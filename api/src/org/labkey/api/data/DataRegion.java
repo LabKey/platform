@@ -123,7 +123,11 @@ public class DataRegion extends AbstractDataRegion
     public static final String LAST_FILTER_PARAM = ".lastFilter";
     public static final String SELECT_CHECKBOX_NAME = ".select";
     public static final String OLD_VALUES_NAME = ".oldValues";
+    public static final String CONTAINER_FILTER_NAME = ".containerFilterName";
     protected static final String TOGGLE_CHECKBOX_NAME = ".toggle";
+
+    // This is a flag that is used to distinguish code paths while migrating the client Data Region
+    public static boolean USE_MIGRATE_DATAREGION = false;
 
     private class GroupTable
     {
@@ -1225,7 +1229,10 @@ public class DataRegion extends AbstractDataRegion
 
             out.write("<input type=checkbox title='Select/unselect all on current page' name='");
             out.write(TOGGLE_CHECKBOX_NAME);
-            out.write("' onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked);'");
+            if (USE_MIGRATE_DATAREGION)
+                out.write("'");
+            else
+                out.write("' onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked);'");
             out.write("></td>");
         }
 
@@ -1249,7 +1256,8 @@ public class DataRegion extends AbstractDataRegion
                 out.write("\">");
 
                 out.write("<input type=checkbox title='Select/unselect all on current page' ");
-                out.write(" onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked);'");
+                if (!USE_MIGRATE_DATAREGION)
+                    out.write(" onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked);'");
                 out.write("></td>");
             }
 
@@ -1535,7 +1543,8 @@ public class DataRegion extends AbstractDataRegion
 
         if (!enabled)
             out.write(" DISABLED");
-        out.write(" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectRow(this);\"");
+        if (!USE_MIGRATE_DATAREGION)
+            out.write(" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectRow(this);\"");
         out.write(">");
         renderExtraRecordSelectorContent(ctx, out);
         out.write("</td>");

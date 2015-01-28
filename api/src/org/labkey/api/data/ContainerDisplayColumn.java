@@ -229,7 +229,7 @@ public class ContainerDisplayColumn extends DataColumn
             MutablePropertyValues mpv = new MutablePropertyValues();
             mpv.addPropertyValue("schemaName", "auditLog");
             mpv.addPropertyValue("query.queryName", "ContainerAuditEvent");
-            mpv.addPropertyValue("query.containerFilterName", "AllFolders");
+            mpv.addPropertyValue("query" + DataRegion.CONTAINER_FILTER_NAME, "AllFolders");
 
             List<FieldKey> fieldKeys = new ArrayList<>();
             fieldKeys.add(FieldKey.fromString("ProjectId"));

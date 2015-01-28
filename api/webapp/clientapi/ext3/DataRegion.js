@@ -76,14 +76,12 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 /**
                  * Non-Configurable Options
                  *  selectionModified
-                 *  currentPanelButton  - The button for the ribbon panel that we're currently showing
                  *  panelButtonContents - All of the different ribbon panels that have been constructed for this data region
                  *  allowHeaderLock     - A partially configurable option that allows for lockable headers on scrolling. Only
                  *                        includes "modern browsers" as of 9.8.2011
                  */
                 Ext.apply(this, {
                     selectionModified: false,
-                    currentPanelButton: null,
                     panelButtonContents: []
                 });
 
@@ -1031,24 +1029,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 return userFilter;
             },
 
-            getUserFiltersByColumn: function (column)
-            {
-                var filters = this.getUserFilterArray();
-                var ret = [];
-
-                for (var i = 0; i < filters.length; i++)
-                {
-                    if (column.lookup && column.displayField && filters[i].getColumnName() == column.displayField)
-                    {
-                        ret.push(filters[i]);
-                    }
-                    else if (column.fieldKey && filters[i].getColumnName() == column.fieldKey)
-                        ret.push(filters[i]);
-                }
-
-                return ret;
-            },
-
             /**
              * Returns an Array of LABKEY.Filter instances constructed from the URL.
              * @returns {Array} Array of {@link LABKEY.Filter} objects that represent currently applied filters.
@@ -1561,8 +1541,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             // private
             updateRequiresSelectionButtons: function (selectionCount)
             {
-//        var fn = selectionCount > 0 ? LABKEY.Utils.enableButton : LABKEY.Utils.disableButton;
-
                 // 10566: for javascript perf on IE stash the requires selection buttons
                 if (!this._requiresSelectionButtons)
                 {
@@ -1892,7 +1870,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     LABKEY.initializeViewDesigner(function ()
                     {
                         var additionalFields = {};
-                        var userFilter = this.getUserFilter();
+                        var userFilter = this.getUserFilter(); // TODO: When it comes time to refactor, use getUserFilterArray() here instead
                         var userSort = this.getUserSort();
                         var userColumns = this.getParameter(this.name + ".columns");
 

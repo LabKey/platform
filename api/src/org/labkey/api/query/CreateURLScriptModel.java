@@ -18,10 +18,9 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.List;
@@ -86,7 +85,7 @@ public class CreateURLScriptModel extends ExportScriptModel
 
         ContainerFilter containerFilter = getContainerFilter();
         if (null != containerFilter && null != containerFilter.getType())
-            url.addParameter("query.containerFilterName", containerFilter.getType().name());
+            url.addParameter("query" + DataRegion.CONTAINER_FILTER_NAME, containerFilter.getType().name());
 
         if (null != getViewName())
             url.addParameter("query.viewName", getViewName());

@@ -120,25 +120,48 @@ public abstract class AbstractDataRegion extends DisplayElement
 
     protected void renderHeaderScript(RenderContext ctx, Writer writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
     {
-        StringWriter out = new StringWriter();
-        out.write("<script type=\"text/javascript\">\n");
-        out.write("Ext.onReady(function() {\n");
-        out.write("new LABKEY.DataRegion(\n");
-        out.write(getDataRegionJSON(ctx, true).toString(2));
-        out.write(");\n");
-        if (messages != null && !messages.isEmpty())
+        if (DataRegion.USE_MIGRATE_DATAREGION)
         {
-            for (Map.Entry<String, String> entry : messages.entrySet())
+            StringWriter out = new StringWriter();
+            out.write("<script type=\"text/javascript\">\n");
+            out.write("new LABKEY.DataRegion2(\n");
+            out.write(getDataRegionJSON(ctx, true).toString(2));
+            out.write(");\n");
+            if (messages != null && !messages.isEmpty())
             {
-                out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].addMessage(" +
-                        PageFlowUtil.jsString(entry.getValue()) + "," +
-                        PageFlowUtil.jsString(entry.getKey()) + ");\n");
+                for (Map.Entry<String, String> entry : messages.entrySet())
+                {
+                    out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].addMessage(" +
+                            PageFlowUtil.jsString(entry.getValue()) + "," +
+                            PageFlowUtil.jsString(entry.getKey()) + ");\n");
+                }
+                out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessageArea();\n");
             }
-            out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessageArea();\n");
+            out.write("</script>\n");
+            writer.write(out.toString());
         }
-        out.write("});\n");
-        out.write("</script>\n");
-        writer.write(out.toString());
+        else
+        {
+            StringWriter out = new StringWriter();
+            out.write("<script type=\"text/javascript\">\n");
+            out.write("Ext.onReady(function() {\n");
+            out.write("new LABKEY.DataRegion(\n");
+            out.write(getDataRegionJSON(ctx, true).toString(2));
+            out.write(");\n");
+            if (messages != null && !messages.isEmpty())
+            {
+                for (Map.Entry<String, String> entry : messages.entrySet())
+                {
+                    out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].addMessage(" +
+                            PageFlowUtil.jsString(entry.getValue()) + "," +
+                            PageFlowUtil.jsString(entry.getKey()) + ");\n");
+                }
+                out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessageArea();\n");
+            }
+            out.write("});\n");
+            out.write("</script>\n");
+            writer.write(out.toString());
+        }
     }
 
     private SimpleFilter getValidFilter(RenderContext ctx)
@@ -158,8 +181,7 @@ public abstract class AbstractDataRegion extends DisplayElement
         SimpleFilter urlFilter = getValidFilter(ctx);
         if (urlFilter != null && !urlFilter.isEmpty())
         {
-            StringBuilder filterDesc = new StringBuilder();
-            filterDesc.append(urlFilter.getFilterText(new SimpleFilter.ColumnNameFormatter()
+            return urlFilter.getFilterText(new SimpleFilter.ColumnNameFormatter()
             {
                 @Override
                 public String format(FieldKey fieldKey)
@@ -181,9 +203,7 @@ public abstract class AbstractDataRegion extends DisplayElement
                         formatted = formatted.substring(slashIndex);
                     return formatted;
                 }
-            }));
-
-            return filterDesc.toString();
+            });
         }
 
         return null;

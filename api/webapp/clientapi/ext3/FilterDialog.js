@@ -290,18 +290,31 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         return this.viewcontainer;
     },
 
-    // Override to return your own filter views
-    getViews : function() {
-
-        var filters = [], views = [];
+    _getFilters : function() {
+        var filters = [];
 
         var dr = this.getDataRegion();
         if (dr) {
-            filters = dr.getUserFiltersByColumn(this.column);
+            Ext.each(dr.getUserFilterArray(), function(ff) {
+                if (this.column.lookup && this.column.displayField && ff.getColumnName() == this.column.displayField) {
+                    filters.push(ff);
+                }
+                else if (this.column.fieldKey && ff.getColumnName() == this.column.fieldKey) {
+                    filters.push(ff);
+                }
+            });
         }
         else if (this.queryString) { // deprecated
             filters = LABKEY.Filter.getFiltersFromUrl(this.queryString, this.dataRegionName);
         }
+
+        return filters;
+    },
+
+    // Override to return your own filter views
+    getViews : function() {
+
+        var filters = this._getFilters(), views = [];
 
         // default view
         views.push({

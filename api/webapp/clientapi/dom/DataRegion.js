@@ -11,6 +11,7 @@
     var ALL_FILTERS_SKIP_PREFIX = '.~';
     var PARAM_PREFIX = '.param.';
     var OFFSET_PREFIX = '.offset';
+    var CONTAINER_FILTER_NAME = '.containerFilterName';
 
     var _buildQueryString = function(region, pairs) {
         if (!$.isArray(pairs)) {
@@ -57,6 +58,7 @@
         return $(baseSel + ' .labkey-selectors input[type="checkbox"][name=".select"]');
     };
 
+    // Formerly, LABKEY.DataRegion.getParamValPairs
     var _getParametersSearch = function(region, qString, skipPrefixSet /* optional */) {
         if (!qString) {
             qString = region.getSearchString.call(region);
@@ -239,6 +241,36 @@
         });
     };
 
+    var _changeFilter = function(region, newParamValPairs, newQueryString) {
+
+        var event = $.Event("beforefilterchange");
+
+        var filterPairs = [], name, val;
+        $.each(newParamValPairs, function(i, pair) {
+            name = pair[0];
+            val = pair[1];
+            if (name.indexOf(region.name + '.') == 0 && name.indexOf('~') > -1) {
+                filterPairs.push([name, val]);
+            }
+        });
+
+        $(region).trigger("beforefilterchange", region, filterPairs);
+        if (event.isDefaultPrevented()) {
+            return;
+        }
+
+        var params = _getParameters(region, newQueryString, [region.name + '.offset']);
+        region.setSearchString.call(region, region.name, _buildQueryString(region, params));
+    };
+
+    var _updateFilter = function(region, filter, skipPrefixes) {
+        var params = _getParameters(region, region.requestURL, skipPrefixes);
+        if (filter) {
+            params.push([filter.getURLParameterName(region.name), filter.getURLParameterValue()]);
+        }
+        _changeFilter(region, params, _buildQueryString(region, params));
+    };
+
     LABKEY.DataRegion2 = function(config) {
 
         if (!config || !LABKEY.Utils.isString(config.name)) {
@@ -380,7 +412,172 @@
     };
 
     //
-    // Selection Methods
+    // Filtering
+    //
+
+    /**
+     * Add a filter to this Data Region.
+     * @param {LABKEY.Filter} filter
+     */
+    Proto.addFilter = function(filter) {
+        _updateFilter(this, filter);
+    };
+
+    /**
+     * Removes all filters from the DataRegion
+     */
+    Proto.clearAllFilters = function() {
+        var event = $.Event("beforeclearallfilters");
+
+        $(this).trigger(event, this);
+
+        if (event.isDefaultPrevented()) {
+            console.log('We were stopped!');
+            return;
+        }
+
+        _removeParameters(this, [ALL_FILTERS_SKIP_PREFIX, ".offset"]);
+    };
+
+    /**
+     * Removes all the filters for a particular field
+     * @param {string or FieldKey} fieldKey the name of the field from which all filters should be removed
+     */
+    Proto.clearFilter = function(fieldKey) {
+        var isString = LABKEY.Utils.isString(fieldKey) && fieldKey.length > 0,
+            isFK = (fieldKey instanceof LABKEY.FieldKey);
+
+        if (isString || isFK) {
+            if (isString) {
+                fieldKey = LABKEY.FieldKey.fromString("" + fieldKey);
+            }
+
+            var columnName = fieldKey.toString();
+
+            var event = $.Event("beforeclearfilter");
+
+            $(this).trigger(event, this, columnName);
+
+            if (event.isDefaultPrevented()) {
+                return;
+            }
+
+            _removeParameters(this, ["." + columnName + "~", ".offset"]);
+        }
+    };
+
+    /**
+     * Returns the {@link LABKEY.Query.containerFilter} currently applied to the DataRegion. Defaults to LABKEY.Query.containerFilter.current.
+     * @returns {String} The container filter currently applied to this DataRegion. Defaults to 'undefined' if a container filter is not specified by the configuration.
+     * @see LABKEY.DataRegion#getUserContainerFilter to get the containerFilter value from the URL.
+     */
+    Proto.getContainerFilter = function() {
+        var cf;
+
+        if (LABKEY.Utils.isString(this.containerFilter) && this.containerFilter.length > 0) {
+            cf = this.containerFilter;
+        }
+        else if (LABKEY.Utils.isObject(this.view) && LABKEY.Utils.isString(this.view.containerFilter) && this.view.containerFilter.length > 0) {
+            cf = this.view.containerFilter;
+        }
+
+        return cf;
+    };
+
+    /**
+     * Returns the user {@link LABKEY.Query.containerFilter} parameter from the URL.
+     * @returns {LABKEY.Query.containerFilter} The user container filter.
+     */
+    Proto.getUserContainerFilter = function() {
+        return this.getParameter(this.name + CONTAINER_FILTER_NAME);
+    };
+
+    /**
+     * Returns an Array of LABKEY.Filter instances constructed from the URL.
+     * @returns {Array} Array of {@link LABKEY.Filter} objects that represent currently applied filters.
+     */
+    Proto.getUserFilterArray = function() {
+        var userFilter = [], me = this;
+
+        var pairs = _getParametersSearch(this, this.requestURL);
+        $.each(pairs, function(i, pair) {
+            if (pair[0].indexOf(me.name + '.') == 0 && pair[0].indexOf('~') > -1) {
+                var tilde = pair[0].indexOf('~');
+                var fieldKey = pair[0].substring(me.name.length + 1, tilde);
+                var op = pair[0].substring(tilde + 1);
+                userFilter.push(LABKEY.Filter.create(fieldKey, pair[1], LABKEY.Filter.getFilterTypeForURLSuffix(op)));
+            }
+        });
+
+        return userFilter;
+    };
+
+    /**
+     * Remove a filter on this DataRegion.
+     * @param {LABKEY.Filter} filter
+     */
+    Proto.removeFilter = function(filter) {
+        if (LABKEY.Utils.isObject(filter) && LABKEY.Utils.isFunction(filter.getColumnName)) {
+            _updateFilter(this, null, [this.name + '.' + filter.getColumnName() + '~']);
+        }
+    };
+
+    /**
+     * Replace a filter on this Data Region. Optionally, supply another filter to replace for cases when the filter
+     * columns don't match exactly.
+     * @param {LABKEY.Filter} filter
+     * @param {LABKEY.Filter} [filterToReplace]
+     */
+    Proto.replaceFilter = function(filter, filterToReplace) {
+        var target = filterToReplace ? filterToReplace : filter;
+        _updateFilter(this, filter, [this.name + '.' + target.getColumnName() + '~']);
+    };
+
+    Proto.replaceFilters = function(filters, column) {
+        if (!LABKEY.Utils.isArray(filters) || filters.length == 0) {
+            return;
+        }
+
+        if (filters.length == 1) {
+            return this.replaceFilter(filters[0]);
+        }
+
+        // use the first filter to skip prefixes
+        var target = filters[0];
+
+        var params = _getParameters(this, this.requestURL, [this.name + '.' + column.fieldKey + '~']);
+        params.push([target.getURLParameterName(this.name), target.getURLParameterValue()]);
+
+        // stop skipping prefixes and add the rest of the params
+        for (var f = 1; f < filters.length; f++)
+        {
+            target = filters[f];
+            params.push([target.getURLParameterName(this.name), target.getURLParameterValue()]);
+        }
+
+        _changeFilter(this, params, LABKEY.DataRegion.buildQueryString(params));
+    };
+
+    /**
+     * @private
+     * @param filter
+     * @param filterMatch
+     */
+    Proto.replaceFilterMatch = function(filter, filterMatch) {
+        var params = _getParameters(this, this.requestURL);
+        var skips = [], me = this;
+
+        $.each(params, function(param) {
+            if (param[0].indexOf(me.name + '.') == 0 && param[0].indexOf(filterMatch) > -1) {
+                skips.push(param[0]);
+            }
+        });
+
+        _updateFilter(this, filter, skips);
+    };
+
+    //
+    // Selection
     //
 
     /**

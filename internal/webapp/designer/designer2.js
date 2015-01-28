@@ -220,12 +220,6 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             customView: this.customView
         });
 
-//        this.propertiesTab = new LABKEY.DataRegion.PropertiesTab({
-//            designer: this,
-//            customView: this.customView,
-//            readOnly: true
-//        });
-
         this.fieldsTree = new Ext.tree.TreePanel({
             autoScroll: true,
             border: false,

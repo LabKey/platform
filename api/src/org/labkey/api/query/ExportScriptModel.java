@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -200,7 +201,7 @@ public abstract class ExportScriptModel
 
     public ContainerFilter getContainerFilter()
     {
-        String containerFilterName = _view.getSettings().getSortFilterURL().getParameter(_view.getDataRegionName() +  ".containerFilterName");
+        String containerFilterName = _view.getSettings().getSortFilterURL().getParameter(_view.getDataRegionName() + DataRegion.CONTAINER_FILTER_NAME);
 
         if (containerFilterName != null)
             return ContainerFilter.getContainerFilterByName(containerFilterName, _view.getUser());

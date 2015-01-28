@@ -1402,7 +1402,7 @@ public class QueryView extends WebPartView<Object>
                 URLHelper url = getSettings().getReturnUrl();
                 if (null == url)
                     url = getSettings().getSortFilterURL();
-                String propName = getDataRegionName() + ".containerFilterName";
+                String propName = getDataRegionName() + DataRegion.CONTAINER_FILTER_NAME;
                 url.replaceParameter(propName, filterType.name());
                 NavTree filterItem = new NavTree(filterType.toString(), url);
 
