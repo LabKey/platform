@@ -85,6 +85,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.form.DeleteForm;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpInputTable;
@@ -156,7 +157,6 @@ import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.*;
@@ -2601,52 +2601,6 @@ public class ExperimentController extends SpringActionController
             {
                 return Collections.emptyList();
             }
-        }
-    }
-
-    public static class DeleteForm extends ViewForm implements DataRegionSelection.DataSelectionKeyForm
-    {
-        private boolean _forceDelete;
-        private String _dataRegionSelectionKey;
-        private Integer _singleObjectRowId;
-
-        public int[] getIds(boolean clear)
-        {
-            if (_singleObjectRowId != null)
-            {
-                return new int[] {_singleObjectRowId};
-            }
-            return PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), clear));
-        }
-
-        public Integer getSingleObjectRowId()
-        {
-            return _singleObjectRowId;
-        }
-
-        public void setSingleObjectRowId(Integer singleObjectRowId)
-        {
-            _singleObjectRowId = singleObjectRowId;
-        }
-
-        public boolean isForceDelete()
-        {
-            return _forceDelete;
-        }
-
-        public void setForceDelete(boolean forceDelete)
-        {
-            _forceDelete = forceDelete;
-        }
-
-        public String getDataRegionSelectionKey()
-        {
-            return _dataRegionSelectionKey;
-        }
-
-        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
-        {
-            _dataRegionSelectionKey = dataRegionSelectionKey;
         }
     }
 

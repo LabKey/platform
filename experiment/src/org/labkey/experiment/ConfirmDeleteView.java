@@ -19,13 +19,13 @@ package org.labkey.experiment;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.form.DeleteForm;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
-import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
@@ -133,17 +133,17 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         }
     }
 
-    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form) throws ServletException
+    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form) throws ServletException
     {
         this(objectType, detailAction, objects, form, Collections.<ExpRun>emptyList());
     }
 
-    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form, List<? extends ExpRun> runs) throws ServletException
+    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form, List<? extends ExpRun> runs) throws ServletException
     {
         this(objectType, detailAction, objects, form, runs, null, Collections.<Pair<SecurableResource, ActionURL>>emptyList(), Collections.<Pair<SecurableResource, ActionURL>>emptyList());
     }
 
-    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form, List<? extends ExpRun> runs, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras) throws ServletException
+    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form, List<? extends ExpRun> runs, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras) throws ServletException
     {
         super("/org/labkey/experiment/ConfirmDelete.jsp");
 
