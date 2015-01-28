@@ -7192,6 +7192,7 @@ internal/src/org/labkey/api/exp/FileXarSource.java -text
 internal/src/org/labkey/api/exp/flag/FlagColumn.java -text
 internal/src/org/labkey/api/exp/flag/FlagColumnRenderer.java -text
 internal/src/org/labkey/api/exp/flag/FlagForeignKey.java -text
+internal/src/org/labkey/api/exp/form/DeleteForm.java -text
 internal/src/org/labkey/api/exp/property/AbstractDomainKind.java -text
 internal/src/org/labkey/api/exp/property/AssayBatchDomainKind.java -text
 internal/src/org/labkey/api/exp/property/AssayDomainKind.java -text
