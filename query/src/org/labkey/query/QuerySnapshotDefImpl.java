@@ -44,8 +44,7 @@ import java.util.List;
 
 public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
 {
-    final static private Logger log = Logger.getLogger(QuerySnapshotDefImpl.class);
-    final static private QueryManager mgr = QueryManager.get();
+    final static private Logger LOG = Logger.getLogger(QuerySnapshotDefImpl.class);
 
     // data models
     private QueryDef _queryDef;
@@ -128,6 +127,10 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
                 key.setQueryDefId(_snapshotDef.getQueryDefId());
                 _queryDef = key.selectObject();
             }
+            if (_queryDef == null)
+            {
+                LOG.warn("Could not find query with queryDefId " + _snapshotDef.getQueryDefId() + " for query snapshot " + _snapshotDef.getName() + " in " + _snapshotDef.lookupContainer());
+            }
             return _queryDef == null ? null : new CustomQueryDefinitionImpl(user, getContainer(), _queryDef);
         }
         else if (_snapshotDef.getQueryTableName() != null)
@@ -136,7 +139,23 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
             if (queryTableContainer != null)
             {
                 UserSchema schema = QueryService.get().getUserSchema(user, queryTableContainer, _snapshotDef.getSchema());
-                return schema.getQueryDefForTable(_snapshotDef.getQueryTableName());
+                if (schema == null)
+                {
+                    LOG.warn("Could not find query with schema " + _snapshotDef.getSchema() + " for query snapshot " + _snapshotDef.getName() + " in " + _snapshotDef.lookupContainer());
+                }
+                else
+                {
+                    QueryDefinition result = schema.getQueryDefForTable(_snapshotDef.getQueryTableName());
+                    if (result == null)
+                    {
+                        LOG.warn("Could not find query with queryTableName " + _snapshotDef.getQueryTableName() + " for query snapshot " + _snapshotDef.getName() + " in " + _snapshotDef.lookupContainer());
+                    }
+                    return result;
+                }
+            }
+            else
+            {
+                LOG.warn("Could not find query with queryTableContainer " + _snapshotDef.getQueryTableContainer() + " for query snapshot " + _snapshotDef.getName() + " in " + _snapshotDef.lookupContainer());
             }
         }
         return null;

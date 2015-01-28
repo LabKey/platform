@@ -133,11 +133,9 @@ public class DatasetWriter implements InternalStudyWriter
             PropertyList propList = datasetXml.addNewTags();
             ReportPropsManager.get().exportProperties(def.getEntityId(), ctx.getContainer(), propList);
 
-            String tag;
             if(def.getTag() != null)
             {
-                tag = def.getTag();
-                datasetXml.setTag(tag.toString());
+                datasetXml.setTag(def.getTag());
             }
         }
 
@@ -208,7 +206,7 @@ public class DatasetWriter implements InternalStudyWriter
                     {
                         // Assuming they're still around, filter out rows where the source assay run has been deleted,
                         // thus orphaning the dataset row and pulling out all of its real data
-                        filter.addCondition(provider.getTableMetadata(protocol).getRunFieldKeyFromResults().toString(), null, CompareType.NONBLANK);
+                        filter.addCondition(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), null, CompareType.NONBLANK);
                     }
                 }
             }
@@ -423,7 +421,7 @@ public class DatasetWriter implements InternalStudyWriter
         // Handle lookup columns which have "/" in their names by mapping them to "."
         for (ColumnInfo outColumn : outColumns)
         {
-            if (outColumn.getName().indexOf("/") != -1)
+            if (outColumn.getName().contains("/"))
             {
                 outColumn.setName(outColumn.getName().replace('/', '.'));
             }

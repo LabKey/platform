@@ -67,7 +67,7 @@ public class EditResultsQueryView extends AssayBaseQueryView
             if (filter == null)
                 filter = new SimpleFilter();
 
-            filter.addCondition(_provider.getTableMetadata(_protocol).getResultRowIdFieldKey().toString(), _runId);
+            filter.addCondition(_provider.getTableMetadata(_protocol).getResultRowIdFieldKey(), _runId);
             view.getRenderContext().setBaseFilter(filter);
             view.getDataRegion().addHiddenFormField("runId", String.valueOf(_runId));
         }

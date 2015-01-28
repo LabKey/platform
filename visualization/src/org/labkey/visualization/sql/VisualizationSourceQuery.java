@@ -503,8 +503,8 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         Map<FieldKey, String> fieldKeys = new HashMap<>();
         for (SimpleFilter.FilterClause clause : filter.getClauses())
         {
-            for (String colName : clause.getColumnNames())
-                fieldKeys.put(FieldKey.fromString(colName), colName);
+            for (FieldKey fieldKey : clause.getFieldKeys())
+                fieldKeys.put(fieldKey, fieldKey.toString());
         }
         return QueryService.get().getColumns(getTableInfo(), fieldKeys.keySet());
     }

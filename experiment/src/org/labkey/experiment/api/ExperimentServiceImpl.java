@@ -1082,11 +1082,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return getExpSchema().getTable("MaterialSource");
     }
 
-    public TableInfo getTinfoMaterialSourceWithProject()
-    {
-        return getExpSchema().getTable("MaterialSourceWithProject");
-    }
-
     public TableInfo getTinfoActiveMaterialSource()
     {
         return getExpSchema().getTable("ActiveMaterialSource");
@@ -1428,7 +1423,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                             {
                                 AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
                                 SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
-                                Collection<String> lsids = new TableSelector(tableInfo, Collections.<String>singleton("LSID"), filter, null).getCollection(String.class);
+                                Collection<String> lsids = new TableSelector(tableInfo, Collections.singleton("LSID"), filter, null).getCollection(String.class);
 
                                 // Do the actual delete on the dataset for the rows in question
                                 dataset.deleteDatasetRows(user, lsids);
@@ -2448,7 +2443,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             for (ProtocolParameter param : protocolParams)
             {
                 param.setProtocolId(result.getRowId());
-                loadParameter(user, param, getTinfoProtocolParameter(), "ProtocolId", protocol.getRowId());
+                loadParameter(user, param, getTinfoProtocolParameter(), FieldKey.fromParts("ProtocolId"), protocol.getRowId());
             }
 
             savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), protocol.getContainer(), !newProtocol);
@@ -2476,7 +2471,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public void loadParameter(User user, AbstractParameter param,
                                    TableInfo tiValueTable,
-                                   String pkName, int rowId)
+                                   FieldKey pkName, int rowId)
     {
         SimpleFilter filter = new SimpleFilter(pkName, rowId);
         filter.addCondition(FieldKey.fromParts("OntologyEntryURI"), param.getOntologyEntryURI());
@@ -3086,7 +3081,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             desiredInputs.add(input);
         }
 
-        syncInputs(user, existingInputs, desiredInputs, "MaterialId", getTinfoMaterialInput());
+        syncInputs(user, existingInputs, desiredInputs, FieldKey.fromParts("MaterialId"), getTinfoMaterialInput());
     }
 
     private void addDataInputs(Map<ExpData, String> inputDatas, ProtocolApplication protApp1, User user)
@@ -3105,10 +3100,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             desiredInputs.add(input);
         }
 
-        syncInputs(user, existingInputs, desiredInputs, "DataId", getTinfoDataInput());
+        syncInputs(user, existingInputs, desiredInputs, FieldKey.fromParts("DataId"), getTinfoDataInput());
     }
 
-    private void syncInputs(User user, Set<? extends AbstractRunInput> existingInputs, Set<? extends AbstractRunInput> desiredInputs, String keyName, TableInfo table)
+    private void syncInputs(User user, Set<? extends AbstractRunInput> existingInputs, Set<? extends AbstractRunInput> desiredInputs, FieldKey keyName, TableInfo table)
             throws SQLException
     {
         Set<AbstractRunInput> inputsToDelete = new HashSet<>(existingInputs);

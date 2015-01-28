@@ -36,6 +36,7 @@ import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -91,23 +92,17 @@ public class ExpGeneratorHelper
     // undone:  does this make sense for non-file based data?
     static private ExpData addData(Map<URI, ExpData> datas, URI originalURI, XarSource source) throws PipelineJobException
     {
-        ExpData data = null;
-
         URI uri;
         try
         {
             uri = new URI(source.getCanonicalDataFileURL(originalURI.toString()));
         }
-        catch (XarFormatException e)
-        {
-            throw new PipelineJobException(e);
-        }
-        catch (URISyntaxException e)
+        catch (XarFormatException | URISyntaxException e)
         {
             throw new PipelineJobException(e);
         }
 
-        data = datas.get(uri);
+        ExpData data = datas.get(uri);
 
         // Check if we've already dealt with this one
         if (data == null)
@@ -321,7 +316,7 @@ public class ExpGeneratorHelper
 
                 protAppParam.setValue(paramType.getType(), param.getValue());
 
-                ExperimentServiceImpl.get().loadParameter(job.getUser(), protAppParam, ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), "ProtocolApplicationId", app.getRowId());
+                ExperimentServiceImpl.get().loadParameter(job.getUser(), protAppParam, ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), FieldKey.fromParts("ProtocolApplicationId"), app.getRowId());
             }
 
             // If there are any property settings, transfer them here

@@ -216,9 +216,3 @@ CREATE VIEW exp.ObjectPropertiesView AS
         P.TypeTag, P.FloatValue, P.StringValue, P.DatetimeValue, P.MvIndicator, PD.PropertyId, PD.ConceptURI, PD.Format
     FROM exp.ObjectProperty P JOIN exp.Object O ON P.ObjectId = O.ObjectId
     JOIN exp.PropertyDescriptor PD ON P.PropertyId = PD.PropertyId;
-
-CREATE VIEW exp.MaterialSourceWithProject AS
-    SELECT ms.RowId, ms.Name, ms.LSID, ms.MaterialLSIDPrefix, ms.Description,
-        ms.Created, ms.CreatedBy, ms.Modified, ms.ModifiedBy, ms.Container , dd.Project, ms.IdCol1, ms.IdCol2, ms.IdCol3, ms.ParentCol
-    FROM exp.MaterialSource ms
-    LEFT OUTER JOIN exp.DomainDescriptor dd ON ms.lsid = dd.domainuri;

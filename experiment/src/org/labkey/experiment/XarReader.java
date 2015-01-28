@@ -1171,7 +1171,7 @@ public class XarReader extends AbstractXarImporter
             param.setProtocolApplicationId(protAppId);
             param.setRunId(protAppId);
             param.setXMLBeanValue(simple, getLog());
-            ExperimentServiceImpl.get().loadParameter(getUser(), param, tiValueTable, "ProtocolApplicationId", protAppId);
+            ExperimentServiceImpl.get().loadParameter(getUser(), param, tiValueTable, FieldKey.fromParts("ProtocolApplicationId"), protAppId);
         }
     }
 

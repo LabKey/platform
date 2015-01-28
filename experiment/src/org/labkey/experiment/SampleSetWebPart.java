@@ -15,18 +15,22 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DataView;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.QuerySettings;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import javax.servlet.http.HttpServletRequest;
@@ -77,21 +81,10 @@ public class SampleSetWebPart extends QueryView
         {
             settings.setContainerFilterName(ContainerFilter.CurrentPlusProjectAndShared.class.getSimpleName());
         }
-        settings.getBaseSort().insertSortColumn("Name");
+        settings.getBaseSort().insertSortColumn(FieldKey.fromParts("Name"));
         return settings;
     }
 
-//    public DataRegion getMaterialSourceWithProjectRegion(ViewContext model) throws Exception
-//    {
-//        DataRegion result = getMaterialSourceRegion(model, ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject());
-//        ActionURL url = new ActionURL(ExperimentController.ListMaterialSourcesAction.class, model.getContainer());
-//        ColumnInfo containerColumnInfo = ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject().getColumn("Container");
-//        ContainerDisplayColumn displayColumn = new ContainerDisplayColumn(containerColumnInfo, true, url);
-//        displayColumn.setEntityIdColumn(containerColumnInfo);
-//        result.addDisplayColumn(displayColumn);
-//        return result;
-//    }
-//
     @Override
     protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {

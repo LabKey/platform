@@ -77,8 +77,8 @@ public class WikiVersionsGrid extends GridView
 
         //filter on container and page name
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(containerLookup.getName(), wiki.getContainerId());
-        filter.addCondition(entityIdLookup.getName(), wiki.getName());
+        filter.addCondition(containerLookup.getFieldKey(), wiki.getContainerId());
+        filter.addCondition(entityIdLookup.getFieldKey(), wiki.getName());
         setFilter(filter);
 
         //sort DESC on version number
