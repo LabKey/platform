@@ -1223,19 +1223,31 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 }
             },
 
+            removeAllMessages: function()
+            {
+                if (this.msgbox)
+                {
+                    this.msgbox.removeAll();
+                }
+            },
+
             /** Clear the message box contents. */
             clearMessage: function ()
             {
                 if (this.msgbox) this.msgbox.clear();
             },
 
-            /**
-             * Get the message area if it exists.
-             * @return {LABKEY.DataRegion.MessageArea} The message area object.
-             */
-            getMessageArea: function ()
-            {
-                return this.msgbox;
+            hasMessage: function(part) {
+                return this.msgbox && this.msgbox.getMessage(part);
+            },
+
+            getMessage: function(part) {
+                var msg;
+                if (this.msgbox)
+                {
+                    msg = this.msgbox.getMessage(part);
+                }
+                return msg;
             },
 
             /**
@@ -3236,7 +3248,9 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
 
         var div = this.parentEl.child("div");
         if (div)
-            div.dom.innerHTML = "";
+        {
+            div.update('');
+        }
     },
 
     /**

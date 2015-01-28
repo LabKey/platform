@@ -145,7 +145,7 @@ Ext.onReady(function () {
             form: newForm,
             isUpload: true,
             callback: function (options, success, response) {
-                dr.getMessageArea().removeAll();
+                dr.removeAllMessages();
                 if (!success) {
                     dr.showErrorMessage("Error exporting to Excel.");
                 }
