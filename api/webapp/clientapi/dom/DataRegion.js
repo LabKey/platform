@@ -12,6 +12,7 @@
     var PARAM_PREFIX = '.param.';
     var SORT_PREFIX = '.sort', SORT_ASC = '+', SORT_DESC = '-';
     var OFFSET_PREFIX = '.offset';
+    var MAX_ROWS_PREFIX = '.maxRows', SHOW_ROWS_PREFIX = '.showRows';
     var CONTAINER_FILTER_NAME = '.containerFilterName';
 
     var _alterSortString = function(region, current, fieldKey, direction /* optional */) {
@@ -38,6 +39,15 @@
         }
 
         return newSorts.join(',');
+    };
+
+    var _beforeRowsChange = function(region, rowChangeEnum) {
+        var event = $.Event('beforeshowrowschange');
+        $(region).trigger(event, region, rowChangeEnum);
+        if (event.isDefaultPrevented()) {
+            return false;
+        }
+        return true;
     };
 
     var _buildQueryString = function(region, pairs) {
@@ -75,7 +85,7 @@
 
     var _changeFilter = function(region, newParamValPairs, newQueryString) {
 
-        var event = $.Event("beforefilterchange");
+        var event = $.Event('beforefilterchange');
 
         var filterPairs = [], name, val;
         $.each(newParamValPairs, function(i, pair) {
@@ -86,7 +96,7 @@
             }
         });
 
-        $(region).trigger("beforefilterchange", region, filterPairs);
+        $(region).trigger(event, region, filterPairs);
         if (event.isDefaultPrevented()) {
             return;
         }
@@ -230,6 +240,12 @@
         }
 
         region.setSearchString.call(region, region.name, _buildQueryString(region, params));
+    };
+
+    var _showRows = function(region, showRowsEnum) {
+        if (_beforeRowsChange(region, showRowsEnum)) {
+            _setParameter(region, SHOW_ROWS_PREFIX, showRowsEnum, [OFFSET_PREFIX, MAX_ROWS_PREFIX, SHOW_ROWS_PREFIX]);
+        }
     };
 
     var _showSelectMessage = function(region, msg) {
@@ -1169,6 +1185,82 @@
         }
 
         return userSort;
+    };
+
+    //
+    // Paging
+    //
+
+    /**
+     * Forces the grid to show all rows, without any paging
+     */
+    Proto.showAllRows = function() {
+        _showRows(this, 'all');
+    };
+    Proto.showAll = Proto.showAllRows;
+
+    /**
+     * Forces the grid to show only rows that have been selected
+     */
+    Proto.showSelectedRows = function() {
+        _showRows(this, 'selected');
+    };
+    Proto.showSelected = Proto.showSelectedRows;
+
+    /**
+     * Forces the grid to show only rows that have not been selected
+     */
+    Proto.showUnselectedRows = function() {
+        _showRows(this, 'unselected');
+    };
+    Proto.showUnselected = Proto.showUnselectedRows;
+
+    /**
+     * Forces the grid to do paging based on the current maximum number of rows
+     */
+    Proto.showPaged = function() {
+        if (_beforeRowsChange(this, null)) { // lol, what? Handing in null is so lame
+            _removeParameters(this, [SHOW_ROWS_PREFIX]);
+        }
+    };
+
+    /**
+     * Displays the first page of the grid
+     */
+    Proto.showFirstPage = function() {
+        this.setPageOffset(0);
+    };
+    Proto.pageFirst = Proto.showFirstPage;
+
+    /**
+     * Changes the current row offset for paged content
+     * @param rowOffset row index that should be at the top of the grid
+     */
+    Proto.setPageOffset = function(rowOffset) {
+        var event = $.Event('beforeoffsetchange');
+
+        $(this).trigger(event, this, rowOffset);
+
+        if (event.isDefaultPrevented()) {
+            return;
+        }
+
+        _setParameter(this, OFFSET_PREFIX, rowOffset, [OFFSET_PREFIX, SHOW_ROWS_PREFIX]);
+    };
+    Proto.setOffset = Proto.setPageOffset;
+
+    /**
+     * Changes the maximum number of rows that the grid will display at one time
+     * @param newmax the maximum number of rows to be shown
+     */
+    Proto.setMaxRows = function(newmax) {
+        var event = $.Event('beforemaxrowschange'); // Can't this just be a variant of _beforeRowsChange with an extra param?
+        $(this).trigger(event, this, newmax);
+        if (event.isDefaultPrevented()) {
+            return;
+        }
+
+        _setParameter(this, MAX_ROWS_PREFIX, newmax, [OFFSET_PREFIX, MAX_ROWS_PREFIX, SHOW_ROWS_PREFIX]);
     };
 
     //
