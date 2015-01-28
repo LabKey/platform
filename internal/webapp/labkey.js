@@ -440,6 +440,12 @@ if (typeof LABKEY == "undefined")
             LABKEY.requiresCss('GuidedTip.css');
             scripts.push('GuidedTip.js');
 
+            // groupTab.lib.xml
+            LABKEY.requiresCss('groupTabPanel/GroupTab.css');
+            LABKEY.requiresCss('groupTabPanel/UngroupedTab.css');
+            scripts.push('groupTabPanel/GroupTabPanel.js');
+            scripts.push('groupTabPanel/GroupTab.js');
+
             if (!window.Ext)
             {
                 requiresExt3(immediate, function()

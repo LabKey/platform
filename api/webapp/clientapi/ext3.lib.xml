@@ -18,6 +18,7 @@
     </library>
     <dependencies>
         <dependency path="Ext3" />
+        <dependency path="groupTabPanel/GroupTab"/> <!-- depended on by DataRegion -->
         <dependency path="GuidedTip.js"/> <!-- depended on by FormPanel.js -->
         <dependency path="GuidedTip.css"/>
     </dependencies>

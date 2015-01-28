@@ -102,12 +102,6 @@ public class PanelButton extends ActionButton
             }
         }
         config.append("]}\n");
-        out.write("<script language=\"javascript\">Ext.onReady(function() {\n" +
-                "LABKEY.requiresCss(\"groupTabPanel/GroupTab.css\");\n" +
-                "LABKEY.requiresCss(\"groupTabPanel/UngroupedTab.css\");\n" +
-                "LABKEY.requiresScript(\"groupTabPanel/GroupTabPanel.js\", true);\n" +
-                "LABKEY.requiresScript(\"groupTabPanel/GroupTab.js\", true);\n" +
-                "});</script>\n");
         out.append(PageFlowUtil.generateDropDownButton(getCaption(), "javascript:void(0)",
                 "LABKEY.DataRegions[" + PageFlowUtil.jsString(_dataRegionName) + "].showButtonPanel(this, " + config + ");", attributes));
     }
