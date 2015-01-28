@@ -227,7 +227,6 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         if (dr)
         {
             this.dataRegion = dr;
-            //updateDownloadLink(true);
 
             // On first load of the QWP, initialize the "previous view URL" to match the current dataregion state.  This
             // prevents an unnecessary refresh of the report in scenarios like "Source" -> "View" -> "Data" -> "View".
@@ -239,18 +238,17 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
             // show any filter messages on the enclosing dataregion's msg area
             var outerRegion = LABKEY.DataRegions[this.reportConfig.dataRegionName];
-            var msgbox = dr.getMessageArea();
+            var msgPart = 'filter';
 
             if (outerRegion)
             {
-                if (msgbox.getMessage('filter'))
+                if (dr.hasMessage(msgPart))
                 {
-                    var filter = msgbox.getMessage('filter');
-                    outerRegion.addMessage(filter, 'filter');
+                    outerRegion.addMessage(dr.getMessage(msgPart), msgPart);
                 }
                 else
                 {
-                    outerRegion.getMessageArea().removeMessage('filter');
+                    outerRegion.removeMessage(msgPart);
                 }
             }
         }
