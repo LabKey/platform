@@ -676,7 +676,7 @@ public class SimpleFilter implements Filter
 
             if ("".equals(sep) || isIncludeNull())
             {
-                sb.append(sep + "BLANK");
+                sb.append(sep).append("BLANK");
             }
 
             sb.append(")");
@@ -891,8 +891,6 @@ public class SimpleFilter implements Filter
 
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            Object[] params = getParamVals();
-
             ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
             String alias = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
 
@@ -1325,6 +1323,8 @@ public class SimpleFilter implements Filter
         return dialect.substituteParameters(fragment);
     }
 
+    private static final FieldKey CONTAINER_FIELD_KEY = FieldKey.fromParts("container");
+
     public boolean hasContainerEqualClause()
     {
         for (FilterClause clause : _clauses)
@@ -1333,15 +1333,15 @@ public class SimpleFilter implements Filter
             {
                 CompareClause compClause = (CompareClause) clause;
                 if (compClause.getComparison() == CompareType.EQUAL &&
-                        compClause.getColumnNames().size() == 1 &&
-                        "container".equalsIgnoreCase(compClause.getColumnNames().get(0)))
+                        compClause.getFieldKeys().size() == 1 &&
+                        CONTAINER_FIELD_KEY.equals(compClause.getFieldKeys().get(0)))
                     return true;
             }
             if (clause instanceof InClause)
             {
                 InClause inClause = (InClause)clause;
-                if (inClause.getColumnNames().size() == 1 &&
-                        "container".equalsIgnoreCase(inClause.getColumnNames().get(0)))
+                if (inClause.getFieldKeys().size() == 1 &&
+                        CONTAINER_FIELD_KEY.equals(inClause.getFieldKeys().get(0)))
                 {
                     return true;
                 }

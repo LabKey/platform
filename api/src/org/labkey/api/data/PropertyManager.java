@@ -631,7 +631,7 @@ public class PropertyManager
             if (ENCRYPTED_STORE.getPreferredPropertyEncryption() == PropertyEncryption.NoKey)
             {
                 // Just test the normal property store
-                testPropertyStore(normal, (PropertyStore) null);
+                testPropertyStore(normal);
 
                 // Validate that encrypted store with no key specified can't be used
                 testPropertyStore(encrypted, new PropertyStoreTest()
@@ -677,13 +677,13 @@ public class PropertyManager
             }
             else
             {
-                testPropertyStore(normal, encrypted);
-                testPropertyStore(encrypted, normal);
+                testPropertyStore(normal);
+                testPropertyStore(encrypted);
             }
         }
 
 
-        private void testPropertyStore(final PropertyStore store, final @Nullable PropertyStore badStore)
+        private void testPropertyStore(final PropertyStore store)
         {
             testPropertyStore(store, new PropertyStoreTest()
             {
@@ -691,8 +691,8 @@ public class PropertyManager
                 public void runTest(PropertyStore store, User user, Container c)
                 {
                     // Do it twice to ensure multiple categories for same user and container works
-                    testProperties(store, user, c, "junit", badStore);
-                    testProperties(store, user, c, "junit2", badStore);
+                    testProperties(store, user, c, "junit");
+                    testProperties(store, user, c, "junit2");
                 }
 
                 @Override
@@ -735,7 +735,7 @@ public class PropertyManager
         }
 
 
-        private void testProperties(PropertyStore store, User user, Container test, String category, @Nullable PropertyStore badStore)
+        private void testProperties(PropertyStore store, User user, Container test, String category)
         {
             PropertyMap m = store.getWritableProperties(user, test, category, true);
             assertNotNull(m);

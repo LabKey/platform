@@ -199,6 +199,11 @@ public class Sort
         _init(sortParam, true);
     }
 
+    public Sort(FieldKey sort)
+    {
+        appendSortColumn(sort, SortDirection.ASC, false);
+    }
+
     public Sort(String sort)
     {
         _init(sort, false);

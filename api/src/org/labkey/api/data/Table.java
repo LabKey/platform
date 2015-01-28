@@ -28,7 +28,6 @@ import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.Join;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
@@ -49,8 +48,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 
 import java.io.IOException;
@@ -1111,36 +1108,6 @@ public class Table
         }
 
 
-        @Test
-        public void testMapJoin()
-        {
-            ArrayList<Map> left = new ArrayList<>();
-            left.add(_quickMap("id=1&A=1"));
-            left.add(_quickMap("id=2&A=2"));
-            left.add(_quickMap("id=3&A=3"));
-            left.add(_quickMap("id=4&A=1"));
-            left.add(_quickMap("id=5&A=2"));
-            left.add(_quickMap("id=6&A=3"));
-            ArrayList<Map> right = new ArrayList<>();
-            right.add(_quickMap("id=HIDDEN&A=1&B=one"));
-            right.add(_quickMap("id=HIDDEN&A=2&B=two"));
-            right.add(_quickMap("id=HIDDEN&A=3&B=three"));
-
-            Collection<Map> join = Join.join(left, right, "A");
-            Set<String> idSet = new HashSet<>();
-            for (Map m : join)
-            {
-                idSet.add((String)m.get("id"));
-                assertNotSame(m.get("id"), "HIDDEN");
-                assertTrue(!m.get("A").equals("1") || m.get("B").equals("one"));
-                assertTrue(!m.get("A").equals("2") || m.get("B").equals("two"));
-                assertTrue(!m.get("A").equals("3") || m.get("B").equals("three"));
-                PageFlowUtil.toQueryString(m.entrySet());
-            }
-            assertEquals(idSet.size(), 6);
-        }
-
-
         enum MyEnum
         {
             FRED, BARNEY, WILMA, BETTY
@@ -1283,15 +1250,6 @@ public class Table
             else
                 assertEquals(expected, actual);
         }
-
-
-        private Map<String, String> _quickMap(String q)
-        {
-            Map<String, String> m = new HashMap<>();
-            for (Pair<String, String> p : PageFlowUtil.fromQueryString(q))
-                m.put(p.first, p.second);
-            return m;
-        }
     }
 
 
@@ -1387,7 +1345,7 @@ public class Table
 
         if (!(table instanceof SchemaTableInfo))
             throw new IllegalArgumentException();
-        if (null == ((SchemaTableInfo)table).getMetaDataName())
+        if (null == table.getMetaDataName())
             throw new IllegalArgumentException();
 
         SqlDialect d = tableDelete.getSqlDialect();

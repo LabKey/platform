@@ -31,8 +31,8 @@ import java.util.ArrayList;
 */
 public class QueryNestingOption
 {
-    private String _rowIdColumnName;
-    private String _aggregateRowIdColumnName;
+    private FieldKey _rowIdFieldKey;
+    private FieldKey _aggregateRowIdFieldKey;
     private final String _ajaxNestedGridURL;
     private DataColumn _groupIdColumn;
 
@@ -43,8 +43,8 @@ public class QueryNestingOption
      */
     public QueryNestingOption(FieldKey aggregateRowIdColumn, FieldKey rowIdColumn, String ajaxNestedGridURL)
     {
-        _aggregateRowIdColumnName = aggregateRowIdColumn.toString();
-        _rowIdColumnName = rowIdColumn.toString();
+        _aggregateRowIdFieldKey = aggregateRowIdColumn;
+        _rowIdFieldKey = rowIdColumn;
         _ajaxNestedGridURL = ajaxNestedGridURL;
     }
 
@@ -54,7 +54,7 @@ public class QueryNestingOption
         {
             return;
         }
-        Map<FieldKey, ColumnInfo> infos = QueryService.get().getColumns(parentTable, Collections.singleton(FieldKey.fromString(_rowIdColumnName)));
+        Map<FieldKey, ColumnInfo> infos = QueryService.get().getColumns(parentTable, Collections.singleton(_rowIdFieldKey));
         assert infos.size() == 1;
 
         ColumnInfo info = infos.values().iterator().next();
@@ -85,22 +85,22 @@ public class QueryNestingOption
     private boolean isOuter(DisplayColumn column)
     {
         ColumnInfo colInfo = column.getColumnInfo();
-        return colInfo != null && isOuter(colInfo.getName());
+        return colInfo != null && isOuter(colInfo.getFieldKey());
     }
 
-    public boolean isOuter(String columnName)
+    public boolean isOuter(FieldKey fieldKey)
     {
-        return columnName.toLowerCase().startsWith(_aggregateRowIdColumnName.toLowerCase() + "/");
+        return fieldKey.toString().toLowerCase().startsWith(_aggregateRowIdFieldKey.toString().toLowerCase() + "/");
     }
 
-    public String getRowIdColumnName()
+    public FieldKey getRowIdFieldKey()
     {
-        return _rowIdColumnName;
+        return _rowIdFieldKey;
     }
 
-    public String getAggregateRowIdColumnName()
+    public FieldKey getAggregateRowIdFieldKey()
     {
-        return _aggregateRowIdColumnName;
+        return _aggregateRowIdFieldKey;
     }
 
     public NestableDataRegion createDataRegion(List<DisplayColumn> originalColumns, String dataRegionName, boolean expanded)

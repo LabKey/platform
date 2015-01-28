@@ -30,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class AdminLinkManager
 {
     private static final AdminLinkManager INSTANCE = new AdminLinkManager();
-    private static final List<Listener> LISTENERS = new CopyOnWriteArrayList<>();
+    private final List<Listener> _listeners = new CopyOnWriteArrayList<>();
 
     public static AdminLinkManager getInstance()
     {
@@ -43,12 +43,12 @@ public class AdminLinkManager
 
     public void addListener(Listener listener)
     {
-        LISTENERS.add(listener);
+        _listeners.add(listener);
     }
 
     public void addStandardAdminLinks(NavTree adminNavTree, Container container, User user)
     {
-        for (Listener listener : LISTENERS)
+        for (Listener listener : _listeners)
             listener.addAdminLinks(adminNavTree, container, user);
     }
 

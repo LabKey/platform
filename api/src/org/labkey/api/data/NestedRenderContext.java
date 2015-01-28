@@ -59,15 +59,15 @@ public class NestedRenderContext extends RenderContext
             int outerIndex = 0;
             for (Sort.SortField field : standardSort.getSortList())
             {
-                boolean innerColumn = _nestingOption.isOuter(field.getColumnName());
-                foundGroupId = foundGroupId || field.getColumnName().equalsIgnoreCase(_nestingOption.getRowIdColumnName());
+                boolean innerColumn = _nestingOption.isOuter(field.getFieldKey());
+                foundGroupId = foundGroupId || field.getFieldKey().equals(_nestingOption.getRowIdFieldKey());
                 sort.insertSortColumn(field.getFieldKey(), field.getSortDirection(), field.isUrlClause(), innerColumn ? outerIndex++ : totalIndex);
                 totalIndex++;
             }
 
             if (!foundGroupId)
             {
-                sort.insertSortColumn(_nestingOption.getRowIdColumnName(), false, outerIndex++);
+                sort.insertSortColumn(_nestingOption.getRowIdFieldKey(), Sort.SortDirection.ASC, false, outerIndex++);
             }
 
             return sort;
@@ -85,14 +85,14 @@ public class NestedRenderContext extends RenderContext
         {
             // We have to apply pagination as a subquery, since we want to paginate based
             // on groups, not on the actual rows in the query we end up executing
-            result.addCondition(_nestingOption.getRowIdColumnName(), null, CompareType.NONBLANK);
+            result.addCondition(_nestingOption.getRowIdFieldKey(), null, CompareType.NONBLANK);
 
             // We only need to sort on the columns that are part of the grouping, not the nested
             // columns. These will also form the basis of the GROUP BY clause
             Sort groupingSort = new Sort();
             for (Sort.SortField sortField : sort.getSortList())
             {
-                if (_nestingOption.isOuter(sortField.getColumnName()))
+                if (_nestingOption.isOuter(sortField.getFieldKey()))
                 {
                     // Only include ones that are part of the grouping data, and preserve their order
                     groupingSort.insertSortColumn(sortField.getFieldKey(), sortField.getSortDirection(), sortField.isUrlClause(), groupingSort.getSortList().size());
@@ -100,7 +100,7 @@ public class NestedRenderContext extends RenderContext
             }
 
             SQLFragment fromSQL = new SQLFragment(" FROM (");
-            ColumnInfo groupColumn = appendFromSQL(tinfo, name, groupingSort, fromSQL, _nestingOption.getRowIdColumnName());
+            ColumnInfo groupColumn = appendFromSQL(tinfo, name, groupingSort, fromSQL, _nestingOption.getRowIdFieldKey());
             fromSQL.append(" ) FilterOnly ");
 
             Collection<ColumnInfo> cols = Collections.singletonList(groupColumn);
@@ -146,9 +146,9 @@ public class NestedRenderContext extends RenderContext
 
         // We want to do the aggregate query on the grouped data, since ultimately we want
         // a count of the number of groups
-        Sort sort = new Sort(_nestingOption.getRowIdColumnName());
+        Sort sort = new Sort(_nestingOption.getRowIdFieldKey());
         final SQLFragment fromSQL = new SQLFragment();
-        ColumnInfo groupColumn = appendFromSQL(tinfo, dataRegionName, sort, fromSQL, _nestingOption.getAggregateRowIdColumnName());
+        ColumnInfo groupColumn = appendFromSQL(tinfo, dataRegionName, sort, fromSQL, _nestingOption.getAggregateRowIdFieldKey());
         fromSQL.insert(0, "SELECT " + groupColumn.getAlias() + " FROM (");
         fromSQL.append(") FilterOnly GROUP BY ");
         fromSQL.append(groupColumn.getAlias());
@@ -177,7 +177,7 @@ public class NestedRenderContext extends RenderContext
         return Collections.emptyMap();
     }
 
-    private ColumnInfo appendFromSQL(TableInfo tinfo, String dataRegionName, Sort sort, SQLFragment sql, String groupingColumnName)
+    private ColumnInfo appendFromSQL(TableInfo tinfo, String dataRegionName, Sort sort, SQLFragment sql, FieldKey groupFieldKey)
     {
         SimpleFilter filter = super.buildFilter(tinfo, getViewContext().getActionURL(), dataRegionName, Table.ALL_ROWS, Table.NO_OFFSET, sort);
 
@@ -188,7 +188,6 @@ public class NestedRenderContext extends RenderContext
 
         // Use Query to build up the SQL that we need
         Collection<ColumnInfo> cols = new ArrayList<>();
-        FieldKey groupFieldKey = FieldKey.fromString(groupingColumnName);
         Map<FieldKey, ColumnInfo> groupColumns = QueryService.get().getColumns(tinfo, Collections.singleton(groupFieldKey));
         assert groupColumns.size() == 1;
         ColumnInfo groupColumn = groupColumns.get(groupFieldKey);
