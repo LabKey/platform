@@ -50,8 +50,6 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
     public V get(Object key)
     {
         String correctKey = normalizeKey(key);
-        if (correctKey == null)
-            return null;
         return _map.get(correctKey);
     }
 
@@ -115,14 +113,22 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
             Map<String, String> m = new CaseInsensitiveHashMap<>();
             Assert.assertFalse("Map should not contain key", m.containsKey("noKey"));
             Assert.assertFalse("Map should not contain null key", m.containsKey(null));
+            Assert.assertNull("Map should not contain key", m.get("noKey"));
+            Assert.assertNull("Map should not contain null key", m.get(null));
             m.put(null, "nullValue");
             Assert.assertFalse("Map should not contain key", m.containsKey("noKey"));
             Assert.assertTrue("Map should contain null key", m.containsKey(null));
+            Assert.assertNull("Map should not contain key", m.get("noKey"));
+            Assert.assertEquals("Map should contain null key", "nullValue", m.get(null));
             m.put("realKey", "realValue");
             Assert.assertTrue("Map should contain key", m.containsKey("realKey"));
             Assert.assertTrue("Map should contain key", m.containsKey("REALKEY"));
             Assert.assertTrue("Map should contain key", m.containsKey("realkey"));
             Assert.assertTrue("Map should contain null key", m.containsKey(null));
+            Assert.assertEquals("Map should contain key", "realValue", m.get("realKey"));
+            Assert.assertEquals("Map should contain key", "realValue", m.get("REALKEY"));
+            Assert.assertEquals("Map should contain key", "realValue", m.get("realkey"));
+            Assert.assertEquals("Map should contain null key", "nullValue", m.get(null));
         }
     }
 }
