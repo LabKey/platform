@@ -25,6 +25,14 @@ LABKEY.vis.internal.Axis = function() {
         } else {
             data = scale.domain();
         }
+
+        // issue 22297: axis values can end up with rounding issues (i.e. 1.4000000000000001)
+        for (var i = 0; i < data.length; i++) {
+            if (typeof data[i] == "number") {
+                data[i] = parseFloat(data[i].toFixed(10));
+            }
+        }
+
         gridLineData = data;
 
         if (orientation == 'left') {
@@ -1228,7 +1236,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         anchorSel = layer.selectAll('.point').data(data);
         anchorSel.exit().remove();
         anchorSel.enter().append('a').attr('class', 'point').append('path');
-        anchorSel.attr('xlink:title', hoverTextAcc);
+        anchorSel.append('title').text(hoverTextAcc);
         pointsSel = anchorSel.select('path');
         pointsSel.attr('d', shapeAcc)
                 .attr('fill', colorAcc)
@@ -1370,7 +1378,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         boxWrappers = layer.selectAll('a.box').data(data);
         boxWrappers.exit().remove();
         boxWrappers.enter().append('a').attr('class', 'box');
-        boxWrappers.attr('xlink:title', hoverFn);
+        boxWrappers.append('title').text(hoverFn);
 
         // Add and style the whiskers
         whiskers = boxWrappers.selectAll('path.box-whisker').data(function(d){return [d];});
@@ -1434,7 +1442,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         outlierSel = layer.selectAll('.outlier').data(data);
         outlierSel.exit().remove();
         outlierSel.enter().append('a').attr('class', 'outlier').append('path');
-        outlierSel.attr('xlink:title', hoverAcc).attr('class', 'outlier');
+        outlierSel.attr('class', 'outlier').append('title').text(hoverAcc);
 
         pathSel = outlierSel.selectAll('path');
         pathSel.attr('d', shapeAcc)
@@ -1597,7 +1605,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         var anchorSel = this.selectAll('.vis-bin').data(binData);
         anchorSel.exit().remove();
         anchorSel.enter().append('a').attr('class', 'vis-bin vis-bin-hexagon').append('path');
-        anchorSel.attr('xlink:title', hoverTextAcc);
+        anchorSel.append('title').text(hoverTextAcc);
 
         var hexSel = anchorSel.select('path');
         hexSel.attr("d", hexbin.hexagon())
@@ -1628,7 +1636,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         var anchorSel = this.selectAll('.vis-bin').data(binData);
         anchorSel.exit().remove();
         anchorSel.enter().append('a').attr('class', 'vis-bin vis-bin-square').append('path');
-        anchorSel.attr('xlink:title', hoverTextAcc);
+        anchorSel.append('title').text(hoverTextAcc);
 
         var squareSel = anchorSel.select('path');
         squareSel.attr("d", sqbin.square())
@@ -1702,7 +1710,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         boxWrappers = selection.selectAll('a.dataspace-box-plot').data(function(d){return [d];});
         boxWrappers.exit().remove();
         boxWrappers.enter().append('a').attr('class', 'dataspace-box-plot');
-        boxWrappers.attr('xlink:title', hoverAcc);
+        boxWrappers.append('title').text(hoverAcc);
 
         whiskers = boxWrappers.selectAll('path.box-whisker').data(function(d){return [d]});
         whiskers.exit().remove();
@@ -1781,7 +1789,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         });
         pointWrapper.exit().remove();
         pointWrapper.enter().append('a').attr('class', 'point');
-        pointWrapper.attr('xlink:title', hoverAcc);
+        pointWrapper.append('title').text(hoverAcc);
 
         points = pointWrapper.selectAll('path').data(function(d){return [d];});
         points.exit().remove();
@@ -1902,7 +1910,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         barWrappers = layer.selectAll('a.bar-individual').data(data);
         barWrappers.exit().remove();
         barWrappers.enter().append('a').attr('class', 'bar-individual');
-        barWrappers.attr('xlink:title', hoverFn);
+        barWrappers.append('title').text(hoverFn);
 
         // add the bars and styling for the counts
         rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
@@ -1931,7 +1939,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             barWrappers = layer.selectAll('a.bar-total').data(data);
             barWrappers.exit().remove();
             barWrappers.enter().append('a').attr('class', 'bar-total');
-            barWrappers.attr('xlink:title', hoverFn);
+            barWrappers.append('title').text(hoverFn);
 
             rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
             rects.exit().remove();

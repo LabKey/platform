@@ -565,9 +565,14 @@ boxPlot.render();
             var allTicks = scale.ticks();
             var ticksToShow = [];
 
-            if(allTicks.length < 10){
+            if (allTicks.length < 2) {
+                //make sure that at least 2 tick marks are shown for reference
+                return [Math.ceil(scale.domain()[0]), Math.floor(scale.domain()[1])];
+            }
+            else if(allTicks.length < 10){
                 return allTicks;
-            } else {
+            }
+            else {
                 for(var i = 0; i < allTicks.length; i++){
                     if(i % 9 == 0){
                         ticksToShow.push(allTicks[i]);
@@ -1245,7 +1250,8 @@ boxPlot.render();
  * @param {String} [config.properties.mean] The data property name for the mean of the expected range.
  * @param {String} [config.properties.stdDev] The data property name for the standard deviation of the expected range.
  * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
- * @param {Number} [config.properties.xTickTagIndex] The index/value of the x-axis label to be tagged (i.e. class="xticktag").
+ * @param {Number} [config.properties.topMargin] (Optional) The top margin for the plot.
+ * @param {Number} [config.properties.xTickTagIndex] (Optional) The index/value of the x-axis label to be tagged (i.e. class="xticktag").
  * @param {String} [config.properties.yAxisScale] (Optional) Whether the y-axis should be plotted with linear or log scale. Default linear.
  * @param {Array} [config.properties.yAxisDomain] (Optional) Y-axis min/max values. Example: [0,20].
  * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
@@ -1269,7 +1275,8 @@ boxPlot.render();
                 || config.properties.stdDev == null || config.properties.xTickLabel == null)
         {
             throw new Error("Unable to create Levey-Jennings plot, properties object not specified. "
-                    + "Required: value, mean, stdDev, xTickLabel. Optional: color, colorRange, hoverTextFn, yAxisScale, yAxisDomain, xTickTagIndex.");
+                    + "Required: value, mean, stdDev, xTickLabel. Optional: topMargin, color, colorRange, hoverTextFn, "
+                    + "yAxisScale, yAxisDomain, xTickTagIndex.");
         }
 
         // min x-axis tick length is 10 by default
@@ -1343,7 +1350,7 @@ boxPlot.render();
             }
         };
         config.margins = {
-            top: config.labels && config.labels.main ? 30 : 10,
+            top: config.labels && config.labels.main ? 30 : config.properties.topMargin || 10,
             right: config.properties.color || config.legendData ? 150 : 40,
             bottom: config.labels && config.labels.x ? 75 : 55,
             left: config.labels && config.labels.y ? 75 : 55
