@@ -52,6 +52,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.UnexpectedException;
@@ -558,6 +559,12 @@ public class PropertyController extends SpringActionController
 
                     Domain d = PropertyService.get().createDomain(getContainer(), domainURI, update.getName());
                     d.save(getUser());
+
+                    // this _create_ code path is a bit odd, why don't we create the domain before we start editing it?
+                    // refetch the domain to get the new timestamp can remove reselect if/when Table.insert reselects timestamp columns
+                    d = PropertyService.get().getDomain(getContainer(), domainURI);
+                    if (null != d)
+                        orig.set_Ts(JdbcUtil.rowVersionToString(d.get_Ts()));
                 }
 
                 return super.updateDomainDescriptor(orig, update);
