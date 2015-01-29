@@ -1645,21 +1645,21 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 materialListener.beforeDelete(materials);
             }
 
-//            for (ExpMaterial material : materials)
-//            {
-//                // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
-//                List<ExpRunImpl> runArray = getRunsUsingMaterials(material.getRowId());
-//                for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
-//                {
-//                    Container runContainer = run.getContainer();
-//                    if (!runContainer.hasPermission(user, DeletePermission.class))
-//                        throw new UnauthorizedException();
-//
-//                    deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
-//                }
-//
-//                OntologyManager.deleteOntologyObjects(container, material.getLSID());
-//            }
+            for (ExpMaterial material : materials)
+            {
+                // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
+                List<ExpRunImpl> runArray = getRunsUsingMaterials(material.getRowId());
+                for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
+                {
+                    Container runContainer = run.getContainer();
+                    if (!runContainer.hasPermission(user, DeletePermission.class))
+                        throw new UnauthorizedException();
+
+                    deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
+                }
+
+                OntologyManager.deleteOntologyObjects(container, material.getLSID());
+            }
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
