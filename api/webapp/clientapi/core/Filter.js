@@ -620,6 +620,27 @@ LABKEY.Filter = new function()
             return params[dataRegionName + "." + "sort"];
         },
 
+        getQueryParamsFromUrl : function(url, dataRegionName)
+        {
+            dataRegionName = dataRegionName || 'query';
+
+            var queryParams = {};
+            var params = LABKEY.ActionURL.getParameters(url);
+            for (var paramName in params)
+            {
+                if (params.hasOwnProperty(paramName))
+                {
+                    if (paramName.indexOf(dataRegionName + "." + "param.") == 0)
+                    {
+                        var queryParamName = paramName.substring((dataRegionName + "." + "param.").length);
+                        queryParams[queryParamName] = params[paramName];
+                    }
+                }
+            }
+
+            return queryParams;
+        },
+
         getFilterTypeForURLSuffix : function (urlSuffix)
         {
             return urlMap[urlSuffix];
