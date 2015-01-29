@@ -18,11 +18,14 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
@@ -226,52 +229,64 @@ public class DataRegionSelection
     }
 
 
-    public static int selectAll(ViewContext context, String key, String schemaName, String queryName, String viewName, String sortFilter)
-            throws SQLException, IOException
+    public static int selectAll(QueryForm form) throws SQLException, IOException
     {
-        QueryForm form = new QueryForm();
-        form.setSchemaName(schemaName);
-        form.setQueryName(queryName);
-        form.setViewName(viewName);
-        ActionURL url = new ActionURL();
-        url.setRawQuery(sortFilter);
-        form.getQuerySettings().setSortFilterURL(url);
+        UserSchema schema = form.getSchema();
+        if (schema == null)
+            throw new NotFoundException();
 
-        return selectAll(context, key, form);
+        QueryView view = schema.createView(form, null);
+        return selectAll(view, form.getQuerySettings().getSelectionKey());
     }
 
-    public static int selectAll(ViewContext context, String key, QueryForm form) throws SQLException, IOException
+    public static int selectAll(QueryView view, String key) throws IOException
     {
-        QueryView view = new QueryView(form, null);
+        ViewContext context = view.getViewContext();
+
         TableInfo table = view.getTable();
 
-        try (ResultSet rs = view.getResultSet())
+        DataView v = view.createDataView();
+        DataRegion rgn = v.getDataRegion();
+        rgn.setShowPaginationCount(false);
+
+        // Include all rows
+        rgn.getSettings().setShowRows(ShowRows.ALL);
+        rgn.getSettings().setOffset(Table.NO_OFFSET);
+
+        //force the pk column(s) into the default list of columns
+        List<String> colNames = rgn.getRecordSelectorValueColumns();
+        if (colNames == null)
+            colNames = table.getPkColumnNames();
+        for (String colName : colNames)
         {
-            List<String> selection = createSelectionList(rs, table);
+            if (null == rgn.getDisplayColumn(colName))
+                rgn.addColumns(table, colName);
+        }
+
+        RenderContext rc = v.getRenderContext();
+        rc.setCache(false);
+
+        try (ResultSet rs = rgn.getResultSet(rc))
+        {
+            List<String> selection = createSelectionList(rc, rgn, rs, colNames);
             return setSelected(context, key, selection, true);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
     }
 
-    private static List<String> createSelectionList(ResultSet rs, TableInfo table) throws SQLException
+    private static List<String> createSelectionList(RenderContext ctx, DataRegion rgn, ResultSet rs, List<String> colNames) throws SQLException
     {
         List<String> selected = new LinkedList<>();
-        List<ColumnInfo> pkColumns = table.getPkColumns();
 
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
         while (rs.next())
         {
-            String and = "";
-            StringBuilder checkboxName = new StringBuilder();
-            for (ColumnInfo column : pkColumns)
-            {
-                Object v = column.getValue(rs);
-                if (null != v)
-                {
-                    checkboxName.append(and);
-                    checkboxName.append(PageFlowUtil.filter(v.toString()));
-                    and = ",";
-                }
-            }
-            selected.add(checkboxName.toString());
+            ctx.setRow(factory.getRowMap(rs));
+            String value = rgn.getRecordSelectorValue(ctx);
+            selected.add(value);
         }
 
         return selected;

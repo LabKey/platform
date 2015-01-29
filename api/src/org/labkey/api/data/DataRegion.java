@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.BoundMap;
@@ -44,8 +45,11 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
@@ -78,6 +82,7 @@ public class DataRegion extends AbstractDataRegion
     private Map<String, List<Aggregate.Result>> _aggregateResults = null;
     private AggregateRowConfig _aggregateRowConfig = new AggregateRowConfig(false, true);
     private TableInfo _table = null;
+    private ActionURL _selectAllURL = null;
     private boolean _showRecordSelectors = false;
     protected boolean _showSelectMessage = true;
     private boolean _showFilters = true;
@@ -1021,6 +1026,7 @@ public class DataRegion extends AbstractDataRegion
         dataRegionJSON.put("selectionKey", getSelectionKey());
         dataRegionJSON.put("selectorCols", _recordSelectorValueColumns == null ? null : _recordSelectorValueColumns);
         dataRegionJSON.put("selectedCount", ctx.getAllSelected().size());
+        dataRegionJSON.put("selectAllURL", getSelectAllURL());
         dataRegionJSON.put("requestURL", ctx.getViewContext().getActionURL().toString());
         dataRegionJSON.put("pkCols", getTable() == null ? null : getTable().getPkColumnNames());
         JSONArray columnsJSON = new JSONArray(JsonWriter.getNativeColProps(getColumnsForMetadata(), null, false).values());
@@ -1224,7 +1230,10 @@ public class DataRegion extends AbstractDataRegion
 
         if (showRecordSelectors)
         {
-            out.write("<td valign=\"top\" class=\"labkey-column-header labkey-selectors");
+            out.write("<td valign=\"top\" class=\"labkey-column-header labkey-selectors labkey-col-header-filter\"");
+            out.write("id=\"");
+            String headerId = "column-header-" + UniqueID.getServerSessionScopedUID();
+            out.write(PageFlowUtil.filter(headerId));
             out.write("\">");
 
             out.write("<input type=checkbox title='Select/unselect all on current page' name='");
@@ -1232,8 +1241,74 @@ public class DataRegion extends AbstractDataRegion
             if (USE_MIGRATE_DATAREGION)
                 out.write("'");
             else
-                out.write("' onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked);'");
-            out.write("></td>");
+                out.write("' onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked); event.stopPropagation(); event.cancelBubble = true; return false;'");
+            out.write(">");
+
+            // TODO: move inline style to stylesheet
+            out.write("<span style=\"display:inline-block; background: url('");
+            out.write(ctx.getViewContext().getContextPath());
+            out.write("/_images/arrow_down.png') right no-repeat; width: 16px; height: 10px;\"");
+            out.write("></span>");
+
+            NavTree navtree = new NavTree();
+
+            NavTree selectAll = new NavTree("Select All");
+            selectAll.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectAll();");
+            navtree.addChild(selectAll);
+
+            NavTree selectNone = new NavTree("Select None");
+            selectNone.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectNone();");
+            navtree.addChild(selectNone);
+
+            navtree.addSeparator();
+
+            if (getShowRows() != ShowRows.PAGINATED)
+            {
+                NavTree showPaginated = new NavTree("Show Paginated");
+                showPaginated.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showPaged();");
+                navtree.addChild(showPaginated);
+            }
+
+            if (getShowRows() != ShowRows.SELECTED)
+            {
+                NavTree showSelected = new NavTree("Show Selected");
+                showSelected.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showSelected();");
+                navtree.addChild(showSelected);
+            }
+
+            if (getShowRows() != ShowRows.UNSELECTED)
+            {
+                NavTree showUnselected = new NavTree("Show Unselected");
+                showUnselected.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showUnselected();");
+                navtree.addChild(showUnselected);
+            }
+
+            if (getShowRows() != ShowRows.ALL)
+            {
+                NavTree showAll = new NavTree("Show All");
+                showAll.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showAll();");
+                navtree.addChild(showAll);
+            }
+
+            PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
+            popup.renderMenuScript(out);
+
+            out.write("<script type='text/javascript'>\n");
+            out.write("Ext4.onReady(function () {\n");
+            out.write("var header = Ext4.get(");
+            out.write(PageFlowUtil.jsString(headerId));
+            out.write(");\n");
+            out.write("if (header) {\n");
+            out.write("  header.on('click', function (evt, el, o) {\n");
+            out.write("    showMenu(el, ");
+            out.write(PageFlowUtil.qh(popup.getSafeID()));
+            out.write(", null);\n");
+            out.write("  });\n");
+            out.write("}\n");
+            out.write("});\n");
+            out.write("</script>\n");
+
+            out.write("</td>");
         }
 
         for (DisplayColumn renderer : renderers)
@@ -1258,7 +1333,14 @@ public class DataRegion extends AbstractDataRegion
                 out.write("<input type=checkbox title='Select/unselect all on current page' ");
                 if (!USE_MIGRATE_DATAREGION)
                     out.write(" onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked);'");
-                out.write("></td>");
+                out.write(">");
+
+                out.write("<span style=\"display:inline-block; background: url('");
+                out.write(ctx.getViewContext().getContextPath());
+                out.write("/_images/arrow_down.png') right no-repeat; width: 16px; height: 10px;\"");
+                out.write("></span>");
+
+                out.write("</td>");
             }
 
             for (DisplayColumn renderer : renderers)
@@ -1441,7 +1523,7 @@ public class DataRegion extends AbstractDataRegion
         out.write(">");
 
         if (showRecordSelectors)
-            renderRecordSelector(ctx, out);
+            renderRecordSelector(ctx, out, rowIndex);
 
         for (DisplayColumn renderer : renderers)
             if (renderer.isVisible(ctx))
@@ -1517,7 +1599,7 @@ public class DataRegion extends AbstractDataRegion
         return _recordSelectorValueColumns;
     }
 
-    protected void renderRecordSelector(RenderContext ctx, Writer out) throws IOException
+    protected void renderRecordSelector(RenderContext ctx, Writer out, int rowIndex) throws IOException
     {
         out.write("<td class=\"labkey-selectors\" nowrap>");
         out.write("<input type=\"checkbox\" title=\"Select/unselect row\" name=\"");
@@ -1547,6 +1629,14 @@ public class DataRegion extends AbstractDataRegion
             out.write(" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectRow(this);\"");
         out.write(">");
         renderExtraRecordSelectorContent(ctx, out);
+
+        // When header locking is enabled, the first row is used to set the header column widths
+        // so we need to write out a span matching the down arrow icon in .toggle header to ensure the header has a proper width.
+        if (rowIndex == 0)
+        {
+            out.write("<span style=\"display: inline-block; width: 16px; height: 10px;\">&nbsp;</span>");
+        }
+
         out.write("</td>");
     }
 
@@ -2456,5 +2546,16 @@ public class DataRegion extends AbstractDataRegion
     public void setShowSurroundingBorder(boolean showSurroundingBorder)
     {
         _showSurroundingBorder = showSurroundingBorder;
+    }
+
+    @Nullable
+    public ActionURL getSelectAllURL()
+    {
+        return _selectAllURL;
+    }
+
+    public void setSelectAllURL(@Nullable ActionURL selectAllURL)
+    {
+        _selectAllURL = selectAllURL;
     }
 }

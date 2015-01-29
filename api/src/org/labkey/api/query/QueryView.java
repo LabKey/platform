@@ -524,6 +524,7 @@ public class QueryView extends WebPartView<Object>
             case exportRowsXLSX:
             case exportRowsTsv:
             case exportScript:
+            case selectAll:
             case printRows:
             {
                 if (_useQueryViewActionExportURLs)
@@ -553,6 +554,9 @@ public class QueryView extends WebPartView<Object>
                         }
                     }
                 }
+
+                ret.addParameter(DATAREGIONNAME_DEFAULT + "." + QueryParam.selectionKey, getSelectionKey());
+
                 // NOTE: Default export will export all rows, but the user may choose to export ShowRows.SELECTED in the export panel
                 ret.deleteParameter(DATAREGIONNAME_DEFAULT + ".maxRows");
                 ret.replaceParameter(DATAREGIONNAME_DEFAULT + ".showRows", ShowRows.ALL.toString());
@@ -1785,6 +1789,7 @@ public class QueryView extends WebPartView<Object>
         rgn.setDisplayColumns(getDisplayColumns());
         rgn.setSettings(getSettings());
         rgn.setShowRecordSelectors(showRecordSelectors());
+        rgn.setSelectAllURL(urlFor(QueryAction.selectAll));
 
         rgn.setShadeAlternatingRows(isShadeAlternatingRows());
         rgn.setShowFilterDescription(isShowFilterDescription());
@@ -2344,6 +2349,21 @@ public class QueryView extends WebPartView<Object>
         writer.write(rs, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);
 
         logAuditEvent("Exported to Excel Web Query data", writer.getDataRowCount());
+    }
+
+    /**
+     * Mark all rows in the query view as selected in the user's session.
+     */
+    public int selectAll() throws IOException
+    {
+        if (StringUtils.isEmpty(getSelectionKey()))
+            throw new IllegalStateException();
+
+        TableInfo table = getTable();
+        if (table == null)
+            throw new IllegalStateException();
+
+        return DataRegionSelection.selectAll(this, this.getSelectionKey());
     }
 
     protected void logAuditEvent(String comment, int dataRowCount)

@@ -102,6 +102,15 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         {
             return ExportScriptModel.getExportScriptView(createInitializedQueryView(form, errors, true, form.getExportRegion()), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
         }
+        else if (QueryAction.selectAll.name().equals(form.getExportType()))
+        {
+            int count = createInitializedQueryView(form, errors, false, form.getExportRegion()).selectAll();
+            ApiResponse resp = new ApiSimpleResponse("count", count);
+            ApiResponseWriter writer = ApiResponseWriter.Format.JSON.createWriter(getViewContext().getResponse(), null);
+            writer.write(resp);
+
+            return null;
+        }
         else
         {
             return getHtmlView(form, errors);

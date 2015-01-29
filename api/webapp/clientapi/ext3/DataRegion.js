@@ -52,7 +52,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                  *                    on this object to get the right value.
                  *  view
                  *  sortFilter
-                 *  complete
+                 *  complete   - All rows visible on the curreng page.
                  *  offset     - Starting offset of the rows to be displayed. 0 if at the beginning of the results. Read-only.
                  *  maxRows    - Maximum number of rows to be displayed. 0 if the count is not limited. Read-only.
                  *  totalRows  - (may be undefined)
@@ -65,6 +65,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                  *  selectionKey - Unique string used to associate the selected items with this DataRegion, schema, query, and view.
                  *  selectorCols
                  *  selectedCount - Count of currently selected rows. Updated as selection changes. Read-only.
+                 *  selectAllURL - URL to use when selecting all rows in the grid. May be null. Read-only.
                  *  requestURL
                  */
                 Ext.apply(this, config, {
@@ -460,15 +461,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             {
                 this.setSelected({ids: [el.value], checked: el.checked});
                 var toggle = this.form[".toggle"];
-                if (el.checked)
+                if (!el.checked)
                 {
-                    if (toggle && this.isPageSelected())
-                        toggle.checked = true;
-                }
-                else
-                {
-                    if (toggle)
-                        toggle.checked = false;
                     this.removeMessage('selection');
                 }
             },
@@ -540,6 +534,28 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 LABKEY.DataRegion.getSelected(config);
             },
 
+            _chainSelectionCountCallback : function (config)
+            {
+                // On success, update the current selectedCount on this DataRegion and fire the 'selectchange' event
+                var self = this;
+                function updateSelected(data, response, options) {
+                    this.selectionModified = true;
+                    self.selectedCount = data.count;
+                    self.onSelectChange();
+                }
+
+                // Chain updateSelected with the user-provided success callback
+                var success = LABKEY.Utils.getOnSuccess(config);
+                if (success) {
+                    success = updateSelected.createSequence(success, config.scope);
+                } else {
+                    success = updateSelected;
+                }
+
+                config.success = success;
+                return config;
+            },
+
             /**
              * Add or remove items from the selection associated with the this DataRegion.
              *
@@ -587,22 +603,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     this.addMessage("Error sending selection.");
                 }
 
-                // Update the current selectedCount on this DataRegion and fire the 'selectchange' event
-                var self = this;
-                function updateSelected(data, response, options) {
-                    this.selectionModified = true;
-                    self.selectedCount = data.count;
-                    self.onSelectChange();
-                }
-
-                // Chain updateSelected with the user-provided success callback
-                var success = LABKEY.Utils.getOnSuccess(config);
-                if (success) {
-                    success = updateSelected.createSequence(success, config.scope);
-                } else {
-                    success = updateSelected;
-                }
-                config.success = success;
+                config = this._chainSelectionCountCallback(config);
 
                 config.failure = LABKEY.Utils.getOnFailure(config) || failureCb;
 
@@ -637,21 +638,21 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         toggle.checked = checked;
                     this.setSelected({ids: ids, checked: checked, success: function (data, response, options)
                     {
-                        if (data && data.count > 0)
+                        if (data && data.count > 0 && !this.complete)
                         {
                             var count = data.count;
                             var msg;
                             if (this.totalRows)
                             {
                                 if (count == this.totalRows)
-                                    msg = "Selected all " + this.totalRows + " rows.";
+                                    msg = "All <b>" + this.totalRows + "</b> rows selected.";
                                 else
-                                    msg = "Selected " + count + " of " + this.totalRows + " rows.";
+                                    msg = "Selected <b>" + count + "</b> of " + this.totalRows + " rows.";
                             }
                             else
                             {
                                 // totalRows isn't available when showing all rows.
-                                msg = "Selected " + count + " rows.";
+                                msg = "Selected <b>" + count + "</b> rows.";
                             }
                             this._showSelectMessage(msg);
                         }
@@ -713,6 +714,41 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         return false;
                 }
                 return hasCheckbox;
+            },
+
+            // private
+            selectAll: function (config)
+            {
+                if (!this.selectionKey)
+                    return;
+
+                config = config || {};
+                config.scope = config.scope || this;
+
+                // Either use the selectAllURL provided or create a query config
+                // object that can be used with the generic query/selectAll.api action.
+                if (this.selectAllURL)
+                    config.url = this.selectAllURL;
+                else
+                    config = LABKEY.Utils.apply(config, this.getQueryConfig());
+
+                config = this._chainSelectionCountCallback(config);
+
+                LABKEY.DataRegion.selectAll(config);
+
+                if (this.showRows == "selected")
+                {
+                    // keep ".showRows=selected" parameter
+                    window.location.reload(true);
+                }
+                else if (this.showRows == "unselected")
+                {
+                    this._removeParams([".showRows"]);
+                }
+                else
+                {
+                    this._setAllCheckboxes(true);
+                }
             },
 
             selectNone: function (config)
@@ -1086,6 +1122,41 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             },
 
             /**
+             * Returns a query config object suitable for passing into LABKEY.Query.selectRows() or other LABKEY.Query APIs.
+             * @returns {Object} Object representing the query configuration that generated this grid.
+             */
+            getQueryConfig : function ()
+            {
+                var config = {
+                    dataRegionName: this.name,
+                    dataRegionSelectionKey: this.selectionKey,
+                    schemaName: this.schemaName,
+                    // TODO: handle this.sql ?
+                    queryName: this.queryName,
+                    viewName: this.viewName,
+                    filters: this.getUserFilterArray() || [],
+                    sort: this.getParameter(this.name + ".sort"),
+                    // NOTE: The parameterized query values from QWP are included
+                    parameters: this.getParameters(false),
+                    containerFilter: this.containerFilter
+                };
+
+                // NOTE: need to account for non-removeable filters and sort in a QWP
+                if (this.qwp) {
+                    if (this.qwp.sort) {
+                        config.sort = config.sort + "," + this.qwp.sort;
+                    }
+
+                    if (this.qwp.filters && this.qwp.filters.length) {
+                        config.filters = config.filters.concat(this.qwp.filters);
+                    }
+                }
+
+                return config;
+            },
+
+
+            /**
              * Show a message in the header of this DataRegion.
              * @param {String / Object} htmlOrConfig the HTML source of the message to be shown or a config object witht the following properties:
              *      <ul>
@@ -1358,13 +1429,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     this.form.dataRegion = this;
                     if (this.showRecordSelectors)
                     {
-                        if (this.isPageSelected())
-                        {
-                            // set the 'select all on page' checkbox state
-                            var toggle = this.form[".toggle"];
-                            if (toggle)
-                                toggle.checked = true;
-                        }
                         this.onSelectChange();
                     }
                     else
@@ -1475,6 +1539,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             {
                 if (this.showRecordSelectors)
                 {
+                    if (this.totalRows && this.totalRows != this.selectedCount)
+                        msg += "&nbsp;<span class='labkey-button select-all'>Select All " + this.totalRows + " Rows</span>";
+
                     msg += "&nbsp;<span class='labkey-button select-none'>Select None</span>";
                     var showOpts = [];
                     if (this.showRows != "all")
@@ -1483,7 +1550,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         showOpts.push("<span class='labkey-button show-selected'>Show Selected</span>");
                     if (this.showRows != "unselected")
                         showOpts.push("<span class='labkey-button show-unselected'>Show Unselected</span>");
-                    msg += "&nbsp;" + showOpts.join(" ");
+                    msg += "&nbsp;&nbsp;" + showOpts.join(" ");
                 }
 
                 // add the record selector message, the link handlers will get added after render in _onRenderMessageArea
@@ -1498,9 +1565,13 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             {
                 if (this.showRecordSelectors && partName == 'selection' && el)
                 {
+                    var selectAllEl = el.child(".labkey-button.select-all");
+                    if (selectAllEl)
+                        selectAllEl.on('click', function (evt, el, o) { this.selectAll(o); }, this);
+
                     var selectNoneEl = el.child(".labkey-button.select-none");
                     if (selectNoneEl)
-                        selectNoneEl.on('click', this.selectNone, this);
+                        selectNoneEl.on('click', function (evt, el, o) { this.selectNone(o); }, this);
 
                     var showAllEl = el.child(".labkey-button.show-all");
                     if (showAllEl)
@@ -1536,6 +1607,35 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             // private
             updateRequiresSelectionButtons: function (selectionCount)
             {
+                // update the 'select all on page' checkbox state
+                var toggle = this.form[".toggle"];
+                if (toggle)
+                {
+                    if (this.isPageSelected())
+                    {
+                        toggle.checked = true;
+                        toggle.indeterminate = false;
+                    }
+                    else if (this.selectedCount > 0)
+                    {
+                        // There are rows selected, but the are not visible on this page.
+                        toggle.checked = false;
+                        toggle.indeterminate = true;
+                    }
+                    else
+                    {
+                        toggle.checked = false;
+                        toggle.indeterminate = false;
+                    }
+                }
+
+                // If all rows have been selected (but not all rows are visible), show selection message
+                if (this.totalRows && this.selectedCount == this.totalRows && !this.complete)
+                {
+                    this._showSelectMessage("All <b>" + this.totalRows + "</b> rows selected.");
+                }
+
+
                 // 10566: for javascript perf on IE stash the requires selection buttons
                 if (!this._requiresSelectionButtons)
                 {
@@ -2570,6 +2670,59 @@ LABKEY.DataRegion.getSelected = function (config)
         url: url,
         success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
         failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+    });
+};
+
+LABKEY.DataRegion.selectAll = function (config)
+{
+    var dataObject = {};
+    if (!config.url)
+    {
+        // DataRegion doesn't have selectAllURL so generate url and query parameters manually
+        config.url = LABKEY.ActionURL.buildURL("query", "selectAll.api", config.containerPath);
+
+        config.dataRegionName = config.dataRegionName || "query";
+
+        dataObject = LABKEY.Query.buildQueryParams(
+                config.schemaName,
+                config.queryName,
+                config.filters,
+                null,
+                config.dataRegionName
+        );
+
+        if (config.viewName)
+            dataObject[config.dataRegionName + '.viewName'] = config.viewName;
+
+        if (config.containerFilter)
+            dataObject.containerFilter = config.containerFilter;
+
+        if (config.selectionKey)
+            dataObject[config.dataRegionName + '.selectionKey'] = config.selectionKey;
+
+        if (config.parameters)
+        {
+            for (var propName in config.parameters)
+            {
+                if (config.parameters.hasOwnProperty(propName))
+                    dataObject[config.dataRegionName + '.param.' + propName] = config.parameters[propName];
+            }
+        }
+
+        if (config.ignoreFilter)
+        {
+            dataObject[config.dataRegionName + '.ignoreFilter'] = true;
+        }
+
+        // NOTE: ignore maxRows, showRows, and offset
+    }
+
+    LABKEY.Ajax.request({
+        url: config.url,
+        method: 'POST',
+        success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+        failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+        params: dataObject
     });
 };
 

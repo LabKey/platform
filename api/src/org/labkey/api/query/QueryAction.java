@@ -34,6 +34,7 @@ public enum QueryAction
     exportExcelTemplate,
     exportRowsTsv,
     exportScript,
+    selectAll,
     printRows,
     deleteQueryRows,
     detailsQueryRow,
