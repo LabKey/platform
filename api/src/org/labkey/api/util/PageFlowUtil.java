@@ -36,6 +36,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -2024,6 +2025,8 @@ public class PageFlowUtil
             projectProps.put("path", project.getPath());
             projectProps.put("name", project.getName());
             json.put("project", projectProps);
+
+            json.put("tours", getTourJson(container));
         }
 
         json.put("serverName", StringUtils.isNotEmpty(appProps.getServerName()) ? appProps.getServerName() : "Labkey Server");
@@ -2041,6 +2044,21 @@ public class PageFlowUtil
         json.put("uuids", Arrays.asList(GUID.makeGUID(), GUID.makeGUID(), GUID.makeGUID()));
 
         return json;
+    }
+
+    private static JSONObject getTourJson(Container container)
+    {
+        JSONObject tourProps = new JSONObject();
+
+        for(Map<String,String> tour : TourService.get().getApplicableTours(container))
+        {
+            JSONObject tourJson = new JSONObject();
+            tourJson.put("Title", tour.get("Title"));
+            //tourJson.put("Description", tour.get("Description"));
+            //tourJson.put("Mode", tour.get("Mode"));
+            tourProps.put(tour.get("RowId"), tourJson);
+        }
+        return tourProps;
     }
 
     public static String getServerSessionHash()

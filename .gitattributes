@@ -113,6 +113,8 @@ api/src/org/labkey/api/annotations/JavaRuntimeVersion.java -text
 api/src/org/labkey/api/annotations/RefactorIn15_1.java -text
 api/src/org/labkey/api/announcements/api/Announcement.java -text
 api/src/org/labkey/api/announcements/api/AnnouncementService.java -text
+api/src/org/labkey/api/announcements/api/Tour.java -text
+api/src/org/labkey/api/announcements/api/TourService.java -text
 api/src/org/labkey/api/announcements/permissions/DeleteMessagePermission.java -text
 api/src/org/labkey/api/announcements/permissions/UpdateMessagePermission.java -text
 api/src/org/labkey/api/app/SinglePageAppUrls.java -text

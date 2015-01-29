@@ -102,5 +102,10 @@ public class CommSchema
     {
         return getSchema().getTable("RSSFeeds");
     }
+
+    public TableInfo getTableInfoTours()
+    {
+        return getSchema().getTable("Tours");
+    }
 }
 

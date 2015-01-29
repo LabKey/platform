@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -41,6 +42,9 @@ public class PopupHelpView extends PopupMenuView
 
         if (laf.isHelpMenuEnabled())
             menu.addChild(topic.getNavTree("LabKey Documentation"));
+
+        if(user.isSiteAdmin())
+            menu.addChild(new NavTree("Tours", TourService.get().getManageListsURL(c)));
 
         menu.setId("helpMenu");
 

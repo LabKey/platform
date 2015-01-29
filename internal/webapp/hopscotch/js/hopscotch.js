@@ -531,7 +531,8 @@
     end:   [],
     show:  [],
     error: [],
-    close: []
+    close: [],
+    nextTour: []
   };
 
   /**
@@ -1856,6 +1857,10 @@
 
       currTour = null;
 
+      if (doCallbacks) {
+        utils.invokeEventCallbacks('nextTour');
+      }
+
       return this;
     };
 
@@ -2068,7 +2073,7 @@
      */
     _configure = function(options, isTourOptions) {
       var bubble,
-          events = ['next', 'prev', 'start', 'end', 'show', 'error', 'close'],
+          events = ['next', 'prev', 'start', 'end', 'show', 'error', 'close', 'nextTour'],
           eventPropName,
           callbackProp,
           i,
