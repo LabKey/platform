@@ -122,21 +122,18 @@ public abstract class AbstractDataRegion extends DisplayElement
     {
         if (DataRegion.USE_MIGRATE_DATAREGION)
         {
+            JSONObject dataRegionJSON = getDataRegionJSON(ctx, true);
+
+            if (messages != null && !messages.isEmpty())
+            {
+                dataRegionJSON.put("messages", messages);
+            }
+
             StringWriter out = new StringWriter();
             out.write("<script type=\"text/javascript\">\n");
             out.write("new LABKEY.DataRegion2(\n");
-            out.write(getDataRegionJSON(ctx, true).toString(2));
+            out.write(dataRegionJSON.toString(2));
             out.write(");\n");
-            if (messages != null && !messages.isEmpty())
-            {
-                for (Map.Entry<String, String> entry : messages.entrySet())
-                {
-                    out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].addMessage(" +
-                            PageFlowUtil.jsString(entry.getValue()) + "," +
-                            PageFlowUtil.jsString(entry.getKey()) + ");\n");
-                }
-                out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessageArea();\n");
-            }
             out.write("</script>\n");
             writer.write(out.toString());
         }

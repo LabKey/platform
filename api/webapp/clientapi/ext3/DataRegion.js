@@ -178,22 +178,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     this.addMessage(msg, 'customizeview');
                 }
 
-                if (this.showInitialSelectMessage)
-                {
-                    switch (this.showRows)
-                    {
-                        case "all":
-                            this._showSelectMessage("Showing all " + this.totalRows + " rows.");
-                            break;
-                        case "selected":
-                            this._showSelectMessage("Showing only <em>selected</em> rows.");
-                            break;
-                        case "unselected":
-                            this._showSelectMessage("Showing only <em>unselected</em> rows.");
-                            break;
-                    }
-                }
-
                 LABKEY.DataRegion.superclass.constructor.call(this, config);
             },
 
@@ -1142,7 +1126,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             /**
              * Show a message in the header of this DataRegion.
              * @param html the HTML source of the message to be shown
-             * @return {Ext.Element} The Ext.Element of the newly created message div.
              * @deprecated use addMessage(html, msg) instead.
              */
             showMessage: function (html)
