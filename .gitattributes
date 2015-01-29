@@ -4,6 +4,7 @@ announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-0.00-12.20.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-13.30-14.10.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-14.10-14.20.sql -text
+announcements/resources/schemas/dbscripts/postgresql/comm-14.30-14.31.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-0.00-1.00.sql -text
@@ -55,6 +56,7 @@ announcements/resources/schemas/dbscripts/postgresql/obsolete/cpas-0.00-0.59.sql
 announcements/resources/schemas/dbscripts/sqlserver/comm-0.00-12.20.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-13.30-14.10.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-14.10-14.20.sql -text
+announcements/resources/schemas/dbscripts/sqlserver/comm-14.30-14.31.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-create.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/obsolete/comm-0.00-1.00.sql -text
@@ -111,11 +113,13 @@ announcements/src/org/labkey/announcements/DailyDigestPage.java -text
 announcements/src/org/labkey/announcements/EmailNotificationPage.java -text
 announcements/src/org/labkey/announcements/EmailPreferencesPage.java -text
 announcements/src/org/labkey/announcements/EmailServiceImpl.java -text
+announcements/src/org/labkey/announcements/GetTourAction.java -text
 announcements/src/org/labkey/announcements/MessageAuditProvider.java -text
 announcements/src/org/labkey/announcements/MessageAuditViewFactory.java -text
 announcements/src/org/labkey/announcements/NotificationSettingsImporterFactory.java -text
 announcements/src/org/labkey/announcements/NotificationSettingsWriterFactory.java -text
 announcements/src/org/labkey/announcements/SendMessageAction.java -text
+announcements/src/org/labkey/announcements/ToursController.java -text
 announcements/src/org/labkey/announcements/announcementEmailDefaults.jsp -text
 announcements/src/org/labkey/announcements/announcementListLinkBar.jsp -text
 announcements/src/org/labkey/announcements/announcementThread.jsp -text
@@ -124,6 +128,8 @@ announcements/src/org/labkey/announcements/announcementWebPartSimple.jsp -text
 announcements/src/org/labkey/announcements/announcementWebPartWithExpandos.jsp -text
 announcements/src/org/labkey/announcements/api/AnnouncementImpl.java -text
 announcements/src/org/labkey/announcements/api/AnnouncementServiceImpl.java -text
+announcements/src/org/labkey/announcements/api/TourImpl.java -text
+announcements/src/org/labkey/announcements/api/TourServiceImpl.java -text
 announcements/src/org/labkey/announcements/config/AnnouncementEmailConfig.java -text
 announcements/src/org/labkey/announcements/config/MessageConfigServiceImpl.java -text
 announcements/src/org/labkey/announcements/confirmDelete.jsp -text
@@ -153,12 +159,15 @@ announcements/src/org/labkey/announcements/model/Permissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardPermissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardReadPermission.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardRespondPermission.java -text
+announcements/src/org/labkey/announcements/model/TourManager.java -text
+announcements/src/org/labkey/announcements/model/TourModel.java -text
 announcements/src/org/labkey/announcements/query/AbstractSubscriptionTable.java -text
 announcements/src/org/labkey/announcements/query/AnnouncementSchema.java -text
 announcements/src/org/labkey/announcements/query/AnnouncementSubscriptionTable.java -text
 announcements/src/org/labkey/announcements/query/AnnouncementTable.java -text
 announcements/src/org/labkey/announcements/query/ForumSubscriptionTable.java -text
 announcements/src/org/labkey/announcements/query/RSSFeedsTable.java -text
+announcements/src/org/labkey/announcements/query/ToursTable.java -text
 announcements/src/org/labkey/announcements/respond.jsp -text
 announcements/src/org/labkey/announcements/rss.jsp -text
 announcements/src/org/labkey/announcements/update.jsp -text

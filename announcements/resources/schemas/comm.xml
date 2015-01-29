@@ -510,4 +510,35 @@
             </ns:column>
         </ns:columns>
     </ns:table>
+    <ns:table tableName="Tours" tableDbType="TABLE">
+      <ns:description>Contains data for user tours.</ns:description>
+      <ns:columns>
+        <ns:column columnName="RowId">
+          <ns:description>Unique ID of the tour.</ns:description>
+        </ns:column>
+        <ns:column columnName="Title">
+          <ns:description>Title displayed to user.</ns:description>
+        </ns:column>
+        <ns:column columnName="Description">
+        </ns:column>
+        <ns:column columnName="Container">
+        </ns:column>
+        <ns:column columnName="EntityId">
+        </ns:column>
+        <ns:column columnName="Created">
+        </ns:column>
+        <ns:column columnName="CreatedBy">
+        </ns:column>
+        <ns:column columnName="Modified">
+        </ns:column>
+        <ns:column columnName="ModifiedBy">
+        </ns:column>
+        <ns:column columnName="Json">
+          <ns:description>JSON containing the tour steps.</ns:description>
+        </ns:column>
+        <ns:column columnName="Mode">
+          <ns:description>Tour mode (0)Off, (1)Show Once, (2)Always Show</ns:description>
+        </ns:column>
+      </ns:columns>
+    </ns:table>
 </ns:tables>

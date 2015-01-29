@@ -18,6 +18,7 @@ package org.labkey.announcements;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
+import org.labkey.announcements.api.TourServiceImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.config.MessageConfigServiceImpl;
 import org.labkey.announcements.model.AnnouncementDigestProvider;
@@ -31,6 +32,7 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.AnnouncementService;
+import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -100,13 +102,17 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public double getVersion()
     {
-        return 14.30;
+        return 14.31;
     }
 
     protected void init()
     {
         addController("announcements", AnnouncementsController.class);
         AnnouncementService.setInstance(new AnnouncementServiceImpl());
+
+        addController("tours", ToursController.class);
+        TourService.setInstance(new TourServiceImpl());
+
         AnnouncementSchema.register(this);
         DiscussionService.register(new DiscussionServiceImpl());
     }
