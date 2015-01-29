@@ -331,13 +331,15 @@ public class DomainImpl implements Domain
             {
                 DomainDescriptor ddCheck = OntologyManager.getDomainDescriptor(_dd.getDomainId());
                 if (!JdbcUtil.rowVersionEqual(ddCheck.get_Ts(), _dd.get_Ts()))
-
                     throw new Table.OptimisticConflictException("Domain has been updated by another user or process.", Table.SQLSTATE_TRANSACTION_STATE, 0);
 
                 // call OntololgyManager.updateDomainDescriptor() to invalidate proper caches
                 DomainDescriptor dbgOld=_dd;
                 _dd = OntologyManager.updateDomainDescriptor(_dd);
-                addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
+
+                // we expect _ddOld should be null if we only have property changes
+                if (null != _ddOld)
+                    addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
             }
             boolean propChanged = false;
             int sortOrder = 0;
