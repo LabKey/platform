@@ -80,9 +80,10 @@ public interface SequenceOutputHandler
      * @param job The pipeline job running this task
      * @param inputFiles The list of input files to process
      * @param params
+     * @param outputDir
      * @param actions
      * @param outputsToCreate
      * @return A list of new SequenceOutputFile records to create
      */
-    public void processFiles(PipelineJob job, List<SequenceOutputFile> inputFiles, JSONObject params, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
+    public void processFiles(PipelineJob job, List<SequenceOutputFile> inputFiles, JSONObject params, File outputDir, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
 }
