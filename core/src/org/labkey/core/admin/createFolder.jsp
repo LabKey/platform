@@ -17,6 +17,9 @@
 %>
 <%@ page import="org.json.JSONArray"%>
 <%@ page import="org.labkey.api.admin.FolderWriter" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
@@ -26,7 +29,8 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.LinkedList" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.core.portal.ProjectController" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -217,7 +221,7 @@
                                     value: ft.name,
                                     boxLabel: ft.label,
                                     labelWidth: 500,
-                                    checked: (ft.name == '<%=folderTypeName%>' ? true : false),
+                                    checked: (ft.name == <%=PageFlowUtil.jsString(folderTypeName)%> ? true : false),
                                     listeners: {
                                         scope: this,
                                         single: true,
@@ -259,8 +263,8 @@
                     xtype: 'button',
                     cls: 'labkey-button',
                     text: 'Cancel',
-                    handler: function(btn){
-                        window.history.back();
+                    handler: function(btn) {
+                        window.location = <%= PageFlowUtil.jsString(form.getReturnURLHelper(new ActionURL(ProjectController.StartAction.class, ContainerManager.getHomeContainer())).toString()) %>;
                     }
                 }],
                 renderModules: function(){

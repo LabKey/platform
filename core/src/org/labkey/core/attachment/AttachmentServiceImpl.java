@@ -1478,7 +1478,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             File relativeDir = new File(attachDir, "subdir2");
             relativeDir.mkdirs();
-            AttachmentDirectory relativeParent = fileService.registerDirectory(folder, "relative", relativeDir.getCanonicalPath(), false);
+            AttachmentDirectory relativeParent = fileService.registerDirectory(folder, "relative", FileUtil.getAbsoluteCaseSensitiveFile(relativeDir).getAbsolutePath(), false);
             
             AttachmentDirectory relativeParentTest = fileService.getRegisteredDirectory(folder, "relative");
             assertNotNull(relativeParentTest);

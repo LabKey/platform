@@ -46,6 +46,7 @@
     int size = containers.size();
 
     ActionURL createFolderURL = new ActionURL(AdminController.CreateFolderAction.class, c);
+    createFolderURL.addParameter(ActionURL.Param.returnUrl, c.getStartURL(user).toString());
 %>
 <%!
     public _HtmlString getTrailSeparator()

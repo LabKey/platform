@@ -460,9 +460,14 @@ public class AdminController extends SpringActionController
             return AdminController.getFolderManagementURL(c, "import");
         }
 
-        public ActionURL getCreateProjectURL()
+        public ActionURL getCreateProjectURL(@Nullable ActionURL returnURL)
         {
-            return new ActionURL(CreateFolderAction.class, ContainerManager.getRoot());
+            ActionURL result = new ActionURL(CreateFolderAction.class, ContainerManager.getRoot());
+            if (returnURL != null)
+            {
+                result.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+            }
+            return result;
         }
 
         public ActionURL getSetFolderPermissionsURL(Container c)
@@ -3970,7 +3975,7 @@ public class AdminController extends SpringActionController
         return new AdminUrlsImpl().getManageFoldersURL(getContainer());
     }
 
-    public static class ManageFoldersForm
+    public static class ManageFoldersForm extends ReturnUrlForm
     {
         private String name;
         private String folder;

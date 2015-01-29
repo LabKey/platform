@@ -19,14 +19,15 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     // Create Project URL
-    ActionURL createProjectURL = new ActionURL(AdminController.CreateFolderAction.class, ContainerManager.getRoot());
+    ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(getContainer().getStartURL(getUser()));
 
     NavTree projects = ContainerManager.getProjectList(getViewContext());
     Container currentProject = getContainer().getProject();
@@ -126,7 +127,7 @@
                             if (null != p.getHref())
                             {
                         %>
-                        <a title="<%=h(text)%>" href="<%=h(p.getHref())%>" <%=highlight%>><%=h(text)%></a>
+                        <a title="<%=h(text)%>" href="<%=h(p.getHref())%>" <%=text(highlight)%>><%=h(text)%></a>
                         <%
                             }
                             else

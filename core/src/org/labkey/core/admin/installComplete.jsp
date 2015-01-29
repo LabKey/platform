@@ -18,9 +18,12 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     AdminUrls adminURLs = PageFlowUtil.urlProvider(AdminUrls.class);
+    ViewContext viewContext = HttpView.currentContext();
 
     // Build links for what's new and the release notes
     // We use most recent "major" version of the core module, so versions 11.20, 11.21, 11.29, etc will all go to the
@@ -36,7 +39,7 @@
 <ul>
     <% if (newInstall) { %>
         <li style="margin-bottom: 10px;">
-            <a href="<%= h(adminURLs.getCreateProjectURL()) %>">Create a new project</a> as place to
+            <a href="<%= h(adminURLs.getCreateProjectURL(viewContext.getActionURL())) %>">Create a new project</a> as place to
             <ul>
                 <li>perform mass spectrometry-based proteomics (MS1 and MS2)
                 <li>analyze flow cytometry data</li>
