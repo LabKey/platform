@@ -20,7 +20,7 @@ LABKEY.help.Tour = new function()
 
     var me = this;
 
-    var stepFnOpts = ["target", "onPrev", "onNext", "onShow", "onCTA"];
+    var stepFnOpts = ["onPrev", "onNext", "onShow", "onCTA"];
     var tourFnOpts = ["onNext", "onPrev", "onStart", "onEnd", "onClose", "onError"];
 
     var tours = 0;
@@ -43,7 +43,7 @@ LABKEY.help.Tour = new function()
             return null;
         }
         return config;
-    }
+    };
 
 
     /**
@@ -53,7 +53,7 @@ LABKEY.help.Tour = new function()
     {
         _tours[config.id] = config;
         _mode[config.id] = mode;
-    }
+    };
 
 
     /**
@@ -71,7 +71,7 @@ LABKEY.help.Tour = new function()
             hopscotch.startTour(config, step||0);
             markSeen(config.id);
         }, me);
-    }
+    };
 
 
     /**
@@ -94,7 +94,7 @@ LABKEY.help.Tour = new function()
             }, me);
         }
         return true;
-    }
+    };
 
 
     /**
@@ -110,7 +110,7 @@ LABKEY.help.Tour = new function()
             return false;
         this.show(config);
         return true;
-    }
+    };
 
 
     var seen = function(id)
@@ -121,7 +121,7 @@ LABKEY.help.Tour = new function()
         if (v)
             state = LABKEY.Utils.decode(v);
         return "seen" == state[id];
-    }
+    };
 
 
     /**
@@ -135,7 +135,7 @@ LABKEY.help.Tour = new function()
             state = LABKEY.Utils.decode(v);
         state[id] = "seen";
         localStorage.setItem(_localStorageProperty, LABKEY.Utils.encode(state));
-    }
+    };
 
 
     var reset = function()
@@ -145,7 +145,7 @@ LABKEY.help.Tour = new function()
         {
             hopscotch.endTour(true,false);
         });
-    }
+    };
 
 
     /**
@@ -178,7 +178,7 @@ LABKEY.help.Tour = new function()
         a.href = href;
         a.hash = 'tourstate:' + hopscotchState;
         window.location = a.href;
-    }
+    };
 
 
     /** see continueAtLocation() */
@@ -203,7 +203,7 @@ LABKEY.help.Tour = new function()
             return;
         }
         return this.resume(id,step);
-    }
+    };
 
     /**
      * Evaluate javascript in JSON defining tour options and step options
@@ -218,7 +218,7 @@ LABKEY.help.Tour = new function()
                 config[key] = jsonFn.call();
             }
         }
-    }
+    };
 
     var evalStepOptions = function(config)
     {
@@ -233,7 +233,7 @@ LABKEY.help.Tour = new function()
                 }
             }
         });
-    }
+    };
 
     /**
      * Run next tour in queue. Callback in show()
@@ -250,7 +250,7 @@ LABKEY.help.Tour = new function()
         // If not shown because already seen, callback won't be triggered. Need to call here.
         if(!shown)
             autoRun();
-    }
+    };
 
 
     /**
@@ -269,14 +269,24 @@ LABKEY.help.Tour = new function()
         }
 
         autoRun();
-    }
+    };
 
     /**
      * AJAX getTour success callback
      */
     var success = function(result)
     {
-        var json = JSON.parse(result.Json);
+        var json;
+        var useEval = false;
+        if (useEval)
+        {
+            eval("window.__eval__=(" + result.Json + ")");
+            json = window.__eval__;
+        }
+        else
+        {
+            json = JSON.parse(result.Json);
+        }
         evalTourOptions(json);
         evalStepOptions(json);
         me.register(json, result.Mode);
@@ -285,7 +295,7 @@ LABKEY.help.Tour = new function()
         {
             kickoffTours();
         }
-    }
+    };
 
     var registerTour = function(id, config)
     {
@@ -302,7 +312,7 @@ LABKEY.help.Tour = new function()
             success: LABKEY.Utils.getCallbackWrapper(success, me, false),
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), me.scope, true)
         });
-    }
+    };
 
     this.init = function()
     {
@@ -313,7 +323,7 @@ LABKEY.help.Tour = new function()
             registerTour(key, config);
             tours++;
         }
-    }
+    };
 
 
     LABKEY.Utils.onReady(function()
