@@ -18,13 +18,12 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -33,7 +32,14 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -290,6 +296,15 @@ public class DataRegionSelection
         }
 
         return selected;
+    }
+
+    /** Response used from SelectAll, ClearAll, and similar APIs for bulk selecting/unselecting data rows */
+    public static class SelectionResponse extends ApiSimpleResponse
+    {
+        public SelectionResponse(int count)
+        {
+            super("count", count);
+        }
     }
 
     public interface DataSelectionKeyForm
