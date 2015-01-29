@@ -138,7 +138,7 @@ LABKEY.Utils = new function(impl, $) {
      * @param msg
      */
     impl.alert = function(title, msg) {
-        if (LABKEY.Utils.isFunction(sweetAlert)) {
+        if (LABKEY.Utils.isFunction(window['sweetAlert'])) {
             sweetAlert(title, msg, 'error');
         }
         else {
