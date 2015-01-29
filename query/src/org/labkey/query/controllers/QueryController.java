@@ -4867,7 +4867,7 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
         {
             DataRegionSelection.clearAll(getViewContext(), form.getKey());
-            return new SelectionResponse(0);
+            return new DataRegionSelection.SelectionResponse(0);
         }
     }
 
@@ -4902,7 +4902,7 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(final QueryForm form, BindException errors) throws Exception
         {
             int count = DataRegionSelection.selectAll(form);
-            return new SelectionResponse(count);
+            return new DataRegionSelection.SelectionResponse(count);
         }
     }
 
@@ -4946,7 +4946,7 @@ public class QueryController extends SpringActionController
             int count = DataRegionSelection.setSelected(
                     getViewContext(), form.getKey(),
                     selection, form.isChecked());
-            return new SelectionResponse(count);
+            return new DataRegionSelection.SelectionResponse(count);
         }
     }
 
@@ -4976,14 +4976,6 @@ public class QueryController extends SpringActionController
         public void setChecked(boolean checked)
         {
             this.checked = checked;
-        }
-    }
-
-    public static class SelectionResponse extends ApiSimpleResponse
-    {
-        public SelectionResponse(int count)
-        {
-            super("count", count);
         }
     }
 
