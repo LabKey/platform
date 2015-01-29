@@ -96,10 +96,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // boolean to check if we should allow things like export to PDF
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8);
 
-        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.reportId) && this.allowEditMode;
-
         params = LABKEY.ActionURL.getParameters();
+        this.editMode = (params.edit == "true" || !this.reportId) && this.allowEditMode;
         this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
+        this.parameters = LABKEY.Filter.getQueryParamsFromUrl(params['filterUrl'], this.dataRegionName);
 
         // Issue 19163
         if (this.autoColumnXName) {
@@ -1057,12 +1057,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var userSort = LABKEY.Filter.getSortFromUrl(filterUrl, this.dataRegionName);
 
         this.currentFilterStr = this.createFilterString(userFilters);
+        this.currentParameterStr = Ext4.JSON.encode(this.parameters);
 
         wpConfig = {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
             viewName    : this.viewName,
             columns     : this.savedColumns,        // TODO, qwp does not support passing in a column list
+            parameters  : this.parameters,
             frame       : 'none',
             showBorders : false,
             removeableFilters       : userFilters,
@@ -1096,13 +1098,28 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // save the dataregion
         this.panelDataRegionName = wp.dataRegionName;
 
+        // issue 21418
+        wp.on('render', function(){
+            if (wp.parameters)
+                this.updateQueryParameters(wp.parameters);
+        }, this);
+
         wp.render(renderTo);
+    },
+
+    updateQueryParameters : function(updatedParams) {
+        for (var param in updatedParams)
+        {
+            var pref = this.panelDataRegionName + ".param.";
+            if (param.indexOf(pref) == 0) {
+                this.parameters[param.replace(pref, "")] = updatedParams[param];
+            }
+        }
     },
 
     // Returns a configuration based on the baseUrl plus any filters applied on the dataregion panel
     // the configuration can be used to make a selectRows request
     getQueryConfig : function(serialize) {
-
         var dataRegion = LABKEY.DataRegions[this.panelDataRegionName];
         var config = {
             schemaName  : this.schemaName,
@@ -1110,7 +1127,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             viewName    : this.viewName,
             dataRegionName: this.dataRegionName,
             queryLabel  : this.queryLabel,
-            maxRows     : 5000,
+            parameters : this.parameters,
+            maxRows     : 5000, // TODO: should only limit rows for scatter plot, not box plot
             requiredVersion : 12.1,
             method: 'POST'
         };
@@ -1630,6 +1648,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (json.queryConfig.queryLabel)
             this.queryLabel = json.queryConfig.queryLabel;
+
+        if (json.queryConfig.parameters)
+            this.parameters = json.queryConfig.parameters;
 
         if (json.chartConfig)
         {
@@ -2330,6 +2351,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (this.currentFilterStr != filterStr) {
             this.currentFilterStr = filterStr;
+            return true;
+        }
+
+        var parameterStr = Ext4.JSON.encode(queryCfg.parameters);
+        if (this.currentParameterStr != parameterStr) {
+            this.currentParameterStr = parameterStr;
             return true;
         }
 
