@@ -4888,14 +4888,9 @@ public class QueryController extends SpringActionController
 
     @RequiresPermissionClass(ReadPermission.class)
     @Action(ActionType.SelectData)
-    public static class SelectAllAction extends ApiAction<SelectAllForm>
+    public static class SelectAllAction extends MutatingApiAction<QueryForm>
     {
-        public SelectAllAction()
-        {
-            super(SelectAllForm.class);
-        }
-
-        public void validateForm(SelectAllForm form, Errors errors)
+        public void validateForm(QueryForm form, Errors errors)
         {
             if (form.getSchemaName().isEmpty() ||
                 form.getQueryName() == null)
@@ -4904,25 +4899,10 @@ public class QueryController extends SpringActionController
             }
         }
 
-        public ApiResponse execute(final SelectAllForm form, BindException errors) throws Exception
+        public ApiResponse execute(final QueryForm form, BindException errors) throws Exception
         {
-            int count = DataRegionSelection.selectAll(getViewContext(), form.getKey(), form);
+            int count = DataRegionSelection.selectAll(form);
             return new SelectionResponse(count);
-        }
-    }
-
-    public static class SelectAllForm extends QueryForm
-    {
-        protected String key;
-
-        public String getKey()
-        {
-            return key;
-        }
-
-        public void setKey(String key)
-        {
-            this.key = key;
         }
     }
 
