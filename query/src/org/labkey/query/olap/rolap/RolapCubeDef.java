@@ -874,9 +874,9 @@ public class RolapCubeDef
             int index = rs.findColumn(keyAlias);
             int columnType = rs.getMetaData().getColumnType(index);
             JdbcType j = JdbcType.valueOf(columnType);
-            if (j != jdbcType)
+            if (j.isText() != jdbcType.isText() || j.isDateOrTime() != jdbcType.isDateOrTime())
             {
-                Logger.getLogger(RolapCubeDef.class).info("jdbc types do not match, expected:" + jdbcType + " found:" + j);
+                Logger.getLogger(RolapCubeDef.class).info("jdbc types do not match, expected: " + jdbcType + " found: " + j + ". Alias: \"" + keyAlias + "\"");
             }
             return jdbcType;
         }
