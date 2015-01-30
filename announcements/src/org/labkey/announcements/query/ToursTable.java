@@ -31,9 +31,11 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -71,7 +73,16 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return getContainer().hasPermission(user, perm);
+        boolean permission;
+
+        if (perm.equals(ReadPermission.class))
+            permission = getContainer().hasPermission(user, perm);
+        else if (user instanceof User)
+            permission = ((User) user).isDeveloper();
+        else
+            permission = user.isInGroup(Group.groupDevelopers);
+
+        return permission;
     }
 
     @Override

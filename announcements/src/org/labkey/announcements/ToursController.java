@@ -1,16 +1,14 @@
 package org.labkey.announcements;
 
-import org.labkey.announcements.model.TourAdministratorPermissions;
 import org.labkey.announcements.query.AnnouncementSchema;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -19,7 +17,6 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public class ToursController extends SpringActionController
 {
-    private static final CommSchema _comm = CommSchema.getInstance();
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ToursController.class, GetTourAction.class);
 
     public ToursController() throws Exception
@@ -27,19 +24,11 @@ public class ToursController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    // Anyone with read permission can attempt to view the list.  AnnouncementWebPart will do further permission checking.  For example,
-    //   in a secure message board, those without Editor permissions will only see messages when they are on the member list
-    @RequiresPermissionClass(TourAdministratorPermissions.class)
+    // Anyone with read permission can attempt to view the list.  ToursTable will do further permission checking.
+    @RequiresPermissionClass(ReadPermission.class)
+    @SuppressWarnings("UnusedDeclaration")
     public class BeginAction extends SimpleViewAction<QueryForm>
     {
-
-
-        // Invoked via reflection
-        @SuppressWarnings("UnusedDeclaration")
-        public BeginAction()
-        {
-        }
-
         @Override
         public ModelAndView getView(QueryForm queryForm, BindException errors) throws Exception
         {
@@ -58,17 +47,9 @@ public class ToursController extends SpringActionController
             return view;
         }
 
-        // Called directly by other actions
-        public BeginAction(ViewContext ctx)
-        {
-            setViewContext(ctx);
-        }
-
-
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            //return root.addChild(getSettings().getBoardName(), getBeginURL(getContainer()));
             return null;
         }
     }

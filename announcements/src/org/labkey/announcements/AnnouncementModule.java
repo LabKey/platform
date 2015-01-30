@@ -27,7 +27,6 @@ import org.labkey.announcements.model.DiscussionServiceImpl;
 import org.labkey.announcements.model.DiscussionWebPartFactory;
 import org.labkey.announcements.model.SecureMessageBoardReadPermission;
 import org.labkey.announcements.model.SecureMessageBoardRespondPermission;
-import org.labkey.announcements.model.TourAdministratorPermissions;
 import org.labkey.announcements.query.AnnouncementSchema;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
@@ -49,7 +48,6 @@ import org.labkey.api.rss.RSSServiceImpl;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -167,11 +165,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         Role editor = RoleManager.getRole(EditorRole.class);
         editor.addPermission(SecureMessageBoardReadPermission.class);
         editor.addPermission(SecureMessageBoardRespondPermission.class);
-
-        // Only developers should be able tour administrators at this point
-        RoleManager.registerPermission(new TourAdministratorPermissions());
-        Role developer = RoleManager.getRole(DeveloperRole.class);
-        developer.addPermission(TourAdministratorPermissions.class);
 
         // initialize message digests
         DailyMessageDigest.getInstance().addProvider(new AnnouncementDigestProvider());
