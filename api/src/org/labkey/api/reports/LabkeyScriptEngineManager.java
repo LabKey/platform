@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
@@ -250,6 +251,9 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
                     definition.clear();
                     definition.save();
                 }
+
+                // Issue 22354: It's a little heavy handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
+                CacheManager.clearAllKnownCaches();
             }
         }
     }
@@ -320,6 +324,10 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         }
         else
             throw new IllegalArgumentException("Engine definition must be an instance of LabkeyScriptEngineManager.EngineDefinition");
+
+        // Issue 22354: It's a little heavy handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
+        CacheManager.clearAllKnownCaches();
+
         return def;
     }
 
