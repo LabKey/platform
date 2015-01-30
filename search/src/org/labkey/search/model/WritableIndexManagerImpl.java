@@ -259,13 +259,6 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     }
 
 
-    public void optimize()
-    {
-        // We removed the call to IndexWriter.optimize() in 12.1.  Lucene deprecated this method and strongly dis-recommends
-        // calling its replacement (forceMerge()).  Let's see what happens if we just leave it out.
-    }
-
-
     @Override
     public String getIndexFormatDescription()
     {

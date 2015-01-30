@@ -45,7 +45,5 @@ public interface WritableIndexManager
 
     void close() throws IOException, InterruptedException;
 
-    void optimize();
-
     String getIndexFormatDescription();
 }

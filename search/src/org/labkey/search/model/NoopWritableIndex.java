@@ -88,12 +88,6 @@ public class NoopWritableIndex implements WritableIndexManager
     }
 
     @Override
-    public void optimize()
-    {
-        log("optimize the search index");
-    }
-
-    @Override
     public String getIndexFormatDescription()
     {
         return "No-op index";

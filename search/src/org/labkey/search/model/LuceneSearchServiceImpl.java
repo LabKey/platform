@@ -1398,13 +1398,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     @Override
-    public void maintenance()
-    {
-        super.maintenance();
-        _indexManager.optimize();
-    }
-
-    @Override
     public List<SecurableResource> getSecurableResources(User user)
     {
         if (null != _externalIndexManager)
