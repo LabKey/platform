@@ -35,6 +35,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
@@ -247,6 +248,7 @@ public class ContainerDisplayColumn extends DataColumn
             // Use a mock request so that we don't end up writing to the "real" output when we write
             // out spaces to see if the client is still listening during an async query
             final ViewContext vc = new ViewContext();
+            vc.setActionURL(new ActionURL("fake", "fake", project));
             final MockHttpServletResponse response = new MockHttpServletResponse();
             vc.setResponse(response);
             QueryView view = new QueryView(us, qs, errors)
