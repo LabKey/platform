@@ -2023,10 +2023,9 @@ public class PageFlowUtil
             projectProps.put("path", project.getPath());
             projectProps.put("name", project.getName());
             json.put("project", projectProps);
-
-            json.put("tours", getTourJson(container));
         }
 
+        json.put("tours", getTourJson(container));
         json.put("serverName", StringUtils.isNotEmpty(appProps.getServerName()) ? appProps.getServerName() : "Labkey Server");
         json.put("versionString", appProps.getLabKeyVersionString());
         if (request != null)
@@ -2047,14 +2046,18 @@ public class PageFlowUtil
     private static JSONObject getTourJson(Container container)
     {
         JSONObject tourProps = new JSONObject();
+        TourService.Interface service = TourService.get();
 
-        for(Map<String,String> tour : TourService.get().getApplicableTours(container))
+        if (null != service)
         {
-            JSONObject tourJson = new JSONObject();
-            tourJson.put("Title", tour.get("Title"));
-            //tourJson.put("Description", tour.get("Description"));
-            //tourJson.put("Mode", tour.get("Mode"));
-            tourProps.put(tour.get("RowId"), tourJson);
+            for (Map<String, String> tour : service.getApplicableTours(container))
+            {
+                JSONObject tourJson = new JSONObject();
+                tourJson.put("Title", tour.get("Title"));
+                //tourJson.put("Description", tour.get("Description"));
+                //tourJson.put("Mode", tour.get("Mode"));
+                tourProps.put(tour.get("RowId"), tourJson);
+            }
         }
         return tourProps;
     }

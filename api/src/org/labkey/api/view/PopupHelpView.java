@@ -50,18 +50,23 @@ public class PopupHelpView extends PopupMenuView
 
         if (c.hasPermission(user, ReadPermission.class))
         {
-            List<Map<String,String>> tours =  TourService.get().getApplicableTours(c);
+            TourService.Interface service = TourService.get();
 
-            if (tours.size() > 0)
+            if (null != service)
             {
-                NavTree toursMenu = new NavTree("Tours");
-                for (Map<String, String> t : tours)
+                List<Map<String, String>> tours = service.getApplicableTours(c);
+
+                if (tours.size() > 0)
                 {
-                    NavTree tourLink = new NavTree(t.get("Title"));
-                    tourLink.setScript("LABKEY.help.Tour.show(" + PageFlowUtil.jsString(t.get("RowId")) + ")");
-                    toursMenu.addChild(tourLink);
+                    NavTree toursMenu = new NavTree("Tours");
+                    for (Map<String, String> t : tours)
+                    {
+                        NavTree tourLink = new NavTree(t.get("Title"));
+                        tourLink.setScript("LABKEY.help.Tour.show(" + PageFlowUtil.jsString(t.get("RowId")) + ")");
+                        toursMenu.addChild(tourLink);
+                    }
+                    menu.addChild(toursMenu);
                 }
-                menu.addChild(toursMenu);
             }
         }
 

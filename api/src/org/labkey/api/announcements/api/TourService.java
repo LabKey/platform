@@ -16,6 +16,7 @@ public class TourService
 
     public static final String MODULE_NAME = "Announcement";
 
+    @Nullable
     static public Interface get()
     {
         return instance;
