@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,6 +34,9 @@ import java.util.List;
  */
 public class StringUtilsLabKey
 {
+    /** Instead of relying on the platform default character encoding, use this Charset */
+    public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+
     // Finds the longest common prefix present in all elements of the passed in string collection. In other words,
     // the longest string (prefix) such that, for all s in strings, s.startsWith(prefix). An empty collection returns
     // the empty string and a single element collection returns that string.

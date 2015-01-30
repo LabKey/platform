@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
@@ -104,7 +103,7 @@ public class Compress
         {
             IOUtils.copy(is, buf);
 
-            return buf.toString("UTF-8");
+            return buf.toString(StringUtilsLabKey.DEFAULT_CHARSET.name());
         }
         catch (IOException x)
         {
@@ -315,27 +314,13 @@ public class Compress
 
     private static byte[] getBytes(String source)
     {
-        try
-        {
-            return source.getBytes("UTF-8");
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            throw new RuntimeException("UTF-8 encoding not supported on this machine", e);
-        }
+        return source.getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
     }
 
 
     private static String getString(ByteArrayOutputStream bos)
     {
-        try
-        {
-            return new String(bos.toByteArray(), "UTF-8");
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            throw new RuntimeException("UTF-8 encoding not supported on this machine", e);
-        }
+        return new String(bos.toByteArray(), StringUtilsLabKey.DEFAULT_CHARSET);
     }
 
 

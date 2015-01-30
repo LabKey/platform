@@ -41,6 +41,7 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -249,7 +250,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     originalName = "upload.csv";
                 }
                 loader = tabLoader;
-                file = new FileStream.ByteArrayFileStream(text.getBytes("UTF-8"));
+                file = new FileStream.ByteArrayFileStream(text.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
                 // di = loader.getDataIterator(ve);
             }
             else if (null != StringUtils.trimToNull(path))

@@ -406,7 +406,7 @@ public class PageFlowUtil
 
     public static List<Pair<String, String>> fromQueryString(String query)
     {
-        return fromQueryString(query, "UTF-8");
+        return fromQueryString(query, StringUtilsLabKey.DEFAULT_CHARSET.name());
     }
 
     public static List<Pair<String, String>> fromQueryString(String query, String encoding)
@@ -415,7 +415,7 @@ public class PageFlowUtil
             return _emptyPairList;
 
         if (null == encoding)
-            encoding = "UTF-8";
+            encoding = StringUtilsLabKey.DEFAULT_CHARSET.name();
 
         List<Pair<String, String>> parameters = new ArrayList<>();
         if (query.startsWith("?"))
@@ -587,7 +587,7 @@ public class PageFlowUtil
             return "";
         try
         {
-            return PATTERN.matcher(URLEncoder.encode(s, "UTF-8")).replaceAll("%20");
+            return PATTERN.matcher(URLEncoder.encode(s, StringUtilsLabKey.DEFAULT_CHARSET.name())).replaceAll("%20");
         }
         catch (UnsupportedEncodingException x)
         {
@@ -633,7 +633,7 @@ public class PageFlowUtil
                     if (ch.charAt(0)==' ')
                         sb.append("%20");
                     else
-                        sb.append(URLEncoder.encode(ch, "UTF-8"));
+                        sb.append(URLEncoder.encode(ch, StringUtilsLabKey.DEFAULT_CHARSET.name()));
                 }
                 start = end+1;
             }
@@ -653,7 +653,7 @@ public class PageFlowUtil
     {
         try
         {
-            return null==s ? "" : URLDecoder.decode(s, "UTF-8");
+            return null==s ? "" : URLDecoder.decode(s, StringUtilsLabKey.DEFAULT_CHARSET.name());
         }
         catch (UnsupportedEncodingException x)
         {
@@ -998,8 +998,6 @@ public class PageFlowUtil
     }
 
 
-    private static final Charset utf8 = Charset.forName("UTF-8");
-
     public static class Content
     {
         public Content(String s)
@@ -1012,7 +1010,7 @@ public class PageFlowUtil
             content = s;
             encoded = e;
             if (null == e && null != s)
-                encoded = s.getBytes(utf8);
+                encoded = s.getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
             modified = m;
         }
 
@@ -1500,12 +1498,12 @@ public class PageFlowUtil
         {
             Transformer t = TransformerFactory.newInstance().newTransformer();
             t.setOutputProperty(OutputKeys.METHOD, format.toString());
-            t.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            t.setOutputProperty(OutputKeys.ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
             ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
             t.transform(new DOMSource(node), new StreamResult(out));
             out.close();
 
-            return new String(out.toByteArray(), "UTF-8").trim();
+            return new String(out.toByteArray(), StringUtilsLabKey.DEFAULT_CHARSET).trim();
         }
         catch (TransformerFactoryConfigurationError e)
         {

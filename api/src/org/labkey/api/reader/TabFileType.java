@@ -17,10 +17,9 @@ package org.labkey.api.reader;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.StringUtilsLabKey;
 
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -50,15 +49,7 @@ class TabFileType extends FileType
     @Override
     public boolean isHeaderMatch(@NotNull byte[] header)
     {
-        String s;
-        try
-        {
-            s = new String(header, "UTF-8"); // TODO: Detect encoding
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            throw new RuntimeException(e);
-        }
+        String s = new String(header, StringUtilsLabKey.DEFAULT_CHARSET); // TODO: Detect encoding
 
         String[] lines = StringUtils.split(s, "\n\r");
         if (lines.length == 0)

@@ -15,13 +15,14 @@
  */
 package org.labkey.api.writer;
 
+import org.labkey.api.util.StringUtilsLabKey;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 
 /**
  * User: adam
@@ -36,11 +37,11 @@ public class UTF8PrintWriter extends PrintWriter
 {
     public UTF8PrintWriter(OutputStream out)
     {
-        super(new OutputStreamWriter(out, StandardCharsets.UTF_8));
+        super(new OutputStreamWriter(out, StringUtilsLabKey.DEFAULT_CHARSET));
     }
 
     public UTF8PrintWriter(File file) throws FileNotFoundException
     {
-        super(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
+        super(new OutputStreamWriter(new FileOutputStream(file), StringUtilsLabKey.DEFAULT_CHARSET));
     }
 }

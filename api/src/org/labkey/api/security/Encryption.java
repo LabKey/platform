@@ -27,6 +27,7 @@ import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -193,7 +194,7 @@ public class Encryption
                 cipher.init(Cipher.ENCRYPT_MODE, _keySpec, new IvParameterSpec(iv));
 
                 // First 16 bytes is the iv, remainder is the encrypted bytes
-                return ArrayUtils.addAll(iv, cipher.doFinal(plainText.getBytes("UTF-8")));
+                return ArrayUtils.addAll(iv, cipher.doFinal(plainText.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)));
             }
             catch (Exception e)
             {
@@ -212,7 +213,7 @@ public class Encryption
                 byte[] encrypted = ArrayUtils.subarray(cipherText, 16, cipherText.length);
                 Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
                 cipher.init(Cipher.DECRYPT_MODE, _keySpec, new IvParameterSpec(iv));
-                return new String(cipher.doFinal(encrypted), "UTF-8");
+                return new String(cipher.doFinal(encrypted), StringUtilsLabKey.DEFAULT_CHARSET);
             }
             catch (BadPaddingException e)
             {

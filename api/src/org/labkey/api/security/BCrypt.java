@@ -14,7 +14,7 @@ package org.labkey.api.security;
 // ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import java.io.UnsupportedEncodingException;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.security.SecureRandom;
 
@@ -670,11 +670,7 @@ public class BCrypt {
 		rounds = Integer.parseInt(salt.substring(off, off + 2));
 
 		real_salt = salt.substring(off + 3, off + 25);
-		try {
-			passwordb = (password + (minor >= 'a' ? "\000" : "")).getBytes("UTF-8");
-		} catch (UnsupportedEncodingException uee) {
-			throw new AssertionError("UTF-8 is not supported");
-		}
+        passwordb = (password + (minor >= 'a' ? "\000" : "")).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
 
 		saltb = decode_base64(real_salt, BCRYPT_SALT_LEN);
 

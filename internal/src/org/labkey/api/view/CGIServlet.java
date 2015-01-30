@@ -31,6 +31,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -242,7 +243,7 @@ public final class CGIServlet extends HttpServlet {
     
     /** the encoding to use for parameters */
     private String parameterEncoding = System.getProperty("file.encoding",
-                                                          "UTF-8");
+            StringUtilsLabKey.DEFAULT_CHARSET.name());
 
     /** object used to ensure multiple threads don't try to expand same file */
     static Object expandFileLock = new Object();

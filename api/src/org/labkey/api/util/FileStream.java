@@ -107,14 +107,7 @@ public interface FileStream
 
         static byte[] toBytes(String s)
         {
-            try
-            {
-                return s.getBytes("UTF-8");
-            }
-            catch (UnsupportedEncodingException  x)
-            {
-                throw new RuntimeException(x);
-            }
+            return s.getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
         }
     }
 

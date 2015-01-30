@@ -165,7 +165,7 @@ public class MothershipReport implements Runnable
                 _responseCode = connection.getResponseCode();
                 if (_responseCode == 200 && MOTHERSHIP_STATUS_SUCCESS.equals(connection.getHeaderField(MOTHERSHIP_STATUS_HEADER_NAME)))
                 {
-                    String encoding = "UTF-8";
+                    String encoding = StringUtilsLabKey.DEFAULT_CHARSET.name();
 
                     if (connection.getContentType() != null)
                     {
@@ -184,10 +184,9 @@ public class MothershipReport implements Runnable
                 connection.disconnect();
             }
         }
-        catch (Exception e)
+        catch (Exception ignored)
         {
             // Don't bother the client if this report fails
-            boolean b = false;
         }
     }
 

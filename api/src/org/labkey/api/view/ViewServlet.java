@@ -38,6 +38,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SessionAppender;
 import org.labkey.api.util.ShuttingDownException;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -469,7 +470,7 @@ public class ViewServlet extends HttpServlet
         }
 
         if (method.equals("POST") && postData != null)
-            request.setContent(postData.getBytes(Charset.forName("UTF-8")));
+            request.setContent(postData.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
 
         return request;
 

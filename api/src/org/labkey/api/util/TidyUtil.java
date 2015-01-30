@@ -27,7 +27,6 @@ import java.io.ByteArrayInputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -139,50 +138,43 @@ public class TidyUtil
         scriptMatcher.appendTail(stripped);
 
         StringWriter err = new StringWriter();
-        try
+        // parse wants to use streams
+        tidy.setErrout(new PrintWriter(err));
+
+        String strippedString = stripped.toString().trim();
+
+        if (strippedString.isEmpty())
+            return null;
+
+        Document doc = tidy.parseDOM(new ByteArrayInputStream(strippedString.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)), null);
+
+        // fix up scripts
+        if (null != doc && null != doc.getDocumentElement())
         {
-            // parse wants to use streams
-            tidy.setErrout(new PrintWriter(err));
-
-            String strippedString = stripped.toString().trim();
-
-            if (strippedString.isEmpty())
-                return null;
-
-            Document doc = tidy.parseDOM(new ByteArrayInputStream(strippedString.getBytes("UTF-8")), null);
-
-            // fix up scripts
-            if (null != doc && null != doc.getDocumentElement())
+            NodeList nl = doc.getDocumentElement().getElementsByTagName("script");
+            for (int i=0 ; i<nl.getLength() ; i++)
             {
-                NodeList nl = doc.getDocumentElement().getElementsByTagName("script");
-                for (int i=0 ; i<nl.getLength() ; i++)
-                {
-                    Node script = nl.item(i);
-                    NodeList childNodes = script.getChildNodes();
-                    if (childNodes.getLength() != 1)
-                        continue;
-                    Node child = childNodes.item(0);
-                    if (!(child instanceof CharacterData))
-                        continue;
-                    String contents = ((CharacterData)child).getData();
-                    String replace = scriptMap.get(contents);
-                    if (null == replace)
-                        continue;
-                    doc.createTextNode(replace);
-                    script.removeChild(childNodes.item(0));
-                    script.appendChild(doc.createTextNode(replace));
-                }
+                Node script = nl.item(i);
+                NodeList childNodes = script.getChildNodes();
+                if (childNodes.getLength() != 1)
+                    continue;
+                Node child = childNodes.item(0);
+                if (!(child instanceof CharacterData))
+                    continue;
+                String contents = ((CharacterData)child).getData();
+                String replace = scriptMap.get(contents);
+                if (null == replace)
+                    continue;
+                doc.createTextNode(replace);
+                script.removeChild(childNodes.item(0));
+                script.appendChild(doc.createTextNode(replace));
             }
-
-            tidy.getErrout().close();
-            collectErrors(err, errors);
-
-            return doc;
         }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new RuntimeException(x);
-        }
+
+        tidy.getErrout().close();
+        collectErrors(err, errors);
+
+        return doc;
     }
 
     private static void collectErrors(final StringWriter err, final Collection<String> errors)
