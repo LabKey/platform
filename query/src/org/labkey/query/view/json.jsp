@@ -52,7 +52,7 @@
                 <textarea cols="80" rows="25" id="query" name="query" style="font-size:10pt; font-family: Andale Monaco, monospace;"><%=h(request.getParameter("query"))%></textarea>
             </td>
         </tr>
-        <tr><td><input type="button" onclick="executeQuery()" value="submit"></td></tr>
+        <tr><td><input type="button" id="submitbtn" onclick="executeQuery()" value="submit"></td></tr>
     </table>
 </labkey:form>
 <p>&nbsp;</p>
