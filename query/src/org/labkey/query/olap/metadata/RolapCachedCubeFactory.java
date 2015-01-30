@@ -19,6 +19,7 @@ import com.drew.lang.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -27,8 +28,6 @@ import org.olap4j.OlapException;
 import org.olap4j.metadata.Dimension;
 import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Member;
-import org.olap4j.metadata.NamedList;
-import org.olap4j.metadata.NamedSet;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -299,17 +298,14 @@ public class RolapCachedCubeFactory
     {
         for (CachedCube._Member m : list)
         {
-            if (null == m.childMembers)
+            if (null == m.childMembers || m.childMembers.isEmpty())
                 continue;
             Collections.sort(m.childMembers, MEMBER_COMPARATOR);
             // We also create a map using the KEY value
-            m._keyMap = CachedCube.KeyMap.create(m.level.jdbcType, m.childMembers);
+            JdbcType childType = ((CachedCube._Member) m.childMembers.get(0)).level.jdbcType;
+            m._keyMap = CachedCube.KeyMap.create(childType, m.childMembers);
         }
     }
-
-
-    static final NamedList<NamedSet> emptyNamedSetList = (new CachedCube._EmptyNamedList<NamedSet>()).recast();
-
 
     static MemberComparator MEMBER_COMPARATOR = new MemberComparator();
 
