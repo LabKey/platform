@@ -113,7 +113,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         AnnouncementService.setInstance(new AnnouncementServiceImpl());
 
         addController("tours", ToursController.class);
-        TourService.setInstance(new TourServiceImpl());
 
         AnnouncementSchema.register(this);
         DiscussionService.register(new DiscussionServiceImpl());
@@ -169,6 +168,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         editor.addPermission(SecureMessageBoardReadPermission.class);
         editor.addPermission(SecureMessageBoardRespondPermission.class);
 
+        // Only developers should be able tour administrators at this point
         RoleManager.registerPermission(new TourAdministratorPermissions());
         Role developer = RoleManager.getRole(DeveloperRole.class);
         developer.addPermission(TourAdministratorPermissions.class);
@@ -207,6 +207,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         {
             fsr.addFactories(new NotificationSettingsWriterFactory(), new NotificationSettingsImporterFactory());
         }
+
+        TourService.setInstance(new TourServiceImpl());
     }
     
 
