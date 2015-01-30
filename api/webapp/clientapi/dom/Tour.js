@@ -20,7 +20,7 @@
 
         var me = this;
 
-        var stepFnOpts = [/*"target", */"onPrev", "onNext", "onShow", "onCTA"];
+        var stepFnOpts = ["onPrev", "onNext", "onShow", "onCTA"];
         var tourFnOpts = ["onNext", "onPrev", "onStart", "onEnd", "onClose", "onError"];
 
         var tours = 0;
@@ -56,14 +56,24 @@
             {
                 $.each(step, function(key, value)
                 {
-                    if (stepFnOpts.indexOf(key) > -1)
+                    if (key == "target")
+                    {
+                        try
+                        {
+                            step[key] = document.querySelector(value);
+                        }
+                        catch (x)
+                        {
+                            if (x && x instanceof DOMException)
+                            {
+                                console.error('Tour provided invalid selector:', "'" + value + "'");
+                            }
+                        }
+                    }
+                    else if (stepFnOpts.indexOf(key) > -1)
                     {
                         var jsonFn = new Function("", "return " + value + ";");
                         step[key] = jsonFn.call();
-                    }
-                    else if (key == "target")
-                    {
-                        step[key] = document.querySelector(value);
                     }
                 });
             });
@@ -237,7 +247,7 @@
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('tours', 'getTour'),
                 jsonData : {id: id},
-                success: LABKEY.Utils.getCallbackWrapper(success, me, false),
+                success: LABKEY.Utils.getCallbackWrapper(function(result) { success.call(this, id, result); }, me, false),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), me.scope, true),
                 scope: this
             });
@@ -304,9 +314,11 @@
         /**
          * AJAX getTour success callback
          */
-        var success = function(result)
+        var success = function(id, result)
         {
             var json = JSON.parse(result.Json);
+            json.id = id;
+
             _evalTourOptions(json);
             _evalStepOptions(json);
             register(json, result.Mode);
@@ -317,10 +329,7 @@
             }
         };
 
-        LABKEY.Utils.onReady(function()
-        {
-            _init();
-        });
+        LABKEY.Utils.onReady(_init);
 
         return {
             autoShow: autoShow,
