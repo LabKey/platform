@@ -1101,6 +1101,7 @@ api/src/org/labkey/api/reader/ReaderFactory.java -text
 api/src/org/labkey/api/reader/SimpleXMLStreamReader.java -text
 api/src/org/labkey/api/reader/TabFileType.java -text
 api/src/org/labkey/api/reader/TestRow.java -text
+api/src/org/labkey/api/reader/UTF8Reader.java -text
 api/src/org/labkey/api/reader/XMLStreamReaderWrapper.java -text
 api/src/org/labkey/api/reader/jxl/JxlCell.java -text
 api/src/org/labkey/api/reader/jxl/JxlCellStyle.java -text
