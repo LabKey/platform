@@ -393,7 +393,9 @@ public class RenderContext implements Map<String, Object>, Serializable
                 assert parts.length == selectorColumns.size() : "Selected item and columns don't match in length: " + row;
                 for (int i = 0; i < parts.length; i++)
                 {
-                    and.addClause(CompareType.EQUAL.createFilterClause(FieldKey.fromString(selectorColumns.get(i)), parts[i]));
+                    SimpleFilter.FilterClause eq = CompareType.EQUAL.createFilterClause(FieldKey.fromString(selectorColumns.get(i)), parts[i]);
+                    eq._needsTypeConversion = true;
+                    and.addClause(eq);
                 }
                 or.addClause(and);
             }
