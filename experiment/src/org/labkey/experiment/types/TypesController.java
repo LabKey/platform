@@ -44,6 +44,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -211,7 +212,7 @@ public class TypesController extends SpringActionController
 
                 if (null != bytes && bytes.length > 0)
                 {
-                    String tsv = new String(bytes, "UTF-8");
+                    String tsv = new String(bytes, StringUtilsLabKey.DEFAULT_CHARSET);
                     CloseableIterator<Concept> concepts = TypesController.readVocabularyTSV(tsv);
                     int count = TypesController.importConcepts(name, concepts);
 

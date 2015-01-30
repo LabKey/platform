@@ -24,23 +24,17 @@
  */
 package org.radeox.test;
 
-import org.radeox.engine.context.BaseInitialRenderContext;
-import org.radeox.engine.context.BaseRenderContext;
-import org.radeox.filter.Filter;
-import org.radeox.filter.ListFilter;
-import org.radeox.filter.LineFilter;
-import org.radeox.filter.context.BaseFilterContext;
-import org.radeox.filter.context.FilterContext;
-import org.radeox.api.engine.context.RenderContext;
-import org.radeox.api.engine.RenderEngine;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.radeox.EngineManager;
+import org.radeox.api.engine.RenderEngine;
+import org.radeox.api.engine.context.RenderContext;
+import org.radeox.engine.context.BaseRenderContext;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.io.IOException;
 
 public class RegexpTest {
   public static void main(String[] args) {
@@ -53,14 +47,14 @@ public class RegexpTest {
 
     String file = args.length > 0 ? args[0] : "conf/wiki.txt";
     try {
-      System.setOut(new PrintStream(System.out, true, "UTF-8"));
+      System.setOut(new PrintStream(System.out, true, StringUtilsLabKey.DEFAULT_CHARSET.name()));
     } catch (UnsupportedEncodingException e) {
       // this should never happen
     }
 
     StringBuffer tmp = new StringBuffer();
     try {
-      BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+      BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StringUtilsLabKey.DEFAULT_CHARSET));
       char[] buffer = new char[1024];
       int n = 0;
       while ((n = reader.read(buffer)) != -1) {

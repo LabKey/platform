@@ -69,6 +69,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -2892,7 +2893,7 @@ public class DavController extends SpringActionController
                         _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4*1025);
                         FileUtil.copyData(getFileStream().openInputStream(), bos);
                         byte[] buf = bos.toByteArray();
-                        String html = new String(buf, "UTF-8");
+                        String html = new String(buf, StringUtilsLabKey.DEFAULT_CHARSET);
                         List<String> errors = new ArrayList<>();
                         List<String> script = new ArrayList<>();
                         PageFlowUtil.validateHtml(html, errors, script);

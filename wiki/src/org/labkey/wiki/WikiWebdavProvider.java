@@ -37,6 +37,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.AbstractDocumentResource;
@@ -60,7 +61,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -528,14 +528,14 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
         public FileStream getFileStream(User user) throws IOException
         {
-            byte[] buf = (null == _body ? "" : _body).getBytes("UTF-8");
+            byte[] buf = (null == _body ? "" : _body).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
             return new FileStream.ByteArrayFileStream(buf);
         }
 
 
         public InputStream getInputStream(User user) throws IOException
         {
-            byte[] buf = (null == _body ? "" : _body).getBytes("UTF-8");
+            byte[] buf = (null == _body ? "" : _body).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
             return new ByteArrayInputStream(buf);
         }
 
@@ -545,7 +545,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             FileUtil.copyData(in.openInputStream(),buf);
             long len = buf.size();
             WikiVersion version = getWikiVersion();
-            version.setBody(buf.toString("UTF-8"));
+            version.setBody(buf.toString(StringUtilsLabKey.DEFAULT_CHARSET.name()));
 
             try
             {
@@ -639,15 +639,8 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
         public long getContentLength()
         {
-            try
-            {
-                byte[] buf = (null == _body ? "" : _body).getBytes("UTF-8");
-                return buf.length;
-            }
-            catch (UnsupportedEncodingException e)
-            {
-                return 0;
-            }
+            byte[] buf = (null == _body ? "" : _body).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
+            return buf.length;
         }
 
 		@Override

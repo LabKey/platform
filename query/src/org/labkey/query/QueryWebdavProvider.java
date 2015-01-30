@@ -28,6 +28,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -213,7 +214,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		public InputStream getInputStream(User user) throws IOException
 		{
 			String sql = StringUtils.trimToEmpty(_q.getSql());
-			return new ByteArrayInputStream(sql.getBytes("UTF-8"));
+			return new ByteArrayInputStream(sql.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
 		}
 
 		public long copyFrom(User user, FileStream in) throws IOException
@@ -234,7 +235,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		public long getContentLength() throws IOException
 		{
 			String sql = StringUtils.trimToEmpty(_q.getSql());
-			return sql.getBytes("UTF-8").length;
+			return sql.getBytes(StringUtilsLabKey.DEFAULT_CHARSET).length;
 		}
 
 		@Override

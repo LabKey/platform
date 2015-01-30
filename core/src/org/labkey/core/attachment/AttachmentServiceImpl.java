@@ -1410,13 +1410,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         private static final String _testDirName = "/_jUnitAttachment";
 
         @Test
-        public void testDirectories() throws IOException, SQLException, AttachmentService.DuplicateFilenameException
+        public void testDirectories() throws IOException, SQLException
         {
             User user = TestContext.get().getUser();
-            assertTrue(null != user);
-
-            String projectRoot = AppProps.getInstance().getProjectRoot();
-            if (projectRoot == null || projectRoot.equals("")) projectRoot = "C:/Labkey";
+            assertNotNull("Should have access to a user", user);
 
             // clean up if anything was left over from last time
             if (null != ContainerManager.getForPath(_testDirName))

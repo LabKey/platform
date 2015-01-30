@@ -1,5 +1,7 @@
 package org.radeox.util;
 
+import org.labkey.api.util.StringUtilsLabKey;
+
 import java.io.*;
 import java.net.URL;
 import java.util.*;
@@ -46,7 +48,7 @@ public class Service {
         while (providerFiles.hasMoreElements()) {
           try {
             URL url = (URL) providerFiles.nextElement();
-            Reader reader = new InputStreamReader(url.openStream(), "UTF-8");
+            Reader reader = new InputStreamReader(url.openStream(), StringUtilsLabKey.DEFAULT_CHARSET);
             if (instantiate) {
               loadResource(reader, classLoader, providers);
             } else {
@@ -65,7 +67,7 @@ public class Service {
           is = classLoader.getResourceAsStream(providerFile);
         }
         if (is != null) {
-          Reader reader = new InputStreamReader(is, "UTF-8");
+          Reader reader = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET);
           loadResource(reader, classLoader, providers);
         }
       }

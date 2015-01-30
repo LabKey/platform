@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.apache.log4j.Logger;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.io.*;
@@ -228,7 +229,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         {
             bOut.write(b, 0, i);
         }
-        String line = new String(bOut.toByteArray(), "UTF-8").trim();
+        String line = new String(bOut.toByteArray(), StringUtilsLabKey.DEFAULT_CHARSET).trim();
         int totalLocks = FILE_LOCKS_DEFAULT;
         int currentIndex = 0;
         if (line.length() > 0)
@@ -333,7 +334,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         String output = Integer.toString(lockInfo.getCurrentLock());
         if (lockInfo.getTotalLocks() != FILE_LOCKS_DEFAULT)
             output += " " + Integer.toString(lockInfo.getTotalLocks());
-        byte[] outputBytes = output.getBytes("UTF-8");
+        byte[] outputBytes = output.getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
         masterFile.write(outputBytes);
         masterFile.setLength(outputBytes.length);
     }

@@ -22,13 +22,23 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.webdav.*;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.webdav.AbstractDocumentResource;
+import org.labkey.api.webdav.AbstractWebdavResourceCollection;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /*
 * User: Karl Lum
@@ -162,7 +172,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
 
         public InputStream getInputStream(User user) throws IOException
         {
-            byte[] buf = _report.getDescriptor().serialize(_c).getBytes("UTF-8");
+            byte[] buf = _report.getDescriptor().serialize(_c).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
             return new ByteArrayInputStream(buf);
         }
 
@@ -224,7 +234,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             try
             {
 
-                byte[] buf = _report.getDescriptor().serialize(_c).getBytes("UTF-8");
+                byte[] buf = _report.getDescriptor().serialize(_c).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
                 return buf.length;
             }
             catch (Exception e)

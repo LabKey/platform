@@ -70,6 +70,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StartupListener;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -422,7 +423,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     private Map<String, Object> decodeFromXML(String objectXML)
     {
         try {
-            XMLDecoder dec = new XMLDecoder(new ByteArrayInputStream(objectXML.getBytes("UTF-8")));
+            XMLDecoder dec = new XMLDecoder(new ByteArrayInputStream(objectXML.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)));
             Object o = dec.readObject();
             if (Map.class.isAssignableFrom(o.getClass()))
                 return (Map<String, Object>)o;

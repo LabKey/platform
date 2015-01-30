@@ -95,6 +95,7 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
@@ -562,7 +563,7 @@ public class FileContentController extends SpringActionController
                    if (formFile.getContentType().contains("html") || (null != contentType && contentType.contains("html")))
                    {
                        //This relies on storing whole file in memory. Generally OK for text files like this.
-                       String html = new String(formFile.getBytes(),"UTF-8");
+                       String html = new String(formFile.getBytes(), StringUtilsLabKey.DEFAULT_CHARSET);
                        List<String> validateErrors = new ArrayList<>();
                        List<String> safetyWarnings = new ArrayList<>();
                        PageFlowUtil.validateHtml(html, validateErrors, safetyWarnings);

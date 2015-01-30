@@ -33,6 +33,7 @@ import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.LogPrintWriter;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 
 import javax.script.Bindings;
@@ -280,7 +281,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 assert !tpOut.isSplitFiles() : "Invalid attempt to pipe output to split files.";
                 File fileOutput = _wd.newWorkFile(WorkDirectory.Function.output,
                         tpOut, getJobSupport().getBaseName());
-                FileUtils.write(fileOutput, String.valueOf(o), "UTF-8");
+                FileUtils.write(fileOutput, String.valueOf(o), StringUtilsLabKey.DEFAULT_CHARSET);
             }
 
             // If we got this far, we were successful in running the script.
