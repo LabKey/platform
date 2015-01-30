@@ -35,7 +35,7 @@
     OlapController.OlapForm form = (OlapController.OlapForm)HttpView.currentModel();
 %>
 <labkey:errors/>
-<labkey:form action="#">
+<labkey:form action="#" id="testJsonForm">
     <table>
         <tr>
             <td><label for="type">Type:</label></td>
@@ -52,7 +52,12 @@
                 <textarea cols="80" rows="25" id="query" name="query" style="font-size:10pt; font-family: Andale Monaco, monospace;"><%=h(request.getParameter("query"))%></textarea>
             </td>
         </tr>
-        <tr><td><input type="button" id="submitbtn" onclick="executeQuery()" value="submit"></td></tr>
+        <tr>
+            <td colspan="2">
+                <input type="button" id="submitbtn" onclick="executeQuery()" value="submit">
+                <input type="button" id="clearbtn" onclick="resetForm()" value="clear">
+            </td>
+        </tr>
     </table>
 </labkey:form>
 <p>&nbsp;</p>
@@ -86,6 +91,12 @@
     });
 
     var startTime;
+
+    function resetForm()
+    {
+        document.getElementById('testJsonForm').reset();
+        Ext4.get('cellset').update();
+    }
 
     function executeQuery()
     {
