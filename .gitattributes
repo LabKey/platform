@@ -159,6 +159,7 @@ announcements/src/org/labkey/announcements/model/Permissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardPermissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardReadPermission.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardRespondPermission.java -text
+announcements/src/org/labkey/announcements/model/TourAdministratorPermissions.java -text
 announcements/src/org/labkey/announcements/model/TourManager.java -text
 announcements/src/org/labkey/announcements/model/TourModel.java -text
 announcements/src/org/labkey/announcements/query/AbstractSubscriptionTable.java -text

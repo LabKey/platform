@@ -1,5 +1,6 @@
 package org.labkey.announcements;
 
+import org.labkey.announcements.model.TourAdministratorPermissions;
 import org.labkey.announcements.query.AnnouncementSchema;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -8,7 +9,6 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
@@ -29,7 +29,7 @@ public class ToursController extends SpringActionController
 
     // Anyone with read permission can attempt to view the list.  AnnouncementWebPart will do further permission checking.  For example,
     //   in a secure message board, those without Editor permissions will only see messages when they are on the member list
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(TourAdministratorPermissions.class)
     public class BeginAction extends SimpleViewAction<QueryForm>
     {
 
