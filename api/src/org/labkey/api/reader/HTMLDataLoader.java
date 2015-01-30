@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TidyUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -30,7 +31,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -78,15 +78,7 @@ public class HTMLDataLoader extends DataLoader
         @Override
         public boolean isHeaderMatch(@NotNull byte[] header)
         {
-            String s;
-            try
-            {
-                s = new String(header, "UTF-8");
-            }
-            catch (UnsupportedEncodingException e)
-            {
-                throw new RuntimeException(e);
-            }
+            String s = new String(header, StringUtilsLabKey.DEFAULT_CHARSET);
 
             List<String> errors = new ArrayList<>();
             Document doc = TidyUtil.convertHtmlToDocument(s, true, errors);
@@ -145,7 +137,7 @@ public class HTMLDataLoader extends DataLoader
 
     protected void init(InputStream is) throws IOException
     {
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(is)))
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET)))
         {
             StringBuilder sb = new StringBuilder();
             String line;

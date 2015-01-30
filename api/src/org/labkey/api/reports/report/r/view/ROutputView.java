@@ -126,7 +126,7 @@ public class ROutputView extends HttpView
 
     protected void renderTitle(Object model, PrintWriter out) throws Exception
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         if (_showHeader)
         {
