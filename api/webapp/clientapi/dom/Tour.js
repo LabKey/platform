@@ -101,11 +101,14 @@
         {
             var config = config || {};
 
-            $.each(LABKEY.tours, function(tourId, tour)
+            if (LABKEY.tours)
             {
-                registerTour(tourId, config);
-                tours++;
-            });
+                $.each(LABKEY.tours, function (tourId, tour)
+                {
+                    registerTour(tourId, config);
+                    tours++;
+                });
+            }
         };
 
         var _initHopscotch = function(fn, scope)
