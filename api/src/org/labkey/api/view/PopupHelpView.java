@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.labkey.api.announcements.api.Tour;
 import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -26,7 +27,6 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
-import java.util.Map;
 
 /*
 * User: adam
@@ -54,15 +54,15 @@ public class PopupHelpView extends PopupMenuView
 
             if (null != service)
             {
-                List<Map<String, String>> tours = service.getApplicableTours(c);
+                List<Tour> tours = service.getApplicableTours(c);
 
                 if (tours.size() > 0)
                 {
                     NavTree toursMenu = new NavTree("Tours");
-                    for (Map<String, String> t : tours)
+                    for (Tour t : tours)
                     {
-                        NavTree tourLink = new NavTree(t.get("Title"));
-                        tourLink.setScript("LABKEY.help.Tour.show(" + PageFlowUtil.jsString(t.get("RowId")) + ")");
+                        NavTree tourLink = new NavTree(t.getTitle());
+                        tourLink.setScript("LABKEY.help.Tour.show(" + PageFlowUtil.jsString(t.getRowId().toString()) + ")");
                         toursMenu.addChild(tourLink);
                     }
                     menu.addChild(toursMenu);

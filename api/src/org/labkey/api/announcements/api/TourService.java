@@ -5,7 +5,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Marty on 1/19/2015.
@@ -30,6 +29,6 @@ public class TourService
     public interface Interface
     {
         public ActionURL getManageListsURL(Container container);
-        public List<Map<String,String>> getApplicableTours(@Nullable Container container);
+        public List<Tour> getApplicableTours(@Nullable Container container);
     }
 }

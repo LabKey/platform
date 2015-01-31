@@ -36,6 +36,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.announcements.api.Tour;
 import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -2050,13 +2051,9 @@ public class PageFlowUtil
 
         if (null != service)
         {
-            for (Map<String, String> tour : service.getApplicableTours(container))
+            for (Tour tour : service.getApplicableTours(container))
             {
-                JSONObject tourJson = new JSONObject();
-                tourJson.put("Title", tour.get("Title"));
-                //tourJson.put("Description", tour.get("Description"));
-                //tourJson.put("Mode", tour.get("Mode"));
-                tourProps.put(tour.get("RowId"), tourJson);
+                tourProps.put(tour.getRowId().toString(), tour.toJSON());
             }
         }
         return tourProps;
