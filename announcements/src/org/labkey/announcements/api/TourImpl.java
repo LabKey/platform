@@ -1,5 +1,6 @@
 package org.labkey.announcements.api;
 
+import org.json.JSONObject;
 import org.labkey.announcements.model.TourModel;
 import org.labkey.api.announcements.api.Tour;
 
@@ -9,6 +10,11 @@ import org.labkey.api.announcements.api.Tour;
 public class TourImpl implements Tour
 {
     TourModel _model;
+
+    public TourImpl(TourModel model)
+    {
+        _model = model;
+    }
 
     public Integer getRowId()
     {
@@ -48,5 +54,20 @@ public class TourImpl implements Tour
     public void setJson(String json)
     {
         _model.setJson(json);
+    }
+
+    public Integer getMode()
+    {
+        return _model.getMode();
+    }
+
+    public void setMode(Integer mode)
+    {
+        _model.setMode(mode);
+    }
+
+    public JSONObject toJSON()
+    {
+        return _model.toJSON();
     }
 }

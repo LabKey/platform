@@ -60,10 +60,9 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         getColumn("RowId").setHidden(true);
         getColumn("Json").setHidden(true);
 
-        ColumnInfo containerColumn = getColumn("Container");
-        containerColumn.setFk(new ContainerForeignKey(schema));
-        containerColumn.setUserEditable(false);
-        containerColumn.setLabel("Folder");
+        ColumnInfo containerCol = getColumn("Container");
+        containerCol.setLabel("Folder");
+        ContainerForeignKey.initColumn(containerCol, schema);
 
         setDescription("Contains one row per tour.");
         setName(AnnouncementSchema.TOURS_TABLE_NAME);

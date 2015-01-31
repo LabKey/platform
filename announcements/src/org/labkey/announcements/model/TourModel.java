@@ -1,5 +1,6 @@
 package org.labkey.announcements.model;
 
+import org.json.JSONObject;
 import org.labkey.api.data.Entity;
 
 import java.io.Serializable;
@@ -69,5 +70,22 @@ public class TourModel extends Entity implements Serializable
     public void setMode(Integer mode)
     {
         _Mode = mode;
+    }
+
+    public JSONObject toJSON()
+    {
+        JSONObject tour = new JSONObject(this);
+        tour.remove("json");
+        tour.remove("title");
+        tour.remove("description");
+        tour.remove("createdBy");
+        tour.remove("created");
+        tour.remove("modifiedBy");
+        tour.remove("modified");
+        tour.remove("containerId");
+        tour.remove("containerPath");
+        tour.remove("entityId");
+
+        return tour;
     }
 }
