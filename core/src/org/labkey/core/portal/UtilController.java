@@ -25,7 +25,6 @@ import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
@@ -99,23 +98,6 @@ public class UtilController extends SpringActionController
                 if (null != svgFile)
                     svgFile.delete();
             }
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public static class TestDotSvgAction extends SimpleViewAction<DotForm>
-    {
-        @Override
-        public ModelAndView getView(DotForm form, BindException errors) throws Exception
-        {
-            return new JspView(ProjectController.class, "testsvg.jsp", form);
         }
 
         @Override

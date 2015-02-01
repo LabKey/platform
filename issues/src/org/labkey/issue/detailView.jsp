@@ -110,7 +110,6 @@
     }
 </script>
 
-<%--<script src="<%=contextPath%>/issues/hashbang.js" type="text/javascript"></script>--%>
 <labkey:form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
     <table><tr><%
 

@@ -119,7 +119,6 @@
                     header:'Project',
                     width:330,
                     dataIndex:'name',
-                    //NOTE: treecolumns do not seem to automatically resolve string->Ext.util.Format methods?
                     renderer: function(val){
                         return Ext4.util.Format.htmlEncode(val);
                     }

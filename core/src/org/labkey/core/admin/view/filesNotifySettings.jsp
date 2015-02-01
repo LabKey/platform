@@ -16,16 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.query.QueryView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.GUID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%
-    String guid = GUID.makeGUID();
-    String onClickScript = null;
-%>
-
 <table class="labkey-export-tab-contents">
     <tr>
         <td class="labkey-export-tab-options">
@@ -37,7 +28,7 @@
                         <option value="individual">Individual</option>
                         <option value="none">None</option>
                     </select></td>
-                    <td><%= PageFlowUtil.button("Set folder default").href("javascript:void(0)").onClick("onSetFolderDefault();") %></td>
+                    <td><%= PageFlowUtil.button("Set folder default").href("javascript:void(0)").onClick("alert('on set folder default');") %></td>
                 </tr>
                 <tr>
                     <td><span class="labkey-strong">Configure Selected Users</span></td>
@@ -53,13 +44,4 @@
         </td>
     </tr>
 </table>
-
-
-<script type="text/javascript">
-
-    function onSetFolderDefault()
-    {
-        alert("on set folder default");    
-    }
-</script>
 

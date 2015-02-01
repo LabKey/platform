@@ -777,7 +777,6 @@ core/src/org/labkey/core/admin/testNetworkDrive.jsp -text
 core/src/org/labkey/core/admin/threads.jsp -text
 core/src/org/labkey/core/admin/view/filesNotifySettings.jsp -text
 core/src/org/labkey/core/admin/view/filesProjectSettings.jsp -text
-core/src/org/labkey/core/admin/view/filesProjectSettingsSummary.jsp -text
 core/src/org/labkey/core/admin/view/filesSiteSettings.jsp -text
 core/src/org/labkey/core/admin/view/folderSettingsHeader.jsp -text
 core/src/org/labkey/core/admin/view/notifySettings.jsp -text
@@ -819,7 +818,6 @@ core/src/org/labkey/core/login/setPassword.jsp -text
 core/src/org/labkey/core/portal/PortalJUnitTest.java -text
 core/src/org/labkey/core/portal/UtilController.java -text
 core/src/org/labkey/core/portal/customizeErrors.jsp -text
-core/src/org/labkey/core/portal/testsvg.jsp -text
 core/src/org/labkey/core/project/FolderNavigationForm.java -text
 core/src/org/labkey/core/project/betaNav.jsp -text
 core/src/org/labkey/core/project/folderNav.jsp -text
@@ -856,7 +854,6 @@ core/src/org/labkey/core/statistics/NoCurveFit.java -text
 core/src/org/labkey/core/statistics/ParameterCurveFit.java -text
 core/src/org/labkey/core/statistics/PolynomialCurveFit.java -text
 core/src/org/labkey/core/statistics/StatsServiceImpl.java -text
-core/src/org/labkey/core/styling.jsp -text
 core/src/org/labkey/core/test/CoreClientApiTemplate.java -text
 core/src/org/labkey/core/test/TestController.java -text
 core/src/org/labkey/core/test/buttons.jsp -text
@@ -1702,7 +1699,6 @@ issues/src/org/labkey/issue/summaryWebpart.jsp -text
 issues/src/org/labkey/issue/updateView.jsp -text
 issues/webapp/issues/admin.js -text
 issues/webapp/issues/detail.js -text
-issues/webapp/issues/hashbang.js -text
 list/List.iml -text
 list/ListGWT.iml -text
 list/gwtsrc/org/labkey/list/Designer.gwt.xml -text
@@ -1762,7 +1758,6 @@ list/src/org/labkey/list/view/customizeSingleListWebPart.jsp -text
 list/src/org/labkey/list/view/deleteListDefinition.jsp -text
 list/src/org/labkey/list/view/importLists.jsp -text
 list/src/org/labkey/list/view/listsWebPart.jsp -text
-list/src/org/labkey/list/view/uploadListItems.jsp -text
 mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-12.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-13.10-13.20.sql -text
@@ -3927,7 +3922,6 @@ study/src/org/labkey/study/view/DatasetsWebPartView.java -text
 study/src/org/labkey/study/view/StudyGWTView.java -text
 study/src/org/labkey/study/view/StudyListQueryView.java -text
 study/src/org/labkey/study/view/StudyListWebPartFactory.java -text
-study/src/org/labkey/study/view/StudyNavigationView.java -text
 study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyToolsWebPart.java -text
 study/src/org/labkey/study/view/StudyToolsWebPartFactory.java -text
@@ -3984,7 +3978,6 @@ study/src/org/labkey/study/view/manageTypes.jsp -text
 study/src/org/labkey/study/view/manageUndefinedTypes.jsp -text
 study/src/org/labkey/study/view/manageVisits.jsp -text
 study/src/org/labkey/study/view/mergeParticipants.jsp -text
-study/src/org/labkey/study/view/moduleNav.jsp -text
 study/src/org/labkey/study/view/overview.jsp -text
 study/src/org/labkey/study/view/participantAll.jsp -text
 study/src/org/labkey/study/view/participantCharacteristics.jsp -text

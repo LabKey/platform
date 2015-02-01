@@ -1,5 +1,3 @@
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%
 /*
  * Copyright (c) 2011-2014 LabKey Corporation

@@ -20,63 +20,55 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromPath("Ext4"));
+        return resources;
+    }
+%>
 <%
     Group group = (Group)HttpView.currentModel();
     ActionURL manageURL = new ActionURL(SecurityController.GroupAction.class, getContainer());
     manageURL.addParameter("id", group.getUserId());
 %>
-
-<script type="text/javascript">
-
-Ext.QuickTips.init();    
-
-var renameForm;
-
-function SubmitButton_onClick()
-{
-    renameForm.getForm().submit({
-        success:function(form,action)
-        {
-            window.location = <%=PageFlowUtil.jsString(manageURL.getLocalURIString())%>;
-        }
-    });
-}
-
-
-function validGroupName(s)
-{
-    if (!s)
-        return "Required";
-    if (!s.match(/^[^@\.\/\\\-&~_]+$/))      // disallow @./\-&~_ see UserManager.validGroupName()
-        return "Group name should not contain punctuation.";
-    return true;
-}
-
-
-Ext.onReady(function(){
-    renameForm = new LABKEY.ext.FormPanel({
-        border:false,
-        errorEl:'errorDiv',
-        url: LABKEY.ActionURL.buildURL('security','renameGroup.post'),
-        items:[
-            {name:'newName', xtype:'textfield', fieldLabel:"New Name", allowBlank:false, validator:validGroupName, width:300},
-            {name:'id', xtype:'hidden', value:<%=group.getUserId()%>}],
-        buttons:[{text:'Submit', handler:SubmitButton_onClick}],
-        buttonAlign:'left'
-    });
-    renameForm.render('renameDiv');
-    renameForm.items.itemAt(0).focus();
-});
-</script>
-
-<div id="errorDiv" class="labkey-error">&nbsp;</div>
 <div id="renameDiv"></div>
+<script type="text/javascript">
+    Ext4.onReady(function() {
 
-<%--<labkey:form action="renameGroup.post" method="POST">
-Rename group:
-    <input type=hidden name=id value="<%=group.getUserId()%>">
-    <input name="newName">
-    <input type="submit">
-</labkey:form>--%>
+        var validGroupName = function(s) {
+            if (!s)
+                return "Required";
+            if (!s.match(/^[^@\.\/\\\-&~_]+$/))
+                return "Group name should not contain punctuation.";
+            return true;
+        };
+
+        var renameForm = Ext4.create('Ext.form.Panel', {
+            renderTo: 'renameDiv',
+            border: false,
+            url: LABKEY.ActionURL.buildURL('security', 'renameGroup.post'),
+            items: [
+                { xtype: 'textfield', name:'newName', fieldLabel: "New Name", allowBlank: false, validator: validGroupName, width: 300 },
+                { xtype: 'hidden', name: 'id', value: <%=group.getUserId()%> }
+            ],
+            bodyStyle: 'background-color: transparent;',
+            buttonAlign: 'left',
+            buttons:[{
+                text:'Submit',
+                handler: function() {
+                    renameForm.getForm().submit({
+                        success: function() {
+                            window.location = <%=PageFlowUtil.jsString(manageURL.getLocalURIString())%>;
+                        }
+                    });
+                }
+            }]
+        });
+    });
+</script>

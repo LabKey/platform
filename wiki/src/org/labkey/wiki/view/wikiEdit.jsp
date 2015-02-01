@@ -33,7 +33,6 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("clientapi/ext3"));
         resources.add(ClientDependency.fromPath("tiny_mce/tiny_mce.js"));
         resources.add(ClientDependency.fromPath("wiki/internal/wikiEdit.js"));
         return resources;
@@ -44,13 +43,10 @@
     WikiEditModel model = me.getModelBean();
     final String ID_PREFIX = "wiki-input-";
     String sep;
-    String saveButtonCaption = "Save";
 %>
 <labkey:scriptDependency/>
 <script type="text/javascript">
-    //page-level variables defined by the server
-    var _idPrefix = <%=PageFlowUtil.jsString(ID_PREFIX)%>;
-    var _wikiProps = {
+    LABKEY._wiki.setProps({
         entityId: <%=model.getEntityId()%>,
         rowId: <%=model.getRowId()%>,
         name: <%=model.getName()%>,
@@ -62,10 +58,10 @@
         webPartId: <%=model.getWebPartId()%>,
         showAttachments: <%=model.isShowAttachments()%>,
         shouldIndex: <%=model.isShouldIndex()%>,
-        isDirty: false
-    };
-    var _editableProps = ['name', 'title', 'body', 'parent', 'showAttachments', 'shouldIndex'];
-    var _attachments = [
+        isDirty: false,
+        useVisualEditor: <%=model.useVisualEditor()%>
+    });
+    LABKEY._wiki.setAttachments([
         <%
         if (model.hasAttachments())
         {
@@ -82,8 +78,8 @@
             }
         }
         %>
-    ];
-    var _formats = {
+    ]);
+    LABKEY._wiki.setFormats({
         <%
             sep = "";
             for (WikiRendererType format : WikiRendererType.values())
@@ -95,27 +91,25 @@
                 sep = ",";
             }
         %>
-    };
-    var _useVisualEditor = <%=model.useVisualEditor()%>;
-    var _redirUrl = <%=model.getRedir()%>;
-    var _cancelUrl = <%=model.getCancelRedir()%>;
+    });
+    LABKEY._wiki.setURLs(<%= model.getRedir() %>, <%= model.getCancelRedir() %>);
 </script>
 
-<div id="status" class="labkey-status-info" style="display:none;" width="99%">(status)</div>
+<div id="status" class="labkey-status-info" style="display: none; width: 99%;">(status)</div>
 
 <table width=99%;>
     <tr>
-        <td width="50%" align="left"  nowrap="true">
-            <%= button("Save & Close").submit(true).onClick("onFinish();").attributes("id='wiki-button-finish'") %>
-            <%= button(saveButtonCaption).submit(true).onClick("onSave();").attributes("id='wiki-button-save'") %>
-            <%= button("Cancel").submit(true).onClick("onCancel();") %>
+        <td width="50%" align="left" style="white-space: nowrap;">
+            <%= button("Save & Close").submit(true).onClick("LABKEY._wiki.onFinish();").attributes("id='wiki-button-finish'") %>
+            <%= button("Save").submit(true).onClick("LABKEY._wiki.onSave();").attributes("id='wiki-button-save'") %>
+            <%= button("Cancel").submit(true).onClick("LABKEY._wiki.onCancel();") %>
         </td>
-        <td width="50%" align="right" nowrap="true">
+        <td width="50%" align="right" style="white-space: nowrap;">
             <% if (model.canUserDelete()) { %>
                 <%= button("Delete Page").submit(true).onClick("return false;").attributes("id=\"" + ID_PREFIX + "button-delete\"").enabled(false) %>
             <% } %>
-            <%= button("Convert To...").submit(true).onClick("showConvertWindow()").attributes("id=\"" + ID_PREFIX + "button-change-format\"") %>
-            <%= button("Show Page Tree").submit(true).onClick("showHideToc()").attributes("id=\"" + ID_PREFIX + "button-toc\"") %>
+            <%= button("Convert To...").submit(true).onClick("LABKEY._wiki.showConvertWindow()").attributes("id=\"" + ID_PREFIX + "button-change-format\"") %>
+            <%= button("Show Page Tree").submit(true).onClick("LABKEY._wiki.showHideToc()").attributes("id=\"" + ID_PREFIX + "button-toc\"") %>
         </td>
     </tr>
 </table>
@@ -124,27 +118,27 @@
         <td width="99%" style="vertical-align:top;">
             <table width="99%">
                 <tr>
-                    <td class="labkey-form-label" nowrap="true">Name * <%= PageFlowUtil.helpPopup("Name", "This field is required") %></td>
+                    <td class="labkey-form-label" style="white-space: nowrap;">Name * <%= PageFlowUtil.helpPopup("Name", "This field is required") %></td>
                     <td width="99%">
-                        <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onkeypress="setWikiDirty()" onchange="onChangeName()" maxlength="255"/>
+                        <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" maxlength="255"/>
                     </td>
                 </tr>
                 <tr>
                     <td class="labkey-form-label">Title</td>
                     <td width="99%">
-                        <input type="text" name="title" id="<%=ID_PREFIX%>title" size="80" onkeypress="setWikiDirty()" onchange="setWikiDirty()" maxlength="255"/>
+                        <input type="text" name="title" id="<%=ID_PREFIX%>title" size="80" maxlength="255"/>
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label" nowrap="true">Index <%= PageFlowUtil.helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></td>
+                    <td class="labkey-form-label" style="white-space: nowrap;">Index <%= PageFlowUtil.helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></td>
                     <td width="99%">
-                        <input type="checkbox" name="shouldIndex" id="<%=ID_PREFIX%>shouldIndex" onkeypress="setWikiDirty()" onchange="setWikiDirty()"/>
+                        <input type="checkbox" name="shouldIndex" id="<%=ID_PREFIX%>shouldIndex"/>
                     </td>
                 </tr>
                 <tr>
                     <td class="labkey-form-label">Parent</td>
                     <td width="99%">
-                        <select name="parent" id="<%=text(ID_PREFIX)%>parent" onkeypress="setWikiDirty()" onchange="setWikiDirty()">
+                        <select name="parent" id="<%=text(ID_PREFIX)%>parent">
                             <option<%=selected(model.getParent() == -1)%> value="-1">[none]</option>
                             <%
                                 for (WikiTree possibleParent : model.getPossibleParents())
@@ -171,18 +165,15 @@
                              when wiki editor loads and hides it with javascript.
                           -->
                             <ul id="wiki-tab-strip" class="labkey-tab-strip">
-                                <li id="wiki-tab-visual" class="labkey-tab-active" style="display: none;"><a href="#" onclick="userSwitchToVisual()">Visual</a></li>
-                                <li id="wiki-tab-source" class="labkey-tab-inactive" style="display: none;"><a href="#" onclick="userSwitchToSource()">Source</a></li>
-                                <div class="x-clear"></div>
+                                <li id="wiki-tab-visual" class="labkey-tab-active" style="display: none;"><a href="#">Visual</a></li>
+                                <li id="wiki-tab-source" class="labkey-tab-inactive" style="display: none;"><a href="#">Source</a></li>
+                                <div class="x4-clear"></div>
                             </ul>
                             <div id="wiki-tab-strip-spacer" class="labkey-tab-strip-spacer" style="display: none;"></div>
                             <div id="wiki-tab-content" class="labkey-tab-strip-content" style="padding: 0;">
                                 <labkey:form action="">
-                                <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=ID_PREFIX%>body"
-                                          name="body" onkeypress="setWikiDirty()" onchange="setWikiDirty()"></textarea>
-                                    <script type="text/javascript">
-                                        Ext.EventManager.on('<%=ID_PREFIX%>body', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
-                                    </script>
+                                    <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=ID_PREFIX%>body" name="body"></textarea>
+                                    <script type="text/javascript">LABKEY.Utils.tabInputHandler('#<%=ID_PREFIX%>body');</script>
                                 </labkey:form>
                             </div>
                         </div>
@@ -193,16 +184,16 @@
                     <td width="99%">
                         <table>
                             <tr>
-                                <td><input type="checkbox" id="<%=ID_PREFIX%>showAttachments" onchange="setWikiDirty();" onclick="setWikiDirty();"/>
-                                    Show Attached Files</td>
+                                <td>
+                                    <input type="checkbox" id="<%=ID_PREFIX%>showAttachments"/>
+                                    Show Attached Files
+                                </td>
                             </tr>
                         </table>
                         <labkey:form action="<%=h(buildURL(WikiController.AttachFilesAction.class))%>" method="POST" enctype="multipart/form-data" id="form-files">
-                            <table id="wiki-existing-attachments">
-                            </table>
-                            <table id="wiki-new-attachments">
-                            </table>
-                            <a onclick="addNewAttachmentInput('wiki-file-link');" id="wiki-file-link"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a>
+                            <table id="wiki-existing-attachments"></table>
+                            <table id="wiki-new-attachments"></table>
+                            <a id="wiki-file-link"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a>
                         </labkey:form>
                     </td>
                 </tr>
@@ -296,11 +287,11 @@
             </div>
         </td>
         <td width="1%" style="vertical-align:top;">
-            <div id="wiki-toc-tree" class="extContainer" style="display:none"/>
+            <div id="wiki-toc-tree" style="display: none;"></div>
         </td>
     </tr>
 </table>
-<div id="<%=ID_PREFIX%>window-change-format" class="x-hidden">
+<div id="<%=ID_PREFIX%>window-change-format" class="x4-hidden">
     <table>
         <tr>
             <td>
@@ -314,17 +305,8 @@
         </tr>
         <tr>
             <td>
-                Convert page format from
-                <b id="<%=ID_PREFIX%>window-change-format-from">(from)</b>
-                to
-                <select id="<%=ID_PREFIX%>window-change-format-to">
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td style="text-align: right">
-                <%= button("Convert").submit(true).onClick("convertFormat()") %>
-                <%= button("Cancel").submit(true).onClick("cancelConvertFormat()") %>
+                <label for="<%=ID_PREFIX%>window-change-format-to">Convert page format from <span id="<%=ID_PREFIX%>window-change-format-from" style="font-weight: bold;">(from)</span> to</label>
+                <select id="<%=ID_PREFIX%>window-change-format-to"></select>
             </td>
         </tr>
     </table>

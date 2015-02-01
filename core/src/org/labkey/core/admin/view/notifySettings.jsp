@@ -132,7 +132,7 @@
                 extraParams: {type: '<%=h(bean.getType())%>'}})
         });
 
-        var idBulkEditBtn = Ext.id();
+        var idBulkEditBtn = Ext4.id();
 
         var emailCombo = Ext4.create('Ext.form.field.ComboBox',{
             hiddenName: '<%=h(bean.getType())%>EmailOption',
@@ -192,7 +192,7 @@
                                     if (o && o.success)
                                         window.location = '<%=bean.getReturnUrl()%>';
                                     else
-                                        Ext.MessageBox.alert('Error', o.message);
+                                        Ext4.MessageBox.alert('Error', o.message);
                                 },
                                 failure: function (response, opts)
                                 {

@@ -63,6 +63,7 @@ import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerTreeSelected;
 import org.labkey.api.util.DiffMatchPatch;
 import org.labkey.api.util.GUID;
@@ -2698,7 +2699,7 @@ public class WikiController extends SpringActionController
 
             for (Map<String, Object> pageProps : pages)
             {
-                if (path[idx].equals(pageProps.get("title").toString()))
+                if (path[idx].equals(pageProps.get("text").toString()))
                 {
                     //add the expanded property
                     if (expandAncestors || idx == (path.length - 1))
@@ -2713,17 +2714,21 @@ public class WikiController extends SpringActionController
         public List<Map<String, Object>> getChildrenProps(List<NavTree> pages)
         {
             List<Map<String, Object>> ret = new ArrayList<>();
+            String contextPath = AppProps.getInstance().getContextPath();
 
             for (NavTree page : pages)
             {
                 Map<String, Object> props = new HashMap<>();
                 ActionURL pageLink = new ActionURL(page.getHref());
                 props.put("name", pageLink.getParameter("name"));
-                props.put("title", page.getText());
-                props.put("pageLink", page.getHref());
+                props.put("text", page.getText() + " (" + pageLink.getParameter("name") + ")");
+                props.put("href", page.getHref());
+                props.put("leaf", !page.hasChildren());
 
                 if (page.hasChildren())
                     props.put("children", getChildrenProps(page.getChildList()));
+                else
+                    props.put("icon", contextPath + "/_images/page.png");
 
                 ret.add(props);
             }

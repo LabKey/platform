@@ -491,9 +491,6 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                         });
                     }
 
-                    // add the folder tree view to show all folders and file content settings for this project
-                    box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettingsSummary.jsp", _form, _errors));
-
                     return box;
                 default:
                     throw new NotFoundException("Unknown tab id");

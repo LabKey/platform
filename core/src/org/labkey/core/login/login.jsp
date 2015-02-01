@@ -112,6 +112,7 @@
     <% // Provide support for persisting the url hash through a login redirect %>
     (function() { if (window && window.location && window.location.hash) { var h = document.getElementById('urlhash'); if (h) { h.value = window.location.hash; } } })();
 
+    <% if (!agreeOnly) { %>
     <%-- Issue 22094: Clear password on login page after session timeout has been exceeded --%>
     (function() {
         var timeout = <%= request.getSession(false) == null ? 30 * 60 * 1000 : request.getSession(false).getMaxInactiveInterval() * 1000 %>;
@@ -138,4 +139,5 @@
             passwordField.onkeypress = changeListener;
         }
     })();
+    <% } %>
 </script>

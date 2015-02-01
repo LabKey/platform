@@ -21,12 +21,11 @@
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -41,7 +40,6 @@
 <%
     AnnouncementUpdateView me = (AnnouncementUpdateView) HttpView.currentView();
     UpdateBean bean = me.getModelBean();
-    Container c = getContainer();
 
     AnnouncementModel ann = bean.annModel;
     DiscussionService.Settings settings = bean.settings;

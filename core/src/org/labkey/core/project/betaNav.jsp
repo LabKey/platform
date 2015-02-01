@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.project.FolderNavigationForm" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -31,6 +30,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromPath("Ext4"));
         resources.add(ClientDependency.fromPath("nav/betanav.css"));
         return resources;
     }
@@ -115,13 +115,13 @@
 
         // scrollIntoView
         var siv = function(t, ct) {
-            ct = Ext.getDom(ct) || Ext.getBody().dom;
+            ct = Ext4.getDom(ct) || Ext4.getBody().dom;
             var el = t.dom,
                     offsets = t.getOffsetsTo(ct),
-            // el's box
+                    // el's box
                     top = offsets[1] + ct.scrollTop,
                     bottom = top + el.offsetHeight,
-            // ct's box
+                    // ct's box
                     ctClientHeight = ct.clientHeight,
                     ctScrollTop = parseInt(ct.scrollTop, 10),
                     ctBottom = ctScrollTop + ctClientHeight,

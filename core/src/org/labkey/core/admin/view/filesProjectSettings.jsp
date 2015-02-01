@@ -16,11 +16,14 @@
  */
 %>
 <%@ page import="org.labkey.api.cloud.CloudStoreService"%>
+<%@ page import="org.labkey.api.cloud.CloudUrls" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
@@ -28,9 +31,6 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.cloud.CloudUrls" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -88,10 +88,6 @@
         </td></tr>
         <tr><td></td></tr>
         <tr>
-<%--
-            <td class="labkey-form-label">File&nbsp;root&nbsp;<%=helpPopup("File root", "Set a project-level file root. " +
-                "When a project-level file root is set, each folder for that project has a corresponding subdirectory in the file system.")%></td>
---%>
             <td>
                 <table>
                     <tr><td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionDisable" value="<%=AdminController.ProjectSettingsForm.FileRootProp.disable%>"
@@ -173,12 +169,6 @@
 </labkey:form>
 
 <script type="text/javascript">
-
-    Ext4.onReady(function()
-    {
-        updateSelection();
-    });
-
     function updateSelection()
     {
         if (document.getElementById('optionDisable').checked)
@@ -197,5 +187,6 @@
             document.getElementById('rootPath').style.display = 'none';
         }
     }
+    updateSelection();
 </script>
 

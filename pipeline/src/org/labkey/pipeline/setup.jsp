@@ -56,48 +56,6 @@
 %>
 
 <labkey:errors />
-
-<script type="text/javascript">
-    Ext.onReady(function()
-    {
-        updatePipelineSelection();
-    });
-
-    function updatePipelineSelection()
-    {
-        if (document.getElementById('pipeOptionSiteDefault').checked)
-        {
-            var permDiv = document.getElementById('pipelineFilesPermissions');
-            if (permDiv) permDiv.style.display = 'none';
-
-            document.getElementById('pipelineRootSettings').style.display = 'none';
-        }
-        if (document.getElementById('pipeOptionProjectSpecified').checked)
-        {
-            var permDiv = document.getElementById('pipelineFilesPermissions');
-            if (permDiv) permDiv.style.display = '';
-
-            document.getElementById('pipelineRootSettings').style.display = '';
-        }
-    }
-
-    function toggleGlobusVisible()
-    {
-        var newDisplay;
-        if (document.getElementById('keyFileRow').style.display == 'none')
-        {
-            newDisplay = '';
-        }
-        else
-        {
-            newDisplay = 'none';
-        }
-        document.getElementById('keyPasswordRow').style.display = newDisplay;
-        document.getElementById('keyFileRow').style.display = newDisplay;
-        document.getElementById('certFileRow').style.display = newDisplay;
-    }
-</script>
-
 <labkey:form enctype="multipart/form-data" method="POST" action="">
     <table>
         <tr><td></td></tr>
@@ -233,3 +191,41 @@
     </table>
     <input type="hidden" name="pipelineRootForm" value="true">
 </labkey:form>
+<script type="text/javascript">
+
+    function updatePipelineSelection()
+    {
+        if (document.getElementById('pipeOptionSiteDefault').checked)
+        {
+            var permDiv = document.getElementById('pipelineFilesPermissions');
+            if (permDiv) permDiv.style.display = 'none';
+
+            document.getElementById('pipelineRootSettings').style.display = 'none';
+        }
+        if (document.getElementById('pipeOptionProjectSpecified').checked)
+        {
+            var permDiv = document.getElementById('pipelineFilesPermissions');
+            if (permDiv) permDiv.style.display = '';
+
+            document.getElementById('pipelineRootSettings').style.display = '';
+        }
+    }
+
+    function toggleGlobusVisible()
+    {
+        var newDisplay;
+        if (document.getElementById('keyFileRow').style.display == 'none')
+        {
+            newDisplay = '';
+        }
+        else
+        {
+            newDisplay = 'none';
+        }
+        document.getElementById('keyPasswordRow').style.display = newDisplay;
+        document.getElementById('keyFileRow').style.display = newDisplay;
+        document.getElementById('certFileRow').style.display = newDisplay;
+    }
+
+    updatePipelineSelection();
+</script>
