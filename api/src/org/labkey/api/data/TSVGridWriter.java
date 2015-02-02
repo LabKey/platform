@@ -25,17 +25,16 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 {
-    protected int _dataRowCount;
+    private final Results _rs;
+    protected final List<DisplayColumn> _displayColumns;
 
-    private Results _rs;
-    protected List<DisplayColumn> _displayColumns;
+    private int _dataRowCount;
 
     public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns) throws SQLException, IOException
     {
@@ -44,12 +43,10 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 
     public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns, String name) throws IOException
     {
-        List<ColumnInfo> selectCols = RenderContext.getSelectColumns(displayColumns, tinfo);
-        LinkedHashMap<FieldKey, ColumnInfo> fieldMap = QueryService.get().getColumns(tinfo, Collections.<FieldKey>emptySet(), selectCols);
         try
         {
-            Results rs = ctx.getResultSet(fieldMap, tinfo, null, null, Table.ALL_ROWS, Table.NO_OFFSET, name, false);
-            init(rs, displayColumns);
+            _rs = ctx.getResultSet(QueryService.get().getColumns(tinfo, Collections.<FieldKey>emptySet(), RenderContext.getSelectColumns(displayColumns, tinfo)), tinfo, null, null, Table.ALL_ROWS, Table.NO_OFFSET, name, false);
+            _displayColumns = init(displayColumns);
         }
         catch (SQLException e)
         {
@@ -60,7 +57,8 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 
     public TSVGridWriter(Results results) throws SQLException
     {
-        init(results, results.getFieldMap().values());
+        _rs = results;
+        _displayColumns = init(results.getFieldMap().values());
     }
 
     /**
@@ -74,34 +72,29 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 
     public TSVGridWriter(Results rs, List<DisplayColumn> displayColumns)
     {
-        init(rs, displayColumns);
+        _rs = rs;
+        _displayColumns = init(displayColumns);
     }
 
-    protected TSVGridWriter(List<DisplayColumn> displayColumns)
-    {
-        init(null, displayColumns);
-    }
-
-
-    private void init(Results rs, Collection<ColumnInfo> cols)
+    private static List<DisplayColumn> init(Collection<ColumnInfo> cols)
     {
         List<DisplayColumn> dataColumns = new LinkedList<>();
 
         for (ColumnInfo col : cols)
             dataColumns.add(col.getDisplayColumnFactory().createRenderer(col));
 
-        init(rs, dataColumns);
+        return init(dataColumns);
     }
 
 
-    private void init(Results rs, List<DisplayColumn> displayColumns)
+    private static List<DisplayColumn> init(List<DisplayColumn> displayColumns)
     {
-        _rs = rs;
-        _displayColumns = displayColumns;
-        for (DisplayColumn displayColumn : _displayColumns)
+        for (DisplayColumn displayColumn : displayColumns)
         {
             displayColumn.setHtmlFiltered(false);
         }
+
+        return displayColumns;
     }
 
 
