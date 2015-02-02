@@ -19,7 +19,6 @@
                 <uptodate srcfile="${antlr.source}" targetfile="${antlr.output.dir}/SqlBaseParser.java" />
             </not>
             <then>
-                <mkdir dir="${antlr.gen}"/>
                 <java classname="org.antlr.Tool">
                     <classpath path="${moduleDir}/lib/antlr-3.5.2.jar" />
                     <arg value="-o" />
