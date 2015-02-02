@@ -16,17 +16,19 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.ViewContext;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.reader.UTF8Reader;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.api.ExpRunImpl;
-import org.apache.log4j.Logger;
 
-import java.io.PrintWriter;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Reader;
 
 /**
  * User: jeckels
@@ -68,28 +70,20 @@ public class ExperimentRunGraphView extends WebPartView
             if (files.getMapFile().exists())
             {
                 out.println("<map name=\"graphmap\">");
-                try
-                {
-                    FileReader reader = new FileReader(files.getMapFile());
-                    char charBuf[] = new char[4096];
-                    int count;
-                    while ((count = reader.read(charBuf)) > 0)
-                        out.write(charBuf, 0, count);
 
-                    reader.close();
-                    out.write("</map>");
+                try (Reader reader = new UTF8Reader(files.getMapFile()))
+                {
+                    IOUtils.copy(reader, out);
                 }
                 finally
                 {
                     files.release();
                 }
+
+                out.write("</map>");
             }
         }
-        catch (ExperimentException e)
-        {
-            out.println("<p>" + e.getMessage() + "</p>");
-        }
-        catch (InterruptedException e)
+        catch (ExperimentException | InterruptedException e)
         {
             out.println("<p>" + e.getMessage() + "</p>");
         }
