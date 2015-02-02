@@ -22,7 +22,7 @@ import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.study.DataSetTable;
+import org.labkey.api.study.DatasetTable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -105,7 +105,7 @@ abstract public class AbstractTableCustomizer implements TableCustomizer
 
     protected boolean matches(TableInfo ti, String schema, String query)
     {
-        if (ti instanceof DataSetTable)
+        if (ti instanceof DatasetTable)
             return ti.getSchema().getName().equalsIgnoreCase(schema) && (ti.getName().equalsIgnoreCase(query) || ti.getTitle().equalsIgnoreCase(query));
         else
             return ti.getSchema().getName().equalsIgnoreCase(schema) && ti.getName().equalsIgnoreCase(query);

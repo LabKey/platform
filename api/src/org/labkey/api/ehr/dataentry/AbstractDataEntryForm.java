@@ -27,7 +27,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -271,7 +271,7 @@ public class AbstractDataEntryForm implements DataEntryForm
     private Map<String, Map<String, Map<String, String>>> getPermissionMap()
     {
         Map<String, Map<String, Map<String, String>>> permissionMap = new HashMap<>();
-        Map<String, DataSet> datasetMap = getCtx().getDatasetMap();
+        Map<String, Dataset> datasetMap = getCtx().getDatasetMap();
 
         for (Pair<String, String> pair : getTableNames())
         {

@@ -25,7 +25,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 
 /*
@@ -49,6 +49,6 @@ public class EditorRole extends AbstractRole
     @Override
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
-        return super.isApplicable(policy,resource) || resource instanceof DataSet;
+        return super.isApplicable(policy,resource) || resource instanceof Dataset;
     }
 }

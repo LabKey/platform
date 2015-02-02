@@ -64,7 +64,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.AssayDetailRedirectAction;
 import org.labkey.api.study.actions.AssayResultDetailsAction;
@@ -614,7 +614,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         Set<String> visibleColumnNames = new HashSet<>();
         int datasetIndex = 0;
         Set<String> usedColumnNames = new HashSet<>();
-        for (final DataSet assayDataset : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
+        for (final Dataset assayDataset : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
         {
             if (!assayDataset.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataset.canRead(getUser()))
             {
@@ -622,7 +622,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             }
 
             String datasetIdColumnName = "dataset" + datasetIndex++;
-            final StudyDataSetColumn datasetColumn = new StudyDataSetColumn(table, datasetIdColumnName, getProvider(), assayDataset, getUser());
+            final StudyDatasetColumn datasetColumn = new StudyDatasetColumn(table, datasetIdColumnName, getProvider(), assayDataset, getUser());
             datasetColumn.setHidden(true);
             datasetColumn.setUserEditable(false);
             datasetColumn.setShownInInsertView(false);

@@ -718,7 +718,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
                 if (foundData || isIncludeBlankLines())
                 {
-                    // This extra copy was added to AbstractTabLoader in r12810 to let DataSetDefinition.importDatasetData()
+                    // This extra copy was added to AbstractTabLoader in r12810 to let DatasetDefinition.importDatasetData()
                     // modify the underlying maps. TODO: Refactor dataset import and return immutable maps. 
                     ArrayList<Object> list = new ArrayList<>(_activeColumns.length);
                     list.addAll(Arrays.asList(values));

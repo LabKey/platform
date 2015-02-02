@@ -1355,9 +1355,9 @@ api/src/org/labkey/api/study/AbstractPlateTypeHandler.java -text
 api/src/org/labkey/api/study/AssaySpecimenConfig.java -text
 api/src/org/labkey/api/study/AssaySpecimenVisit.java -text
 api/src/org/labkey/api/study/Cohort.java -text
-api/src/org/labkey/api/study/DataSet.java -text
-api/src/org/labkey/api/study/DataSetTable.java -text
+api/src/org/labkey/api/study/Dataset.java -text
 api/src/org/labkey/api/study/DatasetDB.java -text
+api/src/org/labkey/api/study/DatasetTable.java -text
 api/src/org/labkey/api/study/Location.java -text
 api/src/org/labkey/api/study/ParticipantCategory.java -text
 api/src/org/labkey/api/study/ParticipantVisit.java -text
@@ -1485,7 +1485,7 @@ api/src/org/labkey/api/study/assay/PlateSamplePropertyHelper.java -text
 api/src/org/labkey/api/study/assay/PlateUrls.java -text
 api/src/org/labkey/api/study/assay/PreviouslyUploadedDataCollector.java -text
 api/src/org/labkey/api/study/assay/ReplacedRunFilter.java -text
-api/src/org/labkey/api/study/assay/RunDataSetContextualRoles.java -text
+api/src/org/labkey/api/study/assay/RunDatasetContextualRoles.java -text
 api/src/org/labkey/api/study/assay/RunListDetailsQueryView.java -text
 api/src/org/labkey/api/study/assay/SampleChooserDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/SampleMetadataInputFormat.java -text
@@ -1493,7 +1493,7 @@ api/src/org/labkey/api/study/assay/SimpleAssayDataImportHelper.java -text
 api/src/org/labkey/api/study/assay/SpecimenForeignKey.java -text
 api/src/org/labkey/api/study/assay/SpecimenPropertyColumnDecorator.java -text
 api/src/org/labkey/api/study/assay/StudyContainerFilter.java -text
-api/src/org/labkey/api/study/assay/StudyDataSetColumn.java -text
+api/src/org/labkey/api/study/assay/StudyDatasetColumn.java -text
 api/src/org/labkey/api/study/assay/StudyParticipantVisitResolver.java -text
 api/src/org/labkey/api/study/assay/StudyParticipantVisitResolverType.java -text
 api/src/org/labkey/api/study/assay/TextAreaDataCollector.java -text

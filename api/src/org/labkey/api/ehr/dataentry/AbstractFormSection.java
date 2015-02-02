@@ -23,7 +23,7 @@ import org.labkey.api.ehr.security.AbstractEHRPermission;
 import org.labkey.api.ehr.security.EHRDataEntryPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -198,13 +198,13 @@ abstract public class AbstractFormSection implements FormSection
 
     public boolean hasPermission(DataEntryFormContext ctx, Class<? extends Permission> perm)
     {
-        Map<String, DataSet> datasetMap = ctx.getDatasetMap();
+        Map<String, Dataset> datasetMap = ctx.getDatasetMap();
         for (Pair<String, String> pair : getTableNames())
         {
             //datasets can be tested directly
             if ("study".equalsIgnoreCase(pair.first) && datasetMap.containsKey(pair.second))
             {
-                DataSet ds = datasetMap.get(pair.second);
+                Dataset ds = datasetMap.get(pair.second);
                 if (!ds.getPermissions(ctx.getUser()).contains(perm))
                     return false;
 

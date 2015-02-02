@@ -79,7 +79,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -275,7 +275,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             Study targetStudy = StudyService.get().getStudy(entry.getKey());
 
             // Look for an existing dataset backed by this assay definition
-            for (DataSet dataset : targetStudy.getDatasets())
+            for (Dataset dataset : targetStudy.getDatasets())
             {
                 if (protocol.equals(dataset.getAssayProtocol()) && dataset.getKeyPropertyName() != null)
                 {

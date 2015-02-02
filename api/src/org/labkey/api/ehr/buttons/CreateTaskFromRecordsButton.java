@@ -20,7 +20,7 @@ import org.labkey.api.ehr.security.EHRScheduledInsertPermission;
 import org.labkey.api.ldk.table.SimpleButtonConfigFactory;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.study.DataSetTable;
+import org.labkey.api.study.DatasetTable;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.Set;
@@ -43,9 +43,9 @@ public class CreateTaskFromRecordsButton extends SimpleButtonConfigFactory
         if (!super.isAvailable(ti))
             return false;
 
-        if (ti instanceof DataSetTable)
+        if (ti instanceof DatasetTable)
         {
-            Set<Class<? extends Permission>> perms = ((DataSetTable) ti).getDataset().getPermissions(ti.getUserSchema().getUser());
+            Set<Class<? extends Permission>> perms = ((DatasetTable) ti).getDataset().getPermissions(ti.getUserSchema().getUser());
             return perms.contains(EHRScheduledInsertPermission.class);
         }
 

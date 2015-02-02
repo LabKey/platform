@@ -21,7 +21,7 @@ import org.labkey.api.data.TableInfo;
  * User: brittp
  * Date: Sep 28, 2011 5:03:09 PM
  */
-public interface DataSetTable extends TableInfo
+public interface DatasetTable extends TableInfo
 {
-    DataSet getDataset();
+    Dataset getDataset();
 }

@@ -22,7 +22,7 @@ import org.labkey.api.ehr.security.EHRScheduledInsertPermission;
 import org.labkey.api.ldk.table.SimpleButtonConfigFactory;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.template.ClientDependency;
@@ -61,7 +61,7 @@ public class CreateTaskFromIdsButton extends SimpleButtonConfigFactory
 
         for (String dataset : _datasets)
         {
-            DataSet ds = getDataSet(s, dataset);
+            Dataset ds = getDataset(s, dataset);
             if (ds == null)
                 return false;
 
@@ -72,9 +72,9 @@ public class CreateTaskFromIdsButton extends SimpleButtonConfigFactory
         return true;
     }
 
-    private DataSet getDataSet(Study s, String name)
+    private Dataset getDataset(Study s, String name)
     {
-        for (DataSet ds : s.getDatasets())
+        for (Dataset ds : s.getDatasets())
         {
             if (ds.getName().equalsIgnoreCase(name) || ds.getLabel().equalsIgnoreCase(name))
                 return ds;

@@ -38,13 +38,12 @@ import java.util.Set;
  * User: kevink
  * Date: May 27, 2009
  */
-public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T>
+public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T>
 {
     Set<String> getDefaultFieldNames();
 
     /**
-     * Get the Domain for the DataSet.  The Domain may be null if the DataSet
-     * hasn't yet been provisioned.
+     * Get the Domain for the Dataset. The Domain may be null if the Dataset hasn't yet been provisioned.
      * @return The Domain or null.
      */
     @Nullable
@@ -135,7 +134,7 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
     KeyType getKeyType();
 
     /**
-     * Returns a string describing the primary keys of this DataSet for display purposes.
+     * Returns a string describing the primary keys of this Dataset for display purposes.
      * For example, "Mouse/Visit/ExtraKey"
      * @return Primary key description
      */
@@ -144,9 +143,9 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
     /**
      * Compares the extra key for this dataset with the passed in dataset.
      * @param pkDataset dataset to compare
-     * @return true if the extra key for this DataSet matches the extra key for the passed in dataset
+     * @return true if the extra key for this Dataset matches the extra key for the passed in dataset
      */
-    public boolean hasMatchingExtraKey(DataSet pkDataset);
+    public boolean hasMatchingExtraKey(Dataset pkDataset);
 
     public void delete(User user);
 

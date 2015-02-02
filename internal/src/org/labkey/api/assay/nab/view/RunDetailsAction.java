@@ -81,7 +81,7 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
         }
 
         // If the current user doesn't have ReadPermission to the current container, but the
-        // RunDataSetContextualRoles has granted us permission to this action, we can elevate the user's
+        // RunDatasetContextualRoles has granted us permission to this action, we can elevate the user's
         // permissions as accessed via the NabAssayRun.  This allows access to schemas and queries used by
         // NabAssayRun even though the original user doesn't have permission to the container.
         User elevatedUser = getUser();

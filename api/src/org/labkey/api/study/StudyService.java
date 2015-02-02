@@ -86,12 +86,12 @@ public class StudyService
         public Set<Study> findStudy(@NotNull Object studyReference, @Nullable User user);
 
         /**
-         * Returns the {@link DataSet} of the given id for the {@link Container} or null.
+         * Returns the {@link Dataset} of the given id for the {@link Container} or null.
          * @param container The container
          * @param datasetId The dataset id
          * @return The container's dataset or null
          */
-        public DataSet getDataset(Container container, int datasetId);
+        public Dataset getDataset(Container container, int datasetId);
 
         /**
          * Returns the dataset id of the requested dataset definition label,
@@ -109,7 +109,7 @@ public class StudyService
          * Returns the dataset id of the requested dataset definition label or name,
          * or -1 if no such dataset by that label or name exists (i.e. also check name in the case of a dataset label change)
          */
-        public DataSet resolveDataset(Container c, String queryName);
+        public Dataset resolveDataset(Container c, String queryName);
 
         /**
          * Applies the administrator-configured default QC filter for a dataset data view.
@@ -123,17 +123,17 @@ public class StudyService
         /**
          * Returns the set of datasets which have ever had data copied from the provided protocol
          */
-        public Set<? extends DataSet> getDatasetsForAssayProtocol(ExpProtocol protocol);
-        public Map<? extends DataSet, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol);
+        public Set<? extends Dataset> getDatasetsForAssayProtocol(ExpProtocol protocol);
+        public Map<? extends Dataset, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol);
         /**
          * Returns the set of datasets which currently contain rows from the provided runs. The user may not have
          * permission to read or modify all of the datasets that are returned.
          */
-        public Set<? extends DataSet> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
+        public Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
 
         public DbSchema getDatasetSchema();
 
-        public void addAssayRecallAuditEvent(DataSet def, int rowCount, Container sourceContainer, User user);
+        public void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
 
         public List<SecurableResource> getSecurableResources(Container container, User user);
 
@@ -161,7 +161,7 @@ public class StudyService
 
         boolean isValidSubjectNounSingular(Container container, String subjectNounSingular);
 
-        DataSet.KeyType getDatasetKeyType(Container container, String datasetName);
+        Dataset.KeyType getDatasetKeyType(Container container, String datasetName);
 
         Map<String, String> getAlternateIdMap(Container container);
 

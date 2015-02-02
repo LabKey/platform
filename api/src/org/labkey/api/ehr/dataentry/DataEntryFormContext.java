@@ -18,7 +18,7 @@ package org.labkey.api.ehr.dataentry;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 
 import java.util.Map;
 
@@ -31,7 +31,7 @@ public interface DataEntryFormContext
 {
     public TableInfo getTable(String schemaName, String queryName);
 
-    public Map<String, DataSet> getDatasetMap();
+    public Map<String, Dataset> getDatasetMap();
 
     public Container getContainer();
 

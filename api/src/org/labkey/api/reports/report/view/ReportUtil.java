@@ -57,7 +57,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ResourceURL;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
@@ -474,7 +474,7 @@ public class ReportUtil
             StudyService.Service svc = StudyService.get();
             if (svc != null)
             {
-                DataSet ds = svc.resolveDataset(c, query);
+                Dataset ds = svc.resolveDataset(c, query);
                 if (ds != null) // should this check && !StringUtils.isEmpty(ds.getCategory()))
                 {
                     vc = ds.getViewCategory();

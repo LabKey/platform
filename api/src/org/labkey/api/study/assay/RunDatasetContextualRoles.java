@@ -32,7 +32,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.HasContextualRoles;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ViewContext;
 
@@ -46,7 +46,7 @@ import java.util.Set;
  * User: kevink
  * Date: Jun 1, 2009 1:02:56 PM
  */
-public class RunDataSetContextualRoles implements HasContextualRoles
+public class RunDatasetContextualRoles implements HasContextualRoles
 {
     /**
      * Returns a contextual ReaderRole if the user has permission to
@@ -68,7 +68,7 @@ public class RunDataSetContextualRoles implements HasContextualRoles
         if (rowIdStr != null)
         {
             int runRowId = NumberUtils.toInt(rowIdStr);
-            return RunDataSetContextualRoles.getContextualRolesForRun(container, user, runRowId);
+            return RunDatasetContextualRoles.getContextualRolesForRun(container, user, runRowId);
         }
         return null;
     }
@@ -140,14 +140,14 @@ public class RunDataSetContextualRoles implements HasContextualRoles
         {
             for (ColumnInfo datasetColumn : datasetColumns)
             {
-                if (!(datasetColumn instanceof StudyDataSetColumn))
+                if (!(datasetColumn instanceof StudyDatasetColumn))
                     continue;
                 Integer datasetId = (Integer)result.get(datasetColumn.getName());
                 if (datasetId == null)
                     continue;
 
-                Container studyContainer = ((StudyDataSetColumn)datasetColumn).getStudyContainer();
-                DataSet dataset = StudyService.get().getDataset(studyContainer, datasetId.intValue());
+                Container studyContainer = ((StudyDatasetColumn)datasetColumn).getStudyContainer();
+                Dataset dataset = StudyService.get().getDataset(studyContainer, datasetId.intValue());
                 SecurityPolicy policy = dataset.getPolicy();
                 if (policy.hasPermission(user, ReadPermission.class))
                     return Collections.<Role>singleton(new ReaderRole());

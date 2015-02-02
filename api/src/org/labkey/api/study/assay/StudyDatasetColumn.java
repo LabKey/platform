@@ -22,7 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 
 import java.sql.Types;
 import java.util.Map;
@@ -31,13 +31,13 @@ import java.util.Map;
  * User: kevink
  * Date: May 31, 2009 8:42:09 PM
  */
-public class StudyDataSetColumn extends ExprColumn
+public class StudyDatasetColumn extends ExprColumn
 {
     private AssayProvider _provider;
-    private final DataSet _assayDataset;
+    private final Dataset _assayDataset;
     private final User _user;
 
-    public StudyDataSetColumn(TableInfo parent, String name, AssayProvider provider, DataSet assayDataset, User user)
+    public StudyDatasetColumn(TableInfo parent, String name, AssayProvider provider, Dataset assayDataset, User user)
     {
         super(parent, name, new SQLFragment("(CASE WHEN " + getDatasetIdAlias(assayDataset.getContainer()) +
                 "._key IS NOT NULL THEN " + assayDataset.getDatasetId() + " ELSE NULL END)"), JdbcType.INTEGER);
@@ -71,11 +71,11 @@ public class StudyDataSetColumn extends ExprColumn
         TableInfo datasetTable = _assayDataset.getTableInfo(_user);
         ExpProtocol protocol = _assayDataset.getAssayProtocol();
 
-        joinSql.appendComment("<StudyDataSetColumn.join " + studyContainer.getPath() + ">", getSqlDialect());
+        joinSql.appendComment("<StudyDatasetColumn.join " + studyContainer.getPath() + ">", getSqlDialect());
         joinSql.append(" LEFT OUTER JOIN ").append(datasetTable.getFromSQL(datasetAlias)).append(" ON ");
-        joinSql.append(datasetAlias).append("._key = CAST(" + parentAlias + "." + _provider.getTableMetadata(protocol).getResultRowIdFieldKey().getName() + " AS ");
+        joinSql.append(datasetAlias).append("._key = CAST(").append(parentAlias).append(".").append(_provider.getTableMetadata(protocol).getResultRowIdFieldKey().getName()).append(" AS ");
         joinSql.append(getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR)).append("(200))");
-        joinSql.appendComment("</StudyDataSetColumn.join>", getSqlDialect());
+        joinSql.appendComment("</StudyDatasetColumn.join>", getSqlDialect());
         map.put(datasetAlias, joinSql);
     }
 }

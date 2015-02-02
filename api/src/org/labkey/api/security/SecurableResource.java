@@ -23,7 +23,7 @@ import org.labkey.api.module.Module;
 import java.util.List;
 
 /**
- * A resource to which users and groups may be assigned roles. Examples include {@link org.labkey.api.data.Container} and {@link org.labkey.api.study.DataSet}.
+ * A resource to which users and groups may be assigned roles. Examples include {@link org.labkey.api.data.Container} and {@link org.labkey.api.study.Dataset}.
  * User: Dave
  * Date: Apr 9, 2009
  */
