@@ -789,8 +789,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         for (String uri : getPropertyDomains(protocol))
         {
             Domain domain = PropertyService.get().getDomain(protocol.getContainer(), uri);
-            Map<DomainProperty, Object> values = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
-            domains.add(new Pair<>(domain, values));
+            if (domain != null)
+            {
+                Map<DomainProperty, Object> values = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
+                domains.add(new Pair<>(domain, values));
+            }
         }
         sortDomainList(domains);
         return domains;
