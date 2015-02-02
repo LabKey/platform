@@ -31,7 +31,7 @@ import java.io.PrintWriter;
  */
 
 /**
- * PrintWriter that guarantees UTF-8 encoding of all characters, which the standard PrintWriter doesn't make very easy.
+ * PrintWriter that guarantees standard encoding of all characters, which the standard PrintWriter doesn't make very easy.
  */
 public class UTF8PrintWriter extends PrintWriter
 {
@@ -42,6 +42,11 @@ public class UTF8PrintWriter extends PrintWriter
 
     public UTF8PrintWriter(File file) throws FileNotFoundException
     {
-        super(new OutputStreamWriter(new FileOutputStream(file), StringUtilsLabKey.DEFAULT_CHARSET));
+        this(file, false);
+    }
+
+    public UTF8PrintWriter(File file, boolean append) throws FileNotFoundException
+    {
+        super(new OutputStreamWriter(new FileOutputStream(file, append), StringUtilsLabKey.DEFAULT_CHARSET));
     }
 }
