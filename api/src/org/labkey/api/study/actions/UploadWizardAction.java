@@ -337,7 +337,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
      */
     protected boolean showBatchStep(FormType form, Domain batchDomain) throws ServletException
     {
-        return !batchDomain.getProperties().isEmpty();
+        return batchDomain != null && !batchDomain.getProperties().isEmpty();
     }
 
     protected void addNextButton(ButtonBar bbar)
