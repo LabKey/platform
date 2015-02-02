@@ -59,8 +59,8 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.DataSetTable;
+import org.labkey.api.study.Dataset;
+import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AbstractAssayProvider;
@@ -77,7 +77,7 @@ import org.labkey.data.xml.TableType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyManager;
 
@@ -92,18 +92,18 @@ import java.util.Map;
 import java.util.Set;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
-public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
+public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 {
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
 
     @NotNull
-    private final DataSetDefinition _dsd;
+    private final DatasetDefinition _dsd;
 
     private TableInfo _fromTable;
     private ContainerFilterable _assayResultTable;
 
-    public DataSetTableImpl(@NotNull final StudyQuerySchema schema, @NotNull DataSetDefinition dsd)
+    public DatasetTableImpl(@NotNull final StudyQuerySchema schema, @NotNull DatasetDefinition dsd)
     {
         super(schema, dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true));
 
@@ -128,7 +128,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
         List<FieldKey> defaultVisibleCols = new ArrayList<>();
 
         HashSet<String> standardURIs = new HashSet<>();
-        for (PropertyDescriptor pd : DataSetDefinition.getStandardPropertiesSet())
+        for (PropertyDescriptor pd : DatasetDefinition.getStandardPropertiesSet())
             standardURIs.add(pd.getPropertyURI());
 
         ActionURL updateURL = new ActionURL(DatasetController.UpdateAction.class, dsd.getContainer());
@@ -136,16 +136,16 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
         setUpdateURL(new DetailsURL(updateURL, Collections.singletonMap("lsid", "lsid")));
 
         ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
-        insertURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDatasetId());
+        insertURL.addParameter(DatasetDefinition.DATASETKEY, dsd.getDatasetId());
         setInsertURL(new DetailsURL(insertURL));
 
         ActionURL gridURL = new ActionURL(StudyController.DatasetAction.class, dsd.getContainer());
-        gridURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDatasetId());
+        gridURL.addParameter(DatasetDefinition.DATASETKEY, dsd.getDatasetId());
         setGridURL(new DetailsURL(gridURL));
 
 //        ActionURL importURL = new ActionURL(StudyController.ShowImportDatasetAction.class, dsd.getContainer());
         ActionURL importURL = new ActionURL(StudyController.ImportAction.class, dsd.getContainer());
-        importURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDatasetId());
+        importURL.addParameter(DatasetDefinition.DATASETKEY, dsd.getDatasetId());
         setImportURL(new DetailsURL(importURL));
 
         ActionURL deleteRowsURL = new ActionURL(StudyController.DeleteDatasetRowsAction.class, dsd.getContainer());
@@ -345,14 +345,14 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
                 if (displayField == null)
                     return null;
 
-                DataSetAutoJoinTable table = new DataSetAutoJoinTable(schema, DataSetTableImpl.this.getDatasetDefinition(), parent, getRemappedField(sequenceNumFieldKey), getRemappedField(keyFieldKey));
+                DatasetAutoJoinTable table = new DatasetAutoJoinTable(schema, DatasetTableImpl.this.getDatasetDefinition(), parent, getRemappedField(sequenceNumFieldKey), getRemappedField(keyFieldKey));
                 return table.getColumn(displayField);
             }
 
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return new DataSetAutoJoinTable(schema, DataSetTableImpl.this.getDatasetDefinition(), null, null, null);
+                return new DatasetAutoJoinTable(schema, DatasetTableImpl.this.getDatasetDefinition(), null, null, null);
             }
 
             @Override
@@ -458,7 +458,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     }
 
     @Override
-    public DataSet getDataset()
+    public Dataset getDataset()
     {
         return _dsd;
     }
@@ -750,7 +750,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     {
         // If this is a server-managed key, or an assay-backed dataset, don't include the key column in the default
         // set of visible columns
-        if ((_dsd.getKeyManagementType() != DataSet.KeyManagementType.None || _dsd.isAssayData()) &&
+        if ((_dsd.getKeyManagementType() != Dataset.KeyManagementType.None || _dsd.isAssayData()) &&
                 col.getName().equals(_dsd.getKeyPropertyName()))
             return false;
         // for backwards compatibility "Date" is not in default visible columns for visit-based study
@@ -773,14 +773,14 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
         return _fromTable;
     }
 
-    public DataSetDefinition getDatasetDefinition()
+    public DatasetDefinition getDatasetDefinition()
     {
         return _dsd;
     }
 
     /**
      * In order to discourage the user from selecting data from deeply nested datasets, we hide
-     * the "ParticipantID", "ParticipantVisit", and "DataSets" columns when the user could just as easily find
+     * the "ParticipantID", "ParticipantVisit", and "Datasets" columns when the user could just as easily find
      * the same data further up the tree.
      */
     public void hideParticipantLookups()
@@ -802,7 +802,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     public QueryUpdateService getUpdateService()
     {
         User user = _userSchema.getUser();
-        DataSet def = getDatasetDefinition();
+        Dataset def = getDatasetDefinition();
         if (!def.canWrite(user))
             return null;
         return new DatasetUpdateService(this);
@@ -812,7 +812,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // OK to edit these in Dataspace project and in any folder
-        DataSet def = getDatasetDefinition();
+        Dataset def = getDatasetDefinition();
         if (ReadPermission.class.isAssignableFrom(perm))
             return def.canRead(user);
         if (InsertPermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm))

@@ -18,13 +18,13 @@ package org.labkey.study.reports;
 
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Visit;
 
 import java.util.HashMap;
@@ -56,8 +56,8 @@ public class BaseStudyView<T> extends HttpView<T>
 
     private List<VisitImpl> _visits;            // display ordered
     private HashMap<Integer, VisitImpl> _visitMap = new HashMap<>();
-    private List<DataSetDefinition> _datasetDefs;
-    private HashMap<Integer, DataSetDefinition> _datasetMap = new HashMap<>();
+    private List<DatasetDefinition> _datasetDefs;
+    private HashMap<Integer, DatasetDefinition> _datasetMap = new HashMap<>();
 
     protected List<VisitImpl> getVisits()
     {
@@ -76,18 +76,18 @@ public class BaseStudyView<T> extends HttpView<T>
         return _visitMap.get(v);
     }
 
-    protected List<DataSetDefinition> getDatasets()
+    protected List<DatasetDefinition> getDatasets()
     {
         if (null == _datasetDefs)
         {
             _datasetDefs = _studyManager.getDatasetDefinitions(_study);
-            for (DataSetDefinition d : _datasetDefs)
+            for (DatasetDefinition d : _datasetDefs)
                 _datasetMap.put(d.getDatasetId(), d);
         }
         return _datasetDefs;
     }
 
-    protected DataSet getDatasetDefinition(int d)
+    protected Dataset getDatasetDefinition(int d)
     {
         getDatasets();
         return _datasetMap.get(d);

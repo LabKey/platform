@@ -15,7 +15,7 @@
  */
 package org.labkey.study.model;
 
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -42,6 +42,6 @@ public class DatasetManager
 
     public interface DatasetListener
     {
-        void datasetChanged(DataSet def);
+        void datasetChanged(Dataset def);
     }
 }

@@ -31,11 +31,11 @@ import org.labkey.api.study.Visit;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyUnionTableInfo;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DataSetTableImpl;
+import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DataspaceContainerFilter;
 
 import java.sql.ResultSet;
@@ -95,7 +95,7 @@ public class SequenceVisitManager extends VisitManager
                     .append(alias).append(".container = SVM.container");
             sql.append("\nWHERE ").append(studyDataContainerFilter);
             if (null != qcStates)
-                sql.append(" AND ").append(qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME));
+                sql.append(" AND ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
             sql.append("\nGROUP BY ").append(keyCols);
             sql.append("\nORDER BY 1, 2");
         }
@@ -115,7 +115,7 @@ public class SequenceVisitManager extends VisitManager
                             .append(alias).append(".container = SVM.container");
                     sql.append("\nWHERE ").append(studyDataContainerFilter);
                     if (qcStates != null)
-                        sql.append(" AND ").append(qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME));
+                        sql.append(" AND ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
                     sql.append("\nGROUP BY ").append(keyCols);
                     sql.append("\nORDER BY 1, 2");
                     break;
@@ -131,7 +131,7 @@ public class SequenceVisitManager extends VisitManager
                             .append(alias).append(".container = SVM.container");
                     sql.append("\nWHERE ").append(studyDataContainerFilter);
                     if (qcStates != null)
-                        sql.append(" AND ").append(qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME));
+                        sql.append(" AND ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
                     sql.append("\nGROUP BY ").append(keyCols);
                     sql.append("\nORDER BY 1, 2");
                     break;
@@ -147,7 +147,7 @@ public class SequenceVisitManager extends VisitManager
     // TODO: we should be incrementally updating ParticipantVisit, rather than trying to speed up resync!
     // TDOO: see 19867: Speed issues when inserting into study datasets
     */
-    protected void updateParticipantVisitTableAfterInsert(@Nullable User user, DataSetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants)
+    protected void updateParticipantVisitTableAfterInsert(@Nullable User user, DatasetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         Container container = getStudy().getContainer();
@@ -266,8 +266,8 @@ public class SequenceVisitManager extends VisitManager
         SqlExecutor executor = new SqlExecutor(schema);
 
         // update ParticipantVisit.VisitDate based on declared Visit.visitDateDatasetId
-        ArrayList<DataSetDefinition> defsWithVisitDates = new ArrayList<>();
-        for (DataSetDefinition def : _study.getDatasets())
+        ArrayList<DatasetDefinition> defsWithVisitDates = new ArrayList<>();
+        for (DatasetDefinition def : _study.getDatasets())
             if (null != def.getVisitDateColumnName())
                 defsWithVisitDates.add(def);
 
@@ -325,7 +325,7 @@ public class SequenceVisitManager extends VisitManager
     }
 
 
-    private void _updateVisitDate(User user, DataSetDefinition def)
+    private void _updateVisitDate(User user, DatasetDefinition def)
     {
         if (null == def.getVisitDateColumnName())
             return;

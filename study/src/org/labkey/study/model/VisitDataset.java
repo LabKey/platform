@@ -23,18 +23,18 @@ import org.labkey.api.data.Container;
  * Date: Jan 7, 2006
  * Time: 3:53:35 PM
  */
-public class VisitDataSet
+public class VisitDataset
 {
     private int _datasetId;
     private int _visitId;
     private boolean _isRequired = false;
     private Container _container;
 
-    public VisitDataSet()
+    public VisitDataset()
     {
     }
 
-    public VisitDataSet(Container container, int datasetId, int visitId, boolean isRequired)
+    public VisitDataset(Container container, int datasetId, int visitId, boolean isRequired)
     {
         _datasetId = datasetId;
         _visitId = visitId;

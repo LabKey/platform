@@ -67,7 +67,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.study.DataSetTable;
+import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -5219,7 +5219,7 @@ public class QueryController extends SpringActionController
                         if (cinfos.size() > 0)
                             qinfo.put("columns", cinfos);
                     }
-                    if (table instanceof DataSetTable)
+                    if (table instanceof DatasetTable)
                         title = table.getTitle();
                 }
             }

@@ -78,7 +78,7 @@ public class StudyLsidHandler implements LsidManager.LsidHandler
                 String ptid = rs.getString(4);
                 Container c = ContainerManager.getForId(containerId);
                 ActionURL url = new ActionURL(StudyController.DatasetAction.class, c);
-                url.addParameter(DataSetDefinition.DATASETKEY, String.valueOf(datasetId));
+                url.addParameter(DatasetDefinition.DATASETKEY, String.valueOf(datasetId));
                 url.addParameter(VisitImpl.SEQUENCEKEY, String.valueOf(sequenceNum));
                 url.addParameter("StudyData.participantId~eq", ptid);
                 return url.toString();

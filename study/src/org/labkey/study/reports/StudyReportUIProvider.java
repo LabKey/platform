@@ -39,7 +39,7 @@ import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
@@ -176,7 +176,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             chartBean.setReportType(StudyChartQueryReport.TYPE);
 
             ActionURL url = ReportUtil.getChartDesignerURL(context, chartBean);
-            url.addParameter(DataSetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DataSetDefinition.DATASETKEY), 0));
+            url.addParameter(DatasetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DatasetDefinition.DATASETKEY), 0));
             url.setAction(ReportsController.DesignChartAction.class);
 
             designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", null, url, _getIconPath(StudyChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION));

@@ -95,7 +95,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -1410,7 +1410,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     if (protocol != null)
                     {
                         protocolImpl = protocol.getImplementation();
-                        for (DataSet dataset : StudyService.get().getDatasetsForAssayRuns(Collections.<ExpRun>singletonList(run), user))
+                        for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(Collections.<ExpRun>singletonList(run), user))
                         {
                             if (!dataset.canWrite(user))
                             {
@@ -1553,7 +1553,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     batch.delete(user);
                 }
 
-                for (DataSet dataset : StudyService.get().getDatasetsForAssayProtocol(protocolToDelete))
+                for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocolToDelete))
                 {
                     dataset.delete(user);
                 }

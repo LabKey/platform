@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.exp.property.Domain"%>
 <%@ page import="org.labkey.api.reports.model.ViewCategory"%>
 <%@ page import="org.labkey.api.study.Cohort" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.Formats" %>
@@ -44,9 +44,9 @@
     Container c = getContainer();
     Study study = StudyManager.getInstance().getStudy(c);
 
-    List<? extends DataSet> datasets = study.getDatasetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER);
+    List<? extends Dataset> datasets = study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER);
     int countUndefined = 0;
-    for (DataSet def : datasets)
+    for (Dataset def : datasets)
     {
         Domain d = def.getDomain();
         if (null == d || 0 == d.getProperties().size())
@@ -147,7 +147,7 @@
     </tr><%
 
     ActionURL details = new ActionURL(DatasetDetailsAction.class, c);
-    for (DataSet def : datasets)
+    for (Dataset def : datasets)
     {
         details.replaceParameter("id",String.valueOf(def.getDatasetId()));
         ViewCategory viewCategory = def.getViewCategory();

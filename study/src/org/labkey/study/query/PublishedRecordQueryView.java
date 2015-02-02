@@ -42,13 +42,13 @@ import java.util.List;
  * User: Karl Lum
  * Date: Oct 10, 2007
  */
-public class PublishedRecordQueryView extends DataSetQueryView
+public class PublishedRecordQueryView extends DatasetQueryView
 {
     private String _sourceLsid;
     private int _protocolId;
     private int _recordCount;
 
-    public PublishedRecordQueryView(UserSchema schema, DataSetQuerySettings settings, String sourceLsid, int protocolId, int recordCount)
+    public PublishedRecordQueryView(UserSchema schema, DatasetQuerySettings settings, String sourceLsid, int protocolId, int recordCount)
     {
         super(schema, settings, null);
         _sourceLsid = sourceLsid;

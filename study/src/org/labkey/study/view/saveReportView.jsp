@@ -95,7 +95,7 @@
         <td>Add as Custom View For:
             <select id="datasetSelection" name="showWithDataset">
 <%
-        for (DataSet def : defs)
+        for (Dataset def : defs)
         {
             if (def.canRead(getUser())) %>
                 <option<%=selected(def.getDatasetId() == showWithDataset)%> value="<%=def.getDatasetId()%>"><%=h(def.getLabel())%></option>

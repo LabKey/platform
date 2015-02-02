@@ -32,9 +32,9 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.study.StudyServiceImpl;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -66,12 +66,12 @@ import java.util.Set;
  */
 public class DatasetUpdateService extends AbstractQueryUpdateService
 {
-    private final DataSetDefinition _dataset;
+    private final DatasetDefinition _dataset;
     private Set<String> _potentiallyNewParticipants = new HashSet<>();
     private Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
 
-    public DatasetUpdateService(DataSetTableImpl table)
+    public DatasetUpdateService(DatasetTableImpl table)
     {
         super(table);
         _dataset = table.getDatasetDefinition();
@@ -149,19 +149,19 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(_dataset.getStudy());
-        DataSetDefinition.CheckForDuplicates dupePolicy;
+        DatasetDefinition.CheckForDuplicates dupePolicy;
         if (isBulkLoad())
         {
-            dupePolicy = DataSetDefinition.CheckForDuplicates.never;
+            dupePolicy = DatasetDefinition.CheckForDuplicates.never;
         }
         else
         if (context.getInsertOption() == InsertOption.MERGE)
         {
-            dupePolicy = DataSetDefinition.CheckForDuplicates.sourceOnly;
+            dupePolicy = DatasetDefinition.CheckForDuplicates.sourceOnly;
         }
         else
         {
-            dupePolicy = DataSetDefinition.CheckForDuplicates.sourceAndDestination;
+            dupePolicy = DatasetDefinition.CheckForDuplicates.sourceAndDestination;
         }
         // for MERGE checking for duplicates within the source rows makes sense, but not against the existing rows
         DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null,
@@ -175,7 +175,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         try
         {
-            boolean hasRowId = _dataset.getKeyManagementType() == DataSet.KeyManagementType.RowId;
+            boolean hasRowId = _dataset.getKeyManagementType() == Dataset.KeyManagementType.RowId;
 
             if (!hasRowId)
             {
@@ -425,7 +425,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
         // if there was no explicit lsid and KeyManagementType == None, there is no non-lsid key that is unique by itself.
         // Unless of course it is a demographic table.
-        if (!isDemographic && _dataset.getKeyManagementType() == DataSetDefinition.KeyManagementType.None)
+        if (!isDemographic && _dataset.getKeyManagementType() == DatasetDefinition.KeyManagementType.None)
         {
             throw new InvalidKeyException("No lsid, and no KeyManagement");
         }

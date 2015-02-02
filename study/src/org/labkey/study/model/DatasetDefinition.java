@@ -83,7 +83,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -96,7 +96,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.importer.StudyImportContext;
-import org.labkey.study.query.DataSetTableImpl;
+import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 import org.springframework.beans.factory.InitializingBean;
@@ -131,12 +131,12 @@ import java.util.regex.Pattern;
  * Date: Jan 6, 2006
  * Time: 10:29:31 AM
  */
-public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> implements Cloneable, DataSet<DataSetDefinition>, InitializingBean
+public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> implements Cloneable, Dataset<DatasetDefinition>, InitializingBean
 {
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
 //    static final Object MANAGED_KEY_LOCK = new Object();
-    private static Logger _log = Logger.getLogger(DataSetDefinition.class);
+    private static Logger _log = Logger.getLogger(DatasetDefinition.class);
 
     private final ReentrantLock _lock = new ReentrantLock();
 
@@ -157,7 +157,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
     private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
     private String _tag;
-    private String _type = DataSet.TYPE_STANDARD;
+    private String _type = Dataset.TYPE_STANDARD;
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
     {
@@ -231,12 +231,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         DEFAULT_VISIT_FIELDS.addAll(Sets.newCaseInsensitiveHashSet(DEFAULT_VISIT_FIELD_NAMES_ARRAY));
     }
 
-    public DataSetDefinition()
+    public DatasetDefinition()
     {
     }
 
 
-    public DataSetDefinition(StudyImpl study, int datasetId)
+    public DatasetDefinition(StudyImpl study, int datasetId)
     {
         _study = study;
         setContainer(_study.getContainer());
@@ -249,7 +249,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    public DataSetDefinition(StudyImpl study, int datasetId, String name, String label, String category,  String entityId, @Nullable String typeURI)
+    public DatasetDefinition(StudyImpl study, int datasetId, String name, String label, String category, String entityId, @Nullable String typeURI)
     {
         _study = study;
         setContainer(_study.getContainer());
@@ -267,12 +267,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     /*
      * given a potentially shared dataset definition, return a dataset definition that is scoped to the current study
      */
-    public DataSetDefinition createLocalDatasetDefintion(StudyImpl substudy)
+    public DatasetDefinition createLocalDatasetDefintion(StudyImpl substudy)
     {
         if (substudy.getContainer().equals(getContainer()))
             return this;
         assert isShared();
-        DataSetDefinition sub = this.createMutable();
+        DatasetDefinition sub = this.createMutable();
         assert sub != this;
         sub._definitionContainer = sub.getContainer();
         sub.setContainer(substudy.getContainer());
@@ -464,7 +464,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         public Date load(String key, @Nullable Object argument)
         {
             StudySchema ss = StudySchema.getInstance();
-            SQLFragment sql = new SQLFragment("SELECT Modified FROM " + ss.getTableInfoDataSet() + " WHERE EntityId = ?",key);
+            SQLFragment sql = new SQLFragment("SELECT Modified FROM " + ss.getTableInfoDataset() + " WHERE EntityId = ?",key);
             Date modified = new SqlSelector(ss.getScope(),sql).getObject(Date.class);
             return modified;
         }
@@ -480,16 +480,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return getModified(this);
     }
 
-    public static Date getModified(DataSetDefinition def)
+    public static Date getModified(DatasetDefinition def)
     {
         Date modified = modifiedDates.get(def.getEntityId());
         return modified;
     }
 
-    public static void updateModified(DataSetDefinition def, Date modified)
+    public static void updateModified(DatasetDefinition def, Date modified)
     {
         StudySchema ss = StudySchema.getInstance();
-        SQLFragment sql = new SQLFragment("UPDATE " + ss.getTableInfoDataSet() + " SET Modified = ? WHERE EntityId = ?", modified, def.getEntityId());
+        SQLFragment sql = new SQLFragment("UPDATE " + ss.getTableInfoDataset() + " SET Modified = ? WHERE EntityId = ?", modified, def.getEntityId());
         new SqlExecutor(ss.getScope()).execute(sql);
         modifiedDates.remove(def.getEntityId());
     }
@@ -528,35 +528,35 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public String getPropertyURI(String column)
     {
-        PropertyDescriptor pd = DataSetDefinition.getStandardPropertiesMap().get(column);
+        PropertyDescriptor pd = DatasetDefinition.getStandardPropertiesMap().get(column);
         if (null != pd)
             return pd.getPropertyURI();
         return _typeURI + "." + column;
     }
 
 
-    public VisitDataSetType getVisitType(int visitRowId)
+    public VisitDatasetType getVisitType(int visitRowId)
     {
-        VisitDataSet vds = getVisitDataset(visitRowId);
+        VisitDataset vds = getVisitDataset(visitRowId);
         if (vds == null)
-            return VisitDataSetType.NOT_ASSOCIATED;
+            return VisitDatasetType.NOT_ASSOCIATED;
         else if (vds.isRequired())
-            return VisitDataSetType.REQUIRED;
+            return VisitDatasetType.REQUIRED;
         else
-            return VisitDataSetType.OPTIONAL;
+            return VisitDatasetType.OPTIONAL;
     }
 
 
-    public List<VisitDataSet> getVisitDatasets()
+    public List<VisitDataset> getVisitDatasets()
     {
         return Collections.unmodifiableList(StudyManager.getInstance().getMapping(this));
     }
 
 
-    public VisitDataSet getVisitDataset(int visitRowId)
+    public VisitDataset getVisitDataset(int visitRowId)
     {
-        List<VisitDataSet> datasets = getVisitDatasets();
-        for (VisitDataSet vds : datasets)
+        List<VisitDataset> datasets = getVisitDatasets();
+        for (VisitDataset vds : datasets)
         {
             if (vds.getVisitRowId() == visitRowId)
                 return vds;
@@ -584,7 +584,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     
 
     /**
-     * Get table info representing dataset.  This relies on the DataSetDefinition being removed from
+     * Get table info representing dataset.  This relies on the DatasetDefinition being removed from
      * the cache if the dataset type changes.
      * see StudyManager.importDatasetTSV()
      */
@@ -623,7 +623,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (isInherited())
         {
             StudyImpl shared = getDefinitionStudy();
-            DataSetDefinition ds = shared.getDataset(getDatasetId());
+            DatasetDefinition ds = shared.getDataset(getDatasetId());
             return null == ds ? null : ds.ensureDomain();
         }
 
@@ -679,7 +679,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             _domain = null;
             if (null == getTypeURI())
             {
-                DataSetDefinition d = this.createMutable();
+                DatasetDefinition d = this.createMutable();
                 d.setTypeURI(DatasetDomainKind.generateDomainURI(getName(), getEntityId(), getContainer()));
                 d.save(null);
             }
@@ -697,7 +697,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (isInherited())
         {
             StudyImpl shared = getDefinitionStudy();
-            DataSetDefinition ds = shared.getDataset(getDatasetId());
+            DatasetDefinition ds = shared.getDataset(getDatasetId());
             return null == ds ? null : ds.getStorageTableInfo();
         }
         else
@@ -922,7 +922,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
     @Override
-    public boolean hasMatchingExtraKey(DataSet other)
+    public boolean hasMatchingExtraKey(Dataset other)
     {
         if (other == null)
             return false;
@@ -991,7 +991,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     // The set of allowed extra key lookup types that we can join across.
     private static final EnumSet<PropertyType> LOOKUP_KEY_TYPES = EnumSet.of(
             PropertyType.DATE_TIME,
-            // Disallow DOUBLE extra key for DataSetAutoJoin.  See Issue 14860.
+            // Disallow DOUBLE extra key for DatasetAutoJoin.  See Issue 14860.
             //PropertyType.DOUBLE,
             PropertyType.STRING,
             PropertyType.INTEGER);
@@ -1159,7 +1159,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
 
 
-        DatasetSchemaTableInfo(DataSetDefinition def, final User user, boolean multiContainer)
+        DatasetSchemaTableInfo(DatasetDefinition def, final User user, boolean multiContainer)
         {
             super(StudySchema.getInstance().getSchema(), DatabaseTableType.TABLE, def.getName());
             setTitle(def.getLabel());
@@ -1250,7 +1250,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // QCState
 
-            ColumnInfo qcStateCol = newDatasetColumnInfo(this, getStorageColumn(DataSetTableImpl.QCSTATE_ID_COLNAME), getQCStateURI());
+            ColumnInfo qcStateCol = newDatasetColumnInfo(this, getStorageColumn(DatasetTableImpl.QCSTATE_ID_COLNAME), getQCStateURI());
             // UNDONE: make the QC column user editable.  This is turned off for now because DatasetSchemaTableInfo is not
             // a FilteredTable, so it doesn't know how to restrict QC options to those in the current container.
             // Note that QC state can still be modified via the standard update UI.
@@ -1409,7 +1409,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 SqlDialect d = getSqlDialect();
                 SQLFragment from = new SQLFragment();
-                from.appendComment("<DataSetDefinition: " + getName() + ">", d); // UNDONE stash name
+                from.appendComment("<DatasetDefinition: " + getName() + ">", d); // UNDONE stash name
                 String comma = " ";
                 from.append("(SELECT ");
                 for (ColumnInfo ci : _template.getColumns())
@@ -1418,7 +1418,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     comma = ", ";
                 }
                 from.append("\nWHERE 0=1) AS ").append(alias);
-                from.appendComment("</DataSetDefinition>", d);
+                from.appendComment("</DatasetDefinition>", d);
                 return from;
             }
 
@@ -1444,13 +1444,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         @Override
         public Domain getDomain()
         {
-            return DataSetDefinition.this.getDomain();
+            return DatasetDefinition.this.getDomain();
         }
 
         @Override
         public DomainKind getDomainKind()
         {
-            return DataSetDefinition.this.getDomainKind();
+            return DatasetDefinition.this.getDomainKind();
         }
 
         @Override
@@ -1548,7 +1548,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (isInherited())
         {
             StudyImpl shared = getDefinitionStudy();
-            DataSetDefinition ds = shared.getDataset(getDatasetId());
+            DatasetDefinition ds = shared.getDataset(getDatasetId());
             return null == ds ? null : ds.getDomain();
         }
 
@@ -1663,7 +1663,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public static String getQCStateURI()
     {
-        return uriForName(DataSetTableImpl.QCSTATE_ID_COLNAME);
+        return uriForName(DatasetTableImpl.QCSTATE_ID_COLNAME);
     }
 
 
@@ -1709,7 +1709,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     @Override
     public String toString()
     {
-        return "DataSetDefinition: " + getLabel() + " " + getDatasetId();
+        return "DatasetDefinition: " + getLabel() + " " + getDatasetId();
     }
 
 
@@ -1995,10 +1995,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             Map<String,Integer> outputMap = DataIteratorUtil.createColumnAndPropertyMap(it);
 
             // find important columns in the input (CONSIDER: use standard etl alt
-            Integer indexPTIDInput = inputMap.get(DataSetDefinition.getParticipantIdURI());
-            Integer indexPTID = outputMap.get(DataSetDefinition.getParticipantIdURI());
+            Integer indexPTIDInput = inputMap.get(DatasetDefinition.getParticipantIdURI());
+            Integer indexPTID = outputMap.get(DatasetDefinition.getParticipantIdURI());
             Integer indexKeyProperty = null==keyColumn ? null : outputMap.get(keyColumn.getPropertyURI());
-            Integer indexVisitDate = outputMap.get(DataSetDefinition.getVisitDateURI());
+            Integer indexVisitDate = outputMap.get(DatasetDefinition.getVisitDateURI());
             Integer indexReplace = outputMap.get("replace");
 
             // do a conversion for PTID aliasing
@@ -2045,7 +2045,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             //
 
             Integer indexVisitDateColumnInput = inputMap.get(getVisitDateURI());
-            Integer indexSequenceNumColumnInput = inputMap.get(DataSetDefinition.getSequenceNumURI());
+            Integer indexSequenceNumColumnInput = inputMap.get(DatasetDefinition.getSequenceNumURI());
             it.indexSequenceNumOutput = it.translateSequenceNum(indexSequenceNumColumnInput, indexVisitDateColumnInput);
 
 
@@ -2113,9 +2113,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             if (needsQC)
             {
-                String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
+                String qcStatePropertyURI = DatasetDefinition.getQCStateURI();
                 Integer indexInputQCState = inputMap.get(qcStatePropertyURI);
-                Integer indexInputQCText = inputMap.get(DataSetTableImpl.QCSTATE_LABEL_COLNAME);
+                Integer indexInputQCText = inputMap.get(DatasetTableImpl.QCSTATE_LABEL_COLNAME);
                 if (null == indexInputQCState)
                 {
                     int indexText = null==indexInputQCText ? -1 : indexInputQCText;
@@ -2318,7 +2318,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         int translateSequenceNum(Integer indexSequenceNumInput, Integer indexVisitDateInput)
         {
             ColumnInfo col = new ColumnInfo("SequenceNum", JdbcType.DOUBLE);
-            SequenceNumImportHelper snih = new SequenceNumImportHelper(_study, DataSetDefinition.this);
+            SequenceNumImportHelper snih = new SequenceNumImportHelper(_study, DatasetDefinition.this);
             Callable call = snih.getCallable(getInput(), indexSequenceNumInput, indexVisitDateInput);
             return addColumn(col, call);
         }
@@ -2326,7 +2326,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         int translatePtid(Integer indexPtidInput, User user) throws ValidationException
         {
             ColumnInfo col = new ColumnInfo("ParticipantId", JdbcType.VARCHAR);
-            ParticipantIdImportHelper piih = new ParticipantIdImportHelper(_study, user, DataSetDefinition.this);
+            ParticipantIdImportHelper piih = new ParticipantIdImportHelper(_study, user, DatasetDefinition.this);
             Callable call = piih.getCallable(getInput(), indexPtidInput);
             return addColumn(col, call);
         }
@@ -2463,7 +2463,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         if (!_autoCreate)
                         {
                             if (notFound.add(currentStateLabel))
-                                getRowError().addFieldError(DataSetTableImpl.QCSTATE_LABEL_COLNAME, "QC State not found: " + currentStateLabel);
+                                getRowError().addFieldError(DatasetTableImpl.QCSTATE_LABEL_COLNAME, "QC State not found: " + currentStateLabel);
                             return null;
                         }
                         else
@@ -2607,7 +2607,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         @Nullable StudyImportContext studyImportContext, boolean forUpdate)
     {
         TableInfo table = getTableInfo(user, false);
-        boolean needToHandleQCState = table.getColumn(DataSetTableImpl.QCSTATE_ID_COLNAME) != null;
+        boolean needToHandleQCState = table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME) != null;
 
         DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(
                 user,
@@ -2872,7 +2872,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DataSetDefinition that = (DataSetDefinition) o;
+        DatasetDefinition that = (DatasetDefinition) o;
 
         if (_datasetId != that._datasetId) return false;
         // The _studyDateBased member variable is populated lazily in the getter,
@@ -2915,7 +2915,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         StudyImpl study = StudyManager.getInstance().getStudy(c);
                         if (study != null)
                         {
-                            for (DataSetDefinition dataset : study.getDatasets())
+                            for (DatasetDefinition dataset : study.getDatasets())
                             {
                                 if (dataset.getName().equalsIgnoreCase(datasetName))
                                 {
@@ -2967,11 +2967,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    private static class DatasetDefObjectFactory extends BeanObjectFactory<DataSetDefinition>
+    private static class DatasetDefObjectFactory extends BeanObjectFactory<DatasetDefinition>
     {
         DatasetDefObjectFactory()
         {
-            super(DataSetDefinition.class);
+            super(DatasetDefinition.class);
             assert !_readableProperties.remove("storageTableInfo");
             assert !_readableProperties.remove("domain");
         }
@@ -2980,7 +2980,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     static
     {
-        ObjectFactory.Registry.register(DataSetDefinition.class, new DatasetDefObjectFactory());
+        ObjectFactory.Registry.register(DatasetDefinition.class, new DatasetDefObjectFactory());
     }
 
 
@@ -3059,7 +3059,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
              defaultQCState = StudyManager.getInstance().getQCStateForRowId(getContainer(), defaultQcStateId.intValue());
 
         String managedKey = null;
-        if (getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER && getKeyManagementType() != DataSet.KeyManagementType.None)
+        if (getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && getKeyManagementType() != Dataset.KeyManagementType.None)
             managedKey = getKeyPropertyName();
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -3219,7 +3219,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
  [ ] verify synchronize/transact updates to domain/storage table
  [N] test column rename, name collisions
  [N] we seem to still be orphaning tables in the studydataset schema
- [ ] exp StudyDataSetColumn usage of getStudyDataTable()
+ [ ] exp StudyDatasetColumn usage of getStudyDataTable()
  // FUTURE
  [ ] don't use subjectname alias at this level
  [ ] remove _Key columns

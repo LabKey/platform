@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.study.model.QCState" %>
@@ -82,7 +82,7 @@
         <tr>
             <td>&nbsp;</td>
             <td><%= button("Update Status").submit(true) %> <%= button("Cancel").href(new ActionURL(StudyController.DatasetAction.class,
-                    container).addParameter(DataSetDefinition.DATASETKEY, bean.getDatasetId())) %></td>
+                    container).addParameter(DatasetDefinition.DATASETKEY, bean.getDatasetId())) %></td>
         </tr>
     </table>
 </labkey:form>

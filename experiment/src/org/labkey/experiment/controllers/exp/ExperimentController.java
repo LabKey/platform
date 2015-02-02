@@ -123,7 +123,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -2174,7 +2174,7 @@ public class ExperimentController extends SpringActionController
 
             List<Pair<SecurableResource, ActionURL>> permissionDatasetRows = new ArrayList<>();
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasetRows = new ArrayList<>();
-            for (DataSet dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
+            for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
             {
                 ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
                 if (dataset.canWrite(getUser()))
@@ -2295,10 +2295,10 @@ public class ExperimentController extends SpringActionController
                 {
                     noun = "Protocol";
                 }
-                for (DataSet dataSet : StudyService.get().getDatasetsForAssayProtocol(protocol))
+                for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocol))
                 {
-                    Pair<SecurableResource, ActionURL> entry = new Pair<SecurableResource, ActionURL>(dataSet, PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataSet.getContainer(), dataSet.getDatasetId()));
-                    if (dataSet.canDelete(getUser()))
+                    Pair<SecurableResource, ActionURL> entry = new Pair<SecurableResource, ActionURL>(dataset, PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
+                    if (dataset.canDelete(getUser()))
                     {
                         deleteableDatasets.add(entry);
                     }

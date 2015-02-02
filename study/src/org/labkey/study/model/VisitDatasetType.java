@@ -21,14 +21,14 @@ package org.labkey.study.model;
  * Date: Jan 17, 2006
  * Time: 2:45:25 PM
  */
-public enum VisitDataSetType
+public enum VisitDatasetType
 {
     NOT_ASSOCIATED("Not Associated"),
     OPTIONAL("Optional"),
     REQUIRED("Required");
 
     private String _label;
-    VisitDataSetType(String label)
+    VisitDatasetType(String label)
     {
         _label = label;
     }

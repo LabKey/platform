@@ -26,8 +26,8 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.VisitDataSet;
+import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.VisitDataset;
 import org.labkey.study.model.VisitImpl;
 
 import java.util.ArrayList;
@@ -49,11 +49,11 @@ import java.util.Map;
 public class StudySchedule implements CustomApiForm
 {
     List<VisitImpl> _visits;
-    List<DataSetDefinition> _datasets;
+    List<DatasetDefinition> _datasets;
     Map<String, DataViewInfo> _viewInfo = new HashMap<>();
-    Map<Integer, List<VisitDataSet>> _schedule;
+    Map<Integer, List<VisitDataset>> _schedule;
 
-    public void setDatasets(List<DataSetDefinition> datasets, List<DataViewInfo> views)
+    public void setDatasets(List<DatasetDefinition> datasets, List<DataViewInfo> views)
     {
         _datasets = datasets;
 
@@ -119,7 +119,7 @@ public class StudySchedule implements CustomApiForm
         return o;
     }
 
-    private JSONObject serializeDataset(User user, DataSetDefinition ds)
+    private JSONObject serializeDataset(User user, DatasetDefinition ds)
     {
         JSONObject o = new JSONObject();
 
@@ -148,7 +148,7 @@ public class StudySchedule implements CustomApiForm
         return o;
     }
 
-    private JSONArray serializeData(User user, List<DataSetDefinition> datasets, List<VisitImpl> visits)
+    private JSONArray serializeData(User user, List<DatasetDefinition> datasets, List<VisitImpl> visits)
     {
         JSONArray d = new JSONArray();
         Map<Integer, VisitImpl> visitMap = new HashMap<>();
@@ -156,13 +156,13 @@ public class StudySchedule implements CustomApiForm
         for (VisitImpl visit : visits)
             visitMap.put(visit.getRowId(), visit);
 
-        for (DataSetDefinition ds : datasets)
+        for (DatasetDefinition ds : datasets)
         {
             JSONObject o = new JSONObject();
 
             o.put("dataset", serializeDataset(user, ds));
 
-            for (VisitDataSet vds : ds.getVisitDatasets())
+            for (VisitDataset vds : ds.getVisitDatasets())
             {
                 VisitImpl visit = visitMap.get(vds.getVisitRowId());
                 if (visit != null)
@@ -186,7 +186,7 @@ public class StudySchedule implements CustomApiForm
             for (int i = 0; i < schedules.length(); i++)
             {
                 JSONObject rec = schedules.getJSONObject(i);
-                List<VisitDataSet> timepoints = new ArrayList<>();
+                List<VisitDataset> timepoints = new ArrayList<>();
                 Integer datasetId = null;
 
                 for (Map.Entry<String, Object> entry : rec.entrySet())
@@ -205,7 +205,7 @@ public class StudySchedule implements CustomApiForm
 
                         if (id != null)
                         {
-                            timepoints.add(new VisitDataSet(container, -1, id, required != null ? required : false));
+                            timepoints.add(new VisitDataset(container, -1, id, required != null ? required : false));
                         }
                     }
                 }
@@ -216,7 +216,7 @@ public class StudySchedule implements CustomApiForm
         }
     }
 
-    public Map<Integer, List<VisitDataSet>> getSchedule()
+    public Map<Integer, List<VisitDataset>> getSchedule()
     {
         return _schedule;
     }

@@ -53,7 +53,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -457,8 +457,8 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     {
         StudyImpl study = StudyManager.getInstance().getStudy(_userSchema.getContainer());
 
-        DataSetDefinition defPtid = null;
-        DataSetDefinition defPtidVisit = null;
+        DatasetDefinition defPtid = null;
+        DatasetDefinition defPtidVisit = null;
 
         if (study.getParticipantCommentDatasetId() != null)
             defPtid = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDatasetId());

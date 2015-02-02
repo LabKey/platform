@@ -45,10 +45,10 @@ public class DatasetReorderer
     // list; any unspecified datasets will appear at the end of the list, maintaining their current order.
     public void reorderDatasets(List<Integer> orderedIds) throws SQLException
     {
-        List<DataSetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(_study);
-        Map<Integer, DataSetDefinition> map = new LinkedHashMap<>(defs.size());
+        List<DatasetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(_study);
+        Map<Integer, DatasetDefinition> map = new LinkedHashMap<>(defs.size());
 
-        for (DataSetDefinition def : defs)
+        for (DatasetDefinition def : defs)
         {
             // TODO: ordering with shared datasets?
             if (def.isShared())
@@ -61,20 +61,20 @@ public class DatasetReorderer
         // Order the datasets specified by orderedIds
         for (Integer id : orderedIds)
         {
-            DataSetDefinition def = map.get(id);
+            DatasetDefinition def = map.get(id);
             updateDef(def);
             map.remove(id);
         }
 
         // Stick any unspecified datasets at the end of the list
-        for (DataSetDefinition def : map.values())
+        for (DatasetDefinition def : map.values())
             updateDef(def);
     }
 
     public void resetOrder() throws SQLException
     {
-        List<DataSetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(_study);
-        for (DataSetDefinition def : defs)
+        List<DatasetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(_study);
+        for (DatasetDefinition def : defs)
             updateDef(def, 0);
     }
     private void resetCounter()
@@ -82,7 +82,7 @@ public class DatasetReorderer
         _i = 0;
     }
 
-    private void updateDef(DataSetDefinition def, int displayOrderIndex)
+    private void updateDef(DatasetDefinition def, int displayOrderIndex)
     {
         if (null != def)
         {
@@ -95,7 +95,7 @@ public class DatasetReorderer
         }
     }
 
-    private void updateDef(DataSetDefinition def)
+    private void updateDef(DatasetDefinition def)
     {
         if (null != def)
         {

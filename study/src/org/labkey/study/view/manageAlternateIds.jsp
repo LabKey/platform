@@ -208,7 +208,7 @@
                 extend : 'Ext.data.Model',
                 fields : [
                     { name : 'Label', type : 'string' },
-                    { name : 'DataSetId', type : 'int'}
+                    { name : 'DatasetId', type : 'int'}
                 ]
             });
 
@@ -222,7 +222,7 @@
                 name : 'datasetCombo',
                 queryMode : 'local',
                 store: this.dataStore,
-                valueField : 'DataSetId',
+                valueField : 'DatasetId',
                 displayField : 'Label',
                 labelWidth : 200,
                 labelSeparator: '',
@@ -292,7 +292,7 @@
                     this.dataStore.loadData(details.rows);
                     if(previousValue)
                     {
-                        dataCombo.select(dataCombo.findRecord('DataSetId', <%=aliasDatasetId%>));
+                        dataCombo.select(dataCombo.findRecord('DatasetId', <%=aliasDatasetId%>));
                         dataCombo.fireEvent('setup', dataCombo);
                     }
                 },
@@ -380,7 +380,7 @@
                         failure: function(response, options){
                             LABKEY.Utils.displayAjaxErrorResponse(response, options, false, 'An error occurred:<br>');
                         },
-                        jsonData : {dataSetId : datasetId, aliasColumn : aliasColumn, sourceColumn : sourceColumn},
+                        jsonData : {datasetId : datasetId, aliasColumn : aliasColumn, sourceColumn : sourceColumn},
                         headers : {'Content-Type' : 'application/json'},
                         scope: this
                     });

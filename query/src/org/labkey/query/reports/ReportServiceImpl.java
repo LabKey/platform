@@ -64,7 +64,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerUtil;
@@ -961,7 +961,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
                 Study study = svc != null ? svc.getStudy(ctx.getContainer()) : null;
                 if (study != null && schema != null && schema.equals("study"))
                 {
-                    DataSet dataset = study.getDatasetByLabel(descriptor.getProperty(ReportDescriptor.Prop.queryName));
+                    Dataset dataset = study.getDatasetByLabel(descriptor.getProperty(ReportDescriptor.Prop.queryName));
                     if (dataset != null && !dataset.getName().equals(dataset.getLabel()))
                     {
                         String newKey = ReportUtil.getReportKey(schema, dataset.getName());

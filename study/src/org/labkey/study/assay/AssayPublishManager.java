@@ -57,7 +57,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -80,7 +80,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.assay.AssayController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
@@ -177,7 +177,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, types, null, errors);
     }
 
-    private List<PropertyDescriptor> createTargetPropertyDescriptors(DataSet dataset, List<PropertyDescriptor> sourcePds, List<String> errors)
+    private List<PropertyDescriptor> createTargetPropertyDescriptors(Dataset dataset, List<PropertyDescriptor> sourcePds, List<String> errors)
     {
         List<PropertyDescriptor> targetPds = new ArrayList<>(sourcePds.size());
         Set<String> legalNames = new HashSet<>();
@@ -262,12 +262,12 @@ public class AssayPublishManager implements AssayPublishService.Service
         assert verifyRequiredColumns(dataMaps, targetStudy.getTimepointType());
 
         boolean schemaChanged = false;
-        DataSetDefinition dataset = null;
+        DatasetDefinition dataset = null;
         List<Map<String, Object>> convertedDataMaps;
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            List<DataSetDefinition> datasets = StudyManager.getInstance().getDatasetDefinitions(targetStudy);
+            List<DatasetDefinition> datasets = StudyManager.getInstance().getDatasetDefinitions(targetStudy);
 
             for (int i = 0; i < datasets.size() && dataset == null; i++)
             {
@@ -344,7 +344,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
         // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
         // IllegalStateException in ContainerManager.ensureContainer.
-        List<String> lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DataSetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
+        List<String> lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
         if (lsids.size() > 0 && protocol != null)
         {
             for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
@@ -425,7 +425,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
                 // NOTE Date is always special for publish be sure to use VisitDateURI to 'mark' this column
                 if (AssayPublishService.DATE_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
-                    uri = DataSetDefinition.getVisitDateURI();
+                    uri = DatasetDefinition.getVisitDateURI();
 
                 if (null == uri)
                 {
@@ -443,7 +443,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
 
     private Map<String, String> ensurePropertyDescriptors(
-            User user, DataSetDefinition dataset,
+            User user, DatasetDefinition dataset,
             List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types, String keyPropertyName) throws ChangePropertyDescriptorException
     {
         Domain domain = dataset.getDomain();
@@ -496,7 +496,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             propertyNamesToUris.put(property.getName(), property.getPropertyURI());
 
         // add hard columns to our return map
-        for (ColumnInfo col : DataSetDefinition.getTemplateTableInfo().getColumns())
+        for (ColumnInfo col : DatasetDefinition.getTemplateTableInfo().getColumns())
         {
             // Swap out whatever subject column name is used in the target study for 'ParticipantID'.
             // This allows the assay side to use its column name (ParticipantID) to find the study-side
@@ -596,19 +596,19 @@ public class AssayPublishManager implements AssayPublishService.Service
         return false;
     }
 
-    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, ExpProtocol protocol)
+    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, ExpProtocol protocol)
     {
-        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, DataSet.TYPE_STANDARD, null, protocol);
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol);
     }
 
-    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, String type, @Nullable Integer categoryId, ExpProtocol protocol)
+    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, String type, @Nullable Integer categoryId, ExpProtocol protocol)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
         {
             if (null == datasetId)
                 datasetId = new SqlSelector(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", study.getContainer().getId(), MIN_ASSAY_ID).getObject(Integer.class);
-            DataSetDefinition newDataset = new DataSetDefinition(study, datasetId.intValue(), name, name, null, null, null);
+            DatasetDefinition newDataset = new DatasetDefinition(study, datasetId.intValue(), name, name, null, null, null);
             newDataset.setShowByDefault(true);
             newDataset.setType(type);
 
@@ -620,7 +620,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             if (protocol != null)
                 newDataset.setProtocolId(protocol.getRowId());
 
-            StudyManager.getInstance().createDataSetDefinition(user, newDataset);
+            StudyManager.getInstance().createDatasetDefinition(user, newDataset);
 
             transaction.commit();
             return newDataset;
@@ -633,7 +633,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     private static String createUniqueDatasetName(Study study, String assayName)
     {
         Set<String> inUseNames = new CaseInsensitiveHashSet();
-        for (DataSet def : study.getDatasetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
+        for (Dataset def : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
             inUseNames.add(def.getName());
 
         int suffix = 1;
@@ -648,7 +648,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         return name;
     }
 
-    public UploadLog saveUploadData(User user, DataSet dsd, FileStream tsv, String filename) throws IOException
+    public UploadLog saveUploadData(User user, Dataset dsd, FileStream tsv, String filename) throws IOException
     {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(dsd.getContainer());
         if (null == pipelineRoot || !pipelineRoot.isValid())
@@ -699,7 +699,7 @@ public class AssayPublishManager implements AssayPublishService.Service
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, DataLoader dl, boolean withTriggers, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
+    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, boolean withTriggers, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws SQLException, ServletException
     {
         DbScope scope = DbSchema.get("study").getScope();
 
@@ -717,7 +717,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 QCState defaultQCState = null;
                 if (defaultQCStateId != null)
                     defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
-                lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DataSetDefinition.CheckForDuplicates.sourceOnly, 
+                lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
                         defaultQCState, QueryUpdateService.InsertOption.IMPORT, null, null);
                 if (!errors.hasErrors())
                     transaction.commit();

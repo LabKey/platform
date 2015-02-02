@@ -25,7 +25,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.importer.StudyImportContext;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.AbstractDatasetImportTask.Action;
@@ -120,10 +120,10 @@ public class DatasetFileReader
             return;
         }
 
-        List<DataSetDefinition> dsArray = _studyManager.getDatasetDefinitions(_study);
-        HashMap<String, DataSetDefinition> dsMap = new HashMap<>(dsArray.size() * 3);
+        List<DatasetDefinition> dsArray = _studyManager.getDatasetDefinitions(_study);
+        HashMap<String, DatasetDefinition> dsMap = new HashMap<>(dsArray.size() * 3);
         // UNDONE: duplicate labels? dataset named participant?
-        for (DataSetDefinition ds : dsArray)
+        for (DatasetDefinition ds : dsArray)
         {
             // When mapping a dataset identifier to an acutal dataset object,
             // we first check to see if the identifier is a dataset ID, then a
@@ -141,11 +141,11 @@ public class DatasetFileReader
             dsMap.put(String.valueOf(ds.getDatasetId()), ds);
         }
 
-        // add fake DataSetDefinition for virtual Participant dataset
-        DataSetDefinition dsParticipant = new DataSetDefinition(_study, -1, "Participant", "Participant", null, null, "StudyParticipant");
+        // add fake DatasetDefinition for virtual Participant dataset
+        DatasetDefinition dsParticipant = new DatasetDefinition(_study, -1, "Participant", "Participant", null, null, "StudyParticipant");
         dsMap.put("participant", dsParticipant);
 
-        IdentityHashMap<DataSetDefinition, DatasetImportRunnable> jobMap = new IdentityHashMap<>();
+        IdentityHashMap<DatasetDefinition, DatasetImportRunnable> jobMap = new IdentityHashMap<>();
 
         //
         // load defaults
@@ -210,7 +210,7 @@ public class DatasetFileReader
                 continue;
             String datasetKey = key.substring(0, period);
             String propertyKey = key.substring(period + 1);
-            DataSetDefinition ds = dsMap.get(datasetKey);
+            DatasetDefinition ds = dsMap.get(datasetKey);
             if (null == ds)
             {
                 errors.add("Could not find dataset for '" + datasetKey + "'");
@@ -268,7 +268,7 @@ public class DatasetFileReader
                 continue;
             String dsKey = m.group(1);
             dsKey = normalizeIntegerString(dsKey);
-            DataSetDefinition ds = dsMap.get(dsKey.toLowerCase());
+            DatasetDefinition ds = dsMap.get(dsKey.toLowerCase());
             if (null == ds)
                 continue;
             DatasetImportRunnable runnable = jobMap.get(ds);
@@ -319,7 +319,7 @@ public class DatasetFileReader
         }
     }
 
-    private DatasetImportRunnable newImportJob(DataSetDefinition ds, VirtualFile root, String tsv, Action defaultAction, boolean defaultDeleteAfterImport, Date defaultReplaceCutoff, OneToOneStringMap defaultColumnMap)
+    private DatasetImportRunnable newImportJob(DatasetDefinition ds, VirtualFile root, String tsv, Action defaultAction, boolean defaultDeleteAfterImport, Date defaultReplaceCutoff, OneToOneStringMap defaultColumnMap)
     {
         DatasetImportRunnable runnable;
         if (ds.getDatasetId() == -1 && "Participant".equals(ds.getName()))
@@ -345,7 +345,7 @@ public class DatasetFileReader
 
     private String toStudyPropertyURI(String property)
     {
-        PropertyDescriptor pd = DataSetDefinition.getStandardPropertiesMap().get(property);
+        PropertyDescriptor pd = DatasetDefinition.getStandardPropertiesMap().get(property);
         if (null == pd)
             return property;
         else

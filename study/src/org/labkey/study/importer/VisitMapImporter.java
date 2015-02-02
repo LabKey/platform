@@ -22,15 +22,15 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.VisitDataSetType;
+import org.labkey.study.model.VisitDatasetType;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.model.VisitTag;
@@ -302,7 +302,7 @@ public class VisitMapImporter
                 if (isRequiredCurrent != isRequiredNew)
                 {
                     // this does a bit too much work...
-                    StudyManager.getInstance().updateVisitDatasetMapping(user, container, key.visitRowId, key.datasetId, isRequiredNew ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
+                    StudyManager.getInstance().updateVisitDatasetMapping(user, container, key.visitRowId, key.datasetId, isRequiredNew ? VisitDatasetType.REQUIRED : VisitDatasetType.OPTIONAL);
                 }
             }
         }
@@ -313,16 +313,16 @@ public class VisitMapImporter
             VisitMapKey key = e.getKey();
             Boolean isRequiredCurrent = e.getValue();
             if (isRequiredCurrent)
-                StudyManager.getInstance().updateVisitDatasetMapping(user, container, key.visitRowId, key.datasetId, VisitDataSetType.OPTIONAL);
+                StudyManager.getInstance().updateVisitDatasetMapping(user, container, key.visitRowId, key.datasetId, VisitDatasetType.OPTIONAL);
         }
     }
 
 
     private void saveDatasets(User user, Study study, List<VisitMapRecord> records) throws SQLException
     {
-        List<DataSetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(study);
+        List<DatasetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(study);
         Set<Integer> existingSet = new HashSet<>();
-        for (DataSet def : defs)
+        for (Dataset def : defs)
             existingSet.add(def.getDatasetId());
 
         Set<Integer> addDatasetIds = new HashSet<>();

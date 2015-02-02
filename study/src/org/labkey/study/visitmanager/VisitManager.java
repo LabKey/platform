@@ -50,7 +50,7 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortManager;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -99,7 +99,7 @@ public abstract class VisitManager
      * @param user the current user
      * @param changedDatasets the datasets that may have one or more rows modified
      */
-    public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets)
+    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets)
     {
         updateParticipantVisits(user, changedDatasets, null, null, true, null);
     }
@@ -121,7 +121,7 @@ public abstract class VisitManager
      * @param participantVisitResyncRequired If true, will force an update of the ParticipantVisit mapping for this study
      * @param logger Log4j logger to use for detailed performance information
      */
-    public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired, @Nullable Logger logger)
+    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired, @Nullable Logger logger)
     {
         info(logger, "Updating participants");
         updateParticipants(changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants);
@@ -131,9 +131,9 @@ public abstract class VisitManager
             boolean exactlyOneDataset = null != changedDatasets && 1==changedDatasets.size();
             if (!mightHaveDeletedParticipants && exactlyOneDataset)
             {
-                Iterator<DataSetDefinition> it = changedDatasets.iterator();
+                Iterator<DatasetDefinition> it = changedDatasets.iterator();
                 it.hasNext();
-                DataSetDefinition ds = it.next();
+                DatasetDefinition ds = it.next();
                 info(logger, "Updating participant visit table for single dataset " + ds.getName());
                 updateParticipantVisitTableAfterInsert(user, ds, potentiallyAddedParticipants);
             }
@@ -192,7 +192,7 @@ public abstract class VisitManager
     }
 
     protected abstract void updateParticipantVisitTable(@Nullable User user);
-    protected void updateParticipantVisitTableAfterInsert(@Nullable User user, @Nullable DataSetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants)
+    protected void updateParticipantVisitTableAfterInsert(@Nullable User user, @Nullable DatasetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants)
     {
         updateParticipantVisitTable(user);
     }
@@ -424,7 +424,7 @@ public abstract class VisitManager
     }
 
     /** Update the Participants table to match the entries in StudyData. */
-    protected void updateParticipants(Collection<DataSetDefinition> changedDatasets,
+    protected void updateParticipants(Collection<DatasetDefinition> changedDatasets,
                                       final Set<String> potentiallyInsertedParticipants,
                                       Set<String> potentiallyDeletedParticipants)
     {
@@ -568,11 +568,11 @@ public abstract class VisitManager
     /** Number of milliseconds to wait between batches of participant purges */
     private static final long PURGE_PARTICIPANT_INTERVAL = DateUtils.MILLIS_PER_MINUTE * 5;
 
-    private static SQLFragment studyDataPtids(Collection<DataSetDefinition> defs)
+    private static SQLFragment studyDataPtids(Collection<DatasetDefinition> defs)
     {
         SQLFragment f = new SQLFragment();
         String union = "";
-        for (DataSetDefinition d : defs)
+        for (DatasetDefinition d : defs)
         {
             TableInfo sti = null;
             try
@@ -602,7 +602,7 @@ public abstract class VisitManager
         //See if there are any demographic datasets that contain a start date
         DbSchema schema = StudySchema.getInstance().getSchema();
 
-        for (DataSetDefinition dataset : getStudy().getDatasets())
+        for (DatasetDefinition dataset : getStudy().getDatasets())
         {
             if (dataset.isDemographicData())
             {

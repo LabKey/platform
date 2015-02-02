@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.exp.PropertyType" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -39,7 +39,7 @@
     StudyImpl study = getStudy();
     StudyManager manager = StudyManager.getInstance();
 
-    List<? extends DataSet> datasets = manager.getDatasetDefinitions(study);
+    List<? extends Dataset> datasets = manager.getDatasetDefinitions(study);
 
     PropertyDescriptor[] ptidDescriptors = new PropertyDescriptor[0];
     PropertyDescriptor[] ptidVisitDescriptors = new PropertyDescriptor[0];
@@ -48,7 +48,7 @@
 
     if (participantCommentDatasetId != null && participantCommentDatasetId >= 0)
     {
-        DataSet dataset = StudyManager.getInstance().getDatasetDefinition(study, participantCommentDatasetId);
+        Dataset dataset = StudyManager.getInstance().getDatasetDefinition(study, participantCommentDatasetId);
         if (dataset != null)
             ptidDescriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
     }
@@ -57,7 +57,7 @@
     {
         if (participantVisitCommentDatasetId != null && participantVisitCommentDatasetId >= 0)
         {
-            DataSet dataset = StudyManager.getInstance().getDatasetDefinition(study, participantVisitCommentDatasetId);
+            Dataset dataset = StudyManager.getInstance().getDatasetDefinition(study, participantVisitCommentDatasetId);
             if (dataset != null)
                 ptidVisitDescriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
         }
@@ -106,7 +106,7 @@
                         onchange="document.manageComments.participantCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
                     <option value="-1">[None]</option>
                     <%
-                        for (DataSet dataset : datasets)
+                        for (Dataset dataset : datasets)
                         {
                             if (dataset.isDemographicData())
                             {
@@ -168,7 +168,7 @@
                         onchange="document.manageComments.participantVisitCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
                     <option value="-1">[None]</option>
                     <%
-                        for (DataSet dataset : datasets)
+                        for (Dataset dataset : datasets)
                         {
                             if (!dataset.isDemographicData())
                             {

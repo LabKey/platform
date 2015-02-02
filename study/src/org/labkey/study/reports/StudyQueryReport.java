@@ -38,9 +38,9 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DataSetQueryView;
+import org.labkey.study.query.DatasetQueryView;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.ServletException;
@@ -109,7 +109,7 @@ public class StudyQueryReport extends QueryReport
         if (oldView != null)
         {
             columns = oldView.getColumns();
-            oldView.applyFilterAndSortToURL(filterOrSort, DataSetQueryView.DATAREGION);
+            oldView.applyFilterAndSortToURL(filterOrSort, DatasetQueryView.DATAREGION);
 
             User user = oldView.getOwner();
             if (user != null)
@@ -123,7 +123,7 @@ public class StudyQueryReport extends QueryReport
         if (columns != null && columns.size() > 0)
         {
             newView.setColumns(columns);
-            newView.setFilterAndSortFromURL(filterOrSort, DataSetQueryView.DATAREGION);
+            newView.setFilterAndSortFromURL(filterOrSort, DatasetQueryView.DATAREGION);
             newView.save(context.getUser(), context.getRequest());
         }
         return reportId;
@@ -219,7 +219,7 @@ public class StudyQueryReport extends QueryReport
 
                 int datasetId = NumberUtils.toInt(getDescriptor().getProperty("showWithDataset"), -1);
                 Study study = StudyManager.getInstance().getStudy(context.getContainer());
-                DataSetDefinition datasetDef = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+                DatasetDefinition datasetDef = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
                 if (datasetDef != null && !datasetDef.canRead(context.getUser()))
                     view.getSettings().setAllowCustomizeView(false);
 
@@ -237,10 +237,10 @@ public class StudyQueryReport extends QueryReport
         if (datasetId != -1)
         {
             Study study = StudyManager.getInstance().getStudy(context.getContainer());
-            DataSetDefinition datasetDef = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+            DatasetDefinition datasetDef = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
             if (datasetDef != null)
                 return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
-                            addParameter(DataSetDefinition.DATASETKEY, datasetId).
+                            addParameter(DatasetDefinition.DATASETKEY, datasetId).
                             addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, getDescriptor().getReportId().toString());
         }
 

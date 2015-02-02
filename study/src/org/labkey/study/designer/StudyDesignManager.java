@@ -45,7 +45,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -438,7 +438,7 @@ public class StudyDesignManager
         }
         List<String> errors = new ArrayList<>();
 
-        DataSet subjectDataset = AssayPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true, null);
+        Dataset subjectDataset = AssayPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true, null);
         study = study.createMutable();
         study.setParticipantCohortDatasetId(subjectDataset.getDatasetId());
         study.setParticipantCohortProperty("Cohort");
@@ -449,9 +449,9 @@ public class StudyDesignManager
             throw new RuntimeException(StringUtils.join(errors, '\n'));
 
         //Need to make the dataset at least optional for some visit
-//        DataSetDefinition[] dsds = StudyManager.getInstance().getDatasetDefinitions(study);
-//        for (DataSetDefinition dsd : dsds)
-//            StudyManager.getInstance().updateVisitDatasetMapping(user, study.getContainer(), 1, dsd.getDatasetId(), VisitDataSetType.OPTIONAL);
+//        DatasetDefinition[] dsds = StudyManager.getInstance().getDatasetDefinitions(study);
+//        for (DatasetDefinition dsd : dsds)
+//            StudyManager.getInstance().updateVisitDatasetMapping(user, study.getContainer(), 1, dsd.getDatasetId(), VisitDatasetType.OPTIONAL);
 
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter(study.getContainer(), user);
         importer.process(specimens, false);

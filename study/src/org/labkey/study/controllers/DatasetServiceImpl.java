@@ -35,7 +35,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -46,7 +46,7 @@ import org.labkey.api.view.ViewContext;
 import gwt.client.org.labkey.study.dataset.client.DatasetService;
 import gwt.client.org.labkey.study.dataset.client.model.GWTDataset;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -77,13 +77,13 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
     {
         try
         {
-            DataSetDefinition dd = study.getDataset(id);
+            DatasetDefinition dd = study.getDataset(id);
             if (null == dd)
                 return null;
             GWTDataset ds = new GWTDataset();
             PropertyUtils.copyProperties(ds, dd);
             ds.setDatasetId(dd.getDatasetId()); // upper/lowercase problem
-            ds.setKeyPropertyManaged(dd.getKeyManagementType() != DataSet.KeyManagementType.None);
+            ds.setKeyPropertyManaged(dd.getKeyManagementType() != Dataset.KeyManagementType.None);
 
             List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
             Map<String, String> cohortMap = new HashMap<>();
@@ -164,7 +164,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         for (Iterator<GWTPropertyDescriptor> iter = updatedProps.iterator(); iter.hasNext();)
         {
             GWTPropertyDescriptor prop = iter.next();
-            if (DataSetDefinition.isDefaultFieldName(prop.getName(), study))
+            if (DatasetDefinition.isDefaultFieldName(prop.getName(), study))
                 iter.remove();
             else if (DatasetDomainKind.DATE.equalsIgnoreCase(prop.getName()))
                 prop.setRangeURI(PropertyType.DATE_TIME.getTypeUri());
@@ -185,7 +185,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         {
             // CONSIDER: optimistic concurrency validate against current
             // validate that this smells right
-            DataSetDefinition def = study.getDataset(ds.getDatasetId());
+            DatasetDefinition def = study.getDataset(ds.getDatasetId());
             if (null == def)
             {
                 errors.add("Dataset not found");
@@ -205,13 +205,13 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 ds.setKeyPropertyManaged(false);
             }
 
-            DataSetDefinition updated = def.createMutable();
+            DatasetDefinition updated = def.createMutable();
             // Clear the category ID so that it gets regenerated based on the new string - see issue 19649
             updated.setCategoryId(null);
             BeanUtils.copyProperties(updated, ds);
 
             // Default is no key management
-            DataSet.KeyManagementType keyType = DataSet.KeyManagementType.None;
+            Dataset.KeyManagementType keyType = Dataset.KeyManagementType.None;
             String keyPropertyName = null;
             if (ds.getKeyPropertyName() != null)
             {
@@ -228,12 +228,12 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                             if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.INTEGER || dp.getPropertyDescriptor().getPropertyType() == PropertyType.DOUBLE)
                             {
                                 // Number fields must be RowIds
-                                keyType = DataSet.KeyManagementType.RowId;
+                                keyType = Dataset.KeyManagementType.RowId;
                             }
                             else if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
                             {
                                 // Strings can be managed as GUIDs
-                                keyType = DataSet.KeyManagementType.GUID;
+                                keyType = Dataset.KeyManagementType.GUID;
                             }
                             else
                             {
@@ -249,7 +249,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
             if (!def.getLabel().equals(updated.getLabel()))
             {
-                DataSet existing = studyManager.getDatasetDefinitionByLabel(study, updated.getLabel());
+                Dataset existing = studyManager.getDatasetDefinitionByLabel(study, updated.getLabel());
                 if (existing != null && existing.getDatasetId() != ds.getDatasetId())
                 {
                     errors.add("A Dataset already exists with the label \"" + updated.getLabel() +"\"");
@@ -260,7 +260,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             if (!def.getName().equals(updated.getName()))
             {
                 // issue 17766: check if dataset or query exist with this name
-                DataSet existing = studyManager.getDatasetDefinitionByName(study, updated.getName());
+                Dataset existing = studyManager.getDatasetDefinitionByName(study, updated.getName());
                 if ((null != existing && existing.getDatasetId() != ds.getDatasetId())
                     || null != QueryService.get().getQueryDef(getUser(), getContainer(), "study", updated.getName()))
                 {
@@ -336,7 +336,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             errors.add("Study not found in current container");
             return false;
         }
-        DataSetDefinition def = (DataSetDefinition)study.getDataset(ds.getDatasetId());
+        DatasetDefinition def = (DatasetDefinition)study.getDataset(ds.getDatasetId());
         if (null == def)
         {
             errors.add("Dataset not found");

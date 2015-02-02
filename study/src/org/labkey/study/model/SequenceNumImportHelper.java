@@ -49,7 +49,7 @@ public class SequenceNumImportHelper
     final SequenceVisitMap _sequenceNumMap;
 
 
-    public SequenceNumImportHelper(@NotNull Study study, @Nullable DataSetDefinition def)
+    public SequenceNumImportHelper(@NotNull Study study, @Nullable DatasetDefinition def)
     {
         _timetype = study.getTimepointType();
         _startDate = study.getStartDate();

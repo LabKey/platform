@@ -78,7 +78,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.SpecimenServiceImpl;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.SpecimenComment;
@@ -1219,7 +1219,7 @@ public class SpecimenImporter
 
         StudyImpl study = StudyManager.getInstance().getStudy(_container);
         info("Updating study-wide subject/visit information...");
-        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, Collections.<DataSetDefinition>emptyList(), null, null, true, _logger);
+        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, Collections.<DatasetDefinition>emptyList(), null, null, true, _logger);
         info("Subject/visit update complete.");
     }
 

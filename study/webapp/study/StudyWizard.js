@@ -899,7 +899,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 schemaName: 'study',
                 queryName: 'Datasets',
                 filterArray: [ LABKEY.Filter.create('ShowByDefault', true) ],
-                columns: 'dataSetId, name, label, category, description',
+                columns: 'datasetId, name, label, category, description',
                 sort: 'label'
             }),
             viewConfig: {forceFit: true},
@@ -919,7 +919,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 schemaName: 'study',
                 queryName: 'Datasets',
                 filterArray: [ LABKEY.Filter.create('ShowByDefault', false) ],
-                columns: 'dataSetId, name, label, category, description',
+                columns: 'datasetId, name, label, category, description',
                 sort: 'label',
                 listeners :   {
                     scope : this,
@@ -973,7 +973,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 else
                 {
                     var datasets = this.setify(this.settings.datasets);
-                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('DataSetId') in datasets); }).getRange(), true);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('DatasetId') in datasets); }).getRange(), true);
                 }
             }
         };

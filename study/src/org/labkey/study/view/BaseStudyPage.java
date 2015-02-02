@@ -46,7 +46,7 @@ public abstract class BaseStudyPage extends JspBase
         return getStudy().getVisits(order);
     }
 
-    protected List<DataSetDefinition> getDatasets()
+    protected List<DatasetDefinition> getDatasets()
     {
         return getStudy().getDatasets();
     }

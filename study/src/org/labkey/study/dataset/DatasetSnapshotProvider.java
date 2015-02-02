@@ -52,7 +52,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContextListener;
@@ -65,7 +65,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetManager;
 import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantCategoryListener;
@@ -74,7 +74,7 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
-import org.labkey.study.query.DataSetQuerySettings;
+import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.writer.DatasetWriter;
 import org.springframework.validation.BindException;
 
@@ -162,7 +162,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
                 addParameter(qs.param(QueryParam.queryName), settings.getQueryName()).
                 addParameter(qs.param(QueryParam.viewName), settings.getViewName()).
-                addParameter(DataSetDefinition.DATASETKEY, context.getActionURL().getParameter(DataSetDefinition.DATASETKEY)).
+                addParameter(DatasetDefinition.DATASETKEY, context.getActionURL().getParameter(DatasetDefinition.DATASETKEY)).
                 addParameter(ActionURL.Param.redirectUrl, PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
@@ -199,7 +199,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
             // dataset snapshots must have an underlying dataset definition defined
             StudyImpl study = StudyManager.getInstance().getStudy(qsDef.getContainer());
-            DataSetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, qsDef.getName());
+            DatasetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, qsDef.getName());
             if (def != null)
             {
                 QueryView view = createQueryView(context, qsDef, errors);
@@ -220,7 +220,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             // import the data
                         BatchValidationException ve = new BatchValidationException();
                         StudyManager.getInstance().importDatasetData(context.getUser(), def, new TabLoader(sb, true),
-                                new CaseInsensitiveHashMap<String>(), ve, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, 
+                                new CaseInsensitiveHashMap<String>(), ve, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null,
                                 QueryUpdateService.InsertOption.INSERT, null, null);
 
                         for (ValidationException e : ve.getRowErrors())
@@ -248,7 +248,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             throw new IllegalArgumentException("QuerySnapshotDefinition cannot be null");
     }
 
-    private Results getResults(ViewContext context, QueryView view, QuerySnapshotDefinition qsDef, DataSetDefinition def) throws SQLException
+    private Results getResults(ViewContext context, QueryView view, QuerySnapshotDefinition qsDef, DatasetDefinition def) throws SQLException
     {
         TableInfo tinfo = view.getTable();
         SimpleFilter filter = createParticipantGroupFilter(context, qsDef);
@@ -302,7 +302,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             if (schema == null)
                 return null;
 
-            DataSetQuerySettings settings = new DataSetQuerySettings(context.getBindPropertyValues(), QueryView.DATAREGIONNAME_DEFAULT);
+            DatasetQuerySettings settings = new DatasetQuerySettings(context.getBindPropertyValues(), QueryView.DATAREGIONNAME_DEFAULT);
             settings.setQueryName(queryDef.getName());
 
             QueryView view = schema.createView(context, settings, errors);
@@ -337,9 +337,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             if (!errors.hasErrors())
             {
                 Study study = StudyManager.getInstance().getStudy(qsDef.getContainer());
-                DataSetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, qsDef.getName());
+                DatasetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, qsDef.getName());
                 return new ActionURL(StudyController.DatasetAction.class, qsDef.getContainer()).
-                        addParameter(DataSetDefinition.DATASETKEY, def.getDatasetId());
+                        addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
             }
         }
         return null;
@@ -370,7 +370,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             for (FieldKey fieldKey : fieldKeys)
             {
                 ColumnInfo col = fieldMap.get(fieldKey);
-                if (col != null && !DataSetDefinition.isDefaultFieldName(col.getName(), study))
+                if (col != null && !DatasetDefinition.isDefaultFieldName(col.getName(), study))
                 {
                     // The key of the entry is the same code that generates the TSV header lines for
                     // TSVGridWriter.ColumnHeaderType.queryColumnName. It would be nice to use the code directly.
@@ -389,7 +389,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             StudyImpl study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
 
             // purge the dataset rows then recreate the new one...
-            DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
+            DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
             if (dsDef != null)
             {
                 DbSchema schema = StudySchema.getInstance().getSchema();
@@ -425,7 +425,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             // import the new data
                             newRows = StudyManager.getInstance().importDatasetData(form.getViewContext().getUser(),
                                     dsDef, new TabLoader(sb, true), new CaseInsensitiveHashMap<String>(),
-                                    importErrors, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null, null);
+                                    importErrors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null, null, null);
 
                             for (String error : importErrors)
                                 errors.reject(SpringActionController.ERROR_MSG, error);
@@ -446,7 +446,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             transaction.commit();
 
                             return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
-                                    addParameter(DataSetDefinition.DATASETKEY, dsDef.getDatasetId());
+                                    addParameter(DatasetDefinition.DATASETKEY, dsDef.getDatasetId());
                         }
                     }
                 }
@@ -469,7 +469,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         // update the study dataset columns
 /*
         Study study = StudyManager.getInstance().getStudy(context.getContainer());
-        DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinition(study, def.getName());
+        DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinition(study, def.getName());
         if (dsDef != null)
         {
             String domainURI = dsDef.getTypeURI();
@@ -506,7 +506,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         if (def != null)
         {
             Study study = StudyManager.getInstance().getStudy(context.getContainer());
-            DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
+            DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
             if (dsDef != null)
             {
                 if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(DatasetAuditProvider.DATASET_AUDIT_EVENT))
@@ -553,7 +553,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
     }
 
-    public void datasetChanged(final DataSet def)
+    public void datasetChanged(final Dataset def)
     {
         _log.debug("Cache cleared notification on dataset : " + def.getDatasetId());
 
@@ -693,7 +693,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             Container snapshotContainer = snapshotEntry.getKey();
             StudyImpl study = StudyManager.getInstance().getStudy(snapshotContainer);
             List<QuerySnapshotDefinition> snapshotDefs = snapshotEntry.getValue();
-            Set<DataSetDefinition> deferredDatasets = new HashSet<>(snapshotDefs.size());
+            Set<DatasetDefinition> deferredDatasets = new HashSet<>(snapshotDefs.size());
             for (QuerySnapshotDefinition def : snapshotDefs)
             {
                 deferredDatasets.add(StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName()));

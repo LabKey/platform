@@ -16,7 +16,7 @@
  */
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%@ page import="org.labkey.api.study.DataSet"%>
+<%@ page import="org.labkey.api.study.Dataset"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
@@ -43,7 +43,7 @@ The dataset definition file <b><%= h(reader.getDefinitionFileName()) %></b> refe
 int row = 0;
 for (DatasetImportRunnable runnable : runnables)
 {
-    DataSet dataset = runnable.getDatasetDefinition();
+    Dataset dataset = runnable.getDatasetDefinition();
     String message = runnable.validate();
     if (message == null)
         message = h(runnable.getFileName());

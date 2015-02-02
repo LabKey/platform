@@ -32,7 +32,7 @@
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
@@ -45,7 +45,7 @@
 <%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.util.List" %>
@@ -77,7 +77,7 @@
     Study study = manager.getStudy(getContainer());
 
     User user = (User) request.getUserPrincipal();
-    List<DataSetDefinition> datasets = manager.getDatasetDefinitions(study);
+    List<DatasetDefinition> datasets = manager.getDatasetDefinitions(study);
     Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
     boolean updateAccess = study.getContainer().hasPermission(user, UpdatePermission.class);
 %>
@@ -85,7 +85,7 @@
 <table class="labkey-data-region">
 
     <%
-        for (DataSetDefinition dataset : datasets)
+        for (DatasetDefinition dataset : datasets)
         {
             // Only interested in default-visible visible demographic data
             if (!dataset.isDemographicData() || !dataset.isShowByDefault())
@@ -246,7 +246,7 @@
     %>
 </table>
 <%!
-    PropertyDescriptor[] sortProperties(PropertyDescriptor[] pds, DataSet dsd, ViewContext context)
+    PropertyDescriptor[] sortProperties(PropertyDescriptor[] pds, Dataset dsd, ViewContext context)
     {
         final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
         if (sortMap != null && !sortMap.isEmpty())

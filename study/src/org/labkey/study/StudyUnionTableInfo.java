@@ -27,7 +27,7 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 
 import java.sql.Types;
@@ -64,14 +64,14 @@ public class StudyUnionTableInfo extends VirtualTable
     SQLFragment unionSql;
     private User _user;
     boolean _crossContainer = false;
-    Collection<DataSetDefinition> _defs;
+    Collection<DatasetDefinition> _defs;
 
-    public StudyUnionTableInfo(StudyImpl study, Collection<DataSetDefinition> defs, User user)
+    public StudyUnionTableInfo(StudyImpl study, Collection<DatasetDefinition> defs, User user)
     {
         this(study, defs, user, false);
     }
 
-    public StudyUnionTableInfo(StudyImpl study, Collection<DataSetDefinition> defs, User user, boolean crossContainer)
+    public StudyUnionTableInfo(StudyImpl study, Collection<DatasetDefinition> defs, User user, boolean crossContainer)
     {
         super(StudySchema.getInstance().getSchema(), "StudyData");
         _study = study;
@@ -81,7 +81,7 @@ public class StudyUnionTableInfo extends VirtualTable
         init(defs);
     }
 
-    public void init(Collection<DataSetDefinition> defs)
+    public void init(Collection<DatasetDefinition> defs)
     {
         SQLFragment sqlf = new SQLFragment();
         int count = 0;
@@ -89,7 +89,7 @@ public class StudyUnionTableInfo extends VirtualTable
 
         Set<PropertyDescriptor> sharedProperties = _study.getSharedProperties();
 
-        for (DataSetDefinition def : defs)
+        for (DatasetDefinition def : defs)
         {
             TableInfo ti = def.getStorageTableInfo();
             if (null == ti || (_user != null && !def.canRead(_user)))
@@ -226,7 +226,7 @@ public class StudyUnionTableInfo extends VirtualTable
         int count = 0;
         String unionAll = "";
         SQLFragment sqlf = new SQLFragment();
-        for (DataSetDefinition def : _defs)
+        for (DatasetDefinition def : _defs)
         {
             TableInfo ti = def.getStorageTableInfo();
             if (null == ti || (_user != null && !def.canRead(_user)))
@@ -292,7 +292,7 @@ public class StudyUnionTableInfo extends VirtualTable
 
     private void makeColumnInfos(Set<PropertyDescriptor> sharedProperties)
     {
-        TableInfo template = DataSetDefinition.getTemplateTableInfo();
+        TableInfo template = DatasetDefinition.getTemplateTableInfo();
 
         for (String name : COLUMN_NAMES)
         {

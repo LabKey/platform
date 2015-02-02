@@ -51,7 +51,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -94,7 +94,7 @@ public class StudyUpgradeCode implements UpgradeCode
                 if (study != null)
                 {
                     List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<>();
-                    for (DataSetDefinition dsd : StudyManager.getInstance().getDatasetDefinitions(study))
+                    for (DatasetDefinition dsd : StudyManager.getInstance().getDatasetDefinitions(study))
                     {
                         if (!dsd.getName().equals(dsd.getLabel()))
                         {
@@ -368,7 +368,7 @@ public class StudyUpgradeCode implements UpgradeCode
             StudyImpl study = StudyManager.getInstance().getStudy(c);
             if (null == study)
                 continue;
-            for (DataSetDefinition def : study.getDatasets())
+            for (DatasetDefinition def : study.getDatasets())
             {
                 migrateDatasetStorage(def);
                 uncacheDef(def);
@@ -378,14 +378,14 @@ public class StudyUpgradeCode implements UpgradeCode
         DbScope.getLabkeyScope().invalidateSchema(StudySchema.getInstance().getDatasetSchema());
     }
 
-    void uncacheDef(DataSetDefinition def)
+    void uncacheDef(DatasetDefinition def)
     {
         TableInfo t = def.getStorageTableInfo();
         t.getSchema().getScope().invalidateTable(StudySchema.getInstance().getDatasetSchema(), t.getName());
         StudyManager.getInstance().uncache(def);
     }
 
-    private void migrateDatasetStorage(DataSetDefinition def) throws ChangePropertyDescriptorException
+    private void migrateDatasetStorage(DatasetDefinition def) throws ChangePropertyDescriptorException
     {
         TableInfo t = def.getStorageTableInfo();
         ColumnInfo dt = t.getColumn("date");
@@ -413,7 +413,7 @@ public class StudyUpgradeCode implements UpgradeCode
     }
 
 
-    void renameColumnWithTheNameOfWhichIDoNotApprove(DataSetDefinition def, ColumnInfo columnInfo) throws ChangePropertyDescriptorException
+    void renameColumnWithTheNameOfWhichIDoNotApprove(DatasetDefinition def, ColumnInfo columnInfo) throws ChangePropertyDescriptorException
     {
         try
         {

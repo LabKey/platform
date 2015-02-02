@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.exp.PropertyType" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
@@ -116,7 +116,7 @@
                         onchange="document.manageCohorts.participantCohortProperty.value=''; document.manageCohorts.submit()">
                     <option value="-1">[None]</option>
                     <%
-                        for (DataSet dataset : manager.getDatasetDefinitions(study))
+                        for (Dataset dataset : manager.getDatasetDefinitions(study))
                         {
                             boolean selected = (study.getParticipantCohortDatasetId() != null &&
                                     dataset.getDatasetId() == study.getParticipantCohortDatasetId());
@@ -141,7 +141,7 @@
                             descriptors = new PropertyDescriptor[0];
                         else
                         {
-                            DataSet dataset = StudyManager.getInstance().getDatasetDefinition(study, participantCohortDatasetId);
+                            Dataset dataset = StudyManager.getInstance().getDatasetDefinition(study, participantCohortDatasetId);
                             if (dataset != null)
                                 descriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
                             else

@@ -25,10 +25,10 @@
 <%@ page import="org.labkey.api.security.roles.ReaderRole" %>
 <%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.ArrayList" %>
@@ -159,10 +159,10 @@ else
     }
 
     java.util.List<Role> possibleRoles = new ArrayList<>();
-    List<DataSetDefinition> datasets = new ArrayList<>(study.getDatasets());
-    Collections.sort(datasets, new Comparator<DataSetDefinition>(){
+    List<DatasetDefinition> datasets = new ArrayList<>(study.getDatasets());
+    Collections.sort(datasets, new Comparator<DatasetDefinition>(){
         @Override
-        public int compare(DataSetDefinition o1, DataSetDefinition o2)
+        public int compare(DatasetDefinition o1, DatasetDefinition o2)
         {
             return o1.getLabel().toLowerCase().compareTo(o2.getLabel().toLowerCase());
         }
@@ -170,7 +170,7 @@ else
 
     if (!datasets.isEmpty())
     {
-        org.labkey.study.model.DataSetDefinition ds = datasets.get(0);
+        DatasetDefinition ds = datasets.get(0);
         SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
         for (Role role : RoleManager.getAllRoles())
         {
@@ -206,7 +206,7 @@ else
         </select></td><%
     }
     %></tr><%
-    for (DataSet ds : datasets)
+    for (Dataset ds : datasets)
     {
         SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
 

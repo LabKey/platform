@@ -25,7 +25,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -88,7 +88,7 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
                     _settings.isRemoveProtectedColumns(), _settings.isShiftDates(), _settings.isUseAlternateParticipantIds(),
                     _settings.isMaskClinic(), new PipelineJobLoggerGetter(this));
 
-            Set<DataSetDefinition> datasets = Collections.emptySet();
+            Set<DatasetDefinition> datasets = Collections.emptySet();
 
             StudyExportContext studyCtx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(),
                     dataTypes, _settings.isRemoveProtectedColumns(),

@@ -34,11 +34,11 @@ import java.util.List;
  * User: brittp
  * Created: Apr 30, 2008 11:13:56 AM
  */
-public class DataSetColumnsTable extends FilteredTable<StudyQuerySchema>
+public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
 {
     public static final String NAME = "DataSetColumns";
 
-    public DataSetColumnsTable(final StudyQuerySchema schema)
+    public DatasetColumnsTable(final StudyQuerySchema schema)
     {
         super(ExperimentService.get().getTinfoPropertyDescriptor(), schema);
         setName(NAME);
@@ -50,7 +50,7 @@ public class DataSetColumnsTable extends FilteredTable<StudyQuerySchema>
         {
             public TableInfo getLookupTableInfo()
             {
-                return new DataSetsTable(schema);
+                return new DatasetsTable(schema);
             }
         });
         addColumn(datasetLookupCol);
@@ -80,7 +80,7 @@ public class DataSetColumnsTable extends FilteredTable<StudyQuerySchema>
                 "JOIN exp.PropertyDomain AS PropertyDomain ON PropertyDomain.PropertyId = PropertyDescriptor.PropertyId\n" +
                 "JOIN exp.DomainDescriptor AS DomainDescriptor ON DomainDescriptor.DomainId = PropertyDomain.DomainId\n" +
                 "JOIN (SELECT * FROM study.DataSet ");
-        SQLFragment datasetFilter = DataSetsTable.getDatasetFilter(getContainer()).getSQLFragment(getSqlDialect());
+        SQLFragment datasetFilter = DatasetsTable.getDatasetFilter(getContainer()).getSQLFragment(getSqlDialect());
         result.append(datasetFilter);
         result.append(") AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI) ");
         result.append(alias);

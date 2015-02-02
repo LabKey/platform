@@ -154,7 +154,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
 
     @Transient
-    public List<VisitDataSet> getVisitDatasets()
+    public List<VisitDataset> getVisitDatasets()
     {
         return StudyManager.getInstance().getMapping(this);
     }

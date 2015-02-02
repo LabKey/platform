@@ -22,7 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.DatasetsDocument;
@@ -60,7 +60,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
             StudyManager studyManager = StudyManager.getInstance();
             Map<String, DatasetDefinitionImporter.DatasetImportProperties> datasetProps = DatasetDefinitionImporter.getDatasetImportProperties(datasets);
 
-            for (DataSetDefinition def : study.getDatasets())
+            for (DatasetDefinition def : study.getDatasets())
             {
                 DatasetDefinitionImporter.DatasetImportProperties props = datasetProps.get(def.getName());
 

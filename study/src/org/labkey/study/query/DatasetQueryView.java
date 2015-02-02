@@ -66,7 +66,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
@@ -90,9 +90,9 @@ import java.util.Set;
  * Date: Aug 25, 2006
  * Time: 4:03:59 PM
  */
-public class DataSetQueryView extends StudyQueryView
+public class DatasetQueryView extends StudyQueryView
 {
-    private DataSetDefinition _dataset;
+    private DatasetDefinition _dataset;
     private VisitImpl _visit;
     private CohortFilter _cohortFilter;
     private boolean _showSourceLinks;
@@ -100,9 +100,9 @@ public class DataSetQueryView extends StudyQueryView
     private QCStateSet _qcStateSet;
     private ExpProtocol _protocol;
     private AssayProvider _provider;
-    protected static Logger _systemLog = Logger.getLogger(DataSetQueryView.class);
+    protected static Logger _systemLog = Logger.getLogger(DatasetQueryView.class);
 
-    public DataSetQueryView(UserSchema schema, DataSetQuerySettings settings, BindException errors)
+    public DatasetQueryView(UserSchema schema, DatasetQuerySettings settings, BindException errors)
     {
         super(schema, settings, errors);
 
@@ -202,7 +202,7 @@ public class DataSetQueryView extends StudyQueryView
                 filter = new SimpleFilter();
                 view.getRenderContext().setBaseFilter(filter);
             }
-            FieldKey qcStateKey = FieldKey.fromParts(DataSetTableImpl.QCSTATE_ID_COLNAME, "rowid");
+            FieldKey qcStateKey = FieldKey.fromParts(DatasetTableImpl.QCSTATE_ID_COLNAME, "rowid");
             Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(table, Collections.singleton(qcStateKey));
             ColumnInfo qcStateColumn = qcStateColumnMap.get(qcStateKey);
             filter.addClause(new SimpleFilter.SQLClause(_qcStateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getFieldKey()));
@@ -229,7 +229,7 @@ public class DataSetQueryView extends StudyQueryView
         }
 
         // allow posts from dataset data regions to determine which dataset was being displayed:
-        view.getDataRegion().addHiddenFormField(DataSetDefinition.DATASETKEY, "" + _dataset.getDatasetId());
+        view.getDataRegion().addHiddenFormField(DatasetDefinition.DATASETKEY, "" + _dataset.getDatasetId());
 
         return view;
     }
@@ -505,7 +505,7 @@ public class DataSetQueryView extends StudyQueryView
         return button;
     }
 
-    private boolean canWrite(DataSetDefinition def, User user)
+    private boolean canWrite(DatasetDefinition def, User user)
     {
         return def.canWrite(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
     }

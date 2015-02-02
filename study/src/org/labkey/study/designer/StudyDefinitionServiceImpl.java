@@ -25,7 +25,7 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -41,7 +41,7 @@ import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -189,8 +189,8 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
             int dsId = StudyService.get().getDatasetIdByName(getContainer(), assayDefinition.getAssayName());
             if (dsId == -1)
             {
-                DataSetDefinition datasetDefinition = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getAssayName(),
-                        null, null, false, DataSet.TYPE_PLACEHOLDER, categoryId, null);
+                DatasetDefinition datasetDefinition = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getAssayName(),
+                        null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null);
                 if (datasetDefinition != null)
                 {
                     datasetDefinition.provisionTable();

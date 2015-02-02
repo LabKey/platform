@@ -34,7 +34,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -44,7 +44,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.ChildStudyDefinition;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -87,7 +87,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
     private ChildStudyDefinition _form;
     private boolean _destFolderCreated;
 
-    private transient Set<DataSetDefinition> _datasets = new HashSet<>();
+    private transient Set<DatasetDefinition> _datasets = new HashSet<>();
     private transient List<ParticipantGroup> _participantGroups = new ArrayList<>();
 
     private static final String REPORT_WRITER_TYPE = "Reports";
@@ -137,7 +137,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // get the list of datasets to export
                 for (int datasetId : _form.getDatasets())
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(getSourceStudy(), datasetId);
+                    DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(getSourceStudy(), datasetId);
 
                     if (def != null)
                         _datasets.add(def);
@@ -164,7 +164,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     // Limit datasets taken to those in the selected set of visits.
                     if (visit.getVisitDateDatasetId() != null && (null == selectedVisits || selectedVisits.contains(visit.getId())))
                     {
-                        DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(getSourceStudy(), visit.getVisitDateDatasetId());
+                        DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(getSourceStudy(), visit.getVisitDateDatasetId());
                         if (def != null)
                             _datasets.add(def);
                     }
@@ -174,7 +174,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // visits are correctly calculated\
                 if (_sourceStudy.getTimepointType() == TimepointType.DATE)
                 {
-                    for (DataSetDefinition dataset : _sourceStudy.getDatasets())
+                    for (DatasetDefinition dataset : _sourceStudy.getDatasets())
                     {
                         if (dataset.isDemographicData())
                         {
@@ -521,14 +521,14 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 }
             }
 
-            for (DataSetDefinition def : _datasets)
+            for (DatasetDefinition def : _datasets)
             {
                 BindException datasetErrors = new NullSafeBindException(def, "dataset");
                 StudyQuerySchema schema = StudyQuerySchema.createSchema(getSourceStudy(), user, true);
                 TableInfo table = def.getTableInfo(user);
                 QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, table.getName());
 
-                if (queryDef != null && def.getType().equals(DataSet.TYPE_STANDARD))
+                if (queryDef != null && def.getType().equals(Dataset.TYPE_STANDARD))
                 {
                     queryDef.setDefinitionContainer(getSourceStudy().getContainer());
 

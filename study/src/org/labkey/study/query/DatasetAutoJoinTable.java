@@ -26,20 +26,20 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Magic table that joins a source DataSet to other DataSets based on primary key types.
+ * Magic table that joins a source Dataset to other Datasets based on primary key types.
  *
- * DataSets may have three types of primary keys:
+ * Datasets may have three types of primary keys:
  * (A) ParticipantID only.
  * (B) ParticipantID, SequenceNum (either Visit or Date)
  * (C) ParticipantID, SequenceNum, and an additional key.
  *
- * This virtual table has a column for each DataSet that the source DataSet can join to (without row duplication):
+ * This virtual table has a column for each Dataset that the source Dataset can join to (without row duplication):
  *   A -> A
  *   B -> A or B
  *   C -> A, B, or C (if C key name and type matches)
@@ -48,10 +48,10 @@ import java.util.Set;
  * Assay backed datasets use the extra key column to store the original assay result rowid
  * and so are treated as a (B) type dataset since the assay rowid would never match any other dataset's assay rowid.
  */
-public class DataSetAutoJoinTable extends VirtualTable
+public class DatasetAutoJoinTable extends VirtualTable
 {
     private StudyQuerySchema _schema;
-    private DataSetDefinition _source;
+    private DatasetDefinition _source;
     private String _keyPropertyName;
 
     // The resolved "ParticipantId" column handed through the ForeignKey.createLookupColumn().
@@ -63,7 +63,7 @@ public class DataSetAutoJoinTable extends VirtualTable
     // The "_Key" FieldKey that has possibly been remapped.
     private FieldKey _keyFieldKey;
 
-    public DataSetAutoJoinTable(StudyQuerySchema schema, DataSetDefinition source,
+    public DatasetAutoJoinTable(StudyQuerySchema schema, DatasetDefinition source,
                                 @Nullable ColumnInfo participantIdColumn,
                                 @Nullable FieldKey sequenceNumFieldKey,
                                 @Nullable FieldKey keyFieldKey)
@@ -108,7 +108,7 @@ public class DataSetAutoJoinTable extends VirtualTable
         }
 
         Set<FieldKey> defaultVisible = new LinkedHashSet<>();
-        for (DataSetDefinition dataset : _schema.getStudy().getDatasets())
+        for (DatasetDefinition dataset : _schema.getStudy().getDatasets())
         {
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).
@@ -123,7 +123,7 @@ public class DataSetAutoJoinTable extends VirtualTable
             if (getColumn(name) != null)
                 continue;
 
-            ColumnInfo datasetColumn = createDataSetColumn(name, dataset);
+            ColumnInfo datasetColumn = createDatasetColumn(name, dataset);
             if (datasetColumn != null)
             {
                 addColumn(datasetColumn);
@@ -140,7 +140,7 @@ public class DataSetAutoJoinTable extends VirtualTable
     }
 
 
-    protected ColumnInfo createDataSetColumn(String name, final DataSetDefinition dsd)
+    protected ColumnInfo createDatasetColumn(String name, final DatasetDefinition dsd)
     {
         ColumnInfo ret;
         if (_participantIdColumn == null)
@@ -198,7 +198,7 @@ public class DataSetAutoJoinTable extends VirtualTable
         return ret;
     }
 
-    private DatasetForeignKey createParticipantFK(DataSetDefinition dsd)
+    private DatasetForeignKey createParticipantFK(DatasetDefinition dsd)
     {
         assert dsd.isDemographicData();
         DatasetForeignKey fk = new DatasetForeignKey(dsd);
@@ -206,7 +206,7 @@ public class DataSetAutoJoinTable extends VirtualTable
         return fk;
     }
 
-    private DatasetForeignKey createParticipantSequenceNumFK(DataSetDefinition dsd)
+    private DatasetForeignKey createParticipantSequenceNumFK(DatasetDefinition dsd)
     {
         assert !dsd.isDemographicData() && (dsd.getKeyPropertyName() == null || dsd.isAssayData());
         assert !_source.isDemographicData();
@@ -222,7 +222,7 @@ public class DataSetAutoJoinTable extends VirtualTable
         return fk;
     }
 
-    private DatasetForeignKey createParticipantSequenceNumKeyFK(DataSetDefinition dsd)
+    private DatasetForeignKey createParticipantSequenceNumKeyFK(DatasetDefinition dsd)
     {
         assert !dsd.isDemographicData() && dsd.getKeyPropertyName() != null;
         assert !_source.isDemographicData() && _keyPropertyName != null;
@@ -255,20 +255,20 @@ public class DataSetAutoJoinTable extends VirtualTable
 
     private class DatasetForeignKey extends LookupForeignKey
     {
-        private final DataSetDefinition dsd;
+        private final DatasetDefinition dsd;
         private String _joinDescription;
 
-        public DatasetForeignKey(DataSetDefinition dsd)
+        public DatasetForeignKey(DatasetDefinition dsd)
         {
             super(StudyService.get().getSubjectColumnName(dsd.getContainer()));
             this.dsd = dsd;
         }
 
-        public DataSetTableImpl getLookupTableInfo()
+        public DatasetTableImpl getLookupTableInfo()
         {
             try
             {
-                DataSetTableImpl ret = _schema.createDatasetTableInternal(dsd);
+                DatasetTableImpl ret = _schema.createDatasetTableInternal(dsd);
                 ret.hideParticipantLookups();
                 return ret;
             }

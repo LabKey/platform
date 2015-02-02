@@ -36,7 +36,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -50,7 +50,7 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -283,7 +283,7 @@ public class StudyQuerySchema extends UserSchema
                 names.add("SpecimenComment");
 
                 names.add("DataSets");
-                names.add(DataSetColumnsTable.NAME);
+                names.add(DatasetColumnsTable.NAME);
 
                 // Only show cohorts if the user has permission
                 if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
@@ -310,7 +310,7 @@ public class StudyQuerySchema extends UserSchema
 
                 // Add only datasets that the user can read
                 User user = getUser();
-                for (DataSetDefinition dsd : _study.getDatasets())
+                for (DatasetDefinition dsd : _study.getDatasets())
                 {
                     boolean canRead = dsd.canRead(user);
                     if (dsd.getName() == null || !canRead)
@@ -337,13 +337,13 @@ public class StudyQuerySchema extends UserSchema
         return _tableNames;
     }
 
-    public Map<String, DataSetDefinition> getDatasetDefinitions()
+    public Map<String, DatasetDefinition> getDatasetDefinitions()
     {
-        Map<String, DataSetDefinition> ret = new LinkedHashMap<>();
+        Map<String, DatasetDefinition> ret = new LinkedHashMap<>();
         assert _study != null : "Attempt to get datasets without a study";
         if (_study != null)
         {
-            for (DataSetDefinition dsd : _study.getDatasets())
+            for (DatasetDefinition dsd : _study.getDatasets())
             {
                 if (dsd.getName() == null)
                     continue;
@@ -354,12 +354,12 @@ public class StudyQuerySchema extends UserSchema
     }
 
     @Nullable
-    public DataSetDefinition getDatasetDefinitionByName(String name)
+    public DatasetDefinition getDatasetDefinitionByName(String name)
     {
         assert _study != null : "Attempt to get datasets without a study";
         if (_study != null)
         {
-            for (DataSetDefinition dsd : _study.getDatasets())
+            for (DatasetDefinition dsd : _study.getDatasets())
             {
                 if (name.equalsIgnoreCase(dsd.getName()))
                     return dsd;
@@ -372,11 +372,11 @@ public class StudyQuerySchema extends UserSchema
      * CONSIDER: use Schema.getTable() instead, use this only if you intend to manipulate the tableinfo in some way
      * UserSchema will call afterConstruct() for tables constructed the usual way
      */
-    public DataSetTableImpl createDatasetTableInternal(DataSetDefinition definition)
+    public DatasetTableImpl createDatasetTableInternal(DatasetDefinition definition)
     {
         try
         {
-            DataSetTableImpl ret = new DataSetTableImpl(this, definition);
+            DatasetTableImpl ret = new DatasetTableImpl(this, definition);
             ret.afterConstruct();
             return ret;
         }
@@ -386,7 +386,7 @@ public class StudyQuerySchema extends UserSchema
         }
     }
 
-    synchronized List<Double> getSequenceNumsForDataset(DataSet dsd)
+    synchronized List<Double> getSequenceNumsForDataset(Dataset dsd)
     {
         if (null == _datasetSequenceMap)
             _datasetSequenceMap =  StudyManager.getInstance().getVisitManager(_study).getDatasetSequenceNums();
@@ -581,12 +581,12 @@ public class StudyQuerySchema extends UserSchema
         }
         if ("DataSets".equalsIgnoreCase(name))
         {
-            DataSetsTable ret = new DataSetsTable(this);
+            DatasetsTable ret = new DatasetsTable(this);
             return ret;
         }
-        if (DataSetColumnsTable.NAME.equalsIgnoreCase(name))
+        if (DatasetColumnsTable.NAME.equalsIgnoreCase(name))
         {
-            DataSetColumnsTable ret = new DataSetColumnsTable(this);
+            DatasetColumnsTable ret = new DatasetColumnsTable(this);
             return ret;
         }
         if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name))
@@ -722,13 +722,13 @@ public class StudyQuerySchema extends UserSchema
         }
 
         // Might be a dataset
-        DataSetDefinition dsd = getDatasetDefinitionByQueryName(name);
+        DatasetDefinition dsd = getDatasetDefinitionByQueryName(name);
 
         if (null != dsd)
         {
             try
             {
-                return new DataSetTableImpl(this, dsd);
+                return new DatasetTableImpl(this, dsd);
             }
             catch (UnauthorizedException e)
             {
@@ -741,7 +741,8 @@ public class StudyQuerySchema extends UserSchema
 
 
     // Simple helper to keep us consistent... try getting by name first, then by label
-    private @Nullable DataSetDefinition getDatasetDefinitionByQueryName(String queryName)
+    private @Nullable
+    DatasetDefinition getDatasetDefinitionByQueryName(String queryName)
     {
         assert _study != null : "Attempt to get datasets without a study";
         if (null == queryName)
@@ -777,11 +778,11 @@ public class StudyQuerySchema extends UserSchema
 
             if (null != id)
             {
-                DataSetDefinition def = study.getDataset(id);
+                DatasetDefinition def = study.getDataset(id);
 
                 if (null != def)
                 {
-                    DataSetTableImpl datasetTable = new DataSetTableImpl(this, def);
+                    DatasetTableImpl datasetTable = new DatasetTableImpl(this, def);
 
                     String aliasName = study.getParticipantAliasProperty();
                     String sourceName = study.getParticipantAliasSourceProperty();
@@ -809,8 +810,8 @@ public class StudyQuerySchema extends UserSchema
     @Override
     protected QuerySettings createQuerySettings(String dataRegionName, String queryName, String viewName)
     {
-        if (DataSetQueryView.DATAREGION.equals(dataRegionName))
-            return new DataSetQuerySettings(dataRegionName);
+        if (DatasetQueryView.DATAREGION.equals(dataRegionName))
+            return new DatasetQuerySettings(dataRegionName);
 
         return super.createQuerySettings(dataRegionName, queryName, viewName);
     }
@@ -835,7 +836,7 @@ public class StudyQuerySchema extends UserSchema
                 return new LocationQueryView(this, settings, errors);
             }
 
-            DataSetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());
+            DatasetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());
             // Check for permission before deciding to treat the request as a dataset
             if (dsd != null && dsd.canRead(getUser()))
             {
@@ -843,10 +844,10 @@ public class StudyQuerySchema extends UserSchema
                 if (!settings.getQueryName().equals(dsd.getName()))
                     settings.setQueryName(dsd.getName());
 
-                if (!(settings instanceof DataSetQuerySettings))
-                    settings = new DataSetQuerySettings(settings);
+                if (!(settings instanceof DatasetQuerySettings))
+                    settings = new DatasetQuerySettings(settings);
 
-                return new DataSetQueryView(this, (DataSetQuerySettings)settings, errors);
+                return new DatasetQueryView(this, (DatasetQuerySettings)settings, errors);
             }
         }
         return super.createView(context, settings, errors);
@@ -858,7 +859,7 @@ public class StudyQuerySchema extends UserSchema
         return _study;
     }
 
-    public String decideTableName(DataSetDefinition dsd)
+    public String decideTableName(DatasetDefinition dsd)
     {
         return dsd.getName();
     }
@@ -885,7 +886,7 @@ public class StudyQuerySchema extends UserSchema
         if (study == null)
             return null;
         
-        DataSetDefinition def = getDatasetDefinitionByQueryName(queryName);
+        DatasetDefinition def = getDatasetDefinitionByQueryName(queryName);
         if (def != null)
         {
             if (def.canRead(getUser()))

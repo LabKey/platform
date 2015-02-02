@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.study.DataSet"%>
+<%@ page import="org.labkey.api.study.Dataset"%>
 <%@ page import="org.labkey.api.study.Visit"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
@@ -23,10 +23,10 @@
 <%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.VisitDataSet" %>
-<%@ page import="org.labkey.study.model.VisitDataSetType" %>
+<%@ page import="org.labkey.study.model.VisitDataset" %>
+<%@ page import="org.labkey.study.model.VisitDatasetType" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
@@ -153,9 +153,9 @@
                 <select name="visitDateDatasetId">
                     <option value="0">[None]</option>
                     <%
-                        for (VisitDataSet vds : visit.getVisitDatasets())
+                        for (VisitDataset vds : visit.getVisitDatasets())
                         {
-                            DataSet def = StudyManager.getInstance().getDatasetDefinition(getStudy(), vds.getDatasetId());
+                            Dataset def = StudyManager.getInstance().getDatasetDefinition(getStudy(), vds.getDatasetId());
                             if (def == null || def.getTypeURI() == null)
                                 continue;
                             boolean selected = (visit.getVisitDateDatasetId() == def.getDatasetId());
@@ -169,7 +169,7 @@
             <td class="labkey-form-label">Visit Date Column Name</td>
             <td><%
                 // UNDONE: use fancy javascript or AJAX here
-                DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(getStudy(), visit.getVisitDateDatasetId());
+                DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(getStudy(), visit.getVisitDateDatasetId());
                 String visitDatePropertyName = (null != def && null != def.getVisitDateColumnName()) ? def.getVisitDateColumnName() : "";
                 %><input disabled=true value="<%=h(visitDatePropertyName)%>">
             </td>
@@ -204,27 +204,27 @@
             <td>
                 <table>
                 <%
-                    HashMap<Integer, VisitDataSetType> typeMap = new HashMap<>();
-                    for (VisitDataSet vds : visit.getVisitDatasets())
-                        typeMap.put(vds.getDatasetId(), vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
+                    HashMap<Integer, VisitDatasetType> typeMap = new HashMap<>();
+                    for (VisitDataset vds : visit.getVisitDatasets())
+                        typeMap.put(vds.getDatasetId(), vds.isRequired() ? VisitDatasetType.REQUIRED : VisitDatasetType.OPTIONAL);
 
-                    for (DataSet dataset : getDatasets())
+                    for (Dataset dataset : getDatasets())
                     {
-                        VisitDataSetType type = typeMap.get(dataset.getDatasetId());
+                        VisitDatasetType type = typeMap.get(dataset.getDatasetId());
                         if (null == type)
-                            type = VisitDataSetType.NOT_ASSOCIATED;
+                            type = VisitDatasetType.NOT_ASSOCIATED;
                 %>
                         <tr>
                             <td><%= h(dataset.getDisplayString()) %></td>
                             <td>
-                                <input type="hidden" name="dataSetIds" value="<%= dataset.getDatasetId() %>">
-                                <select name="dataSetStatus">
-                                    <option value="<%= h(VisitDataSetType.NOT_ASSOCIATED.name()) %>"
-                                        <%=selected(type == VisitDataSetType.NOT_ASSOCIATED)%>></option>
-                                    <option value="<%= h(VisitDataSetType.OPTIONAL.name()) %>"
-                                        <%=selected(type == VisitDataSetType.OPTIONAL) %>>Optional</option>
-                                    <option value="<%= h(VisitDataSetType.REQUIRED.name()) %>"
-                                        <%=selected(type == VisitDataSetType.REQUIRED) %>>Required</option>
+                                <input type="hidden" name="datasetIds" value="<%= dataset.getDatasetId() %>">
+                                <select name="datasetStatus">
+                                    <option value="<%= h(VisitDatasetType.NOT_ASSOCIATED.name()) %>"
+                                        <%=selected(type == VisitDatasetType.NOT_ASSOCIATED)%>></option>
+                                    <option value="<%= h(VisitDatasetType.OPTIONAL.name()) %>"
+                                        <%=selected(type == VisitDatasetType.OPTIONAL) %>>Optional</option>
+                                    <option value="<%= h(VisitDatasetType.REQUIRED.name()) %>"
+                                        <%=selected(type == VisitDatasetType.REQUIRED) %>>Required</option>
                                 </select>
                             </td>
                         </tr>

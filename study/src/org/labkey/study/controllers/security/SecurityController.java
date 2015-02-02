@@ -40,7 +40,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -353,7 +353,7 @@ public class SecurityController extends SpringActionController
             for (Group g : groups)
                 groupsInProject.add(g.getUserId());
 
-            for (DataSet dsDef : study.getDatasets())
+            for (Dataset dsDef : study.getDatasets())
             {
                 // Data that comes back is a list of permissions and groups separated by underscores.
                 // e.g. "NONE_1182" or "READ_-1"
@@ -403,7 +403,7 @@ public class SecurityController extends SpringActionController
             return groupToPermission;
         }
 
-        private MutableSecurityPolicy policyFromPost(Map<Integer, String> group2Perm, HashSet<Integer> groupsInProject, DataSet dsDef)
+        private MutableSecurityPolicy policyFromPost(Map<Integer, String> group2Perm, HashSet<Integer> groupsInProject, Dataset dsDef)
         {
             MutableSecurityPolicy policy = new MutableSecurityPolicy(dsDef);
 

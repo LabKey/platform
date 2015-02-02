@@ -34,7 +34,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Map;
@@ -56,7 +56,7 @@ public class ParticipantVisitTable extends BaseStudyTable
         {
             if ("Container".equalsIgnoreCase(col.getName()))
             {
-                // 20546: need to expose Container for use in DataSetTableImpl.ParticipantVisitForeignKey
+                // 20546: need to expose Container for use in DatasetTableImpl.ParticipantVisitForeignKey
                 col = new AliasedColumn(this, "Container", col);
                 col = ContainerForeignKey.initColumn(col, _userSchema);
                 col.setHidden(true);
@@ -118,7 +118,7 @@ public class ParticipantVisitTable extends BaseStudyTable
                 addWrapColumn(col);
         }
 
-        for (DataSetDefinition dataset : _userSchema.getStudy().getDatasets())
+        for (DatasetDefinition dataset : _userSchema.getStudy().getDatasets())
         {
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).
@@ -149,7 +149,7 @@ public class ParticipantVisitTable extends BaseStudyTable
     }
 
 
-    protected ColumnInfo createDatasetColumn(String name, final DataSetDefinition dsd, ColumnInfo participantSequenceNumColumn)
+    protected ColumnInfo createDatasetColumn(String name, final DatasetDefinition dsd, ColumnInfo participantSequenceNumColumn)
     {
         ColumnInfo ret = new AliasedColumn(name, participantSequenceNumColumn);
         ret.setFk(new PVForeignKey(dsd));
@@ -178,19 +178,19 @@ public class ParticipantVisitTable extends BaseStudyTable
 
     private class PVForeignKey extends LookupForeignKey
     {
-        private final DataSetDefinition dsd;
+        private final DatasetDefinition dsd;
 
-        public PVForeignKey(DataSetDefinition dsd)
+        public PVForeignKey(DatasetDefinition dsd)
         {
             super(StudyService.get().getSubjectVisitColumnName(dsd.getContainer()));
             this.dsd = dsd;
         }
         
-        public DataSetTableImpl getLookupTableInfo()
+        public DatasetTableImpl getLookupTableInfo()
         {
             try
             {
-                DataSetTableImpl ret = _userSchema.createDatasetTableInternal(dsd);
+                DatasetTableImpl ret = _userSchema.createDatasetTableInternal(dsd);
                 ret.hideParticipantLookups();
                 return ret;
             }

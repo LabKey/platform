@@ -18,14 +18,14 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.query.QueryParam"%>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor"%>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.query.DataSetQueryView" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
+<%@ page import="org.labkey.study.query.DatasetQueryView" %>
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
@@ -106,7 +106,7 @@
 <input type="hidden" id="showWithDataset" name="showWithDataset" value="0">
 <input type="hidden" name="<%=h(ActionURL.Param.returnUrl.name())%>" value="<%=h(bean.getSrcURL().getLocalURIString())%>">
 <input type="hidden" id="viewName" name="<%=h(QueryParam.viewName.toString())%>" value="">
-<input type="hidden" name="dataRegionName" value="<%=h(DataSetQueryView.DATAREGION)%>">
+<input type="hidden" name="dataRegionName" value="<%=h(DatasetQueryView.DATAREGION)%>">
 <table>
     <tr>
         <th align="right">Label for View</th>
@@ -117,10 +117,10 @@
         <td>
             <select id="datasetSelection" name="params" onchange="onUpdateDataset();">
                 <%
-                    Map<String, DataSetDefinition> datasetMap = bean.getDatasetDefinitions();
+                    Map<String, DatasetDefinition> datasetMap = bean.getDatasetDefinitions();
                     for (String name : bean.getTableAndQueryNames())
                     {
-                        DataSet def = datasetMap.get(name);
+                        Dataset def = datasetMap.get(name);
                         if (def != null) {
                             String label = !def.getLabel().equals(def.getName()) ? def.getName() + " (" + def.getLabel() + ")" : def.getLabel();
                 %>

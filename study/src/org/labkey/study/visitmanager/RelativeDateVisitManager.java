@@ -33,7 +33,7 @@ import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.query.DataSetTableImpl;
+import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DataspaceContainerFilter;
 
 import java.sql.SQLException;
@@ -92,7 +92,7 @@ public class RelativeDateVisitManager extends VisitManager
             sql.append("\nWHERE ");
             sql.append(studyDataContainerFilter);
             if (null != qcStates)
-                sql.append(" AND ").append(qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME));
+                sql.append(" AND ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
             sql.append("\nGROUP BY ").append(keyCols);
             sql.append("\nORDER BY 1, 2");
         }
@@ -112,7 +112,7 @@ public class RelativeDateVisitManager extends VisitManager
                     sql.append("\nWHERE ")
                         .append(studyDataContainerFilter)
                         .append(" AND P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
-                        .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "");
+                        .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "");
                     sql.add(cohortFilter.getCohortId());
                     sql.append("\nGROUP BY ").append(keyCols);
                     sql.append("\nORDER BY 1, 2");
@@ -188,7 +188,7 @@ public class RelativeDateVisitManager extends VisitManager
         sqlUpdateDays.add(VisitImpl.DEMOGRAPHICS_VISIT);
         sqlUpdateDays.add(container);
         new SqlExecutor(schema).execute(sqlUpdateDays);
-//            for (DataSetDefinition dataset : _study.getDatasets())
+//            for (DatasetDefinition dataset : _study.getDatasets())
 //            {
 //                TableInfo tempTableInfo = dataset.getMaterializedTempTableInfo(user, false);
 //                if (tempTableInfo != null)

@@ -307,7 +307,7 @@ public class CohortManager
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            DataSetDefinition dataset = null;
+            DatasetDefinition dataset = null;
             if (study.getParticipantCohortDatasetId() != null)
                 dataset = study.getDataset(study.getParticipantCohortDatasetId().intValue());
 
@@ -352,7 +352,7 @@ public class CohortManager
         }
     }
 
-    private SQLFragment getParticipantVisitCohortSql(User user, StudyImpl study, DataSetDefinition dsd, ColumnInfo cohortLabelCol)
+    private SQLFragment getParticipantVisitCohortSql(User user, StudyImpl study, DatasetDefinition dsd, ColumnInfo cohortLabelCol)
     {
         // The following SQL will return a list of all participant/visit combinations, ordered by participant and sub-ordered by chronological
         // visit order.  There will be a column for cohort assignment, if available in the cohort dataset.  For example:
@@ -371,7 +371,7 @@ public class CohortManager
         // assignment never changes.  Participant "NegativeUntil2" starts out negative, then switches to positive in visit
         // 2.  The following code uses this information to fill in the blanks between assignment changes, saving a cohort
         // assignment for every known participant/visit combination based on the results of this query.
-        DataSetDefinition.DatasetSchemaTableInfo cohortDatasetTinfo = dsd.getTableInfo(user, false);
+        DatasetDefinition.DatasetSchemaTableInfo cohortDatasetTinfo = dsd.getTableInfo(user, false);
         ColumnInfo subjectCol = cohortDatasetTinfo.getParticipantColumn();
         SQLFragment pvCohortSql = new SQLFragment("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, " + cohortLabelCol.getValueSql("D") + "\n" +
                 "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV") + "\n" +
@@ -385,7 +385,7 @@ public class CohortManager
         return pvCohortSql;
     }
 
-    private SQLFragment getContinuousStudyCohortSql(User user, StudyImpl study, DataSetDefinition dsd, ColumnInfo cohortLabelCol)
+    private SQLFragment getContinuousStudyCohortSql(User user, StudyImpl study, DatasetDefinition dsd, ColumnInfo cohortLabelCol)
     {
         // Continuous studies don't populate study.ParticipantVisit, so we have a simpler form of the SQL here.  This path
         // assumes that the study is continuous and that advanced cohort management (which allows subjects to change cohorts
@@ -395,7 +395,7 @@ public class CohortManager
         if (study.isAdvancedCohorts())
             throw new IllegalStateException("Continuous studies require simple cohort management");
 
-        DataSetDefinition.DatasetSchemaTableInfo cohortDatasetTinfo = dsd.getTableInfo(user, false);
+        DatasetDefinition.DatasetSchemaTableInfo cohortDatasetTinfo = dsd.getTableInfo(user, false);
         ColumnInfo subjectCol = cohortDatasetTinfo.getParticipantColumn();
         SQLFragment pCohortSql = new SQLFragment("SELECT P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, " + cohortLabelCol.getValueSql("D") + "\n" +
                 "FROM " + StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P") + "\n" +
@@ -407,7 +407,7 @@ public class CohortManager
         return pCohortSql;
     }
 
-    private void updateCohorts(User user, StudyImpl study, TableInfo tableParticipant, DataSetDefinition dsd, ColumnInfo cohortLabelCol)
+    private void updateCohorts(User user, StudyImpl study, TableInfo tableParticipant, DatasetDefinition dsd, ColumnInfo cohortLabelCol)
     {
         SQLFragment cohortSql;
         // Continuous studies don't populate the participant/visit table, so we use simpler SQL (which doesn't support advanced cohort features)

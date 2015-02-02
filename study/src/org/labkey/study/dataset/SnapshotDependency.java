@@ -30,7 +30,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
-import org.labkey.api.study.DataSet;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantCategoryImpl;
@@ -108,7 +107,7 @@ public abstract class SnapshotDependency
             {
                 try
                 {
-                    DataSet dsDef = (DataSet)sourceData.getValue();
+                    org.labkey.api.study.Dataset dsDef = (org.labkey.api.study.Dataset)sourceData.getValue();
 
                     // check if container is still valid
                     Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<>();

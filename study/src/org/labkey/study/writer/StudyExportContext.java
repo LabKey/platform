@@ -18,8 +18,8 @@ package org.labkey.study.writer;
 import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.api.study.Dataset;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.Vial;
 import org.labkey.study.model.StudyImpl;
@@ -38,7 +38,7 @@ import java.util.Set;
 public class StudyExportContext extends AbstractContext
 {
     private final Set<String> _dataTypes;
-    private final List<DataSetDefinition> _datasets = new LinkedList<>();
+    private final List<DatasetDefinition> _datasets = new LinkedList<>();
     private final Set<Integer> _datasetIds = new HashSet<>();
     private final boolean _removeProtected;
     private final boolean _maskClinic;
@@ -52,7 +52,7 @@ public class StudyExportContext extends AbstractContext
         this(study, user, c, dataTypes, false, new ParticipantMapper(study, false, false), false, logger);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, Set<DataSetDefinition> initDatasets, LoggerGetter logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, Set<DatasetDefinition> initDatasets, LoggerGetter logger)
     {
         this(study, user, c, dataTypes, false, new ParticipantMapper(study, false, false), false, logger);
         setDatasets(initDatasets);
@@ -70,7 +70,7 @@ public class StudyExportContext extends AbstractContext
             initializeDatasets(study);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, boolean maskClinic, Set<DataSetDefinition> initDatasets, LoggerGetter logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, boolean maskClinic, Set<DatasetDefinition> initDatasets, LoggerGetter logger)
     {
         this(study, user, c, dataTypes, removeProtected, participantMapper, maskClinic, logger);
         setDatasets(initDatasets);
@@ -110,7 +110,7 @@ public class StudyExportContext extends AbstractContext
         boolean includeCRF = _dataTypes.contains(DatasetWriter.SELECTION_TEXT);
         boolean includeAssay = _dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT);
 
-        for (DataSetDefinition dataset : study.getDatasetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
+        for (DatasetDefinition dataset : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
         {
             if ((!dataset.isAssayData() && includeCRF) || (dataset.isAssayData() && includeAssay))
             {
@@ -125,7 +125,7 @@ public class StudyExportContext extends AbstractContext
         return _datasetIds.contains(datasetId);
     }
 
-    public List<DataSetDefinition> getDatasets()
+    public List<DatasetDefinition> getDatasets()
     {
         return _datasets;
     }
@@ -135,11 +135,11 @@ public class StudyExportContext extends AbstractContext
         return _datasetIds;
     }
 
-    public void setDatasets(Set<DataSetDefinition> datasets)
+    public void setDatasets(Set<DatasetDefinition> datasets)
     {
         _datasets.clear();
         _datasetIds.clear();
-        for (DataSetDefinition dataset : datasets)
+        for (DatasetDefinition dataset : datasets)
         {
             _datasets.add(dataset);
             _datasetIds.add(dataset.getDatasetId());

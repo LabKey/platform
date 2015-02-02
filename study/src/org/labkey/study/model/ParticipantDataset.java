@@ -44,12 +44,12 @@ public class ParticipantDataset
         _container = container;
     }
 
-    public Integer getDataSetId()
+    public Integer getDatasetId()
     {
         return _studyDatasetId;
     }
 
-    public void setDataSetId(Integer studyDatasetId)
+    public void setDatasetId(Integer studyDatasetId)
     {
         _studyDatasetId = studyDatasetId;
     }

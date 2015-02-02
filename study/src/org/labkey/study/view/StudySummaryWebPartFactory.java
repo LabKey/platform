@@ -23,7 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Cohort;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
@@ -80,7 +80,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return getStudy().getVisits(order);
         }
 
-        public List<? extends DataSet> getDatasets()
+        public List<? extends Dataset> getDatasets()
         {
             return getStudy().getDatasets();
         }

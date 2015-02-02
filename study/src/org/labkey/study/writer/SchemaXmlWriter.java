@@ -22,7 +22,7 @@ import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -30,7 +30,7 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.xml.StudyDocument;
@@ -45,7 +45,7 @@ import java.util.Set;
  * Date: May 27, 2009
  * Time: 11:12:33 AM
  */
-public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportContext<StudyDocument.Study>>
+public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportContext<StudyDocument.Study>>
 {
     public static final String SCHEMA_FILENAME = "datasets_metadata.xml";
 
@@ -55,7 +55,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
     {
         // We export only the standard study propertyURIs and the SystemProperty propertyURIs (special EHR properties,
         // etc.); see #12742.  We could have a registration mechanism for this... but this seems good enough for now.
-        for (PropertyDescriptor pd : DataSetDefinition.getStandardPropertiesMap().values())
+        for (PropertyDescriptor pd : DatasetDefinition.getStandardPropertiesMap().values())
             _candidatePropertyURIs.add(pd.getPropertyURI());
 
         for (PropertyDescriptor pd: SystemProperty.getProperties())
@@ -67,7 +67,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
         return "Dataset Schema Description";
     }
 
-    public void write(List<DataSetDefinition> definitions, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws IOException
+    public void write(List<DatasetDefinition> definitions, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws IOException
     {
         // Create dataset metadata file
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
@@ -75,10 +75,10 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
 
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
-        for (DataSetDefinition def : definitions)
+        for (DatasetDefinition def : definitions)
         {
             TableType tableXml = tablesXml.addNewTable();
-            if (def.getType().equals(DataSet.TYPE_PLACEHOLDER))
+            if (def.getType().equals(Dataset.TYPE_PLACEHOLDER))
             {
                 PlaceholderDatasetWriter w = new PlaceholderDatasetWriter(def);
                 w.writeTable(tableXml);
@@ -96,9 +96,9 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
 
     private class PlaceholderDatasetWriter
     {
-        private final DataSetDefinition _def;
+        private final DatasetDefinition _def;
 
-        private PlaceholderDatasetWriter(DataSetDefinition def)
+        private PlaceholderDatasetWriter(DatasetDefinition def)
         {
             _def = def;
         }
@@ -116,9 +116,9 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
 
     private class DatasetTableInfoWriter extends TableInfoWriter
     {
-        private final DataSetDefinition _def;
+        private final DatasetDefinition _def;
 
-        private DatasetTableInfoWriter(TableInfo ti, DataSetDefinition def, boolean removeProtected)
+        private DatasetTableInfoWriter(TableInfo ti, DatasetDefinition def, boolean removeProtected)
         {
             super(def.getContainer(), ti, DatasetWriter.getColumnsToExport(ti, def, true, removeProtected));
             _def = def;
@@ -182,9 +182,9 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
             {
                 columnXml.setIsKeyField(true);
 
-                if (_def.getKeyManagementType() == DataSet.KeyManagementType.RowId)
+                if (_def.getKeyManagementType() == Dataset.KeyManagementType.RowId)
                     columnXml.setIsAutoInc(true);
-                else if (_def.getKeyManagementType() == DataSet.KeyManagementType.GUID)
+                else if (_def.getKeyManagementType() == Dataset.KeyManagementType.GUID)
                     columnXml.setDatatype("entityid");
             }
         }
@@ -212,7 +212,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
             // Proper ConceptURI support is not implemented, but we use the 'VisitDate' concept in this isolated spot
             // as a marker to indicate which dataset column should be tagged as the visit date column during import:
             if (column.getName().equalsIgnoreCase(_def.getVisitDateColumnName()))
-                return DataSetDefinition.getVisitDateURI();
+                return DatasetDefinition.getVisitDateURI();
             return null;
         }
     }

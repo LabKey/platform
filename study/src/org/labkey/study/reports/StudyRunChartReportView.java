@@ -25,7 +25,7 @@ import org.labkey.api.view.*;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 
 import java.util.List;
@@ -61,7 +61,7 @@ public class StudyRunChartReportView extends RunChartReportView
             {
                 ViewContext context = getViewContext();
                 int datasetId = 0;
-                DataSetDefinition def = getDatasetDefinition();
+                DatasetDefinition def = getDatasetDefinition();
                 if (def != null)
                     datasetId = def.getRowId();
 
@@ -93,11 +93,11 @@ public class StudyRunChartReportView extends RunChartReportView
         }
     }
 
-    protected DataSetDefinition getDatasetDefinition()
+    protected DatasetDefinition getDatasetDefinition()
     {
         try
         {
-            int datasetId = NumberUtils.toInt(getReport().getDescriptor().getProperty(DataSetDefinition.DATASETKEY));
+            int datasetId = NumberUtils.toInt(getReport().getDescriptor().getProperty(DatasetDefinition.DATASETKEY));
             return StudyManager.getInstance().getDatasetDefinition(StudyManager.getInstance().getStudy(getViewContext().getContainer()), datasetId);
         }
         catch (Exception e)

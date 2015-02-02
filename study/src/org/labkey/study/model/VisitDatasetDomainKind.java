@@ -38,14 +38,14 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
     @Override
     public Priority getPriority(String domainURI)
     {
-        DataSetDefinition def  = getDatasetDefinition(domainURI);
+        DatasetDefinition def  = getDatasetDefinition(domainURI);
         return null!=def && def.getStudy().getTimepointType() == TimepointType.VISIT ? Priority.MEDIUM : null;
     }
 
     @Override
     public Set<String> getMandatoryPropertyNames(Domain domain)
     {
-        HashSet<String> ret = new HashSet<>(DataSetDefinition.DEFAULT_VISIT_FIELDS);
+        HashSet<String> ret = new HashSet<>(DatasetDefinition.DEFAULT_VISIT_FIELDS);
         ret.add(DatasetDomainKind.DATE);
         return ret;
     }
@@ -53,7 +53,7 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        return Collections.unmodifiableSet(DataSetDefinition.DEFAULT_VISIT_FIELDS);
+        return Collections.unmodifiableSet(DatasetDefinition.DEFAULT_VISIT_FIELDS);
     }
 }
 

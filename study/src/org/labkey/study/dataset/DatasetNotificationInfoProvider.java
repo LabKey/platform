@@ -28,7 +28,7 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.study.DatasetDB;
 import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
@@ -46,7 +46,7 @@ public class DatasetNotificationInfoProvider extends NotificationInfoProvider
         if (null == _notificationInfoMap)
         {
             final Map<String, Map<Integer, List<NotificationInfo>>> notificationInfoMap = new HashMap<>();
-            TableInfo reportTableInfo = StudySchema.getInstance().getTableInfoDataSet();
+            TableInfo reportTableInfo = StudySchema.getInstance().getTableInfoDataset();
             SimpleFilter filter = new SimpleFilter();
             filter.addBetween(FieldKey.fromString("Modified"), modifiedRangeStart, modifiedRangeEnd);
             Sort sort = new Sort("DisplayOrder");
@@ -65,7 +65,7 @@ public class DatasetNotificationInfoProvider extends NotificationInfoProvider
                         Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(report.getContainer()));
                         if (null != study)
                         {
-                            DataSetDefinition datasetDefinition = StudyManager.getInstance().getDatasetDefinition(study, report.getDatasetId());
+                            DatasetDefinition datasetDefinition = StudyManager.getInstance().getDatasetDefinition(study, report.getDatasetId());
                             NotificationInfo notificationInfo = new NotificationInfo(report, !datasetDefinition.isShowByDefault());
                             if (null != notificationInfo.getContainer() && !notificationInfo.isHidden() && notificationInfo.isShared())
                             {

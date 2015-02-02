@@ -30,7 +30,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSetTable;
+import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.SQLGenerationException;
@@ -192,9 +192,9 @@ public class VisualizationServiceImpl implements VisualizationService
         try
         {
             TableInfo t = q.getTable(null, false);
-            if (!(t instanceof DataSetTable))
+            if (!(t instanceof DatasetTable))
                 return false;
-            return ((DataSetTable)t).getDataset().isDemographicData();
+            return ((DatasetTable)t).getDataset().isDemographicData();
         }
         catch (QueryException qe)
         {
@@ -271,12 +271,12 @@ public class VisualizationServiceImpl implements VisualizationService
         if (_tableInfoMap.containsKey(query))
         {
             TableInfo table = _tableInfoMap.get(query);
-            if (table instanceof DataSetTable)
+            if (table instanceof DatasetTable)
             {
                 if (asLabel)
-                    queryName = ((DataSetTable) table).getDataset().getLabel();
+                    queryName = ((DatasetTable) table).getDataset().getLabel();
                 else
-                    queryName = ((DataSetTable) table).getDataset().getName();
+                    queryName = ((DatasetTable) table).getDataset().getName();
             }
             else if (asLabel)
             {
@@ -295,8 +295,8 @@ public class VisualizationServiceImpl implements VisualizationService
         if (_tableInfoMap.containsKey(query))
         {
             TableInfo table = _tableInfoMap.get(query);
-            if (table instanceof DataSetTable)
-                description = ((DataSetTable) table).getDataset().getDescription();
+            if (table instanceof DatasetTable)
+                description = ((DatasetTable) table).getDataset().getDescription();
         }
 
         return description;

@@ -63,7 +63,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -90,7 +90,7 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -229,7 +229,7 @@ public class ReportsController extends BaseStudyController
         {
             Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudyRedirectIfNull(), true);
 
-            if (report.getDescriptor().getProperty(DataSetDefinition.DATASETKEY) == null)
+            if (report.getDescriptor().getProperty(DatasetDefinition.DATASETKEY) == null)
             {
                 if (!getViewContext().hasPermission(AdminPermission.class))
                     return new HtmlView("<font class=labkey-error>This view must be configured by an administrator.</font>");
@@ -257,7 +257,7 @@ public class ReportsController extends BaseStudyController
             final ReportDescriptor descriptor = report.getDescriptor();
 
             if (form.getDatasetId() != null)
-                descriptor.setProperty(DataSetDefinition.DATASETKEY, Integer.toString(form.getDatasetId()));
+                descriptor.setProperty(DatasetDefinition.DATASETKEY, Integer.toString(form.getDatasetId()));
             if (form.getSequenceNum() >= 0)
                 descriptor.setProperty(VisitImpl.SEQUENCEKEY, VisitImpl.formatSequenceNum(form.getSequenceNum()));
 
@@ -267,7 +267,7 @@ public class ReportsController extends BaseStudyController
                 return HttpView.redirect(getViewContext().cloneActionURL().setAction(EnrollmentReportAction.class));
             }
 
-            int datasetId = NumberUtils.toInt(descriptor.getProperty(DataSetDefinition.DATASETKEY));
+            int datasetId = NumberUtils.toInt(descriptor.getProperty(DatasetDefinition.DATASETKEY));
             double sequenceNum = NumberUtils.toDouble(descriptor.getProperty(VisitImpl.SEQUENCEKEY));
 
             form.setDatasetId(datasetId);
@@ -406,7 +406,7 @@ public class ReportsController extends BaseStudyController
                 {
                     // add the dataset id
                     Study study = getStudyThrowIfNull();
-                    DataSet def = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, form.getQueryName());
+                    Dataset def = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, form.getQueryName());
                     if (def != null)
                     {
                         report.getDescriptor().setProperty("showWithDataset", String.valueOf(def.getDatasetId()));
@@ -462,7 +462,7 @@ public class ReportsController extends BaseStudyController
         url.setAction(StudyController.DatasetReportAction.class);
 
         url.replaceParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, String.valueOf(reportId));
-        url.replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(dataset));
+        url.replaceParameter(DatasetDefinition.DATASETKEY, String.valueOf(dataset));
         return HttpView.redirect(url);
     }
 
@@ -723,7 +723,7 @@ public class ReportsController extends BaseStudyController
         {
 /*
             ViewContext context = getViewContext();
-            int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
+            int datasetId = null == context.get(DatasetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DatasetDefinition.DATASETKEY));
             int visitRowId = null == context.get("visitRowId") ? 0 : Integer.parseInt((String) context.get("visitRowId"));
 
             return _appendNavTrail(root, "Crosstab View Builder", datasetId, visitRowId);
@@ -860,7 +860,7 @@ public class ReportsController extends BaseStudyController
 
     public static class CreateCrosstabBean
     {
-        private List<DataSetDefinition> _datasets;
+        private List<DatasetDefinition> _datasets;
         private List<VisitImpl> _visits;
 
         public CreateCrosstabBean(ViewContext context) throws IllegalStateException
@@ -870,7 +870,7 @@ public class ReportsController extends BaseStudyController
             _visits = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
         }
 
-        public List<DataSetDefinition> getDatasets()
+        public List<DatasetDefinition> getDatasets()
         {
             return _datasets;
         }
@@ -888,7 +888,7 @@ public class ReportsController extends BaseStudyController
         private User _user;
         private String _queryName;
         private ActionURL _srcURL;
-        private Map<String, DataSetDefinition> _datasetMap;
+        private Map<String, DatasetDefinition> _datasetMap;
 
         public CreateQueryReportBean(ViewContext context, String queryName) throws IllegalStateException
         {
@@ -911,14 +911,14 @@ public class ReportsController extends BaseStudyController
             return _tableAndQueryNames;
         }
 
-        public Map<String, DataSetDefinition> getDatasetDefinitions() throws IllegalStateException
+        public Map<String, DatasetDefinition> getDatasetDefinitions() throws IllegalStateException
         {
             if (_datasetMap == null)
             {
                 _datasetMap = new HashMap<>();
                 final Study study = getStudyThrowIfNull(_container);
 
-                for (DataSetDefinition def : StudyManager.getInstance().getDatasetDefinitions(study))
+                for (DatasetDefinition def : StudyManager.getInstance().getDatasetDefinitions(study))
                 {
                     _datasetMap.put(def.getName(), def);
                 }
@@ -1087,12 +1087,12 @@ public class ReportsController extends BaseStudyController
 
             Container c = getViewContext().getContainer();
             Study study = getStudyThrowIfNull(c);
-            List<DataSetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(study);
+            List<DatasetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(study);
             out.write("<td>Add as Custom View For: ");
             out.write("<select name=\"showWithDataset\">");
             //out.write("<option value=\"0\">Views and Reports Web Part</option>");
             int showWithDataset = NumberUtils.toInt(report.getDescriptor().getProperty("showWithDataset"));
-            for (DataSet def : defs)
+            for (Dataset def : defs)
             {
                 out.write("<option ");
                 if (def.getDatasetId() == showWithDataset)
@@ -1390,7 +1390,7 @@ public class ReportsController extends BaseStudyController
 
         public ReportData(Study study, int datasetId, int visitRowId, User user, ActionURL filterUrl) throws ServletException, SQLException
         {
-            DataSet def = study.getDataset(datasetId);
+            Dataset def = study.getDataset(datasetId);
             if (def == null)
             {
                 throw new NotFoundException();
@@ -1452,8 +1452,8 @@ public class ReportsController extends BaseStudyController
             props.put("subjectNounSingular", StudyService.get().getSubjectNounSingular(getContainer()));
             props.put("participantId", getViewContext().getActionURL().getParameter("participantId"));
 
-            _datasetId = NumberUtils.toInt((String) getViewContext().get(DataSetDefinition.DATASETKEY));
-            DataSet def = StudyManager.getInstance().getDatasetDefinition(BaseStudyController.getStudyRedirectIfNull(getContainer()), _datasetId);
+            _datasetId = NumberUtils.toInt((String) getViewContext().get(DatasetDefinition.DATASETKEY));
+            Dataset def = StudyManager.getInstance().getDatasetDefinition(BaseStudyController.getStudyRedirectIfNull(getContainer()), _datasetId);
             if (def != null)
                 props.put("datasetId", String.valueOf(_datasetId));
 
@@ -1546,7 +1546,7 @@ public class ReportsController extends BaseStudyController
     public class RunRReportAction extends SimpleViewAction<RReportBean>
     {
         protected Report _report;
-        protected DataSet _def;
+        protected Dataset _def;
 
         protected Report getReport(RReportBean form) throws Exception
         {
@@ -1566,12 +1566,12 @@ public class ReportsController extends BaseStudyController
             if (_report == null)
                 return new HtmlView("Unable to locate the specified report");
 
-            DataSet def = getDatasetDefinition();
+            Dataset def = getDatasetDefinition();
             if (def != null && _report != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
                         replaceParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, _report.getDescriptor().getReportId().toString()).
-                        replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDatasetId()));
+                        replaceParameter(DatasetDefinition.DATASETKEY, String.valueOf(def.getDatasetId()));
 
                 return HttpView.redirect(url);
             }
@@ -1582,7 +1582,7 @@ public class ReportsController extends BaseStudyController
                 return new HtmlView("User does not have read permission on this report.");
         }
 
-        protected DataSet getDatasetDefinition()
+        protected Dataset getDatasetDefinition()
         {
             if (_def == null && _report != null)
             {
@@ -1598,7 +1598,7 @@ public class ReportsController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            DataSet def = getDatasetDefinition();
+            Dataset def = getDatasetDefinition();
 
             if (def != null)
             {
@@ -1691,7 +1691,7 @@ public class ReportsController extends BaseStudyController
 
             if (datasetId > 0)
             {
-                DataSet dataset = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+                Dataset dataset = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
 
                 if (dataset != null)
                 {

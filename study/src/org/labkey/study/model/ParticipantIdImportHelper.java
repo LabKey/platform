@@ -53,7 +53,7 @@ public class ParticipantIdImportHelper
      * @param user  The user with priviledges to import the data. This value is used to resolve the aliases table.
      * @param def   The dataset definition of the dataset that is being imported into.
      */
-    public ParticipantIdImportHelper(@NotNull Study study, @NotNull User user, @Nullable DataSetDefinition def) throws ValidationException
+    public ParticipantIdImportHelper(@NotNull Study study, @NotNull User user, @Nullable DatasetDefinition def) throws ValidationException
     {
         _study = study;
         _user = user;
@@ -74,7 +74,7 @@ public class ParticipantIdImportHelper
     /*
      * The setup function that extracts alias information from the alias table and saves it in a hashmap.
      */
-    public HashMap<String,String> generateAliasHashMap(@Nullable DataSetDefinition targetDef) throws ValidationException
+    public HashMap<String,String> generateAliasHashMap(@Nullable DatasetDefinition targetDef) throws ValidationException
     {
         HashMap<String,String> result = new HashMap<>();
         StudyImpl studyImpl = StudyManager.getInstance().getStudy(_study.getContainer());
@@ -87,7 +87,7 @@ public class ParticipantIdImportHelper
         if (participantAliasDatasetId != null && (targetDef == null || targetDef.getDatasetId() != participantAliasDatasetId)) // do not apply lookups on the alias table itself.
         {
             StudyManager studyManager = StudyManager.getInstance();
-            DataSetDefinition aliasDataset = studyManager.getDatasetDefinition(studyImpl, participantAliasDatasetId);
+            DatasetDefinition aliasDataset = studyManager.getDatasetDefinition(studyImpl, participantAliasDatasetId);
             if (aliasDataset != null) // possible if the alias dataset has been deleted
             {
                 // Build up a HashSet of ptids to check for conflicts in the alias table

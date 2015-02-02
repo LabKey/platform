@@ -45,7 +45,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
@@ -84,12 +84,12 @@ public class ParticipantTable extends BaseStudyTable
             {
                 if (displayField == null)
                     return null;
-                return new ParticipantDataSetTable(_userSchema, parent).getColumn(displayField);
+                return new ParticipantDatasetTable(_userSchema, parent).getColumn(displayField);
             }
 
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantDataSetTable(_userSchema, null);
+                return new ParticipantDatasetTable(_userSchema, null);
             }
 
             public StringExpression getURL(ColumnInfo parent)
@@ -162,12 +162,12 @@ public class ParticipantTable extends BaseStudyTable
     {
         if (_study != null && _study.getParticipantAliasDatasetId() != null)
         {
-            DataSetDefinition dataset = _study.getDataset(_study.getParticipantAliasDatasetId());
+            DatasetDefinition dataset = _study.getDataset(_study.getParticipantAliasDatasetId());
             User user = getUserSchema().getUser();
             if (dataset != null && dataset.canRead(user))
             {
                 // Get the table and the two admin-configured columns
-                final DataSetDefinition.DatasetSchemaTableInfo datasetTable = dataset.getTableInfo(user, true);
+                final DatasetDefinition.DatasetSchemaTableInfo datasetTable = dataset.getTableInfo(user, true);
                 final ColumnInfo aliasColumn = datasetTable.getColumn(_study.getParticipantAliasProperty());
                 final ColumnInfo sourceColumn = datasetTable.getColumn(_study.getParticipantAliasSourceProperty());
 

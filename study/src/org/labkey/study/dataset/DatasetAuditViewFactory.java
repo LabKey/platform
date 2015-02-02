@@ -42,7 +42,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
@@ -52,7 +52,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 
@@ -105,7 +105,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         return view;
     }
 
-    public AuditLogQueryView createDatasetView(ViewContext context, DataSetDefinition def)
+    public AuditLogQueryView createDatasetView(ViewContext context, DatasetDefinition def)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IntKey1"), def.getRowId());
 
@@ -126,7 +126,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         LookupForeignKey fk = new LookupForeignKey("DatasetId", "Label") {
             public TableInfo getLookupTableInfo()
             {
-                return StudySchema.getInstance().getTableInfoDataSet();
+                return StudySchema.getInstance().getTableInfoDataset();
             }
         };
         fk.addJoin(FieldKey.fromParts("ContainerId"), "container", false);
@@ -158,7 +158,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                             return;
                         }
 
-                        DataSet def = study.getDataset(datasetId.intValue());
+                        Dataset def = study.getDataset(datasetId.intValue());
                         if (def == null)
                         {
                             return;
@@ -229,7 +229,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
             if (type == SecurityType.ADVANCED_READ || type == SecurityType.ADVANCED_WRITE)
             {
                 List<Integer> readDatasets = new ArrayList<>();
-                for (DataSet ds : study.getDatasets())
+                for (Dataset ds : study.getDatasets())
                 {
                     if (ds.canRead(user))
                         readDatasets.add(ds.getDatasetId());

@@ -24,13 +24,13 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController.BulkImportDataTypesAction" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
-    DataSetDefinition dataset = me.getModelBean();
+    JspView<DatasetDefinition> me = (JspView<DatasetDefinition>) HttpView.currentView();
+    DatasetDefinition dataset = me.getModelBean();
     Study study = dataset.getStudy();
 
     List<ColumnInfo> allCols = dataset.getTableInfo(getUser(), true).getColumns();
@@ -40,9 +40,9 @@
 
     for (ColumnInfo col : allCols)
     {
-        if (DataSetDefinition.isDefaultFieldName(col.getName(), study))
+        if (DatasetDefinition.isDefaultFieldName(col.getName(), study))
         {
-            if (DataSetDefinition.showOnManageView(col.getName(), study))
+            if (DatasetDefinition.showOnManageView(col.getName(), study))
                 systemColumns.add(col);
         }
         else

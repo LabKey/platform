@@ -25,7 +25,7 @@ import org.springframework.beans.PropertyValues;
  * Date: Sep 30, 2011
  * Time: 4:48:11 PM
  */
-public class DataSetQuerySettings extends QuerySettings
+public class DatasetQuerySettings extends QuerySettings
 {
     private boolean _showSourceLinks;
     private boolean _showEditLinks = true;
@@ -41,17 +41,17 @@ public class DataSetQuerySettings extends QuerySettings
         _useQCSet = useQCSet;
     }
 
-    public DataSetQuerySettings(String dataRegionName)
+    public DatasetQuerySettings(String dataRegionName)
     {
         super(dataRegionName);
     }
 
-    public DataSetQuerySettings(PropertyValues pvs, String dataRegionName)
+    public DatasetQuerySettings(PropertyValues pvs, String dataRegionName)
     {
         super(pvs, dataRegionName);
     }
 
-    public DataSetQuerySettings(QuerySettings settings)
+    public DatasetQuerySettings(QuerySettings settings)
     {
         super(settings.getDataRegionName());
 

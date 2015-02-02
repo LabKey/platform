@@ -34,10 +34,10 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.query.DataSetQuerySettings;
-import org.labkey.study.query.DataSetQueryView;
+import org.labkey.study.query.DatasetQuerySettings;
+import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.validation.BindException;
 
@@ -139,7 +139,7 @@ public class ExportExcelReport extends RedirectReport
 
         ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xls);
 
-        for (DataSetDefinition def : study.getDatasets())
+        for (DatasetDefinition def : study.getDatasets())
         {
             if (def.getTypeURI() == null)
                 continue;
@@ -150,7 +150,7 @@ public class ExportExcelReport extends RedirectReport
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(study.getContainer()) + ",SequenceNum");
 
             UserSchema schema = QueryService.get().getUserSchema(user, study.getContainer(), StudyQuerySchema.SCHEMA_NAME);
-            DataSetQuerySettings settings = (DataSetQuerySettings)schema.getSettings(context, DataSetQueryView.DATAREGION, def.getName());
+            DatasetQuerySettings settings = (DatasetQuerySettings)schema.getSettings(context, DatasetQueryView.DATAREGION, def.getName());
             settings.setBaseFilter(siteFilter);
             settings.setBaseSort(sort);
 

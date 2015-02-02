@@ -182,9 +182,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
-        List<DataSetDefinition> datasets = getDatasets();
+        List<DatasetDefinition> datasets = getDatasets();
         ArrayList<SecurableResource> readableDatasets = new ArrayList<>(datasets.size());
-        for (DataSetDefinition ds : datasets)
+        for (DatasetDefinition ds : datasets)
             if (ds.canRead(user))
                 readableDatasets.add(ds);
 
@@ -226,30 +226,30 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
-    public DataSetDefinition getDataset(int id)
+    public DatasetDefinition getDataset(int id)
     {
         return StudyManager.getInstance().getDatasetDefinition(this, id);
     }
 
     @Override
-    public DataSetDefinition getDatasetByName(String name)
+    public DatasetDefinition getDatasetByName(String name)
     {
         return StudyManager.getInstance().getDatasetDefinitionByName(this, name);
     }
 
     @Override
-    public DataSetDefinition getDatasetByLabel(String label)
+    public DatasetDefinition getDatasetByLabel(String label)
     {
         return StudyManager.getInstance().getDatasetDefinitionByLabel(this, label);
     }
 
-    public List<DataSetDefinition> getDatasets()
+    public List<DatasetDefinition> getDatasets()
     {
         return StudyManager.getInstance().getDatasetDefinitions(this);
     }
 
     @Override
-    public List<DataSetDefinition> getDatasetsByType(String... types)
+    public List<DatasetDefinition> getDatasetsByType(String... types)
     {
         return StudyManager.getInstance().getDatasetDefinitions(this, null, types);
     }
@@ -851,7 +851,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public boolean isEmptyStudy()
     {
-        List<DataSetDefinition> datasets = getDatasets();
+        List<DatasetDefinition> datasets = getDatasets();
         List<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);
         return visits.size() < 1 && datasets.size() < 1;
     }
@@ -1081,7 +1081,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             LOG.error("Can't extract text from study description", e);
         }
 
-        for (DataSetDefinition dataset : getDatasets())
+        for (DatasetDefinition dataset : getDatasets())
         {
             appendKeyword(sb, dataset.getName());
             appendKeyword(sb, dataset.getLabel());

@@ -37,7 +37,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
@@ -49,10 +49,10 @@ import org.labkey.api.view.VBox;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DataSetTableImpl;
+import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -170,14 +170,14 @@ public class DatasetController extends BaseStudyController
                 if (lsid != null)
                 {
                     // If we have a current record, display it
-                    DataSet ds = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
+                    Dataset ds = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
                     if (null != ds)
                     {
                         TableInfo datasetTable = ds.getTableInfo(getUser());
 
                         TableViewForm objForm = new TableViewForm(datasetTable);
                         objForm.set("lsid", lsid);
-                        objForm.set(DataSetDefinition.DATASETKEY, datasetId);
+                        objForm.set(DatasetDefinition.DATASETKEY, datasetId);
 
                         DetailsView objView = new DetailsView(objForm);
                         objView.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
@@ -273,7 +273,7 @@ public class DatasetController extends BaseStudyController
             // Loop over each dataset, transacting per dataset to keep from locking out other users
             for (int datasetId : datasetIds)
             {
-                DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+                DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
                 if (def == null)
                     continue; // It's already been deleted; ignore it. User likely double-clicked.
 
@@ -287,7 +287,7 @@ public class DatasetController extends BaseStudyController
             }
 
             if (countDeleted > 0)
-                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(getUser(), Collections.<DataSetDefinition>emptySet());
+                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(getUser(), Collections.<DatasetDefinition>emptySet());
 
             return true;
         }
@@ -307,7 +307,7 @@ public class DatasetController extends BaseStudyController
             Map<String,String> props = new HashMap<>();
 
             Study study = getStudyRedirectIfNull();
-            DataSet def = study.getDataset(form.getDatasetId());
+            Dataset def = study.getDataset(form.getDatasetId());
             if (null == def)
                 throw new NotFoundException("Invalid dataset id");
 
@@ -333,7 +333,7 @@ public class DatasetController extends BaseStudyController
 
             // need a comma-separated list of base columns
             Set<String> baseColumnNames = def.getDefaultFieldNames();
-            StringBuilder sb = new StringBuilder(DataSetTableImpl.QCSTATE_LABEL_COLNAME);
+            StringBuilder sb = new StringBuilder(DatasetTableImpl.QCSTATE_LABEL_COLNAME);
             for (String baseColumnName : baseColumnNames)
             {
                 sb.append(",");

@@ -27,7 +27,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
@@ -72,7 +72,7 @@ public class StudyCrosstabReport extends CrosstabReport
 
     public ActionURL getRunReportURL(ViewContext context)
     {
-        int datasetId = NumberUtils.toInt(getDescriptor().getProperty(DataSetDefinition.DATASETKEY), -1);
+        int datasetId = NumberUtils.toInt(getDescriptor().getProperty(DatasetDefinition.DATASETKEY), -1);
         if (datasetId == -1)
         {
             String queryName = getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
@@ -81,7 +81,7 @@ public class StudyCrosstabReport extends CrosstabReport
                 Study study = StudyManager.getInstance().getStudy(context.getContainer());
                 if (study != null)
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, queryName) ;
+                    DatasetDefinition def = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, queryName) ;
                     if (def != null)
                         datasetId = def.getDatasetId();
                 }
@@ -91,7 +91,7 @@ public class StudyCrosstabReport extends CrosstabReport
         if (datasetId != -1)
         {
             return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
-                        addParameter(DataSetDefinition.DATASETKEY, datasetId).
+                        addParameter(DatasetDefinition.DATASETKEY, datasetId).
                         addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, getDescriptor().getReportId().toString());
         }
         return super.getRunReportURL(context);

@@ -22,7 +22,7 @@
 
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
@@ -49,7 +49,7 @@
 
     if (aliasDatasetId != null)
     {
-        DataSetDefinition ds = s.getDataset(aliasDatasetId);
+        DatasetDefinition ds = s.getDataset(aliasDatasetId);
         if (ds != null)
         {
             aliasDatasetName = ds.getName();

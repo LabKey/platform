@@ -155,22 +155,22 @@ public class VisitForm extends ViewForm
         setSequenceNumHandling(bean.getSequenceNumHandling());
     }
 
-    public String[] getDataSetStatus()
+    public String[] getDatasetStatus()
     {
         return _datasetStatus;
     }
 
-    public void setDataSetStatus(String[] datasetStatus)
+    public void setDatasetStatus(String[] datasetStatus)
     {
         _datasetStatus = datasetStatus;
     }
 
-    public int[] getDataSetIds()
+    public int[] getDatasetIds()
     {
         return _datasetIds;
     }
 
-    public void setDataSetIds(int[] datasetIds)
+    public void setDatasetIds(int[] datasetIds)
     {
         _datasetIds = datasetIds;
     }

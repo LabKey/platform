@@ -16,13 +16,13 @@
  */
 %>
 <%@ page import="org.labkey.study.controllers.StudyController.BulkImportDataTypesAction"%>
-<%@ page import="org.labkey.study.model.DataSetDefinition"%>
+<%@ page import="org.labkey.study.model.DatasetDefinition"%>
 <%@ page import="java.util.ArrayList"%>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    List<DataSetDefinition> undefined = new ArrayList<>();
-    for (DataSetDefinition def : getDatasets())
+    List<DatasetDefinition> undefined = new ArrayList<>();
+    for (DatasetDefinition def : getDatasets())
     {
         if (def.getTypeURI() == null)
             undefined.add(def);
@@ -50,7 +50,7 @@
         <th>Label</th>
     </tr>
 <%
-    for (DataSetDefinition def : undefined)
+    for (DatasetDefinition def : undefined)
     {
 %>
     <tr>

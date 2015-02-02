@@ -33,15 +33,15 @@ import org.labkey.study.visitmanager.VisitManager;
 
 import java.util.*;
 
-public class ParticipantVisitDataSetTable extends VirtualTable
+public class ParticipantVisitDatasetTable extends VirtualTable
 {
     StudyImpl _study;
     StudyQuerySchema _schema;
-    DataSetDefinition _dataset;
+    DatasetDefinition _dataset;
     ColumnInfo _colParticipantId;
     Map<Double,ColumnInfo> _seqColumnMap = new HashMap<>();
 
-    public ParticipantVisitDataSetTable(StudyQuerySchema schema, DataSetDefinition dsd, ColumnInfo colParticipantId)
+    public ParticipantVisitDatasetTable(StudyQuerySchema schema, DatasetDefinition dsd, ColumnInfo colParticipantId)
     {
         super(StudySchema.getInstance().getSchema(), null);
         StudyManager studyManager = StudyManager.getInstance();
@@ -60,10 +60,10 @@ public class ParticipantVisitDataSetTable extends VirtualTable
 
         // visits for this dataset
         // NOTE vdsList (and therefore visitList) is in display order
-        List<VisitDataSet> vdsList = _dataset.getVisitDatasets();
+        List<VisitDataset> vdsList = _dataset.getVisitDatasets();
         Set<Integer> visitIds = new HashSet<>();
         List<VisitImpl> visitList = new ArrayList<>(vdsList.size());
-        for (VisitDataSet vds : vdsList)
+        for (VisitDataset vds : vdsList)
         {
             VisitImpl visit = visitRowIdMap.get(vds.getVisitRowId());
             if (null != visit && null != StringUtils.trimToNull(visit.getLabel()))
@@ -74,7 +74,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         }
 
         Set<Double> sequenceSet = new TreeSet<>();
-        for (VisitDataSet vds : vdsList)
+        for (VisitDataset vds : vdsList)
         {
             VisitImpl visit = visitRowIdMap.get(vds.getVisitRowId());
             if (null == visit)
@@ -247,7 +247,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             {
                 try
                 {
-                    DataSetTableImpl dsTable = _schema.createDatasetTableInternal(_dataset);
+                    DatasetTableImpl dsTable = _schema.createDatasetTableInternal(_dataset);
                     dsTable.hideParticipantLookups();
                     return dsTable;
                 }

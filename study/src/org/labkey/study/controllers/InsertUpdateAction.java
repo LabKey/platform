@@ -59,7 +59,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.study.StudyModule;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -89,7 +89,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     protected abstract NavTree appendExtraNavTrail(NavTree root);
     protected StudyImpl _study = null;
     private QueryUpdateForm _updateForm;
-    protected DataSetDefinition _ds = null;
+    protected DatasetDefinition _ds = null;
 
     protected InsertUpdateAction(Class<? extends Form> formClass)
     {
@@ -204,7 +204,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         if (referer.isEmpty())
         {
             cancelURL = new ActionURL(StudyController.DatasetAction.class, getContainer());
-            cancelURL.addParameter(DataSetDefinition.DATASETKEY, ""+form.getDatasetId());
+            cancelURL.addParameter(DatasetDefinition.DATASETKEY, ""+form.getDatasetId());
         }
         else
         {
@@ -214,7 +214,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
         ButtonBar buttonBar = new ButtonBar();
         buttonBar.setStyle(ButtonBar.Style.separateButtons);
-        ActionButton btnSubmit = new ActionButton(new ActionURL(getClass(), getContainer()).addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId()), "Submit");
+        ActionButton btnSubmit = new ActionButton(new ActionURL(getClass(), getContainer()).addParameter(DatasetDefinition.DATASETKEY, form.getDatasetId()), "Submit");
         ActionButton btnCancel = new ActionButton("Cancel", cancelURL);
         buttonBar.add(btnSubmit);
         buttonBar.add(btnCancel);
@@ -241,7 +241,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             }
             root.addChild(study.getLabel(), rootURL);
             ActionURL grid = new ActionURL(StudyController.DatasetAction.class, getContainer());
-            grid.addParameter(DataSetDefinition.DATASETKEY, _ds.getDatasetId());
+            grid.addParameter(DatasetDefinition.DATASETKEY, _ds.getDatasetId());
             grid.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
             root.addChild(_ds.getLabel(), grid);
             appendExtraNavTrail(root);
@@ -287,7 +287,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         if (errors.hasErrors())
             return false;
 
-        // The query DataSet table supports QueryUpdateService while the table returned from ds.getTableInfo() doesn't.
+        // The query Dataset table supports QueryUpdateService while the table returned from ds.getTableInfo() doesn't.
         QueryUpdateService qus = datasetTable.getUpdateService();
         assert qus != null;
 
@@ -361,7 +361,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             return url;
 
         url = new ActionURL(StudyController.DatasetAction.class, getContainer());
-        url.addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
+        url.addParameter(DatasetDefinition.DATASETKEY, form.getDatasetId());
         if (StudyManager.getInstance().showQCStates(getContainer()))
         {
             QCStateSet stateSet = QCStateSet.getAllStates(getContainer());

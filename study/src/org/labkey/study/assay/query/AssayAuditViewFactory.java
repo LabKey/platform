@@ -36,7 +36,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
@@ -252,7 +252,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
                     if (s != null)
                     {
                         out.write("<a href=\"" +
-                                new ActionURL(StudyController.DatasetAction.class, c).addParameter(DataSetDefinition.DATASETKEY, datasetId) + "\">");
+                                new ActionURL(StudyController.DatasetAction.class, c).addParameter(DatasetDefinition.DATASETKEY, datasetId) + "\">");
                         out.write(s.getLabel().replaceAll(" ", "&nbsp;") + "</a>");
                     }
                 }

@@ -58,7 +58,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -72,7 +72,7 @@ import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.importer.StudyImportJob;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.SpecimenDomainKind;
@@ -81,7 +81,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VialDomainKind;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
-import org.labkey.study.query.DataSetTableImpl;
+import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.SimpleSpecimenTable;
 import org.labkey.study.query.SpecimenDetailTable;
 import org.labkey.study.query.SpecimenSummaryTable;
@@ -142,7 +142,7 @@ public class StudyServiceImpl implements StudyService.Service
             return StudyManager.getInstance().createStudy(user, study);
     }
 
-    public DataSetDefinition getDataset(Container c, int datasetId)
+    public DatasetDefinition getDataset(Container c, int datasetId)
     {
         Study study = StudyManager.getInstance().getStudy(c);
         if (study != null)
@@ -156,7 +156,7 @@ public class StudyServiceImpl implements StudyService.Service
         Study study = StudyManager.getInstance().getStudy(c);
         if (study == null)
             return -1;
-        DataSet def = StudyManager.getInstance().getDatasetDefinitionByLabel(study, datasetLabel);
+        Dataset def = StudyManager.getInstance().getDatasetDefinitionByLabel(study, datasetLabel);
 
         return def == null ? -1 : def.getDatasetId();
     }
@@ -167,14 +167,14 @@ public class StudyServiceImpl implements StudyService.Service
         Study study = StudyManager.getInstance().getStudy(c);
         if (study == null)
             return -1;
-        DataSet def = StudyManager.getInstance().getDatasetDefinitionByName(study, datasetName);
+        Dataset def = StudyManager.getInstance().getDatasetDefinitionByName(study, datasetName);
 
         return def == null ? -1 : def.getDatasetId();
     }
 
 
     @Override
-    public DataSet resolveDataset(Container c, String queryName)
+    public Dataset resolveDataset(Container c, String queryName)
     {
         Study study = StudyManager.getInstance().getStudy(c);
         if (study == null)
@@ -186,7 +186,7 @@ public class StudyServiceImpl implements StudyService.Service
     /**
      * Requests arrive as maps of name->value. The StudyManager expects arrays of maps
      * of property URI -> value. This is a convenience method to do that conversion.
-    private List<Map<String,Object>> convertMapToPropertyMapArray(User user, Map<String,Object> origData, DataSetDefinition def)
+    private List<Map<String,Object>> convertMapToPropertyMapArray(User user, Map<String,Object> origData, DatasetDefinition def)
         throws SQLException
     {
         Map<String,Object> map = new HashMap<String,Object>();
@@ -218,10 +218,10 @@ public class StudyServiceImpl implements StudyService.Service
             map.put(col.getPropertyURI(), value);
         }
 
-        if (origData.containsKey(DataSetTableImpl.QCSTATE_LABEL_COLNAME))
+        if (origData.containsKey(DatasetTableImpl.QCSTATE_LABEL_COLNAME))
         {
-            // DataSetDefinition.importDatasetData() pulls this one out by name instead of PropertyURI
-            map.put(DataSetTableImpl.QCSTATE_LABEL_COLNAME, origData.get(DataSetTableImpl.QCSTATE_LABEL_COLNAME));
+            // DatasetDefinition.importDatasetData() pulls this one out by name instead of PropertyURI
+            map.put(DatasetTableImpl.QCSTATE_LABEL_COLNAME, origData.get(DatasetTableImpl.QCSTATE_LABEL_COLNAME));
         }
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
@@ -230,7 +230,7 @@ public class StudyServiceImpl implements StudyService.Service
     }
 */
 
-    public void addAssayRecallAuditEvent(DataSet def, int rowCount, Container sourceContainer, User user)
+    public void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user)
     {
         AuditLogEvent event = new AuditLogEvent();
 
@@ -249,7 +249,7 @@ public class StudyServiceImpl implements StudyService.Service
 
         event.setComment(rowCount + " row(s) were recalled to the assay: " + assayName);
 
-        Map<String,Object> dataMap = Collections.<String,Object>singletonMap(DataSetDefinition.DATASETKEY, def.getDatasetId());
+        Map<String,Object> dataMap = Collections.<String,Object>singletonMap(DatasetDefinition.DATASETKEY, def.getDatasetId());
 
         AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT));
     }
@@ -259,7 +259,7 @@ public class StudyServiceImpl implements StudyService.Service
      * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
      * if both are set, it's an edit
      */
-    public static void addDatasetAuditEvent(User u, DataSet def, @Nullable Map<String, Object> oldRecord, @Nullable Map<String, Object> newRecord)
+    public static void addDatasetAuditEvent(User u, Dataset def, @Nullable Map<String, Object> oldRecord, @Nullable Map<String, Object> newRecord)
     {
         String comment;
         if (oldRecord == null)
@@ -275,7 +275,7 @@ public class StudyServiceImpl implements StudyService.Service
      * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
      * if both are set, it's an edit
      */
-    public static void addDatasetAuditEvent(User u, DataSet def, Map<String, Object> oldRecord, Map<String, Object> newRecord, String auditComment)
+    public static void addDatasetAuditEvent(User u, Dataset def, Map<String, Object> oldRecord, Map<String, Object> newRecord, String auditComment)
     {
         AuditLogEvent event = new AuditLogEvent();
         event.setCreatedBy(u);
@@ -322,7 +322,7 @@ public class StudyServiceImpl implements StudyService.Service
         AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
     }
 
-    public static void addDatasetAuditEvent(User u, Container c, DataSet def, String comment, UploadLog ul /*optional*/)
+    public static void addDatasetAuditEvent(User u, Container c, Dataset def, String comment, UploadLog ul /*optional*/)
     {
         AuditLogEvent event = new AuditLogEvent();
         event.setCreatedBy(u);
@@ -361,7 +361,7 @@ public class StudyServiceImpl implements StudyService.Service
                     filter = new SimpleFilter();
                     view.getRenderContext().setBaseFilter(filter);
                 }
-                FieldKey qcStateKey = FieldKey.fromParts(DataSetTableImpl.QCSTATE_ID_COLNAME, "rowid");
+                FieldKey qcStateKey = FieldKey.fromParts(DatasetTableImpl.QCSTATE_ID_COLNAME, "rowid");
                 Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(view.getDataRegion().getTable(), Collections.singleton(qcStateKey));
                 ColumnInfo qcStateColumn = qcStateColumnMap.get(qcStateKey);
                 if (qcStateColumn != null)
@@ -427,11 +427,11 @@ public class StudyServiceImpl implements StudyService.Service
         return result;
     }
 
-    public Set<DataSetDefinition> getDatasetsForAssayProtocol(ExpProtocol protocol)
+    public Set<DatasetDefinition> getDatasetsForAssayProtocol(ExpProtocol protocol)
     {
-        TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataSet();
+        TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataset();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("protocolid"), protocol.getRowId());
-        Set<DataSetDefinition> result = new HashSet<>();
+        Set<DatasetDefinition> result = new HashSet<>();
         Collection<Map<String, Object>> rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapCollection();
         for (Map<String, Object> row : rows)
         {
@@ -443,20 +443,20 @@ public class StudyServiceImpl implements StudyService.Service
         return result;
     }
 
-    public Map<DataSetDefinition, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol)
+    public Map<DatasetDefinition, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol)
     {
-        Set<DataSetDefinition> datasets = getDatasetsForAssayProtocol(protocol);
-        Map<DataSetDefinition, String> result = new HashMap<>();
-        for (DataSetDefinition dataset : datasets)
+        Set<DatasetDefinition> datasets = getDatasetsForAssayProtocol(protocol);
+        Map<DatasetDefinition, String> result = new HashMap<>();
+        for (DatasetDefinition dataset : datasets)
             result.put(dataset, dataset.getStorageTableInfo().getSelectName());
         return result;
     }
 
     @Override
-    public Set<DataSet> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user)
+    public Set<Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user)
     {
         // Cache the datasets for a specific protocol (assay design)
-        Map<ExpProtocol, Set<DataSetDefinition>> protocolDatasets = new HashMap<>();
+        Map<ExpProtocol, Set<DatasetDefinition>> protocolDatasets = new HashMap<>();
         // Remember all of the run RowIds for a given protocol (assay design)
         Map<ExpProtocol, List<Integer>> allProtocolRunIds = new HashMap<>();
 
@@ -464,7 +464,7 @@ public class StudyServiceImpl implements StudyService.Service
         for (ExpRun run : runs)
         {
             ExpProtocol protocol = run.getProtocol();
-            Set<DataSetDefinition> datasets = protocolDatasets.get(protocol);
+            Set<DatasetDefinition> datasets = protocolDatasets.get(protocol);
             if (datasets == null)
             {
                 datasets = getDatasetsForAssayProtocol(protocol);
@@ -480,11 +480,11 @@ public class StudyServiceImpl implements StudyService.Service
         }
 
         // All of the datasets that have rows backed by data in the specified runs
-        Set<DataSet> result = new HashSet<>();
+        Set<Dataset> result = new HashSet<>();
 
-        for (Map.Entry<ExpProtocol, Set<DataSetDefinition>> entry : protocolDatasets.entrySet())
+        for (Map.Entry<ExpProtocol, Set<DatasetDefinition>> entry : protocolDatasets.entrySet())
         {
-            for (DataSetDefinition dataset : entry.getValue())
+            for (DatasetDefinition dataset : entry.getValue())
             {
                 // Don't enforce permissions for the current user - we still want to tell them if the data
                 // has been copied even if they can't see the dataset.
@@ -626,19 +626,19 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @Override
-    public DataSet.KeyType getDatasetKeyType(Container container, String datasetName)
+    public Dataset.KeyType getDatasetKeyType(Container container, String datasetName)
     {
         Study study = StudyManager.getInstance().getStudy(container);
         if (study != null)
         {
-            DataSet dataset = StudyManager.getInstance().getDatasetDefinitionByName(study, datasetName);
+            Dataset dataset = StudyManager.getInstance().getDatasetDefinitionByName(study, datasetName);
             if (dataset != null)
                 return dataset.getKeyType();
         }
         if (datasetName.equals(getSubjectGroupMapTableName(container)) || datasetName.equals(getSubjectTableName(container)))
         {
             // Treat these the same as demographics datasets for JOIN purposes - just use ParticipantId
-            return DataSet.KeyType.SUBJECT;
+            return Dataset.KeyType.SUBJECT;
         }
         return null;
     }

@@ -28,21 +28,21 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 
 import java.util.ArrayList;
 
-public class ParticipantDataSetTable extends VirtualTable
+public class ParticipantDatasetTable extends VirtualTable
 {
     StudyQuerySchema _schema;
     ColumnInfo _colParticipantId;
 
-    public ParticipantDataSetTable(StudyQuerySchema schema, ColumnInfo colParticipantId)
+    public ParticipantDatasetTable(StudyQuerySchema schema, ColumnInfo colParticipantId)
     {
         super(StudySchema.getInstance().getSchema(), null);
         _schema = schema;
         _colParticipantId = colParticipantId;
-        for (DataSetDefinition dataset : _schema.getStudy().getDatasets())
+        for (DatasetDefinition dataset : _schema.getStudy().getDatasets())
         {
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).
@@ -62,7 +62,7 @@ public class ParticipantDataSetTable extends VirtualTable
         }
     }
 
-    protected ColumnInfo createDatasetColumn(String name, final DataSetDefinition def)
+    protected ColumnInfo createDatasetColumn(String name, final DatasetDefinition def)
     {
         ColumnInfo column;
         if (_colParticipantId == null)
@@ -97,7 +97,7 @@ public class ParticipantDataSetTable extends VirtualTable
                 {
                     try
                     {
-                        DataSetTableImpl dsTable = _schema.createDatasetTableInternal(def);
+                        DatasetTableImpl dsTable = _schema.createDatasetTableInternal(def);
                         dsTable.hideParticipantLookups();
                         dsTable.overlayMetadata(dsTable.getName(), _schema, new ArrayList<QueryException>());
                         return dsTable;
@@ -124,7 +124,7 @@ public class ParticipantDataSetTable extends VirtualTable
                 {
                     if (displayField == null)
                         return null;
-                    ColumnInfo ret = new ParticipantVisitDataSetTable(_schema, def, parent).getColumn(displayField);
+                    ColumnInfo ret = new ParticipantVisitDatasetTable(_schema, def, parent).getColumn(displayField);
                     if (ret == null)
                         return null;
                     ret.setLabel(parent.getLabel() + " " + ret.getLabel());
@@ -133,7 +133,7 @@ public class ParticipantDataSetTable extends VirtualTable
 
                 public TableInfo getLookupTableInfo()
                 {
-                    return new ParticipantVisitDataSetTable(_schema, def, null);
+                    return new ParticipantVisitDatasetTable(_schema, def, null);
                 }
 
                 public StringExpression getURL(ColumnInfo parent)

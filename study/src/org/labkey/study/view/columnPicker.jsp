@@ -20,8 +20,8 @@
 <%@ page import="org.labkey.api.study.Visit"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
-<%@ page import="org.labkey.study.model.DataSetDefinition"%>
-<%@ page import="org.labkey.study.model.VisitDataSet"%>
+<%@ page import="org.labkey.study.model.DatasetDefinition"%>
+<%@ page import="org.labkey.study.model.VisitDataset"%>
 <%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page import="java.util.HashMap"%>
 <%@ page import="java.util.List" %>
@@ -32,17 +32,17 @@
 //    ReportsController.ColumnPickerForm form;
 
 ReportsController.DataPickerBean bean = (ReportsController.DataPickerBean)HttpView.currentModel();
-DataSetDefinition selectedDataset = null;
+DatasetDefinition selectedDataset = null;
 PropertyDescriptor[] pds = null;
 String error = null;
 %>
 <p><%=h(bean.caption)%></p>
 <labkey:form id="columnPickerForm" action="<%=h(buildURL(ReportsController.RenderConfigureEnrollmentReportAction.class))%>" method="POST">
 <table>
-<tr><td>Dataset</td><td><select name="<%=text(DataSetDefinition.DATASETKEY)%>" onchange="refreshForm(this.options[this.selectedIndex].value);">
+<tr><td>Dataset</td><td><select name="<%=text(DatasetDefinition.DATASETKEY)%>" onchange="refreshForm(this.options[this.selectedIndex].value);">
     <option value="-1"></option>
 <%
-for (DataSetDefinition ds : bean.study.getDatasets())
+for (DatasetDefinition ds : bean.study.getDatasets())
 {
     boolean selected = bean.form.getDatasetId().intValue() == ds.getDatasetId();
     if (selected)
@@ -59,7 +59,7 @@ if (selectedDataset != null)
         if (visit.getSequenceNumMin() == visit.getSequenceNumMax())
             visits.put(visit.getRowId(), visit);
     }
-    List<VisitDataSet> datasetVisits = selectedDataset.getVisitDatasets();
+    List<VisitDataset> datasetVisits = selectedDataset.getVisitDatasets();
     if (null != selectedDataset.getTypeURI())
         pds = OntologyManager.getPropertiesForType(selectedDataset.getTypeURI(),bean.study.getContainer());
     if (null == pds || pds.length == 0)
@@ -68,7 +68,7 @@ if (selectedDataset != null)
     %><tr><td>Visit</td><td><select name="<%=text(VisitImpl.SEQUENCEKEY)%>"><%
     if (datasetVisits.size() == 0 && error == null)
         error = "No visits defined for this dataset.";
-    for (VisitDataSet vds : datasetVisits)
+    for (VisitDataset vds : datasetVisits)
     {
         VisitImpl visit = visits.get(vds.getVisitRowId());
 //        if (!visit.isRequired())            continue;

@@ -30,12 +30,12 @@ import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.query.DataSetTableImpl;
+import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.Arrays;
@@ -115,7 +115,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     
     public String getTypeLabel(Domain domain)
     {
-        DataSetDefinition def = getDatasetDefinition(domain.getTypeURI());
+        DatasetDefinition def = getDatasetDefinition(domain.getTypeURI());
         if (null == def)
             return domain.getName();
         return def.getName();
@@ -124,7 +124,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        DataSetDefinition def = getDatasetDefinition(domain.getTypeURI());
+        DatasetDefinition def = getDatasetDefinition(domain.getTypeURI());
         if (null == def)
             return new SQLFragment("NULL");
         TableInfo ti = def.getStorageTableInfo();
@@ -162,7 +162,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
-        DataSet def = getDatasetDefinition(domain.getTypeURI());
+        Dataset def = getDatasetDefinition(domain.getTypeURI());
         ActionURL url = new ActionURL(StudyController.DatasetReportAction.class, containerUser.getContainer());
         url.addParameter("datasetId", "" + def.getDatasetId());
         return url;
@@ -171,7 +171,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        DataSet def = getDatasetDefinition(domain.getTypeURI());
+        Dataset def = getDatasetDefinition(domain.getTypeURI());
         ActionURL url = new ActionURL(StudyController.EditTypeAction.class, containerUser.getContainer());
         url.addParameter("datasetId", "" + def.getDatasetId());
         return url;
@@ -187,7 +187,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     }
 
 
-    DataSetDefinition getDatasetDefinition(String domainURI)
+    DatasetDefinition getDatasetDefinition(String domainURI)
     {
         return StudyManager.getInstance().getDatasetDefinition(domainURI);
     }
@@ -232,7 +232,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     public void invalidate(Domain domain)
     {
         super.invalidate(domain);
-        DataSetDefinition def = getDatasetDefinition(domain.getTypeURI());
+        DatasetDefinition def = getDatasetDefinition(domain.getTypeURI());
         if (null != def)
         {
             StudyManager.getInstance().uncache(def);
@@ -256,16 +256,16 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, true);
-        DataSetDefinition dsd = schema.getDatasetDefinitionByName(name);
+        DatasetDefinition dsd = schema.getDatasetDefinitionByName(name);
 
-        return new DataSetTableImpl(schema, dsd);
+        return new DatasetTableImpl(schema, dsd);
     }
 
     @Override
     public void afterLoadTable(SchemaTableInfo ti, Domain domain)
     {
         // Grab the "standard" properties and apply them to this dataset table
-        TableInfo template = DataSetDefinition.getTemplateTableInfo();
+        TableInfo template = DatasetDefinition.getTemplateTableInfo();
 
         for (PropertyStorageSpec pss : domain.getDomainKind().getBaseProperties())
         {

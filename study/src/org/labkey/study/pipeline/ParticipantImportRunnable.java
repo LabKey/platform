@@ -28,7 +28,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 
 import java.io.BufferedReader;
@@ -42,7 +42,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 {
     private String _siteLookup = "RowId";
 
-    ParticipantImportRunnable(PipelineJob job, StudyImpl study, DataSetDefinition ds, VirtualFile root, String tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
+    ParticipantImportRunnable(PipelineJob job, StudyImpl study, DatasetDefinition ds, VirtualFile root, String tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
     {
         super(job, study, ds, root, tsv, action, deleteAfterImport, defaultReplaceCutoff, columnMap, null);
     }

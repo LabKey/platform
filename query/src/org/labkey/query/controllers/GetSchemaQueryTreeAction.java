@@ -28,7 +28,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.DataSetTable;
+import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 
@@ -139,7 +139,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         catch (QueryException ignored) {}
 
                         String label = qname;
-                        if (null != tinfo && tinfo instanceof DataSetTable)
+                        if (null != tinfo && tinfo instanceof DatasetTable)
                             label = tinfo.getTitle();           // Display title (label if different from name) for Datasets
 
                         // If there's an error, still include the table in the tree

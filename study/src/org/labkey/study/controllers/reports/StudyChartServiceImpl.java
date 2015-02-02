@@ -39,7 +39,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -49,7 +49,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.reports.ReportManager;
 
@@ -87,7 +87,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
         if (study != null)
         {
-            for (DataSet def : StudyManager.getInstance().getDatasetDefinitions(study))
+            for (Dataset def : StudyManager.getInstance().getDatasetDefinitions(study))
             {
                 if (def.canRead(getUser()))
                     datasets.add(new GWTPair(def.getLabel(), Integer.toString(def.getDatasetId())));
@@ -147,9 +147,9 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
                 ActionURL url = new ActionURL(StudyController.DatasetReportAction.class, _context.getContainer());
                 url.addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, String.valueOf(reportId));
                 if (showWithDataset == ReportManager.ALL_DATASETS)
-                    url.addParameter(DataSetDefinition.DATASETKEY, report.getDescriptor().getProperty("datasetId"));
+                    url.addParameter(DatasetDefinition.DATASETKEY, report.getDescriptor().getProperty("datasetId"));
                 else
-                    url.replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(showWithDataset));
+                    url.replaceParameter(DatasetDefinition.DATASETKEY, String.valueOf(showWithDataset));
                 return url.toString();
             }
         }
@@ -193,7 +193,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
             String queryName = null;
             Study study = StudyManager.getInstance().getStudy(_context.getContainer());
-            DataSet def = StudyManager.getInstance().getDatasetDefinition(study, showWithDataset);
+            Dataset def = StudyManager.getInstance().getDatasetDefinition(study, showWithDataset);
             if (def != null)
                 queryName = def.getName();
             return ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), queryName);
@@ -273,7 +273,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         {
             // if this is a participant chart, just filter on the first participant in the dataset so that
             // the chart preview will look more representative.
-            int datasetId = NumberUtils.toInt(chart.getProperties().get(DataSetDefinition.DATASETKEY));
+            int datasetId = NumberUtils.toInt(chart.getProperties().get(DatasetDefinition.DATASETKEY));
             String qcState = getActionURL().getParameter(BaseStudyController.SharedFormParameters.QCState);
             List<String> participants = StudyController.getParticipantListFromCache(_context, datasetId, bean.getViewName(), null, qcState);
             if (!participants.isEmpty())

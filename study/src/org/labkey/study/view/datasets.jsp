@@ -18,11 +18,11 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
@@ -32,7 +32,7 @@
     Container container = getContainer();
     Study study = manager.getStudy(container);
     User user = getUser();
-    List<DataSetDefinition> datasets = manager.getDatasetDefinitions(study);
+    List<DatasetDefinition> datasets = manager.getDatasetDefinitions(study);
 
     if (null == datasets || datasets.isEmpty())
     {
@@ -44,8 +44,8 @@
         return;
     }
 
-    List<DataSetDefinition> userDatasets = new ArrayList<>();
-    for (DataSetDefinition dataset : datasets)
+    List<DatasetDefinition> userDatasets = new ArrayList<>();
+    for (DatasetDefinition dataset : datasets)
     {
         if (!dataset.isShowByDefault())
             continue;
@@ -71,7 +71,7 @@
         out.print("<br>" + textLink("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, container)));
 %>
 <%!
-    String renderDatasets(List<DataSetDefinition> datasets, int startIndex, int endIndex)
+    String renderDatasets(List<DatasetDefinition> datasets, int startIndex, int endIndex)
     {
         StringBuilder sb = new StringBuilder();
         if (startIndex >= datasets.size() || startIndex >= endIndex)
@@ -81,7 +81,7 @@
         ActionURL datasetURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, getContainer());
         sb.append("<table>\n");
         //Print a column header if necessary
-        DataSet firstDataset = datasets.get(startIndex);
+        Dataset firstDataset = datasets.get(startIndex);
         if (!equal(category, firstDataset.getCategory()))
         {
             category = firstDataset.getCategory();
@@ -99,7 +99,7 @@
             sb.append("<tr><td class=\"labkey-title-area-line\"></td></tr>\n");
         }
 
-        for (DataSet dataset : datasets.subList(startIndex, endIndex))
+        for (Dataset dataset : datasets.subList(startIndex, endIndex))
         {
             if (!equal(category, dataset.getCategory()))
             {

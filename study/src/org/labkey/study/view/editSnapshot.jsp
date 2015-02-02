@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotDefinition" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotForm" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -46,7 +46,7 @@
     String datasetLabel = showDataset ? "Hide Dataset Definition" : "Edit Dataset Definition";
 
     final Study study = StudyManager.getInstance().getStudy(getContainer());
-    final DataSet dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, bean.getSnapshotName());
+    final Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, bean.getSnapshotName());
     ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, getContainer());
 %>
 

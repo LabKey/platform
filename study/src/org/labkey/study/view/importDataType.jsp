@@ -22,7 +22,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     StudyController.ImportTypeForm form = (StudyController.ImportTypeForm)HttpView.currentModel();
-    String formDatasetId = form.getDataSetId() == null ? "" : form.getDataSetId().toString();
+    String formDatasetId = form.getDatasetId() == null ? "" : form.getDatasetId().toString();
 %>
 
 <labkey:errors />
@@ -38,7 +38,7 @@
                 </tr>
                 <tr>
                     <td class=labkey-form-label>Dataset ID <%=PageFlowUtil.helpPopup("Dataset ID", "The dataset id is an integer number that must be unique for each dataset in a study.")%></td>
-                    <td><input id=datasetId type=text name=dataSetId value="<%=formDatasetId%>"<%=disabled(form.isAutoDatasetId())%> size=6>
+                    <td><input id=datasetId type=text name=datasetId value="<%=formDatasetId%>"<%=disabled(form.isAutoDatasetId())%> size=6>
                         <input type=checkbox name="autoDatasetId" onclick="toggleAutoDatasetId(this);"<%=checked(form.isAutoDatasetId())%>>Define Dataset Id Automatically</td>
                 </tr>
                 <tr>

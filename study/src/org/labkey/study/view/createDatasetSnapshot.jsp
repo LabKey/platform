@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
@@ -88,8 +88,8 @@
 
         %>
     </table>
-    <%  if (getActionURL().getParameter(DataSetDefinition.DATASETKEY) != null) { %>
-    <input type="hidden" name="<%=h(DataSetDefinition.DATASETKEY)%>" value="<%=h(getActionURL().getParameter(DataSetDefinition.DATASETKEY))%>">
+    <%  if (getActionURL().getParameter(DatasetDefinition.DATASETKEY) != null) { %>
+    <input type="hidden" name="<%=h(DatasetDefinition.DATASETKEY)%>" value="<%=h(getActionURL().getParameter(DatasetDefinition.DATASETKEY))%>">
     <%  } %>
     <input type="hidden" name="action" value="<%=h(StudyController.StudySnapshotForm.CREATE_SNAPSHOT)%>" id="action">
     <input type="hidden" name="snapshotDatasetId" value="<%=bean.getSnapshotDatasetId()%>">

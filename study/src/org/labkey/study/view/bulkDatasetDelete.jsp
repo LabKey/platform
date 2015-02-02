@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.study.DataSet"%>
+<%@ page import="org.labkey.api.study.Dataset"%>
 <%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -53,7 +53,7 @@
 
     ActionURL cancelURL = new ActionURL(StudyController.ManageTypesAction.class, study.getContainer());
 
-    for (DataSet def : study.getDatasetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
+    for (Dataset def : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
     {
         ActionURL detailsURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, study.getContainer());
         detailsURL.addParameter("datasetId", def.getDatasetId());

@@ -33,9 +33,8 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
@@ -43,7 +42,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -104,7 +103,7 @@ public class DatasetViewProvider implements DataViewProvider
 
             if (null != study)
             {
-                for (DataSet ds : study.getDatasets())
+                for (Dataset ds : study.getDatasets())
                 {
                     if (ds.canRead(user))
                     {
@@ -180,7 +179,7 @@ public class DatasetViewProvider implements DataViewProvider
 
             if (study != null)
             {
-                DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByEntityId(study, id);
+                DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByEntityId(study, id);
                 if (dsDef == null)
                     errors.add(new SimpleValidationError("Unable to locate the dataset for the specified ID"));
             }
@@ -201,7 +200,7 @@ public class DatasetViewProvider implements DataViewProvider
                 StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
                 if (study != null)
                 {
-                    DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByEntityId(study, id);
+                    DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByEntityId(study, id);
                     if (dsDef != null)
                     {
                         ViewCategory category = null;

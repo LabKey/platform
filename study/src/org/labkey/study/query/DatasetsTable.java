@@ -27,10 +27,10 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
@@ -42,11 +42,11 @@ import java.util.Set;
  * User: brittp
  * Created: Apr 30, 2008 11:13:43 AM
  */
-public class DataSetsTable extends FilteredTable<StudyQuerySchema>
+public class DatasetsTable extends FilteredTable<StudyQuerySchema>
 {
-    public DataSetsTable(StudyQuerySchema schema)
+    public DatasetsTable(StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoDataSet(), schema);
+        super(StudySchema.getInstance().getTableInfoDataset(), schema);
         setName("Datasets");
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
@@ -96,10 +96,10 @@ public class DataSetsTable extends FilteredTable<StudyQuerySchema>
             return new SimpleFilter().addClause(new SimpleFilter.FalseClause());
         List<String> entityIds = new ArrayList<>();
         Set<String> containerIds = new HashSet<>();
-        for (DataSet ds : study.getDatasets())
+        for (Dataset ds : study.getDatasets())
         {
             entityIds.add(ds.getEntityId());
-            containerIds.add(((DataSetDefinition)ds).getDefinitionContainer().getId());
+            containerIds.add(((DatasetDefinition)ds).getDefinitionContainer().getId());
         }
         if (entityIds.isEmpty() || containerIds.isEmpty())
             return new SimpleFilter().addClause(new SimpleFilter.FalseClause());

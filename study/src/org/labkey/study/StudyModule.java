@@ -130,7 +130,7 @@ import org.labkey.study.importer.StudyImporterFactory;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.model.CohortDomainKind;
 import org.labkey.study.model.ContinuousDatasetDomainKind;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.ParticipantIdImportHelper;
@@ -458,7 +458,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         try
         {
-            DataSetDefinition.cleanupOrphanedDatasetDomains();
+            DatasetDefinition.cleanupOrphanedDatasetDomains();
         }
         catch (SQLException sql)
         {
@@ -761,7 +761,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(StudyManager.DatasetImportTestCase.class);
         set.add(ParticipantGroupManager.ParticipantGroupTestCase.class);
         set.add(StudyImpl.ProtocolDocumentTestCase.class);
-        set.add(DataSetDefinition.TestCleanupOrphanedDatasetDomains.class);
+        set.add(DatasetDefinition.TestCleanupOrphanedDatasetDomains.class);
         set.add(StudyManager.VisitCreationTestCase.class);
         set.add(TreatmentManager.TreatmentDataTestCase.class);
         set.add(StudyManager.AssayScheduleTestCase.class);

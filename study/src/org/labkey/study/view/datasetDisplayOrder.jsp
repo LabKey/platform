@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.model.DataSetDefinition"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset"%>
+<%@ page import="org.labkey.study.controllers.StudyController"%>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <script>
@@ -86,12 +85,12 @@ function orderModule(down)
         <tr>
             <td>
                 <%
-                    List<DataSetDefinition> defs = getDatasets();
+                    List<DatasetDefinition> defs = getDatasets();
                     boolean first = true;
                 %>
                 <select name="items" size="<%= defs.size() %>">
                 <%
-                for (DataSet def: defs)
+                for (Dataset def: defs)
                 {
                     StringBuilder desc = new StringBuilder();
                     desc.append(def.getDatasetId());
@@ -108,7 +107,7 @@ function orderModule(down)
                         first = false;
                     }
                     %>
-                    <option value="<%= def.getDatasetId() %>"><%= desc.toString() %></option>
+                    <option value="<%= def.getDatasetId() %>"><%=h(desc.toString())%></option>
                     <%
                 }
                 %>

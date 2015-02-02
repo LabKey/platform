@@ -40,7 +40,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
@@ -55,7 +55,7 @@
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.QCState" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -111,9 +111,9 @@
     StudyImpl study = manager.getStudy(getContainer());
 
     User user = (User) request.getUserPrincipal();
-    List<DataSetDefinition> allDatasets = manager.getDatasetDefinitions(study);
-    ArrayList<DataSetDefinition> datasets = new ArrayList<>(allDatasets.size());
-    for (DataSetDefinition def : allDatasets)
+    List<DatasetDefinition> allDatasets = manager.getDatasetDefinitions(study);
+    ArrayList<DatasetDefinition> datasets = new ArrayList<>(allDatasets.size());
+    for (DatasetDefinition def : allDatasets)
     {
         if (!def.canRead(user) || !def.isShowByDefault() || null == def.getStorageTableInfo() || def.isDemographicData())
             continue;
@@ -285,7 +285,7 @@
 </tr>
 
 <%
-    for (DataSetDefinition dataset : datasets)
+    for (DatasetDefinition dataset : datasets)
     {
         // Do not display demographic data here. That goes in a separate web part,
         // the participant characteristics
@@ -579,7 +579,7 @@
             "visitrowid", "dataset", "participantsequencenum", "created", "modified", "createdby", "modifiedby", "participantvisit");
 
 
-    ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext context)
+    ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, Dataset dsd, ViewContext context)
     {
         final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
         if (sortMap != null && !sortMap.isEmpty())

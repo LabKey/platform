@@ -33,7 +33,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
@@ -112,7 +112,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
                     LookupForeignKey fk = new LookupForeignKey("DatasetId", "Label") {
                         public TableInfo getLookupTableInfo()
                         {
-                            return StudySchema.getInstance().getTableInfoDataSet();
+                            return StudySchema.getInstance().getTableInfoDataset();
                         }
                     };
                     fk.addJoin(FieldKey.fromParts("Container"), "container", false);
@@ -155,7 +155,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
             if (type == SecurityType.ADVANCED_READ || type == SecurityType.ADVANCED_WRITE)
             {
                 List<Integer> readDatasets = new ArrayList<>();
-                for (DataSet ds : study.getDatasets())
+                for (Dataset ds : study.getDatasets())
                 {
                     if (ds.canRead(user))
                         readDatasets.add(ds.getDatasetId());

@@ -24,10 +24,10 @@
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.VisitDataSetType" %>
+<%@ page import="org.labkey.study.model.VisitDatasetType" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="java.util.HashMap" %>
@@ -36,8 +36,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DataSetDefinition> me = (JspView<DataSetDefinition>)HttpView.currentView();
-    DataSetDefinition dataset = me.getModelBean();
+    JspView<DatasetDefinition> me = (JspView<DatasetDefinition>)HttpView.currentView();
+    DatasetDefinition dataset = me.getModelBean();
 
     Container container = getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(container);
@@ -107,7 +107,7 @@
                 <%
                 if (dataset.getTypeURI() == null)
                 {
-                    %><a href="importDataType.view?<%=h(DataSetDefinition.DATASETKEY)%>=<%= dataset.getDatasetId() %>">[Upload]</a><%
+                    %><a href="importDataType.view?<%=h(DatasetDefinition.DATASETKEY)%>=<%= dataset.getDatasetId() %>">[Upload]</a><%
                 }
                 else
                 {
@@ -126,19 +126,19 @@
                 <%
                     for (VisitImpl visit : study.getVisits(Visit.Order.DISPLAY))
                     {
-                        VisitDataSetType type = dataset.getVisitType(visit.getRowId());
+                        VisitDatasetType type = dataset.getVisitType(visit.getRowId());
                 %>
                         <tr>
                             <td><%= h(visit.getDisplayString()) %></td>
                             <td>
                                 <input type="hidden" name="visitRowIds" value="<%= visit.getRowId() %>">
                                 <select name="visitStatus">
-                                    <option value="<%= h(VisitDataSetType.NOT_ASSOCIATED.name()) %>"
-                                        <%=selected(type == VisitDataSetType.NOT_ASSOCIATED)%>/>
-                                    <option value="<%= h(VisitDataSetType.OPTIONAL.name()) %>"
-                                        <%=selected(type == VisitDataSetType.OPTIONAL)%>>Optional</option>
-                                    <option value="<%= h(VisitDataSetType.REQUIRED.name()) %>"
-                                        <%=selected(type == VisitDataSetType.REQUIRED)%>>Required</option>
+                                    <option value="<%= h(VisitDatasetType.NOT_ASSOCIATED.name()) %>"
+                                        <%=selected(type == VisitDatasetType.NOT_ASSOCIATED)%>/>
+                                    <option value="<%= h(VisitDatasetType.OPTIONAL.name()) %>"
+                                        <%=selected(type == VisitDatasetType.OPTIONAL)%>>Optional</option>
+                                    <option value="<%= h(VisitDatasetType.REQUIRED.name()) %>"
+                                        <%=selected(type == VisitDatasetType.REQUIRED)%>>Required</option>
                                 </select>
                             </td>
                         </tr>

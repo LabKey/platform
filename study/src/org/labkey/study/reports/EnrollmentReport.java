@@ -35,7 +35,7 @@ import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -44,7 +44,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
@@ -106,7 +106,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
             HttpServletResponse response = viewContext.getResponse();
 
             final Study study = StudyManager.getInstance().getStudy(viewContext.getContainer());
-            int datasetId = NumberUtils.createInteger(descriptor.getProperty(DataSetDefinition.DATASETKEY));
+            int datasetId = NumberUtils.createInteger(descriptor.getProperty(DatasetDefinition.DATASETKEY));
             double sequenceNum = VisitImpl.parseSequenceNum(descriptor.getProperty(VisitImpl.SEQUENCEKEY));
 
             if (ReportManager.get().canReadReport(viewContext.getUser(), viewContext.getContainer(), this))
@@ -156,7 +156,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
                 col.addSeries(seriesTotal);
                 col.addSeries(seriesPeriod);
 
-                DataSet ds = study.getDataset(datasetId);
+                Dataset ds = study.getDataset(datasetId);
                 byte[] bytes = generateTimeChart("Dataset: " + ds.getLabel(), col, "Visit Date", "", null);
                 response.setContentType("image/png");
                 response.setContentLength(bytes.length);
@@ -205,7 +205,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
 
     private static Selector getVisitDateSelector(Study study, int datasetId, double sequenceNum, User user)
     {
-        DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+        DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
         TableInfo ti = def.getTableInfo(user);
         SQLFragment sql = new SQLFragment();
         sql.append(
@@ -243,7 +243,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
                 out.println("&nbsp;<br><img src=\"" + url.getLocalURIString() + "\"><br>");
 
                 final Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
-                int datasetId = NumberUtils.toInt(descriptor.getProperty(DataSetDefinition.DATASETKEY));
+                int datasetId = NumberUtils.toInt(descriptor.getProperty(DatasetDefinition.DATASETKEY));
 
                 if (descriptor.getProperty(VisitImpl.SEQUENCEKEY) != null)
                 {

@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.study.DataSet"%>
+<%@ page import="org.labkey.api.study.Dataset"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.reports.ExternalReport" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -46,11 +46,11 @@
             <td colspan="3">
                 <select name="queryName">
                 <%
-                    Map<String, DataSetDefinition> datasetMap = bean.getDatasetDefinitions();
+                    Map<String, DatasetDefinition> datasetMap = bean.getDatasetDefinitions();
                     for (String name : bean.getTableAndQueryNames())
                     {
                         String label = name;
-                        DataSet def = datasetMap.get(name);
+                        Dataset def = datasetMap.get(name);
                         if (def != null)
                         {
                             label = !def.getLabel().equals(def.getName()) ? def.getName() + " (" + def.getLabel() + ")" : def.getLabel();

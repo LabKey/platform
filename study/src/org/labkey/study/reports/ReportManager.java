@@ -43,7 +43,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -53,7 +53,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetManager;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -136,7 +136,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         }
     }
 
-    public List<Pair<String, String>> getReportLabelsForDataset(ViewContext context, DataSet def) throws Exception
+    public List<Pair<String, String>> getReportLabelsForDataset(ViewContext context, Dataset def) throws Exception
     {
         SimpleFilter filter = new SimpleFilter();
         Container container = context.getContainer();
@@ -217,7 +217,7 @@ public class ReportManager implements DatasetManager.DatasetListener
     public Results getReportResultSet(ViewContext ctx, int datasetId, int visitRowId) throws ServletException, SQLException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
-        DataSetDefinition def = study.getDataset(datasetId);
+        DatasetDefinition def = study.getDataset(datasetId);
         if (def == null)
         {
             throw new NotFoundException();
@@ -273,7 +273,7 @@ public class ReportManager implements DatasetManager.DatasetListener
 
     public static class StudyReportFilter extends ReportUtil.DefaultReportFilter
     {
-        Map<String, DataSetDefinition> _datasets;
+        Map<String, DatasetDefinition> _datasets;
         boolean _editOnly;
 
         public StudyReportFilter(boolean editOnly)
@@ -289,7 +289,7 @@ public class ReportManager implements DatasetManager.DatasetListener
             return ReportManager.get().canReadReport(user, c, report);
         }
 
-        private Map<String, DataSetDefinition> getDatasets(Container c)
+        private Map<String, DatasetDefinition> getDatasets(Container c)
         {
             if (_datasets == null)
             {
@@ -298,7 +298,7 @@ public class ReportManager implements DatasetManager.DatasetListener
                 Study study = StudyManager.getInstance().getStudy(c);
                 if (study == null)
                     return Collections.emptyMap();
-                for (DataSetDefinition ds : StudyManager.getInstance().getDatasetDefinitions(study))
+                for (DatasetDefinition ds : StudyManager.getInstance().getDatasetDefinitions(study))
                     _datasets.put(ds.getName(), ds);
             }
 
@@ -308,12 +308,12 @@ public class ReportManager implements DatasetManager.DatasetListener
         @Override
         public ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
         {
-            Map<String, DataSetDefinition> datasets = getDatasets(c);
+            Map<String, DatasetDefinition> datasets = getDatasets(c);
 
             if (datasets.containsKey(view.getQueryName()))
             {
                 return new ActionURL(StudyController.DatasetReportAction.class, c).
-                        addParameter(DataSetDefinition.DATASETKEY, datasets.get(view.getQueryName()).getDatasetId()).
+                        addParameter(DatasetDefinition.DATASETKEY, datasets.get(view.getQueryName()).getDatasetId()).
                         addParameter(StudyController.DATASET_VIEW_NAME_PARAMETER_NAME, view.getName());
             }
 
@@ -350,19 +350,19 @@ public class ReportManager implements DatasetManager.DatasetListener
                     study.getSecurityType() == SecurityType.ADVANCED_WRITE))
             {
                 // dataset permissions
-                String datasetId = report.getDescriptor().getProperty(DataSetDefinition.DATASETKEY);
+                String datasetId = report.getDescriptor().getProperty(DatasetDefinition.DATASETKEY);
                 String queryName = report.getDescriptor().getProperty(QueryParam.queryName.toString());
 
                 if (NumberUtils.isDigits(datasetId))
                 {
-                    DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinition(study, NumberUtils.toInt(datasetId));
+                    DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinition(study, NumberUtils.toInt(datasetId));
                     if (dsDef != null)
                         return dsDef.canRead(user);
                 }
                 else if (queryName != null)
                 {
                     // try query name, which is synonymous to dataset in study-land
-                    DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, queryName);
+                    DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, queryName);
                     if (dsDef != null)
                         return dsDef.canRead(user);
                 }
@@ -396,7 +396,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         public void setReports(Report[] reports);
     }
 
-    public void datasetChanged(final DataSet def)
+    public void datasetChanged(final Dataset def)
     {
         if (def != null)
         {

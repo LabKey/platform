@@ -27,7 +27,7 @@ import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.XmlValidationException;
@@ -103,15 +103,15 @@ public class ReportImporter implements FolderImporter
             if (study != null)
             {
                 List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<>();
-                for (DataSet dataSet : study.getDatasets())
+                for (Dataset dataset : study.getDatasets())
                 {
-                    if (!dataSet.getName().equals(dataSet.getLabel()))
+                    if (!dataset.getName().equals(dataset.getLabel()))
                     {
                         queryPropertyChanges.add(new QueryChangeListener.QueryPropertyChange<>(
-                                QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), "study").getQueryDefForTable(dataSet.getName()),
+                                QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), "study").getQueryDefForTable(dataset.getName()),
                                 QueryChangeListener.QueryProperty.Name,
-                                dataSet.getLabel(),
-                                dataSet.getName()
+                                dataset.getLabel(),
+                                dataset.getName()
                         ));
                     }
                 }

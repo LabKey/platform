@@ -53,6 +53,7 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -95,7 +96,7 @@
 
     String availableStudyName = ContainerManager.getAvailableChildContainerName(c, "New Study");
 
-    int numDatasets = study.getDatasetsByType(org.labkey.api.study.DataSet.TYPE_STANDARD, org.labkey.api.study.DataSet.TYPE_PLACEHOLDER).size();
+    int numDatasets = study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER).size();
 
     if (study.hasSourceStudy() || study.isSnapshotStudy())
     {

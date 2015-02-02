@@ -51,7 +51,7 @@ public class StudyDataTable extends BaseStudyTable
         datasetColumn.setFk(new LookupForeignKey(getDatasetURL(), "entityId", "entityId", "Name") {
             public TableInfo getLookupTableInfo()
             {
-                return new DataSetsTable(_userSchema);
+                return new DatasetsTable(_userSchema);
             }
         });
         addColumn(datasetColumn);

@@ -22,8 +22,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.DataSetTable;
+import org.labkey.api.study.Dataset;
+import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
@@ -150,22 +150,22 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         if (!first.isVisitTagQuery() && ! second.isVisitTagQuery())
         {
             // attempt to lookup the dataset using the queryName by label and then by name
-            DataSet firstDataset = StudyService.get().resolveDataset(first.getContainer(), first.getQueryName());
-            DataSet secondDataset = StudyService.get().resolveDataset(second.getContainer(), second.getQueryName());
+            Dataset firstDataset = StudyService.get().resolveDataset(first.getContainer(), first.getQueryName());
+            Dataset secondDataset = StudyService.get().resolveDataset(second.getContainer(), second.getQueryName());
 
             boolean subjectJoinOnly = isGroupByQuery || first.isSkipVisitJoin() || second.isSkipVisitJoin();
 
             // if either query is a demographic dataset, it's sufficient to join on subject only:
-            if (!subjectJoinOnly && (firstDataset == null || firstDataset.getKeyType() != DataSet.KeyType.SUBJECT) &&
-                    (secondDataset == null || secondDataset.getKeyType() != DataSet.KeyType.SUBJECT))
+            if (!subjectJoinOnly && (firstDataset == null || firstDataset.getKeyType() != Dataset.KeyType.SUBJECT) &&
+                    (secondDataset == null || secondDataset.getKeyType() != Dataset.KeyType.SUBJECT))
             {
                 VisualizationSourceColumn firstSequenceCol = getVisitJoinColumn(factory, first, firstSubjectNounSingular);
                 VisualizationSourceColumn secondSequenceCol = getVisitJoinColumn(factory, second, secondSubjectNounSingular);
                 joinCols.add(new Pair<>(firstSequenceCol, secondSequenceCol));
 
                 // for datasets with matching 3rd keys, join on subject/visit/key (if neither are pivoted), allowing null results for this column so as to follow the lead of the primary measure column for this query:
-                if (firstDataset != null && firstDataset.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER &&
-                        secondDataset != null && secondDataset.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER &&
+                if (firstDataset != null && firstDataset.getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER &&
+                        secondDataset != null && secondDataset.getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER &&
                         first.getPivot() == null && second.getPivot() == null && firstDataset.hasMatchingExtraKey(secondDataset))
                 {
                     VisualizationSourceColumn firstKeyCol = factory.create(first.getSchema(), first.getQueryName(), firstDataset.getKeyPropertyName(), true);
@@ -190,9 +190,9 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     @Override
     protected boolean isValid(TableInfo table, QueryDefinition query, ColumnMatchType type)
     {
-        if (table instanceof DataSetTable)
+        if (table instanceof DatasetTable)
         {
-            if (!((DataSetTable) table).getDataset().isShowByDefault())
+            if (!((DatasetTable) table).getDataset().isShowByDefault())
                 return false;
         }
         if (type == ColumnMatchType.CONFIGURED_MEASURES)
@@ -274,7 +274,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         Study study = getSchema().getStudy();
         if (study != null)
         {
-            for (DataSet ds : study.getDatasets())
+            for (Dataset ds : study.getDatasets())
             {
                 if (ds.isDemographicData() && ds.isShowByDefault())
                 {
@@ -348,7 +348,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     {
         if (study != null)
         {
-            for (DataSet ds : study.getDatasets())
+            for (Dataset ds : study.getDatasets())
             {
                 if (ds.isShowByDefault())
                 {

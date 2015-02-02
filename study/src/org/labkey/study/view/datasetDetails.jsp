@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.security.permissions.Permission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
@@ -30,11 +30,11 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.VisitDataSet" %>
-<%@ page import="org.labkey.study.model.VisitDataSetType" %>
+<%@ page import="org.labkey.study.model.VisitDataset" %>
+<%@ page import="org.labkey.study.model.VisitDatasetType" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="org.springframework.validation.BindException" %>
@@ -43,8 +43,8 @@
 <%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
-    DataSetDefinition dataset = me.getModelBean();
+    JspView<DatasetDefinition> me = (JspView<DatasetDefinition>) HttpView.currentView();
+    DatasetDefinition dataset = me.getModelBean();
 
     Container c = getContainer();
     User user = getUser();
@@ -81,7 +81,7 @@ if (permissions.contains(AdminPermission.class))
 
     %>
     <br>
-<%  if (dataset.getType().equals(org.labkey.api.study.DataSet.TYPE_STANDARD)) { %>
+<%  if (dataset.getType().equals(Dataset.TYPE_STANDARD)) { %>
         <%= button("View Data").href(viewDatasetURL) %>
 <%  }
     if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
@@ -105,10 +105,10 @@ if (permissions.contains(UpdatePermission.class) && !isSharedDataset)
     editTypeURL.addParameter("datasetId", dataset.getDatasetId());
 
     %>&nbsp;<%= button("Show Import History").href(showHistoryURL) %>
-<%  if (dataset.getType().equals(org.labkey.api.study.DataSet.TYPE_STANDARD)) { %>
+<%  if (dataset.getType().equals(Dataset.TYPE_STANDARD)) { %>
         &nbsp;<%= button("Edit Definition").href(editTypeURL) %>
 <%  }
-    else if(dataset.getType().equals(org.labkey.api.study.DataSet.TYPE_PLACEHOLDER))
+    else if(dataset.getType().equals(Dataset.TYPE_PLACEHOLDER))
     {
 %>
         <a class="labkey-button" href="#" onclick="showLinkDialog()"><span>Link or Define Dataset</span></a>
@@ -179,21 +179,21 @@ if (!pipelineSet)
 <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
 <% WebPartView.startTitleFrame(out, "Visit Associations", null, "100%", null); %>
 <table><%
-    List<VisitDataSet> visitList = StudyManager.getInstance().getMapping(dataset);
-    HashMap<Integer,VisitDataSet> visitMap = new HashMap<>();
-    for (VisitDataSet vds : visitList)
+    List<VisitDataset> visitList = StudyManager.getInstance().getMapping(dataset);
+    HashMap<Integer,VisitDataset> visitMap = new HashMap<>();
+    for (VisitDataset vds : visitList)
         visitMap.put(vds.getVisitRowId(), vds);
     boolean hasVisitAssociations = false;
     for (VisitImpl visit : study.getVisits(Visit.Order.DISPLAY))
     {
-        VisitDataSet vm = visitMap.get(visit.getRowId());
+        VisitDataset vm = visitMap.get(visit.getRowId());
         if (vm != null)
         {
             hasVisitAssociations = true;
-            VisitDataSetType type = vm.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL;
+            VisitDatasetType type = vm.isRequired() ? VisitDatasetType.REQUIRED : VisitDatasetType.OPTIONAL;
             %><tr>
                 <td><%= h(visit.getDisplayString()) %></td>
-                <td><%=text(type == VisitDataSetType.NOT_ASSOCIATED ? "&nbsp;" : h(type.getLabel()))%></td>
+                <td><%=text(type == VisitDatasetType.NOT_ASSOCIATED ? "&nbsp;" : h(type.getLabel()))%></td>
             </tr><%
         }
     }
@@ -248,7 +248,7 @@ if (!pipelineSet)
         Ext4.onReady(function(){
             var datasets = [
 <%
-        for (DataSet def : study.getDatasetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
+        for (Dataset def : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
         {
 %>
                 {label: "<%=h(def.getLabel())%>", id: <%=def.getDatasetId()%>},

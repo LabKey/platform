@@ -33,7 +33,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.CohortManager" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.QCStateSet" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -79,7 +79,7 @@
     VisitStatistic[] statisticsToDisplay = bean.stats.toArray(new VisitStatistic[bean.stats.size()]);
 
     List<VisitImpl> visits = manager.getVisits(study, selectedCohort, user, Visit.Order.DISPLAY);
-    List<DataSetDefinition> datasets = manager.getDatasetDefinitions(study, selectedCohort);
+    List<DatasetDefinition> datasets = manager.getDatasetDefinitions(study, selectedCohort);
     boolean cantReadOneOrMoreDatasets = false;
     String basePage = buildURL(StudyController.OverviewAction.class);
 
@@ -197,7 +197,7 @@
         String prevCategory = null;
         boolean useCategories = false;
 
-        for (DataSetDefinition dataset : datasets)
+        for (DatasetDefinition dataset : datasets)
         {
             if (dataset.getCategory() != null)
             {
@@ -208,7 +208,7 @@
 
         Map<VisitMapKey, Boolean> requiredMap = StudyManager.getInstance().getRequiredMap(study);
 
-        for (DataSetDefinition dataset : datasets)
+        for (DatasetDefinition dataset : datasets)
         {
             if (!bean.showAll && !dataset.isShowByDefault())
                 continue;
@@ -273,7 +273,7 @@
             if (userCanRead)
             {
                 ActionURL defaultReportURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, container);
-                defaultReportURL.addParameter(DataSetDefinition.DATASETKEY, dataset.getDatasetId());
+                defaultReportURL.addParameter(DatasetDefinition.DATASETKEY, dataset.getDatasetId());
                 if (selectedCohort != null && bean.cohortFilter != null)
                     bean.cohortFilter.addURLParameters(study, defaultReportURL, "Dataset");
                 if (bean.qcStates != null)
@@ -317,7 +317,7 @@
                 {
                     ActionURL datasetLink = new ActionURL(StudyController.DatasetAction.class, container);
                     datasetLink.addParameter(VisitImpl.VISITKEY, visit.getRowId());
-                    datasetLink.addParameter(DataSetDefinition.DATASETKEY, dataset.getDatasetId());
+                    datasetLink.addParameter(DatasetDefinition.DATASETKEY, dataset.getDatasetId());
                     if (selectedCohort != null)
                         bean.cohortFilter.addURLParameters(study, datasetLink, null);
                     if (bean.qcStates != null)

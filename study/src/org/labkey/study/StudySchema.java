@@ -26,7 +26,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DefaultSpecimenTablesTemplate;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -107,7 +107,7 @@ public class StudySchema
         return getSchema().getTable("VisitAliases");
     }
 
-    public TableInfo getTableInfoDataSet()
+    public TableInfo getTableInfoDataset()
     {
         return getSchema().getTable("DataSet");
     }
@@ -132,16 +132,16 @@ public class StudySchema
         return new StudyUnionTableInfo(study, StudyManager.getInstance().getDatasetDefinitions(study), user, study.isDataspaceStudy());
     }
 
-    public TableInfo getTableInfoStudyDataFiltered(StudyImpl study, Collection<DataSetDefinition> defs, User user)
+    public TableInfo getTableInfoStudyDataFiltered(StudyImpl study, Collection<DatasetDefinition> defs, User user)
     {
         return new StudyUnionTableInfo(study, defs, user, study.isDataspaceStudy());
     }
 
     public TableInfo getTableInfoStudyDataVisible(StudyImpl study, @Nullable User user)
     {
-        List<DataSetDefinition> defsAll = study.getDatasets();
-        List<DataSetDefinition> defsVisible = new ArrayList<>(defsAll.size());
-        for (DataSetDefinition def : defsAll)
+        List<DatasetDefinition> defsAll = study.getDatasets();
+        List<DatasetDefinition> defsVisible = new ArrayList<>(defsAll.size());
+        for (DatasetDefinition def : defsAll)
         {
             if (!def.isShowByDefault())
                 continue;

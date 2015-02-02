@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController.CreateCrosstabBean" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.reports.StudyCrosstabReport" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -46,7 +46,7 @@
         <td>
             <select name="<%=QueryParam.queryName%>">
                 <%
-                    for (DataSetDefinition dataset : bean.getDatasets())
+                    for (DatasetDefinition dataset : bean.getDatasets())
                     {
                 %>
                 <option value="<%=h(dataset.getName())%>"><%= h(dataset.getDisplayString()) %></option>

@@ -18,32 +18,24 @@ package org.labkey.study.importer;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.ColumnRenderProperties;
-import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.exp.ImportTypesHelper;
-import org.labkey.api.exp.property.Type;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.study.importer.DatasetDefinitionImporter.DatasetImportProperties;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: adam
@@ -117,7 +109,7 @@ public class SchemaXmlReader implements SchemaReader
                 {
                     // Proper ConceptURI support is not implemented, but we use the 'VisitDate' concept in this isolated spot
                     // as a marker to indicate which dataset column should be tagged as the visit date column during import:
-                    if (DataSetDefinition.getVisitDateURI().equalsIgnoreCase(columnXml.getConceptURI()))
+                    if (DatasetDefinition.getVisitDateURI().equalsIgnoreCase(columnXml.getConceptURI()))
                     {
                         if (info.visitDatePropertyName == null)
                             info.visitDatePropertyName = columnName;
@@ -126,7 +118,7 @@ public class SchemaXmlReader implements SchemaReader
                     }
 
                     // filter out the built-in types
-                    if (DataSetDefinition.isDefaultFieldName(columnXml.getColumnName(), study))
+                    if (DatasetDefinition.isDefaultFieldName(columnXml.getColumnName(), study))
                         return false;
 
                     if (columnXml.getIsKeyField())
@@ -137,9 +129,9 @@ public class SchemaXmlReader implements SchemaReader
                         info.keyPropertyName = columnName;
 
                         if (columnXml.getIsAutoInc())
-                            info.keyManagementType = DataSet.KeyManagementType.RowId;
+                            info.keyManagementType = Dataset.KeyManagementType.RowId;
                         if ("entityid".equalsIgnoreCase(columnXml.getDatatype()))
-                            info.keyManagementType = DataSet.KeyManagementType.GUID;
+                            info.keyManagementType = Dataset.KeyManagementType.GUID;
                     }
 
                     return true;

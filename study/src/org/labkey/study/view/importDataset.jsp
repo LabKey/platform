@@ -32,8 +32,8 @@
     }
 %>
 <%
-    JspView<StudyController.ImportDataSetForm> me = (JspView<StudyController.ImportDataSetForm>) HttpView.currentView();
-    StudyController.ImportDataSetForm form = me.getModelBean();
+    JspView<StudyController.ImportDatasetForm> me = (JspView<StudyController.ImportDatasetForm>) HttpView.currentView();
+    StudyController.ImportDatasetForm form = me.getModelBean();
 %>
 
 <labkey:errors/>

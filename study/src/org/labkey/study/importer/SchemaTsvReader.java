@@ -20,11 +20,11 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.reportProps.PropertyList;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -127,7 +127,7 @@ public class SchemaTsvReader implements SchemaReader
                 }
 
                 // filter out the built-in types
-                if (DataSetDefinition.isDefaultFieldName(propName, study))
+                if (DatasetDefinition.isDefaultFieldName(propName, study))
                     continue;
 
                 // look for visitdate column
@@ -136,10 +136,10 @@ public class SchemaTsvReader implements SchemaReader
                 {
                     String vtype = (String)props.get("vtype");  // datafax special case
                     if (null != vtype && vtype.toLowerCase().contains("visitdate"))
-                        conceptURI = DataSetDefinition.getVisitDateURI();
+                        conceptURI = DatasetDefinition.getVisitDateURI();
                 }
 
-                if (DataSetDefinition.getVisitDateURI().equalsIgnoreCase(conceptURI))
+                if (DatasetDefinition.getVisitDateURI().equalsIgnoreCase(conceptURI))
                 {
                     if (info.visitDatePropertyName == null)
                         info.visitDatePropertyName = propName;
@@ -167,10 +167,10 @@ public class SchemaTsvReader implements SchemaReader
 
                 // Deal with managed key field
                 String keyTypeName = props.get("AutoKey") == null ? null : props.get("AutoKey").toString();
-                DataSetDefinition.KeyManagementType keyType = DataSet.KeyManagementType.findMatch(keyTypeName);
-                if (keyType != DataSet.KeyManagementType.None)
+                DatasetDefinition.KeyManagementType keyType = Dataset.KeyManagementType.findMatch(keyTypeName);
+                if (keyType != Dataset.KeyManagementType.None)
                 {
-                    if (info.keyManagementType == DataSet.KeyManagementType.None)
+                    if (info.keyManagementType == Dataset.KeyManagementType.None)
                         info.keyManagementType = keyType;
                     else
                     {

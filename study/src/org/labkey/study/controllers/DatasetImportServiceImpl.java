@@ -26,7 +26,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -54,7 +54,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         Container container = getContainer();
         StudyImpl study = StudyManager.getInstance().getStudy(container);
 
-        DataSetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, domain.getName());
+        DatasetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, domain.getName());
 
         if (def == null)
             throw new IllegalStateException("Could not find dataset: " + domain.getName());
@@ -86,7 +86,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
                 loader,
                 columnMap,
                 errors,
-                DataSetDefinition.CheckForDuplicates.sourceAndDestination,
+                DatasetDefinition.CheckForDuplicates.sourceAndDestination,
                 StudyManager.getInstance().getDefaultQCState(study),
                 null,
                 null
@@ -123,7 +123,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
     {
         Container container = getContainer();
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        DataSetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, orig.getName());
+        DatasetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, orig.getName());
         if (def == null)
             throw new IllegalStateException("Could not find dataset: " + orig.getName());
 

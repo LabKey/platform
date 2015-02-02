@@ -108,7 +108,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SimpleSpecimenImporter;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ExtendedSpecimenRequestView;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.ParticipantDataset;
@@ -125,8 +125,8 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.SpecimenArchive;
 import org.labkey.study.pipeline.SpecimenBatch;
-import org.labkey.study.query.DataSetQuerySettings;
-import org.labkey.study.query.DataSetQueryView;
+import org.labkey.study.query.DatasetQuerySettings;
+import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.SpecimenDetailTable;
 import org.labkey.study.query.SpecimenEventQueryView;
 import org.labkey.study.query.SpecimenQueryView;
@@ -4994,7 +4994,7 @@ public class SpecimenController extends BaseStudyController
             final Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
             if (form.getParticipantCommentDatasetId() != null && form.getParticipantCommentDatasetId() != -1)
             {
-                DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantCommentDatasetId());
+                DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantCommentDatasetId());
                 if (def != null && !def.isDemographicData())
                 {
                     errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + " comments must be a demographics dataset.");
@@ -5008,7 +5008,7 @@ public class SpecimenController extends BaseStudyController
             {
                 if (form.getParticipantVisitCommentDatasetId() != null && form.getParticipantVisitCommentDatasetId() != -1)
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantVisitCommentDatasetId());
+                    DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantVisitCommentDatasetId());
                     if (def != null && def.isDemographicData())
                     {
                         errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
@@ -5155,7 +5155,7 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(final ParticipantCommentForm form, BindException errors) throws Exception
         {
             StudyImpl study = getStudyRedirectIfNull();
-            DataSetDefinition def;
+            DatasetDefinition def;
 
             if (form.getVisitId() != 0)
             {
@@ -5169,10 +5169,10 @@ public class SpecimenController extends BaseStudyController
             if (def != null)
             {
                 StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
-                DataSetQuerySettings qs = (DataSetQuerySettings)querySchema.getSettings(getViewContext(), DataSetQueryView.DATAREGION, def.getName());
+                DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(getViewContext(), DatasetQueryView.DATAREGION, def.getName());
                 qs.setUseQCSet(false);
 
-                DataSetQueryView queryView = new DataSetQueryView(querySchema, qs, errors)
+                DatasetQueryView queryView = new DatasetQueryView(querySchema, qs, errors)
                 {
                     @Override
                     public DataView createDataView()

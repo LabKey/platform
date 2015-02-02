@@ -35,7 +35,7 @@ import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.GUID;
@@ -50,7 +50,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -105,7 +105,7 @@ public class ChartReportView extends AbstractReportView
                 Study study = StudyService.get().getStudy(HttpView.currentContext().getContainer());
                 if (study != null)
                 {
-                    DataSet ds = study.getDataset(datasetId);
+                    Dataset ds = study.getDataset(datasetId);
                     if (ds != null)
                         descriptor.setProperty(ReportDescriptor.Prop.queryName, ds.getName());
                 }
@@ -155,11 +155,11 @@ public class ChartReportView extends AbstractReportView
 
     public ActionURL getRunReportURL(ViewContext context)
     {
-        String datasetId = getDescriptor().getProperty(DataSetDefinition.DATASETKEY);
+        String datasetId = getDescriptor().getProperty(DatasetDefinition.DATASETKEY);
         if (datasetId != null)
         {
             return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
-                        addParameter(DataSetDefinition.DATASETKEY, datasetId).
+                        addParameter(DatasetDefinition.DATASETKEY, datasetId).
                         addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, getDescriptor().getReportId().toString());
         }
         return super.getRunReportURL(context);
@@ -323,7 +323,7 @@ public class ChartReportView extends AbstractReportView
         {
             final int datasetId = Integer.parseInt(descriptor.getProperty("datasetId"));
             final Study study = StudyService.get().getStudy(context.getContainer());
-            DataSet def = study.getDataset(datasetId);
+            Dataset def = study.getDataset(datasetId);
 
             return def.getTableInfo(context.getUser());
         }

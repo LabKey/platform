@@ -46,7 +46,7 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -263,7 +263,7 @@ public class SpecimenUtils
                 boolean addSep = true;
                 if (study.getParticipantCommentDatasetId() != null && study.getParticipantCommentDatasetId() != -1)
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDatasetId());
+                    DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDatasetId());
                     if (def != null && def.canWrite(getUser()))
                     {
                         if (addSep)
@@ -279,7 +279,7 @@ public class SpecimenUtils
 
                 if (study.getParticipantVisitCommentDatasetId() != null && study.getParticipantVisitCommentDatasetId() != -1)
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDatasetId());
+                    DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDatasetId());
                     if (def != null && def.canWrite(getUser()))
                     {
                         if (addSep)

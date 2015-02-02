@@ -17,11 +17,11 @@
 %>
 <%@ page import="org.labkey.study.model.*" %>
 <%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
-    DataSetDefinition dataset = me.getModelBean();
+    JspView<DatasetDefinition> me = (JspView<DatasetDefinition>) HttpView.currentView();
+    DatasetDefinition dataset = me.getModelBean();
 %>
 <table>
     <tr><td class=labkey-form-label>Name</td><th align=left><%= h(dataset.getName()) %></th></tr>

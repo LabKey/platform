@@ -23,7 +23,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -36,7 +36,7 @@ import org.labkey.study.AssayFolderType;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.specimen.SpecimenUtils;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.security.permissions.ManageStudyPermission;
@@ -229,7 +229,7 @@ public abstract class BaseStudyController extends SpringActionController
             if (visitRowId > 0)
                 visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
 
-            DataSet dataset = study.getDataset(datasetId);
+            Dataset dataset = study.getDataset(datasetId);
             if (dataset != null)
             {
                 StringBuilder label = new StringBuilder();
@@ -245,7 +245,7 @@ public abstract class BaseStudyController extends SpringActionController
                     label.append(", All Visits");
 
                 ActionURL datasetUrl = new ActionURL(StudyController.DatasetAction.class, getContainer()).
-                        addParameter(DataSetDefinition.DATASETKEY, datasetId);
+                        addParameter(DatasetDefinition.DATASETKEY, datasetId);
                 if (cohortFilter != null)
                     cohortFilter.addURLParameters(study, datasetUrl, "Dataset");
                 if (qcStateSetFormValue != null)

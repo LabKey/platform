@@ -33,7 +33,7 @@ import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.study.model.GroupSecurityType;
@@ -112,7 +112,7 @@ public class StudyPermissionExporter
             {
                 PerDatasetPermissions pdp = PerDatasetPermissions.Factory.newInstance();
 
-                for (DataSet ds : study.getDatasets())
+                for (Dataset ds : study.getDatasets())
                 {
                     SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
 
@@ -230,10 +230,10 @@ public class StudyPermissionExporter
 
             if (sp.isSetPerDatasetPermissions())
             {
-                Map<DataSet, List<PerDatasetPermission>> map = new HashMap<>();
+                Map<Dataset, List<PerDatasetPermission>> map = new HashMap<>();
                 for (PerDatasetPermission pd : sp.getPerDatasetPermissions().getDatasetPermissionArray())
                 {
-                    DataSet ds = study.getDatasetByName(pd.getDatasetName());
+                    Dataset ds = study.getDatasetByName(pd.getDatasetName());
                     if (ds == null)
                     {
                         errorMsgs.add("Unable to find dataset with name: " + pd.getDatasetName() + ", skipping");
@@ -248,7 +248,7 @@ public class StudyPermissionExporter
                     map.put(ds, list);
                 }
 
-                for (DataSet ds : study.getDatasets())
+                for (Dataset ds : study.getDatasets())
                 {
                     MutableSecurityPolicy dsPolicy = new MutableSecurityPolicy(ds);
                     List<PerDatasetPermission> list = map.get(ds);

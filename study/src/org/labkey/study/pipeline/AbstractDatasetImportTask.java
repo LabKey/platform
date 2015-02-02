@@ -28,7 +28,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.CohortManager;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -118,7 +118,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 List<DatasetImportRunnable> runnables = reader.getRunnables();
                 ctx.getLogger().info("Start batch " + datasetsFileName);
 
-                List<DataSetDefinition> datasets = new ArrayList<>();
+                List<DatasetDefinition> datasets = new ArrayList<>();
 
                 for (DatasetImportRunnable runnable : runnables)
                 {

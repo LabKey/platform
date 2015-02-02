@@ -32,7 +32,7 @@ import org.labkey.api.util.Filter;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.StudyImportContext;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -54,7 +54,7 @@ public class DatasetImportRunnable implements Runnable
     protected String visitDatePropertyURI = null;
     protected String visitDatePropertyName = null;
 
-    protected final DataSetDefinition _datasetDefinition;
+    protected final DatasetDefinition _datasetDefinition;
     protected final PipelineJob _job;
     protected final StudyImpl _study;
     @Nullable protected final StudyImportContext _studyImportContext;
@@ -63,7 +63,7 @@ public class DatasetImportRunnable implements Runnable
     protected VirtualFile _root;
     protected String _tsvName;
 
-    DatasetImportRunnable(PipelineJob job, StudyImpl study, DataSetDefinition ds, VirtualFile root, String tsv,
+    DatasetImportRunnable(PipelineJob job, StudyImpl study, DatasetDefinition ds, VirtualFile root, String tsv,
                           AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff,
                           Map<String, String> columnMap, @Nullable StudyImportContext studyImportContext)
     {
@@ -188,7 +188,7 @@ public class DatasetImportRunnable implements Runnable
                             loader,
                             _columnMap,
                             errors,
-                            DataSetDefinition.CheckForDuplicates.sourceOnly,
+                            DatasetDefinition.CheckForDuplicates.sourceOnly,
                             //Set to TRUE if MERGEing
                             defaultQCState,
                             _studyImportContext,
@@ -250,7 +250,7 @@ public class DatasetImportRunnable implements Runnable
         return _tsvName;
     }
 
-    public DataSetDefinition getDatasetDefinition()
+    public DatasetDefinition getDatasetDefinition()
     {
         return _datasetDefinition;
     }
@@ -279,7 +279,7 @@ public class DatasetImportRunnable implements Runnable
                     visitDatePropertyURI = col.getPropertyURI();
             }
             if (visitDatePropertyURI == null)
-                visitDatePropertyURI = DataSetDefinition.getVisitDateURI();
+                visitDatePropertyURI = DatasetDefinition.getVisitDateURI();
         }
         return visitDatePropertyURI;
     }

@@ -23,9 +23,9 @@ import org.labkey.data.xml.reportProps.PropertyList;
  * Date: Jan 6, 2006
  * Time: 10:29:31 AM
  */
-public class DataSetDefinitionEntry
+public class DatasetDefinitionEntry
 {
-    public DataSetDefinitionEntry(DataSetDefinition datasetDefinition, boolean isNew, PropertyList tags)
+    public DatasetDefinitionEntry(DatasetDefinition datasetDefinition, boolean isNew, PropertyList tags)
     {
         this.datasetDefinition = datasetDefinition;
         this.isNew = isNew;
@@ -33,7 +33,7 @@ public class DataSetDefinitionEntry
         this.tags = tags;
     }
 
-    public DataSetDefinitionEntry(DataSetDefinition datasetDefinition, boolean isNew, boolean isModified, PropertyList tags)
+    public DatasetDefinitionEntry(DatasetDefinition datasetDefinition, boolean isNew, boolean isModified, PropertyList tags)
     {
         this.datasetDefinition = datasetDefinition;
         this.isNew = isNew;
@@ -41,7 +41,7 @@ public class DataSetDefinitionEntry
         this.tags = tags;
     }
 
-    public DataSetDefinition datasetDefinition;
+    public DatasetDefinition datasetDefinition;
     public boolean isNew;
     public boolean isModified;
     public PropertyList tags;

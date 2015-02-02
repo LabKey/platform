@@ -31,7 +31,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 
 import java.util.List;
@@ -74,7 +74,7 @@ public class StudyRReport extends RReport
             return reportView;
 
         int datasetId = 0;
-        DataSetDefinition def = getDatasetDefinition(context);
+        DatasetDefinition def = getDatasetDefinition(context);
         if (def != null)
             datasetId = def.getRowId();
 
@@ -89,7 +89,7 @@ public class StudyRReport extends RReport
         return vBox;
     }
 
-    protected DataSetDefinition getDatasetDefinition(ViewContext context)
+    protected DatasetDefinition getDatasetDefinition(ViewContext context)
     {
         try
         {

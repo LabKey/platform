@@ -38,17 +38,17 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.study.Cohort;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DataSetTableImpl;
+import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
@@ -92,13 +92,13 @@ public class DatasetWriter implements InternalStudyWriter
         datasetsXml.setFile(MANIFEST_FILENAME);
 
         VirtualFile vf = root.getDir(DEFAULT_DIRECTORY);
-        List<DataSetDefinition> datasets = ctx.getDatasets();
+        List<DatasetDefinition> datasets = ctx.getDatasets();
 
         DatasetsDocument manifestXml = DatasetsDocument.Factory.newInstance();
         DatasetsDocument.Datasets dsXml = manifestXml.addNewDatasets();
         DatasetsDocument.Datasets.Datasets2 datasets2Xml = dsXml.addNewDatasets();
 
-        for (DataSetDefinition def : datasets)
+        for (DatasetDefinition def : datasets)
         {
             DatasetsDocument.Datasets.Datasets2.Dataset datasetXml = datasets2Xml.addNewDataset();
             datasetXml.setName(def.getName());
@@ -176,10 +176,10 @@ public class DatasetWriter implements InternalStudyWriter
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
         // Write out all the dataset .tsv files
-        for (DataSetDefinition def : datasets)
+        for (DatasetDefinition def : datasets)
         {
             // no data to export for placeholder datasets
-            if (def.getType().equals(DataSet.TYPE_PLACEHOLDER))
+            if (def.getType().equals(Dataset.TYPE_PLACEHOLDER))
                 continue;
 
             TableInfo ti = schema.getTable(def.getName());
@@ -303,11 +303,11 @@ public class DatasetWriter implements InternalStudyWriter
 
     private static boolean shouldExport(ColumnInfo column, boolean metaData, boolean removeProtected, boolean isKeyProperty)
     {
-        return (column.isUserEditable() || (!metaData && column.getPropertyURI().equals(DataSetDefinition.getQCStateURI()))) &&
+        return (column.isUserEditable() || (!metaData && column.getPropertyURI().equals(DatasetDefinition.getQCStateURI()))) &&
                 !(column.getFk() instanceof ContainerForeignKey) && (!removeProtected || !column.isProtected() || isKeyProperty);
     }
 
-    public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DataSetDefinition def, boolean metaData, boolean removeProtected)
+    public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DatasetDefinition def, boolean metaData, boolean removeProtected)
     {
         // tinfo can be null if the dataset is a Placeholder
         if (tinfo == null)
@@ -316,9 +316,9 @@ public class DatasetWriter implements InternalStudyWriter
         List<ColumnInfo> inColumns = tinfo.getColumns();
         Collection<ColumnInfo> outColumns = new LinkedHashSet<>(inColumns.size());
 
-        ColumnInfo ptidColumn = null; String ptidURI = DataSetDefinition.getParticipantIdURI();
-        ColumnInfo sequenceColumn = null; String sequenceURI = DataSetDefinition.getSequenceNumURI();
-        ColumnInfo qcStateColumn = null; String qcStateURI = DataSetDefinition.getQCStateURI();
+        ColumnInfo ptidColumn = null; String ptidURI = DatasetDefinition.getParticipantIdURI();
+        ColumnInfo sequenceColumn = null; String sequenceURI = DatasetDefinition.getSequenceNumURI();
+        ColumnInfo qcStateColumn = null; String qcStateURI = DatasetDefinition.getQCStateURI();
 
         if (def.isAssayData())
         {
@@ -327,7 +327,7 @@ public class DatasetWriter implements InternalStudyWriter
 
         for (ColumnInfo in : inColumns)
         {
-            // Find the PTID column but ignore the PTID wrapped 'DataSets' column.
+            // Find the PTID column but ignore the PTID wrapped 'Datasets' column.
             if (in.getPropertyURI().equals(ptidURI) && !in.getName().equals("DataSets"))
             {
                 if (null == ptidColumn)
@@ -357,7 +357,7 @@ public class DatasetWriter implements InternalStudyWriter
         ColumnInfo qcStateLabelColumn = null;
         for (ColumnInfo inColumn : inColumns)
         {
-            if (DataSetTableImpl.QCSTATE_LABEL_COLNAME.equalsIgnoreCase(inColumn.getName()))
+            if (DatasetTableImpl.QCSTATE_LABEL_COLNAME.equalsIgnoreCase(inColumn.getName()))
             {
                 qcStateLabelColumn = inColumn;
             }
@@ -380,9 +380,9 @@ public class DatasetWriter implements InternalStudyWriter
                     // only if the dataset don't already have a property named "QCStateLabel"
                     if (qcStateLabelColumn == null)
                     {
-                        FieldKey qcFieldKey = FieldKey.fromParts(DataSetTableImpl.QCSTATE_ID_COLNAME, "Label");
+                        FieldKey qcFieldKey = FieldKey.fromParts(DatasetTableImpl.QCSTATE_ID_COLNAME, "Label");
                         Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(qcFieldKey));
-                        ColumnInfo qcAlias = new AliasedColumn(tinfo, DataSetTableImpl.QCSTATE_LABEL_COLNAME, select.get(qcFieldKey));   // Change the caption to QCStateLabel
+                        ColumnInfo qcAlias = new AliasedColumn(tinfo, DatasetTableImpl.QCSTATE_LABEL_COLNAME, select.get(qcFieldKey));   // Change the caption to QCStateLabel
                         outColumns.add(qcAlias);
                         qcStateLabelColumn = qcAlias;
                     }

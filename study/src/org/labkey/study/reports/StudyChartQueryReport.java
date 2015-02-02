@@ -23,7 +23,7 @@ import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.controllers.StudyController;
 
 /**
@@ -54,11 +54,11 @@ public class StudyChartQueryReport extends ChartQueryReport
 
     public ActionURL getRunReportURL(ViewContext context)
     {
-        String datasetId = getDescriptor().getProperty(DataSetDefinition.DATASETKEY);
+        String datasetId = getDescriptor().getProperty(DatasetDefinition.DATASETKEY);
         if (datasetId != null)
         {
             return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
-                        addParameter(DataSetDefinition.DATASETKEY, datasetId).
+                        addParameter(DatasetDefinition.DATASETKEY, datasetId).
                         addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, getDescriptor().getReportId().toString());
         }
         return super.getRunReportURL(context);

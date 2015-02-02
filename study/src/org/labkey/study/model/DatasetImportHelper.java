@@ -22,7 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.UnauthorizedException;
@@ -45,12 +45,12 @@ class DatasetImportHelper implements OntologyManager.UpdateableTableImportHelper
     final String _visitDatePropertyURI;
     final String _keyPropertyURI;
     final Study _study;
-    final DataSet _dataset;
+    final Dataset _dataset;
 
     final TimepointType _timetype;
     final DecimalFormat _sequenceFormat; 
 
-    DatasetImportHelper(User user, DataSetDefinition dataset, long lastModified) throws SQLException, UnauthorizedException
+    DatasetImportHelper(User user, DatasetDefinition dataset, long lastModified) throws SQLException, UnauthorizedException
     {
         _containerId = dataset.getContainer().getId();
         _study = dataset.getStudy();
@@ -111,16 +111,16 @@ class DatasetImportHelper implements OntologyManager.UpdateableTableImportHelper
     }
 
 
-    static String participantURI = DataSetDefinition.getParticipantIdURI();
-    static String visitSequenceNumURI = DataSetDefinition.getSequenceNumURI();
-    static String visitDateURI = DataSetDefinition.getVisitDateURI();
-    static String sourceLsidURI = DataSetDefinition.getSourceLsidURI();
-    static String qcStateURI = DataSetDefinition.getQCStateURI();
+    static String participantURI = DatasetDefinition.getParticipantIdURI();
+    static String visitSequenceNumURI = DatasetDefinition.getSequenceNumURI();
+    static String visitDateURI = DatasetDefinition.getVisitDateURI();
+    static String sourceLsidURI = DatasetDefinition.getSourceLsidURI();
+    static String qcStateURI = DatasetDefinition.getQCStateURI();
 
 
     public String getURI(Map map)
     {
-        // Note - this should generate the same value as how we do it in SQL in StudyManager.updateDataSetDefinition
+        // Note - this should generate the same value as how we do it in SQL in StudyManager.updateDatasetDefinition
         String ptid = String.valueOf(map.get(participantURI));
         double visit;
         if (_study.getTimepointType() != TimepointType.VISIT)
@@ -132,7 +132,7 @@ class DatasetImportHelper implements OntologyManager.UpdateableTableImportHelper
                 visit = VisitImpl.DEMOGRAPHICS_VISIT;
         }
         else
-            visit = toDouble(map.get(DataSetDefinition.getSequenceNumURI()));
+            visit = toDouble(map.get(DatasetDefinition.getSequenceNumURI()));
         StringBuilder sb = new StringBuilder(_urnPrefix);
         sb.append(visit).append('.').append(ptid);
         if (null != _keyPropertyURI)
