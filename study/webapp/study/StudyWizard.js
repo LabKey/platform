@@ -973,7 +973,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 else
                 {
                     var datasets = this.setify(this.settings.datasets);
-                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('DatasetId') in datasets); }).getRange(), true);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('DataSetId') in datasets); }).getRange(), true);
                 }
             }
         };
