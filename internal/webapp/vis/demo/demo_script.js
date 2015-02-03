@@ -115,8 +115,8 @@ var coffeePlot = new LABKEY.vis.Plot({
     height: 300,
     labels: {
         main: {value: 'Efficiency (%) Over Time'},
-        x: {value: 'Efficiency (%)'},
-        yLeft: {value: 'Time (PST)'}
+        x: {value: 'Time (PST)'},
+        yLeft: {value: 'Efficiency (%)'}
     },
     data: coffeeData,
     layers: [coffeePathLayer, coffeePointLayer],

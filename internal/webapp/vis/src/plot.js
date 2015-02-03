@@ -1252,6 +1252,7 @@ boxPlot.render();
  * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
  * @param {Number} [config.properties.topMargin] (Optional) The top margin for the plot.
  * @param {Number} [config.properties.xTickTagIndex] (Optional) The index/value of the x-axis label to be tagged (i.e. class="xticktag").
+ * @param {Boolean} [config.properites.showTrendLine] (Optional) Whether or not to show a line connecting the data points. Default false.
  * @param {String} [config.properties.yAxisScale] (Optional) Whether the y-axis should be plotted with linear or log scale. Default linear.
  * @param {Array} [config.properties.yAxisDomain] (Optional) Y-axis min/max values. Example: [0,20].
  * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
@@ -1276,7 +1277,7 @@ boxPlot.render();
         {
             throw new Error("Unable to create Levey-Jennings plot, properties object not specified. "
                     + "Required: value, mean, stdDev, xTickLabel. Optional: topMargin, color, colorRange, hoverTextFn, "
-                    + "yAxisScale, yAxisDomain, xTickTagIndex.");
+                    + "showTrendLine, yAxisScale, yAxisDomain, xTickTagIndex.");
         }
 
         // min x-axis tick length is 10 by default
@@ -1360,16 +1361,6 @@ boxPlot.render();
             x: 'seqValue'
         };
 
-        // points based on the data value, color and hover text can be added via params to config
-        var pointLayerConfig = { geom: new LABKEY.vis.Geom.Point({size: 3}), aes: {} };
-        if (config.properties.color) {
-            pointLayerConfig.aes.color = function(row){return row[config.properties.color];};
-        }
-        if (config.properties.hoverTextFn) {
-            pointLayerConfig.aes.hoverText = config.properties.hoverTextFn;
-        }
-        var pointLayer = new LABKEY.vis.Layer(pointLayerConfig);
-
         // determine the width the error bars
         var barWidth = Math.max(config.width / config.data.length / 5, 3);
 
@@ -1407,7 +1398,22 @@ boxPlot.render();
             }
         });
 
-        config.layers = [stdDev3Layer, stdDev2Layer, stdDev1Layer, meanLayer, pointLayer];
+        config.layers = [stdDev3Layer, stdDev2Layer, stdDev1Layer, meanLayer];
+
+        if (config.properties.showTrendLine) {
+            var pathLayerConfig = { geom: new LABKEY.vis.Geom.Path({ opacity: .6, size: 2 }) };
+            config.layers.push(new LABKEY.vis.Layer(pathLayerConfig));
+        }
+
+        // points based on the data value, color and hover text can be added via params to config
+        var pointLayerConfig = { geom: new LABKEY.vis.Geom.Point({size: 3}), aes: {} };
+        if (config.properties.color) {
+            pointLayerConfig.aes.color = function(row){return row[config.properties.color];};
+        }
+        if (config.properties.hoverTextFn) {
+            pointLayerConfig.aes.hoverText = config.properties.hoverTextFn;
+        }
+        config.layers.push(new LABKEY.vis.Layer(pointLayerConfig));
 
         return new LABKEY.vis.Plot(config);
     };
