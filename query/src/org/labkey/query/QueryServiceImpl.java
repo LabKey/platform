@@ -533,6 +533,9 @@ public class QueryServiceImpl extends QueryService
             views = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly, true).values();
         }
 
+        if (views == null || views.isEmpty())
+            return Collections.emptyList();
+
         return new ArrayList<>(views);
     }
 
