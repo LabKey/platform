@@ -1763,6 +1763,7 @@ mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-12.10.sql -tex
 mothership/resources/schemas/dbscripts/postgresql/mothership-13.10-13.20.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-13.20-13.30.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-14.30-14.31.sql -text
+mothership/resources/schemas/dbscripts/postgresql/mothership-14.31-14.32.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-0.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-10.20.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-11.30.sql -text
@@ -1803,6 +1804,7 @@ mothership/resources/schemas/dbscripts/sqlserver/mothership-0.00-12.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-13.10-13.20.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-13.20-13.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-14.30-14.31.sql -text
+mothership/resources/schemas/dbscripts/sqlserver/mothership-14.31-14.32.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-0.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-10.20.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-11.30.sql -text
