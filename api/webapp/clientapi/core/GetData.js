@@ -36,20 +36,34 @@
     /**
      * @private
      */
-    var validateFieldKey = function(fieldKey) {
-        if (fieldKey instanceof LABKEY.FieldKey) {
-            return fieldKey.getParts();
+    var _validateKey = function(key, keyClazz) {
+        if (key instanceof keyClazz) {
+            return key.getParts();
         }
 
-        if (fieldKey instanceof Array) {
-            return fieldKey;
+        if (key instanceof Array) {
+            return key;
         }
 
-        if (typeof fieldKey === 'string') {
-            return LABKEY.FieldKey.fromString(fieldKey).getParts();
+        if (typeof key === 'string') {
+            return keyClazz.fromString(key).getParts();
         }
 
         return false;
+    };
+
+    /**
+     * @private
+     */
+    var validateSchemaKey = function(schemaKey) {
+        return _validateKey(schemaKey, LABKEY.SchemaKey);
+    };
+
+    /**
+     * @private
+     */
+    var validateFieldKey = function(fieldKey) {
+        return _validateKey(fieldKey, LABKEY.FieldKey);
     };
 
     /**
@@ -68,7 +82,7 @@
             throw new Error('A schemaName is required.');
         }
 
-        source.schemaName = validateFieldKey(source.schemaName);
+        source.schemaName = validateSchemaKey(source.schemaName);
 
         if (!source.schemaName) {
             throw new Error('schemaName must be a FieldKey');

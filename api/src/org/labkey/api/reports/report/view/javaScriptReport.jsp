@@ -42,7 +42,7 @@
             var getDataConfig = {
                 source: {
                     containerFilter: <%=bean.model.getContainerFilter()%>,
-                    schemaName: new LABKEY.FieldKey.fromString('<%=bean.model.getSchemaName()%>'),
+                    schemaName: LABKEY.SchemaKey.fromString('<%=bean.model.getSchemaName()%>'),
                     queryName: '<%=bean.model.getQueryName()%>'
                 },
                 transforms: []
