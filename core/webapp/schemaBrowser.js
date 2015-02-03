@@ -201,6 +201,7 @@ Ext4.define('LABKEY.ext4.QueryTreePanel', {
                         }
                     }
                 },
+                idProperty: 'name',
                 fields : [
                     {name: 'description'},
                     {name: 'hidden', type: 'boolean', defaultValue: false},
@@ -217,6 +218,7 @@ Ext4.define('LABKEY.ext4.QueryTreePanel', {
         this.store = Ext4.create('Ext.data.TreeStore', {
             model : 'SchemaBrowser.Queries',
             root: {
+                name: 'root',
                 expanded: true,
                 expandable: false,
                 draggable: false
@@ -2165,7 +2167,7 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
             // Expand along the patch to fetch the schema data
             if (dataSourceRoot) {
                 var partIndex = 0;
-                var schemaPathStr = "/root/" + dataSourceRoot.attributes.name + "/" + parts[partIndex];
+                var schemaPathStr = "/root/" + dataSourceRoot.data.name + "/" + parts[partIndex];
                 var expandCallback = function (success, lastNode) {
                     if (!success)
                     {
@@ -2183,10 +2185,10 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
                     else
                     {
                         schemaPathStr += "/" + parts[partIndex];
-                        tree.expandPath(schemaPathStr, "name", expandCallback);
+                        tree.expandPath(schemaPathStr, undefined, undefined, expandCallback);
                     }
                 };
-                tree.expandPath(schemaPathStr, "name", expandCallback);
+                tree.expandPath(schemaPathStr, undefined, undefined, expandCallback);
             }
             else {
                 Ext4.Msg.alert("Missing Schema", "The schema '" + Ext4.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
