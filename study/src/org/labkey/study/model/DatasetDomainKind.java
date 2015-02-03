@@ -251,12 +251,17 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         return true;
     }
 
+
     @Override
     public TableInfo getTableInfo(User user, Container container, String name)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
+        if (null == study)
+            return null;
         StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, true);
         DatasetDefinition dsd = schema.getDatasetDefinitionByName(name);
+        if (null == dsd)
+            return null;
 
         return new DatasetTableImpl(schema, dsd);
     }

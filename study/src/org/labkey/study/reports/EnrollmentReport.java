@@ -99,77 +99,84 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
     {
         String errorMessage = null;
         ReportDescriptor reportDescriptor = getDescriptor();
+        HttpServletResponse response = viewContext.getResponse();
 
-        if (reportDescriptor instanceof ChartReportDescriptor)
+        renderBlock:
         {
-            ChartReportDescriptor descriptor = (ChartReportDescriptor)reportDescriptor;
-            HttpServletResponse response = viewContext.getResponse();
+            if (!(reportDescriptor instanceof ChartReportDescriptor))
+            {
+                errorMessage = "Invalid report params: The ReportDescriptor must be an instance of ChartReportDescriptor";
+                break renderBlock;
+            }
+            ChartReportDescriptor descriptor = (ChartReportDescriptor) reportDescriptor;
+
+            if (null == descriptor.getProperty(DatasetDefinition.DATASETKEY) ||
+                    null == descriptor.getProperty(VisitImpl.SEQUENCEKEY))
+            {
+                errorMessage = "Invalid report params: " + DatasetDefinition.DATASETKEY + " and " + VisitImpl.SEQUENCEKEY + " must be specified.";
+                break renderBlock;
+            }
 
             final Study study = StudyManager.getInstance().getStudy(viewContext.getContainer());
             int datasetId = NumberUtils.createInteger(descriptor.getProperty(DatasetDefinition.DATASETKEY));
             double sequenceNum = VisitImpl.parseSequenceNum(descriptor.getProperty(VisitImpl.SEQUENCEKEY));
 
-            if (ReportManager.get().canReadReport(viewContext.getUser(), viewContext.getContainer(), this))
-            {
-                final ArrayList<Date> dates = new ArrayList<>();
-                final int indexX = 1;
-                final Date tomorrow = new Date(System.currentTimeMillis() + CacheManager.DAY);
-
-                getVisitDateSelector(study, datasetId, sequenceNum, viewContext.getUser()).forEach(new Selector.ForEachBlock<ResultSet>()
-                {
-                    @Override
-                    public void exec(ResultSet rs) throws SQLException
-                    {
-                        Timestamp t = rs.getTimestamp(indexX);
-                        if (t == null)
-                            dates.add(tomorrow);
-                        else
-                            dates.add(t);
-                    }
-                });
-
-                Collections.sort(dates);
-                Week lastWeek = dates.isEmpty() ? new Week(new Date()) : new Week(dates.get(dates.size() - 1));
-                Week firstWeek = (Week) (dates.isEmpty() ? lastWeek : (new Week(dates.get(0))).previous());
-                // add a sentinal date (after last)
-                dates.add((lastWeek.next()).getStart());
-
-                TimeSeries seriesTotal = new TimeSeries("Enrollment", Week.class);
-                TimeSeries seriesPeriod = new TimeSeries("Weekly", Week.class);
-                double runningCount = 0;
-                double periodCount = 0;
-                Week curr = firstWeek;
-                for (Date d : dates)
-                {
-                    Week w = new Week(d);
-                    for (; curr.compareTo(w) < 0; curr = (Week) curr.next())
-                    {
-                        seriesTotal.add(curr, runningCount);
-                        seriesPeriod.add(curr, periodCount);
-                        periodCount = 0;
-                    }
-                    ++runningCount;
-                    ++periodCount;
-                }
-
-                TimeSeriesCollection col = new TimeSeriesCollection();
-                col.addSeries(seriesTotal);
-                col.addSeries(seriesPeriod);
-
-                Dataset ds = study.getDataset(datasetId);
-                byte[] bytes = generateTimeChart("Dataset: " + ds.getLabel(), col, "Visit Date", "", null);
-                response.setContentType("image/png");
-                response.setContentLength(bytes.length);
-                response.getOutputStream().write(bytes);
-            }
-            else
+            if (!ReportManager.get().canReadReport(viewContext.getUser(), viewContext.getContainer(), this))
             {
                 errorMessage = "No permission to view this chart";
+                break renderBlock;
             }
-        }
-        else
-        {
-            errorMessage = "Invalid report params: The ReportDescriptor must be an instance of ChartReportDescriptor";
+
+            final ArrayList<Date> dates = new ArrayList<>();
+            final int indexX = 1;
+            final Date tomorrow = new Date(System.currentTimeMillis() + CacheManager.DAY);
+
+            getVisitDateSelector(study, datasetId, sequenceNum, viewContext.getUser()).forEach(new Selector.ForEachBlock<ResultSet>()
+            {
+                @Override
+                public void exec(ResultSet rs) throws SQLException
+                {
+                    Timestamp t = rs.getTimestamp(indexX);
+                    if (t == null)
+                        dates.add(tomorrow);
+                    else
+                        dates.add(t);
+                }
+            });
+
+            Collections.sort(dates);
+            Week lastWeek = dates.isEmpty() ? new Week(new Date()) : new Week(dates.get(dates.size() - 1));
+            Week firstWeek = (Week) (dates.isEmpty() ? lastWeek : (new Week(dates.get(0))).previous());
+            // add a sentinal date (after last)
+            dates.add((lastWeek.next()).getStart());
+
+            TimeSeries seriesTotal = new TimeSeries("Enrollment", Week.class);
+            TimeSeries seriesPeriod = new TimeSeries("Weekly", Week.class);
+            double runningCount = 0;
+            double periodCount = 0;
+            Week curr = firstWeek;
+            for (Date d : dates)
+            {
+                Week w = new Week(d);
+                for (; curr.compareTo(w) < 0; curr = (Week) curr.next())
+                {
+                    seriesTotal.add(curr, runningCount);
+                    seriesPeriod.add(curr, periodCount);
+                    periodCount = 0;
+                }
+                ++runningCount;
+                ++periodCount;
+            }
+
+            TimeSeriesCollection col = new TimeSeriesCollection();
+            col.addSeries(seriesTotal);
+            col.addSeries(seriesPeriod);
+
+            Dataset ds = study.getDataset(datasetId);
+            byte[] bytes = generateTimeChart("Dataset: " + ds.getLabel(), col, "Visit Date", "", null);
+            response.setContentType("image/png");
+            response.setContentLength(bytes.length);
+            response.getOutputStream().write(bytes);
         }
 
         if (errorMessage != null)
