@@ -234,6 +234,14 @@ public class ClientDependency
         return set;
     }
 
+
+    @Deprecated
+    public static ClientDependency fromFilePath(String path)
+    {
+        return ClientDependency.fromPath(path);
+    }
+
+
     public static ClientDependency fromPath(String path)
     {
         return fromPath(path, ModeTypeEnum.BOTH);
