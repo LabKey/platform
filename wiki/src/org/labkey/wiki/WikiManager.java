@@ -609,7 +609,7 @@ public class WikiManager implements WikiService
             return;
 
         // Push a ViewContext onto the stack before indexing; wikis may need this to render embedded webpart
-        try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(User.guest, c, new ActionURL()))
+        try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(User.getSearchUser(), c, new ActionURL()))
         {
             indexWikiContainerFast(task, c, modifiedSince, null);
         }
