@@ -430,7 +430,6 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         List<Attachment> attachments = new ArrayList<>(AttachmentService.get().getAttachments(parent));
 
         StringBuilder sb = new StringBuilder();
-        boolean canEdit = isEditable("attachments");
 
         if (attachments.size() > 0)
         {
@@ -440,26 +439,14 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             for (Attachment a : attachments)
             {
                 sb.append("<tr><td>");
-
-                if (!canEdit)
-                {
-                    sb.append("<a href=\"");
-                    sb.append(PageFlowUtil.filter(a.getDownloadUrl(DownloadAction.class)));
-                    sb.append("\"><img src=\"");
-                    sb.append(context.getRequest().getContextPath());
-                    sb.append(PageFlowUtil.filter(a.getFileIcon()));
-                    sb.append("\">&nbsp;");
-                    sb.append(PageFlowUtil.filter(a.getName()));
-                    sb.append("</a>");
-                }
-                else
-                {
-                    sb.append("<img src=\"");
-                    sb.append(context.getRequest().getContextPath());
-                    sb.append(PageFlowUtil.filter(a.getFileIcon()));
-                    sb.append("\">&nbsp;");
-                    sb.append(PageFlowUtil.filter(a.getName()));
-                }
+                sb.append("<a href=\"");
+                sb.append(PageFlowUtil.filter(a.getDownloadUrl(DownloadAction.class)));
+                sb.append("\" target=\"_blank\"><img src=\"");
+                sb.append(context.getRequest().getContextPath());
+                sb.append(PageFlowUtil.filter(a.getFileIcon()));
+                sb.append("\">&nbsp;");
+                sb.append(PageFlowUtil.filter(a.getName()));
+                sb.append("</a>");
                 sb.append("</td></tr>");
             }
             sb.append("</table>");
