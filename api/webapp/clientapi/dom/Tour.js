@@ -44,11 +44,14 @@
         {
             _initHopscotch(function()
             {
-                hopscotch.listen("end", _yieldAutoRun);
-                hopscotch.startTour(config, step||0);
+                hopscotch.listen("end", function() {
+                    // 22390: Hopscotch doesn't actually end the tours until after this call
+                    setTimeout(_autoRun, 1);
+                });
+                hopscotch.startTour(config, step || 0);
                 markSeen(config.id);
             }, me);
-        }
+        };
 
         /**
          * Evaluate javascript in JSON defining tour options and step options
@@ -142,14 +145,11 @@
                     _queue.push(key);
             });
 
-            if( !continuing )
+            if (!continuing)
+            {
                 _autoRun();
+            }
         };
-
-        var _yieldAutoRun = function ()
-        {
-            setTimeout(_autoRun, 1);
-        }
 
         //
         // Public Functions
@@ -207,25 +207,19 @@
          */
         var continueTour = function()
         {
-            var hash = window.location.hash;
+            var hash = window.location.hash, prefix = "tourstate:";
             if (hash && hash.charAt(0) == '#')
                 hash = hash.substring(1);
-            if (hash.substring(0, "tourstate:".length) != "tourstate:")
+            if (hash.substring(0, prefix.length) != prefix)
                 return;
-            var tourstate = hash.substring("tourstate:".length);
-            if (-1 == tourstate.indexOf(":"))
-                return;
-            var id = tourstate.substring(0, tourstate.indexOf(":"));
-            var step = tourstate.substring(tourstate.indexOf(":")+1);
-            try
+            var tourstate = hash.substring(prefix.length),
+                endIdx = tourstate.indexOf(':');
+            if (-1 != endIdx)
             {
-                step = parseInt(step);
+                var id = tourstate.substring(0, endIdx);
+                var step = tourstate.substring(endIdx + 1);
+                return resume(id, parseInt(step));
             }
-            catch (ex)
-            {
-                return;
-            }
-            return resume(id, step);
         };
 
         /**
@@ -234,7 +228,7 @@
         var failure = function(id, result)
         {
             loads--;
-        }
+        };
 
         /**
          * Mark tour as seen so autoShow() will no longer show this tour
@@ -271,23 +265,19 @@
          * Countinue tour if it is currently on the indicated step, useful for multi-page tours
          * Always loads hopscotch.js
          */
-        var resume = function(idOrConfig, step)
+        var resume = function(id, step)
         {
-            var config = _get(idOrConfig);
-            if (!config)
-                return;
-            var testState = config.id + ":" + step;
-            // peek into hopscotch state w/o loading hopscotch.js
-            var hopscotchState = sessionStorage.getItem(_hopscotchSessionProperty);
-            if (hopscotchState == testState)
+            var config = _get(id);
+            if (config)
             {
-                _initHopscotch(function ()
+                var testState = config.id + ":" + step;
+                // peek into hopscotch state w/o loading hopscotch.js
+                if (testState == sessionStorage.getItem(_hopscotchSessionProperty))
                 {
-                    hopscotch.listen("end", _yieldAutoRun);
-                    hopscotch.startTour(config, step);
-                }, me);
+                    _display(config, step);
+                }
+                return id;
             }
-            return idOrConfig;
         };
 
         var seen = function(id)
