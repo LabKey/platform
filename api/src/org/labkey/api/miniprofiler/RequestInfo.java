@@ -140,6 +140,10 @@ public class RequestInfo implements AutoCloseable
         return _ignored;
     }
 
+    /**
+     * Mark the current profiling session as ignored.  Timings will still be collected but won't
+     * be reported to the user.
+     */
     public void setIgnored(boolean ignored)
     {
         _ignored = ignored;

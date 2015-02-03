@@ -105,6 +105,7 @@ public class MiniProfiler
      * Returns a {@link Timing} that will time the code between its creation and disposal.
      * @param name descriptive name for the code that is encapsulated by the resulting AutoCloseable's lifetime.
      */
+    @Nullable
     public static Timing step(String name)
     {
         RequestInfo requestInfo = MemTracker.getInstance().current();
@@ -119,6 +120,7 @@ public class MiniProfiler
      * @param category category of timing within the current Timing step.
      * @param msg descriptive message.
      */
+    @Nullable
     public static CustomTiming custom(String category, String msg)
     {
         RequestInfo requestInfo = MemTracker.getInstance().current();

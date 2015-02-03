@@ -18,6 +18,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.collections15.map.AbstractReferenceMap;
 import org.apache.commons.collections15.map.ReferenceIdentityMap;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -176,6 +177,7 @@ public class MemTracker
     /**
      * Create new RequestInfo for the current thread and request.
      */
+    @NotNull
     public RequestInfo startProfiler(HttpServletRequest request, @Nullable String name)
     {
         String url = request.getRequestURI() + (request.getQueryString() == null ? "" : "?" + request.getQueryString());
@@ -183,9 +185,10 @@ public class MemTracker
     }
 
     /**
-     * Create new RequestInfo for the current thread and request and mark it as ignored.
+     * Create new RequestInfo for the current thread and request and mark it as {@link org.labkey.api.miniprofiler.RequestInfo#setIgnored(boolean)}.
      * Used for profiling background requests that will be merged into a parent profiler.
      */
+    @NotNull
     public RequestInfo startProfiler(@Nullable String name)
     {
         RequestInfo req = startProfiler(null, null, name);
@@ -196,6 +199,7 @@ public class MemTracker
     /**
      * Create new RequestInfo for the current thread and request.
      */
+    @NotNull
     public synchronized RequestInfo startProfiler(String url, Principal user, @Nullable String name)
     {
         RequestInfo req = new RequestInfo(url, user, name);
@@ -203,6 +207,7 @@ public class MemTracker
         return req;
     }
 
+    @Nullable
     public RequestInfo current()
     {
         return _requestTracker.get();
@@ -317,6 +322,7 @@ public class MemTracker
         }
     }
 
+    @Nullable
     public synchronized RequestInfo getRequest(long id)
     {
         // search recent requests backwards looking for the matching id
