@@ -173,6 +173,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             listeners: {
                 scope: this,
                 'chartDefinitionChanged': this.chartDefinitionChanged,
+                'switchToGroupLayout': function(){
+                    this.editorGroupingPanel.setChartSubjectSelection(true);
+                    this.setOptionsForGroupLayout(true);
+                    this.chartDefinitionChanged(true);
+                },
                 'measureMetadataRequestPending': this.measureMetadataRequestPending,
                 'measureMetadataRequestComplete': this.measureMetadataRequestComplete
             }
@@ -319,12 +324,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,
-                'chartDefinitionChanged': function(requiresDataRefresh){
-                    if(this.editorGroupingPanel.groupLayoutChanged == true){
-                        this.editorGroupingPanel.groupLayoutChanged = false;
-                    }
-                    this.chartDefinitionChanged(requiresDataRefresh);
-                },
+                'chartDefinitionChanged': this.chartDefinitionChanged,
                 'groupLayoutSelectionChanged': function(groupLayoutSelected) {
                     // if the filters panel is collapsed, first open it up so the user sees that the filter options have changed
                     if (this.filtersPanel.collapsed)

@@ -51,12 +51,12 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             value: LABKEY.Utils.textLink({href: LABKEY.ActionURL.buildURL("study", "manageParticipantCategories"), text: 'Manage Groups'})
         });
 
-        // add a hiden display field to show what is selected by default
+        // add a hidden display field to show what is selected by default
         this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
             hideLabel: true,
             hidden: true,
             padding: 3,
-            value: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
+            value: '<span style="font-size:75%;color:red;">Selecting 5 values by default.</span>'
         });
 
         // add a hidden display field for warning the user if a saved chart has a group that is no longer available

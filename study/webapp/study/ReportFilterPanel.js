@@ -92,37 +92,8 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             multiSelect : true,
             columns     : this.getColumnCfg(isHeader),
             features    : this.getFeaturesCfg(),
-            dockedItems: [{
-                xtype: 'pagingtoolbar',
-                cls: 'paging-toolbar',
-                store: this.store,
-                dock: 'bottom',
-                hidden: true,
-                border: false,
-                beforePageText: '',
-                listeners: {
-                    afterrender: function() {
-                        // hide the refresh button and last separator
-                        this.items.items[9].hide();
-                        this.items.items[10].hide();
-
-                        // we check and show the paging toolbar if the store count matches the page size
-                        var checkStoreSize = function(store, pager) {
-                            if (store.pageSize == store.getCount()) {
-                                pager.show();
-                            }
-                        };
-                        if (this.store.getCount() > 0) {
-                            checkStoreSize(this.store, this);
-                        }
-                        else {
-                            this.store.on('load', function(){
-                                checkStoreSize(this.store, this);
-                            }, this);
-                        }
-                    }
-                }
-            }],
+            pageSelections : {}, // used to track selection across pages
+            dockedItems: [this.getPagingToolbarCfg()],
             viewConfig : {
                 stripeRows : false,
                 listeners  : {
@@ -170,6 +141,60 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             },
             bubbleEvents: ['select', 'selectionchange', 'cellclick', 'itemmouseenter', 'itemmouseleave'],
             scope       : this
+        };
+    },
+
+    getPagingToolbarCfg : function() {
+        // issue 22254: add paging toolbar to support > 1000 participants
+        return {
+            xtype: 'pagingtoolbar',
+            cls: 'paging-toolbar',
+            store: this.store,
+            dock: 'bottom',
+            hidden: true,
+            border: false,
+            beforePageText: '',
+            listeners: {
+                afterrender: function() {
+                    // hide the refresh button and last separator
+                    this.items.items[9].hide();
+                    this.items.items[10].hide();
+
+                    // we check and show the paging toolbar if the store count matches the page size
+                    var checkStoreSize = function(store, pager) {
+                        if (store.pageSize == store.getCount()) {
+                            pager.show();
+
+                            // add listener to reselect rows on page change
+                            var me = pager.up('labkey-filterselectlist');
+                            me.getGrid().getView().on('refresh', function(){
+                                var pageSelections = this.pageSelections[this.getStore().currentPage];
+                                if (pageSelections)
+                                {
+                                    // need to select by index since the record id will change each time a page loads
+                                    Ext4.each(Ext4.Array.pluck(pageSelections, "index"), function(index){
+                                        this.getSelectionModel().select(index % store.pageSize, true, true);
+                                    }, this);
+                                }
+                                else if (me.selection)
+                                {
+                                    this.suspendEvents();
+                                    me.initGridSelection(this, me.selection);
+                                    this.resumeEvents();
+                                }
+                            }, me.getGrid());
+                        }
+                    };
+                    if (this.store.getCount() > 0) {
+                        checkStoreSize(this.store, this);
+                    }
+                    else {
+                        this.store.on('load', function(){
+                            checkStoreSize(this.store, this);
+                        }, this, {single: true});
+                    }
+                }
+            }
         };
     },
 
@@ -250,45 +275,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             }
         }
         else {
-            target.getSelectionModel().deselectAll();
-            for (var s=0; s < this.selection.length; s++)
-            {
-                // first try matching on cateogryId and record id
-                var rec = target.getStore().getAt(target.getStore().findBy(function(record){
-                    return record.get("categoryId") == this.selection[s].categoryId && record.get("id") == this.selection[s].id;
-                }, this));
-
-                // next try matching on categoryName and record label
-                if (!rec)
-                {
-                    rec = target.getStore().getAt(target.getStore().findBy(function(record){
-                        return record.get("categoryName") == this.selection[s].categoryName && record.get("label") == this.selection[s].label;
-                    }, this));
-                }
-
-                // finally try to find a matching record by just the label
-                if (!rec)
-                {
-                    var label = null;
-                    if (this.selection[s].data && this.selection[s].data.label)
-                        label = this.selection[s].data.label;
-                    else if (this.selection[s].label)
-                        label = this.selection[s].label;
-
-                    if (label != null)
-                        rec = target.getStore().findRecord('label', label);
-                }
-
-                if (rec)
-                {
-                    // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
-                    if (this.selection[s].id < 0 && (rec.data.label != this.selection[s].label))
-                        continue;
-
-                    target.getSelectionModel().select(rec, true);
-                }
-            }
-
+            this.initGridSelection(target, this.selection);
             this.updateCategorySelectAllCheckboxes(this.defaultSelectUncheckedCategory);
         }
 
@@ -296,6 +283,47 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
         // fire event to tell the panel the initial selection is compelete, return the number of selected records
         this.fireEvent('afterInitGroupConfig', target.getSelectionModel().getCount(), this);
+    },
+
+    initGridSelection: function(grid, selection) {
+        grid.getSelectionModel().deselectAll();
+        for (var s=0; s < selection.length; s++)
+        {
+            // first try matching on cateogryId and record id
+            var rec = grid.getStore().getAt(grid.getStore().findBy(function(record){
+                return record.get("categoryId") == selection[s].categoryId && record.get("id") == selection[s].id;
+            }, this));
+
+            // next try matching on categoryName and record label
+            if (!rec)
+            {
+                rec = grid.getStore().getAt(grid.getStore().findBy(function(record){
+                    return record.get("categoryName") == selection[s].categoryName && record.get("label") == selection[s].label;
+                }, this));
+            }
+
+            // finally try to find a matching record by just the label
+            if (!rec)
+            {
+                var label = null;
+                if (selection[s].data && selection[s].data.label)
+                    label = selection[s].data.label;
+                else if (selection[s].label)
+                    label = selection[s].label;
+
+                if (label != null)
+                    rec = grid.getStore().findRecord('label', label);
+            }
+
+            if (rec)
+            {
+                // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
+                if (selection[s].id < 0 && (rec.data.label != selection[s].label))
+                    continue;
+
+                grid.getSelectionModel().select(rec, true);
+            }
+        }
     },
 
     getGrid: function(){
@@ -341,7 +369,20 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         if (!target)
             return;
 
-        var selection = target.getSelectionModel().getSelection();
+        // issue 22254: update the given pages selection in the pageSelections object
+        var selection = [];
+        if (!target.down('pagingtoolbar').hidden)
+        {
+            target.pageSelections[target.getStore().currentPage] = target.getSelectionModel().getSelection();
+
+            // concat the selections across pages
+            for (var pageIndex in target.pageSelections) {
+                selection = selection.concat(target.pageSelections[pageIndex]);
+            }
+        }
+        else {
+            selection = target.getSelectionModel().getSelection();
+        }
 
         //if all are checked in a given category, this is treated the same as none checked
         if(skipIfAllSelected)

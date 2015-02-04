@@ -19,6 +19,7 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
 
         this.addEvents(
             'chartDefinitionChanged',
+            'switchToGroupLayout',
             'measureMetadataRequestPending',
             'measureMetadataRequestComplete'
         );
@@ -34,12 +35,38 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
         if (this.ptidFilterPanel)
             return;
 
-        // add a hiden display field to show what is selected by default
+        // issue 22254: if there are too many ptids in a study, suggest that the user switch to plot by group
+        this.switchToGroupPanel = Ext4.create('Ext.panel.Panel', {
+            padding: 5,
+            border: false,
+            hidden: true,
+            items: [{
+                xtype: 'label',
+                style: 'font-size:90%;',
+                text: 'There is a large number of ' + LABKEY.moduleContext.study.subject.nounPlural.toLowerCase()
+                    + ' in this study. Would you like to switch to plot by '
+                    + LABKEY.moduleContext.study.subject.nounSingular.toLowerCase() + ' groups?'
+            }],
+            buttonAlign: 'left',
+            buttons: [{
+                text: 'Yes', height: 20, scope: this,
+                handler: function(){
+                    this.fireEvent('switchToGroupLayout');
+                    this.switchToGroupPanel.hide();
+                }
+            },{
+                text: 'No', height: 20, scope: this,
+                handler: function(){ this.switchToGroupPanel.hide(); }
+            }]
+        });
+        this.add(this.switchToGroupPanel);
+
+        // add a hidden display field to show what is selected by default and if paging is enabled
         this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
             hideLabel: true,
             hidden: true,
             padding: 3,
-            value: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
+            value: null
         });
         this.add(this.defaultDisplayField);
 
@@ -66,21 +93,35 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
             maxInitSelection: this.maxInitSelection,
             selection: this.selection,
             listeners : {
-                selectionchange : function(){
-                    this.fireChangeTask.delay(1000);
-                },
                 beforerender : function(){
                     this.fireEvent('measureMetadataRequestPending');
                 },
-                initSelectionComplete : function(numSelected){
-                    // if this is a new time chart, show the text indicating that we are selecting the first 5 by default
-                    if (!this.subject.values && numSelected == this.maxInitSelection)
-                    {
-                        this.hideDefaultDisplayField = new Ext4.util.DelayedTask(function(){
-                            this.defaultDisplayField.hide();
-                        }, this);
+                initSelectionComplete : function(numSelected, panel){
+                    this.hideDefaultDisplayField = new Ext4.util.DelayedTask(function(){
+                        this.defaultDisplayField.hide();
+                    }, this);
 
-                        // show the display for 5 seconds before hiding it again
+                    // if this is a new time chart, show the text indicating that we are selecting the first 5 by default
+                    var displayHtml = '';
+                    if (!this.subject.values && numSelected == this.maxInitSelection) {
+                        displayHtml += '<div style="font-size:75%;color:red;">Selecting 5 values by default.</div>';
+                    }
+
+                    // issue 22254: add message about paging toolbar if > 1000 ptids
+                    if (!this.ptidFilterPanel.down('pagingtoolbar').hidden) {
+                        displayHtml += '<div style="font-size:75%;color:red;">Paging enabled (see bottom of list).</div>';
+                    }
+
+                    // issue 22254: if this is a new chart and we have a lot of ptids, show switchToGroupPanel
+                    var totalCount = panel.getFilterPanels()[0].getGrid().getStore().getTotalCount();
+                    if (!this.subject.values && totalCount >= 1000) {
+                        this.switchToGroupPanel.show();
+                    }
+
+                    // show the display for 5 seconds before hiding it again
+                    if (displayHtml.length > 0)
+                    {
+                        this.defaultDisplayField.setValue(displayHtml);
                         this.defaultDisplayField.show();
                         this.hideDefaultDisplayField.delay(5000);
                     }
@@ -91,6 +132,10 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
             }
         });
         this.add(this.ptidFilterPanel);
+
+        this.ptidFilterPanel.on('selectionchange', function(){
+            this.fireChangeTask.delay(100);
+        }, this, {buffer: 1000});
     },
 
     getSubject: function() {

@@ -337,6 +337,15 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
         this.requireDataRefresh = true;
     },
 
+    setChartSubjectSelection: function(asGroups) {
+        if (asGroups) {
+            this.groupsRadio.setValue(true);
+        }
+        else {
+            this.subjectRadio.setValue(true);
+        }
+    },
+
     getChartSubjectSelection: function(){
         if(this.groupsRadio.getValue()){
             return "groups";
