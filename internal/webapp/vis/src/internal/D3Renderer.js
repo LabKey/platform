@@ -106,9 +106,9 @@ LABKEY.vis.internal.Axis = function() {
                     .attr('stroke-width', gridLineWidth);
         }
 
-        textAnchors = textSel.selectAll('a').data(data);
+        textAnchors = textSel.selectAll(tickHover ? 'a' : 'g').data(data);
         textAnchors.exit().remove();
-        textAnchors.enter().append('a').append('text');
+        textAnchors.enter().append(tickHover ? 'a' : 'g').append('text');
         textEls = textAnchors.select('text');
         textEls.text(tickFormat)
                 .attr('class', tickCls)
@@ -117,6 +117,10 @@ LABKEY.vis.internal.Axis = function() {
                 .attr('text-anchor', textAnchor)
                 .attr('fill', tickTextColor)
                 .style('font', '10px arial, verdana, helvetica, sans-serif');
+
+        if (tickHover) {
+            textEls.append('title').text(tickHover);
+        }
 
         if (orientation == 'bottom') {
             hasOverlap = false;
