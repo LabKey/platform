@@ -80,7 +80,7 @@ function validateForm(form)
     {
         %><tr>
             <td class='labkey-form-label'>Members</td>
-            <td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="30" url="<%=completeUserUrl%>" value="<%=bean.memberList%>"/></td>
+            <td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="40" url="<%=completeUserUrl%>" value="<%=bean.memberList%>"/></td>
             <td width="100%"><i><%
         if (settings.isSecure())
         {

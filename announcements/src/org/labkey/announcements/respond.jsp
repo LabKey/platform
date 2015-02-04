@@ -98,7 +98,7 @@ if (settings.hasAssignedTo())
 
 if (settings.hasMemberList())
 {
-    %><tr><td class="labkey-form-label">Members</td><td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="30" url="<%=h(completeUserUrl)%>" value="<%=h(bean.memberList)%>"/></td><td width="100%"><i><%
+    %><tr><td class="labkey-form-label">Members</td><td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="40" url="<%=h(completeUserUrl)%>" value="<%=h(bean.memberList)%>"/></td><td width="100%"><i><%
     if (settings.isSecure())
     {
         %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it.  These users will also<%

@@ -609,7 +609,7 @@ public class Issue extends Entity implements Serializable, Cloneable
             if (u != null && !u.isActive())
                 continue;
 
-            String display = null != u ? u.getDisplayName(user) : null != v ? v.getEmailAddress() : id;
+            String display = null != u ? u.getAutocompleteName(ContainerManager.getForId(getContainerId()), user) : null != v ? v.getEmailAddress() : id;
             ret.add(display);
         }
         return ret;

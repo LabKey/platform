@@ -339,7 +339,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
             _memberListDisplay = new ArrayList<>();
             for (Integer userId : getMemberListIds())
             {
-                _memberListDisplay.add(UserManager.getUser(userId).getDisplayName(currentUser));
+                _memberListDisplay.add(UserManager.getUser(userId).getAutocompleteName(c, currentUser));
             }
         }
         return _memberListDisplay;

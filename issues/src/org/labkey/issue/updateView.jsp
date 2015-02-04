@@ -251,7 +251,7 @@
                         <%=text(bean.writeCustomColumn(ColumnType.STRING1, 2, true))%>
                     </table>
                 </td>
-                <td valign="top" rowspan="<%=h(rowSpan)%>"><table>
+                <td valign="top" rowspan="<%=h(rowSpan)%>"><table style="width: 100%;">
                     <tr><td class="labkey-form-label">Closed</td><td><%=text(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr>
     <%
                 if (bean.isEditable("notifyList"))
@@ -273,7 +273,7 @@
     %>
                         </td>
                         <td>
-                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl.getLocalURIString())%>" rows="4" tabindex="3" cols="30" value="<%=h(bean.getNotifyListString(false))%>"/>
+                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl.getLocalURIString())%>" rows="4" tabindex="3" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
                         </td>
                     </tr>
     <%

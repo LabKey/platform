@@ -161,7 +161,7 @@
 }
 %>
 
-<table>
+<table style="width: 60%;">
     <tr>
         <td valign="top"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>

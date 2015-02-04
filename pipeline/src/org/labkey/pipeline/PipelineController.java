@@ -853,14 +853,14 @@ public class PipelineController extends SpringActionController
             Container c = getContainer();
             PipelineEmailPreferences pref = PipelineEmailPreferences.get();
             pref.setNotifyOwnerOnSuccess(form.getNotifyOwnerOnSuccess(), c);
-            pref.setNotifyUsersOnSuccess(getValidEmailList(form.getNotifyUsersOnSuccess(), errors), c);
+            pref.setNotifyUsersOnSuccess(getValidUserList(form.getNotifyUsersOnSuccess(), errors), c);
             pref.setSuccessNotificationInterval(
                     form.getSuccessNotifyInterval(),
                     form.getSuccessNotifyStart(),
                     c);
             pref.setNotifyOwnerOnError(form.getNotifyOwnerOnError(), c);
-            pref.setNotifyUsersOnError(getValidEmailList(form.getNotifyUsersOnError(), errors), c);
-            pref.setEscalationUsers(getValidEmailList(form.getEscalationUsers(), errors), c);
+            pref.setNotifyUsersOnError(getValidUserList(form.getNotifyUsersOnError(), errors), c);
+            pref.setEscalationUsers(getValidUserList(form.getEscalationUsers(), errors), c);
             pref.setFailureNotificationInterval(
                     form.getFailureNotifyInterval(),
                     form.getFailureNotifyStart(),
@@ -886,7 +886,7 @@ public class PipelineController extends SpringActionController
             }
         }
 
-        private String getValidEmailList(String emailString, BindException errors)
+        private String getValidUserList(String emailString, BindException errors)
         {
             String[] rawEmails = StringUtils.trimToEmpty(emailString).split("\n");
             List<String> invalidEmails = new ArrayList<>();
@@ -895,14 +895,36 @@ public class PipelineController extends SpringActionController
 
             for (ValidEmail email : emails)
             {
-                builder.append(email.getEmailAddress());
-                builder.append(';');
+                User u = UserManager.getUser(email);
+                if (u != null)
+                {
+                    builder.append(u.getAutocompleteName(getContainer(), getUser())).append(';');
+                }
+                else if (getUser().isSiteAdmin())
+                {
+                    try
+                    {
+                        SecurityManager.addUser(getViewContext(), email, true, null, null);
+                        u = UserManager.getUser(email);
+                        if (u != null)
+                            builder.append(email).append(';');
+                        else
+                            errors.reject(ERROR_MSG, "Unable to create user for email: " + email.toString());
+                    }
+                    catch (Exception e)
+                    {
+                        errors.reject(ERROR_MSG, "Unable to create user for email: " + email.toString());
+                    }
+                }
+                else
+                    errors.reject(ERROR_MSG, "Unable to find user or create user for email: " + email.toString());
             }
             for (String rawEmail : invalidEmails)
             {
                 String e = StringUtils.trimToNull(rawEmail);
                 if (null != e)
                 {
+
                     errors.reject(ERROR_MSG, "Invalid email address: " + e);
                 }
             }
