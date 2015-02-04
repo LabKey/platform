@@ -38,6 +38,7 @@ import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.event.PropertyChange;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
@@ -1599,6 +1600,20 @@ public class ContainerManager
         return children;
     }
 
+    /**
+     * Return all children of the root node, including root node, which have the given active module
+     */
+    @NotNull
+    public static Set<Container> getAllChildrenWithModule(@NotNull Container root, @NotNull Module module)
+    {
+        Set<Container> children = new HashSet<>();
+        for (Container candidate : getAllChildren(root))
+        {
+            if (candidate.getActiveModules().contains(module))
+                children.add(candidate);
+        }
+        return Collections.unmodifiableSet(children);
+    }
 
     public static long getContainerCount()
     {

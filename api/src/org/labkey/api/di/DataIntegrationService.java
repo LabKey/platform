@@ -15,14 +15,37 @@
  */
 package org.labkey.api.di;
 
-import org.labkey.api.module.Module;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.security.User;
+import org.labkey.api.view.NotFoundException;
 
 /**
  * User: matthewb
  * Date: 2013-04-03
  * Time: 11:34 AM
  */
-public interface DataIntegrationService
+public class DataIntegrationService
 {
-    public void registerStepProviders();
+    static private Interface instance;
+
+    public static final String MODULE_NAME = "DataIntegration";
+
+    static public Interface get()
+    {
+        return instance;
+    }
+
+    static public void setInstance(Interface impl)
+    {
+        instance = impl;
+    }
+
+    public interface Interface
+    {
+        public void registerStepProviders();
+        @Nullable
+        public Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException;
+    }
 }

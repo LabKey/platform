@@ -1641,6 +1641,14 @@ public class ModuleLoader implements Filter
         return _schemaNameToSchemaDetails.get(schemaName);
     }
 
+    public void clearAllSchemaDetails()
+    {
+        synchronized(_schemaNameToSchemaDetails)
+        {
+            _schemaNameToSchemaDetails.clear();
+        }
+    }
+
     /** @return true if the UrlProvider exists. */
     public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
     {

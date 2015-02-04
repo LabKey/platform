@@ -383,6 +383,9 @@ abstract public class QueryService
     // could make this a separate service
     abstract public void cubeDataChanged(Container c);    // TODO could be more specific than "something in this container"
     abstract public String warmCube(User user, Container container, String schemaName, String configId, String cubeName);
+    abstract public void cubeDataChanged(Set<Container> containers);
+    abstract public String warmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
+    abstract public String cubeDataChangedAndRewarmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
 
     abstract public void saveNamedSet(String setName, List<String> setList);
     abstract public void deleteNamedSet(String setName);
