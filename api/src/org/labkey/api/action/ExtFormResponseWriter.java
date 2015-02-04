@@ -78,17 +78,24 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         response.setContentType(isMultipartRequest ? "text/html" : CONTENT_TYPE_JSON);
     }
 
-    public  ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response, String contentTypeOverride) throws IOException
+    public ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response, String contentTypeOverride) throws IOException
     {
         this(request, response);
         if (!isMultipartRequest && null != contentTypeOverride)
             response.setContentType(contentTypeOverride);
     }
 
-
-    public void write(ValidationException e) throws IOException
+    @Override
+    public void writeAndClose(ValidationException e) throws IOException
     {
-        writeObject(toJSON(e));
+        try
+        {
+            writeObject(toJSON(e));
+        }
+        finally
+        {
+            complete();
+        }
     }
 
     public JSONObject toJSON(ValidationException e)
@@ -126,7 +133,8 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         jsonErrors.put(key, msg);
     }
 
-    public void write(Errors errors) throws IOException
+    @Override
+    public void writeAndClose(Errors errors) throws IOException
     {
         JSONObject jsonErrors = new JSONObject();
         for(ObjectError error : (List<ObjectError>)errors.getAllErrors())
@@ -143,10 +151,18 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         JSONObject root = new JSONObject();
         root.put("success", false); //used by Ext forms
         root.put("errors", jsonErrors);
-        writeObject(root);
+        try
+        {
+            writeObject(root);
+        }
+        finally
+        {
+            complete();
+        }
     }
 
-    public void write(Throwable e) throws IOException
+    @Override
+    public void writeAndClose(Throwable e) throws IOException
     {
         int status;
 
@@ -155,7 +171,14 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         else
             status = errorResponseStatus;
 
-        write(e, status);
+        try
+        {
+            write(e, status);
+        }
+        finally
+        {
+            complete();
+        }
     }
 
 

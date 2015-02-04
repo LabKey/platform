@@ -160,7 +160,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             //if we had binding or validation errors,
             //return them without calling execute.
             if (isFailure(errors))
-                createResponseWriter().write((Errors)errors);
+                createResponseWriter().writeAndClose((Errors) errors);
             else
             {
                 Object response;
@@ -172,7 +172,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 try (Timing t = MiniProfiler.step("render"))
                 {
                     if (isFailure(errors))
-                        createResponseWriter().write((Errors) errors);
+                        createResponseWriter().writeAndClose((Errors) errors);
                     else if (null != response)
                         createResponseWriter().writeResponse(response);
                 }
@@ -180,28 +180,28 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         }
         catch (BindException e)
         {
-            createResponseWriter().write((Errors)e);
+            createResponseWriter().writeAndClose((Errors) e);
         }
         //don't log exceptions that result from bad inputs
         catch (BatchValidationException e)
         {
             // Catch separately to be sure that we call the subclass-specific write() method
-            createResponseWriter().write(e);
+            createResponseWriter().writeAndClose(e);
         }
         catch (ValidationException e)
         {
             // Catch separately to be sure that we call the subclass-specific write() method
-            createResponseWriter().write(e);
+            createResponseWriter().writeAndClose(e);
         }
         catch (RuntimeValidationException e)
         {
             // Catch separately to be sure that we call the subclass-specific write() method
-            createResponseWriter().write(e.getValidationException());
+            createResponseWriter().writeAndClose(e.getValidationException());
         }
         catch (QueryException | IllegalArgumentException |
                 NotFoundException | InvalidKeyException | ApiUsageException e)
         {
-            createResponseWriter().write(e);
+            createResponseWriter().writeAndClose(e);
         }
         catch (UnauthorizedException e)
         {
@@ -213,7 +213,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
             Logger.getLogger(ApiAction.class).error("ApiAction exception: ", e);
 
-            createResponseWriter().write(e);
+            createResponseWriter().writeAndClose(e);
         }
 
         return null;

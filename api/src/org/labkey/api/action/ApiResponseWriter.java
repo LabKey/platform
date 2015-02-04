@@ -183,7 +183,7 @@ public abstract class ApiResponseWriter
             if (null != getResponse() && !getResponse().isCommitted())
                 resetOutput();
 
-            write(e);
+            writeAndClose(e);
         }
     }
 
@@ -218,22 +218,28 @@ public abstract class ApiResponseWriter
         jsonObj.put("exceptionClass", e.getClass().getName());
         jsonObj.put("stackTrace", e.getStackTrace());
 
-        writeObject(jsonObj);
+        try
+        {
+            writeObject(jsonObj);
+        }
+        finally
+        {
+            complete();
+        }
     }
 
-
-    public void write(Throwable e) throws IOException
+    public void writeAndClose(Throwable e) throws IOException
     {
         int status;
 
         if (e instanceof BatchValidationException)
         {
-            write((BatchValidationException)e);
+            writeAndClose((BatchValidationException) e);
             return;
         }
         if (e instanceof ValidationException)
         {
-            write((ValidationException)e);
+            writeAndClose((ValidationException) e);
             return;
         }
         if (e instanceof NotFoundException)
@@ -241,16 +247,30 @@ public abstract class ApiResponseWriter
         else
             status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
-        write(e, status);
+        try
+        {
+            write(e, status);
+        }
+        finally
+        {
+            complete();
+        }
     }
 
 
-    public void write(BatchValidationException e) throws IOException
+    public void writeAndClose(BatchValidationException e) throws IOException
     {
         if (null != getResponse())
             getResponse().setStatus(errorResponseStatus);
 
-        writeObject(getJSON(e));
+        try
+        {
+            writeObject(getJSON(e));
+        }
+        finally
+        {
+            complete();
+        }
     }
 
     public JSONObject getJSON(BatchValidationException e) throws IOException
@@ -274,14 +294,22 @@ public abstract class ApiResponseWriter
         return obj;
     }
 
-    public void write(ValidationException e) throws IOException
+    public void writeAndClose(ValidationException e) throws IOException
     {
         if (null != getResponse())
             getResponse().setStatus(errorResponseStatus);
 
         JSONObject obj = toJSON(e);
         obj.put("success", Boolean.FALSE);
-        writeObject(obj);
+
+        try
+        {
+            writeObject(obj);
+        }
+        finally
+        {
+            complete();
+        }
     }
 
     protected JSONObject toJSON(ValidationException e)
@@ -329,7 +357,7 @@ public abstract class ApiResponseWriter
         parent.put(jsonError);
     }
 
-    public void write(Errors errors) throws IOException
+    public void writeAndClose(Errors errors) throws IOException
     {
         //set the status to 400 to indicate that it was a bad request
         if (null != getResponse())
@@ -341,7 +369,14 @@ public abstract class ApiResponseWriter
         root.put("success", false);
         root.put("exception", pair.getKey());
         root.put("errors", pair.getValue());
-        writeObject(root);
+        try
+        {
+            writeObject(root);
+        }
+        finally
+        {
+            complete();
+        }
     }
 
     /**
