@@ -2137,7 +2137,6 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
         var schemaNode = this.getSchemaNode(tree, schemaName);
         if (schemaNode)
         {
-            //tree.selectPath(schemaNode.getPath('text'));
             schemaNode.expand(false, function (schemaNode) {
                 if (Ext4.isFunction(callback))
                     callback.call((scope || this), true, schemaNode);
@@ -2179,8 +2178,10 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
                     // Might need to recurse to expand child schemas
                     if (!success || ++partIndex == parts.length)
                     {
-                        if (Ext4.isFunction(callback))
-                            callback.call((scope || this), true, lastNode);
+                        lastNode.expand(false, function (lastNode) {
+                            if (Ext4.isFunction(callback))
+                                callback.call((scope || this), true, lastNode);
+                        });
                     }
                     else
                     {
@@ -2229,10 +2230,10 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
             };
 
             // TODO: check Issue 15674: if more than 100 queries are present, we include a placeholder node saying 'More..', which lacks queryName
-            if (schemaNode.childNodes.length > 0)
-                Ext4.each(schemaNode.childNodes[0].childNodes, comparison);
+            if (schemaNode.length > 0)
+                Ext4.each(schemaNode[0].childNodes, comparison);
             if (!queryNode && schemaNode.length > 1)
-                Ext4.each(schemaNode.childNodes[1].childNodes, comparison);
+                Ext4.each(schemaNode[1].childNodes, comparison);
 
             if (!queryNode)
             {
