@@ -1601,6 +1601,7 @@ freezerpro/src/org/labkey/freezerpro/export/GetFreezerSamplesCommand.java -text
 freezerpro/src/org/labkey/freezerpro/export/GetFreezerSamplesResponse.java -text
 freezerpro/src/org/labkey/freezerpro/export/GetFreezersCommand.java -text
 freezerpro/src/org/labkey/freezerpro/export/GetFreezersResponse.java -text
+freezerpro/src/org/labkey/freezerpro/export/GetVialSamplesCommand.java -text
 freezerpro/src/org/labkey/freezerpro/view/configure.jsp -text
 issues/module.properties -text
 issues/resources/queries/issues/Issues/mine.qview.xml -text

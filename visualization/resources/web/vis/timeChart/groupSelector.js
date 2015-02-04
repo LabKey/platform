@@ -127,15 +127,25 @@ Ext4.define('LABKEY.vis.GroupSelector', {
     },
 
     getUniqueGroupSubjectValues: function(groups){
+        var map = {};
         var values = [];
         for (var i = 0; i < groups.length; i++)
         {
-            values = Ext4.Array.unique(values.concat(groups[i].participantIds));
+            // issue 22254: using map to check for uniqueness is faster than concat+unique
+            for (var j = 0; j < groups[i].participantIds.length; j++)
+            {
+                var ptid = groups[i].participantIds[j];
+                if (!map[ptid])
+                {
+                    map[ptid] = true;
+                    values.push(ptid);
+                }
+            }
         }
         return values.sort();
     },
 
-    getSubject: function(){
+    getSubject: function(includeIndividual){
         var groups = [];
         var selected = this.groupFilterList.getSelection(true);
         for (var i = 0; i < selected.length; i++)
@@ -161,6 +171,12 @@ Ext4.define('LABKEY.vis.GroupSelector', {
         }
         groups.sort(compareGroups);
 
-        return {groups: groups, values: this.getUniqueGroupSubjectValues(groups)};
+        var results = {groups: groups};
+        // issue 22254: we only need to include the unique ptid list when displaying individual lines
+        if (includeIndividual) {
+            results.values = this.getUniqueGroupSubjectValues(groups);
+        }
+
+        return results;
     }
 });

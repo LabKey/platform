@@ -1362,7 +1362,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // get the subject info based on the selected chart layout
         if (config.chartSubjectSelection == 'groups')
-            config.subject = this.groupsSelector.getSubject();
+            config.subject = this.groupsSelector.getSubject(config.displayIndividual);
         else
             config.subject = this.participantSelector.getSubject();
 

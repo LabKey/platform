@@ -63,7 +63,7 @@ public class FreezerProExport
     private List<Pair<String, List<String>>> _columnFilters = new ArrayList<>();
     private Map<String, String> _columnMap = new CaseInsensitiveHashMap<>();
     private Set<String> _columnSet = new HashSet<>();
-    private static int RECORD_CHUNK_SIZE = 1000;
+    private static int RECORD_CHUNK_SIZE = 2000;
 
     public static final String BARCODE_FIELD_NAME = "barcode";
     public static final String SAMPLE_ID_FIELD_NAME = "uid";
@@ -173,31 +173,24 @@ public class FreezerProExport
         if (_searchFilterString != null)
         {
             data = getSampleData(client);
+            // get location information
+            Map<String, Map<String, Object>> locationMap = new HashMap<>();
+            getSampleLocationData(client, locationMap);
+
+            // merge the location information into the sample data
+            for (Map<String, Object> dataRow : data)
+            {
+                String sampleId = String.valueOf(dataRow.get(SAMPLE_ID_FIELD_NAME));
+
+                if (locationMap.containsKey(sampleId))
+                {
+                    dataRow.putAll(locationMap.get(sampleId));
+                }
+            }
         }
         else
         {
-            for (Freezer freezer : getFreezers(client))
-            {
-                if (_job.checkInterrupted())
-                    return null;
-
-                getSamplesForFreezer(client, freezer, data);
-            }
-        }
-
-        // get location information
-        Map<String, Map<String, Object>> locationMap = new HashMap<>();
-        getSampleLocationData(client, locationMap);
-
-        // merge the location information into the sample data
-        for (Map<String, Object> dataRow : data)
-        {
-            String sampleId = String.valueOf(dataRow.get(SAMPLE_ID_FIELD_NAME));
-
-            if (locationMap.containsKey(sampleId))
-            {
-                dataRow.putAll(locationMap.get(sampleId));
-            }
+            getVialSamples(client, data);
         }
 
         // if there are any column filters in the configuration, perform the filtering
@@ -206,6 +199,7 @@ public class FreezerProExport
         if (_getUserFields && !data.isEmpty())
         {
             _job.info("requesting any user defined fields and location information");
+            int count = 0;
             for (Map<String, Object> row : data)
             {
                 if (_job.checkInterrupted())
@@ -217,15 +211,10 @@ public class FreezerProExport
 
                     // get any user defined fields
                     getSampleUserData(client, id, row);
-
-                    // retrieve the sample location info
-/*
-                    if (row.containsKey("loc_id"))
+                    if ((++count % 1000) == 0)
                     {
-                        String locationId = String.valueOf(row.get("loc_id"));
-                        getSampleLocationData(client, locationId, row);
+                        _job.info("User defined fields = retrieved " + count + " records out of a total of " + data.size());
                     }
-*/
                 }
             }
         }
@@ -508,6 +497,49 @@ public class FreezerProExport
             {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    private void getVialSamples(HttpClient client, List<Map<String, Object>> rows)
+    {
+        try
+        {
+            int start = 0;
+            int limit = RECORD_CHUNK_SIZE;
+            boolean done = false;
+
+            while (!done)
+            {
+                GetVialSamplesCommand vialSamplesCommand = new GetVialSamplesCommand(this, _config.getBaseServerUrl(),
+                        _config.getUsername(), _config.getPassword(), start, limit);
+                FreezerProCommandResonse response = vialSamplesCommand.execute(client, _job);
+                if (response != null)
+                {
+                    if (response.getStatusCode() == HttpStatus.SC_OK)
+                    {
+                        for (Map<String, Object> row : response.loadData())
+                        {
+                            String location = String.valueOf(row.get("location"));
+                            if (location != null)
+                                parseLocation(location, row);
+
+                            rows.add(row);
+                        }
+                        start += limit;
+                        done = (response.getTotalRecords() == 0) || (start >= response.getTotalRecords());
+                        _job.info("Vial informatation = retrieved " + start + " records out of a total of " + response.getTotalRecords());
+                    }
+                    else
+                    {
+                        _job.error("request for vial data failed, status code: " + response.getStatusCode());
+                        throw new RuntimeException("request for vial data failed, status code: " + response.getStatusCode());
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
         }
     }
 

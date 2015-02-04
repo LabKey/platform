@@ -14,10 +14,12 @@ if(!LABKEY.vis) {
 LABKEY.vis.TimeChartHelper = new function() {
 
     var studyNounSingular = 'Participant';
+    var studyNounPlural = 'Participants';
     var studyNounColumnName = 'ParticipantId';
     if (LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject)
     {
         studyNounSingular = LABKEY.moduleContext.study.subject.nounSingular;
+        studyNounPlural = LABKEY.moduleContext.study.subject.nounPlural;
         studyNounColumnName = LABKEY.moduleContext.study.subject.columnName;
     }
 
@@ -909,6 +911,14 @@ LABKEY.vis.TimeChartHelper = new function() {
         if (!config.chartInfo.displayIndividual && !config.chartInfo.displayAggregate)
             throw "We expect to either be displaying individual series lines or aggregate data!";
 
+        // issue 22254: perf issues if we try to show individual lines for a group with a large number of subjects
+        var subjectLength = config.chartInfo.subject.values ? config.chartInfo.subject.values.length : 0;
+        if (config.chartInfo.displayIndividual && subjectLength > 10000)
+        {
+            config.chartInfo.displayIndividual = false;
+            config.chartInfo.subject.values = undefined;
+        }
+
         var chartData = {numberFormats: {}};
         var counter = config.chartInfo.displayIndividual && config.chartInfo.displayAggregate ? 2 : 1;
         var isDateBased = config.chartInfo.measures[0].time == "date";
@@ -1137,6 +1147,14 @@ LABKEY.vis.TimeChartHelper = new function() {
         if (!(config.displayIndividual || config.displayAggregate))
         {
             message = "Please select either \"Show Individual Lines\" or \"Show Mean\".";
+            return {success: false, message: message};
+        }
+
+        // issue 22254: perf issues if we try to show individual lines for a group with a large number of subjects
+        var subjectLength = config.subject.values ? config.subject.values.length : 0;
+        if (config.displayIndividual && subjectLength > 10000)
+        {
+            message = "Unable to display individual series lines for greater than 10,000 total " + studyNounPlural.toLowerCase() + ".";
             return {success: false, message: message};
         }
 
