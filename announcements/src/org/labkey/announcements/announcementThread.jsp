@@ -71,7 +71,7 @@ if (!bean.print && null != discussionSrc)
 <table style="table-layout:fixed;width:100%">
 <tr>
     <td class="labkey-announcement-title labkey-force-word-break" width="33%" align=left><span><%=h(announcementModel.getTitle())%></span></td>
-    <td class="labkey-announcement-title" width="33%" align=center><%=h(announcementModel.getCreatedByName(bean.includeGroups, user))%></td>
+    <td class="labkey-announcement-title" width="33%" align=center><%=text(announcementModel.getCreatedByName(bean.includeGroups, user, true))%></td>
     <td class="labkey-announcement-title" width="33%" align="right" nowrap><%
 
 if (false && !bean.print && null != discussionSrc)
@@ -161,7 +161,7 @@ if (0 < announcementModel.getResponses().size())
         for (AnnouncementModel r : announcementModel.getResponses())
         {%>
             <tr class="labkey-alternate-row">
-                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=h(r.getCreatedByName(bean.includeGroups, user) + " responded:")%></td>
+                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=text(r.getCreatedByName(bean.includeGroups, user, true) + " responded:")%></td>
                 <td class="labkey-bordered" style="border-left: 0 none" align="right"><%
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {

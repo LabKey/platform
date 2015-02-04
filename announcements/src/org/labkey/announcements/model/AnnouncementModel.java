@@ -30,7 +30,9 @@ import org.labkey.api.data.Transient;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserUrls;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -180,34 +182,37 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
     public String getCreatedByName(User currentUser)
     {
-        return getCreatedByName(false, currentUser);
+        return getCreatedByName(false, currentUser, false);
     }
 
-
-    public String getCreatedByName(boolean includeGroups, User currentUser)
+    public String getCreatedByName(boolean includeGroups, User currentUser, boolean htmlFormatted)
     {
-        return getDisplayName(getCreatedBy(), includeGroups, currentUser);
-    }
-
-
-    private String getDisplayName(int userId, boolean includeGroups, User currentUser)
-    {
-        String name = UserManager.getDisplayNameOrUserId(userId, currentUser);
+        String result = UserManager.getDisplayNameOrUserId(getCreatedBy(), currentUser);
 
         if (includeGroups)
         {
-            User user = UserManager.getUser(userId);
+            User user = UserManager.getUser(getCreatedBy());
 
             if (null != user)
             {
-                String groupList = SecurityManager.getGroupList(ContainerManager.getForId(getContainerId()), user);
+                Container container = ContainerManager.getForId(getContainerId());
+                String groupList = SecurityManager.getGroupList(container, user);
+
+                if (htmlFormatted)
+                {
+                    result = "<a href=\"" +
+                            PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, user.getUserId(), null)) +
+                            "\">" + PageFlowUtil.filter(result) + "</a>";
+                }
 
                 if (groupList.length() > 0)
-                    return name + " (" + groupList + ")";
+                    result += " (" + (htmlFormatted ? PageFlowUtil.filter(groupList) : groupList) + ")";
+
+                return result;
             }
         }
 
-        return name;
+        return htmlFormatted ? PageFlowUtil.filter(result) : result;
     }
 
 

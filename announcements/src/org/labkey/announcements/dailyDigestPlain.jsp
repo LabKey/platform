@@ -49,7 +49,7 @@ View this <%=text(conversationName)%> here:
 
 <%
         }
-%><%=text(ann.getCreatedByName(includeGroups, HttpView.currentContext().getUser()))%><% if (null == ann.getParent()) { %> created this <%=text(conversationName)%><% } else { %> responded<% } %> at <%=text(DateUtil.formatDateTime(c, ann.getCreated()))%><%
+%><%=text(ann.getCreatedByName(includeGroups, HttpView.currentContext().getUser(), false))%><% if (null == ann.getParent()) { %> created this <%=text(conversationName)%><% } else { %> responded<% } %> at <%=text(DateUtil.formatDateTime(c, ann.getCreated()))%><%
 
         int attachmentCount = ann.getAttachments().size();
 

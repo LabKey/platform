@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
@@ -194,7 +193,7 @@ for (AnnouncementModel a : bean.announcementModels)
         if (a.getResponseCount() > 0)
             out.print(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)"));
         %></td>
-        <td width="20%" align="center"><%=h(a.getCreatedByName(bean.includeGroups, user))%></td>
+        <td width="20%" align="center"><%=text(a.getCreatedByName(bean.includeGroups, user, true))%></td>
         <td width="40%" align="right" nowrap><%=formatDateTime(a.getCreated())%></td>
     </tr>
     <tr><td colspan=3 class="labkey-title-area-line"></td></tr>
