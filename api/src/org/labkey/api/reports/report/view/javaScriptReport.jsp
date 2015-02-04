@@ -17,6 +17,8 @@
 %>
 <%@ page import="org.labkey.api.reports.report.JavaScriptReport.JavaScriptReportBean" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.data.ContainerFilter" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JavaScriptReportBean bean = (JavaScriptReportBean)getModelBean();
@@ -36,14 +38,14 @@
                 if (bean.useGetDataApi)
                 {
             %>
-            var filterArray = <%=bean.model.getJSONFilters()%>;
-            var columnArray = <%=bean.model.getJSONColumns()%>;
+            var filterArray = <%=text(bean.model.getJSONFilters())%>;
+            var columnArray = <%=text(bean.model.getJSONColumns())%>;
 
             var getDataConfig = {
                 source: {
-                    containerFilter: <%=bean.model.getContainerFilter()%>,
-                    schemaName: LABKEY.SchemaKey.fromString('<%=bean.model.getSchemaName()%>'),
-                    queryName: '<%=bean.model.getQueryName()%>'
+                    containerFilter: <%=PageFlowUtil.jsString(bean.model.getContainerFilter().getType() == null ? ContainerFilter.Type.Current.name() : bean.model.getContainerFilter().getType().name())%>,
+                    schemaName: LABKEY.SchemaKey.fromString(<%=PageFlowUtil.jsString(bean.model.getSchemaName())%>),
+                    queryName: <%=PageFlowUtil.jsString(bean.model.getQueryName())%>
                 },
                 transforms: []
             };
