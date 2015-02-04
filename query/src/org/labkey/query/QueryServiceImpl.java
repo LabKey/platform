@@ -2435,6 +2435,34 @@ public class QueryServiceImpl extends QueryService
         return ServerManager.warmCube(user, container, schemaName, configId, cubeName);
     }
 
+    @Override
+    public void cubeDataChanged(Set<Container> containers)
+    {
+        for (Container c : containers)
+            cubeDataChanged(c);
+    }
+
+    @Override
+    public String warmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName)
+    {
+        StringBuilder result = new StringBuilder();
+        for (Container c : containers)
+            result.append(warmCube(user, c, schemaName, configId, cubeName)).append("\n");
+        return result.toString();
+    }
+
+    @Override
+    public String cubeDataChangedAndRewarmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName)
+    {
+        StringBuilder result = new StringBuilder();
+        for (Container c : containers)
+        {
+            cubeDataChanged(c);
+            result.append(warmCube(user, c, schemaName, configId, cubeName)).append("\n");
+        }
+        return result.toString();
+    }
+
     public static class TestCase extends Assert
     {
         ResultSet rs = null;

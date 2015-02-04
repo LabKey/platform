@@ -26,7 +26,6 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ShutdownListener;
@@ -76,7 +75,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
     protected void init()
     {
-        ServiceRegistry.get().registerService(DataIntegrationService.class, TransformManager.get());
+        DataIntegrationService.setInstance(TransformManager.get());
         addController("dataintegration", DataIntegrationController.class);
         TransformProperty.register();
     }
@@ -106,9 +105,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
         DataIntegrationQuerySchema.register(this);
         TransformDataType.register();
-        DataIntegrationService dis = ServiceRegistry.get(DataIntegrationService.class);
-        if (null != dis)
-            dis.registerStepProviders();
+        DataIntegrationService.get().registerStepProviders();
     }
 
 

@@ -214,7 +214,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         Container c = run != null ? run.getContainer() : protocol.getContainer();
         event.setContainerId(c.getId());
-        event.setProjectId(c.getProject().getId());
+        event.setProjectId(c.getProject() == null ? null : c.getProject().getId());
         event.setIntKey1(runGroup == null ? null : runGroup.getRowId());
 
         event.setKey1(protocol.getLSID());

@@ -67,6 +67,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.di.DataIntegrationQuerySchema;
@@ -120,7 +121,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * User: jeckels
  * Date: 2/20/13
  */
-public class TransformManager implements DataIntegrationService
+public class TransformManager implements DataIntegrationService.Interface
 {
     private static final TransformManager INSTANCE = new TransformManager();
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
@@ -746,6 +747,16 @@ public class TransformManager implements DataIntegrationService
     public StepProvider getStepProvider(String providerName)
     {
         return _providers.get(providerName);
+    }
+
+    @Nullable
+    @Override
+    public Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException
+    {
+        ScheduledPipelineJobDescriptor etl = getDescriptor(transformId);
+        if (etl == null)
+            throw new NotFoundException(transformId);
+        return runNowPipeline(etl, c, u, new LinkedHashMap<ParameterDescription, Object>());
     }
 
     //

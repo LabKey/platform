@@ -25,9 +25,11 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -310,7 +312,7 @@ public class DataIntegrationController extends SpringActionController
             }
 
             Integer jobId = TransformManager.get().runNowPipeline(etl, getContainer(), getUser(), params);
-            ActionURL pipelineURL = jobId==null ? null : new ActionURL("pipeline-status", "details", getContainer()).addParameter("rowId", jobId);
+            ActionURL pipelineURL = jobId==null ? null : PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(getContainer(), jobId);
             String status = null==pipelineURL ? "No work" : "Queued";
 
             JSONObject ret = new JSONObject();
