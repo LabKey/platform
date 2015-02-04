@@ -15,11 +15,11 @@
  */
 package org.labkey.api.exp;
 
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.exp.property.Type;
-import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.FacetingBehaviorType;

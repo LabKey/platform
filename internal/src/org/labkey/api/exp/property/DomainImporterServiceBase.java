@@ -20,7 +20,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterService;
-import org.labkey.api.gwt.client.ui.domain.ImportException;
+import org.labkey.api.gwt.client.ui.domain.GWTImportException;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -63,7 +63,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
         _importFile = (null == fileHolder ? null : fileHolder.getFile());
     }
 
-    public List<InferencedColumn> inferenceColumns() throws ImportException
+    public List<InferencedColumn> inferenceColumns() throws GWTImportException
     {
         try (DataLoader loader = getDataLoader())
         {
@@ -72,10 +72,10 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
     }
 
     @NotNull
-    private File getImportFile() throws ImportException
+    private File getImportFile() throws GWTImportException
     {
         if (null == _importFile)
-            throw new ImportException("No import file uploaded");
+            throw new GWTImportException("No import file uploaded");
 
         return _importFile;
     }
@@ -92,14 +92,14 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
             if (null != session)
                 session.removeAttribute("org.labkey.domain.tempFile");
         }
-        catch (ImportException ie)
+        catch (GWTImportException ie)
         {
             // Nothing to do here -- we don't care if we couldn't find the file
         }
     }
 
     @NotNull
-    protected DataLoader getDataLoader() throws ImportException
+    protected DataLoader getDataLoader() throws GWTImportException
     {
         try
         {
@@ -107,7 +107,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
         }
         catch (IOException e)
         {
-            throw new ImportException(e.getMessage());
+            throw new GWTImportException(e.getMessage());
         }
     }
 
@@ -121,7 +121,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
         _numSampleRows = numSampleRows;
     }
 
-    private List<InferencedColumn> getColumns(DataLoader loader) throws ImportException
+    private List<InferencedColumn> getColumns(DataLoader loader) throws GWTImportException
     {
         List<InferencedColumn> result = new ArrayList<>();
 
@@ -175,7 +175,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
         }
         catch (IOException e)
         {
-            throw new ImportException(e.getMessage());
+            throw new GWTImportException(e.getMessage());
         }
 
         return result;
@@ -186,5 +186,5 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
         return DomainUtil.getDomainDescriptor(getUser(), typeURI, getContainer());
     }
 
-    public abstract ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException;
+    public abstract ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws GWTImportException;
 }

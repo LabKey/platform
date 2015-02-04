@@ -28,10 +28,10 @@ import java.util.Map;
  */
 public interface DomainImporterService extends LookupService
 {
-    public List<InferencedColumn> inferenceColumns() throws ImportException;
+    public List<InferencedColumn> inferenceColumns() throws GWTImportException;
     public List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> dd);
     public GWTDomain getDomainDescriptor(String typeURI);
-    public ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException;
-    public ImportStatus getStatus(String jobId) throws ImportException;
-    public String cancelImport(String jobId) throws ImportException;
+    public ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws GWTImportException;
+    public ImportStatus getStatus(String jobId) throws GWTImportException;
+    public String cancelImport(String jobId) throws GWTImportException;
 }

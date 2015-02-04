@@ -21,14 +21,14 @@ import com.google.gwt.user.client.rpc.SerializableException;
  * User: jgarms
  * Date: Nov 4, 2008
  */
-public class ImportException extends SerializableException
+public class GWTImportException extends SerializableException
 {
-    public ImportException()
+    public GWTImportException()
     {
         super();
     }
 
-    public ImportException(String message)
+    public GWTImportException(String message)
     {
         super(message);
     }
