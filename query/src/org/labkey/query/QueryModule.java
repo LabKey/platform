@@ -25,6 +25,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.DefaultModule;
@@ -249,6 +250,8 @@ public class QueryModule extends DefaultModule
         AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());
+        DailyMessageDigest.getInstance().addProvider(ReportAndDatasetChangeDigestProvider.get());
+        // Note: DailyMessageDigest timer is initialized by the AnnouncementModule
 
         CacheManager.addListener(new ServerManager.CacheListener());
 

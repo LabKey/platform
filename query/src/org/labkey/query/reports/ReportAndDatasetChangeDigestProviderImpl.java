@@ -129,6 +129,7 @@ public class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDatasetCh
                                 categories = new TreeSet<>();
                                 for (ViewCategory viewCategory : ViewCategoryManager.getInstance().getAllCategories(container))
                                     categories.add(viewCategory.getRowId());
+                                categories.add(ViewCategoryManager.UNCATEGORIZED_ROWID);
                             }
                             for (Integer category : categories)
                             {
