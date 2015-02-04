@@ -139,6 +139,22 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         _displayName = displayName;
     }
 
+    /**
+     * Spec 22327 Implement consistent autocomplete behavior, completion values,
+     * and redisplay of names across the application.
+     *
+     */
+    public String getAutocompleteName(@Nullable Container c, @Nullable User currentUser)
+    {
+        if (c != null && currentUser != null && SecurityManager.canSeeEmailAddresses(c, currentUser))
+        {
+            return getEmail() + " (" + getDisplayName(currentUser) + ")";
+        }
+        else
+            return getDisplayName(currentUser);
+    }
+
+
     public int[] getGroups()
     {
         if (_groups == null)

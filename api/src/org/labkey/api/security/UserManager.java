@@ -631,7 +631,7 @@ public class UserManager
         for (User user : users)
         {
             final String fullName = StringUtils.defaultString(user.getFirstName()) + " " + StringUtils.defaultString(user.getLastName());
-            String completionValue = user.getDisplayName(currentUser);
+            String completionValue = user.getAutocompleteName(c, currentUser);
 
             // Output the most human-friendly names possible for the pick list, and append the email addresses if the user has permission to see them
 
