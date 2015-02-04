@@ -331,10 +331,6 @@ if (typeof LABKEY == "undefined")
             _requestedCssFiles[fullPath] = true;
         };
 
-//        var alreadyPresentCSS = function(href) {
-//            return document.querySelectorAll('link[rel="stylesheet"][href="' + href + '"]').length > 0;
-//        };
-
         var requestedCssFiles = function()
         {
             var ret = (arguments.length > 0 && _requestedCssFiles[arguments[0]]) ? true : false;
@@ -354,38 +350,44 @@ if (typeof LABKEY == "undefined")
             if (configs.devMode)
             {
                 var scripts = [
+                    // clientapi_core.lib.xml
                     "clientapi/core/Utils.js",
-                    "clientapi/dom/Utils.js",
-                    "clientapi/core/Ajax.js",
                     "clientapi/core/ActionURL.js",
+                    "clientapi/core/Ajax.js",
                     "clientapi/core/Assay.js",
-                    "clientapi/dom/Chart.js",
                     "clientapi/core/Domain.js",
                     "clientapi/core/Experiment.js",
                     "clientapi/core/FieldKey.js",
                     "clientapi/core/Filter.js",
-                    "clientapi/core/GetData.js",
-                    "clientapi/dom/GetData.js",
-                    "clientapi/dom/NavTrail.js",
-                    "clientapi/core/Query.js",
-                    "clientapi/dom/Query.js",
-                    "clientapi/dom/WebPart.js",
-                    "clientapi/core/Security.js",
-                    "clientapi/core/ParticipantGroup.js",
-                    "clientapi/core/Specimen.js",
-                    "clientapi/core/MultiRequest.js",
-                    "clientapi/dom/Form.js",
                     "clientapi/core/Message.js",
+                    "clientapi/core/MultiRequest.js",
+                    "clientapi/core/ParticipantGroup.js",
                     "clientapi/core/Pipeline.js",
+                    "clientapi/core/Specimen.js",
+                    "clientapi/core/Query.js",
+                    "clientapi/core/GetData.js",
+                    "clientapi/core/Report.js",
+                    "clientapi/core/Security.js",
+                    "clientapi/core/Visualization.js",
+
+                    // clientapi.lib.xml
+                    "clientapi/dom/Utils.js",
+                    "clientapi/dom/Tour.js",
+                    "clientapi/dom/Chart.js",
+                    "clientapi/dom/Form.js",
+                    "clientapi/dom/NavTrail.js",
                     "clientapi/dom/Portal.js",
-                    "clientapi/core/Visualization.js"
+                    "clientapi/dom/Query.js",
+                    "clientapi/dom/Security.js",
+                    "clientapi/dom/GetData.js",
+                    "clientapi/dom/WebPart.js"
                 ];
                 requiresScript(scripts, immediate, coreDone);
             }
             else
             {
                 requiresExt4Sandbox(immediate, function() {
-                    requiresScript('clientapi.min.js', immediate, coreDone);
+                    requiresScript("clientapi.min.js", immediate, coreDone);
                 });
             }
         };
@@ -414,18 +416,26 @@ if (typeof LABKEY == "undefined")
         {
             if (arguments.length < 1) immediate = true;
 
-            var scripts = ['clientapi/ext3.min.js']; // production
+            var scripts;
 
             if (configs.devMode)
             {
                 scripts = [
+                    // groupTabPanel/groupTab.lib.xml
+                    "groupTabPanel/GroupTabPanel.js",
+                    "groupTabPanel/GroupTab.js",
+
+                    // GuidedTip
+                    "GuidedTip.js",
+
+                    // clientapi/ext3.lib.xml
                     "clientapi/ext3/DataRegion.js",
                     "clientapi/ext3/EditorGridPanel.js",
                     "clientapi/ext3/ExtendedJsonReader.js",
                     "clientapi/ext3/FieldKey.js",
                     "clientapi/ext3/FileSystem.js",
-                    "clientapi/ext3/FormPanel.js",
                     "clientapi/ext3/FilterDialog.js",
+                    "clientapi/ext3/FormPanel.js",
                     "clientapi/ext3/GridView.js",
                     "clientapi/ext3/HoverPopup.js",
                     "clientapi/ext3/LongTextEditor.js",
@@ -436,15 +446,18 @@ if (typeof LABKEY == "undefined")
                     "clientapi/ext3/Utils.js"
                 ];
             }
+            else
+            {
+                scripts = [
+                    "groupTabPanel/groupTab.min.js",
+                    "GuidedTip.js",
+                    "clientapi/ext3.min.js"
+                ];
+            }
 
-            LABKEY.requiresCss('GuidedTip.css');
-            scripts.push('GuidedTip.js');
-
-            // groupTab.lib.xml
             LABKEY.requiresCss('groupTabPanel/GroupTab.css');
             LABKEY.requiresCss('groupTabPanel/UngroupedTab.css');
-            scripts.push('groupTabPanel/GroupTabPanel.js');
-            scripts.push('groupTabPanel/GroupTab.js');
+            LABKEY.requiresCss('GuidedTip.css');
 
             if (!window.Ext)
             {
@@ -464,34 +477,65 @@ if (typeof LABKEY == "undefined")
         {
             if (arguments.length < 1) immediate = true;
 
-            //for now we assume this is only dev mode
-            requiresExt4Sandbox(immediate);
+            var scripts;
+            if (configs.devMode)
+            {
+                scripts = [
+                    // clientapi/ext4.lib.xml
+                    "clientapi/ext4/Util.js",
+                    "clientapi/ext4/data/Reader.js",
+                    "clientapi/ext4/data/Proxy.js",
+                    "clientapi/ext4/data/Store.js",
 
-            var scripts = [
-                "clientapi/ext4/Util.js",
-                "clientapi/ext4/data/Reader.js",
-                "clientapi/ext4/data/Proxy.js",
-                "clientapi/ext4/data/Store.js",
-                "extWidgets/LabkeyCombo.js",
-                "extWidgets/ExtComponents.js",
-                "extWidgets/Ext4FormPanel.js",
-                "extWidgets/Ext4GridPanel.js",
-                "extWidgets/DetailsPanel.js"
-            ];
+                    // Ext4ClientApi.lib.xml
+                    "extWidgets/LabkeyCombo.js",
+                    "extWidgets/ExtComponents.js",
+                    "extWidgets/Ext4FormPanel.js",
+                    "extWidgets/Ext4GridPanel.js",
+                    "extWidgets/DetailsPanel.js"
+                ]
+            }
+            else
+            {
+                scripts = [
+                    "clientapi/ext4.min.js",
+                    "Ext4ClientApi.min.js"
+                ];
+            }
 
-            requiresScript(scripts, immediate, callback, scope, true);
+            if (!window.Ext4)
+            {
+                requiresExt4Sandbox(immediate, function()
+                {
+                    requiresScript(scripts, immediate, callback, scope, true);
+                });
+            }
+            else
+            {
+                requiresScript(scripts, immediate, callback, scope, true);
+            }
         };
 
         var requiresExt4Sandbox = function(immediate, callback, scope)
         {
-            if (arguments.length < 1) immediate = true;
+            if (!window.Ext4)
+            {
+                if (arguments.length < 1) immediate = true;
 
-            var scripts = [
-                configs.extJsRoot_42 + "/ext-all-sandbox" + (configs.devMode ?  "-debug.js" : ".js"),
-                configs.extJsRoot_42 + "/ext-patches.js"
-            ];
+                var scripts = [
+                    configs.extJsRoot_42 + "/ext-all-sandbox" + (configs.devMode ?  "-debug.js" : ".js"),
+                    configs.extJsRoot_42 + "/ext-patches.js"
+                ];
 
-            requiresScript(scripts, immediate, callback, scope);
+                requiresScript(scripts, immediate, callback, scope);
+            }
+            else
+            {
+                if (typeof callback == "function")
+                {
+                    callback.call(scope || this);
+                }
+            }
         };
 
         var requiresScript = function(file, immediate, callback, scope, inOrder)

@@ -3,43 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-/**
- * Helper class to render the impersonation dialogs to the page
- */
-LABKEY.Security.Impersonation = new function() {
-
-    function display(componentName)
-    {
-        Ext4.onReady(function() {
-            var cmp = Ext4.create(componentName);
-            /*
-             cmp.on("afterlayout", function(cmp){
-             cmp.center();
-             });
-             */
-            cmp.show();
-        });
-    }
-
-    return {
-        showImpersonateUser: function()
-        {
-            display('LABKEY.Security.ImpersonateUser');
-        },
-
-        showImpersonateGroup: function()
-        {
-            display('LABKEY.Security.ImpersonateGroup');
-        },
-
-        showImpersonateRole: function()
-        {
-            display('LABKEY.Security.ImpersonateRoles');
-        }
-    };
-};
-
 Ext4.define('LABKEY.Security.ImpersonateUser', {
     extend: 'Ext.window.Window',
     modal: true,
@@ -58,7 +21,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
         },{
             text: 'Cancel',
             scope: this,
-            handler: this.handleCancel
+            handler: this.close
         }];
 
         this.items = [this.getPanel()];
@@ -132,21 +95,20 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
         });
     },
 
-    handleImpersonateUser: function(){
+    handleImpersonateUser: function() {
         if (!this.userCombo.isValid())
             return;
 
-        var userId = this.userCombo.getValue();
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('user', 'impersonateUser'),
             method: 'POST',
             params: {
-                userId: userId,
+                userId: this.userCombo.getValue(),
                 returnUrl: window.location
             },
             scope: this,
-            success: function(response){
-                location = location;
+            success: function(response) {
+                window.location = window.location; // avoid form resubmit
             },
             failure: function(response){
                 var jsonResp = LABKEY.Utils.decode(response.responseText);
@@ -157,10 +119,6 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                 }
             }
         });
-    },
-
-    handleCancel: function(){
-        this.close();
     }
 });
 
@@ -182,7 +140,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
         },{
             text: 'Cancel',
             scope: this,
-            handler: this.handleCancel
+            handler: this.close
         }];
 
         this.items = [this.getPanel()];
@@ -279,10 +237,6 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
                 }
             }
         });
-    },
-
-    handleCancel: function(){
-        this.close();
     }
 });
 
@@ -306,7 +260,7 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
         this.buttons = ['->', this.impersonateButton, {
             text: 'Cancel',
             scope: this,
-            handler: this.handleCancel
+            handler: this.close
         }];
 
         this.items = [this.getPanel()];
@@ -429,9 +383,5 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
                 }
             }
         });
-    },
-
-    handleCancel: function(){
-        this.close();
     }
 });

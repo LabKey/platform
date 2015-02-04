@@ -1,4 +1,5 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <!-- If you modify this file in any way, confirm the changes are reflected in labkey.js -->
     <library compileInProductionMode="true">
         <script path="clientapi/ext3/DataRegion.js"/>
         <script path="clientapi/ext3/EditorGridPanel.js"/>

@@ -205,7 +205,7 @@ LABKEY.Utils = new function()
             return LABKEY.useMDYDateParsing ? DATEALTFORMATS_MonthDay : DATEALTFORMATS_DayMonth;
         },
 
-        displayAjaxErrorResponse: function(responseObj, exceptionObj, showExceptionClass, msgPrefix) {
+        displayAjaxErrorResponse: function() {
             console.warn('displayAjaxErrorRepsonse: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implemntation');
         },
 
@@ -250,7 +250,7 @@ LABKEY.Utils = new function()
          * For Ext 3.4.1 see LABKEY.ext.Utils.resizeToViewport
          * For Ext 4.2.1 see LABKEY.ext4.Util.resizeToViewport
          */
-        resizeToViewport : function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
+        resizeToViewport : function()
         {
             console.warn('LABKEY.Utils.resizeToViewport has been migrated. See JavaScript API documentation for details.');
         },
@@ -282,7 +282,7 @@ LABKEY.Utils = new function()
                 if (!json)
                 {
                     //ensure response is JSON before trying to decode
-                    if(response && response.getResponseHeader && response.getResponseHeader('Content-Type')
+                    if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                             && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0){
                         try {
                             json = LABKEY.Utils.decode(response.responseText);
@@ -296,7 +296,7 @@ LABKEY.Utils = new function()
                     response.responseJSON = json;
                 }
 
-                if(!json && isErrorCallback)
+                if (!json && isErrorCallback)
                 {
                     json = {};
                 }
@@ -307,9 +307,9 @@ LABKEY.Utils = new function()
                     json.exception = (response && response.statusText ? response.statusText : "Communication failure.");
                 }
 
-                if(fn)
+                if (fn)
                     fn.call(scope || this, json, response, options);
-                else if(isErrorCallback && response.status != 0)
+                else if (isErrorCallback && response.status != 0)
                 {
                     // Don't show an error dialog if the user cancelled the request in the browser, like navigating
                     // to another page
@@ -338,23 +338,23 @@ LABKEY.Utils = new function()
          */
         applyTranslated : function(target, source, translationMap, applyOthers, applyFunctions)
         {
-            if(undefined === target)
+            if (undefined === target)
                 target = {};
-            if(undefined === applyOthers)
+            if (undefined === applyOthers)
                 applyOthers = true;
             if (undefined == applyFunctions && applyOthers)
                 applyFunctions = true;
             var targetPropName;
-            for(var prop in source)
+            for (var prop in source)
             {
                 //special case: Ext adds a "constructor" property to every object, which we don't want to apply
                 if (prop == "constructor" || LABKEY.Utils.isFunction(prop))
                     continue;
                 
                 targetPropName = translationMap[prop];
-                if(targetPropName)
+                if (targetPropName)
                     target[translationMap[prop]] = source[prop];
-                else if(undefined === targetPropName && applyOthers && (applyFunctions || !LABKEY.Utils.isFunction(source[prop])))
+                else if (undefined === targetPropName && applyOthers && (applyFunctions || !LABKEY.Utils.isFunction(source[prop])))
                     target[prop] = source[prop];
             }
         },
@@ -383,8 +383,7 @@ LABKEY.Utils = new function()
             var path = "/";
             if (pageonly)
                 path = location.pathname.substring(0, location.pathname.lastIndexOf('/'));
-            var cookieString = name + "=" + value + expires + "; path=" + path;
-            document.cookie = cookieString;
+            document.cookie = name + "=" + value + expires + "; path=" + path;
         },
 
         /**
@@ -398,7 +397,7 @@ LABKEY.Utils = new function()
         getCookie : function(name, defaultvalue) {
             var nameEQ = name + "=";
             var ca = document.cookie.split(';');
-            for(var i=0; i < ca.length; i++)
+            for (var i=0; i < ca.length; i++)
             {
                 var c = ca[i];
                 while (c.charAt(0) == ' ')
@@ -532,13 +531,16 @@ LABKEY.Utils = new function()
             config.maxTests = config.maxTests || 1000;
             try
             {
-                if(config.testCallback.apply(config.scope || this, config.testArguments || []))
+                if (config.testCallback.apply(config.scope || this, config.testArguments || []))
                     LABKEY.Utils.getOnSuccess(config).apply(config.scope || this, config.successArguments || []);
                 else
                 {
-                    if (config.maxTests <= 0) {
+                    if (config.maxTests <= 0)
+                    {
                         throw "Maximum number of tests reached!";
-                    } else {
+                    }
+                    else
+                    {
                         --config.maxTests;
                         LABKEY.Utils.onTrue.defer(10, this, [config]);
                     }
@@ -546,18 +548,14 @@ LABKEY.Utils = new function()
             }
             catch(e)
             {
-                if (LABKEY.Utils.getOnFailure(config)) {
+                if (LABKEY.Utils.getOnFailure(config))
+                {
                     LABKEY.Utils.getOnFailure(config).apply(config.scope || this, [e,config.errorArguments]);
                 }
             }
         },
 
-//        escapeId: function(id) {
-//            // Note: Does not work for \ (e.g. "Some\Id" parses as "SomeId" which should be "Some\\\Id" I think)
-//            return id.replace(/[!"#$%&'()*+,.\/:;<=>?@\[\\\]^`{|}~]/g, '\\\\$&');
-//        },
-
-        ensureBoxVisible: function() {
+        ensureBoxVisible : function() {
             console.warn('LABKEY.Utils.ensureBoxVisible has been migrated to the appropriate Ext scope. Consider LABKEY.ext.Utils.ensureBoxVisible or LABKEY.ext4.Util.ensureBoxVisible');
         },
         /**
@@ -697,11 +695,11 @@ LABKEY.Utils = new function()
         /**
          * Returns true if the passed object is empty (ie. {}) and false if not.
          *
-         * @param {Object} object The object to test
+         * @param {Object} ob The object to test
          * @return {Boolean} the result of the test
         */
         isEmptyObj : function(ob){
-           for(var i in ob){ return false;}
+           for (var i in ob){ return false;}
            return true;
         },
 
@@ -725,7 +723,7 @@ LABKEY.Utils = new function()
          * @return {String} The padded string
         **/
         padString : function(input, length, padChar){
-            if(typeof input != 'string')
+            if (typeof input != 'string')
                 input = input.toString();
 
             var pd = '';
@@ -744,11 +742,8 @@ LABKEY.Utils = new function()
          * @param {String/Number} b The second item to test
          * @return {boolean} True if arguments are case-insensitive equal, false if not
         */
-        caseInsensitiveEquals: function(a, b){
-            a = String(a);
-            b = String(b);
-
-            return a.toLowerCase() == b.toLowerCase();
+        caseInsensitiveEquals: function(a, b) {
+            return String(a).toLowerCase() == String(b).toLowerCase();
         },
 
         /**
@@ -779,11 +774,11 @@ LABKEY.Utils = new function()
         /**
          * Decodes (parses) a JSON string to an object.
          *
-         * @param {String} json The JSON string
+         * @param {String} data The JSON string
          * @return {Object} The resulting object
          */
-        decode : function( data ) {
-            return JSON.parse( data + "" );
+        decode : function(data) {
+            return JSON.parse(data + "");
         },
 
         /**
@@ -792,7 +787,7 @@ LABKEY.Utils = new function()
          * @param {Object} data the variable to encode.
          * @return {String} The JSON string.
          */
-        encode : function( data ) {
+        encode : function(data) {
             return JSON.stringify(data);
         },
 
