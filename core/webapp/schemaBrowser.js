@@ -2229,10 +2229,10 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
             };
 
             // TODO: check Issue 15674: if more than 100 queries are present, we include a placeholder node saying 'More..', which lacks queryName
-            if (schemaNode.length > 0)
-                Ext4.each(schemaNode[0].childNodes, comparison);
+            if (schemaNode.childNodes.length > 0)
+                Ext4.each(schemaNode.childNodes[0].childNodes, comparison);
             if (!queryNode && schemaNode.length > 1)
-                Ext4.each(schemaNode[1].childNodes, comparison);
+                Ext4.each(schemaNode.childNodes[1].childNodes, comparison);
 
             if (!queryNode)
             {
