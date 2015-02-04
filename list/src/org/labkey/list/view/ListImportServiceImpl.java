@@ -24,7 +24,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.ui.domain.ImportException;
+import org.labkey.api.gwt.client.ui.domain.GWTImportException;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -54,7 +54,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         super(context);
     }
 
-    public ImportStatus importData(GWTDomain gwtDomain, Map<String, String> mappedColumnNames) throws ImportException
+    public ImportStatus importData(GWTDomain gwtDomain, Map<String, String> mappedColumnNames) throws GWTImportException
     {
         Domain domain = PropertyService.get().getDomain(gwtDomain.getDomainId());
         if (domain == null)
@@ -152,7 +152,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
             _progress = progress;
         }
 
-        public List<String> call() throws ImportException
+        public List<String> call() throws GWTImportException
         {
             List<String> messages = new ArrayList<>();
             BatchValidationException errors = new BatchValidationException();
@@ -170,7 +170,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
             }
             catch (IOException ioe)
             {
-                throw new ImportException(ioe.getMessage());
+                throw new GWTImportException(ioe.getMessage());
             }
             finally
             {
@@ -283,7 +283,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         }
     }
 
-    public String cancelImport(String jobId) throws ImportException
+    public String cancelImport(String jobId) throws GWTImportException
     {
         ImportContext context = getContext(jobId);
         Container c;
@@ -308,7 +308,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
             }
             catch (Exception e)
             {
-                throw new ImportException(e.getMessage());
+                throw new GWTImportException(e.getMessage());
             }
             finally
             {

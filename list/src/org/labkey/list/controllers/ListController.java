@@ -35,6 +35,7 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.announcements.DiscussionService;
@@ -1166,6 +1167,10 @@ public class ListController extends SpringActionController
                     catch (InvalidFileException e)
                     {
                         errors.reject(ERROR_MSG, "Invalid list archive");
+                    }
+                    catch (ImportException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
                     }
                 }
             }

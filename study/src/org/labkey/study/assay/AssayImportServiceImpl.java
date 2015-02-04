@@ -34,7 +34,7 @@ import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.ui.domain.ImportException;
+import org.labkey.api.gwt.client.ui.domain.GWTImportException;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
 import org.labkey.api.iterator.CloseableIterator;
@@ -55,7 +55,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -96,7 +95,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public List<InferencedColumn> getInferenceColumns(String path, String file) throws ImportException
+    public List<InferencedColumn> getInferenceColumns(String path, String file) throws GWTImportException
     {
         List<File> files = ImportAction.getFiles(getContainer(), path, new String[]{file});
 
@@ -105,11 +104,11 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
             _importFile = files.get(0);
             return inferenceColumns();
         }
-        throw new ImportException("Failed trying to infer columns for the file: " + file);
+        throw new GWTImportException("Failed trying to infer columns for the file: " + file);
     }
 
     @Override
-    public Boolean validateColumns(List<InferencedColumn> columns, String path, String file) throws ImportException
+    public Boolean validateColumns(List<InferencedColumn> columns, String path, String file) throws GWTImportException
     {
         List<File> files = ImportAction.getFiles(getContainer(), path, new String[]{file});
 
@@ -157,7 +156,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         }
         catch (Exception e)
         {
-            throw new ImportException(e.getMessage());
+            throw new GWTImportException(e.getMessage());
         }
         finally
         {
@@ -167,7 +166,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public ImportStatus importData(GWTDomain gwtDomain, Map<String, String> mappedColumnNames) throws ImportException
+    public ImportStatus importData(GWTDomain gwtDomain, Map<String, String> mappedColumnNames) throws GWTImportException
     {
         ImportStatus status = new ImportStatus();
 
@@ -201,7 +200,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
                 }
                 catch (ChangePropertyDescriptorException e)
                 {
-                    throw new ImportException(e.getMessage());
+                    throw new GWTImportException(e.getMessage());
                 }
             }
 
@@ -214,19 +213,19 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public ImportStatus getStatus(String jobId) throws ImportException
+    public ImportStatus getStatus(String jobId) throws GWTImportException
     {
-        throw new ImportException("Shouldn't be calling getStatus() -- assays import synchronously");
+        throw new GWTImportException("Shouldn't be calling getStatus() -- assays import synchronously");
     }
 
     @Override
-    public String cancelImport(String jobId) throws ImportException
+    public String cancelImport(String jobId) throws GWTImportException
     {
         return null;
     }
 
     @Override
-    public GWTProtocol createProtocol(String providerName, String assayName, String containerID) throws ImportException
+    public GWTProtocol createProtocol(String providerName, String assayName, String containerID) throws GWTImportException
     {
         ViewContext context = new ViewContext(getViewContext());
 
@@ -246,12 +245,12 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         }
         catch (Exception e)
         {
-            throw new ImportException(e.getMessage());
+            throw new GWTImportException(e.getMessage());
         }
     }
 
     @Override
-    public String getDomainImportURI(GWTProtocol gwtProtocol) throws ImportException
+    public String getDomainImportURI(GWTProtocol gwtProtocol) throws GWTImportException
     {
         try {
             AssayProvider provider = AssayService.get().getProvider(gwtProtocol.getProviderName());
@@ -268,12 +267,12 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         }
         catch (Exception e)
         {
-            throw new ImportException(e.getMessage());
+            throw new GWTImportException(e.getMessage());
         }
     }
 
     @Override
-    public String getImportURL(GWTProtocol gwtProtocol, String directoryPath, String file) throws ImportException
+    public String getImportURL(GWTProtocol gwtProtocol, String directoryPath, String file) throws GWTImportException
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(gwtProtocol.getProtocolId());
         List<File> files = ImportAction.getFiles(getContainer(), directoryPath, new String[]{file});
@@ -287,7 +286,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public String getDesignerURL(GWTProtocol gwtProtocol, String directoryPath, String file) throws ImportException
+    public String getDesignerURL(GWTProtocol gwtProtocol, String directoryPath, String file) throws GWTImportException
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(gwtProtocol.getProtocolId());
         List<File> files = ImportAction.getFiles(getContainer(), directoryPath, new String[]{file});
@@ -302,7 +301,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         return null;
     }
 
-    public String getTypeURI(String providerName, String assayName) throws ImportException
+    public String getTypeURI(String providerName, String assayName) throws GWTImportException
     {
         ViewContext context = getViewContext();
 
@@ -327,7 +326,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         }
         catch (Exception e)
         {
-            throw new ImportException(e.getMessage());
+            throw new GWTImportException(e.getMessage());
         }
     }
 
@@ -363,7 +362,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         protocol.setObjectProperties(props);
     }
 
-    public String getImportURL(String providerName, String directoryPath, String assayName) throws ImportException
+    public String getImportURL(String providerName, String directoryPath, String assayName) throws GWTImportException
     {
         List<ExpProtocol> assays = AssayService.get().getAssayProtocols(getContainer());
         ExpProtocol assayProtocol = null;
@@ -385,7 +384,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public List<GWTPropertyDescriptor> getBaseColumns(String providerName) throws ImportException
+    public List<GWTPropertyDescriptor> getBaseColumns(String providerName) throws GWTImportException
     {
         AssayProvider provider = AssayService.get().getProvider(providerName);
         List<GWTPropertyDescriptor> baseColumns = new ArrayList<>();
@@ -410,7 +409,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public List<Map<String, String>> getAssayLocations() throws ImportException
+    public List<Map<String, String>> getAssayLocations() throws GWTImportException
     {
         List<Map<String, String>> locations = new ArrayList<>();
         boolean isDefault = true;

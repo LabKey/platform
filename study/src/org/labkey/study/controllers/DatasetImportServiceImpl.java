@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.ui.domain.ImportException;
+import org.labkey.api.gwt.client.ui.domain.GWTImportException;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.UnexpectedException;
@@ -49,7 +49,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         super(context);
     }
 
-    public ImportStatus importData(GWTDomain domain, Map<String, String> columnMap) throws ImportException
+    public ImportStatus importData(GWTDomain domain, Map<String, String> columnMap) throws GWTImportException
     {
         Container container = getContainer();
         StudyImpl study = StudyManager.getInstance().getStudy(container);
@@ -138,9 +138,9 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
     }
 
 
-    public ImportStatus getStatus(String jobId) throws ImportException
+    public ImportStatus getStatus(String jobId) throws GWTImportException
     {
-        throw new ImportException("Shouldn't be calling getStatus() -- datasets import synchronously");
+        throw new GWTImportException("Shouldn't be calling getStatus() -- datasets import synchronously");
     }
 
     public String cancelImport(String jobId)
