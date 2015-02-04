@@ -38,6 +38,8 @@
                 _display(_tours[_queue[_next]], 0);
                 _next++;
             }
+            else
+                resetRegistration();
         };
 
         var _display = function (config, step)
@@ -47,6 +49,9 @@
                 hopscotch.listen("end", function() {
                     // 22390: Hopscotch doesn't actually end the tours until after this call
                     setTimeout(_autoRun, 1);
+                });
+                hopscotch.listen("close", function() {
+                    resetRegistration();
                 });
                 hopscotch.startTour(config, step || 0);
                 markSeen(config.id);
@@ -259,6 +264,12 @@
             {
                 hopscotch.endTour(true,false);
             });
+        };
+
+        var resetRegistration = function()
+        {
+            _tours = {};
+            _mode = {};;
         };
 
         /**
