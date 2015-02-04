@@ -1585,7 +1585,7 @@ public class ExperimentController extends SpringActionController
                 {
                     // Try to write the exception back to the caller if we haven't already flushed the buffer
                     ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
-                    writer.write(e);
+                    writer.writeAndClose(e);
                 }
                 catch (IllegalStateException ise)
                 {
