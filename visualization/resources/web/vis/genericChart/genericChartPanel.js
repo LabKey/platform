@@ -22,7 +22,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             border  : false,
             layout    : 'border',
             editable  : false,
-            minWidth  : 800
+            minWidth  : 800,
+            dataLimit : 5000
         });
 
         // delayed task to redraw the chart
@@ -1066,18 +1067,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             columns     : this.savedColumns,        // TODO, qwp does not support passing in a column list
             parameters  : this.parameters,
             frame       : 'none',
-            showBorders : false,
-            removeableFilters       : userFilters,
-            removeableSort          : userSort,
-            showSurroundingBorder   : false,
-            showDetailsColumn       : false,
-            showUpdateColumn        : false,
-            showRecordSelectors     : false,
-            quickChartDisabled      : true,
-            showPagination          : true,
+            removeableFilters     : userFilters,
+            removeableSort        : userSort,
+            showSurroundingBorder : false,
+            showPagination        : false,
+            maxRows               : this.dataLimit,
             buttonBar   : {
                 includeStandardButton: false,
-                items: [LABKEY.QueryWebPart.standardButtons.pageSize]
+                items: [LABKEY.QueryWebPart.standardButtons.exportRows]
             },
             listeners : {
                 render : function() {
@@ -1121,14 +1118,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     // the configuration can be used to make a selectRows request
     getQueryConfig : function(serialize) {
         var dataRegion = LABKEY.DataRegions[this.panelDataRegionName];
+
         var config = {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
             viewName    : this.viewName,
             dataRegionName: this.dataRegionName,
             queryLabel  : this.queryLabel,
-            parameters : this.parameters,
-            maxRows     : 5000, // TODO: should only limit rows for scatter plot, not box plot
+            parameters  : this.parameters,
+            maxRows     : this.dataLimit, // TODO: should only limit rows for scatter plot, not box plot
             requiredVersion : 12.1,
             method: 'POST'
         };
@@ -1789,6 +1787,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if (customRenderType.generateScales) {
                 scales = customRenderType.generateScales(this, chartConfig, scales);
             }
+        }
+
+        if (this.chartData.rows.length == this.dataLimit) {
+            this.addWarningText("The data limit for plotting has been reached. Consider filtering your data.");
         }
 
         this.validateGroupingMeasures(chartConfig.measures);
