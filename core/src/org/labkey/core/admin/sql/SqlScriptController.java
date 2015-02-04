@@ -933,6 +933,9 @@ public class SqlScriptController extends SpringActionController
                 unclaimedFiles.remove("naturalize_install.sql");      // From the LDK module
             }
 
+            // specifically allow db scripts to have README files
+            unclaimedFiles.remove("README.txt");
+
             if (!unclaimedFiles.isEmpty())
             {
                 html.append("<br><b>WARNING: Unrecognized files ").append(unclaimedFiles.toString()).append("</b>");
