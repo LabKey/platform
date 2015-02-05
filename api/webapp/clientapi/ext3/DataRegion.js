@@ -538,17 +538,21 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             {
                 // On success, update the current selectedCount on this DataRegion and fire the 'selectchange' event
                 var self = this;
-                function updateSelected(data, response, options) {
-                    this.selectionModified = true;
+                var updateSelected = function(data)
+                {
+                    self.selectionModified = true;
                     self.selectedCount = data.count;
                     self.onSelectChange();
-                }
+                };
 
                 // Chain updateSelected with the user-provided success callback
                 var success = LABKEY.Utils.getOnSuccess(config);
-                if (success) {
+                if (success)
+                {
                     success = updateSelected.createSequence(success, config.scope);
-                } else {
+                }
+                else
+                {
                     success = updateSelected;
                 }
 

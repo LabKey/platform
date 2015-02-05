@@ -83,6 +83,27 @@
         return queryParts.join("");
     };
 
+    var _chainSelectionCountCallback = function(region, config) {
+        // On success, update the current selectedCount on this DataRegion and fire the 'selectchange' event
+        var updateSelected = function(data) {
+            region.selectionModified = true;
+            region.selectedCount = data.count;
+            _onSelectionChange(region);
+        };
+
+        // Chain updateSelected with the user-provided success callback
+        var success = LABKEY.Utils.getOnSuccess(config);
+        if (success) {
+            success = updateSelected.createSequence(success, config.scope);
+        }
+        else {
+            success = updateSelected;
+        }
+
+        config.success = success;
+        return config;
+    };
+
     var _changeFilter = function(region, newParamValPairs, newQueryString) {
 
         var event = $.Event('beforefilterchange');
@@ -101,7 +122,7 @@
             return;
         }
 
-        var params = _getParameters(region, newQueryString, [region.name + '.offset']);
+        var params = _getParameters(region, newQueryString, [region.name + OFFSET_PREFIX]);
         region.setSearchString.call(region, region.name, _buildQueryString(region, params));
     };
 
@@ -201,6 +222,7 @@
         var msgArea = region.msgbox;
         if (msgArea) {
             if (region.showRecordSelectors && parts['selection']) {
+                _buttonBind(region, '.select-all', region.selectAll);
                 _buttonBind(region, '.select-none', region.clearSelected);
                 _buttonBind(region, '.show-all', region.showAll);
                 _buttonBind(region, '.show-selected', region.showSelected);
@@ -277,6 +299,10 @@
 
     var _showSelectMessage = function(region, msg) {
         if (region.showRecordSelectors) {
+            if (region.totalRows && region.totalRows != region.selectedCount) {
+                msg += "&nbsp;<span class='labkey-button select-all'>Select All " + region.totalRows + " Rows</span>";
+            }
+
             msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
             var showOpts = [];
             if (region.showRows != "all")
@@ -285,7 +311,7 @@
                 showOpts.push("<span class='labkey-button show-selected'>Show Selected</span>");
             if (region.showRows != "unselected")
                 showOpts.push("<span class='labkey-button show-unselected'>Show Unselected</span>");
-            msg += "&nbsp;" + showOpts.join(" ");
+            msg += "&nbsp;&nbsp;" + showOpts.join(" ");
         }
 
         // add the record selector message, the link handlers will get added after render in _onRenderMessageArea
@@ -316,16 +342,36 @@
 
     var _updateRequiresSelectionButtons = function(region, selectedCount) {
 
-        var me = region;
+        // update the 'select all on page' checkbox state
+        _getAllRowSelectors(region).each(function() {
+            if (region.isPageSelected.call(region)) {
+                this.checked = true;
+                this.indeterminate = false;
+            }
+            else if (region.selectedCount > 0) {
+                // There are rows selected, but the are not visible on this page.
+                this.checked = false;
+                this.indeterminate = true;
+            }
+            else {
+                this.checked = false;
+                this.indeterminate = false;
+            }
+        });
 
-        // 10566: for javascript perf on IE stash the requires selection buttons
-        if (!me._requiresSelectionButtons) {
-            // escape ', ", and \
-            var escaped = me.name.replace(/('|"|\\)/g, "\\$1");
-            me._requiresSelectionButtons = $("a[labkey-requires-selection='" + escaped + "']");
+        // If all rows have been selected (but not all rows are visible), show selection message
+        if (region.totalRows && region.selectedCount == region.totalRows && !region.complete) {
+            _showSelectMessage(region, 'All <span class="labkey-strong">' + region.totalRows + '</span> rows selected.');
         }
 
-        me._requiresSelectionButtons.each(function() {
+        // 10566: for javascript perf on IE stash the requires selection buttons
+        if (!region._requiresSelectionButtons) {
+            // escape ', ", and \
+            var escaped = region.name.replace(/('|"|\\)/g, "\\$1");
+            region._requiresSelectionButtons = $("a[labkey-requires-selection='" + escaped + "']");
+        }
+
+        region._requiresSelectionButtons.each(function() {
             var el = $(this);
 
             // handle min-count
@@ -343,12 +389,10 @@
                 maxCount = parseInt(maxCount.value);
             }
 
-            if (minCount <= selectedCount && (!maxCount || maxCount >= selectedCount))
-            {
+            if (minCount <= selectedCount && (!maxCount || maxCount >= selectedCount)) {
                 el.addClass('labkey-button').removeClass('labkey-disabled-button');
             }
-            else
-            {
+            else {
                 el.addClass('labkey-disabled-button').removeClass('labkey-button');
             }
         });
@@ -365,9 +409,9 @@
          */
         var defaults = {
             /**
-             * Name of the DataRegion. Should be unique within a given page. Read-only. This will also be used as the id.
+             * All rows visible on the curreng page.
              */
-            name: name,
+            complete: false,
 
             /**
              * Id of the DataRegion. Same as name property.
@@ -375,19 +419,14 @@
             id: name,
 
             /**
-             * Schema name of the query to which this DataRegion is bound. Read-only.
+             * Maximum number of rows to be displayed. 0 if the count is not limited. Read-only.
              */
-            schemaName: '',
+            maxRows: 0,
 
             /**
-             * Name of the query to which this DataRegion is bound. Read-only.
+             * Name of the DataRegion. Should be unique within a given page. Read-only. This will also be used as the id.
              */
-            queryName: '',
-
-            /**
-             * Name of the custom view to which this DataRegion is bound, may be blank. Read-only.
-             */
-            viewName: null,
+            name: name,
 
             /**
              * Starting offset of the rows to be displayed. 0 if at the beginning of the results. Read-only.
@@ -395,11 +434,21 @@
             offset: 0,
 
             /**
-             * Maximum number of rows to be displayed. 0 if the count is not limited. Read-only.
+             * Name of the query to which this DataRegion is bound. Read-only.
              */
-            maxRows: 0,
+            queryName: '',
 
             requestURL: undefined,
+
+            /**
+             * Schema name of the query to which this DataRegion is bound. Read-only.
+             */
+            schemaName: '',
+
+            /**
+             * URL to use when selecting all rows in the grid. May be null. Read-only.
+             */
+            selectAllURL: undefined,
 
             selectedCount: 0,
 
@@ -410,7 +459,12 @@
              */
             showRows: "paginated",
 
-            totalRows: undefined // totalRows isn't available when showing all rows.
+            totalRows: undefined, // totalRows isn't available when showing all rows.
+
+            /**
+             * Name of the custom view to which this DataRegion is bound, may be blank. Read-only.
+             */
+            viewName: null
         };
 
         var settings = $.extend({}, defaults, config);
@@ -467,9 +521,21 @@
         this.form = $(baseSel);
         //this.table = $('dataregion_' + me.name);
 
+        // derived DataRegion's may not include the form id
+        //if (!this.form && this.table)
+        //{
+        //    var el = this.table.dom;
+        //    do
+        //    {
+        //        el = el.parentNode;
+        //    }
+        //    while (el != null && el.tagName != "FORM");
+        //    if (el) this.form = el;
+        //}
+
+        this._initMessaging();
         this._initSelection();
         this._initPaging();
-        this._initMessaging();
     };
 
     /**
@@ -513,7 +579,7 @@
             return;
         }
 
-        _removeParameters(this, [ALL_FILTERS_SKIP_PREFIX, ".offset"]);
+        _removeParameters(this, [ALL_FILTERS_SKIP_PREFIX, OFFSET_PREFIX]);
     };
 
     /**
@@ -534,7 +600,7 @@
                 return;
             }
 
-            _removeParameters(this, ["." + columnName + "~", ".offset"]);
+            _removeParameters(this, ["." + columnName + "~", OFFSET_PREFIX]);
         }
     };
 
@@ -661,15 +727,15 @@
 
         if (this.form) {
             if (this.showRecordSelectors) {
-                if (this.isPageSelected()) {
-                    _getAllRowSelectors(this).each(function() { this.checked = true; });
-                }
                 _onSelectionChange(this);
             }
         }
 
         // Bind Events
-        _getAllRowSelectors(this).on('click', function() { me.selectPage.call(me, this.checked); });
+        _getAllRowSelectors(this).on('click', function(evt) {
+            evt.stopPropagation();
+            me.selectPage.call(me, this.checked);
+        });
         _getRowSelectors(this).on('click', function() { me.selectRow.call(me, this); });
     };
 
@@ -811,6 +877,37 @@
         return i > 0;
     };
 
+    Proto.selectAll = function(config) {
+        if (this.selectionKey) {
+            config = config || {};
+            config.scope = config.scope || this;
+
+            // Either use the selectAllURL provided or create a query config
+            // object that can be used with the generic query/selectAll.api action.
+            if (this.selectAllURL) {
+                config.url = this.selectAllURL;
+            }
+            else {
+                config = LABKEY.Utils.apply(config, this.getQueryConfig());
+            }
+
+            config = _chainSelectionCountCallback(this, config);
+
+            LABKEY.DataRegion2.selectAll(config);
+
+            if (this.showRows === "selected") {
+                // keep "SHOW_ROWS_PREFIX=selected" parameter
+                window.location.reload(true);
+            }
+            else if (this.showRows === "unselected") {
+                _removeParameters(this, [SHOW_ROWS_PREFIX]);
+            }
+            else {
+                _toggleAllRows(this, true);
+            }
+        }
+    };
+
     /**
      * @see LABKEY.DataRegion#clearSelected
      */
@@ -835,19 +932,20 @@
                 ids: ids,
                 checked: _check,
                 success: function(data) {
-                    if (data && data.count > 0) {
+                    if (data && data.count > 0 && !this.complete) {
                         var count = data.count;
                         var msg;
                         if (me.totalRows) {
                             if (count == me.totalRows) {
-                                msg = "Selected all " + this.totalRows + " rows.";
+                                msg = 'All <span class="labkey-strong">' + this.totalRows + '</span> rows selected.';
                             }
                             else {
-                                msg = "Selected " + count + " of " + this.totalRows + " rows.";
+                                msg = 'Selected <span class="labkey-strong">' + count + '</span> of ' + this.totalRows + ' rows.';
                             }
                         }
                         else {
-                            msg = "Selected " + count + " rows.";
+                            // totalRows isn't available when showing all rows.
+                            msg = 'Selected <span class="labkey-strong">' + count + '</span> rows.';
                         }
                         _showSelectMessage(me, msg);
                     }
@@ -871,14 +969,7 @@
             checked: el.checked
         });
 
-        var toggle = _getAllRowSelectors(this);
-        if (el.checked) {
-            if (this.isPageSelected()) {
-                toggle.each(function() { this.checked = true; });
-            }
-        }
-        else {
-            toggle.each(function() { this.checked = false; });
+        if (!el.checked) {
             this.removeMessage('selection');
         }
     };
@@ -917,21 +1008,7 @@
         config.selectionKey = this.selectionKey;
         config.scope = config.scope || me;
 
-        // Update the current selectedCount and fire 'selectchange' event
-        var updateSelected = function(data) {
-            me.selectionModified = true;
-            me.selectedCount = data.count;
-            _onSelectionChange(me);
-        };
-
-        // Chain updateSelected with the user-provided success callback
-        var success = LABKEY.Utils.getOnSuccess(config);
-        if ($.isFunction(success)) {
-            success = updateSelected.createSequence(success, config.scope);
-        } else {
-            success = updateSelected;
-        }
-        config.success = success;
+        config = _chainSelectionCountCallback(this, config);
 
         var failure = LABKEY.Utils.getOnFailure(config);
         if ($.isFunction(failure)) {
@@ -1394,6 +1471,39 @@
     };
 
     /**
+     * Returns a query config object suitable for passing into LABKEY.Query.selectRows() or other LABKEY.Query APIs.
+     * @returns {Object} Object representing the query configuration that generated this grid.
+     */
+    Proto.getQueryConfig = function() {
+        var config = {
+            dataRegionName: this.name,
+            dataRegionSelectionKey: this.selectionKey,
+            schemaName: this.schemaName,
+            // TODO: handle this.sql ?
+            queryName: this.queryName,
+            viewName: this.viewName,
+            filters: this.getUserFilterArray() || [],
+            sort: this.getParameter(this.name + ".sort"),
+            // NOTE: The parameterized query values from QWP are included
+            parameters: this.getParameters(false),
+            containerFilter: this.containerFilter
+        };
+
+        // NOTE: need to account for non-removeable filters and sort in a QWP
+        if (this.qwp) {
+            if (this.qwp.sort) {
+                config.sort = config.sort + "," + this.qwp.sort;
+            }
+
+            if (this.qwp.filters && this.qwp.filters.length) {
+                config.filters = config.filters.concat(this.qwp.filters);
+            }
+        }
+
+        return config;
+    };
+
+    /**
      * Hide the ribbon panel. If visible the ribbon panel will be hidden.
      */
     Proto.hideButtonPanel = function() {
@@ -1409,6 +1519,51 @@
     };
 
     Proto.on = function(evt, callback, scope) { $(this).bind(evt, $.proxy(callback, scope)); };
+
+    LABKEY.DataRegion2.selectAll = function(config) {
+        var params = {};
+        if (!config.url) {
+            // DataRegion doesn't have selectAllURL so generate url and query parameters manually
+            config.url = LABKEY.ActionURL.buildURL('query', 'selectAll.api', config.containerPath);
+
+            config.dataRegionName = config.dataRegionName || "query";
+
+            params = LABKEY.Query.buildQueryParams(
+                    config.schemaName,
+                    config.queryName,
+                    config.filters,
+                    null,
+                    config.dataRegionName
+            );
+
+            if (config.viewName)
+                params[config.dataRegionName + '.viewName'] = config.viewName;
+
+            if (config.containerFilter)
+                params.containerFilter = config.containerFilter;
+
+            if (config.selectionKey)
+                params[config.dataRegionName + '.selectionKey'] = config.selectionKey;
+
+            $.each(config.parameters, function(propName, value) {
+                params[config.dataRegionName + PARAM_PREFIX + propName] = value;
+            });
+
+            if (config.ignoreFilter) {
+                params[config.dataRegionName + '.ignoreFilter'] = true;
+            }
+
+            // NOTE: ignore maxRows, showRows, and offset
+        }
+
+        LABKEY.Ajax.request({
+            url: config.url,
+            method: 'POST',
+            params: params,
+            success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+        });
+    };
 
     /**
      * Static method to add or remove items from the selection for a given {@link #selectionKey}.
