@@ -43,7 +43,9 @@
 
             var getDataConfig = {
                 source: {
-                    containerFilter: <%=PageFlowUtil.jsString(bean.model.getContainerFilter().getType() == null ? ContainerFilter.Type.Current.name() : bean.model.getContainerFilter().getType().name())%>,
+                    <% if (bean.model.getContainerFilter() != null && bean.model.getContainerFilter().getType() != null) { %>
+                        containerFilter: <%=PageFlowUtil.jsString(bean.model.getContainerFilter().getType().name())%>,
+                    <% } %>
                     schemaName: LABKEY.SchemaKey.fromString(<%=PageFlowUtil.jsString(bean.model.getSchemaName())%>),
                     queryName: <%=PageFlowUtil.jsString(bean.model.getQueryName())%>
                 },
