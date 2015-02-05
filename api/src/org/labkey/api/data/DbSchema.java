@@ -374,7 +374,7 @@ public class DbSchema
         return ti;
     }
 
-    SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
+    protected SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
     {
         SingleTableMetaDataLoader loader = new SingleTableMetaDataLoader(getScope(), getName(), tableName);
 

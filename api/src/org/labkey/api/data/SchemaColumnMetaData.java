@@ -53,7 +53,7 @@ public class SchemaColumnMetaData
     private String _titleColumn = null;
     private boolean _hasDefaultTitleColumn = true;
 
-    SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
+    protected SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
     {
         this(tinfo, true);
     }
@@ -123,7 +123,7 @@ public class SchemaColumnMetaData
                     colInfo = getColumn(xmlColumn.getColumnName());
                     if (null != colInfo)
                     {
-                        colInfo.loadFromXml(xmlColumn, true);
+                        loadFromXml(xmlColumn, colInfo, true);
                         continue;
                     }
                 }
@@ -133,7 +133,7 @@ public class SchemaColumnMetaData
                 else
                     colInfo = new ColumnInfo(xmlColumn.getColumnName(), tinfo);
                 colInfo.setNullable(true);
-                colInfo.loadFromXml(xmlColumn, false);
+                loadFromXml(xmlColumn, colInfo, false);
                 addColumn(colInfo);
             }
         }
@@ -145,7 +145,7 @@ public class SchemaColumnMetaData
             if (column != null && getColumn(wrappedColumnXml.getColumnName()) == null)
             {
                 ColumnInfo wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
-                wrappedColumn.loadFromXml(wrappedColumnXml, false);
+                loadFromXml(wrappedColumnXml, wrappedColumn, false);
                 addColumn(wrappedColumn);
             }
         }
@@ -170,6 +170,11 @@ public class SchemaColumnMetaData
                 }
             }
         }
+    }
+
+    protected void loadFromXml(ColumnType xmlColumn, ColumnInfo colInfo, boolean merge)
+    {
+        colInfo.loadFromXml(xmlColumn, merge);
     }
 
     private void loadFromMetaData(DatabaseMetaData dbmd, final SchemaTableInfo ti) throws SQLException
@@ -234,7 +239,7 @@ public class SchemaColumnMetaData
         return Collections.unmodifiableList(_columns);
     }
 
-    void addColumn(ColumnInfo column)
+    protected void addColumn(ColumnInfo column)
     {
         assert getColumn(column.getName()) == null : "Duplicate column " + column.getName() + " on table " + _tinfo.getName();
         _columns.add(column);

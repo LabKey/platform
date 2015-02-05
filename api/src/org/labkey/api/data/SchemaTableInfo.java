@@ -397,7 +397,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             {
                 try
                 {
-                    _columnMetaData = new SchemaColumnMetaData(this, _autoLoadMetaData);
+                    _columnMetaData = createSchemaColumnMetaData();
                 }
                 catch (SQLException e)
                 {
@@ -415,8 +415,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         }
     }
 
+    protected SchemaColumnMetaData createSchemaColumnMetaData() throws SQLException
+    {
+        return new SchemaColumnMetaData(this, _autoLoadMetaData);
+    }
 
-     public CustomizerType getJavaCustomizer()
+
+    public CustomizerType getJavaCustomizer()
      {
          if (_xmlTable == null || !_xmlTable.isSetJavaCustomizer())
          {
