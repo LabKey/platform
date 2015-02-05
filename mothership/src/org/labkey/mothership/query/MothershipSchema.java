@@ -16,6 +16,7 @@
 
 package org.labkey.mothership.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -40,6 +41,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
@@ -211,7 +214,14 @@ public class MothershipSchema extends UserSchema
 
     public TableInfo createServerInstallationTable()
     {
-        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoServerInstallation(), this);
+        FilteredTable<MothershipSchema> result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoServerInstallation(), this)
+        {
+            @Override
+            public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+            {
+                return getContainer().hasPermission(user, perm);
+            }
+        };
         result.wrapAllColumns(true);
 
         ActionURL url = new ActionURL(MothershipController.ShowInstallationDetailAction.class, getContainer());
