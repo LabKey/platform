@@ -1603,8 +1603,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             int[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Integer.class));
             deleteProtocolByRowIds(c, user, orphanedProtocolIds);
 
-            AssayService.get().clearProtocolCache();
-            getExpSchema().getScope().addCommitTask(new Runnable()
+            transaction.addCommitTask(new Runnable()
             {
                 @Override
                 public void run()
@@ -1613,7 +1612,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     // gets repopulated by another thread before then
                     AssayService.get().clearProtocolCache();
                 }
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
+            }, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.IMMEDIATE);
 
             transaction.commit();
         }

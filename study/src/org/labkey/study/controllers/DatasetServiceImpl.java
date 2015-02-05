@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.OntologyManager;
@@ -45,6 +46,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import gwt.client.org.labkey.study.dataset.client.DatasetService;
 import gwt.client.org.labkey.study.dataset.client.model.GWTDataset;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
@@ -171,9 +173,19 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         }
         update.setFields(updatedProps);
 
-        errors = updateDomainDescriptor(orig, update);
-        if (errors.isEmpty())
-            errors = updateDataset(ds, orig.getDomainURI());
+        try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+        {
+            errors = updateDomainDescriptor(orig, update);
+            if (errors.isEmpty())
+            {
+                errors = updateDataset(ds, orig.getDomainURI());
+                if (errors.isEmpty())
+                {
+                    transaction.commit();
+                }
+            }
+        }
+
 
         return errors;
     }

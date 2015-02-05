@@ -20,6 +20,7 @@ import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -685,7 +686,7 @@ public class StudyManager
     }
 
 
-    public boolean updateDatasetDefinition(User user, DatasetDefinition datasetDefinition, List<String> errors)
+    public boolean updateDatasetDefinition(User user, final DatasetDefinition datasetDefinition, List<String> errors)
     {
         if (datasetDefinition.isShared())
         {
@@ -743,7 +744,7 @@ public class StudyManager
 
                 try
                 {
-                    new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateKeySQL);
+                    new SqlExecutor(StudySchema.getInstance().getSchema()).setLogLevel(Level.OFF).execute(updateKeySQL);
 
                     // Now update the LSID column. Note - this needs to be the same as DatasetImportHelper.getURI()
                     SQLFragment updateLSIDSQL = new SQLFragment("UPDATE " + tableName + " SET lsid = ");
@@ -776,11 +777,16 @@ public class StudyManager
                 QueryService.get().fireQueryChanged(user, datasetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
                         QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
             }
+            transaction.addCommitTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // And post-commit to make sure that no other threads have reloaded the cache in the meantime
+                    uncache(datasetDefinition);
+                }
+            }, CommitTaskOption.POSTCOMMIT, CommitTaskOption.IMMEDIATE);
             transaction.commit();
-        }
-        finally
-        {
-            uncache(datasetDefinition);
         }
         indexDataset(null, datasetDefinition);
         return true;

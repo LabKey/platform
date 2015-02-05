@@ -3449,7 +3449,7 @@ public class QueryController extends SpringActionController
     public static final DbScope.Transaction NO_OP_TRANSACTION = new DbScope.Transaction()
     {
         @Override
-        public <T extends Runnable> T addCommitTask(T runnable, DbScope.CommitTaskOption taskOption)
+        public <T extends Runnable> T addCommitTask(T runnable, DbScope.CommitTaskOption... taskOption)
         {
             runnable.run();
             return runnable;
