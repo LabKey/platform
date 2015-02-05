@@ -889,18 +889,19 @@ public class DbScope
      *
      * @return  the task that was inserted or the existing class that will be run instead
      */
-    public <T extends Runnable> T addCommitTask(T task, CommitTaskOption taskOption)
+    public <T extends Runnable> T addCommitTask(T task, CommitTaskOption... taskOptions)
     {
         Transaction t = getCurrentTransaction();
 
         if (null == t)
         {
+            // No active transaction, so run the task immediately
             task.run();
             return task;
         }
         else
         {
-            return t.addCommitTask(task, taskOption);
+            return t.addCommitTask(task, taskOptions);
         }
     }
 
@@ -1334,15 +1335,17 @@ public class DbScope
         /** Run inside of the same transaction, immediately before committing it */
         PRECOMMIT,
         /** Run after the main transaction has been committed, separate from the transaction itself */
-        POSTCOMMIT
+        POSTCOMMIT,
+        /** Run immediately. Useful for cache-clearing tasks, which often want to fire right away, as well as after the commit */
+        IMMEDIATE
     }
 
     public interface Transaction extends AutoCloseable
     {
         /*
-         * @return  the task that was inserted or the existing class that will be run instead
+         * @return  the task that was inserted or the existing object (equal to the runnable passed in) that will be run instead
          */
-        public <T extends Runnable> T addCommitTask(T runnable, CommitTaskOption taskOption);
+        public <T extends Runnable> T addCommitTask(T runnable, CommitTaskOption... taskOption);
         public Connection getConnection();
         public void close();
         public void commit();
@@ -1398,33 +1401,41 @@ public class DbScope
             _caches.put(cache, map);
         }
 
-        public <T extends Runnable> T addCommitTask(T task, CommitTaskOption taskOption)
+        public <T extends Runnable> T addCommitTask(T task, CommitTaskOption... taskOptions)
         {
-            boolean added;
+            boolean added = false;
             T addedObj = task;
-            switch (taskOption)
+
+            for (CommitTaskOption taskOption : taskOptions)
             {
-                case PRECOMMIT:
-                    added = _preCommitTasks.add(task);
-                    for(Runnable r : _preCommitTasks)
-                        if( r.equals(task))
-                        {
-                            addedObj = (T) r;
-                            break;
-                        }
-                    break;
-                case POSTCOMMIT:
-                    added = _postCommitTasks.add(task);
-                    for(Runnable r : _postCommitTasks)
-                        if( r.equals(task))
-                        {
-                            addedObj = (T) r;
-                            break;
-                        }
-                    break;
-                default:
-                    throw new IllegalArgumentException("Option '" + taskOption + "' handled by addCommitTask");
+                switch (taskOption)
+                {
+                    case PRECOMMIT:
+                        added |= _preCommitTasks.add(task);
+                        for(Runnable r : _preCommitTasks)
+                            if( r.equals(task))
+                            {
+                                addedObj = (T) r;
+                                break;
+                            }
+                        break;
+                    case POSTCOMMIT:
+                        added |= _postCommitTasks.add(task);
+                        for(Runnable r : _postCommitTasks)
+                            if( r.equals(task))
+                            {
+                                addedObj = (T) r;
+                                break;
+                            }
+                        break;
+                    case IMMEDIATE:
+                        task.run();
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Option '" + taskOption + "' handled by addCommitTask");
+                }
             }
+
             if (!added)
             {
                 LOG.debug("Skipping duplicate runnable: " + task.toString());

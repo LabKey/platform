@@ -316,7 +316,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     }
                     ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, null, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId());
 
-                    scope.addCommitTask( new Runnable()
+                    transaction.addCommitTask( new Runnable()
                     {
                         @Override
                         public void run()

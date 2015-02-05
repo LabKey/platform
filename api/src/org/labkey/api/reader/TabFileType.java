@@ -57,9 +57,8 @@ class TabFileType extends FileType
 
         int noFieldsCount = 0;
         int fieldLen = -1;
-        for (int i = 0; i < lines.length; i++)
+        for (String line : lines)
         {
-            String line = lines[i];
             if (line.length() == 0 || line.charAt(0) == TabLoader.COMMENT_CHAR)
                 continue;
 
@@ -96,10 +95,7 @@ class TabFileType extends FileType
 
         // TODO: Allow single column tsv files
         // Reject if no lines using the delimiter were found.
-        if (fieldLen == -1)
-            return false;
-
-        return true;
+        return fieldLen != -1;
     }
 
     /*package*/ boolean isHeader(@NotNull String cs)
