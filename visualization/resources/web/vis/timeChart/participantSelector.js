@@ -49,13 +49,13 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
             }],
             buttonAlign: 'left',
             buttons: [{
-                text: 'Yes', height: 20, scope: this,
+                text: 'Yes', id: 'switchToGroupsYes', height: 20, scope: this,
                 handler: function(){
                     this.fireEvent('switchToGroupLayout');
                     this.switchToGroupPanel.hide();
                 }
             },{
-                text: 'No', height: 20, scope: this,
+                text: 'No', id: 'switchToGroupsNo', height: 20, scope: this,
                 handler: function(){ this.switchToGroupPanel.hide(); }
             }]
         });
