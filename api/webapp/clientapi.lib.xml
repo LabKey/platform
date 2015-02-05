@@ -13,7 +13,7 @@
         <script path="clientapi/dom/GetData.js"/> <!-- TODO: REQUIRES FIX: Depends on LABKEY.QueryWebPart -->
         <script path="clientapi/dom/WebPart.js"/>
 
-        <!--<script path="clientapi/dom/DataRegion.js"/>-->
+        <script path="clientapi/dom/DataRegion.js"/>
     </library>
     <dependencies>
         <dependency path="clientapi_core"/>

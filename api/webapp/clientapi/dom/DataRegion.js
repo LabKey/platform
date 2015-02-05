@@ -421,6 +421,14 @@
             }
         }
 
+        if (!this.messages) {
+            this.messages = {};
+        }
+
+        // Only while this is an experimental feature
+        var adminLink = LABKEY.Utils.textLink({text: 'Experimental Features', href: LABKEY.ActionURL.buildURL('admin', 'experimentalFeatures', '/')});
+        this.messages['experimental'] = '<span class="labkey-strong">Warning!</span>&nbsp;<span>This is an experimental Data Region. ' + adminLink + '</span>';
+
         /**
          * Non-configurable Options
          */

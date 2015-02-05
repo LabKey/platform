@@ -120,7 +120,7 @@ public abstract class AbstractDataRegion extends DisplayElement
 
     protected void renderHeaderScript(RenderContext ctx, Writer writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
     {
-        if (DataRegion.USE_MIGRATE_DATAREGION)
+        if (DataRegion.useExperimentalDataRegion())
         {
             JSONObject dataRegionJSON = getDataRegionJSON(ctx, true);
 

@@ -38,6 +38,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
@@ -132,7 +133,12 @@ public class DataRegion extends AbstractDataRegion
     protected static final String TOGGLE_CHECKBOX_NAME = ".toggle";
 
     // This is a flag that is used to distinguish code paths while migrating the client Data Region
-    public static boolean USE_MIGRATE_DATAREGION = false;
+    public static final String EXPERIMENTAL_MIGRATE_DATA_REGION = "migrate-data-region";
+
+    public static boolean useExperimentalDataRegion()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_MIGRATE_DATA_REGION);
+    }
 
     private class GroupTable
     {
@@ -1238,10 +1244,9 @@ public class DataRegion extends AbstractDataRegion
 
             out.write("<input type=checkbox title='Select/unselect all on current page' name='");
             out.write(TOGGLE_CHECKBOX_NAME);
-            if (USE_MIGRATE_DATAREGION)
-                out.write("'");
-            else
-                out.write("' onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked); event.stopPropagation(); event.cancelBubble = true; return false;'");
+            out.write("' ");
+            if (!DataRegion.useExperimentalDataRegion())
+                out.write("onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked); event.stopPropagation(); event.cancelBubble = true; return false;'");
             out.write(">");
 
             // TODO: move inline style to stylesheet
@@ -1331,7 +1336,7 @@ public class DataRegion extends AbstractDataRegion
                 out.write("\">");
 
                 out.write("<input type=checkbox title='Select/unselect all on current page' ");
-                if (!USE_MIGRATE_DATAREGION)
+                if (!DataRegion.useExperimentalDataRegion())
                     out.write(" onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked);'");
                 out.write(">");
 
@@ -1625,7 +1630,7 @@ public class DataRegion extends AbstractDataRegion
 
         if (!enabled)
             out.write(" DISABLED");
-        if (!USE_MIGRATE_DATAREGION)
+        if (!DataRegion.useExperimentalDataRegion())
             out.write(" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectRow(this);\"");
         out.write(">");
         renderExtraRecordSelectorContent(ctx, out);
