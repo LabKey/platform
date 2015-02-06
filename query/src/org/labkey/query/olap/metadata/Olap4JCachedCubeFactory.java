@@ -218,7 +218,7 @@ public class Olap4JCachedCubeFactory
         }
         else
         {
-            boolean isLeaf = l.getDepth() == l.getHierarchy().getLevels().size();
+            boolean isLeaf = l.getDepth() == l.getHierarchy().getLevels().size()-1;
             for (Member m : l.getMembers())
             {
                 ret.members.add(new _Member(cube, ret, parentLevel, m, isLeaf));
