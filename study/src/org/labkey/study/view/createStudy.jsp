@@ -19,8 +19,6 @@
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.study.StudyModule" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -131,6 +129,19 @@
             <td>&nbsp;</td>
             <td align="left"><p><br>Enable sharing of dataset definitions created in this project-level study.
                 If this option is enabled, all studies in this project will see the datasets defined in the root folder of the project.</p></td>
+        </tr>
+        <tr><td>&nbsp;</td></tr>
+        <tr>
+            <th style="text-align:left;width:18em">Shared Visits</th>
+            <td align="left">
+                <input type="radio" name="shareVisits" value="false" checked> disabled
+                <input type="radio" name="shareVisits" value="true"> enabled
+            </td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td align="left"><p><br>Enable sharing of visit definitions created in this project-level study.
+                If this option is enabled, all studies in this project will see the visits defined in the root folder of the project.</p></td>
         </tr>
 <%}%>
 

@@ -1378,7 +1378,10 @@ public class StudyController extends BaseStudyController
             study.setAllowReqLocSal(form.isAllowReqLocSal());
             study.setAllowReqLocEndpoint(form.isAllowReqLocEndpoint());
             if (c.isProject())
+            {
                 study.setShareDatasetDefinitions(form.isShareDatasets());
+                study.setShareVisitDefinitions(form.isShareVisits());
+            }
 
             study = StudyManager.getInstance().createStudy(user, study);
             RequestabilityManager.getInstance().setDefaultRules(c, user);
@@ -1584,8 +1587,17 @@ public class StudyController extends BaseStudyController
                 CreateStudyAction action = (CreateStudyAction)initAction(this, new CreateStudyAction());
                 return action.getView(form, false, errors);
             }
+
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study</span>");
+
+            Container currentContainer = study.getContainer();
+            if (!currentContainer.isProject())
+            {
+                Study projectStudy = getStudy(currentContainer.getProject());
+                if (projectStudy != null && projectStudy.getShareVisitDefinitions() == Boolean.TRUE)
+                    return HttpView.redirect(new ActionURL(ManageVisitsAction.class, study.getContainer().getProject()));
+            }
 
             return new StudyJspView<>(study, _jspName(study), form, errors);
         }
@@ -5645,6 +5657,7 @@ public class StudyController extends BaseStudyController
         private boolean _allowReqLocSal = true;
         private boolean _allowReqLocEndpoint = true;
         private boolean _shareDatasets = false;
+        private boolean _shareVisits = false;
 
         public String getLabel()
         {
@@ -5894,6 +5907,16 @@ public class StudyController extends BaseStudyController
         public void setShareDatasets(boolean shareDatasets)
         {
             _shareDatasets = shareDatasets;
+        }
+
+        public boolean isShareVisits()
+        {
+            return _shareVisits;
+        }
+
+        public void setShareVisits(boolean shareDatasets)
+        {
+            _shareVisits = shareDatasets;
         }
     }
 

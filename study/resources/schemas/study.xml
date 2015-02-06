@@ -165,6 +165,8 @@
       </ns:column>
       <ns:column columnName="ShareDatasetDefinitions">
       </ns:column>
+      <ns:column columnName="ShareVisitDefinitions">
+      </ns:column>
       <ns:column columnName="ValidateQueriesAfterImport">
         <ns:description>Flag to perform query validation after import.</ns:description>
       </ns:column>

@@ -151,6 +151,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     // experimental
     private boolean _shareDatasetDefinitions = false;
+    private boolean _shareVisitDefinitions = false;
 
 
     public StudyImpl()
@@ -1181,6 +1182,19 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setShareDatasetDefinitions(Boolean shareDatasetDefinitions)
     {
         _shareDatasetDefinitions = Boolean.TRUE == shareDatasetDefinitions;
+    }
+
+
+    @NotNull
+    public Boolean getShareVisitDefinitions()
+    {
+        return _shareVisitDefinitions && getContainer().isProject();
+    }
+
+
+    public void setShareVisitDefinitions(Boolean shareVisitDefinitions)
+    {
+        _shareVisitDefinitions = Boolean.TRUE == shareVisitDefinitions;
     }
 
 
