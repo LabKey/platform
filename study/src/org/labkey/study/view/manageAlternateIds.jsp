@@ -208,7 +208,7 @@
                 extend : 'Ext.data.Model',
                 fields : [
                     { name : 'Label', type : 'string' },
-                    { name : 'DatasetId', type : 'int'}
+                    { name : 'DataSetId', type : 'int'}
                 ]
             });
 
@@ -222,7 +222,7 @@
                 name : 'datasetCombo',
                 queryMode : 'local',
                 store: this.dataStore,
-                valueField : 'DatasetId',
+                valueField : 'DataSetId',
                 displayField : 'Label',
                 labelWidth : 200,
                 labelSeparator: '',
@@ -292,7 +292,7 @@
                     this.dataStore.loadData(details.rows);
                     if(previousValue)
                     {
-                        dataCombo.select(dataCombo.findRecord('DatasetId', <%=aliasDatasetId%>));
+                        dataCombo.select(dataCombo.findRecord('DataSetId', <%=aliasDatasetId%>));
                         dataCombo.fireEvent('setup', dataCombo);
                     }
                 },
