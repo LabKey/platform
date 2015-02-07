@@ -26,6 +26,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SessionHelper;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -85,7 +86,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
      */
     public void convertToLoggedInSession()
     {
-        removeAttribute(GuestSession.class.getName());
+        removeAttribute(GuestSessionMarker.class.getName());
         // don't treat like guest on next getSession call
         _loggedIn = true;
     }
@@ -118,11 +119,35 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
                 return null;
         }
 
-        HttpSession s = !isGuest() ? makeRealSession() : isRobot() ? robotSession() : guestSession();
+        HttpSession s;
+        if (!isGuest())
+        {
+            s = makeRealSession();
+            return s;
+        }
+        else if (isRobot())
+        {
+            s = robotSession();
+            _session = s;
+            return s;
+        }
+        else
+        {
+            s = guestSession();
+        }
+
         if (_log.isDebugEnabled() && !(s instanceof SessionWrapper))
             s = new SessionWrapper(s);
+
         _session = s;
         return _session;
+    }
+
+
+    public void invalidateSession()
+    {
+        SessionHelper.invalidateSession((HttpServletRequest)getRequest());
+        _session = null;
     }
 
 
@@ -132,6 +157,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         {
             if (s instanceof SessionWrapper && !((SessionWrapper) s).isValid())
                 return false;
+            // getCreationTime() throws IllegalStateException if called on an invalidated session
             s.getCreationTime();
             return true;
         }
@@ -363,19 +389,38 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
      * start expiring sessions that appear inactive.  Active sessions get handled by tomcat.
      */
     static final int NURSERY_SIZE = AppProps.getInstance().isDevMode() ? 100 : 1000;
-    static final Map<String,GuestSession> _nursery = Collections.synchronizedMap(new LinkedHashMap<String, GuestSession>(2000, 0.5f, true)
+    static final Map<String,GuestSessionMarker> _nursery = Collections.synchronizedMap(new LinkedHashMap<String, GuestSessionMarker>(2000, 0.5f, true)
     {
+        /* returning true here means this session no longer needs to be tracked in the guest nursery
+         * This may be because
+         *    a) It has graduated to "active" and Tomcat can do normal session timeout
+         *    b) The session is now invalid for some reason
+         *    c) We've killed/expired it, so we don't need to track
+         */
         @Override
-        protected boolean removeEldestEntry(Map.Entry<String, GuestSession> e)
+        protected boolean removeEldestEntry(Map.Entry<String, GuestSessionMarker> e)
         {
             try
             {
-                GuestSession s = e.getValue();
-                if (s.isActive() || null == s._session || !isValid(s._session))
+                String id = e.getKey();
+                GuestSessionMarker marker = e.getValue();
+
+                // if session is active, let tomcat manage it
+                if (marker.isActive())
                     return true;
+
+                // if not a real and valid session then there is no need to track it
+                if (null == marker._session || !isValid(marker._session))
+                    return true;
+
+                // check for recycled session object?
+                if (!StringUtils.equals(id, marker._session.getId()))
+                    return true;
+
+                // expire the session if the nursery is overflowing
                 boolean remove = size() > NURSERY_SIZE;
                 if (remove)
-                    s.expire();
+                    marker.expire();
                 return remove;
             }
             catch (IllegalStateException x)
@@ -397,14 +442,14 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         if (null == containerSession)
             return null;
 
-        GuestSession guestSession;
+        GuestSessionMarker guestSession;
         synchronized (_nursery)
         {
             guestSession = _nursery.get(containerSession.getId());
             if (null == guestSession  && containerSession.isNew())
             {
-                guestSession = new GuestSession(this);
-                containerSession.setAttribute(GuestSession.class.getName(), guestSession);
+                guestSession = new GuestSessionMarker(this);
+                containerSession.setAttribute(GuestSessionMarker.class.getName(), guestSession);
                 _nursery.put(containerSession.getId(), guestSession);
             }
         }
@@ -429,14 +474,18 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     }
 
 
-    private static class GuestSession implements HttpSessionBindingListener
+
+    /*
+     * This class is used to track guest sessions
+     */
+    private static class GuestSessionMarker implements HttpSessionBindingListener
     {
         HttpSession _session = null;
         final String _ip;
         final long[] _accessedTime = new long[5];
         final Map<String,String> _info;
 
-        GuestSession(AuthenticatedRequest r)
+        GuestSessionMarker(AuthenticatedRequest r)
         {
             // do not hold onto request
             _ip = r.getRemoteAddr();

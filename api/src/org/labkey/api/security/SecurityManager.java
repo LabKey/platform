@@ -484,7 +484,7 @@ public class SecurityManager
 
     public static void setAuthenticatedUser(HttpServletRequest request, User user)
     {
-        invalidateSession(request);      // Clear out terms-of-use and other session info that guest / previous user may have
+        SessionHelper.invalidateSession(request);      // Clear out terms-of-use and other session info that guest / previous user may have
         if (!user.isGuest() && request instanceof AuthenticatedRequest)
             ((AuthenticatedRequest)request).convertToLoggedInSession();
 
@@ -497,7 +497,7 @@ public class SecurityManager
     public static void logoutUser(HttpServletRequest request, User user)
     {
         AuthenticationManager.logout(user, request);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
-        invalidateSession(request);
+        SessionHelper.invalidateSession(request);
     }
 
 
@@ -549,14 +549,6 @@ public class SecurityManager
         // Remove factory from session
         HttpSession session = request.getSession(true);
         session.removeAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
-    }
-
-
-    public static void invalidateSession(HttpServletRequest request)
-    {
-        HttpSession s = request.getSession(false);
-        if (null != s)
-            s.invalidate();
     }
 
 

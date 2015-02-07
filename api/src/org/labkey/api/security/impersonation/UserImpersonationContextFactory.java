@@ -27,6 +27,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -100,7 +101,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     @Override
     public void stopImpersonating(HttpServletRequest request)
     {
-        SecurityManager.invalidateSession(request);
+        SessionHelper.invalidateSession(request);
         restoreSessionAttributes(request.getSession(true));
 
         User impersonatedUser = UserManager.getUser(_impersonatedUserId);

@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.LockManager;
+import org.labkey.api.security.AuthenticatedRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -80,7 +81,7 @@ public class SessionHelper
 
 
     /** Does not modify the session */
-    public Object getAttribute(@NotNull HttpServletRequest req, @NotNull String key, @Nullable Object defaultValue)
+    public static Object getAttribute(@NotNull HttpServletRequest req, @NotNull String key, @Nullable Object defaultValue)
     {
         HttpSession s = req.getSession(true);
         if (null == s)
@@ -89,5 +90,20 @@ public class SessionHelper
 //        if (value instanceof Reference)
 //            value = ((Reference)value).get();
         return null == value ? defaultValue : value;
+    }
+
+
+    public static void invalidateSession(@NotNull HttpServletRequest request)
+    {
+        if (request instanceof AuthenticatedRequest)
+        {
+            ((AuthenticatedRequest)request).invalidateSession();
+        }
+        else
+        {
+            HttpSession s = request.getSession(false);
+            if (null != s)
+                s.invalidate();
+        }
     }
 }
