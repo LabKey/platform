@@ -62,7 +62,7 @@ public class DbSchemaCache
             type = ModuleLoader.getInstance().getSchemaTypeForSchemaName(schemaName);
 
             if (null == type)
-                type = DbSchemaType.Module;  // Asking for a schema that doesn't exist falls back on Module type
+                type = DbSchemaType.Bare;  // Asking for a schema that doesn't exist falls back on Bare type
         }
 
         return _cache.get(getKey(schemaName, type), new SchemaDetails(schemaName, type));
