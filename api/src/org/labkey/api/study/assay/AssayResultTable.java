@@ -123,14 +123,11 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                 DomainProperty domainProperty = _resultsDomain.getPropertyByName(baseColumn.getName());
                 if (domainProperty != null)
                 {
-//                    PropertyDescriptor pd = domainProperty.getPropertyDescriptor();
-//                    PropertyColumn propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _userSchema.getUser(), false);
-
                     col.setName(domainProperty.getName());
                     PropertyDescriptor pd = domainProperty.getPropertyDescriptor();
                     FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
                     PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey);
-                }//
+                }
                 addColumn(col);
 
                 if (col.getMvColumnName() != null)
