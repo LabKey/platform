@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
@@ -246,7 +247,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         aliasColumns(row);
-        convertTypes(row);
+        convertTypes(container, row);
         setSpecialColumns(user, container, getDbTable(), row);
         return _insert(user, container, row);
     }
@@ -332,7 +333,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             rowStripped.put(dbName, row.get(name));
         }
 
-        convertTypes(rowStripped);
+        convertTypes(container, rowStripped);
         setSpecialColumns(user, container, getDbTable(), row);
 
         Object rowContainer = row.get("container");
@@ -532,7 +533,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     }
 
 
-    protected void convertTypes(Map<String,Object> row) throws ValidationException
+    protected void convertTypes(Container c, Map<String,Object> row) throws ValidationException
     {
         for (ColumnInfo col : getDbTable().getColumns())
         {
@@ -551,6 +552,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                             row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
                             break;
                         default:
+                            if (/* col is file type? && */ value instanceof AttachmentFile)
+                            {
+                                value = saveFile(c, col, value);
+                            }
                             row.put(col.getName(), ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass()));
                     }
                 }

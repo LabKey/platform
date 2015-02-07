@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -42,11 +43,15 @@ import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.etl.TriggerDataBuilderHelper;
 import org.labkey.api.etl.WrapperDataIterator;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -585,4 +590,22 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         return _bulkLoad;
     }
+
+    protected Object saveFile(Container container, ColumnInfo col, Object value) throws ValidationException
+    {
+        SpringAttachmentFile saf = (SpringAttachmentFile)value;
+        try
+        {
+            File dir = AssayFileWriter.ensureUploadDirectory(container);
+            File file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
+            saf.saveTo(file);
+            value = file;
+            return value;
+        }
+        catch (IOException | ExperimentException e)
+        {
+            throw new ValidationException(e.getMessage(), col.getName());
+        }
+    }
+
 }
