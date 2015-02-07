@@ -63,15 +63,16 @@ public class GraphMoreGrid extends GridView
 
         // for starting inputs, the runId is passed, not looked up
         if (null != url.getParameter("runId"))
-            runIdParam="?rowId=" + url.getParameter("runId");
+            runIdParam = url.getParameter("runId");
         else
-            runIdParam="?rowId=${RunId}";
+            runIdParam = "${RunId}";
 
         List<ColumnInfo> cols = ti.getColumns("RowId,Name,LSID,RunId");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
+
         ActionURL resolve = new ActionURL(ExperimentController.ResolveLSIDAction.class, c);
-        getDataRegion().getDisplayColumn(1).setURL(resolve.toString() + "?lsid=${LSID}");
+        getDataRegion().getDisplayColumn(1).setURL(resolve.addParameter("lsid", "${LSID}").toString());
         getDataRegion().getDisplayColumn(2).setVisible(false);
         getDataRegion().getDisplayColumn(3).setVisible(false);
 
@@ -79,7 +80,11 @@ public class GraphMoreGrid extends GridView
         getDataRegion().getDisplayColumn(4).setWidth("200px");
 
         ActionURL graphDetail = new ActionURL(ExperimentController.ShowRunGraphDetailAction.class, c);
-        getDataRegion().getDisplayColumn(4).setURL(graphDetail.toString() + runIdParam + "&detail=true&focusType=" + objectType + "&focus=${rowId}");
+        graphDetail.addParameter("rowId", runIdParam);
+        graphDetail.addParameter("detail", true);
+        graphDetail.addParameter("focusType", objectType);
+        graphDetail.addParameter("focus", "${rowId}");
+        getDataRegion().getDisplayColumn(4).setURL(graphDetail.toString());
 
         getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         String param = url.getParameter("rowId~in");
