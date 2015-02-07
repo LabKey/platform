@@ -169,7 +169,7 @@ TD.message-short .message-less, TD.message-short .message-more
     <tr>
         <td colspan="3">
             <div style="text-align: left"><%
-            if (null != bean.insertURL)
+            if (null != bean.insertURL && !bean.isPrint)
             {
         %><%= button("New").href(bean.insertURL) %><%
             }
