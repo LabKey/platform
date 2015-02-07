@@ -103,7 +103,8 @@ public class PanelButton extends ActionButton
         }
         config.append("]}\n");
         out.append(PageFlowUtil.generateDropDownButton(getCaption(), "javascript:void(0)",
-                "LABKEY.DataRegions[" + PageFlowUtil.jsString(_dataRegionName) + "].showButtonPanel(this, " + config + ");", attributes));
+                // Sadly, we need to do all this because we initialize the GroupTab in the 'config' that is handed in here.
+                "(function(el) { LABKEY.requiresExt3ClientAPI(true, function() { LABKEY.DataRegions[" + PageFlowUtil.jsString(_dataRegionName) + "].showButtonPanel(el, " + config + "); }); })(this);", attributes));
     }
 
     public void addSubPanel(String caption, HttpView view)

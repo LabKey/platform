@@ -3,6 +3,11 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+if (!LABKEY.DataRegions)
+{
+    LABKEY.DataRegions = {};
+}
+
 (function($) {
 
     //
@@ -14,389 +19,13 @@
     var OFFSET_PREFIX = '.offset';
     var MAX_ROWS_PREFIX = '.maxRows', SHOW_ROWS_PREFIX = '.showRows';
     var CONTAINER_FILTER_NAME = '.containerFilterName';
-
-    var _alterSortString = function(region, current, fieldKey, direction /* optional */) {
-        fieldKey = _resolveFieldKey(region, fieldKey);
-
-        var columnName = fieldKey.toString(),
-            newSorts = [];
-
-        if (current != null) {
-            var sorts = current.split(",");
-            $.each(sorts, function(i, sort) {
-                if ((sort != columnName) && (sort != SORT_ASC + columnName) && (sort != SORT_DESC + columnName)) {
-                    newSorts.push(sort);
-                }
-            });
-        }
-
-        if (direction == SORT_ASC) { // Easier to read without the encoded + on the URL...
-            direction = '';
-        }
-
-        if (LABKEY.Utils.isString(direction)) {
-            newSorts = [direction + columnName].concat(newSorts);
-        }
-
-        return newSorts.join(',');
-    };
-
-    var _beforeRowsChange = function(region, rowChangeEnum) {
-        var event = $.Event('beforeshowrowschange');
-        $(region).trigger(event, region, rowChangeEnum);
-        if (event.isDefaultPrevented()) {
-            return false;
-        }
-        return true;
-    };
-
-    var _buildQueryString = function(region, pairs) {
-        if (!$.isArray(pairs)) {
-            return '';
-        }
-
-        var queryParts = [], key, value;
-
-        $.each(pairs, function(i, pair) {
-            key = pair[0];
-            value = pair.length > 1 ? pair[1] : undefined;
-
-            queryParts.push(encodeURIComponent(key));
-            if (LABKEY.Utils.isDefined(value)) {
-
-                if (LABKEY.Utils.isDate(value)) {
-                    value = $.format.date(value, 'yyyy-MM-dd');
-                    if (LABKEY.Utils.endsWith(value, 'Z')) {
-                        value = value.substring(0, value.length - 1);
-                    }
-                }
-                queryParts.push('=');
-                queryParts.push(encodeURIComponent(value));
-            }
-            queryParts.push('&');
-        });
-
-        if (queryParts.length > 0) {
-            queryParts.pop();
-        }
-
-        return queryParts.join("");
-    };
-
-    var _chainSelectionCountCallback = function(region, config) {
-        // On success, update the current selectedCount on this DataRegion and fire the 'selectchange' event
-        var updateSelected = function(data) {
-            region.selectionModified = true;
-            region.selectedCount = data.count;
-            _onSelectionChange(region);
-        };
-
-        // Chain updateSelected with the user-provided success callback
-        var success = LABKEY.Utils.getOnSuccess(config);
-        if (success) {
-            success = updateSelected.createSequence(success, config.scope);
-        }
-        else {
-            success = updateSelected;
-        }
-
-        config.success = success;
-        return config;
-    };
-
-    var _changeFilter = function(region, newParamValPairs, newQueryString) {
-
-        var event = $.Event('beforefilterchange');
-
-        var filterPairs = [], name, val;
-        $.each(newParamValPairs, function(i, pair) {
-            name = pair[0];
-            val = pair[1];
-            if (name.indexOf(region.name + '.') == 0 && name.indexOf('~') > -1) {
-                filterPairs.push([name, val]);
-            }
-        });
-
-        $(region).trigger(event, region, filterPairs);
-        if (event.isDefaultPrevented()) {
-            return;
-        }
-
-        var params = _getParameters(region, newQueryString, [region.name + OFFSET_PREFIX]);
-        region.setSearchString.call(region, region.name, _buildQueryString(region, params));
-    };
-
-    var _getAllRowSelectors = function(region) {
-        var nameSel = '#' + region.name;
-        var baseSel = 'form' + nameSel;
-        return $(baseSel + ' .labkey-selectors input[type="checkbox"][name=".toggle"]');
-    };
-
-    var _getRowSelectors = function(region) {
-        var nameSel = '#' + region.name;
-        var baseSel = 'form' + nameSel;
-        return $(baseSel + ' .labkey-selectors input[type="checkbox"][name=".select"]');
-    };
-
-    var _getHeaderSelector = function(region) {
-        return $('#dataregion_header_' + region.name);
-    };
-
-    // Formerly, LABKEY.DataRegion.getParamValPairs
-    var _getParametersSearch = function(region, qString, skipPrefixSet /* optional */) {
-        if (!qString) {
-            qString = region.getSearchString.call(region);
-        }
-        return _getParameters(region, qString, skipPrefixSet);
-    };
-
-    // Formerly, LABKEY.DataRegion.getParamValPairsFromString
-    var _getParameters = function(region, qString, skipPrefixSet /* optional */) {
-
-        var params = [];
-
-        if (LABKEY.Utils.isString(qString) && qString.length > 0) {
-
-            var qmIdx = qString.indexOf('?');
-            if (qmIdx > -1) {
-                qString = qString.substring(qmIdx + 1);
-            }
-
-            var pairs = qString.split('&'), p, key,
-                LAST = '.lastFilter', lastIdx, skip = $.isArray(skipPrefixSet);
-
-            $.each(pairs, function(i, pair) {
-                p = pair.split('=', 2);
-                key = p[0] = decodeURIComponent(p[0]);
-                lastIdx = key.indexOf(LAST);
-
-                if (lastIdx > -1 && lastIdx == (key.length - LAST.length)) {
-                    return;
-                }
-
-                var stop = false;
-                if (skip) {
-                    $.each(skipPrefixSet, function(j, skipPrefix) {
-                        if (LABKEY.Utils.isString(skipPrefix)) {
-
-                            // Special prefix that should remove all filters, but no other parameters
-                            if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) == (skipPrefix.length - 2)) {
-                                if (key.indexOf('~') > 0) {
-                                    stop = true;
-                                    return false;
-                                }
-                            }
-                            else if (key.indexOf(skipPrefix) == 0) {
-                                // only skip filters, parameters, and sorts
-                                if (key == skipPrefix ||
-                                    key.indexOf("~") > 0 ||
-                                    key.indexOf(PARAM_PREFIX) > 0 ||
-                                    key == (skipPrefix + "sort")) {
-                                    stop = true;
-                                    return false;
-                                }
-                            }
-                        }
-                    });
-                }
-
-                if (!stop) {
-                    if (p.length > 1) {
-                        p[1] = decodeURIComponent(p[1]);
-                    }
-                    params.push(p);
-                }
-            });
-        }
-
-        return params;
-    };
-
-    var _buttonBind = function(region, cls, fn) {
-        region.msgbox.find('.labkey-button' + cls).on('click', $.proxy(function() {
-            fn.call(this);
-        }, region));
-    };
-
-    var _onRenderMessageArea = function(region, parts) {
-        var msgArea = region.msgbox;
-        if (msgArea) {
-            if (region.showRecordSelectors && parts['selection']) {
-                _buttonBind(region, '.select-all', region.selectAll);
-                _buttonBind(region, '.select-none', region.clearSelected);
-                _buttonBind(region, '.show-all', region.showAll);
-                _buttonBind(region, '.show-selected', region.showSelected);
-                _buttonBind(region, '.show-unselected', region.showUnselected);
-            }
-            else if (parts['customview']) {
-                _buttonBind(region, '.unsavedview-revert', region.revertCustomView);
-                _buttonBind(region, '.unsavedview-edit', function() { this.showCustomView(undefined, true, true); });
-                _buttonBind(region, '.unsavedview-save', region.saveSessionCustomView);
-            }
-        }
-    };
-
-    var _onSelectionChange = function(region) {
-        $(region).trigger('selectchange', [region, region.selectedCount]);
-        _updateRequiresSelectionButtons(region, region.selectedCount);
-    };
-
-    var _removeParameters = function(region, skipPrefixes /* optional */) {
-        return _setParameters(region, null, skipPrefixes);
-    };
-
-    var _resolveFieldKey = function(region, fieldKey) {
-        var fk = fieldKey;
-        if (!(fk instanceof LABKEY.FieldKey)) {
-            fk = LABKEY.FieldKey.fromString('' + fk);
-        }
-        return fk;
-    };
-
-    var _setParameter = function(region, param, value, skipPrefixes /* optional */) {
-        _setParameters(region, [[param, value]], skipPrefixes);
-    };
-
-    var _setParameters = function(region, newParamValPairs, skipPrefixes /* optional */) {
-
-        if ($.isArray(skipPrefixes)) {
-            $.each(skipPrefixes, function(i, skip) {
-                skipPrefixes[i] = region.name + skip;
-            });
-        }
-
-        var param, value,
-            params = _getParametersSearch(region, region.requestURL, skipPrefixes);
-
-        if ($.isArray(newParamValPairs)) {
-            $.each(newParamValPairs, function(i, newPair) {
-                if (!$.isArray(newPair)) {
-                    throw new Error("DataRegion: _setParameters newParamValPairs improperly initialized. It is an array of arrays. You most likely passed in an array of strings.");
-                    return false;
-                }
-                param = newPair[0];
-                value = newPair[1];
-
-                // Allow value to be null/undefined to support no-value filter types (Is Blank, etc)
-                if (LABKEY.Utils.isString(param)) {
-                    if (param.indexOf(region.name) !== 0) {
-                        param = region.name + param;
-                    }
-
-                    params.push([param, value]);
-                }
-            });
-        }
-
-        region.setSearchString.call(region, region.name, _buildQueryString(region, params));
-    };
-
-    var _showRows = function(region, showRowsEnum) {
-        if (_beforeRowsChange(region, showRowsEnum)) {
-            _setParameter(region, SHOW_ROWS_PREFIX, showRowsEnum, [OFFSET_PREFIX, MAX_ROWS_PREFIX, SHOW_ROWS_PREFIX]);
-        }
-    };
-
-    var _showSelectMessage = function(region, msg) {
-        if (region.showRecordSelectors) {
-            if (region.totalRows && region.totalRows != region.selectedCount) {
-                msg += "&nbsp;<span class='labkey-button select-all'>Select All " + region.totalRows + " Rows</span>";
-            }
-
-            msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
-            var showOpts = [];
-            if (region.showRows != "all")
-                showOpts.push("<span class='labkey-button show-all'>Show All</span>");
-            if (region.showRows != "selected")
-                showOpts.push("<span class='labkey-button show-selected'>Show Selected</span>");
-            if (region.showRows != "unselected")
-                showOpts.push("<span class='labkey-button show-unselected'>Show Unselected</span>");
-            msg += "&nbsp;&nbsp;" + showOpts.join(" ");
-        }
-
-        // add the record selector message, the link handlers will get added after render in _onRenderMessageArea
-        region.addMessage.call(region, msg, 'selection');
-    };
-
-    var _toggleAllRows = function(region, checked) {
-        var ids = [];
-
-        _getRowSelectors(region).each(function() {
-            if (!this.disabled) {
-                this.checked = checked;
-                ids.push(this.value);
-            }
-        });
-
-        _getAllRowSelectors(region).each(function() { this.checked = (checked == true)});
-        return ids;
-    };
-
-    var _updateFilter = function(region, filter, skipPrefixes) {
-        var params = _getParameters(region, region.requestURL, skipPrefixes);
-        if (filter) {
-            params.push([filter.getURLParameterName(region.name), filter.getURLParameterValue()]);
-        }
-        _changeFilter(region, params, _buildQueryString(region, params));
-    };
-
-    var _updateRequiresSelectionButtons = function(region, selectedCount) {
-
-        // update the 'select all on page' checkbox state
-        _getAllRowSelectors(region).each(function() {
-            if (region.isPageSelected.call(region)) {
-                this.checked = true;
-                this.indeterminate = false;
-            }
-            else if (region.selectedCount > 0) {
-                // There are rows selected, but the are not visible on this page.
-                this.checked = false;
-                this.indeterminate = true;
-            }
-            else {
-                this.checked = false;
-                this.indeterminate = false;
-            }
-        });
-
-        // If all rows have been selected (but not all rows are visible), show selection message
-        if (region.totalRows && region.selectedCount == region.totalRows && !region.complete) {
-            _showSelectMessage(region, 'All <span class="labkey-strong">' + region.totalRows + '</span> rows selected.');
-        }
-
-        // 10566: for javascript perf on IE stash the requires selection buttons
-        if (!region._requiresSelectionButtons) {
-            // escape ', ", and \
-            var escaped = region.name.replace(/('|"|\\)/g, "\\$1");
-            region._requiresSelectionButtons = $("a[labkey-requires-selection='" + escaped + "']");
-        }
-
-        region._requiresSelectionButtons.each(function() {
-            var el = $(this);
-
-            // handle min-count
-            var minCount = el.attr('labkey-requires-selection-min-count');
-            if (minCount) {
-                minCount = parseInt(minCount.value);
-            }
-            if (minCount === undefined) {
-                minCount = 1;
-            }
-
-            // handle max-count
-            var maxCount = el.attr('labkey-requires-selection-max-count');
-            if (maxCount) {
-                maxCount = parseInt(maxCount.value);
-            }
-
-            if (minCount <= selectedCount && (!maxCount || maxCount >= selectedCount)) {
-                el.addClass('labkey-button').removeClass('labkey-disabled-button');
-            }
-            else {
-                el.addClass('labkey-disabled-button').removeClass('labkey-button');
-            }
-        });
-    };
+    var CUSTOM_VIEW_PANELID = '~~customizeView~~';
+    var VIEWNAME_PREFIX = '.viewName';
+
+    //
+    // PRIVATE VARIABLES
+    //
+    var _paneCache = {};
 
     LABKEY.DataRegion2 = function(config) {
 
@@ -408,6 +37,9 @@
          * Config Options
          */
         var defaults = {
+
+            _allowHeaderLock: false,
+
             /**
              * All rows visible on the curreng page.
              */
@@ -486,8 +118,8 @@
         /**
          * Non-configurable Options
          */
-        this['selectionModified'] = false;
-        this['panelButtonContents'] = [];
+        this.selectionModified = false;
+        this.panelButtonContents = {};
 
         if (!LABKEY.DataRegions) {
             LABKEY.DataRegions = {};
@@ -536,6 +168,8 @@
         this._initMessaging();
         this._initSelection();
         this._initPaging();
+        this._initCustomViews();
+        this._initPanes();
     };
 
     /**
@@ -1190,7 +824,7 @@
             if (config.duration) {
                 var dr = this; var timeout = config.duration;
                 setTimeout(function() {
-                    dr.removeMessage(htmlOrConfig.part || part);
+                    dr.removeMessage(config.part || part);
                     _getHeaderSelector(dr).trigger('resize');
                 }, timeout);
             }
@@ -1220,6 +854,13 @@
     };
 
     /**
+     * Removes all messages from this Data Region.
+     */
+    Proto.removeAllMessages = function() {
+        if (this.msgbox) { this.msgbox.removeAll(); }
+    };
+
+    /**
      * If a message is currently showing, remove the specified part
      */
     Proto.removeMessage = function(part) {
@@ -1232,7 +873,11 @@
      */
     Proto.showLoadingMessage = function(html) {
         html = html || "Loading...";
-        this.addMessage('<div><span class="loading-indicator">&nbsp;</span><em>' + html + '</em></div>');
+        this.addMessage('<div><span class="loading-indicator">&nbsp;</span><em>' + html + '</em></div>', 'drloading');
+    };
+
+    Proto.hideLoadingMessage = function() {
+        this.removeMessage('drloading');
     };
 
     /**
@@ -1289,7 +934,7 @@
 
         var event = $.Event("beforesortchange");
 
-        $(this).trigger(event, this, columnName, sortDir);
+        $(this).trigger(event, [this, columnName, sortDir]);
 
         if (event.isDefaultPrevented()) {
             return;
@@ -1313,7 +958,7 @@
 
         var event = $.Event("beforeclearsort");
 
-        $(this).trigger(event, this, columnName);
+        $(this).trigger(event, [this, columnName]);
 
         if (event.isDefaultPrevented()) {
             return;
@@ -1414,7 +1059,7 @@
     Proto.setPageOffset = function(rowOffset) {
         var event = $.Event('beforeoffsetchange');
 
-        $(this).trigger(event, this, rowOffset);
+        $(this).trigger(event, [this, rowOffset]);
 
         if (event.isDefaultPrevented()) {
             return;
@@ -1430,7 +1075,7 @@
      */
     Proto.setMaxRows = function(newmax) {
         var event = $.Event('beforemaxrowschange'); // Can't this just be a variant of _beforeRowsChange with an extra param?
-        $(this).trigger(event, this, newmax);
+        $(this).trigger(event, [this, newmax]);
         if (event.isDefaultPrevented()) {
             return;
         }
@@ -1439,8 +1084,243 @@
     };
 
     //
+    // Customize View
+    //
+    Proto._initCustomViews = function() {
+        if (this.view && this.view.session) {
+            var msg;
+            if (this.view.savable) {
+                msg = (this.viewName ? "The current view '<em>" + LABKEY.Utils.encodeHtml(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> view") + " is unsaved.";
+                msg += " &nbsp;";
+                msg += "<span class='labkey-button unsavedview-revert'>Revert</span>";
+                msg += "&nbsp;";
+                msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
+                msg += "&nbsp;";
+                msg += "<span class='labkey-button unsavedview-save'>Save</span>";
+            }
+            else {
+                msg = ("The current view has been customized.");
+                msg += "&nbsp;";
+                msg += "<span class='labkey-button unsavedview-revert' title='Revert'>Revert</span>";
+                msg += "&nbsp;";
+                msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
+            }
+
+            // add the customize view message, the link handlers will get added after render in _onRenderMessageArea
+            this.addMessage(msg, 'customizeview');
+        }
+    };
+
+    /**
+     * Change the currently selected view to the named view
+     * @param {Object} view An object which contains the following properties.
+     * @param {String} [view.type] the type of view, either a 'view' or a 'report'.
+     * @param {String} [view.viewName] If the type is 'view', then the name of the view.
+     * @param {String} [view.reportId] If the type is 'report', then the report id.
+     * @param {Object} urlParameters <b>NOTE: Experimental parameter; may change without warning.</b> A set of filter and sorts to apply as URL parameters when changing the view.
+     */
+    Proto.changeView = function(view, urlParameters) {
+        var event = $.Event('beforechangeview');
+        $(this).trigger(event, [this, view, urlParameters]);
+        if (event.isDefaultPrevented()) {
+            return;
+        }
+
+        var paramValPairs = [], newSort = [];
+
+        if (view) {
+            if (view.type == 'report')
+                paramValPairs.push([".reportId", view.reportId]);
+            else if (view.type == 'view')
+                paramValPairs.push([VIEWNAME_PREFIX, view.viewName]);
+            else
+                paramValPairs.push([VIEWNAME_PREFIX, view]);
+        }
+
+        if (urlParameters) {
+            $.each(urlParameters.filter, function(i, filter) {
+                paramValPairs.push(['.' + filter.fieldKey + '~' + filter.op, filter.value]);
+            });
+
+            if (urlParameters.sort && urlParameters.sort.length > 0) {
+                $.each(urlParameters.sort, function(i, sort) {
+                    newSort.push((sort.dir == "+" ? "" : sort.dir) + sort.fieldKey);
+                });
+                paramValPairs.push([SORT_PREFIX, newSort.join(',')]);
+            }
+
+            if (urlParameters.containerFilter) {
+                paramValPairs.push([CONTAINER_FILTER_NAME, urlParameters.containerFilter]);
+            }
+        }
+
+        // removes all filter, sort, and container filter parameters
+        _setParameters(this, paramValPairs, [OFFSET_PREFIX, SHOW_ROWS_PREFIX, VIEWNAME_PREFIX, ".reportId", ALL_FILTERS_SKIP_PREFIX, SORT_PREFIX, ".columns", CONTAINER_FILTER_NAME]);
+    };
+
+    Proto.deleteCustomView = function() {
+        var title = "Delete " +
+                (this.view && this.view.shared ? "shared " : "your ") +
+                (this.view && this.view.session ? "unsaved" : "") + "view";
+
+        var msg = "Are you sure you want to delete the ";
+        msg += (this.viewName ? " '<em>" + LABKEY.Utils.encodeHtml(this.viewName) + "</em>'" : "default");
+        msg += " saved view";
+
+        if (this.view && this.view.containerPath && this.containerPath != LABKEY.ActionURL.getContainer()) {
+            msg += " from '" + this.view.containerPath + "'";
+        }
+        msg += "?";
+        // Assume that customize view is already present -- along with Ext
+        Ext.Msg.confirm(title, msg, function (btnId) {
+            if (btnId == "yes") {
+                _deleteCustomView(this, true, "Deleting view...");
+            }
+        }, this);
+    };
+
+    Proto.hideCustomizeView = function(animate) {
+        if (this.customizeView && this.customizeView.getEl() && this.customizeView.getEl().dom && this.customizeView.isVisible()) {
+            _showExt3ButtonPanel(this, Ext, CUSTOM_VIEW_PANELID, animate);
+        }
+    };
+
+    /**
+     * Show the customize view interface.
+     * @param activeTab {[String]} Optional. One of "ColumnsTab", "FilterTab", or "SortTab".  If no value is specified (or undefined), the ColumnsTab will be shown.
+     * @param hideMessage {[boolean]} Optional. True to hide the DataRegion message bar when showing.
+     * @param animate {boolean} Optional. True to slide in the ribbon panel.
+     */
+    Proto.showCustomizeView = function(activeTab, hideMessage, animate) {
+        var region = this;
+        if (hideMessage) {
+            region.hideMessage();
+        }
+
+        if (!region.customizeView) {
+
+            var timerId = setTimeout(function() {
+                timerId = 0;
+                region.showLoadingMessage("Opening custom view designer...");
+            }, 500);
+
+            LABKEY.initializeViewDesigner(function() {
+                // scope is region
+                var header = Ext.get(_getHeaderSelector(this)[0]);
+
+                var additionalFields = {},
+                        userFilter = {},
+                        userSort = this.getUserSort(),
+                        userColumns = this.getParameter(this.name + ".columns"), fields = [];
+
+                $.each(this.getUserFilterArray(), function(i, filter) {
+                    userFilter.push({
+                        fieldKey: filter.getColumnName(),
+                        op: filter.getFilterType().getURLSuffix(),
+                        value: filter.getValue()
+                    });
+                    additionalFields[filter.getColumnName()] = true;
+                });
+                $.each(userSort, function(i, sort) {
+                    additionalFields[sort.fieldKey] = true;
+                });
+                $.each(additionalFields, function(fieldKey) {
+                    fields.push(fieldKey);
+                });
+
+                var viewName = (this.view && this.view.name) || this.viewName || '';
+                LABKEY.Query.getQueryDetails({
+                    containerPath : this.containerPath,
+                    schemaName: this.schemaName,
+                    queryName: this.queryName,
+                    viewName: viewName,
+                    fields: fields,
+                    initializeMissingView: true,
+                    success: function (json) {
+                        timerId > 0 ? clearTimeout(timerId) : this.hideLoadingMessage();
+
+                        // If there was an error parsing the query, we won't be able to render the customize view panel.
+                        if (json.exception) {
+                            var viewSourceUrl = LABKEY.ActionURL.buildURL('query', 'viewQuerySource.view', this.containerPath, {
+                                schemaName: this.schemaName,
+                                "query.queryName": this.queryName
+                            });
+                            var msg = LABKEY.Utils.encodeHtml(json.exception) +
+                                    " &nbsp;<a target=_blank class='labkey-button' href='" + viewSourceUrl + "'>View Source</a>";
+
+                            this.showErrorMessage(msg);
+                            return;
+                        }
+
+                        var minWidth = Math.max(Math.min(1000, header.getWidth(true)), 700); // >= 700 && <= 1000
+
+                        this.customizeView = new LABKEY.DataRegion.ViewDesigner({
+                            renderTo: Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: 'none'}}),
+                            width: minWidth,
+                            activeGroup: activeTab,
+                            dataRegion: this,
+                            containerPath : this.containerPath,
+                            schemaName: this.schemaName,
+                            queryName: this.queryName,
+                            viewName: viewName,
+                            query: json,
+                            userFilter: userFilter,
+                            userSort: userSort,
+                            userColumns: userColumns,
+                            userContainerFilter: this.getUserContainerFilter(),
+                            allowableContainerFilters: this.allowableContainerFilters
+                        });
+
+                        this.customizeView.on('viewsave', function(designer, savedViewsInfo, urlParameters) {
+                            _onViewSave.apply(this, [this, designer, savedViewsInfo, urlParameters]);
+                        }, this);
+
+                        this.panelButtonContents[CUSTOM_VIEW_PANELID] = this.customizeView;
+                        _showExt3ButtonPanel(this, Ext, CUSTOM_VIEW_PANELID, animate);
+                    },
+                    scope: this
+                });
+
+            }, region);
+        }
+        else {
+            if (activeTab) {
+                region.customizeView.setActiveGroup(activeTab);
+                var group = this.customizeView.activeGroup;
+                if (!group.activeItem) {
+                    group.setActiveTab(group.getMainItem());
+                }
+            }
+            if (region.currentPanelId != CUSTOM_VIEW_PANELID) {
+                _showExt3ButtonPanel(region, Ext, CUSTOM_VIEW_PANELID, animate);
+            }
+        }
+
+    };
+
+    Proto.toggleShowCustomizeView = function() {
+        if (this.customizeView && this.customizeView.getEl() && this.customizeView.getEl().dom && this.customizeView.isVisible()) {
+            this.hideCustomizeView(true);
+        }
+        else {
+            this.showCustomizeView(undefined, null, true);
+        }
+    };
+
+    //
     // Misc
     //
+
+    Proto._initPanes = function() {
+        var callbacks = _paneCache[this.name];
+        if (callbacks) {
+            var me = this;
+            $.each(callbacks, function(i, config) {
+                config.cb.call(config.scope || me, me);
+            });
+            delete _paneCache[this.name];
+        }
+    };
 
     /**
      * Looks for a column based on fieldKey, name, or caption (in that order)
@@ -1483,7 +1363,7 @@
             queryName: this.queryName,
             viewName: this.viewName,
             filters: this.getUserFilterArray() || [],
-            sort: this.getParameter(this.name + ".sort"),
+            sort: this.getParameter(this.name + SORT_PREFIX),
             // NOTE: The parameterized query values from QWP are included
             parameters: this.getParameters(false),
             containerFilter: this.containerFilter
@@ -1492,7 +1372,7 @@
         // NOTE: need to account for non-removeable filters and sort in a QWP
         if (this.qwp) {
             if (this.qwp.sort) {
-                config.sort = config.sort + "," + this.qwp.sort;
+                config.sort = config.sort + ',' + this.qwp.sort;
             }
 
             if (this.qwp.filters && this.qwp.filters.length) {
@@ -1507,7 +1387,7 @@
      * Hide the ribbon panel. If visible the ribbon panel will be hidden.
      */
     Proto.hideButtonPanel = function() {
-        console.log('DataRegion2.hideButtonPanel() NYI');
+        _hideExt3ButtonPanel(this, true);
     };
 
     /**
@@ -1515,10 +1395,745 @@
      * value is the items array.
      */
     Proto.showButtonPanel = function(panelButton, tabPanelConfig) {
-        console.log('DataRegion2.showButtonPanel() NYI');
+        var me = this;
+        LABKEY.requiresExt3ClientAPI(true, function() {
+            _showExt3ButtonPanel(me, Ext, panelButton.getAttribute('panelId'), true, tabPanelConfig, panelButton);
+        });
     };
 
-    Proto.on = function(evt, callback, scope) { $(this).bind(evt, $.proxy(callback, scope)); };
+    Proto.on = function(evt, callback, scope) {
+        // Prevent from handing back the jQuery event itself.
+        $(this).bind(evt, function() { callback.apply(scope || this, $(arguments).slice(1)); });
+    };
+
+    Proto.headerLock = function() { return this._allowHeaderLock === true; };
+
+    //
+    // PRIVATE FUNCTIONS
+    //
+    var _alterSortString = function(region, current, fieldKey, direction /* optional */) {
+        fieldKey = _resolveFieldKey(region, fieldKey);
+
+        var columnName = fieldKey.toString(),
+                newSorts = [];
+
+        if (current != null) {
+            var sorts = current.split(',');
+            $.each(sorts, function(i, sort) {
+                if ((sort != columnName) && (sort != SORT_ASC + columnName) && (sort != SORT_DESC + columnName)) {
+                    newSorts.push(sort);
+                }
+            });
+        }
+
+        if (direction == SORT_ASC) { // Easier to read without the encoded + on the URL...
+            direction = '';
+        }
+
+        if (LABKEY.Utils.isString(direction)) {
+            newSorts = [direction + columnName].concat(newSorts);
+        }
+
+        return newSorts.join(',');
+    };
+
+    var _beforeRowsChange = function(region, rowChangeEnum) {
+        var event = $.Event('beforeshowrowschange');
+        $(region).trigger(event, [region, rowChangeEnum]);
+        if (event.isDefaultPrevented()) {
+            return false;
+        }
+        return true;
+    };
+
+    var _buildQueryString = function(region, pairs) {
+        if (!$.isArray(pairs)) {
+            return '';
+        }
+
+        var queryParts = [], key, value;
+
+        $.each(pairs, function(i, pair) {
+            key = pair[0];
+            value = pair.length > 1 ? pair[1] : undefined;
+
+            queryParts.push(encodeURIComponent(key));
+            if (LABKEY.Utils.isDefined(value)) {
+
+                if (LABKEY.Utils.isDate(value)) {
+                    value = $.format.date(value, 'yyyy-MM-dd');
+                    if (LABKEY.Utils.endsWith(value, 'Z')) {
+                        value = value.substring(0, value.length - 1);
+                    }
+                }
+                queryParts.push('=');
+                queryParts.push(encodeURIComponent(value));
+            }
+            queryParts.push('&');
+        });
+
+        if (queryParts.length > 0) {
+            queryParts.pop();
+        }
+
+        return queryParts.join("");
+    };
+
+    var _chainSelectionCountCallback = function(region, config) {
+        // On success, update the current selectedCount on this DataRegion and fire the 'selectchange' event
+        var updateSelected = function(data) {
+            region.selectionModified = true;
+            region.selectedCount = data.count;
+            _onSelectionChange(region);
+        };
+
+        // Chain updateSelected with the user-provided success callback
+        var success = LABKEY.Utils.getOnSuccess(config);
+        if (success) {
+            success = updateSelected.createSequence(success, config.scope);
+        }
+        else {
+            success = updateSelected;
+        }
+
+        config.success = success;
+        return config;
+    };
+
+    var _changeFilter = function(region, newParamValPairs, newQueryString) {
+
+        var event = $.Event('beforefilterchange');
+
+        var filterPairs = [], name, val;
+        $.each(newParamValPairs, function(i, pair) {
+            name = pair[0];
+            val = pair[1];
+            if (name.indexOf(region.name + '.') == 0 && name.indexOf('~') > -1) {
+                filterPairs.push([name, val]);
+            }
+        });
+
+        $(region).trigger(event, region, filterPairs);
+        if (event.isDefaultPrevented()) {
+            return;
+        }
+
+        var params = _getParameters(region, newQueryString, [region.name + OFFSET_PREFIX]);
+        region.setSearchString.call(region, region.name, _buildQueryString(region, params));
+    };
+
+    var _deleteCustomView = function(region, complete, message) {
+        var timerId = setTimeout(function() {
+            timerId = 0;
+            region.showLoadingMessage(message);
+        }, 500);
+
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('query', 'deleteView', region.containerPath),
+            jsonData: {schemaName: region.schemaName, queryName: region.queryName, viewName: region.viewName, complete: complete},
+            method: 'POST',
+            callback: function() {
+                if (timerId > 0) { clearTimeout(timerId); }
+            },
+            success: LABKEY.Utils.getCallbackWrapper(function(json) {
+                region.showSuccessMessage.call(region);
+                // change view to either a shadowed view or the default view
+                region.changeView.call(region, {type: 'view', viewName: json.viewName})
+            }, region),
+            failure: LABKEY.Utils.getCallbackWrapper(function(json) {
+                region.showErrorMessage.call(json.exception);
+            }, region, true),
+            scope: region
+        });
+    };
+
+    var _getAllRowSelectors = function(region) {
+        var nameSel = '#' + region.name;
+        var baseSel = 'form' + nameSel;
+        return $(baseSel + ' .labkey-selectors input[type="checkbox"][name=".toggle"]');
+    };
+
+    var _getRowSelectors = function(region) {
+        var nameSel = '#' + region.name;
+        var baseSel = 'form' + nameSel;
+        return $(baseSel + ' .labkey-selectors input[type="checkbox"][name=".select"]');
+    };
+
+    var _getHeaderSelector = function(region) {
+        return $('#dataregion_header_' + region.name);
+    };
+
+    // Formerly, LABKEY.DataRegion.getParamValPairs
+    var _getParametersSearch = function(region, qString, skipPrefixSet /* optional */) {
+        if (!qString) {
+            qString = region.getSearchString.call(region);
+        }
+        return _getParameters(region, qString, skipPrefixSet);
+    };
+
+    // Formerly, LABKEY.DataRegion.getParamValPairsFromString
+    var _getParameters = function(region, qString, skipPrefixSet /* optional */) {
+
+        var params = [];
+
+        if (LABKEY.Utils.isString(qString) && qString.length > 0) {
+
+            var qmIdx = qString.indexOf('?');
+            if (qmIdx > -1) {
+                qString = qString.substring(qmIdx + 1);
+            }
+
+            var pairs = qString.split('&'), p, key,
+                    LAST = '.lastFilter', lastIdx, skip = $.isArray(skipPrefixSet);
+
+            $.each(pairs, function(i, pair) {
+                p = pair.split('=', 2);
+                key = p[0] = decodeURIComponent(p[0]);
+                lastIdx = key.indexOf(LAST);
+
+                if (lastIdx > -1 && lastIdx == (key.length - LAST.length)) {
+                    return;
+                }
+
+                var stop = false;
+                if (skip) {
+                    $.each(skipPrefixSet, function(j, skipPrefix) {
+                        if (LABKEY.Utils.isString(skipPrefix)) {
+
+                            // Special prefix that should remove all filters, but no other parameters
+                            if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) == (skipPrefix.length - 2)) {
+                                if (key.indexOf('~') > 0) {
+                                    stop = true;
+                                    return false;
+                                }
+                            }
+                            else if (key.indexOf(skipPrefix) == 0) {
+                                // only skip filters, parameters, and sorts
+                                if (key == skipPrefix ||
+                                        key.indexOf("~") > 0 ||
+                                        key.indexOf(PARAM_PREFIX) > 0 ||
+                                        key == (skipPrefix + "sort")) {
+                                    stop = true;
+                                    return false;
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if (!stop) {
+                    if (p.length > 1) {
+                        p[1] = decodeURIComponent(p[1]);
+                    }
+                    params.push(p);
+                }
+            });
+        }
+
+        return params;
+    };
+
+    var _buttonBind = function(region, cls, fn) {
+        region.msgbox.find('.labkey-button' + cls).on('click', $.proxy(function() {
+            fn.call(this);
+        }, region));
+    };
+
+    var _onRenderMessageArea = function(region, parts) {
+        var msgArea = region.msgbox;
+        if (msgArea) {
+            if (region.showRecordSelectors && parts['selection']) {
+                _buttonBind(region, '.select-all', region.selectAll);
+                _buttonBind(region, '.select-none', region.clearSelected);
+                _buttonBind(region, '.show-all', region.showAll);
+                _buttonBind(region, '.show-selected', region.showSelected);
+                _buttonBind(region, '.show-unselected', region.showUnselected);
+            }
+            else if (parts['customizeview']) {
+                _buttonBind(region, '.unsavedview-revert', function() { _revertCustomView(this); });
+                _buttonBind(region, '.unsavedview-edit', function() { this.showCustomView(undefined, true, true); });
+                _buttonBind(region, '.unsavedview-save', function() { _saveSessionCustomView(this); });
+            }
+        }
+    };
+
+    var _onSelectionChange = function(region) {
+        $(region).trigger('selectchange', [region, region.selectedCount]);
+        _updateRequiresSelectionButtons(region, region.selectedCount);
+    };
+
+    var _onViewSave = function(region, designer, savedViewsInfo, urlParameters) {
+        if (savedViewsInfo && savedViewsInfo.views.length > 0) {
+            region.hideCustomizeView.call(region, false);
+            region.changeView.call(region, {
+                type: 'view',
+                viewName: savedViewsInfo.views[0].name
+            }, urlParameters);
+        }
+    };
+
+    var _removeParameters = function(region, skipPrefixes /* optional */) {
+        return _setParameters(region, null, skipPrefixes);
+    };
+
+    var _revertCustomView = function(region) {
+        _deleteCustomView(region, false, 'Reverting view...');
+    };
+
+    var _resolveFieldKey = function(region, fieldKey) {
+        var fk = fieldKey;
+        if (!(fk instanceof LABKEY.FieldKey)) {
+            fk = LABKEY.FieldKey.fromString('' + fk);
+        }
+        return fk;
+    };
+
+    var _saveSessionCustomView = function(region) {
+        // Note: currently only will save session views. Future version could create a new view using url sort/filters.
+        if (!(region.view && region.view.session)) {
+            return;
+        }
+
+        // Get the canEditSharedViews permission and candidate targetContainers.
+        var viewName = (this.view && this.view.name) || this.viewName || '';
+        LABKEY.Query.getQueryDetails({
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            viewName: viewName,
+            initializeMissingView: false,
+            success: function (json) {
+                // Display an error if there was an issue error getting the query details
+                if (json.exception) {
+                    var viewSourceUrl = LABKEY.ActionURL.buildURL('query', 'viewQuerySource.view', null, {schemaName: this.schemaName, "query.queryName": this.queryName});
+                    var msg = LABKEY.Utils.encodeHtml(json.exception) + " &nbsp;<a target=_blank class='labkey-button' href='" + viewSourceUrl + "'>View Source</a>";
+
+                    this.showErrorMessage.call(this, msg);
+                    return;
+                }
+
+                _saveSessionShowPrompt(this, json);
+            },
+            scope: region
+        });
+    };
+
+    var _saveSessionShowPrompt = function(region, queryDetails) {
+        var config = Ext.applyIf({
+            allowableContainerFilters: region.allowableContainerFilters,
+            targetContainers: queryDetails.targetContainers,
+            canEditSharedViews: queryDetails.canEditSharedViews,
+            canEdit: LABKEY.DataRegion._getCustomViewEditableErrors(config).length == 0,
+            success: function (win, o) {
+                var timerId = setTimeout(function() {
+                    timerId = 0;
+                    Ext.Msg.progress("Saving...", "Saving custom view...");
+                }, 500);
+
+                var jsonData = {
+                    schemaName: region.schemaName,
+                    "query.queryName": region.queryName,
+                    "query.viewName": region.viewName,
+                    newName: o.name,
+                    inherit: o.inherit,
+                    shared: o.shared
+                };
+
+                if (o.inherit) {
+                    jsonData.containerPath = o.containerPath;
+                }
+
+                LABKEY.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL('query', 'saveSessionView', region.containerPath),
+                    method: 'POST',
+                    jsonData: jsonData,
+                    callback: function() {
+                        if (timerId > 0)
+                            clearTimeout(timerId);
+                        win.close();
+                        Ext.Msg.hide();
+                    },
+                    success: function() {
+                        region.showSuccessMessage.call(region);
+                        region.changeView({type: 'view', viewName: o.name});
+                    },
+                    failure: function(json) {
+                        Ext.Msg.alert('Error saving view', json.exception);
+                    },
+                    scope: region
+                });
+            },
+            scope: region
+        }, region.view);
+
+        LABKEY.DataRegion.saveCustomizeViewPrompt(config);
+    };
+
+    var _setParameter = function(region, param, value, skipPrefixes /* optional */) {
+        _setParameters(region, [[param, value]], skipPrefixes);
+    };
+
+    var _setParameters = function(region, newParamValPairs, skipPrefixes /* optional */) {
+
+        if ($.isArray(skipPrefixes)) {
+            $.each(skipPrefixes, function(i, skip) {
+                skipPrefixes[i] = region.name + skip;
+            });
+        }
+
+        var param, value,
+                params = _getParametersSearch(region, region.requestURL, skipPrefixes);
+
+        if ($.isArray(newParamValPairs)) {
+            $.each(newParamValPairs, function(i, newPair) {
+                if (!$.isArray(newPair)) {
+                    throw new Error("DataRegion: _setParameters newParamValPairs improperly initialized. It is an array of arrays. You most likely passed in an array of strings.");
+                    return false;
+                }
+                param = newPair[0];
+                value = newPair[1];
+
+                // Allow value to be null/undefined to support no-value filter types (Is Blank, etc)
+                if (LABKEY.Utils.isString(param)) {
+                    if (param.indexOf(region.name) !== 0) {
+                        param = region.name + param;
+                    }
+
+                    params.push([param, value]);
+                }
+            });
+        }
+
+        region.setSearchString.call(region, region.name, _buildQueryString(region, params));
+    };
+
+    var _hideExt3ButtonPanel = function(region, animate) {
+        var header = Ext.get(_getHeaderSelector(region)[0]);
+        var panelDiv = header.child(".labkey-ribbon");
+        var _duration = 0.4, y, h;
+
+        if (region.currentPanelId) {
+            var panelToHide =  region.panelButtonContents[region.currentPanelId];
+
+            if (region.headerLock.call(region)) {
+                y = region.colHeaderRow.getY();
+                h = region.headerSpacer.getHeight();
+            }
+
+            var callback = function() {
+                panelToHide.setVisible(false);
+                $(region).trigger('afterpanelhide');
+                region.currentPanelId = null;
+                // Close the panelDiv since we're not adding a new panel.
+                panelDiv.setDisplayed(true);
+                // Remove highlight from the button that triggered the menu. The button in question *should* be the
+                // only button below the dataregion that has the labkey-menu-button-active class on it.
+                if (panelToHide.button) {
+                    var btnEl = Ext.get(panelToHide.button);
+                    if (btnEl) {
+                        // Remove the highlight from the button that opened up the panel, since the panel is being closed
+                        btnEl.removeClass('labkey-menu-button-active');
+                    }
+                }
+            };
+
+            if (animate) {
+                panelToHide.getEl().slideOut('t', {
+                    callback: callback,
+                    concurrent: true,
+                    duration: _duration,
+                    scope: region
+                });
+            }
+            else {
+                callback.call(region);
+            }
+
+            if (region.headerLock.call(region)) {
+                region.headerSpacer.setHeight(h - panelToHide.getHeight());
+                region.colHeaderRow.shift({y: (y - panelToHide.getHeight()), duration: _duration, concurrent: true, scope: region});
+            }
+        }
+    };
+
+    /**
+     * @private
+     * This method is used to show/hide an Ext.ux.GroupTab panel in the 'ribbon' bar. It requires that ExtJS be
+     * handed in as an argument. This has basically been left untouched from the Ext implementation and is dying for a
+     * re-write (like why does the "show" function do all the hiding?)
+     */
+    var _showExt3ButtonPanel = function(region, Ext, panelId, animate, tabPanelConfig, button) {
+        var header = Ext.get(_getHeaderSelector(region)[0]);
+        var panelDiv = header.child(".labkey-ribbon");
+        if (panelDiv) {
+            var panelToHide = null;
+            // If we find a spot to put the panel, check its current contents
+            if (region.currentPanelId) {
+                // We're currently showing a ribbon panel, so remember that we need to hide it
+                panelToHide = region.panelButtonContents[region.currentPanelId];
+                if (panelToHide && panelToHide.button) {
+                    var btnEl = Ext.get(panelToHide.button);
+                    if (btnEl) {
+                        // Remove the highlight from the button that opened up the panel, since the panel is being closed
+                        btnEl.removeClass('labkey-menu-button-active');
+                    }
+                    panelToHide.button = undefined;
+                }
+            }
+
+            var _duration = 0.4, y, h;
+
+            // Create a callback function to render the requested ribbon panel
+            var callback = function () {
+                if (panelToHide) {
+                    panelToHide.setVisible(false);
+                }
+                if (region.currentPanelId != panelId) {
+                    panelDiv.setDisplayed(true);
+                    if (!region.panelButtonContents[panelId]) {
+                        var minWidth = 700;
+                        var tabContentWidth = 0;
+
+                        // New up the TabPanel if we haven't already
+                        // Only create one per button, even if that button is rendered both above and below the grid
+                        tabPanelConfig.cls = 'vertical-tabs';
+                        tabPanelConfig.tabWidth = 80;
+                        tabPanelConfig.renderTo = panelDiv;
+                        tabPanelConfig.activeGroup = 0;
+
+                        var newItems = [];
+                        $.each(tabPanelConfig.items, function(i, item) {
+                            item.autoScroll = true;
+
+                            //FF and IE won't auto-resize the tab panel to fit the content
+                            //so we need to calculate the min size and set it explicitly
+                            if (Ext.isGecko || Ext.isIE) {
+                                if (!item.events) {
+                                    item = Ext.create(item, 'grouptab');
+                                }
+                                item.removeClass("x-hide-display");
+                                if (item.items.getCount() > 0 && item.items.items[0].contentEl) {
+                                    tabContentWidth = Ext.get(item.items.items[0].contentEl).getWidth();
+                                    item.addClass("x-hide-display");
+                                    minWidth = Math.min(minWidth, tabContentWidth);
+                                }
+                            }
+
+                            newItems.push(item);
+                        });
+                        tabPanelConfig.items = newItems;
+                        if ((Ext.isGecko || Ext.isIE) && minWidth > 0 && header.getWidth() < minWidth) {
+                            tabPanelConfig.width = minWidth;
+                        }
+                        region.panelButtonContents[panelId] = new Ext.ux.GroupTabPanel(tabPanelConfig);
+                    }
+                    else {
+                        // Otherwise, be sure that it's parented correctly - it might have been shown
+                        // in a different button bar position
+                        region.panelButtonContents[panelId].getEl().appendTo(Ext.get(panelDiv));
+                    }
+
+                    var buttonElement = Ext.get(button);
+                    if (buttonElement) {
+                        // Highlight the button that opened up the panel, if it's directly on the button bar
+                        buttonElement.addClass('labkey-menu-button-active');
+                    }
+
+                    region.panelButtonContents[panelId].button = button;
+
+                    region.currentPanelId = panelId;
+
+                    // Slide it into place
+                    var panelToShow = region.panelButtonContents[panelId];
+                    panelToShow.setVisible(true);
+
+                    if (region.headerLock.call(region)) {
+                        y = region.colHeaderRow.getY();
+                        h = region.headerSpacer.getHeight();
+                    }
+
+                    if (animate) {
+                        panelToShow.getEl().slideIn('t', {
+                            callback: function() {
+                                $(this).trigger('afterpanelshow');
+                            },
+                            concurrent: true,
+                            duration: _duration,
+                            scope: region
+                        });
+                    }
+                    else {
+                        panelToShow.getEl().setVisible(true);
+                        $(region).trigger('afterpanelshow');
+                    }
+
+                    if (region.headerLock.call(region)) {
+                        region.headerSpacer.setHeight(h + panelToShow.getHeight());
+                        region.colHeaderRow.shift({y: (y + panelToShow.getHeight()), duration: _duration, concurrent: true, scope: region});
+                    }
+
+                    panelToShow.setWidth(panelToShow.getResizeEl().getWidth());
+                }
+                else {
+                    region.currentPanelId = null;
+                    panelDiv.setDisplayed(false);
+                }
+            };
+
+            if (region.currentPanelId) {
+                // We're already showing a ribbon panel, so hide it before showing the new one
+                if (region.headerLock.call(region)) {
+                    y = region.colHeaderRow.getY();
+                    h = region.headerSpacer.getHeight();
+                }
+
+                if (animate) {
+                    panelToHide.getEl().slideOut('t', {
+                        callback: function() {
+                            $(this).trigger('afterpanelhide');
+                            callback.call(this);
+                        },
+                        concurrent: true,
+                        duration: _duration,
+                        scope: region
+                    });
+                }
+                else {
+                    panelToHide.getEl().setVisible(false);
+                    $(region).trigger('afterpanelhide');
+                    callback.call(region);
+                }
+
+                if (region.headerLock.call(region)) {
+                    region.headerSpacer.setHeight(h - panelToHide.getHeight());
+                    region.colHeaderRow.shift({y: (y - panelToHide.getHeight()), duration: _duration, concurrent: true, scope: region});
+                }
+            }
+            else {
+                // We're not showing another ribbon panel, so show the new one right away
+                callback.call(region);
+            }
+        }
+    };
+
+    var _showRows = function(region, showRowsEnum) {
+        if (_beforeRowsChange(region, showRowsEnum)) {
+            _setParameter(region, SHOW_ROWS_PREFIX, showRowsEnum, [OFFSET_PREFIX, MAX_ROWS_PREFIX, SHOW_ROWS_PREFIX]);
+        }
+    };
+
+    var _showSelectMessage = function(region, msg) {
+        if (region.showRecordSelectors) {
+            if (region.totalRows && region.totalRows != region.selectedCount) {
+                msg += "&nbsp;<span class='labkey-button select-all'>Select All " + region.totalRows + " Rows</span>";
+            }
+
+            msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
+            var showOpts = [];
+            if (region.showRows != "all")
+                showOpts.push("<span class='labkey-button show-all'>Show All</span>");
+            if (region.showRows != "selected")
+                showOpts.push("<span class='labkey-button show-selected'>Show Selected</span>");
+            if (region.showRows != "unselected")
+                showOpts.push("<span class='labkey-button show-unselected'>Show Unselected</span>");
+            msg += "&nbsp;&nbsp;" + showOpts.join(" ");
+        }
+
+        // add the record selector message, the link handlers will get added after render in _onRenderMessageArea
+        region.addMessage.call(region, msg, 'selection');
+    };
+
+    var _toggleAllRows = function(region, checked) {
+        var ids = [];
+
+        _getRowSelectors(region).each(function() {
+            if (!this.disabled) {
+                this.checked = checked;
+                ids.push(this.value);
+            }
+        });
+
+        _getAllRowSelectors(region).each(function() { this.checked = (checked == true)});
+        return ids;
+    };
+
+    var _updateFilter = function(region, filter, skipPrefixes) {
+        var params = _getParameters(region, region.requestURL, skipPrefixes);
+        if (filter) {
+            params.push([filter.getURLParameterName(region.name), filter.getURLParameterValue()]);
+        }
+        _changeFilter(region, params, _buildQueryString(region, params));
+    };
+
+    var _updateRequiresSelectionButtons = function(region, selectedCount) {
+
+        // update the 'select all on page' checkbox state
+        _getAllRowSelectors(region).each(function() {
+            if (region.isPageSelected.call(region)) {
+                this.checked = true;
+                this.indeterminate = false;
+            }
+            else if (region.selectedCount > 0) {
+                // There are rows selected, but the are not visible on this page.
+                this.checked = false;
+                this.indeterminate = true;
+            }
+            else {
+                this.checked = false;
+                this.indeterminate = false;
+            }
+        });
+
+        // If all rows have been selected (but not all rows are visible), show selection message
+        if (region.totalRows && region.selectedCount == region.totalRows && !region.complete) {
+            _showSelectMessage(region, 'All <span class="labkey-strong">' + region.totalRows + '</span> rows selected.');
+        }
+
+        // 10566: for javascript perf on IE stash the requires selection buttons
+        if (!region._requiresSelectionButtons) {
+            // escape ', ", and \
+            var escaped = region.name.replace(/('|"|\\)/g, "\\$1");
+            region._requiresSelectionButtons = $("a[labkey-requires-selection='" + escaped + "']");
+        }
+
+        region._requiresSelectionButtons.each(function() {
+            var el = $(this);
+
+            // handle min-count
+            var minCount = el.attr('labkey-requires-selection-min-count');
+            if (minCount) {
+                minCount = parseInt(minCount.value);
+            }
+            if (minCount === undefined) {
+                minCount = 1;
+            }
+
+            // handle max-count
+            var maxCount = el.attr('labkey-requires-selection-max-count');
+            if (maxCount) {
+                maxCount = parseInt(maxCount.value);
+            }
+
+            if (minCount <= selectedCount && (!maxCount || maxCount >= selectedCount)) {
+                el.addClass('labkey-button').removeClass('labkey-disabled-button');
+            }
+            else {
+                el.addClass('labkey-disabled-button').removeClass('labkey-button');
+            }
+        });
+    };
+
+    LABKEY.DataRegion2.registerPane = function(regionName, callback, scope) {
+        var region = LABKEY.DataRegions[regionName];
+        if (region) {
+            callback.call(scope || region, region);
+            return;
+        }
+        else if (!_paneCache[regionName]) {
+            _paneCache[regionName] = [];
+        }
+
+        _paneCache[regionName].push({cb: callback, scope: scope});
+    };
 
     LABKEY.DataRegion2.selectAll = function(config) {
         var params = {};
@@ -1526,7 +2141,7 @@
             // DataRegion doesn't have selectAllURL so generate url and query parameters manually
             config.url = LABKEY.ActionURL.buildURL('query', 'selectAll.api', config.containerPath);
 
-            config.dataRegionName = config.dataRegionName || "query";
+            config.dataRegionName = config.dataRegionName || 'query';
 
             params = LABKEY.Query.buildQueryParams(
                     config.schemaName,
@@ -1537,7 +2152,7 @@
             );
 
             if (config.viewName)
-                params[config.dataRegionName + '.viewName'] = config.viewName;
+                params[config.dataRegionName + VIEWNAME_PREFIX] = config.viewName;
 
             if (config.containerFilter)
                 params.containerFilter = config.containerFilter;
@@ -1712,8 +2327,9 @@
     };
 
     MsgProto.removeMessage = function(part) {
-        if (this.parts.hasOwnProperty(part)) {
-            delete this.parts[part];
+        var p = part.toLowerCase();
+        if (this.parts.hasOwnProperty(p)) {
+            delete this.parts[p];
             this.render();
         }
     };

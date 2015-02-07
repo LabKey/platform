@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.data.TSVWriter" %>
+<%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -45,10 +45,11 @@
     QueryView.TextExportOptionsBean model = (QueryView.TextExportOptionsBean)HttpView.currentModel();
     boolean hasSelected = model.hasSelected(getViewContext());
     String exportRegionName = model.getExportRegionName();
+    String DRNamespace = DataRegion.useExperimentalDataRegion() ? "LABKEY.DataRegion2" : "LABKEY.DataRegion";
 %>
 <table class="labkey-export-tab-contents">
     <tr>
-        <td>Separator:</td>
+        <td><label for="<%=text(delimGUID)%>">Separator:</label></td>
         <td>
             <select id="<%=text(delimGUID)%>" name="delim">
                 <labkey:options value="<%=TSVWriter.DELIM.TAB%>" map="<%=delimiterMap%>" />
@@ -56,7 +57,7 @@
         </td>
     </tr>
     <tr>
-        <td>Quote:</td>
+        <td><label for="<%=text(quoteGUID)%>">Quote:</label></td>
         <td>
             <select id="<%=text(quoteGUID)%>" name="quote">
                 <labkey:options value="<%=TSVWriter.QUOTE.DOUBLE%>" map="<%=quoteMap%>" />
@@ -71,78 +72,65 @@
         </td>
     </tr>
     <tr>
-        <td colspan=2>
-            <%= button("Export to Text").id(exportButtonId) %>
-        </td>
+        <td colspan="2"><%= button("Export to Text").id(exportButtonId) %></td>
     </tr>
 </table>
 <script>
-Ext.onReady(function () {
-    var delimEl = document.getElementById("<%=h(delimGUID)%>");
-    var quoteEl = document.getElementById("<%=h(quoteGUID)%>");
+    (function($) {
 
-    var exportSelectedEl = document.getElementById("<%=h(exportSelectedId)%>");
-    var exportSelectedLabelEl = document.getElementById("<%=h(exportSelectedId + "_label")%>");
+        <%=text(DRNamespace)%>.registerPane(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function(dr) {
+            var delimEl = $("#<%=h(delimGUID)%>"),
+                quoteEl = $("#<%=h(quoteGUID)%>"),
+                exportSelectedEl = $("#<%=h(exportSelectedId)%>"),
+                exportSelectedLabelEl = $("#<%=h(exportSelectedId + "_label")%>");
 
-    <%-- CONSIDER: Add a universal export function to LABKEY.DataRegion clientapi --%>
-    function doTsvExport()
-    {
-        var dr = LABKEY.DataRegions[<%=PageFlowUtil.jsString(model.getDataRegionName())%>];
+            var doTsvExport = function() {
+                var exportRegionName = <%=PageFlowUtil.jsString(exportRegionName)%>;
+                var selectedParam = exportRegionName + '.showRows=SELECTED';
+                var url = <%=PageFlowUtil.jsString(model.getTsvURL().toString())%>;
+                if (exportSelectedEl.is(':checked')) {
+                    if (url.indexOf(exportRegionName + '.showRows=ALL') == -1) {
+                        url = url+'&'+selectedParam;
+                    }
+                    else {
+                        url = url.replace(exportRegionName + '.showRows=ALL', selectedParam);
+                    }
+                    url = url + '&' + exportRegionName + '.selectionKey=' + dr.selectionKey;
+                }
 
-        var exportRegionName = <%=PageFlowUtil.jsString(exportRegionName)%>;
-        var selectedParam = exportRegionName + '.showRows=SELECTED';
-        var url = <%=PageFlowUtil.jsString(model.getTsvURL().toString())%>;
-        if (exportSelectedEl.checked) {
-          if (url.indexOf(exportRegionName + '.showRows=ALL') == -1) {
-            url = url+'&'+selectedParam;
-          } else {
-            url = url.replace(exportRegionName + '.showRows=ALL', selectedParam);
-          }
-          url = url+'&' + exportRegionName + '.selectionKey=' + dr.selectionKey;
-        }
+                url = url + '&delim=' + delimEl.value + '&quote=' + quoteEl.value;
 
-        url = url + '&delim=' + delimEl.value + '&quote=' + quoteEl.value;
+                dr.addMessage({
+                    html: '<div class=\"labkey-message\"><strong>Text export started.</strong></div>',
+                    part: 'excelExport', hideButtonPanel: true, duration:5000
+                });
 
-        dr.addMessage({
-            html: '<div class=\"labkey-message\"><strong>Text export started.</strong></div>',
-            part: 'excelExport', hideButtonPanel: true, duration:5000
+                window.location = url;
+                return false;
+            };
+
+            var enableExportSelected = function() {
+                if (exportSelectedEl.is(':disabled')) {
+                    exportSelectedEl.prop('checked', true);
+                    exportSelectedEl.prop('disabled', false);
+                    exportSelectedLabelEl.removeClass();
+                }
+            };
+
+            var disableExportSelected = function() {
+                exportSelectedEl.prop('checked', false);
+                exportSelectedEl.prop('disabled', true);
+                exportSelectedLabelEl.addClass('labkey-disabled');
+            };
+
+            var exportButtonEl = $("#<%=h(exportButtonId)%>");
+            exportButtonEl.click(doTsvExport);
+
+            dr.on('selectchange', function(dr, selectedCount) {
+                selectedCount > 0 ? enableExportSelected() : disableExportSelected();
+            });
         });
 
-        window.location = url;
-        return false;
-    }
-
-    function enableExportSelected()
-    {
-        if (exportSelectedEl.disabled) {
-            exportSelectedEl.checked = true;
-            exportSelectedEl.disabled = false;
-            exportSelectedLabelEl.className = "";
-        }
-    }
-
-    function disableExportSelected()
-    {
-        exportSelectedEl.checked = false;
-        exportSelectedEl.disabled = true;
-        exportSelectedLabelEl.className = "labkey-disabled";
-    }
-
-    var exportButtonEl = document.getElementById("<%=h(exportButtonId)%>");
-    if (exportButtonEl.addEventListener)
-        exportButtonEl.addEventListener('click', doTsvExport, false);
-    else if (exportButtonEl.attachEvent)
-        exportButtonEl.attachEvent('onclick', doTsvExport);
-
-    Ext.ComponentMgr.onAvailable(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function (dr) {
-        dr.on('selectchange', function (dr, selectedCount) {
-            if (selectedCount > 0) {
-                enableExportSelected();
-            } else {
-                disableExportSelected();
-            }
-        });
-    });
-});
+    })(jQuery);
 </script>
 

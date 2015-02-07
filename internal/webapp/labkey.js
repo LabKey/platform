@@ -251,21 +251,22 @@ if (typeof LABKEY == "undefined")
 
         //private
         //Pull in the required JS files and invoke the callback when they're loaded
-        var initializeViewDesigner = function(dependenciesCallback, scope)
+        var initializeViewDesigner = function(cb, scope)
         {
-            var dependencies = [
-                "query/queryDesigner.js",
-                "groupTabPanel/GroupTabPanel.js",
-                "groupTabPanel/GroupTab.js",
-                "ComponentDataView.js",
-                "Ext.ux.dd.GridDragDropRowOrder.js"
+            var scripts = [
+                'query/queryDesigner.js',
+                'ComponentDataView.js',
+                'Ext.ux.dd.GridDragDropRowOrder.js'
             ];
+
+            requiresExt3ClientAPI(true, function() {
+                requiresScript(scripts, true, function() {
+                    requiresScript('designer/designer2.js', true, cb, scope)
+                });
+            });
 
             requiresCss("groupTabPanel/GroupTab.css");
             requiresCss("groupTabPanel/UngroupedTab.css");
-            requiresScript(dependencies, true, function () {
-                requiresScript("designer/designer2.js", true, dependenciesCallback, scope)
-            });
         };
 
         var isDirty = function()

@@ -2728,7 +2728,8 @@ public class QueryView extends WebPartView<Object>
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("clientapi/ext3"));
+        if (!DataRegion.useExperimentalDataRegion())
+            resources.add(ClientDependency.fromPath("clientapi/ext3"));
         resources.addAll(super.getClientDependencies());
 
         ButtonBarConfig cfg = _buttonBarConfig;
