@@ -41,6 +41,8 @@ import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
+import org.labkey.api.data.JdbcMetaDataSelector2.JdbcMetaDataResultSetFactory;
+import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -1199,7 +1201,7 @@ public class QueryController extends SpringActionController
                 ti = ((FilteredTable) ti).getRealTable();
 
             if (ti instanceof SchemaTableInfo)
-                _tableName = ((SchemaTableInfo) ti).getMetaDataName();
+                _tableName = ti.getMetaDataName();
             else
                 _tableName = ti.getSelectName();
 
@@ -1209,36 +1211,32 @@ public class QueryController extends SpringActionController
 
             ModelAndView metaDataView;
             ModelAndView pkView;
-            Connection con = null;
 
-            try
+            SqlDialect dialect = scope.getSqlDialect();
+
+            try (JdbcMetaDataLocator locator = dialect.getMetaDataLocator(scope, _schemaName, _tableName))
             {
-                con = scope.getConnection();
-                SqlDialect dialect = scope.getSqlDialect();
-                DatabaseMetaData dbmd = con.getMetaData();
+                JdbcMetaDataSelector2 columnSelector = new JdbcMetaDataSelector2(locator, new JdbcMetaDataResultSetFactory()
+                {
+                    @Override
+                    public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
+                    {
+                        return dbmd.getColumns(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), null);
+                    }
+                });
 
-                ResultSet columnsRs;
+                metaDataView = new ResultSetView(CachedResultSets.create(columnSelector.getResultSet(), true, Table.ALL_ROWS), "Table Meta Data");
 
-                if (dialect.treatCatalogsAsSchemas())
-                    columnsRs = dbmd.getColumns(_schemaName, null, _tableName, null);
-                else
-                    columnsRs = dbmd.getColumns(null, _schemaName, _tableName, null);
+                JdbcMetaDataSelector2 pkSelector = new JdbcMetaDataSelector2(locator, new JdbcMetaDataResultSetFactory()
+                {
+                    @Override
+                    public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
+                    {
+                        return dbmd.getPrimaryKeys(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName());
+                    }
+                });
 
-                metaDataView = new ResultSetView(CachedResultSets.create(columnsRs, true, Table.ALL_ROWS), "Table Meta Data");
-
-                ResultSet pksRs;
-
-                if (dialect.treatCatalogsAsSchemas())
-                    pksRs = dbmd.getPrimaryKeys(_schemaName, null, _tableName);
-                else
-                    pksRs = dbmd.getPrimaryKeys(null, _schemaName, _tableName);
-
-                pkView = new ResultSetView(CachedResultSets.create(pksRs, true, Table.ALL_ROWS), "Primary Key Meta Data");
-            }
-            finally
-            {
-                if (null != con)
-                    scope.releaseConnection(con);
+                pkView = new ResultSetView(CachedResultSets.create(pkSelector.getResultSet(), true, Table.ALL_ROWS), "Primary Key Meta Data");
             }
 
             return new VBox(scopeInfo, metaDataView, pkView);
@@ -1267,24 +1265,23 @@ public class QueryController extends SpringActionController
 
             HttpView scopeInfo = new ScopeView("Scope Information", scope);
 
-            ModelAndView tableInfo;
-            Connection con = null;
+            ModelAndView tablesView;
 
-            try
+            try (JdbcMetaDataLocator locator = dialect.getMetaDataLocator(scope, _schemaName, null))
             {
-                con = scope.getConnection();
-                DatabaseMetaData dma = con.getMetaData();
-                ResultSet rs;
-
-                if (dialect.treatCatalogsAsSchemas())
-                    rs = dma.getTables(_schemaName, null, null, null);
-                else
-                    rs = dma.getTables(null, _schemaName, null, null);
+                JdbcMetaDataSelector2 selector = new JdbcMetaDataSelector2(locator, new JdbcMetaDataResultSetFactory()
+                {
+                    @Override
+                    public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
+                    {
+                        return dbmd.getTables(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), null);
+                    }
+                });
 
                 ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
                 url.addParameter("schemaName", _schemaName);
                 String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
-                tableInfo = new ResultSetView(CachedResultSets.create(rs, true, Table.ALL_ROWS), "Tables", 3, tableLink) {
+                tablesView = new ResultSetView(CachedResultSets.create(selector.getResultSet(), true, Table.ALL_ROWS), "Tables", 3, tableLink) {
                     @Override
                     protected boolean shouldLink(ResultSet rs) throws SQLException
                     {
@@ -1294,13 +1291,8 @@ public class QueryController extends SpringActionController
                     }
                 };
             }
-            finally
-            {
-                if (null != con)
-                    scope.releaseConnection(con);
-            }
 
-            return new VBox(scopeInfo, tableInfo);
+            return new VBox(scopeInfo, tablesView);
         }
 
         public NavTree appendNavTrail(NavTree root)

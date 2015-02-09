@@ -20,15 +20,18 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
+import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.sql.ResultSet;
@@ -130,6 +133,20 @@ public class MySqlDialect extends SimpleSqlDialect
     public boolean treatCatalogsAsSchemas()
     {
         return true;
+    }
+
+    @Override
+    public JdbcMetaDataLocator getMetaDataLocator(DbScope scope, final String schemaName, String tableName) throws SQLException
+    {
+        // MySQL treats catalogs as schemas... i.e., getSchemaName() needs to return null and getCatalogName() needs to return the schema name
+        return new StandardJdbcMetaDataLocator(scope, null, tableName)
+        {
+            @Override
+            public String getCatalogName()
+            {
+                return schemaName;
+            }
+        };
     }
 
     @Override

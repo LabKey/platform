@@ -19,6 +19,9 @@ package org.labkey.bigiron.mssql;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
@@ -30,6 +33,7 @@ import org.labkey.api.data.InlineInClauseGenerator;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -38,8 +42,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.HelpTopic;
@@ -78,6 +84,9 @@ import java.util.regex.Pattern;
 // Dialect specifics for Microsoft SQL Server
 public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 {
+    // Cache of synonyms by datasource name. This lets admins force a re-query by clearing caches.
+    private static final Cache<String, Map<String, Map<String, Synonym>>> SYNONYM_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.YEAR, "SQL Server synonyms", new SynonymLoader());
+
     private volatile boolean _groupConcatInstalled = false;
 
     private final InClauseGenerator _defaultGenerator = new InlineInClauseGenerator(this);
@@ -1364,6 +1373,149 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             name = StringUtils.substringAfter(name, "@");
         return name;
     }
+
+    public static class Synonym
+    {
+        private String _schemaName;
+        private String _name;
+        private String _targetServer;
+        private String _targetDatabase;
+        private String _targetSchema;
+        private String _targetTable;
+
+        public Synonym()
+        {
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setTargetServer(String targetServer)
+        {
+            _targetServer = targetServer;
+        }
+
+        public String getTargetServer()
+        {
+            return _targetServer;
+        }
+
+        public void setTargetDatabase(String targetDatabase)
+        {
+            _targetDatabase = targetDatabase;
+        }
+
+        public String getTargetDatabase()
+        {
+            return _targetDatabase;
+        }
+
+        public void setTargetSchema(String targetSchema)
+        {
+            _targetSchema = targetSchema;
+        }
+
+        public String getTargetSchema()
+        {
+            return _targetSchema;
+        }
+
+        public void setTargetTable(String targetTable)
+        {
+            _targetTable = targetTable;
+        }
+
+        public String getTargetTable()
+        {
+            return _targetTable;
+        }
+    }
+
+
+    private static class SynonymLoader implements CacheLoader<String, Map<String, Map<String, Synonym>>>
+    {
+        @Override
+        public Map<String, Map<String, Synonym>> load(String key, @Nullable Object argument)
+        {
+            DbScope scope = DbScope.getDbScope(key);
+
+            SQLFragment sql = new SQLFragment("SELECT\n" +
+                "SCHEMA_NAME(s.schema_id) AS SchemaName,\n" +
+                "s.Name,\n" +
+                "COALESCE(PARSENAME(base_object_name, 4), @@servername) AS TargetServer,\n" +
+                "COALESCE(PARSENAME(base_object_name, 3), DB_NAME(DB_ID())) AS TargetDatabase,\n" +
+                "COALESCE(PARSENAME(base_object_name, 2), SCHEMA_NAME(SCHEMA_ID())) AS TargetSchema,\n" +
+                "PARSENAME(base_object_name, 1) AS TargetTable\n" +
+                "FROM sys.synonyms s INNER JOIN sys.objects o ON OBJECT_ID(base_object_name) = o.object_id\n" +   // Join back to objects to get synonym target type
+                "WHERE o.Type IN ('U', 'V')");                                                                  // Filter type... only tables and views
+
+            final Map<String, Map<String, Synonym>> synonymMap = new HashMap<>();
+
+            new SqlSelector(scope, sql).forEach(new Selector.ForEachBlock<Synonym>()
+            {
+                @Override
+                public void exec(Synonym synonym) throws SQLException
+                {
+                    Map<String, Synonym> map = synonymMap.get(synonym.getSchemaName());
+
+                    if (null == map)
+                    {
+                        map = new HashMap<>();
+                        synonymMap.put(synonym.getSchemaName(), map);
+                    }
+
+                    map.put(synonym.getName(), synonym);
+                }
+            }, Synonym.class);
+
+            return synonymMap;
+        }
+    }
+
+
+    private @NotNull Map<String, Synonym> getSynonymnMap(DbScope scope, String schemaName)
+    {
+        Map<String, Synonym> synonymMap = SYNONYM_CACHE.get(scope.getDataSourceName()).get(schemaName);
+
+        return null == synonymMap ? Collections.<String, Synonym>emptyMap() : synonymMap;
+    }
+
+
+    @Override
+    public void addTableNames(Map<String, String> map, DbScope scope, String schemaName)
+    {
+        Map<String, Synonym> synonymMap = getSynonymnMap(scope, schemaName);
+
+        for (String name : synonymMap.keySet())
+            map.put(name, name);
+    }
+
+
+    @Override
+    public JdbcMetaDataLocator getMetaDataLocator(DbScope scope, String schemaName, String tableName) throws SQLException
+    {
+        Synonym synonym = getSynonymnMap(scope, schemaName).get(tableName);
+
+        return null != synonym ? new StandardJdbcMetaDataLocator(scope, synonym.getTargetSchema(), synonym.getTargetTable()) : super.getMetaDataLocator(scope, schemaName, tableName);
+    }
+
 
     private enum TokenType
     {

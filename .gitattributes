@@ -485,6 +485,8 @@ core/resources/schemas/dbscripts/postgresql/prop-create.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/test-0.00-12.10.sql -text
 core/resources/schemas/dbscripts/postgresql/test-13.10-13.20.sql -text
+core/resources/schemas/dbscripts/postgresql/test-create.sql -text
+core/resources/schemas/dbscripts/postgresql/test-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-0.00-12.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.30-13.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.10-13.20.sql -text
@@ -668,6 +670,7 @@ core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/test-0.00-12.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/test-13.10-13.20.sql -text
+core/resources/schemas/dbscripts/sqlserver/test-14.32-14.33.sql -text
 core/resources/schemas/labkey.xml -text
 core/resources/scripts/ExtAdapter.js -text
 core/resources/scripts/console.js -text

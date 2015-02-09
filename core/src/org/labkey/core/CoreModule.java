@@ -753,7 +753,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Set<Class> testClasses = new HashSet<Class>(Arrays.asList(
                 Table.TestCase.class,
                 Table.DataIteratorTestCase.class,
-                DbSchema.TestCase.class,
+                DbSchema.SchemaXMLTestCase.class,
+                DbSchema.TableSelectTestCase.class,
+                DbSchema.TransactionTestCase.class,
+                DbSchema.CachingTestCase.class,
+                DbSchema.DDLMethodsTestCase.class,
+                DbSchema.SchemaCasingTestCase.class,
                 TableViewFormTestCase.class,
                 ActionURL.TestCase.class,
                 SecurityManager.TestCase.class,
