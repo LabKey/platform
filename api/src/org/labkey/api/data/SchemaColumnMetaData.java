@@ -19,6 +19,8 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.JdbcMetaDataSelector2.JdbcMetaDataResultSetFactory;
+import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -52,11 +54,6 @@ public class SchemaColumnMetaData
     private List<ColumnInfo> _pkColumns;
     private String _titleColumn = null;
     private boolean _hasDefaultTitleColumn = true;
-
-    protected SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
-    {
-        this(tinfo, true);
-    }
 
     SchemaColumnMetaData(SchemaTableInfo tinfo, boolean load) throws SQLException
     {
@@ -186,45 +183,44 @@ public class SchemaColumnMetaData
 
         loadColumnsFromMetaData(dbmd, catalogName, schemaName, ti);
 
-        Selector pkSelector = new JdbcMetaDataSelector(ti.getSchema().getScope(), dbmd, new JdbcMetaDataSelector.JdbcMetaDataResultSetFactory()
-        {
-            @Override
-            public ResultSet getResultSet(DbScope scope, DatabaseMetaData dbmd) throws SQLException
-            {
-                if (ti.getSqlDialect().treatCatalogsAsSchemas())
-                    return dbmd.getPrimaryKeys(schemaName, null, ti.getMetaDataName());
-                else
-                    return dbmd.getPrimaryKeys(catalogName, schemaName, ti.getMetaDataName());
-            }
-        });
-
         // Use TreeMap to order columns by keySeq
-        Map<Integer, String> pkMap = new TreeMap<>();
+        Map<Integer, String> pkMap2 = new TreeMap<>();
 
-        try (ResultSet rs = pkSelector.getResultSet())
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
         {
-            int columnCount = 0;
-            PkMetaDataReader reader = ti.getSqlDialect().getPkMetaDataReader(rs);
+            JdbcMetaDataSelector2 pkSelector = new JdbcMetaDataSelector2(locator, new JdbcMetaDataResultSetFactory(){
+                @Override
+                public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
+                {
+                    return dbmd.getPrimaryKeys(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName());
+                }
+            });
 
-            while (rs.next())
+            try (ResultSet rs = pkSelector.getResultSet())
             {
-                columnCount++;
-                String colName = reader.getName();
-                ColumnInfo colInfo = getColumn(colName);
-                assert null != colInfo;
+                int columnCount = 0;
+                PkMetaDataReader reader = ti.getSqlDialect().getPkMetaDataReader(rs);
 
-                colInfo.setKeyField(true);
-                int keySeq = reader.getKeySeq();
+                while (rs.next())
+                {
+                    columnCount++;
+                    String colName = reader.getName();
+                    ColumnInfo colInfo = getColumn(colName);
+                    assert null != colInfo;
 
-                // If we don't have sequence information (e.g., SAS doesn't return it) then use 1-based counter as a backup
-                if (0 == keySeq)
-                    keySeq = columnCount;
+                    colInfo.setKeyField(true);
+                    int keySeq = reader.getKeySeq();
 
-                pkMap.put(keySeq, colName);
+                    // If we don't have sequence information (e.g., SAS doesn't return it) then use 1-based counter as a backup
+                    if (0 == keySeq)
+                        keySeq = columnCount;
+
+                    pkMap2.put(keySeq, colName);
+                }
             }
         }
 
-        setPkColumnNames(new ArrayList<>(pkMap.values()));
+        setPkColumnNames(new ArrayList<>(pkMap2.values()));
     }
 
     private void loadColumnsFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName, SchemaTableInfo ti) throws SQLException

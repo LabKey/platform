@@ -28,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
+import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultScaleType;
@@ -1465,71 +1466,73 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         SqlDialect dialect = parentTable.getSqlDialect();
         DbScope scope = parentTable.getSchema().getScope();
 
-        Selector columnSelector = new JdbcMetaDataSelector(scope, dbmd, new JdbcMetaDataResultSetFactory()
+        try (JdbcMetaDataLocator locator = dialect.getMetaDataLocator(scope, schemaName, parentTable.getMetaDataName()))
         {
-            @Override
-            public ResultSet getResultSet(DbScope scope, DatabaseMetaData dbmd) throws SQLException
+            JdbcMetaDataSelector2 columnSelector = new JdbcMetaDataSelector2(locator, new JdbcMetaDataSelector2.JdbcMetaDataResultSetFactory()
             {
-                if (scope.getSqlDialect().treatCatalogsAsSchemas())
-                    return dbmd.getColumns(schemaName, null, parentTable.getMetaDataName(), null);
-                else
-                    return dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);
-            }
-        });
-
-        try (ResultSet rsCols = columnSelector.getResultSet())
-        {
-            ColumnMetaDataReader reader = dialect.getColumnMetaDataReader(rsCols, parentTable);
-
-            while (rsCols.next())
-            {
-                String metaDataName = reader.getName();
-                ColumnInfo col = new ColumnInfo(metaDataName, parentTable);
-
-                col.metaDataName = metaDataName;
-                col.selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
-                col.sqlTypeName = reader.getSqlTypeName();
-                col.jdbcType = dialect.getJdbcType(reader.getSqlType(), reader.getSqlTypeName());
-                col.isAutoIncrement = reader.isAutoIncrement();
-                col.scale = reader.getScale();
-                col.nullable = reader.isNullable();
-                col.jdbcDefaultValue = reader.getDefault();
-
-                inferMetadata(col);
-
-                // TODO: This is a temporary hack... move to SAS dialect(s)
-                String databaseFormat = reader.getDatabaseFormat();
-
-                if (null != databaseFormat)
+                @Override
+                public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
                 {
-                    // Do nothing for now -- not implementing SAS format support at this point
-/*                if (databaseFormat.startsWith("$"))
-                {
-                    _log.info("User-defined format: " + databaseFormat);
+                    return dbmd.getColumns(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), null);
                 }
-                else
-                {
-                    String tableAlias = col.getTableAlias();
-                    SQLFragment sql = new SQLFragment("PUT(" + ExprColumn.STR_TABLE_ALIAS + "." + col.getName() + ", " + databaseFormat + ")");
-//                    col = new ExprColumn(col.getParentTable(), col.getName(), sql, Types.VARCHAR);
+            });
 
-                    if (!tables.contains(tableAlias))
+            try (ResultSet rsCols = columnSelector.getResultSet())
+            {
+                ColumnMetaDataReader reader = dialect.getColumnMetaDataReader(rsCols, parentTable);
+
+                while (rsCols.next())
+                {
+                    String metaDataName = reader.getName();
+                    ColumnInfo col = new ColumnInfo(metaDataName, parentTable);
+
+                    col.metaDataName = metaDataName;
+                    col.selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
+                    col.sqlTypeName = reader.getSqlTypeName();
+                    col.jdbcType = dialect.getJdbcType(reader.getSqlType(), reader.getSqlTypeName());
+                    col.isAutoIncrement = reader.isAutoIncrement();
+                    col.scale = reader.getScale();
+                    col.nullable = reader.isNullable();
+                    col.jdbcDefaultValue = reader.getDefault();
+
+                    inferMetadata(col);
+
+    /*
+                    // TODO: This is a temporary hack... move to SAS dialect(s)
+                    String databaseFormat = reader.getDatabaseFormat();
+
+                    if (null != databaseFormat)
                     {
-                        _log.info("Table: " + tableAlias);
-                        tables.add(tableAlias);
+                        // Do nothing for now -- not implementing SAS format support at this point
+                    if (databaseFormat.startsWith("$"))
+                    {
+                        _log.info("User-defined format: " + databaseFormat);
                     }
+                    else
+                    {
+                        String tableAlias = col.getTableAlias();
+                        SQLFragment sql = new SQLFragment("PUT(" + ExprColumn.STR_TABLE_ALIAS + "." + col.getName() + ", " + databaseFormat + ")");
+    //                    col = new ExprColumn(col.getParentTable(), col.getName(), sql, Types.VARCHAR);
+
+                        if (!tables.contains(tableAlias))
+                        {
+                            _log.info("Table: " + tableAlias);
+                            tables.add(tableAlias);
+                        }
+                    }
+                    }
+    */
+
+                    col.label = reader.getLabel();
+                    col.description = reader.getDescription();
+
+                    if (nonEditableColNames.contains(col.getPropertyName()))
+                        col.setUserEditable(false);
+
+                    colMap.put(col.getName(), col);
                 }
-*/
-                }
-
-                col.label = reader.getLabel();
-                col.description = reader.getDescription();
-
-                if (nonEditableColNames.contains(col.getPropertyName()))
-                    col.setUserEditable(false);
-
-                colMap.put(col.getName(), col);
             }
+
         }
 
         // load keys in two phases

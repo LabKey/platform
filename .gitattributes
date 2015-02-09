@@ -305,6 +305,7 @@ api/src/org/labkey/api/data/JavaScriptDisplayColumn.java -text
 api/src/org/labkey/api/data/JavaScriptDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/JdbcCommand.java -text
 api/src/org/labkey/api/data/JdbcMetaDataSelector.java -text
+api/src/org/labkey/api/data/JdbcMetaDataSelector2.java -text
 api/src/org/labkey/api/data/JdbcType.java -text
 api/src/org/labkey/api/data/JsonPrettyPrintDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/JsonTest.java -text
@@ -420,6 +421,7 @@ api/src/org/labkey/api/data/dialect/DatabaseNotSupportedException.java -text
 api/src/org/labkey/api/data/dialect/DialectStringHandler.java -text
 api/src/org/labkey/api/data/dialect/JdbcHelper.java -text
 api/src/org/labkey/api/data/dialect/JdbcHelperTest.java -text
+api/src/org/labkey/api/data/dialect/JdbcMetaDataLocator.java -text
 api/src/org/labkey/api/data/dialect/KeywordCandidates.java -text
 api/src/org/labkey/api/data/dialect/MockSqlDialect.java -text
 api/src/org/labkey/api/data/dialect/ParameterSubstitutionTest.java -text
@@ -431,6 +433,7 @@ api/src/org/labkey/api/data/dialect/SqlDialectManager.java -text
 api/src/org/labkey/api/data/dialect/SqlDialectNotSupportedException.java -text
 api/src/org/labkey/api/data/dialect/StandardDialectStringHandler.java -text
 api/src/org/labkey/api/data/dialect/StandardJdbcHelper.java -text
+api/src/org/labkey/api/data/dialect/StandardJdbcMetaDataLocator.java -text
 api/src/org/labkey/api/data/dialect/StatementWrapper.java -text
 api/src/org/labkey/api/data/dialect/TestUpgradeCode.java -text
 api/src/org/labkey/api/data/dialect/sql2003Keywords.txt -text

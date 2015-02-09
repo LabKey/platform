@@ -864,6 +864,17 @@ public abstract class SqlDialect
         return Collections.emptyList();
     }
 
+    // Do nothing by default
+    public void addTableNames(Map<String, String> map, DbScope scope, String schemaName)
+    {
+    }
+
+    // TODO: Make schemaName @Nullable?
+    public JdbcMetaDataLocator getMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableName) throws SQLException
+    {
+        return new StandardJdbcMetaDataLocator(scope, schemaName, tableName);
+    }
+
     protected class SQLSyntaxException extends SQLException
     {
         private Collection<String> _errors;

@@ -175,7 +175,10 @@ public class TableXmlUtils
                 if (merge)
                     mt.setTableName(xmlTable.getTableName());
 
-                compareStringProperty(tt.getTableDbType(), xmlTable.getTableDbType(), "TableDbType", sbOut, true, true);
+                // Special value "UNKNOWN" means the type is different on different databases, e.g., some of the tables/views/synonyms in the test schema
+                if (!"UNKNOWN".equals(xmlTable.getTableDbType()))
+                    compareStringProperty(tt.getTableDbType(), xmlTable.getTableDbType(), "TableDbType", sbOut, true, true);
+
                 if (merge)
                     mt.setTableDbType(xmlTable.getTableDbType());
 

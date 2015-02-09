@@ -22,8 +22,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
+import org.labkey.api.data.JdbcMetaDataSelector2.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -34,7 +35,6 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -43,7 +43,6 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -233,15 +232,21 @@ public class DbSchema
     {
         final Map<String, String> metaDataTableNameMap = new CaseInsensitiveHashMap<>();
 
-        TableMetaDataLoader loader = new TableMetaDataLoader(scope, schemaName, "%", ignoreTemp) {
-            @Override
-            protected void handleTable(String name, ResultSet rs) throws SQLException
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getMetaDataLocator(scope, schemaName, "%"))
+        {
+            TableMetaDataLoader loader = new TableMetaDataLoader(locator, ignoreTemp)
             {
-                metaDataTableNameMap.put(name, name);
-            }
-        };
+                @Override
+                protected void handleTable(String name, ResultSet rs) throws SQLException
+                {
+                    metaDataTableNameMap.put(name, name);
+                }
+            };
 
-        loader.load();
+            loader.load();
+        }
+
+        scope.getSqlDialect().addTableNames(metaDataTableNameMap, scope, schemaName);
 
         return metaDataTableNameMap;
     }
@@ -253,16 +258,12 @@ public class DbSchema
     // both cases.
     private static abstract class TableMetaDataLoader
     {
-        private final String _tableNamePattern;
-        private final String _metaDataSchemaName;
-        private final DbScope _scope;
+        private final JdbcMetaDataLocator _locator;
         private final boolean _ignoreTemp;
 
-        private TableMetaDataLoader(DbScope scope, String metaDataSchemaName, String tableNamePattern, boolean ignoreTemp)
+        private TableMetaDataLoader(JdbcMetaDataLocator locator, boolean ignoreTemp)
         {
-            _tableNamePattern = tableNamePattern;
-            _metaDataSchemaName = metaDataSchemaName;
-            _scope = scope;
+            _locator = locator;
             _ignoreTemp = ignoreTemp;
         }
 
@@ -270,61 +271,35 @@ public class DbSchema
 
         void load() throws SQLException
         {
-            Connection conn = null;
+            final SqlDialect dialect = _locator.getScope().getSqlDialect();
 
-            try
+            JdbcMetaDataSelector2 selector = new JdbcMetaDataSelector2(_locator, new JdbcMetaDataResultSetFactory()
             {
-                conn = _scope.getConnection();
-                final SqlDialect dialect = _scope.getSqlDialect();
-
-                Selector selector = new JdbcMetaDataSelector(_scope, conn, new TableMetaDataResultSetFactory());
-
-                selector.forEach(new ForEachBlock<ResultSet>(){
-                    @Override
-                    public void exec(ResultSet rs) throws SQLException
-                    {
-                        String tableName = rs.getString("TABLE_NAME").trim();
-
-                        // Ignore system tables
-                        if (dialect.isSystemTable(tableName))
-                            return;
-
-                        // skip if it looks like one of our temp table names: name$<32hexchars>
-                        if (_ignoreTemp && tableName.length() > 33 && tableName.charAt(tableName.length() - 33) == '$')
-                            return;
-
-                        handleTable(tableName, rs);
-                    }
-                });
-            }
-            finally
-            {
-                try
+                @Override
+                public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
                 {
-                    if (null != conn && !_scope.isTransactionActive())
-                        _scope.releaseConnection(conn);
+                    return dbmd.getTables(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), locator.getTableTypes());
                 }
-                catch (Exception x)
-                {
-                    _log.error("DbSchema.createFromMetaData()", x);
-                }
-            }
-        }
+            });
 
-
-        private class TableMetaDataResultSetFactory implements JdbcMetaDataResultSetFactory
-        {
-            @Override
-            public ResultSet getResultSet(DbScope scope, DatabaseMetaData dbmd) throws SQLException
+            selector.forEach(new ForEachBlock<ResultSet>()
             {
-                String dbName = scope.getDatabaseName();
-                SqlDialect dialect = scope.getSqlDialect();
-                String[] types = dialect.getTableTypes();
+                @Override
+                public void exec(ResultSet rs) throws SQLException
+                {
+                    String tableName = rs.getString("TABLE_NAME").trim();
 
-                return scope.getSqlDialect().treatCatalogsAsSchemas() ?
-                                        dbmd.getTables(_metaDataSchemaName, null, _tableNamePattern, types) :
-                                        dbmd.getTables(dbName, _metaDataSchemaName, _tableNamePattern, types);
-            }
+                    // Ignore system tables
+                    if (dialect.isSystemTable(tableName))
+                        return;
+
+                    // skip if it looks like one of our temp table names: name$<32hexchars>
+                    if (_ignoreTemp && tableName.length() > 33 && tableName.charAt(tableName.length() - 33) == '$')
+                        return;
+
+                    handleTable(tableName, rs);
+                }
+            });
         }
     }
 
@@ -376,11 +351,14 @@ public class DbSchema
 
     protected SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
     {
-        SingleTableMetaDataLoader loader = new SingleTableMetaDataLoader(getScope(), getName(), tableName);
+        try (JdbcMetaDataLocator locator = getSqlDialect().getMetaDataLocator(getScope(), getName(), tableName))
+        {
+            SingleTableMetaDataLoader loader = new SingleTableMetaDataLoader(tableName, locator);
 
-        loader.load();
+            loader.load();
 
-        return loader.getTableInfo();
+            return loader.getTableInfo();
+        }
     }
 
 
@@ -389,16 +367,15 @@ public class DbSchema
         private final String _tableName;
         private SchemaTableInfo _ti = null;
 
-        private SingleTableMetaDataLoader(DbScope scope, String schemaName, String tableName)
+        private SingleTableMetaDataLoader(String tableName, JdbcMetaDataLocator locator)
         {
-            super(scope, schemaName, tableName, true);
+            super(locator, true);
             _tableName = tableName;
         }
 
         @Override
         protected void handleTable(String name, ResultSet rs) throws SQLException
         {
-            assert _tableName.equalsIgnoreCase(name);
             String typeName = rs.getString("TABLE_TYPE");
             DatabaseTableType tableType = DbSchema.this.getSqlDialect().getTableType(typeName);
             _ti = new SchemaTableInfo(DbSchema.this, tableType, _tableName);
@@ -573,8 +550,7 @@ public class DbSchema
         return _tableXmlMap;
     }
 
-    @TestTimeout(120)
-    public static class TestCase extends Assert
+    public static class SchemaXMLTestCase extends Assert
     {
         // Compare schema XML vs. meta data for all module schemas
         @Test
@@ -585,41 +561,6 @@ public class DbSchema
             for (DbSchema schema : schemas)
                 testSchemaXml(schema);
         }
-
-
-        // Do a simple select from every table in every module schema. This ends up invoking validation code
-        // in Table that checks PKs and columns, further validating the schema XML file.
-        @Test
-        public void testTableSelect()
-        {
-            Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
-
-            for (DbSchema schema : schemas)
-            {
-                for (String tableName : schema.getTableNames())
-                {
-                    try
-                    {
-                        TableInfo table = schema.getTable(tableName);
-
-                        if (null == table)
-                            fail("Could not create table instance: " + tableName);
-
-                        if (table.getTableType() == DatabaseTableType.NOT_IN_DB)
-                            continue;
-
-                        TableSelector selector = new TableSelector(table);
-                        selector.setMaxRows(10);
-                        selector.getMapCollection();
-                    }
-                    catch (Exception e)
-                    {
-                        throw new RuntimeException("Exception testing table " + schema.getDisplayName() + "." + tableName, e);
-                    }
-                }
-            }
-        }
-
 
         private void testSchemaXml(DbSchema schema) throws Exception
         {
@@ -656,7 +597,46 @@ public class DbSchema
             assertTrue("<div>Type errors in schema " + schema.getName() + ":<br><br>" + typeErrors + "<div>", "".equals(typeErrors.toString()));
 */
         }
+    }
 
+    public static class TableSelectTestCase extends Assert
+    {
+        // Do a simple select from every table in every module schema. This ends up invoking validation code
+        // in Table that checks PKs and columns, further validating the schema XML file.
+        @Test
+        public void testTableSelect()
+        {
+            Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
+
+            for (DbSchema schema : schemas)
+            {
+                for (String tableName : schema.getTableNames())
+                {
+                    try
+                    {
+                        TableInfo table = schema.getTable(tableName);
+
+                        if (null == table)
+                            fail("Could not create table instance: " + tableName);
+
+                        if (table.getTableType() == DatabaseTableType.NOT_IN_DB)
+                            continue;
+
+                        TableSelector selector = new TableSelector(table);
+                        selector.setMaxRows(10);
+                        selector.getMapCollection();
+                    }
+                    catch (Exception e)
+                    {
+                        throw new RuntimeException("Exception testing table " + schema.getDisplayName() + "." + tableName, e);
+                    }
+                }
+            }
+        }
+    }
+
+    public static class TransactionTestCase extends Assert
+    {
         @Test
         public void testTransactions() throws Exception
         {
@@ -713,7 +693,10 @@ public class DbSchema
 
             Table.delete(testTable, rowId);
         }
+    }
 
+    public static class CachingTestCase extends Assert
+    {
         @Test
         public void testCaching() throws Exception
         {
@@ -773,7 +756,10 @@ public class DbSchema
             Table.delete(testTable, rowId2);
             Table.delete(testTable, rowId3);
         }
+    }
 
+    public static class DDLMethodsTestCase extends Assert
+    {
         @Test
         public void testDDLMethods() throws Exception
         {
@@ -845,7 +831,10 @@ public class DbSchema
             testSchema.getSqlDialect().dropSchema(testSchema, "testdrop2");
             testSchema.getSqlDialect().dropSchema(testSchema, "testdrop3");
         }
+    }
 
+    public static class SchemaCasingTestCase extends Assert
+    {
         @Test   // See #12210
         public void testSchemaCasing() throws Exception
         {
