@@ -78,6 +78,7 @@
                 type    : 'text',
                 name    : 'cloneUser',
                 disabled: true,
+                style   : 'width: 303px;',
                 autocomplete : 'off'
             }
         });

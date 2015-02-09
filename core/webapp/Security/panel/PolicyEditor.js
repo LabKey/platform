@@ -576,7 +576,7 @@ Ext4.define('Security.panel.PolicyEditor', {
             iconCls   : 'closeicon',
             iconAlign : 'right',
             margin  : '2 5 5 0',
-            text    : group.Type == 'u' ? group.Name + ' (' + group.DisplayName + ')' : group.Name,
+            text    : group.Type == 'u' && group.DisplayName ? group.Name + ' (' + group.DisplayName + ')' : group.Name,
             itemId  : btnId,
             groupId : ids.groupId,
             roleId  : ids.roleId,

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.Group" %>
@@ -212,7 +213,7 @@ else
             {
                 %>
                 <%= h(memberName) %>&nbsp;
-                <%= h(!memberName.equalsIgnoreCase(displayName) ? "(" + displayName + ")" : "") %>
+                <%= h(!memberName.equalsIgnoreCase(displayName) && StringUtils.isNotBlank(displayName) ? "(" + displayName + ")" : "") %>
                 <%
             }
         }
