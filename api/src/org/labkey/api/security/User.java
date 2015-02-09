@@ -148,7 +148,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     {
         if (c != null && currentUser != null && SecurityManager.canSeeEmailAddresses(c, currentUser))
         {
-            return getEmail() + " (" + getDisplayName(currentUser) + ")";
+            String result = getEmail();
+            if (StringUtils.isNotBlank(getDisplayName(currentUser)))
+                result += " (" + getDisplayName(currentUser) + ")";
+
+            return result;
         }
         else
             return getDisplayName(currentUser);

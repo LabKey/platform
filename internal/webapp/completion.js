@@ -41,6 +41,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
                 tag : 'div',
                 id  : completionDiv,
                 cls : 'labkey-completion',
+                style : this.tagConfig.style,
                 children: [{tag : 'div', id : completionBodyDiv}]
             }));
         }
