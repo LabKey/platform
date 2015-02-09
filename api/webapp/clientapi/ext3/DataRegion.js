@@ -2294,8 +2294,18 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 // If the search string doesn't change and there is a hash on the url, the page won't reload.
                 // Remove the hash by setting the full path plus search string.
                 window.location.assign(window.location.pathname + "?" + this.savedSearchString);
-            }
+            },
 
+            /**
+             * @private
+             */
+            _openFilter: function(columnName)
+            {
+                new LABKEY.FilterDialog({
+                    dataRegionName: this.name,
+                    column: this.getColumn(columnName)
+                }).show();
+            }
         });
 
 LABKEY.DataRegion.plugins = {};

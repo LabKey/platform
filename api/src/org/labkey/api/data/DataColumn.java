@@ -258,16 +258,10 @@ public class DataColumn extends DisplayColumn
         if (_filterColumn == null)
             return;
 
-        out.write("new LABKEY.FilterDialog({\n");
-        out.write("\tdataRegionName: " + PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + ",\n");
-        out.write("\tcolumn: ");
-        // Grab the column metadata out of the LABKEY.DataRegion object
-        out.write("LABKEY.DataRegions[");
-        out.write(PageFlowUtil.jsString(ctx.getCurrentRegion().getName()));
-        out.write("].getColumn(");
-        out.write(PageFlowUtil.jsString(_boundColumn.getFieldKey().toString()));
-        out.write(")\n");
-        out.write("}).show();");
+        String regionName = PageFlowUtil.jsString(ctx.getCurrentRegion().getName());
+        String columnName = PageFlowUtil.jsString(_boundColumn.getFieldKey().toString());
+
+        out.write("LABKEY.DataRegions[" + regionName + "]._openFilter(" + columnName + ");");
     }
 
     public String getClearFilter(RenderContext ctx)

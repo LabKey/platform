@@ -1408,6 +1408,19 @@ if (!LABKEY.DataRegions)
 
     Proto.headerLock = function() { return this._allowHeaderLock === true; };
 
+    /**
+     * @private
+     */
+    Proto._openFilter = function(columnName) {
+        var me = this;
+        LABKEY.requiresExt3ClientAPI(true, function() {
+            new LABKEY.FilterDialog({
+                dataRegionName: me.name,
+                column: me.getColumn(columnName)
+            }).show();
+        });
+    };
+
     //
     // PRIVATE FUNCTIONS
     //
