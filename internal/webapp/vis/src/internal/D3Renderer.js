@@ -1240,7 +1240,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         anchorSel = layer.selectAll('.point').data(data);
         anchorSel.exit().remove();
         anchorSel.enter().append('a').attr('class', 'point').append('path');
+
+        // two different ways to add the hover title (so that it works in IE as well)
+        anchorSel.attr('xlink:title', hoverTextAcc);
         anchorSel.append('title').text(hoverTextAcc);
+
         pointsSel = anchorSel.select('path');
         pointsSel.attr('d', shapeAcc)
                 .attr('fill', colorAcc)
