@@ -1387,14 +1387,14 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         {
         }
 
-        public String getSchemaName()
-        {
-            return _schemaName;
-        }
-
         public void setSchemaName(String schemaName)
         {
             _schemaName = schemaName;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
         }
 
         public void setName(String name)
@@ -1485,7 +1485,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                 }
             }, Synonym.class);
 
-            return synonymMap;
+            return Collections.unmodifiableMap(synonymMap);
         }
     }
 

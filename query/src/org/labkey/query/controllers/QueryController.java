@@ -41,7 +41,7 @@ import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
-import org.labkey.api.data.JdbcMetaDataSelector2.JdbcMetaDataResultSetFactory;
+import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -1216,7 +1216,7 @@ public class QueryController extends SpringActionController
 
             try (JdbcMetaDataLocator locator = dialect.getMetaDataLocator(scope, _schemaName, _tableName))
             {
-                JdbcMetaDataSelector2 columnSelector = new JdbcMetaDataSelector2(locator, new JdbcMetaDataResultSetFactory()
+                JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
                 {
                     @Override
                     public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
@@ -1227,7 +1227,7 @@ public class QueryController extends SpringActionController
 
                 metaDataView = new ResultSetView(CachedResultSets.create(columnSelector.getResultSet(), true, Table.ALL_ROWS), "Table Meta Data");
 
-                JdbcMetaDataSelector2 pkSelector = new JdbcMetaDataSelector2(locator, new JdbcMetaDataResultSetFactory()
+                JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
                 {
                     @Override
                     public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
@@ -1269,7 +1269,7 @@ public class QueryController extends SpringActionController
 
             try (JdbcMetaDataLocator locator = dialect.getMetaDataLocator(scope, _schemaName, null))
             {
-                JdbcMetaDataSelector2 selector = new JdbcMetaDataSelector2(locator, new JdbcMetaDataResultSetFactory()
+                JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
                 {
                     @Override
                     public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
