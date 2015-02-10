@@ -114,12 +114,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public boolean treatCatalogsAsSchemas()
-    {
-        return false;
-    }
-
-    @Override
     public boolean canShowExecutionPlan()
     {
         return false;

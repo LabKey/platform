@@ -1458,8 +1458,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
-    public static Collection<ColumnInfo> createFromDatabaseMetaData(DatabaseMetaData dbmd, final String catalogName, final String schemaName, final SchemaTableInfo parentTable)
-            throws SQLException
+    public static Collection<ColumnInfo> createFromDatabaseMetaData(String schemaName, SchemaTableInfo parentTable) throws SQLException
     {
          //Use linked hash map to preserve ordering...
         LinkedHashMap<String, ColumnInfo> colMap = new LinkedHashMap<>();

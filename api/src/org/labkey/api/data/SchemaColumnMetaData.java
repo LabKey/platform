@@ -25,7 +25,6 @@ import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -65,21 +64,7 @@ public class SchemaColumnMetaData
         _tinfo = tinfo;
         if (load)
         {
-            DbScope scope = _tinfo.getSchema().getScope();
-            boolean inTransaction = scope.isTransactionActive();
-            Connection conn = null;
-
-            try
-            {
-                conn = scope.getConnection();
-                loadFromMetaData(conn.getMetaData(), _tinfo);
-            }
-            finally
-            {
-                if (!inTransaction && null != conn)
-                    scope.releaseConnection(conn);
-            }
-
+            loadFromMetaData(_tinfo);
             loadColumnsFromXml(_tinfo);
         }
     }
@@ -179,17 +164,16 @@ public class SchemaColumnMetaData
         colInfo.loadFromXml(xmlColumn, merge);
     }
 
-    private void loadFromMetaData(DatabaseMetaData dbmd, final SchemaTableInfo ti) throws SQLException
+    private void loadFromMetaData(SchemaTableInfo ti) throws SQLException
     {
         DbSchema schema = ti.getSchema();
         DbScope scope = schema.getScope();
-        final String catalogName = scope.getDatabaseName();
-        final String schemaName = schema.getName();
+        String schemaName = schema.getName();
 
-        loadColumnsFromMetaData(dbmd, catalogName, schemaName, ti);
+        loadColumnsFromMetaData(schemaName, ti);
 
         // Use TreeMap to order columns by keySeq
-        Map<Integer, String> pkMap2 = new TreeMap<>();
+        Map<Integer, String> pkMap = new TreeMap<>();
 
         try (JdbcMetaDataLocator locator = scope.getSqlDialect().getMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
         {
@@ -220,17 +204,17 @@ public class SchemaColumnMetaData
                     if (0 == keySeq)
                         keySeq = columnCount;
 
-                    pkMap2.put(keySeq, colName);
+                    pkMap.put(keySeq, colName);
                 }
             }
         }
 
-        setPkColumnNames(new ArrayList<>(pkMap2.values()));
+        setPkColumnNames(new ArrayList<>(pkMap.values()));
     }
 
-    private void loadColumnsFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName, SchemaTableInfo ti) throws SQLException
+    private void loadColumnsFromMetaData(String schemaName, SchemaTableInfo ti) throws SQLException
     {
-        Collection<ColumnInfo> meta = ColumnInfo.createFromDatabaseMetaData(dbmd, catalogName, schemaName, ti);
+        Collection<ColumnInfo> meta = ColumnInfo.createFromDatabaseMetaData(schemaName, ti);
         for (ColumnInfo c : meta)
             addColumn(c);
     }

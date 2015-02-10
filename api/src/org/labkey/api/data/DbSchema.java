@@ -234,16 +234,14 @@ public class DbSchema
 
         try (JdbcMetaDataLocator locator = scope.getSqlDialect().getMetaDataLocator(scope, schemaName, "%"))
         {
-            TableMetaDataLoader loader = new TableMetaDataLoader(locator, ignoreTemp)
+            new TableMetaDataLoader(locator, ignoreTemp)
             {
                 @Override
                 protected void handleTable(String name, ResultSet rs) throws SQLException
                 {
                     metaDataTableNameMap.put(name, name);
                 }
-            };
-
-            loader.load();
+            }.load();
         }
 
         scope.getSqlDialect().addTableNames(metaDataTableNameMap, scope, schemaName);
@@ -256,7 +254,7 @@ public class DbSchema
     // code between schema load (when we capture just the table names for all tables) and table load (when we capture
     // all properties of just a single table). We want consistent transaction, exception, and filtering behavior in
     // both cases.
-    private static abstract class TableMetaDataLoader
+    private static abstract class TableMetaDataLoader<T>
     {
         private final JdbcMetaDataLocator _locator;
         private final boolean _ignoreTemp;
@@ -269,7 +267,9 @@ public class DbSchema
 
         protected abstract void handleTable(String name, ResultSet rs) throws SQLException;
 
-        void load() throws SQLException
+        protected T getReturnValue() {return null;}
+
+        T load() throws SQLException
         {
             final SqlDialect dialect = _locator.getScope().getSqlDialect();
 
@@ -300,6 +300,8 @@ public class DbSchema
                     handleTable(tableName, rs);
                 }
             });
+
+            return getReturnValue();
         }
     }
 
@@ -353,16 +355,12 @@ public class DbSchema
     {
         try (JdbcMetaDataLocator locator = getSqlDialect().getMetaDataLocator(getScope(), getName(), tableName))
         {
-            SingleTableMetaDataLoader loader = new SingleTableMetaDataLoader(tableName, locator);
-
-            loader.load();
-
-            return loader.getTableInfo();
+            return new SingleTableMetaDataLoader(tableName, locator).load();
         }
     }
 
 
-    private class SingleTableMetaDataLoader extends TableMetaDataLoader
+    private class SingleTableMetaDataLoader extends TableMetaDataLoader<SchemaTableInfo>
     {
         private final String _tableName;
         private SchemaTableInfo _ti = null;
@@ -384,7 +382,8 @@ public class DbSchema
                 _ti.setDescription(description);
         }
 
-        private SchemaTableInfo getTableInfo()
+        @Override
+        protected SchemaTableInfo getReturnValue()
         {
             return _ti;
         }

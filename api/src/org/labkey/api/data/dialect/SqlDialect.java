@@ -524,9 +524,6 @@ public abstract class SqlDialect
      */
     public abstract SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset);
 
-    // Some databases lack true schema support; if true, we'll map the database's catalogs to schemas
-    public abstract boolean treatCatalogsAsSchemas();
-
     /** Does the dialect support limitRows() with an offset? */
     public abstract boolean supportsOffset();
 
