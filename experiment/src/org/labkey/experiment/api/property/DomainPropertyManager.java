@@ -201,21 +201,21 @@ public class DomainPropertyManager
     };
 
     private static final Cache<String, MultiMap<Integer, PropertyValidator>> validatorCache = new BlockingCache<>(new DatabaseCache<Wrapper<MultiMap<Integer, PropertyValidator>>>(getExpSchema().getScope(), 5000, CacheManager.HOUR, "Property Validators"), PV_LOADER);
-    private static final Collection<PropertyValidator> _emptyArray = Collections.emptyList();
+    private static final Collection<PropertyValidator> _emptyCollection = Collections.emptyList();
     private static final MultiMap<Integer, PropertyValidator> _emptyMap = new UnmodifiableMultiMap<>(new MultiHashMap<Integer, PropertyValidator>());
 
 
     private Collection<PropertyValidator> getValidators(@NotNull Container c, int propertyId)
     {
         if (propertyId == 0)
-            return _emptyArray;
+            return _emptyCollection;
 
         MultiMap<Integer, PropertyValidator> validators = validatorCache.get(c.getId());
         if (null == validators)
-            return _emptyArray;
+            return _emptyCollection;
         Collection<PropertyValidator> coll = validators.get(propertyId);
         if (null == coll)
-            return _emptyArray;
+            return _emptyCollection;
         else
             return Collections.unmodifiableCollection(coll);
     }
