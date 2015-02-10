@@ -14,6 +14,7 @@ Ext.define('LABKEY.app.model.State', {
     extend : 'Ext.data.Model',
 
     fields : [
+        {name : 'name'},
         {name : 'activeView'},
         {name : 'viewState'},
         {name : 'customState'},
@@ -74,9 +75,39 @@ Ext.define('LABKEY.app.controller.State', {
             this.initColumnService();
         }
 
+        this.addStateNameFilter();
+
         this.state.load();
 
         this.application.on('route', function() { this.loadState(); }, this, {single: true});
+    },
+
+    addStateNameFilter : function() {
+        // issue 22475: if we have multiple containers used in this session, use a state filter to remove records that don't match the name provided
+        var stateNameFilter = this.getStateFilterName();
+        if (stateNameFilter != null) {
+            this.state.on('load', function (store, records) {
+                for (var i = 0; i < records.length; i++)
+                {
+                    var rec = records[i];
+                    if (stateNameFilter != rec.get('name')) {
+                        store.remove(rec);
+                    }
+                }
+
+                if (store.getCount() != records.length) {
+                    this._sync();
+                }
+            }, this, {single: true});
+        }
+    },
+
+    /**
+     * Provided to be overridden to provide a way to filter the state store on load
+     * @returns {name}
+     */
+    getStateFilterName : function() {
+        return null;
     },
 
     setDataSource : function(olap) {
@@ -296,6 +327,7 @@ Ext.define('LABKEY.app.controller.State', {
         });
 
         this._sync([{
+            name: this.getStateFilterName(),
             viewState: {},
             customState: this.customState,
             filters: jsonReadyFilters,
