@@ -214,14 +214,7 @@ public class MothershipSchema extends UserSchema
 
     public TableInfo createServerInstallationTable()
     {
-        FilteredTable<MothershipSchema> result = new FilteredTable<MothershipSchema>(MothershipManager.get().getTableInfoServerInstallation(), this)
-        {
-            @Override
-            public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
-            {
-                return getContainer().hasPermission(user, perm);
-            }
-        };
+        FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoServerInstallation(), this);
         result.wrapAllColumns(true);
 
         ActionURL url = new ActionURL(MothershipController.ShowInstallationDetailAction.class, getContainer());
@@ -317,7 +310,7 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createExceptionStackTraceTable()
     {
-        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionStackTrace(), this);
+        FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoExceptionStackTrace(), this);
         result.wrapAllColumns(true);
         result.getColumn("StackTrace").setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -551,5 +544,19 @@ public class MothershipSchema extends UserSchema
 
         }
         return super.createView(context, settings, errors);
+    }
+
+    private static class MothershipTable extends FilteredTable<MothershipSchema>
+    {
+        public MothershipTable(TableInfo tableInfo, MothershipSchema schema)
+        {
+            super(tableInfo, schema);
+        }
+
+        @Override
+        public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+        {
+            return getContainer().hasPermission(user, perm);
+        }
     }
 }
