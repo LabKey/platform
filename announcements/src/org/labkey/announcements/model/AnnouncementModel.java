@@ -200,7 +200,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
                 if (htmlFormatted)
                 {
-                    result = "<a href=\"" +
+                    result = "<a class=\"announcement-title-link\" href=\"" +
                             PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, user.getUserId(), null)) +
                             "\">" + PageFlowUtil.filter(result) + "</a>";
                 }
