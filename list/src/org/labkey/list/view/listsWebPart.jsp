@@ -78,8 +78,7 @@
                     include(pmw, out);
                     %></td><%
                 }
-                %><td><a href="<%=h(list.urlShowData(c))%>"><%=h(list.getName())%></a></td><%
-%></tr><%
+                %><td><a href="<%=h(list.urlShowData(c))%>"><%=h(list.getName())%></a></td></tr><%
             }
         }
     %>
