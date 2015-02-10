@@ -738,7 +738,6 @@ api/src/org/labkey/api/files/UnsetRootDirectoryException.java -text
 api/src/org/labkey/api/files/view/CustomizeFilesWebPartView.java -text
 api/src/org/labkey/api/files/view/FilesWebPart.java -text
 api/src/org/labkey/api/files/view/customizeWebPart.jsp -text
-api/src/org/labkey/api/files/view/fileContent.jsp -text
 api/src/org/labkey/api/files/view/filesWebPart.jsp -text
 api/src/org/labkey/api/flow/api/FlowService.java -text
 api/src/org/labkey/api/issues/IssuesUrls.java -text

@@ -75,7 +75,6 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     private boolean _isPipelineFiles;       // viewing @pipeline files
 
     private static final String JSP = "/org/labkey/api/files/view/filesWebPart.jsp";
-//    private static final String EXT3_JSP = "/org/labkey/api/files/view/fileContent.jsp";
     private static final String JSP_RIGHT = "/org/labkey/filecontent/view/files.jsp";
 
     public FilesWebPart(Container c, @Nullable String fileSet)
@@ -99,7 +98,6 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                     getModelBean().setRootDirectory(root.getRootPath());
                 }
                 setTitleHref(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c));
-                //setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName", fileSet));
                 setTitle("Pipeline Files");
             }
             else if (fileSet.startsWith(CloudStoreService.CLOUD_NAME))
