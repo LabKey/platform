@@ -15,9 +15,13 @@
  */
 package org.labkey.api.collections;
 
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.Unmodifiable;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.data.PropertyManager;
 
 import java.util.ArrayList;
@@ -65,7 +69,7 @@ public class CollectionUtils
     // TODO: Extend to recognize apache collections Unmodifiable interface and/or guava ImmutableCollection
     public static @Nullable String getModifiableCollectionMapOrArrayType(@Nullable Object value)
     {
-        if (null == value)
+        if (null == value || value instanceof Unmodifiable)
             return null;
 
         if (value instanceof PropertyManager.PropertyMap)
@@ -102,12 +106,21 @@ public class CollectionUtils
         {
             return "an array";
         }
+        else if (value instanceof MultiMap)
+        {
+            return "a modifiable MultiMap (" + value.getClass() + ")";
+        }
+        else if (value instanceof MultiValueMap)
+        {
+            return "a modifiable MultiValueMap (class org.labkey.api.collections.MultiValueMap)";
+        }
 
         return null;
     }
 
     public static class TestCase extends Assert
     {
+        @JavaRuntimeVersion  // Re-enable code below when we require Java 8
         @Test
         public void testModifiableCollectionDetection()
         {
@@ -133,6 +146,16 @@ public class CollectionUtils
             assertModifiable(new String[10], "an array");
             assertModifiable(new int[20], "an array");
 
+            // MultiMaps
+            assertModifiable(new MultiHashMap<>(), "a modifiable MultiMap (class org.apache.commons.collections15.multimap.MultiHashMap)");
+            assertModifiable(new MultiValueMap<String, String>(new HashMap<String, Collection<String>>()){
+                @Override
+                protected Collection<String> createValueCollection()
+                {
+                    return new TreeSet<>();
+                }
+            }, "a modifiable MultiValueMap (class org.labkey.api.collections.MultiValueMap)");
+
             // null should be "unmodifiable"
             assertUnmodifiable(null);
 
@@ -155,6 +178,9 @@ public class CollectionUtils
             assertUnmodifiable(Collections.singletonMap(null, null));
             assertUnmodifiable(Collections.unmodifiableMap(new HashMap<>()));
             assertUnmodifiable(Collections.unmodifiableSortedMap(new TreeMap<>()));
+
+            // Unmodifiable MultiMap
+            assertUnmodifiable(new UnmodifiableMultiMap<>(new MultiHashMap<>()));
 
 //  These Collections methods are new to Java 8... re-enable when we require that version
 //            assertUnmodifiable(Collections.emptyNavigableSet());
