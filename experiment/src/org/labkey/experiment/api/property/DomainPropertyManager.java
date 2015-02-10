@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,11 +24,13 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Wrapper;
+import org.labkey.api.collections.UnmodifiableMultiMap;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -42,6 +45,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -167,36 +171,38 @@ public class DomainPropertyManager
 
 
     // Container.getId() -> PropertyId -> Collection<PropertyValidator>
-
-    static CacheLoader<String,  MultiHashMap<Integer, PropertyValidator>> PV_LOADER = new CacheLoader<String,  MultiHashMap<Integer, PropertyValidator>>()
+    private static final CacheLoader<String, MultiMap<Integer, PropertyValidator>> PV_LOADER = new CacheLoader<String, MultiMap<Integer, PropertyValidator>>()
     {
         @Override
-        public MultiHashMap<Integer, PropertyValidator> load(String containerId, @Nullable Object argument)
+        public MultiMap<Integer, PropertyValidator> load(String containerId, @Nullable Object argument)
         {
-        /*
-         * There are a LOT more property descriptors than property validators, let's just sweep them all up, if we have a container
-         * CONSIDER: Should PropertyValidators just be cached as part of the PropertyDescriptor?
-         */
+            /*
+             * There are a LOT more property descriptors than property validators, let's just sweep them all up, if we have a container
+             * CONSIDER: Should PropertyValidators just be cached as part of the PropertyDescriptor?
+             */
             String sql = "SELECT VR.PropertyId, PV.* " +
                     "FROM " + getTinfoValidatorReference() + " VR " +
                     "LEFT OUTER JOIN " + getTinfoValidator() + " PV ON (VR.ValidatorId = PV.RowId) " +
                     "WHERE PV.Container=?\n";
 
-            ArrayList<PropertyValidator> list = new SqlSelector(getExpSchema(), sql, containerId).getArrayList(PropertyValidator.class);
-            MultiHashMap<Integer, PropertyValidator> validators = new MultiHashMap<>();
-            for (PropertyValidator pv : list)
-                validators.put(pv.getPropertyId(), pv);
+            final MultiMap<Integer, PropertyValidator> validators = new MultiHashMap<>();
 
-            if (validators.isEmpty())
-                validators = _emptyMap;
-            return validators.isEmpty() ? _emptyMap : validators;
+            new SqlSelector(getExpSchema(), sql, containerId).forEach(new Selector.ForEachBlock<PropertyValidator>()
+            {
+                @Override
+                public void exec(PropertyValidator pv) throws SQLException
+                {
+                    validators.put(pv.getPropertyId(), pv);
+                }
+            }, PropertyValidator.class);
+
+            return validators.isEmpty() ? _emptyMap : new UnmodifiableMultiMap<>(validators);
         }
     };
 
-    static Cache<String,MultiHashMap<Integer, PropertyValidator>> validatorCache = new BlockingCache<>(
-            new DatabaseCache<Wrapper<MultiHashMap<Integer, PropertyValidator>>>(getExpSchema().getScope(), 5000, CacheManager.HOUR, "Property Validators"),PV_LOADER);
+    private static final Cache<String, MultiMap<Integer, PropertyValidator>> validatorCache = new BlockingCache<>(new DatabaseCache<Wrapper<MultiMap<Integer, PropertyValidator>>>(getExpSchema().getScope(), 5000, CacheManager.HOUR, "Property Validators"), PV_LOADER);
     private static final Collection<PropertyValidator> _emptyArray = Collections.emptyList();
-    private static final MultiHashMap<Integer, PropertyValidator> _emptyMap = new MultiHashMap<>();
+    private static final MultiMap<Integer, PropertyValidator> _emptyMap = new UnmodifiableMultiMap<>(new MultiHashMap<Integer, PropertyValidator>());
 
 
     private Collection<PropertyValidator> getValidators(@NotNull Container c, int propertyId)
@@ -204,7 +210,7 @@ public class DomainPropertyManager
         if (propertyId == 0)
             return _emptyArray;
 
-        MultiHashMap<Integer, PropertyValidator> validators = validatorCache.get(c.getId());
+        MultiMap<Integer, PropertyValidator> validators = validatorCache.get(c.getId());
         if (null == validators)
             return _emptyArray;
         Collection<PropertyValidator> coll = validators.get(propertyId);
