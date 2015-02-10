@@ -305,7 +305,6 @@ api/src/org/labkey/api/data/JavaScriptDisplayColumn.java -text
 api/src/org/labkey/api/data/JavaScriptDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/JdbcCommand.java -text
 api/src/org/labkey/api/data/JdbcMetaDataSelector.java -text
-api/src/org/labkey/api/data/JdbcMetaDataSelector2.java -text
 api/src/org/labkey/api/data/JdbcType.java -text
 api/src/org/labkey/api/data/JsonPrettyPrintDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/JsonTest.java -text

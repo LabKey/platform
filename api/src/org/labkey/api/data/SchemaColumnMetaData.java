@@ -19,7 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.JdbcMetaDataSelector2.JdbcMetaDataResultSetFactory;
+import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.data.xml.ColumnType;
@@ -188,7 +188,7 @@ public class SchemaColumnMetaData
 
         try (JdbcMetaDataLocator locator = scope.getSqlDialect().getMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
         {
-            JdbcMetaDataSelector2 pkSelector = new JdbcMetaDataSelector2(locator, new JdbcMetaDataResultSetFactory(){
+            JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory(){
                 @Override
                 public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
                 {

@@ -26,8 +26,8 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
+import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -1465,10 +1465,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         LinkedHashMap<String, ColumnInfo> colMap = new LinkedHashMap<>();
         SqlDialect dialect = parentTable.getSqlDialect();
         DbScope scope = parentTable.getSchema().getScope();
+        List<ImportedKey> importedKeys = new ArrayList<>();
 
         try (JdbcMetaDataLocator locator = dialect.getMetaDataLocator(scope, schemaName, parentTable.getMetaDataName()))
         {
-            JdbcMetaDataSelector2 columnSelector = new JdbcMetaDataSelector2(locator, new JdbcMetaDataSelector2.JdbcMetaDataResultSetFactory()
+            JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
             {
                 @Override
                 public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
@@ -1533,61 +1534,55 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 }
             }
 
-        }
-
-        // load keys in two phases
-        // 1) combine multi column keys
-        // 2) update columns
-
-        Selector keySelector = new JdbcMetaDataSelector(scope, dbmd, new JdbcMetaDataResultSetFactory()
-        {
-            @Override
-            public ResultSet getResultSet(DbScope scope, DatabaseMetaData dbmd) throws SQLException
+            JdbcMetaDataSelector keySelector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
             {
-                if (parentTable.getSqlDialect().treatCatalogsAsSchemas())
-                    return dbmd.getImportedKeys(schemaName, null, parentTable.getMetaDataName());
-                else
-                    return dbmd.getImportedKeys(catalogName, schemaName, parentTable.getMetaDataName());
-            }
-        });
-
-        List<ImportedKey> importedKeys = new ArrayList<>();
-
-        try (ResultSet rsKeys = keySelector.getResultSet())
-        {
-            int iPkTableSchema = findColumn(rsKeys, "PKTABLE_SCHEM");
-            int iPkTableName = findColumn(rsKeys, "PKTABLE_NAME");
-            int iPkColumnName = findColumn(rsKeys, "PKCOLUMN_NAME");
-            int iFkColumnName = findColumn(rsKeys, "FKCOLUMN_NAME");
-            int iKeySequence = findColumn(rsKeys, "KEY_SEQ");
-            int iFkName = findColumn(rsKeys, "FK_NAME");
-
-            while (rsKeys.next())
-            {
-                String pkOwnerName = rsKeys.getString(iPkTableSchema);
-                String pkTableName = rsKeys.getString(iPkTableName);
-                String pkColumnName = rsKeys.getString(iPkColumnName);
-                String colName = rsKeys.getString(iFkColumnName);
-                int keySequence = rsKeys.getInt(iKeySequence);
-                String fkName = rsKeys.getString(iFkName);
-
-                if (keySequence == 1)
+                @Override
+                public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
                 {
-                    ImportedKey key = new ImportedKey();
-                    key.fkName = fkName;
-                    key.pkOwnerName = pkOwnerName;
-                    key.pkTableName = pkTableName;
-                    key.pkColumnNames.add(pkColumnName);
-                    key.fkColumnNames.add(colName);
-                    importedKeys.add(key);
+                    return dbmd.getImportedKeys(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName());
                 }
-                else
+            });
+
+            // load keys in two phases
+            // 1) combine multi column keys
+            // 2) update columns
+
+            try (ResultSet rsKeys = keySelector.getResultSet())
+            {
+                int iPkTableSchema = findColumn(rsKeys, "PKTABLE_SCHEM");
+                int iPkTableName = findColumn(rsKeys, "PKTABLE_NAME");
+                int iPkColumnName = findColumn(rsKeys, "PKCOLUMN_NAME");
+                int iFkColumnName = findColumn(rsKeys, "FKCOLUMN_NAME");
+                int iKeySequence = findColumn(rsKeys, "KEY_SEQ");
+                int iFkName = findColumn(rsKeys, "FK_NAME");
+
+                while (rsKeys.next())
                 {
-                    assert importedKeys.size() > 0;
-                    ImportedKey key = importedKeys.get(importedKeys.size() - 1);
-                    assert key.fkName.equals(fkName);
-                    key.pkColumnNames.add(pkColumnName);
-                    key.fkColumnNames.add(colName);
+                    String pkOwnerName = rsKeys.getString(iPkTableSchema);
+                    String pkTableName = rsKeys.getString(iPkTableName);
+                    String pkColumnName = rsKeys.getString(iPkColumnName);
+                    String colName = rsKeys.getString(iFkColumnName);
+                    int keySequence = rsKeys.getInt(iKeySequence);
+                    String fkName = rsKeys.getString(iFkName);
+
+                    if (keySequence == 1)
+                    {
+                        ImportedKey key = new ImportedKey();
+                        key.fkName = fkName;
+                        key.pkOwnerName = pkOwnerName;
+                        key.pkTableName = pkTableName;
+                        key.pkColumnNames.add(pkColumnName);
+                        key.fkColumnNames.add(colName);
+                        importedKeys.add(key);
+                    }
+                    else
+                    {
+                        assert importedKeys.size() > 0;
+                        ImportedKey key = importedKeys.get(importedKeys.size() - 1);
+                        assert key.fkName.equals(fkName);
+                        key.pkColumnNames.add(pkColumnName);
+                        key.fkColumnNames.add(colName);
+                    }
                 }
             }
         }

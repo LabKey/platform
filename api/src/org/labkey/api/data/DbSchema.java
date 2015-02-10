@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.JdbcMetaDataSelector2.JdbcMetaDataResultSetFactory;
+import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -273,7 +273,7 @@ public class DbSchema
         {
             final SqlDialect dialect = _locator.getScope().getSqlDialect();
 
-            JdbcMetaDataSelector2 selector = new JdbcMetaDataSelector2(_locator, new JdbcMetaDataResultSetFactory()
+            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(_locator, new JdbcMetaDataResultSetFactory()
             {
                 @Override
                 public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException

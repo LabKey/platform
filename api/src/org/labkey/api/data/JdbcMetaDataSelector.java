@@ -15,10 +15,10 @@
  */
 package org.labkey.api.data;
 
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.springframework.dao.DeadlockLoserDataAccessException;
 
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,38 +28,52 @@ import java.sql.SQLException;
  * Date: 7/10/2014
  * Time: 8:52 AM
  */
-public class JdbcMetaDataSelector extends NonSqlExecutingSelector<JdbcMetaDataSelector>
+
+/**
+ * This class is used to read JDBC meta data via the standard DatabaseMetaData methods. It follows the basic Selector
+ * pattern, but much simpler to keep it out of that class hierarchy.
+ */
+public class JdbcMetaDataSelector
 {
-    private final ResultSetFactory _factory;
-    private final DatabaseMetaData _dbmd;
+    private final JdbcMetaDataLocator _locator;
+    private final JdbcMetaDataResultSetFactory _factory;
 
-    private JdbcMetaDataSelector(DbScope scope, Connection conn, DatabaseMetaData dbmd, JdbcMetaDataResultSetFactory factory)
+    public JdbcMetaDataSelector(JdbcMetaDataLocator locator, JdbcMetaDataResultSetFactory factory)
     {
-        super(scope, conn);
-        _dbmd = dbmd;
-        _factory = new InternalJdbcMetaDataResultSetFactory(factory);
-    }
-
-    protected JdbcMetaDataSelector(DbScope scope, Connection conn, JdbcMetaDataResultSetFactory factory) throws SQLException
-    {
-        this(scope, conn, conn.getMetaData(), factory);
-    }
-
-    protected JdbcMetaDataSelector(DbScope scope, DatabaseMetaData dbmd, JdbcMetaDataResultSetFactory factory)
-    {
-        this(scope, null, dbmd, factory);
-    }
-
-    @Override
-    protected ResultSetFactory getStandardResultSetFactory()
-    {
-        return _factory;
+        _locator = locator;
+        _factory = factory;
     }
 
     private static final int DEADLOCK_RETRIES = 5;
 
-    @Override
-    public TableResultSet getResultSet()
+    public TableResultSet getResultSet() throws SQLException
+    {
+        return handleResultSet(new ResultSetHandler<TableResultSet>()
+        {
+            @Override
+            public TableResultSet handle(ResultSet rs) throws SQLException
+            {
+                return new ResultSetImpl(rs, QueryLogging.emptyQueryLogging());
+            }
+        });
+    }
+
+    public void forEach(final ForEachBlock<ResultSet> block) throws SQLException
+    {
+        handleResultSet(new ResultSetHandler<Object>()
+        {
+            @Override
+            public Object handle(ResultSet rs) throws SQLException
+            {
+                while (rs.next())
+                    block.exec(rs);
+
+                return null;
+            }
+        });
+    }
+
+    private <T> T handleResultSet(ResultSetHandler<T> handler) throws SQLException
     {
         // Retry on deadlock, up to five times, see #22148 and #15640.
         int tries = 1;
@@ -68,14 +82,7 @@ public class JdbcMetaDataSelector extends NonSqlExecutingSelector<JdbcMetaDataSe
         {
             try
             {
-                return handleResultSet(_factory, new ResultSetHandler<TableResultSet>()
-                {
-                    @Override
-                    public TableResultSet handle(ResultSet rs, Connection conn) throws SQLException
-                    {
-                        return new ResultSetImpl(rs, QueryLogging.emptyQueryLogging());
-                    }
-                });
+                return handler.handle(_factory.getResultSet(_locator.getDatabaseMetaData(), _locator));
             }
             catch (DeadlockLoserDataAccessException e)
             {
@@ -86,49 +93,13 @@ public class JdbcMetaDataSelector extends NonSqlExecutingSelector<JdbcMetaDataSe
         }
     }
 
-    @Override
-    protected JdbcMetaDataSelector getThis()
+    private interface ResultSetHandler<T>
     {
-        return this;
+        T handle(ResultSet rs) throws SQLException;
     }
-
 
     public interface JdbcMetaDataResultSetFactory
     {
-        ResultSet getResultSet(DbScope scope, DatabaseMetaData dbmd) throws SQLException;
-    }
-
-
-    private class InternalJdbcMetaDataResultSetFactory implements ResultSetFactory
-    {
-        private final JdbcMetaDataResultSetFactory _factory;
-
-        public InternalJdbcMetaDataResultSetFactory(JdbcMetaDataResultSetFactory factory)
-        {
-            _factory = factory;
-        }
-
-        @Override
-        public final ResultSet getResultSet(Connection conn) throws SQLException
-        {
-            return _factory.getResultSet(getScope(), _dbmd);
-        }
-
-        @Override
-        public final boolean shouldClose()
-        {
-            return false;
-        }
-
-        @Override
-        public final void handleSqlException(SQLException e, @Nullable Connection conn)
-        {
-            throw getExceptionFramework().translate(getScope(), "JdbcMetaDataSelector", e);
-        }
-
-        private DbScope getScope()
-        {
-            return JdbcMetaDataSelector.this.getScope();
-        }
+        ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException;
     }
 }

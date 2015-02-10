@@ -21,8 +21,8 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
+import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -76,12 +76,22 @@ public class SchemaNameCache
     // Query the JDBC metadata for all schemas in this database.
     private Map<String, String> loadSchemaNameMap(DbScope scope) throws SQLException
     {
-        Connection conn = scope.getConnection();
         final Map<String, String> schemaNameMap = new CaseInsensitiveTreeMap<>();
 
-        try
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getMetaDataLocator(scope, null, null))
         {
-            getSchemaNameSelector(scope, conn).forEach(new Selector.ForEachBlock<ResultSet>(){
+            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
+            {
+                @Override
+                public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
+                {
+                    // null catalog name tells us that this dialect treats schemas as catalogs (e.g., MySQL)
+                    return null == locator.getCatalogName() ? dbmd.getCatalogs() : dbmd.getSchemas();
+                }
+            });
+
+            selector.forEach(new Selector.ForEachBlock<ResultSet>()
+            {
                 @Override
                 public void exec(ResultSet rs) throws SQLException
                 {
@@ -89,25 +99,8 @@ public class SchemaNameCache
                     schemaNameMap.put(name, name);
                 }
             });
-
-            return Collections.unmodifiableMap(schemaNameMap);
         }
-        finally
-        {
-            if (!scope.isTransactionActive())
-                conn.close();
-        }
-    }
 
-    private Selector getSchemaNameSelector(final DbScope scope, Connection conn) throws SQLException
-    {
-        return new JdbcMetaDataSelector(scope, conn, new JdbcMetaDataResultSetFactory()
-        {
-            @Override
-            public ResultSet getResultSet(DbScope scope, DatabaseMetaData dbmd) throws SQLException
-            {
-                return scope.getSqlDialect().treatCatalogsAsSchemas() ? dbmd.getCatalogs() : dbmd.getSchemas();
-            }
-        });
+        return Collections.unmodifiableMap(schemaNameMap);
     }
 }
