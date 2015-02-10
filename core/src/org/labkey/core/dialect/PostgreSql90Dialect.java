@@ -247,12 +247,6 @@ public class PostgreSql90Dialect extends SqlDialect
     }
 
     @Override
-    public boolean treatCatalogsAsSchemas()
-    {
-        return false;
-    }
-
-    @Override
     public void appendStatement(Appendable sql, String statement)
     {
         try

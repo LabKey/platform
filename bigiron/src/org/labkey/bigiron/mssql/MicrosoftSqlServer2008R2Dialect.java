@@ -738,12 +738,6 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     @Override
-    public boolean treatCatalogsAsSchemas()
-    {
-        return false;
-    }
-
-    @Override
     protected String getSIDQuery()
     {
         return "SELECT @@spid";

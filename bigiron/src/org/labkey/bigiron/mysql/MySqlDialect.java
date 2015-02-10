@@ -130,12 +130,6 @@ public class MySqlDialect extends SimpleSqlDialect
     }
 
     @Override
-    public boolean treatCatalogsAsSchemas()
-    {
-        return true;
-    }
-
-    @Override
     public JdbcMetaDataLocator getMetaDataLocator(DbScope scope, final String schemaName, String tableName) throws SQLException
     {
         // MySQL treats catalogs as schemas... i.e., getSchemaName() needs to return null and getCatalogName() needs to return the schema name
