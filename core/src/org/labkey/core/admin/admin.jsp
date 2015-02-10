@@ -30,11 +30,14 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.settings.AppProps"%>
+<%@ page import="org.labkey.api.module.DefaultModule" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
     AdminController.AdminBean bean = me.getModelBean();
     Container c = getContainer();
+    boolean devMode = AppProps.getInstance().isDevMode();
 %>
 <table class="labkey-admin-console"><tr>
 <td>
@@ -114,17 +117,38 @@
         <tr style="display:none">
             <td width="9"></td>
             <td style="padding-left: 2em">
-                <% if (!StringUtils.isEmpty(module.getDescription()))
-                {
-                    %><div style="padding-left:6px;"><%=h(module.getDescription())%></div><%
-                }
-                %><table cellpadding="0"><%
+                <table cellpadding="0"><%
+                    boolean sourcePathMatched = module instanceof DefaultModule && ((DefaultModule)module).isSourcePathMatched();
+                    boolean enlistmentIdMatched = module instanceof DefaultModule && ((DefaultModule)module).isSourceEnlistmentIdMatched();
+
+                    if (!StringUtils.isEmpty(module.getDescription()))
+                    {
+                        %><tr><td colspan="2" style="padding-left:6px;"><%=h(module.getDescription())%></td></tr><%
+                    }
                     for (Map.Entry<String, String> entry : new TreeMap<>(module.getProperties()).entrySet())
                     {
-                    %><tr>
-                        <td nowrap="true" class="labkey-form-label"><%=h(entry.getKey())%></td>
-                        <td nowrap="true"><%=h(entry.getValue())%></td>
-                    </tr><%
+                        if (StringUtils.equals("Source Path", entry.getKey()))
+                        {
+
+                            %><tr>
+                                <td nowrap="true" class="labkey-form-label"><%=h(entry.getKey())%><%=(devMode && !sourcePathMatched) ? helpPopup("source path not found") : new _HtmlString("")%></td>
+                                <td nowrap="true" style="color:<%=h(!devMode?"":sourcePathMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
+                            </tr><%
+                        }
+                        else if (StringUtils.equals("Enlistment ID", entry.getKey()))
+                        {
+                            %><tr>
+                                <td nowrap="true" class="labkey-form-label"><%=h(entry.getKey())%><%=(devMode && sourcePathMatched && !enlistmentIdMatched) ? helpPopup("enlistment id does not match") : new _HtmlString("")%></td>
+                                <td nowrap="true" style="color:<%=h( (!devMode||!sourcePathMatched)?"":enlistmentIdMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
+                            </tr><%
+                        }
+                        else
+                        {
+                            %><tr>
+                                <td nowrap="true" class="labkey-form-label"><%=h(entry.getKey())%></td>
+                                <td nowrap="true"><%=h(entry.getValue())%></td>
+                            </tr><%
+                        }
                     } %>
                 </table>
             </td>
