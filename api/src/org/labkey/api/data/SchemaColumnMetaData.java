@@ -55,6 +55,11 @@ public class SchemaColumnMetaData
     private String _titleColumn = null;
     private boolean _hasDefaultTitleColumn = true;
 
+    protected SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
+    {
+        this(tinfo, true);
+    }
+
     SchemaColumnMetaData(SchemaTableInfo tinfo, boolean load) throws SQLException
     {
         _tinfo = tinfo;
