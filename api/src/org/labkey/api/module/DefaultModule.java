@@ -142,6 +142,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     protected String _resourcePath = null;
     private boolean _requireSitePermission = false;
 
+    // for displaying development status of module
+    private boolean _sourcePathMatched = false;
+    private boolean _sourceEnlistmentIdMatched = false;
+
+
     protected DefaultModule()
     {
     }
@@ -1154,6 +1159,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
                 if (sourceDir.isDirectory())
                 {
+                    _sourcePathMatched = true;
                     String moduleEnlistmentId = getEnlistmentId();
 
                     if (null != moduleEnlistmentId)
@@ -1169,7 +1175,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                         }
 
                         if (useSource)
+                        {
+                            _sourceEnlistmentIdMatched = true;
                             return getResourceDirectory(sourceDir);
+                        }
                     }
                 }
             }
@@ -1346,5 +1355,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, String> metaDataTableNames)
     {
         return new DbSchema(metaDataName, DbSchemaType.Module, scope, metaDataTableNames);
+    }
+
+    // for development mode info only
+    public boolean isSourcePathMatched()
+    {
+        return _sourcePathMatched;
+    }
+
+    public boolean isSourceEnlistmentIdMatched()
+    {
+        return _sourceEnlistmentIdMatched;
     }
 }
