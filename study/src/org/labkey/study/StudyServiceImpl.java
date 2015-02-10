@@ -43,6 +43,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.AliasManager;
@@ -52,6 +53,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -60,6 +62,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyReloadSource;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayProvider;
@@ -68,6 +71,7 @@ import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
@@ -81,6 +85,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VialDomainKind;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
+import org.labkey.study.pipeline.StudyReloadSourceJob;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.SimpleSpecimenTable;
 import org.labkey.study.query.SpecimenDetailTable;
@@ -93,6 +98,8 @@ import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.springframework.validation.BindException;
 
 import java.io.File;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -104,6 +111,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: jgarms
@@ -111,6 +119,7 @@ import java.util.Set;
 public class StudyServiceImpl implements StudyService.Service
 {
     public static final StudyServiceImpl INSTANCE = new StudyServiceImpl();
+    private final Map<String, StudyReloadSource> _reloadSourceMap = new ConcurrentHashMap<>();
 
     private StudyServiceImpl() {}
 
@@ -993,6 +1002,43 @@ public class StudyServiceImpl implements StudyService.Service
         return new _UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf);
     }
 
+    @Override
+    public void registerStudyReloadSource(StudyReloadSource source)
+    {
+        if (!_reloadSourceMap.containsKey(source.getName()))
+            _reloadSourceMap.put(source.getName(), source);
+        else
+            throw new IllegalStateException("A study reload source implementation with the name: " + source.getName() + " is already registered");
+    }
+
+    @Override
+    public Collection<StudyReloadSource> getStudyReloadSources(Container container)
+    {
+        List<StudyReloadSource> sources = new ArrayList<>();
+
+        for (StudyReloadSource source : _reloadSourceMap.values())
+        {
+            if (source.isEnabled(container))
+                sources.add(source);
+        }
+        return sources;
+    }
+
+    @Nullable
+    @Override
+    public StudyReloadSource getStudyReloadSource(String name)
+    {
+        return _reloadSourceMap.get(name);
+    }
+
+    @Override
+    public PipelineJob createReloadSourceJob(Container container, User user, StudyReloadSource reloadSource, @Nullable ActionURL url) throws SQLException, IOException, ValidationException
+    {
+        PipeRoot root = PipelineService.get().findPipelineRoot(container);
+        StudyReloadSourceJob job = new StudyReloadSourceJob(new ViewBackgroundInfo(container, user, url), root, reloadSource.getName());
+
+        return job;
+    }
 
     private static class _UnionTable extends AbstractTableInfo
     {

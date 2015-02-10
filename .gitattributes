@@ -3715,6 +3715,9 @@ study/src/org/labkey/study/pipeline/StudyBatch.java -text
 study/src/org/labkey/study/pipeline/StudyImportDatasetTask.java -text
 study/src/org/labkey/study/pipeline/StudyImportSpecimenTask.java -text
 study/src/org/labkey/study/pipeline/StudyPipeline.java -text
+study/src/org/labkey/study/pipeline/StudyReloadSourceJob.java -text
+study/src/org/labkey/study/pipeline/StudyReloadSourceJobSupport.java -text
+study/src/org/labkey/study/pipeline/StudyReloadSourceTask.java -text
 study/src/org/labkey/study/plate/CurveFitFactory.java -text
 study/src/org/labkey/study/plate/PlateDataServiceImpl.java -text
 study/src/org/labkey/study/plate/PlateImpl.java -text
