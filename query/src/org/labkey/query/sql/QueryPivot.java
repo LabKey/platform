@@ -200,7 +200,7 @@ public class QueryPivot extends QueryRelation
 
                 // TODO check duplicate values as well as duplicate names
                 if (pivotValues.containsKey(name))
-                    parseError("Duplicate pivot column name: " + name, node);
+                    parseError("Duplicate pivot column name: " + name + ".\nColumn names are case-insensitve, you may need to use lower() or upper() in your query to work around this.", node);
                 else
                     pivotValues.put(name, constant);
             }
