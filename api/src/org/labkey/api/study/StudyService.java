@@ -29,7 +29,9 @@ import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
@@ -39,6 +41,8 @@ import org.labkey.api.view.DataView;
 import org.springframework.validation.BindException;
 
 import java.io.File;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -180,6 +184,17 @@ public class StudyService
         TableInfo getSpecimenDetailTableUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
         TableInfo getSpecimenWrapTableUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
         TableInfo getSpecimenSummaryTableUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
+
+        /**
+         * Register an implementation of a reload source. A StudyReloadSource is a potential source for
+         * study artifacts to be created and reloaded automatically through the normal study reload framework.
+         * The source of the study artifacts could be an external repository or server.
+         */
+        void registerStudyReloadSource(StudyReloadSource reloadSource);
+        Collection<StudyReloadSource> getStudyReloadSources(Container container);
+        @Nullable
+        StudyReloadSource getStudyReloadSource(String name);
+        PipelineJob createReloadSourceJob(Container container, User user, StudyReloadSource transform, @Nullable ActionURL url) throws SQLException, IOException, ValidationException;
     }
 
     @Nullable
