@@ -21,17 +21,45 @@ import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
-import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.property.*;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.exp.AbstractParameter;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolAction;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.experiment.api.*;
+import org.labkey.experiment.api.Data;
+import org.labkey.experiment.api.DataInput;
+import org.labkey.experiment.api.ExpDataImpl;
+import org.labkey.experiment.api.ExpExperimentImpl;
+import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.Experiment;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.Material;
+import org.labkey.experiment.api.MaterialInput;
+import org.labkey.experiment.api.ProtocolActionPredecessor;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.w3c.dom.Document;
@@ -44,7 +72,17 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -71,6 +109,8 @@ public class XarExporter
     private Set<String> _inputMaterialLSIDs = new HashSet<>();
 
     private Set<String> _sampleSetLSIDs = new HashSet<>();
+    /** Use a TreeMap so that we order domains by their RowIds, see issue 22459 */
+    private Map<Integer, Domain> _domainsToAdd = new TreeMap<>();
     private Set<String> _domainLSIDs = new HashSet<>();
     private Set<Integer> _expDataIDs = new HashSet<>();
 
@@ -434,34 +474,13 @@ public class XarExporter
         }
         
         Domain domain = sampleSet.getType();
-        addDomain(domain);
+        queueDomain(domain);
     }
 
-    private void addDomain(Domain domain) throws ExperimentException
+    private void queueDomain(Domain domain) throws ExperimentException
     {
-        if (_domainLSIDs.contains(domain.getTypeURI()))
-        {
-            return;
-        }
-        _domainLSIDs.add(domain.getTypeURI());
-        
-        ExperimentArchiveType.DomainDefinitions domainDefs = _archive.getDomainDefinitions();
-        if (domainDefs == null)
-        {
-            domainDefs = _archive.addNewDomainDefinitions();
-        }
-        DomainDescriptorType xDomain = domainDefs.addNewDomain();
-        xDomain.setName(domain.getName());
-        if (domain.getDescription() != null)
-        {
-            xDomain.setDescription(domain.getDescription());
-        }
-        xDomain.setDomainURI(_relativizedLSIDs.relativize(domain.getTypeURI()));
-        Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
-        for (DomainProperty domainProp : domain.getProperties())
-        {
-            addPropertyDescriptor(xDomain, domainProp, defaults.get(domainProp));
-        }
+        // Save them up so that we are sure they are written out in the proper order
+        _domainsToAdd.put(domain.getTypeId(), domain);
     }
 
     private void addPropertyDescriptor(DomainDescriptorType xDomain, DomainProperty domainProp, Object defaultValue) throws ExperimentException
@@ -916,7 +935,7 @@ public class XarExporter
                             Domain domain = PropertyService.get().getDomain(parentContainer, value.getStringValue());
                             if (domain != null)
                             {
-                                addDomain(domain);
+                                queueDomain(domain);
                             }
                         }
                         break;
@@ -940,6 +959,8 @@ public class XarExporter
 
     public void dumpXML(OutputStream out) throws IOException, ExperimentException
     {
+        ensureDomainsWritten();
+
         XmlOptions validateOptions = new XmlOptions();
         ArrayList<XmlError> errorList = new ArrayList<>();
         validateOptions.setErrorListener(errorList);
@@ -969,6 +990,35 @@ public class XarExporter
         }
 
         _document.save(out, options);
+    }
+
+    private void ensureDomainsWritten() throws ExperimentException
+    {
+        for (Map.Entry<Integer, Domain> entry : _domainsToAdd.entrySet())
+        {
+            Domain domain = entry.getValue();
+            if (_domainLSIDs.add(domain.getTypeURI()))
+            {
+                ExperimentArchiveType.DomainDefinitions domainDefs = _archive.getDomainDefinitions();
+                if (domainDefs == null)
+                {
+                    domainDefs = _archive.addNewDomainDefinitions();
+                }
+                DomainDescriptorType xDomain = domainDefs.addNewDomain();
+                xDomain.setName(domain.getName());
+                if (domain.getDescription() != null)
+                {
+                    xDomain.setDescription(domain.getDescription());
+                }
+                xDomain.setDomainURI(_relativizedLSIDs.relativize(domain.getTypeURI()));
+                Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
+                for (DomainProperty domainProp : domain.getProperties())
+                {
+                    addPropertyDescriptor(xDomain, domainProp, defaults.get(domainProp));
+                }
+
+            }
+        }
     }
 
     public void write(OutputStream out) throws IOException, ExperimentException
