@@ -566,14 +566,10 @@ public class StudyUpgradeCode implements UpgradeCode
 
     private void migrateForeignKeyConstraint(TableInfo tableInfoWithFK, TableInfo oldDestTableInfo, TableInfo newDestTableInfo, String fieldName)
     {
-        SQLFragment sql = new SQLFragment("ALTER TABLE ");
-        sql.append(tableInfoWithFK.getSelectName()).append(" DROP CONSTRAINT FK_")
-           .append(fieldName).append("_")
-           .append(tableInfoWithFK.getMetaDataName()).append("_");
-        sql.append(oldDestTableInfo.getMetaDataName());
-        new SqlExecutor(tableInfoWithFK.getSchema()).execute(sql);
+        String constraintName = "FK_" + fieldName + "_" + tableInfoWithFK.getMetaDataName() + "_" + oldDestTableInfo.getMetaDataName();
+        tableInfoWithFK.getSqlDialect().dropIfExists(DbSchema.get("specimentables"), tableInfoWithFK.getMetaDataName(), "CONSTRAINT", constraintName);
 
-        sql = new SQLFragment("ALTER TABLE ");
+        SQLFragment sql = new SQLFragment("ALTER TABLE ");
         sql.append(tableInfoWithFK.getSelectName()).append(" ADD CONSTRAINT FK_")
            .append(fieldName).append("_").append(tableInfoWithFK.getMetaDataName()).append("_").append(newDestTableInfo.getMetaDataName())
            .append(" FOREIGN KEY (").append(fieldName).append(") REFERENCES ").append(newDestTableInfo.getSelectName()).append(" (RowId)");

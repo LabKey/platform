@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-ALTER TABLE study.Participant DROP CONSTRAINT FK_CurrentSiteId_Site;
-ALTER TABLE study.Participant DROP CONSTRAINT FK_EnrollmentSiteId_Site;
-ALTER TABLE study.SampleRequest DROP CONSTRAINT FK_SampleRequest_Site;
-ALTER TABLE study.SampleRequestRequirement DROP CONSTRAINT FK_SampleRequestRequirement_Site;
+SELECT core.fn_dropifexists ('Participant', 'study', 'CONSTRAINT', 'FK_CurrentSiteId_Site');
+SELECT core.fn_dropifexists ('Participant', 'study', 'CONSTRAINT', 'FK_EnrollmentSiteId_Site');
+SELECT core.fn_dropifexists ('SampleRequest', 'study', 'CONSTRAINT', 'FK_SampleRequest_Site');
+SELECT core.fn_dropifexists ('SampleRequestRequirement', 'study', 'CONSTRAINT', 'FK_SampleRequestRequirement_Site');
 
 SELECT core.executeJavaUpgradeCode('migrateSpecimenTypeAndLocationTables');
 
