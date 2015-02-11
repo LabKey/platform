@@ -1349,6 +1349,9 @@ public class IssuesController extends SpringActionController
         final Set<User> allAddresses = getUsersToEmail(issue, prevIssue, action);
         for (User user : allAddresses)
         {
+            boolean hasPermission = getContainer().hasPermission(user, ReadPermission.class);
+            if (!hasPermission) continue;
+
             String to = user.getEmail();
             try
             {
