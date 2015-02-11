@@ -15,7 +15,6 @@
  */
 package org.labkey.mothership.query;
 
-import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.query.QuerySettings;
@@ -44,24 +43,27 @@ public class ExceptionStackTraceQueryView extends QueryView
     {
         super.populateButtonBar(view, bar, exportAsWebPage);
 
-        MenuButton assignToButton = new MenuButton("Assign To");
-        assignToButton.setRequiresSelection(true);
-        assignToButton.setDisplayPermission(UpdatePermission.class);
-        for (User user : MothershipManager.get().getAssignedToList(getSchema().getContainer()))
+        if (getContainer().hasPermission(getUser(), UpdatePermission.class))
         {
-            ActionURL url = new ActionURL(MothershipController.BulkUpdateAction.class, getContainer());
-            url.addParameter("userId", user.getUserId());
-            String script = "if (verifySelected(document.forms['" + getDataRegionName() + "'], '" + url +
-            "', 'post', 'rows')) document.forms['" + getDataRegionName() + "'].submit();";
+            MenuButton assignToButton = new MenuButton("Assign To");
+            assignToButton.setRequiresSelection(true);
+            assignToButton.setDisplayPermission(UpdatePermission.class);
+            for (User user : MothershipManager.get().getAssignedToList(getSchema().getContainer()))
+            {
+                ActionURL url = new ActionURL(MothershipController.BulkUpdateAction.class, getContainer());
+                url.addParameter("userId", user.getUserId());
+                String script = "if (verifySelected(document.forms['" + getDataRegionName() + "'], '" + url +
+                        "', 'post', 'rows')) document.forms['" + getDataRegionName() + "'].submit();";
 
-            assignToButton.addMenuItem(user.getDisplayName(getSchema().getUser()), null, script);
+                assignToButton.addMenuItem(user.getDisplayName(getSchema().getUser()), null, script);
+            }
+            assignToButton.addSeparator();
+            ActionURL ignoreURL = new ActionURL(MothershipController.BulkUpdateAction.class, getContainer());
+            ignoreURL.addParameter("ignore", true);
+            String ignoreScript = "if (verifySelected(document.forms['" + getDataRegionName() + "'], '" + ignoreURL +
+                    "', 'post', 'rows')) document.forms['" + getDataRegionName() + "'].submit();";
+            assignToButton.addMenuItem("Ignore", null, ignoreScript);
+            bar.add(assignToButton);
         }
-        assignToButton.addSeparator();
-        ActionURL ignoreURL = new ActionURL(MothershipController.BulkUpdateAction.class, getContainer());
-        ignoreURL.addParameter("ignore", true);
-        String ignoreScript = "if (verifySelected(document.forms['" + getDataRegionName() + "'], '" + ignoreURL +
-        "', 'post', 'rows')) document.forms['" + getDataRegionName() + "'].submit();";
-        assignToButton.addMenuItem("Ignore", null, ignoreScript);
-        bar.add(assignToButton);
     }
 }
