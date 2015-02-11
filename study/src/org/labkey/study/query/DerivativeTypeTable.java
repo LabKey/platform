@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.study.StudySchema;
 import org.labkey.api.query.AliasedColumn;
 
@@ -23,12 +24,16 @@ public class DerivativeTypeTable extends BaseStudyTable
 {
     public DerivativeTypeTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenDerivative(), true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenDerivative(schema.getContainer()), true);
+        setName("SpecimenDerivative");
+        setPublicSchemaName("study");
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
         addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
         addColumn(new AliasedColumn(this, "LdmsCode", _rootTable.getColumn("LdmsDerivativeCode")));
         addColumn(new AliasedColumn(this, "LabwareCode", _rootTable.getColumn("LabwareDerivativeCode")));
         addColumn(new AliasedColumn(this, "Description", _rootTable.getColumn("Derivative")));
+        ColumnInfo typeColumn = addWrapColumn("Derivative", _rootTable.getColumn("Derivative"));    // for lookups
+        typeColumn.setHidden(true);
         setTitleColumn("Description");
     }
 }

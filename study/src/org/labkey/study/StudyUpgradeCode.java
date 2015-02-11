@@ -36,6 +36,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -491,4 +492,92 @@ public class StudyUpgradeCode implements UpgradeCode
             }
         }
     }
+
+    // study-14.31-14.33
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void migrateSpecimenTypeAndLocationTables(final ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        Set<Container> allContainers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+        for (Container c : allContainers)
+        {
+            if (null != c)
+            {
+                Study study = StudyManager.getInstance().getStudy(c);
+                if (null != study)
+                    migrateSpecimenTypeAndLocationTables(study, true);
+            }
+        }
+
+        for (Container c : allContainers)
+        {
+            if (null != c)
+            {
+                Study study = StudyManager.getInstance().getStudy(c);
+                if (null != study)
+                    migrateSpecimenTypeAndLocationTables(study, false);
+            }
+        }
+
+        // Now drop the tables
+        SqlDialect dialect = StudySchema.getInstance().getSchema().getScope().getSqlDialect();
+        dialect.dropIfExists(StudySchema.getInstance().getSchema(), "Site", "TABLE", null);
+        dialect.dropIfExists(StudySchema.getInstance().getSchema(), "SpecimenPrimaryType", "TABLE", null);
+        dialect.dropIfExists(StudySchema.getInstance().getSchema(), "SpecimenDerivative", "TABLE", null);
+        dialect.dropIfExists(StudySchema.getInstance().getSchema(), "SpecimenAdditive", "TABLE", null);
+    }
+
+    public void migrateSpecimenTypeAndLocationTables(Study study, boolean createTablesOnly)
+    {
+        TableInfo location = StudySchema.getInstance().getTableInfoSite(study.getContainer());
+        TableInfo primaryType = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(study.getContainer());
+        TableInfo derivative = StudySchema.getInstance().getTableInfoSpecimenDerivative(study.getContainer());
+        TableInfo additive = StudySchema.getInstance().getTableInfoSpecimenAdditive(study.getContainer());
+
+        if (createTablesOnly)
+            return;
+
+        DbSchema db = DbSchema.get("study");
+        try
+        {
+            DbSchema bareStudySchema = DbSchema.createFromMetaData(db.getScope(), "study", DbSchemaType.Bare);
+            db = bareStudySchema;
+        }
+        catch (SQLException e)
+        {
+
+        }
+        TableInfo locationOld = db.getTable("site");
+        TableInfo primaryTypeOld = db.getTable("specimenprimarytype");
+        TableInfo derivativeOld = db.getTable("specimenderivative");
+        TableInfo additiveOld = db.getTable("specimenadditive");
+        _copy(study, locationOld, location, true);
+        _copy(study, primaryTypeOld, primaryType, true);
+        _copy(study, derivativeOld, derivative, true);
+        _copy(study, additiveOld, additive, true);
+
+        // Vial and Specimen each have an FK to Site. We need to drop that and add one to the provisioned Location/Site table
+        migrateForeignKeyConstraint(StudySchema.getInstance().getTableInfoVial(study.getContainer()), locationOld, location, "CurrentLocation");
+        migrateForeignKeyConstraint(StudySchema.getInstance().getTableInfoSpecimenEvent(study.getContainer()), locationOld, location, "LabId");
+    }
+
+    private void migrateForeignKeyConstraint(TableInfo tableInfoWithFK, TableInfo oldDestTableInfo, TableInfo newDestTableInfo, String fieldName)
+    {
+        SQLFragment sql = new SQLFragment("ALTER TABLE ");
+        sql.append(tableInfoWithFK.getSelectName()).append(" DROP CONSTRAINT FK_")
+           .append(fieldName).append("_")
+           .append(tableInfoWithFK.getMetaDataName()).append("_");
+        sql.append(oldDestTableInfo.getMetaDataName());
+        new SqlExecutor(tableInfoWithFK.getSchema()).execute(sql);
+
+        sql = new SQLFragment("ALTER TABLE ");
+        sql.append(tableInfoWithFK.getSelectName()).append(" ADD CONSTRAINT FK_")
+           .append(fieldName).append("_").append(tableInfoWithFK.getMetaDataName()).append("_").append(newDestTableInfo.getMetaDataName())
+           .append(" FOREIGN KEY (").append(fieldName).append(") REFERENCES ").append(newDestTableInfo.getSelectName()).append(" (RowId)");
+        new SqlExecutor(tableInfoWithFK.getSchema()).execute(sql);
+    }
+
 }

@@ -3210,6 +3210,7 @@ study/resources/schemas/dbscripts/postgresql/study-14.21-14.22.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.30-14.31.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.31-14.32.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.32-14.33.sql -text
+study/resources/schemas/dbscripts/postgresql/study-14.33-14.34.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -3452,6 +3453,7 @@ study/resources/schemas/dbscripts/sqlserver/study-14.21-14.22.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.30-14.31.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.31-14.32.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.32-14.33.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-14.33-14.34.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -3620,6 +3622,7 @@ study/src/org/labkey/study/model/AbstractSpecimenDomainKind.java -text
 study/src/org/labkey/study/model/AbstractStudyCachable.java -text
 study/src/org/labkey/study/model/AbstractStudyEntity.java -text
 study/src/org/labkey/study/model/AdditiveType.java -text
+study/src/org/labkey/study/model/AdditiveTypeDomainKind.java -text
 study/src/org/labkey/study/model/AssaySpecimenConfigImpl.java -text
 study/src/org/labkey/study/model/AssaySpecimenVisitImpl.java -text
 study/src/org/labkey/study/model/BaseStudyDomainKind.java -text
@@ -3638,9 +3641,11 @@ study/src/org/labkey/study/model/DatasetReorderer.java -text
 study/src/org/labkey/study/model/DateDatasetDomainKind.java -text
 study/src/org/labkey/study/model/DefaultSpecimenTablesTemplate.java -text
 study/src/org/labkey/study/model/DerivativeType.java -text
+study/src/org/labkey/study/model/DerivativeTypeDomainKind.java -text
 study/src/org/labkey/study/model/ExtendedSpecimenRequestView.java -text
 study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
 study/src/org/labkey/study/model/GroupSecurityType.java -text
+study/src/org/labkey/study/model/LocationDomainKind.java -text
 study/src/org/labkey/study/model/LocationImpl.java -text
 study/src/org/labkey/study/model/Participant.java -text
 study/src/org/labkey/study/model/ParticipantCategoryImpl.java -text
@@ -3652,6 +3657,7 @@ study/src/org/labkey/study/model/ParticipantGroupManager.java -text
 study/src/org/labkey/study/model/ParticipantIdImportHelper.java -text
 study/src/org/labkey/study/model/ParticipantMapper.java -text
 study/src/org/labkey/study/model/PrimaryType.java -text
+study/src/org/labkey/study/model/PrimaryTypeDomainKind.java -text
 study/src/org/labkey/study/model/ProductAntigenImpl.java -text
 study/src/org/labkey/study/model/ProductImpl.java -text
 study/src/org/labkey/study/model/QCState.java -text

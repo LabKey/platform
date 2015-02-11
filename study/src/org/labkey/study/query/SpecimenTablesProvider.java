@@ -30,6 +30,10 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.study.model.AbstractSpecimenDomainKind;
+import org.labkey.study.model.AdditiveTypeDomainKind;
+import org.labkey.study.model.DerivativeTypeDomainKind;
+import org.labkey.study.model.LocationDomainKind;
+import org.labkey.study.model.PrimaryTypeDomainKind;
 import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.SpecimenEventDomainKind;
 import org.labkey.study.model.VialDomainKind;
@@ -41,16 +45,36 @@ public class SpecimenTablesProvider
     public static final String SPECIMEN_TABLENAME = "Specimen";
     public static final String VIAL_TABLENAME = "Vial";
     public static final String SPECIMENEVENT_TABLENAME = "SpecimenEvent";
+    public static final String LOCATION_TABLENAME = "Site";
+    public static final String PRIMARYTYPE_TABLENAME = "SpecimenPrimaryType";
+    public static final String DERIVATIVETYPE_TABLENAME = "SpecimenDerivative";
+    public static final String ADDITIVETYPE_TABLENAME = "SpecimenAdditive";
 
-    private Container _container;
-    private User _user;
-    private SpecimenTablesTemplate _template;
+    private final Container _container;
+    private final User _user;
+    private final SpecimenTablesTemplate _template;
+    final private AbstractSpecimenDomainKind _specimenDomainKind = new SpecimenDomainKind();
+    final private AbstractSpecimenDomainKind _vialDomainKind;
+    final private AbstractSpecimenDomainKind _specimenEventDomainKind;
+    final private AbstractSpecimenDomainKind _locationDomainKind = new LocationDomainKind();
+    final private AbstractSpecimenDomainKind _primaryTypeDomainKind = new PrimaryTypeDomainKind();
+    final private AbstractSpecimenDomainKind _derivativeTypeDomainKind = new DerivativeTypeDomainKind();
+    final private AbstractSpecimenDomainKind _additiveTypeDomainKind = new AdditiveTypeDomainKind();
 
     public SpecimenTablesProvider(Container container, @Nullable User user, @Nullable SpecimenTablesTemplate template)
     {
         _container = container;
         _user = user;
         _template = template;
+
+        // Vial depends on Specimen
+        String specimenDomainURI = getDomainKind(SPECIMEN_TABLENAME).generateDomainURI(SCHEMA_NAME, SPECIMEN_TABLENAME, _container, _user);
+        _vialDomainKind = new VialDomainKind(specimenDomainURI);
+
+        // SpecimenEvent depends on Vial
+        String vialDomainURI = getDomainKind(VIAL_TABLENAME).generateDomainURI(SCHEMA_NAME, VIAL_TABLENAME, _container, _user);
+        _specimenEventDomainKind =  new SpecimenEventDomainKind(vialDomainURI);
+
     }
 
     @Nullable
@@ -148,6 +172,26 @@ public class SpecimenTablesProvider
             {
                 domain.delete(_user);
             }
+            domain = getDomain(LOCATION_TABLENAME, false);
+            if (null != domain)
+            {
+                domain.delete(_user);
+            }
+            domain = getDomain(PRIMARYTYPE_TABLENAME, false);
+            if (null != domain)
+            {
+                domain.delete(_user);
+            }
+            domain = getDomain(DERIVATIVETYPE_TABLENAME, false);
+            if (null != domain)
+            {
+                domain.delete(_user);
+            }
+            domain = getDomain(ADDITIVETYPE_TABLENAME, false);
+            if (null != domain)
+            {
+                domain.delete(_user);
+            }
         }
         catch (DomainNotFoundException e)
         {
@@ -168,42 +212,28 @@ public class SpecimenTablesProvider
             StorageProvisioner.addOrDropTableIndices(domain, false);
     }
 
-    // We can cache these within the provider and provider can be cached for container/user (there's only max 1 study per container)
-    // but these are not what is registered with Domain stuff, so extra info is only valid to be used here
-    private AbstractSpecimenDomainKind _specimenDomainKind = null;
-    private AbstractSpecimenDomainKind _vialDomainKind = null;
-    private AbstractSpecimenDomainKind _specimenEventDomainKind = null;
-
     private AbstractSpecimenDomainKind getDomainKind(String tableName)
     {
         if (SPECIMEN_TABLENAME.equalsIgnoreCase(tableName))
-        {
-            if (null == _specimenDomainKind)
-                _specimenDomainKind = new SpecimenDomainKind();
             return _specimenDomainKind;
-        }
 
         if (VIAL_TABLENAME.equalsIgnoreCase(tableName))
-        {
-            if (null == _vialDomainKind)
-            {
-                // Vial depends on Specimen
-                String specimenDomainURI = getDomainKind(SPECIMEN_TABLENAME).generateDomainURI(SCHEMA_NAME, SPECIMEN_TABLENAME, _container, _user);
-                _vialDomainKind = new VialDomainKind(specimenDomainURI);
-            }
             return _vialDomainKind;
-        }
 
         if (SPECIMENEVENT_TABLENAME.equalsIgnoreCase(tableName))
-        {
-            if (null == _specimenEventDomainKind)
-            {
-                // SpecimenEvent depends on Vial
-                String vialDomainURI = getDomainKind(VIAL_TABLENAME).generateDomainURI(SCHEMA_NAME, VIAL_TABLENAME, _container, _user);
-                _specimenEventDomainKind =  new SpecimenEventDomainKind(vialDomainURI);
-            }
             return _specimenEventDomainKind;
-        }
+
+        if (LOCATION_TABLENAME.equalsIgnoreCase(tableName))
+            return _locationDomainKind;
+
+        if (PRIMARYTYPE_TABLENAME.equalsIgnoreCase(tableName))
+            return _primaryTypeDomainKind;
+
+        if (DERIVATIVETYPE_TABLENAME.equalsIgnoreCase(tableName))
+            return _derivativeTypeDomainKind;
+
+        if (ADDITIVETYPE_TABLENAME.equalsIgnoreCase(tableName))
+            return _additiveTypeDomainKind;
 
         throw new IllegalStateException("Unknown domain kind: " + tableName);
     }

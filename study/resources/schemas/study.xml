@@ -172,60 +172,85 @@
       </ns:column>
     </ns:columns>
   </ns:table>
-  <ns:table tableName="Site" tableDbType="TABLE">
+  <ns:table tableName="Site" tableDbType="NOT_IN_DB">
     <ns:description>Contains one row per study-affiliated location.  Locations can include labs, clinics, and repositories.</ns:description>
     <ns:titleColumn>Label</ns:titleColumn>
     <ns:columns>
       <ns:column columnName="RowId">
         <ns:description>The unique identifier for each location.</ns:description>
+        <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="ExternalId">
         <ns:description>The external identifier for each location, if imported from an external data source.</ns:description>
+        <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="LdmsLabCode">
         <ns:columnTitle>Location Id</ns:columnTitle>
         <ns:nullable>false</ns:nullable>
         <ns:description>The unique LDMS identifier assigned to each location, if imported from an LDMS system.</ns:description>
+        <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="LabwareLabCode">
         <ns:description>The unique Labware identifier assigned to each location, if imported from a Labware system.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>20</ns:scale>
       </ns:column>
       <ns:column columnName="LabUploadCode">
         <ns:description>The upload code for each location.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>10</ns:scale>
       </ns:column>
       <ns:column columnName="Sal">
         <ns:description>Whether each location is a site-affiliated laboratory.</ns:description>
+        <ns:datatype>boolean</ns:datatype>
       </ns:column>
       <ns:column columnName="Repository">
         <ns:description>Whether each location is a repository.</ns:description>
+        <ns:datatype>boolean</ns:datatype>
       </ns:column>
       <ns:column columnName="Endpoint">
         <ns:description>Whether each location is an endpoint laboratory.</ns:description>
+        <ns:datatype>boolean</ns:datatype>
       </ns:column>
       <ns:column columnName="Clinic">
         <ns:description>Whether each location is a clinic.</ns:description>
+        <ns:datatype>boolean</ns:datatype>
       </ns:column>
       <ns:column columnName="Label">
         <ns:nullable>false</ns:nullable>
         <ns:description>The long/friendly name of each location.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>200</ns:scale>
       </ns:column>
       <ns:column columnName="Description">
         <ns:description>A short description of each location.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>500</ns:scale>
       </ns:column>
       <ns:column columnName="StreetAddress">
         <ns:description>The street address of each location.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>200</ns:scale>
       </ns:column>
       <ns:column columnName="City">
         <ns:description>The city or town of each location.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>200</ns:scale>
       </ns:column>
       <ns:column columnName="GoverningDistrict">
         <ns:description>The governing district (i.e. state, province, federal district) of each location.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>200</ns:scale>
       </ns:column>
       <ns:column columnName="Country">
         <ns:description>The country of each location.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>200</ns:scale>
       </ns:column>
       <ns:column columnName="PostalArea">
         <ns:description>The postal area code (i.e. zip, postcode) of each location.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>50</ns:scale>
       </ns:column>
       <ns:column columnName="Container">
         <ns:isKeyField>true</ns:isKeyField>
@@ -1284,45 +1309,61 @@
       </ns:column>
     </ns:columns>
   </ns:table>
-  <ns:table tableName="SpecimenAdditive" tableDbType="TABLE">
+  <ns:table tableName="SpecimenAdditive" tableDbType="NOT_IN_DB">
     <ns:description>Contains one row per specimen additive.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId">
         <ns:description>The unique ID of each specimen additive.</ns:description>
+        <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="Container"/>
       <ns:column columnName="ExternalId">
-          <ns:description>The external identifier for each additive, if imported from an external data source.</ns:description>
+        <ns:description>The external identifier for each additive, if imported from an external data source.</ns:description>
+        <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="LdmsAdditiveCode">
         <ns:description>The LDMS additive code.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>30</ns:scale>
       </ns:column>
       <ns:column columnName="LabwareAdditiveCode">
         <ns:description>The Labware additive code.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>20</ns:scale>
       </ns:column>
       <ns:column columnName="Additive">
         <ns:description>The name/label of each additive.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>100</ns:scale>
       </ns:column>
     </ns:columns>
   </ns:table>
-  <ns:table tableName="SpecimenDerivative" tableDbType="TABLE">
+  <ns:table tableName="SpecimenDerivative" tableDbType="NOT_IN_DB">
     <ns:description>Contains one row per specimen derivative.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId">
         <ns:description>The unique ID of each derivative.</ns:description>
+        <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="Container"/>
       <ns:column columnName="ExternalId">
-          <ns:description>The external identifier for each derivative, if imported from an external data source.</ns:description>
+        <ns:description>The external identifier for each derivative, if imported from an external data source.</ns:description>
+        <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="LdmsDerivativeCode">
         <ns:description>The LDMS derivative code.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>30</ns:scale>
       </ns:column>
       <ns:column columnName="LabwareDerivativeCode">
         <ns:description>The Labware derivative code.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>20</ns:scale>
       </ns:column>
       <ns:column columnName="Derivative">
         <ns:description>The name/label of each additive.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+        <ns:scale>100</ns:scale>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -1493,24 +1534,32 @@
       </ns:column>
     </ns:columns>
   </ns:table>
-  <ns:table tableName="SpecimenPrimaryType" tableDbType="TABLE">
+  <ns:table tableName="SpecimenPrimaryType" tableDbType="NOT_IN_DB">
     <ns:description>Contains one row per primary specimen type.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId">
         <ns:description>The unique ID of each primary type.</ns:description>
+        <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="Container"/>
       <ns:column columnName="ExternalId">
-          <ns:description>The external identifier for each primary type, if imported from an external data source.</ns:description>
+        <ns:description>The external identifier for each primary type, if imported from an external data source.</ns:description>
+        <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="PrimaryTypeLdmsCode">
         <ns:description>The LDMS code for each primary type.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>5</ns:scale>
       </ns:column>
       <ns:column columnName="PrimaryTypeLabwareCode">
         <ns:description>The Labware code for each primary type.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>5</ns:scale>
       </ns:column>
       <ns:column columnName="PrimaryType">
         <ns:description>The name/label of each primary type.</ns:description>
+        <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>100</ns:scale>
       </ns:column>
     </ns:columns>
   </ns:table>

@@ -36,8 +36,16 @@ public class SpecimenWrapTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail(schema.getContainer()), true, true);
 
+        addWrapTypeColumn("PrimaryTypeId", "PrimaryTypeId");
+        addWrapTypeColumn("DerivativeTypeId", "DerivativeTypeId");
+        addWrapTypeColumn("AdditiveTypeId", "AdditiveTypeId");
+        addWrapTypeColumn("DerivativeTypeId2", "DerivativeTypeId2");
+        addWrapLocationColumn("OriginatingLocationId", "OriginatingLocationId");
+        addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");
+
+        // wrap the rest regularly
         for (ColumnInfo columnInfo : _rootTable.getColumns())
-            if (!"container".equalsIgnoreCase(columnInfo.getName()))
+            if (!"container".equalsIgnoreCase(columnInfo.getName()) && null == getColumn(columnInfo.getName()))
                 addWrapColumn(columnInfo);
 
         // Add optional fields

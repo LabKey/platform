@@ -62,6 +62,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.StudyManager;
@@ -416,16 +417,18 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
     {
         DbSchema study = DbSchema.get("study");
         StudyManager sm = StudyManager.getInstance();
+        String primaryTypeSelectName = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(c).getSelectName();
+        String derivativeSelectName = StudySchema.getInstance().getTableInfoSpecimenDerivative(c).getSelectName();
         for (Location l : sm.getSites(c))
             _labIds.put(l.getLabel(), l.getRowId());
-        (new SqlSelector(study,"SELECT primaryType, rowId FROM study.specimenprimarytype WHERE container=?", c)).forEach(new Selector.ForEachBlock<ResultSet>(){
+        (new SqlSelector(study,"SELECT primaryType, rowId FROM " + primaryTypeSelectName + " WHERE container=?", c)).forEach(new Selector.ForEachBlock<ResultSet>(){
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
                 _primaryIds.put(rs.getString(1), rs.getInt(2));
             }
         });
-        (new SqlSelector(study,"SELECT derivative, rowId FROM study.specimenderivative WHERE container=?", c)).forEach(new Selector.ForEachBlock<ResultSet>(){
+        (new SqlSelector(study,"SELECT derivative, rowId FROM " + derivativeSelectName + " WHERE container=?", c)).forEach(new Selector.ForEachBlock<ResultSet>(){
             @Override
             public void exec(ResultSet rs) throws SQLException
             {

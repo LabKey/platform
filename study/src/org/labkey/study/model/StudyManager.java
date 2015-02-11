@@ -190,7 +190,7 @@ public class StudyManager
 
     private final QueryHelper<StudyImpl> _studyHelper;
     private final QueryHelper<VisitImpl> _visitHelper;
-    private final QueryHelper<LocationImpl> _locationHelper;
+//    private final QueryHelper<LocationImpl> _locationHelper;
     private final QueryHelper<AssaySpecimenConfigImpl> _assaySpecimenHelper;
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
@@ -315,13 +315,13 @@ public class StudyManager
             }
         }, VisitImpl.class);
 
-        _locationHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoSite();
-            }
-        }, LocationImpl.class);
+//        _locationHelper = new QueryHelper<>(new TableInfoGetter()
+//        {
+//            public TableInfo getTableInfo()
+//            {
+//                return StudySchema.getInstance().getTableInfoSite();
+//            }
+//        }, LocationImpl.class);
 
         _assaySpecimenHelper = new QueryHelper<>(new TableInfoGetter()
         {
@@ -592,6 +592,7 @@ public class StudyManager
 
         try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
+            StudySchema.getInstance().getTableInfoSite(container, user);    // This provisioned table is needed for creating the study
             study = _studyHelper.create(user, study);
 
             //note: we no longer copy the container's policy to the study upon creation
@@ -599,6 +600,9 @@ public class StudyManager
             //is changed to one of the advanced options.
 
             // Force provisioned specimen tables to be created
+            StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container, user);
+            StudySchema.getInstance().getTableInfoSpecimenDerivative(container, user);
+            StudySchema.getInstance().getTableInfoSpecimenAdditive(container, user);
             StudySchema.getInstance().getTableInfoSpecimen(container, user);
             StudySchema.getInstance().getTableInfoVial(container, user);
             StudySchema.getInstance().getTableInfoSpecimenEvent(container, user);
@@ -1472,7 +1476,22 @@ public class StudyManager
 
     public List<LocationImpl> getSites(Container container)
     {
-        return _locationHelper.get(container, "Label");
+//        return _locationHelper.get(container, "Label");
+        return getLocations(container, null, null);
+    }
+
+    public List<LocationImpl> getLocations(final Container container, @Nullable SimpleFilter filter, @Nullable Sort sort)
+    {
+        final List<LocationImpl> locations = new ArrayList<>();
+        getLocationsSelector(container, filter, sort).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+        {
+            @Override
+            public void exec(Map<String, Object> map) throws SQLException
+            {
+                locations.add(new LocationImpl(container, map));
+            }
+        });
+        return locations;
     }
 
     public List<LocationImpl> getValidRequestingLocations(Container container)
@@ -1525,24 +1544,32 @@ public class StudyManager
         return false;
     }
 
+    @Nullable
     public LocationImpl getLocation(Container container, int id)
     {
-        return _locationHelper.get(container, id);
+//        return _locationHelper.get(container, id);
+        List<LocationImpl> locations = getLocations(container, new SimpleFilter(FieldKey.fromParts("RowId"), id), null);
+        if (!locations.isEmpty())
+            return locations.get(0);
+        return null;
     }
 
     public List<LocationImpl> getLocationsByLabel(Container container, String label)
     {
-        return _locationHelper.get(container, new SimpleFilter(FieldKey.fromParts("Label"), label));
+//        return _locationHelper.get(container, new SimpleFilter(FieldKey.fromParts("Label"), label));
+        return getLocations(container, new SimpleFilter(FieldKey.fromParts("Label"), label), null);
     }
 
     public void createSite(User user, LocationImpl location)
     {
-        _locationHelper.create(user, location);
+//        _locationHelper.create(user, location);
+        Table.insert(user, getTableInfoLocations(location.getContainer()), location);
     }
 
     public void updateSite(User user, LocationImpl location)
     {
-        _locationHelper.update(user, location);
+//        _locationHelper.update(user, location);
+        Table.update(user, getTableInfoLocations(location.getContainer()), location, location.getRowId());
     }
 
     private boolean isLocationInUse(LocationImpl loc, TableInfo table, String... columnNames)
@@ -1604,7 +1631,8 @@ public class StudyManager
 
                 TreatmentManager.getInstance().deleteTreatmentVisitMapForCohort(container, location.getRowId());
 
-                _locationHelper.delete(location);
+//                _locationHelper.delete(location);
+                Table.delete(getTableInfoLocations(container), location.getRowId());
 
                 transaction.commit();
             }
@@ -1613,6 +1641,16 @@ public class StudyManager
         {
             throw new SQLException("Locations currently in use cannot be deleted");
         }
+    }
+
+    private TableInfo getTableInfoLocations(Container container)
+    {
+        return StudySchema.getInstance().getTableInfoSite(container);
+    }
+
+    private TableSelector getLocationsSelector(Container container, @Nullable SimpleFilter filter, @Nullable Sort sort)
+    {
+        return new TableSelector(getTableInfoLocations(container), filter, sort);
     }
 
     public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container, String sortCol)
@@ -2635,7 +2673,7 @@ public class StudyManager
         Study study = getStudy(c);
         _studyHelper.clearCache(c);
         _visitHelper.clearCache(c);
-        _locationHelper.clearCache(c);
+//        _locationHelper.clearCache(c);
         AssayManager.get().clearProtocolCache();
         if (unmaterializeDatasets && null != study)
             for (DatasetDefinition def : getDatasetDefinitions(study))
@@ -2709,8 +2747,8 @@ public class StudyManager
             assert deletedTables.add(StudySchema.getInstance().getTableInfoUploadLog());
             Table.delete(_datasetHelper.getTableInfo(), containerFilter);
             assert deletedTables.add(_datasetHelper.getTableInfo());
-            Table.delete(_locationHelper.getTableInfo(), containerFilter);
-            assert deletedTables.add(_locationHelper.getTableInfo());
+//            Table.delete(_locationHelper.getTableInfo(), containerFilter);
+//            assert deletedTables.add(_locationHelper.getTableInfo());
             Table.delete(_visitHelper.getTableInfo(), containerFilter);
             assert deletedTables.add(_visitHelper.getTableInfo());
             Table.delete(_studyHelper.getTableInfo(), containerFilter);
@@ -2882,7 +2920,9 @@ public class StudyManager
         for (String tableName : StudySchema.getInstance().getSchema().getTableNames())
         {
             if (!deletedTableNames.contains(tableName) &&
-                    !"specimen".equalsIgnoreCase(tableName) && !"vial".equalsIgnoreCase(tableName) && !"specimenevent".equalsIgnoreCase(tableName))
+                    !"specimen".equalsIgnoreCase(tableName) && !"vial".equalsIgnoreCase(tableName) && !"specimenevent".equalsIgnoreCase(tableName) &&
+                    !"site".equalsIgnoreCase(tableName) && !"specimenprimarytype".equalsIgnoreCase(tableName) &&
+                    !"specimenderivative".equalsIgnoreCase(tableName) && !"specimenadditive".equalsIgnoreCase(tableName))
             {
                 missed.append(" ");
                 missed.append(tableName);

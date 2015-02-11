@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.study.StudySchema;
 
@@ -23,12 +24,16 @@ public class PrimaryTypeTable extends BaseStudyTable
 {
     public PrimaryTypeTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenPrimaryType(), true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenPrimaryType(schema.getContainer()), true);
+        setName("SpecimenPrimaryType");
+        setPublicSchemaName("study");
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
         addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
         addColumn(new AliasedColumn(this, "LdmsCode", _rootTable.getColumn("PrimaryTypeLdmsCode")));
         addColumn(new AliasedColumn(this, "LabwareCode", _rootTable.getColumn("PrimaryTypeLabwareCode")));
         addColumn(new AliasedColumn(this, "Description", _rootTable.getColumn("PrimaryType")));
+        ColumnInfo typeColumn = addWrapColumn("PrimaryType", _rootTable.getColumn("PrimaryType"));    // for lookups
+        typeColumn.setHidden(true);
         setTitleColumn("Description");
     }
 }

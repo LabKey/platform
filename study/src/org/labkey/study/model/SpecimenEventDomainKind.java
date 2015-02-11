@@ -28,7 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
+public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
 {
     private static final String NAME = "SpecimenEvent";
     private static final String NAMESPACE_PREFIX = "SpecimenEvent";
@@ -159,7 +159,7 @@ public class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
         BASE_INDICES = new HashSet<>(Arrays.asList(indices));
     }
 
-    private String _vialDomainURI;
+    final private String _vialDomainURI;
 
     public SpecimenEventDomainKind()
     {
@@ -180,22 +180,20 @@ public class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        Set<PropertyStorageSpec> specs = new LinkedHashSet<>(BASE_PROPERTIES);
-        return specs;
+        return new LinkedHashSet<>(BASE_PROPERTIES);
     }
 
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices()
     {
-        Set<PropertyStorageSpec.Index> indices = new HashSet<>(BASE_INDICES);
-        return indices;
+        return new HashSet<>(BASE_INDICES);
     }
 
     @Override
     public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container, SpecimenTablesProvider provider)
     {
         Set<PropertyStorageSpec.ForeignKey> foreignKeys = new HashSet<>();
-        foreignKeys.add(new PropertyStorageSpec.ForeignKey(LABID, "study", "Site", "RowId", null, false));
+        foreignKeys.add(new PropertyStorageSpec.ForeignKey(LABID, "study", "Site", "RowId", null, true));
         foreignKeys.add(new PropertyStorageSpec.ForeignKey(VIALID, "study", "Vial", "RowId", _vialDomainURI, true));
         setForeignKeyTableInfos(container, foreignKeys, provider);
         return foreignKeys;

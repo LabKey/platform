@@ -101,9 +101,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     private final static SpecimenManager _instance = new SpecimenManager();
 
     private final QueryHelper<SpecimenRequestEvent> _requestEventHelper;
-    private final QueryHelper<AdditiveType> _additiveHelper;
-    private final QueryHelper<DerivativeType> _derivativeHelper;
-    private final QueryHelper<PrimaryType> _primaryTypeHelper;
+//    private final QueryHelper<AdditiveType> _additiveHelper;
+//    private final QueryHelper<DerivativeType> _derivativeHelper;
+//    private final QueryHelper<PrimaryType> _primaryTypeHelper;
     private final QueryHelper<SpecimenRequest> _requestHelper;
     private final QueryHelper<SpecimenRequestStatus> _requestStatusHelper;
     private final RequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor> _requirementProvider =
@@ -113,7 +113,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     private SpecimenManager()
     {
-        _primaryTypeHelper = new QueryHelper<>(new TableInfoGetter()
+/*        _primaryTypeHelper = new QueryHelper<>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
             {
@@ -134,7 +134,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 return StudySchema.getInstance().getTableInfoAdditiveType();
             }
         }, AdditiveType.class);
-
+*/
         _requestEventHelper = new QueryHelper<>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
@@ -746,34 +746,95 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return _requestStatusHelper.get(c, rowId);
     }
 
+    @Nullable
     public AdditiveType getAdditiveType(Container c, int rowId)
     {
-        return _additiveHelper.get(c, rowId);
+//        return _additiveHelper.get(c, rowId);
+        List<AdditiveType> additiveTypes = getAdditiveTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
+        if (!additiveTypes.isEmpty())
+            return additiveTypes.get(0);
+        return null;
     }
 
-    public List<AdditiveType> getAdditiveTypes(Container c)
+/*    public List<AdditiveType> getAdditiveTypes(Container c)
     {
         return _additiveHelper.get(c, "ExternalId");
+    }
+*/
+
+    private List<AdditiveType> getAdditiveTypes(final Container container, @Nullable SimpleFilter filter)
+    {
+        final List<AdditiveType> additiveTypes = new ArrayList<>();
+        new TableSelector(StudySchema.getInstance().getTableInfoSpecimenAdditive(container), filter, null).
+            forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+            {
+                @Override
+                public void exec(Map<String, Object> map) throws SQLException
+                {
+                    additiveTypes.add(new AdditiveType(container, map));
+                }
+            });
+        return additiveTypes;
     }
 
     public DerivativeType getDerivativeType(Container c, int rowId)
     {
-        return _derivativeHelper.get(c, rowId);
+//        return _derivativeHelper.get(c, rowId);
+        List<DerivativeType> derivativeTypes = getDerivativeTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
+        if (!derivativeTypes.isEmpty())
+            return derivativeTypes.get(0);
+        return null;
     }
 
-    public List<DerivativeType> getDerivativeTypes(Container c)
+/*    public List<DerivativeType> getDerivativeTypes(Container c)
     {
         return _derivativeHelper.get(c, "ExternalId");
+    }
+*/
+
+    private List<DerivativeType> getDerivativeTypes(final Container container, @Nullable SimpleFilter filter)
+    {
+        final List<DerivativeType> derivativeTypes = new ArrayList<>();
+        new TableSelector(StudySchema.getInstance().getTableInfoSpecimenDerivative(container), filter, null).
+            forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+            {
+                @Override
+                public void exec(Map<String, Object> map) throws SQLException
+                {
+                    derivativeTypes.add(new DerivativeType(container, map));
+                }
+            });
+        return derivativeTypes;
     }
 
     public PrimaryType getPrimaryType(Container c, int rowId)
     {
-        return _primaryTypeHelper.get(c, rowId);
+//        return _primaryTypeHelper.get(c, rowId);
+        List<PrimaryType> primaryTypes = getPrimaryTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null);
+        if (!primaryTypes.isEmpty())
+            return primaryTypes.get(0);
+        return null;
     }
 
     public List<PrimaryType> getPrimaryTypes(Container c)
     {
-        return _primaryTypeHelper.get(c, "ExternalId");
+//        return _primaryTypeHelper.get(c, "ExternalId");
+        return getPrimaryTypes(c, null, new Sort("ExternalId"));
+    }
+
+    private List<PrimaryType> getPrimaryTypes(final Container container, @Nullable SimpleFilter filter, @Nullable Sort sort)
+    {
+        final List<PrimaryType> primaryTypes = new ArrayList<>();
+        new TableSelector(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container), filter, sort).
+            forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+            {
+                @Override
+                public void exec(Map<String, Object> map) throws SQLException
+                {
+                    primaryTypes.add(new PrimaryType(container, map));
+                }
+            });
+        return primaryTypes;
     }
 
     public List<SpecimenRequestStatus> getRequestStatuses(Container c, User user)
@@ -1508,6 +1569,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         if (null == tableInfoSpecimenWrap)
             throw new IllegalStateException("SpecimenDetail table not found.");
 
+        TableInfo additiveTableInfo = StudySchema.getInstance().getTableInfoSpecimenAdditive(container);
+        TableInfo derivativeTableInfo = StudySchema.getInstance().getTableInfoSpecimenDerivative(container);
+        TableInfo primaryTypeTableInfo = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container);
         String tableInfoSelectName = "SpecimenWrap";
 
         String cacheKey = container.getId() + "/SpecimenTypeSummary";
@@ -1530,11 +1594,11 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 "\tSUM(VialCount) AS VialCount\n" +
                 "FROM (\n" +
                 "\tSELECT\n" +
-                "\tstudy.SpecimenPrimaryType.PrimaryType AS PrimaryType,\n" +
+                "\tPT.PrimaryType AS PrimaryType,\n" +
                 "\tPrimaryTypeId,\n" +
-                "\tstudy.SpecimenDerivative.Derivative AS Derivative,\n" +
+                "\tDT.Derivative AS Derivative,\n" +
                 "\tDerivativeTypeId,\n" +
-                "\tstudy.SpecimenAdditive.Additive AS Additive,\n" +
+                "\tAT.Additive AS Additive,\n" +
                 "\tAdditiveTypeId,\n" +
                 "\tSpecimens.VialCount\n" +
                 "\tFROM\n");
@@ -1576,12 +1640,12 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 .append(tableInfoSpecimenWrap.getColumn("DerivativeTypeId").getValueSql(tableInfoSelectName)).append(",")
                 .append(tableInfoSpecimenWrap.getColumn("AdditiveTypeId").getValueSql(tableInfoSelectName))
                 .append("\t\t\t) Specimens\n").append(
-                "\tLEFT OUTER JOIN study.SpecimenPrimaryType ON\n" +
-                        "\t\tstudy.SpecimenPrimaryType.RowId = Specimens.PrimaryTypeId\n" +
-                        "\tLEFT OUTER JOIN study.SpecimenDerivative ON\n" +
-                        "\t\tstudy.SpecimenDerivative.RowId = Specimens.DerivativeTypeId\n" +
-                        "\tLEFT OUTER JOIN study.SpecimenAdditive ON\n" +
-                        "\t\tstudy.SpecimenAdditive.RowId = Specimens.AdditiveTypeId\n" +
+                "\tLEFT OUTER JOIN ").append(primaryTypeTableInfo.getFromSQL("PT")).append(  " ON\n" +
+                        "\t\tPT.RowId = Specimens.PrimaryTypeId\n" +
+                        "\tLEFT OUTER JOIN ").append(derivativeTableInfo.getFromSQL("DT")).append(" ON\n" +
+                        "\t\tDT.RowId = Specimens.DerivativeTypeId\n" +
+                        "\tLEFT OUTER JOIN ").append(additiveTableInfo.getFromSQL("AT")).append(" ON\n" +
+                        "\t\tAT.RowId = Specimens.AdditiveTypeId\n" +
                         ") ContainerTotals\n" +
                         "GROUP BY PrimaryType, PrimaryTypeId, Derivative, DerivativeTypeId, Additive, AdditiveTypeId\n" +
                         "ORDER BY PrimaryType, Derivative, Additive");
@@ -1955,14 +2019,14 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         assert set.add(_requestStatusHelper.getTableInfo());
 
         new SpecimenTablesProvider(c, null, null).deleteTables();
-
+/*
         Table.delete(StudySchema.getInstance().getTableInfoSpecimenAdditive(), containerFilter);
         assert set.add(StudySchema.getInstance().getTableInfoSpecimenAdditive());
         Table.delete(StudySchema.getInstance().getTableInfoSpecimenDerivative(), containerFilter);
         assert set.add(StudySchema.getInstance().getTableInfoSpecimenDerivative());
         Table.delete(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(), containerFilter);
         assert set.add(StudySchema.getInstance().getTableInfoSpecimenPrimaryType());
-
+*/
         Table.delete(StudySchema.getInstance().getTableInfoSampleAvailabilityRule(), containerFilter);
         assert set.add(StudySchema.getInstance().getTableInfoSampleAvailabilityRule());
 
@@ -2395,16 +2459,10 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public LocationImpl[] getSitesWithRequests(Container container)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM study.site WHERE rowid IN\n" +
+        TableInfo locationTableInfo = StudySchema.getInstance().getTableInfoSite(container);
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + locationTableInfo.getSelectName() + " WHERE rowid IN\n" +
                 "(SELECT destinationsiteid FROM study.samplerequest WHERE container = ?)\n" +
                 "AND container = ? ORDER BY label", container.getId(), container.getId());
-
-        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(LocationImpl.class);
-    }
-
-    public LocationImpl[] getSites(Container container)
-    {
-        SQLFragment sql = new SQLFragment("SELECT * FROM study.site WHERE Container = ? ORDER BY label", container.getId());
 
         return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(LocationImpl.class);
     }
@@ -2581,6 +2639,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         final SpecimenDetailQueryHelper sqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, level);
 
+        TableInfo locationTableInfo = StudySchema.getInstance().getTableInfoSite(container);
         String subjectCol = StudyService.get().getSubjectColumnName(container);
         String sql = "SELECT Specimen.Container,\n" +
                 "Specimen." + subjectCol + ",\n" +
@@ -2595,7 +2654,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 "JOIN study.SampleRequest AS Request ON\n" +
                 "\tRequestSpecimen.SampleRequestId = Request.RowId AND\n" +
                 "\tRequestSpecimen.Container = Request.Container\n" +
-                "JOIN study.Site AS Site ON\n" +
+                "JOIN " + locationTableInfo.getSelectName() + " AS Site ON\n" +
                 "\tSite.Container = Request.Container AND\n" +
                 "\tSite.RowId = Request.DestinationSiteId\n" +
                 "JOIN study.SampleRequestStatus AS Status ON\n" +

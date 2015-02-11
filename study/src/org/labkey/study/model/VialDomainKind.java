@@ -27,7 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public class VialDomainKind extends AbstractSpecimenDomainKind
+public final class VialDomainKind extends AbstractSpecimenDomainKind
 {
     private static final String NAME = "Vial";
     private static final String NAMESPACE_PREFIX = "Vial";
@@ -58,7 +58,7 @@ public class VialDomainKind extends AbstractSpecimenDomainKind
     {
         PropertyStorageSpec[] props =
         {
-            new PropertyStorageSpec(ROWID, JdbcType.BIGINT, 0, PropertyStorageSpec.Special.PrimaryKey, false, false, null),
+            new PropertyStorageSpec(ROWID, JdbcType.BIGINT, 0, PropertyStorageSpec.Special.PrimaryKey, false, false, null),         // TODO why is this not auto-incr???
             new PropertyStorageSpec(GLOBALUNIQUEID, JdbcType.VARCHAR, 50, false, null),
             new PropertyStorageSpec(VOLUME, JdbcType.DOUBLE, 0),
             new PropertyStorageSpec(SPECIMENHASH, JdbcType.VARCHAR, 256),
@@ -93,7 +93,7 @@ public class VialDomainKind extends AbstractSpecimenDomainKind
 
     }
 
-    private String _specimenDomainURI;
+    final private String _specimenDomainURI;
 
     public VialDomainKind()
     {
@@ -114,22 +114,20 @@ public class VialDomainKind extends AbstractSpecimenDomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        Set<PropertyStorageSpec> specs = new LinkedHashSet<>(BASE_PROPERTIES);
-        return specs;
+        return new LinkedHashSet<>(BASE_PROPERTIES);
     }
 
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices()
     {
-        Set<PropertyStorageSpec.Index> indices = new HashSet<>(BASE_INDICES);
-        return indices;
+        return new HashSet<>(BASE_INDICES);
     }
 
     @Override
     public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container, SpecimenTablesProvider provider)
     {
         Set<PropertyStorageSpec.ForeignKey> foreignKeys = new HashSet<>();
-        foreignKeys.add(new PropertyStorageSpec.ForeignKey(CURRENTLOCATION, "study", "Site", "RowId", null, false));
+        foreignKeys.add(new PropertyStorageSpec.ForeignKey(CURRENTLOCATION, "study", "Site", "RowId", null, true));
         foreignKeys.add(new PropertyStorageSpec.ForeignKey(SPECIMENID, "study", "Specimen", "RowId", _specimenDomainURI, true));
         setForeignKeyTableInfos(container, foreignKeys, provider);
         return foreignKeys;

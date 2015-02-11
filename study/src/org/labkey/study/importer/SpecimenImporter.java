@@ -1070,10 +1070,10 @@ public class SpecimenImporter
         }
     }
 
-    protected static SpecimenTableType _labsTableType = new SpecimenTableType("labs", "study.Site", SITE_COLUMNS);
-    protected static SpecimenTableType _additivesTableType = new SpecimenTableType("additives", "study.SpecimenAdditive", ADDITIVE_COLUMNS);
-    protected static SpecimenTableType _derivativesTableType = new SpecimenTableType("derivatives", "study.SpecimenDerivative", DERIVATIVE_COLUMNS);
-    protected static SpecimenTableType _primaryTypesTableType = new SpecimenTableType("primary_types", "study.SpecimenPrimaryType", PRIMARYTYPE_COLUMNS);
+    protected static SpecimenTableType _labsTableType;
+    protected static SpecimenTableType _additivesTableType;
+    protected static SpecimenTableType _derivativesTableType;
+    protected static SpecimenTableType _primaryTypesTableType;
 
     protected final SpecimenTableType _specimensTableType;
 
@@ -1110,6 +1110,10 @@ public class SpecimenImporter
     private final TableInfo _tableInfoSpecimen;
     private final TableInfo _tableInfoVial;
     private final TableInfo _tableInfoSpecimenEvent;
+    private final TableInfo _tableInfoLocation;
+    private final TableInfo _tableInfoPrimaryType;
+    private final TableInfo _tableInfoDerivative;
+    private final TableInfo _tableInfoAdditive;
     private final SqlDialect _dialect;
 
     private MultiPhaseCPUTimer.InvocationTimer<ImportPhases> _iTimer;
@@ -1127,6 +1131,38 @@ public class SpecimenImporter
     private TableInfo getTableInfoSpecimenEvent()
     {
         return _tableInfoSpecimenEvent;
+    }
+
+    private TableInfo getTableInfoPrimaryType()
+    {
+        return _tableInfoPrimaryType;
+    }
+    private TableInfo getTableInfoLocation()
+    {
+        return _tableInfoLocation;
+    }
+
+    private TableInfo getTableInfoDerivative()
+    {
+        return _tableInfoDerivative;
+    }
+
+    private TableInfo getTableInfoAdditive()
+    {
+        return _tableInfoAdditive;
+    }
+
+    public TableInfo getTableInfoFromFkTableName(String fkTableName)
+    {
+        if ("Site".equalsIgnoreCase(fkTableName))
+            return getTableInfoLocation();
+        if ("SpecimenPrimaryType".equalsIgnoreCase(fkTableName))
+            return getTableInfoPrimaryType();
+        if ("SpecimenDerivative".equalsIgnoreCase(fkTableName))
+            return getTableInfoDerivative();
+        if ("SpecimenAdditive".equalsIgnoreCase(fkTableName))
+            return getTableInfoAdditive();
+        throw new IllegalStateException("Unexpected table name.");
     }
 
     protected Container getContainer()
@@ -1159,10 +1195,22 @@ public class SpecimenImporter
         _tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(_container);
         _tableInfoVial = StudySchema.getInstance().getTableInfoVial(_container);
         _tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(_container);
+        _tableInfoPrimaryType = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(_container);
+        _tableInfoLocation = StudySchema.getInstance().getTableInfoSite(_container);
+        _tableInfoDerivative = StudySchema.getInstance().getTableInfoSpecimenDerivative(_container);
+        _tableInfoAdditive = StudySchema.getInstance().getTableInfoSpecimenAdditive(_container);
         _dialect = _tableInfoSpecimen.getSqlDialect();
 
         _specimenColumns = determineSpecimenColumns();
         _specimensTableType = new SpecimenTableType("specimens", "study.Specimen", _specimenColumns);
+        _labsTableType = new SpecimenTableType("labs",
+                StudySchema.getInstance().getTableInfoSite(_container).getSelectName(), SITE_COLUMNS);
+        _additivesTableType = new SpecimenTableType("additives",
+                StudySchema.getInstance().getTableInfoSpecimenAdditive(_container).getSelectName(), ADDITIVE_COLUMNS);
+        _derivativesTableType = new SpecimenTableType("derivatives",
+                StudySchema.getInstance().getTableInfoSpecimenDerivative(_container).getSelectName(), DERIVATIVE_COLUMNS);
+        _primaryTypesTableType = new SpecimenTableType("primary_types",
+                StudySchema.getInstance().getTableInfoSpecimenPrimaryType(_container).getSelectName(), PRIMARYTYPE_COLUMNS);
     }
 
     private Collection<SpecimenColumn> determineSpecimenColumns()
@@ -1264,26 +1312,26 @@ public class SpecimenImporter
             setStatus(GENERAL_JOB_STATUS_MSG);
             _iTimer.setPhase(ImportPhases.PopulateLabs);
             if (null != sifMap.get(_labsTableType))
-                mergeTable(schema, sifMap.get(_labsTableType), true, true);
+                mergeTable(schema, sifMap.get(_labsTableType), getTableInfoLocation(), true, true);
 
             _iTimer.setPhase(ImportPhases.SpecimenTypes);
             if (merge)
             {
                 if (null != sifMap.get(_additivesTableType))
-                    mergeTable(schema, sifMap.get(_additivesTableType), false, true);
+                    mergeTable(schema, sifMap.get(_additivesTableType), getTableInfoAdditive(), false, true);
                 if (null != sifMap.get(_derivativesTableType))
-                    mergeTable(schema, sifMap.get(_derivativesTableType), false, true);
+                    mergeTable(schema, sifMap.get(_derivativesTableType), getTableInfoDerivative(), false, true);
                 if (null != sifMap.get(_primaryTypesTableType))
-                    mergeTable(schema, sifMap.get(_primaryTypesTableType), false, true);
+                    mergeTable(schema, sifMap.get(_primaryTypesTableType), getTableInfoPrimaryType(), false, true);
             }
             else
             {
                 if (null != sifMap.get(_additivesTableType))
-                    replaceTable(schema, sifMap.get(_additivesTableType), false, true);
+                    replaceTable(schema, sifMap.get(_additivesTableType), getTableInfoAdditive(), false, true);
                 if (null != sifMap.get(_derivativesTableType))
-                    replaceTable(schema, sifMap.get(_derivativesTableType), false, true);
+                    replaceTable(schema, sifMap.get(_derivativesTableType), getTableInfoDerivative(), false, true);
                 if (null != sifMap.get(_primaryTypesTableType))
-                    replaceTable(schema, sifMap.get(_primaryTypesTableType), false, true);
+                    replaceTable(schema, sifMap.get(_primaryTypesTableType), getTableInfoPrimaryType(), false, true);
             }
 
             // Specimen temp table must be populated AFTER the types tables have been reloaded, since the SpecimenHash
@@ -2570,7 +2618,7 @@ public class SpecimenImporter
         return mergeTable(schema, tableName, target, potentialColumns, values, entityIdCol, hasContainerColumn);
     }
 
-    private void mergeTable(DbSchema schema, SpecimenImportFile file, boolean addEntityId, boolean hasContainerColumn)
+    private void mergeTable(DbSchema schema, SpecimenImportFile file, TableInfo target, boolean addEntityId, boolean hasContainerColumn)
             throws SQLException, ValidationException, IOException
     {
         SpecimenTableType type = file.getTableType();
@@ -2584,7 +2632,7 @@ public class SpecimenImporter
 
         try (DataLoader loader = loadTsv(file))
         {
-            mergeTable(schema, type.getTableName(), null, type.getColumns(), loader, entityIdCol, hasContainerColumn);
+            mergeTable(schema, type.getTableName(), target, type.getColumns(), loader, entityIdCol, hasContainerColumn);
         }
         finally
         {
@@ -2947,7 +2995,7 @@ public class SpecimenImporter
     }
 
 
-    private void replaceTable(DbSchema schema, SpecimenImportFile file, boolean addEntityId, boolean hasContainerColumn)
+    private void replaceTable(DbSchema schema, SpecimenImportFile file, TableInfo target, boolean addEntityId, boolean hasContainerColumn)
         throws IOException, SQLException, ValidationException
     {
         ComputedColumn entityIdCol = null;
@@ -2956,7 +3004,7 @@ public class SpecimenImporter
             entityIdCol = new EntityIdComputedColumn();
         }
 
-        replaceTable(schema, file, file.getTableType().getTableName(), null, false, hasContainerColumn, null, null, entityIdCol);
+        replaceTable(schema, file, file.getTableType().getTableName(), target, false, hasContainerColumn, null, null, entityIdCol);
     }
 
 
@@ -3595,7 +3643,7 @@ public class SpecimenImporter
 
                 innerTableSelectSql.append(",\n\t").append(col.getFkTableAlias()).append(".RowId AS ").append(col.getLegalDbColumnName(_dialect));
 
-                innerTableJoinSql.append("\nLEFT OUTER JOIN study.").append(col.getFkTable()).append(" AS ").append(col.getFkTableAlias()).append(" ON ");
+                innerTableJoinSql.append("\nLEFT OUTER JOIN ").append(getTableInfoFromFkTableName(col.getFkTable()).getSelectName()).append(" AS ").append(col.getFkTableAlias()).append(" ON ");
                 innerTableJoinSql.append("(").append(tempTable).append(".");
                 innerTableJoinSql.append(col.getLegalDbColumnName(_dialect)).append(" = ").append(col.getFkTableAlias()).append(".").append(col.getFkColumn());
                 innerTableJoinSql.append(" AND ").append(col.getFkTableAlias()).append(".Container").append(" = ?)");

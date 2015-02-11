@@ -62,8 +62,9 @@ public class LocationTable extends BaseStudyTable
 
     public LocationTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSite());
+        super(schema, StudySchema.getInstance().getTableInfoSite(schema.getContainer()));
         setName("Location");
+        setPublicSchemaName("study");
         ColumnInfo inUse = new LocationInUseExpressionColumn(this);
         addColumn(inUse);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
@@ -96,7 +97,7 @@ public class LocationTable extends BaseStudyTable
     @Override
     public QueryUpdateService getUpdateService()
     {
-        TableInfo dbTable = StudySchema.getInstance().getTableInfoSite();
+        TableInfo dbTable = StudySchema.getInstance().getTableInfoSite(getContainer());
         return new LocationQueryUpdateService(this, dbTable);
     }
 
@@ -215,7 +216,7 @@ public class LocationTable extends BaseStudyTable
         {
             TableInfo eventTableInfo = schema.getTableInfoSpecimenEventIfExists(c);
             if (null != eventTableInfo)
-                existsSQL.append(" OR\n" + EXISTS).append(eventTableInfo, "se").append(" WHERE ").append(tableAlias).append(".RowId = se.LabId OR location.RowId = se.OriginatingLocationId)");
+                existsSQL.append(" OR\n" + EXISTS).append(eventTableInfo, "se").append(" WHERE ").append(tableAlias).append(".RowId = se.LabId OR ").append(tableAlias).append(".RowId = se.OriginatingLocationId)");
 
             TableInfo vialTableInfo = schema.getTableInfoVialIfExists(c);
             if (null != vialTableInfo)

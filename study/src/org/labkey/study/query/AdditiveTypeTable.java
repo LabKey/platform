@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.study.StudySchema;
 import org.labkey.api.query.AliasedColumn;
 
@@ -23,12 +24,16 @@ public class AdditiveTypeTable extends BaseStudyTable
 {
     public AdditiveTypeTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenAdditive(), true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenAdditive(schema.getContainer()), true);
+        setName("SpecimenAdditive");
+        setPublicSchemaName("study");
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
         addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
         addColumn(new AliasedColumn(this, "LdmsCode", _rootTable.getColumn("LdmsAdditiveCode")));
         addColumn(new AliasedColumn(this, "LabwareCode", _rootTable.getColumn("LabwareAdditiveCode")));
         addColumn(new AliasedColumn(this, "Description", _rootTable.getColumn("Additive")));
+        ColumnInfo typeColumn = addWrapColumn("Additive", _rootTable.getColumn("Additive"));    // for lookups
+        typeColumn.setHidden(true);
         setTitleColumn("Description");
     }
 }

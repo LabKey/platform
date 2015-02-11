@@ -17,6 +17,8 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
 
+import java.util.Map;
+
 /*
  * User: brittp
  * Date: Dec 18, 2008
@@ -32,6 +34,16 @@ public class DerivativeType extends AbstractStudyCachable<DerivativeType>
     private String _derivative; // character varying(100),
     private int _externalId; // integer NOT NULL default 0
 
+    public DerivativeType(Container container, Map<String, Object> map)
+    {
+        super();
+        _rowId = (int) map.get(DerivativeTypeDomainKind.ROWID);
+        _container = container;
+        _ldmsDerivativeCode = (String) map.get(DerivativeTypeDomainKind.LDMSDERIVATIVECODE);
+        _labwareDerivativeCode = (String) map.get(DerivativeTypeDomainKind.LABWAREDERIVATIVECODE);
+        _derivative = (String) map.get(DerivativeTypeDomainKind.DERIVATIVE);
+        _externalId = (int) map.get(DerivativeTypeDomainKind.EXTERNALID);
+    }
 
     public Object getPrimaryKey()
     {

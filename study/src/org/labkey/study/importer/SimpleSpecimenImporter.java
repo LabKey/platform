@@ -217,9 +217,9 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         Container container = getContainer();
         Study study = StudyManager.getInstance().getStudy(container);
         Map<String, LookupTable> lookupTables = new HashMap<>();
-        lookupTables.put("additive_type", new LookupTable(StudySchema.getInstance().getTableInfoAdditiveType(), container, _additivesTableType, "additive_type_id", "additive_id", "additive", "Additive"));
-        lookupTables.put("derivative_type", new LookupTable(StudySchema.getInstance().getTableInfoDerivativeType(), container, _derivativesTableType, "derivative_type_id", "derivative_id", "derivative", "Derivative"));
-        lookupTables.put("primary_specimen_type", new LookupTable(StudySchema.getInstance().getTableInfoPrimaryType(), container, _primaryTypesTableType, "primary_specimen_type_id", "primary_type_id", "primary_type", "PrimaryType"));
+        lookupTables.put("additive_type", new LookupTable(StudySchema.getInstance().getTableInfoSpecimenAdditive(container), container, _additivesTableType, "additive_type_id", "additive_id", "additive", "Additive"));
+        lookupTables.put("derivative_type", new LookupTable(StudySchema.getInstance().getTableInfoSpecimenDerivative(container), container, _derivativesTableType, "derivative_type_id", "derivative_id", "derivative", "Derivative"));
+        lookupTables.put("primary_specimen_type", new LookupTable(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container), container, _primaryTypesTableType, "primary_specimen_type_id", "primary_type_id", "primary_type", "PrimaryType"));
         LabLookupTable labLookup =  new LabLookupTable(container);
         lookupTables.put("lab", labLookup);
 
@@ -411,7 +411,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
         LabLookupTable(Container c) throws SQLException
         {
-            super(StudySchema.getInstance().getTableInfoSite(), c, _labsTableType, "lab_id", "lab_id", "lab_name", "Label");
+            super(StudySchema.getInstance().getTableInfoSite(c), c, _labsTableType, "lab_id", "lab_id", "lab_name", "Label");
             defaultLabId = getVal(DEFAULT_LAB);
         }
 

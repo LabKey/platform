@@ -112,9 +112,16 @@ public class StudySchema
         return getSchema().getTable("DataSet");
     }
 
-    public TableInfo getTableInfoSite()
+    public TableInfo getTableInfoSite(Container container)
     {
-        return getSchema().getTable("Site");
+        return getTableInfoSite(container, null);
+    }
+
+    public TableInfo getTableInfoSite(Container container, User user)
+    {
+//        return getSchema().getTable("Site");
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.LOCATION_TABLENAME);
     }
 
     public TableInfo getTableInfoVisitMap()
@@ -223,7 +230,7 @@ public class StudySchema
     @Nullable
     public TableInfo getTableInfoVialIfExists(Container container)
     {
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, null);
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, _specimenTablesTemplate);
         return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.VIAL_TABLENAME);
     }
 
@@ -243,7 +250,7 @@ public class StudySchema
     @Nullable
     public TableInfo getTableInfoSpecimenIfExists(Container container)
     {
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, null);
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, _specimenTablesTemplate);
         return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMEN_TABLENAME);
     }
 
@@ -263,7 +270,7 @@ public class StudySchema
     @Nullable
     public TableInfo getTableInfoSpecimenEventIfExists(Container container)
     {
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, null);
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, _specimenTablesTemplate);
         return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMENEVENT_TABLENAME);
     }
 
@@ -277,17 +284,40 @@ public class StudySchema
         return getSchema().getTable("SpecimenSummary");
     }
 
-    public TableInfo getTableInfoSpecimenPrimaryType()
+    public TableInfo getTableInfoSpecimenPrimaryType(Container container)
     {
-        return getSchema().getTable("SpecimenPrimaryType");
+        return getTableInfoSpecimenPrimaryType(container, null);
     }
-    public TableInfo getTableInfoSpecimenAdditive()
+
+    public TableInfo getTableInfoSpecimenPrimaryType(Container container, User user)
     {
-        return getSchema().getTable("SpecimenAdditive");
+//        return getSchema().getTable("SpecimenPrimaryType");
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.PRIMARYTYPE_TABLENAME);
     }
-    public TableInfo getTableInfoSpecimenDerivative()
+
+    public TableInfo getTableInfoSpecimenAdditive(Container container)
     {
-        return getSchema().getTable("SpecimenDerivative");
+        return getTableInfoSpecimenAdditive(container, null);
+    }
+
+    public TableInfo getTableInfoSpecimenAdditive(Container container, User user)
+    {
+//        return getSchema().getTable("SpecimenAdditive");
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.ADDITIVETYPE_TABLENAME);
+    }
+
+    public TableInfo getTableInfoSpecimenDerivative(Container container)
+    {
+        return getTableInfoSpecimenDerivative(container, null);
+    }
+
+    public TableInfo getTableInfoSpecimenDerivative(Container container, User user)
+    {
+//        return getSchema().getTable("SpecimenDerivative");
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.DERIVATIVETYPE_TABLENAME);
     }
 
     public TableInfo getTableInfoUploadLog()
@@ -328,21 +358,6 @@ public class StudySchema
     public TableInfo getTableInfoSpecimenComment()
     {
         return getSchema().getTable("SpecimenComment");
-    }
-
-    public TableInfo getTableInfoPrimaryType()
-    {
-        return getSchema().getTable("SpecimenPrimaryType");
-    }
-
-    public TableInfo getTableInfoDerivativeType()
-    {
-        return getSchema().getTable("SpecimenDerivative");
-    }
-
-    public TableInfo getTableInfoAdditiveType()
-    {
-        return getSchema().getTable("SpecimenAdditive");
     }
 
     public TableInfo getTableInfoSpecimenVialCount()

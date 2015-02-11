@@ -25,7 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public class SpecimenDomainKind extends AbstractSpecimenDomainKind
+public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
 {
     private static final String NAME = "Specimen";
     private static final String NAMESPACE_PREFIX = "Specimen";
@@ -119,15 +119,13 @@ public class SpecimenDomainKind extends AbstractSpecimenDomainKind
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices()
     {
-        Set<PropertyStorageSpec.Index> indices = new HashSet<>(BASE_INDICES);
-        return indices;
+        return new HashSet<>(BASE_INDICES);
     }
 
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        Set<PropertyStorageSpec> specs = new LinkedHashSet<>(BASE_PROPERTIES);
-        return specs;
+        return new LinkedHashSet<>(BASE_PROPERTIES);
     }
 
     protected String getNamespacePrefix()

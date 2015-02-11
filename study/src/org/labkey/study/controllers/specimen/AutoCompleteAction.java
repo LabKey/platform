@@ -72,7 +72,7 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
         }
         else if (SpecimenService.CompletionType.LabId.name().equals(form.getType()))
         {
-            tinfo = StudySchema.getInstance().getTableInfoSite();
+            tinfo = StudySchema.getInstance().getTableInfoSite(container);
             column = "Label";
             insensitiveCompare = true;
         }

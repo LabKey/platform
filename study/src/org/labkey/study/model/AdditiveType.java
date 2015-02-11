@@ -21,6 +21,8 @@ import org.labkey.api.data.Container;/*
  * Time: 12:48:03 PM
  */
 
+import java.util.Map;
+
 public class AdditiveType extends AbstractStudyCachable<AdditiveType>
 {
     private long _rowId; // serial NOT NULL,
@@ -29,6 +31,17 @@ public class AdditiveType extends AbstractStudyCachable<AdditiveType>
     private String _labwareAdditiveCode; // character varying(5),
     private String _additive; // character varying(100),
     private int _externalId; // integer NOT NULL default 0
+
+    public AdditiveType(Container container, Map<String, Object> map)
+    {
+        super();
+        _rowId = (int) map.get(AdditiveTypeDomainKind.ROWID);
+        _container = container;
+        _ldmsAdditiveCode = (String) map.get(AdditiveTypeDomainKind.LDMSADDITIVECODE);
+        _labwareAdditiveCode = (String) map.get(AdditiveTypeDomainKind.LABWAREADDITIVECODE);
+        _additive = (String) map.get(AdditiveTypeDomainKind.ADDITIVE);
+        _externalId = (int) map.get(AdditiveTypeDomainKind.EXTERNALID);
+    }
 
     public Object getPrimaryKey()
     {

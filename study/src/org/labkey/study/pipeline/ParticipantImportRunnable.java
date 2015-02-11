@@ -18,6 +18,7 @@ package org.labkey.study.pipeline;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableInfo;
@@ -77,7 +78,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         if (error != null)
             return error;
 
-        TableInfo site = StudySchema.getInstance().getTableInfoSite();
+        TableInfo site = StudySchema.getInstance().getTableInfoSite(getDatasetDefinition().getContainer());
         ColumnInfo col = site.getColumn(_siteLookup);
         if (col == null || _siteLookup.toLowerCase().startsWith("is"))
             return "No such column in Site table: " + _siteLookup;
@@ -98,7 +99,8 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
             for (ColumnDescriptor c : loader.getColumns())
                 columnMap.put(c.name, c);
 
-            String subjectIdCol = StudyService.get().getSubjectColumnName(getDatasetDefinition().getContainer());
+            Container container = getDatasetDefinition().getContainer();
+            String subjectIdCol = StudyService.get().getSubjectColumnName(container);
             if (!columnMap.containsKey(subjectIdCol))
             {
                 _job.error("Dataset does not contain column " + subjectIdCol + ".");
@@ -109,7 +111,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
             TempTableWriter ttl = new TempTableWriter(loader);
             TempTableInfo tinfoTemp = ttl.loadTempTable();
-            TableInfo site = StudySchema.getInstance().getTableInfoSite();
+            TableInfo site = StudySchema.getInstance().getTableInfoSite(container);
             ColumnInfo siteLookup = site.getColumn(_siteLookup);
 
             // Merge uploaded data with Study tables
@@ -121,14 +123,14 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
             if (columnMap.containsKey("EnrollmentSiteId"))
             {
-                executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET EnrollmentSiteId=study.Site.RowId\n" +
-                        "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".EnrollmentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
+                executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET EnrollmentSiteId=" + site.getSelectName() + ".RowId\n" +
+                        "FROM " + tinfoTemp + " JOIN " + site.getSelectName() + " ON " + tinfoTemp.toString() + ".EnrollmentSiteId=" + site.getSelectName() + "." + siteLookup.getSelectName() + "\n" +
                         "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
             }
             if (columnMap.containsKey("CurrentSiteId"))
             {
-                executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET CurrentSiteId=study.Site.RowId\n" +
-                        "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".CurrentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
+                executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET CurrentSiteId=" + site.getSelectName() + ".RowId\n" +
+                        "FROM " + tinfoTemp + " JOIN " + site.getSelectName() + " ON " + tinfoTemp.toString() + ".CurrentSiteId=" + site.getSelectName() + "." + siteLookup.getSelectName() + "\n" +
                         "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
             }
 

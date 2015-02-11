@@ -128,23 +128,7 @@ import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyImporterFactory;
 import org.labkey.study.importer.StudyReload;
-import org.labkey.study.model.CohortDomainKind;
-import org.labkey.study.model.ContinuousDatasetDomainKind;
-import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.DateDatasetDomainKind;
-import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.model.ParticipantIdImportHelper;
-import org.labkey.study.model.SequenceNumImportHelper;
-import org.labkey.study.model.SpecimenDomainKind;
-import org.labkey.study.model.SpecimenEventDomainKind;
-import org.labkey.study.model.StudyDomainKind;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyLsidHandler;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.TestDatasetDomainKind;
-import org.labkey.study.model.TreatmentManager;
-import org.labkey.study.model.VialDomainKind;
-import org.labkey.study.model.VisitDatasetDomainKind;
+import org.labkey.study.model.*;
 import org.labkey.study.pipeline.AssayImportRunTask;
 import org.labkey.study.pipeline.SampleMindedTransform;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
@@ -249,7 +233,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 14.33;
+        return 14.34;
     }
 
     protected void init()
@@ -287,6 +271,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
+        PropertyService.get().registerDomainKind(new LocationDomainKind());
+        PropertyService.get().registerDomainKind(new PrimaryTypeDomainKind());
+        PropertyService.get().registerDomainKind(new DerivativeTypeDomainKind());
+        PropertyService.get().registerDomainKind(new AdditiveTypeDomainKind());
         PropertyService.get().registerDomainKind(new SpecimenDomainKind());
         PropertyService.get().registerDomainKind(new VialDomainKind());
         PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());

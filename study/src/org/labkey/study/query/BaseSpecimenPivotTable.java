@@ -21,14 +21,17 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.PrimaryType;
 import org.labkey.study.model.SpecimenTypeSummary;
+import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -314,7 +317,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         Map<Integer, NameLabelPair> siteMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        LocationImpl[] locations = SpecimenManager.getInstance().getSites(container);
+        List<LocationImpl> locations = StudyManager.getInstance().getLocations(container, null, new Sort(FieldKey.fromParts("Label")));
 
         for (LocationImpl location : locations)
         {

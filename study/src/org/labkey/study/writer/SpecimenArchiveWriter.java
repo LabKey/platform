@@ -68,10 +68,10 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
 
             StudySchema schema = StudySchema.getInstance();
 
-            new LocationSpecimenWriter().write(new QueryInfo(schema.getTableInfoSite(), "labs", SpecimenImporter.SITE_COLUMNS), ctx, zip);
-            new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoPrimaryType(), "primary_types", SpecimenImporter.PRIMARYTYPE_COLUMNS), ctx, zip);
-            new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoAdditiveType(), "additives", SpecimenImporter.ADDITIVE_COLUMNS), ctx, zip);
-            new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoDerivativeType(), "derivatives", SpecimenImporter.DERIVATIVE_COLUMNS), ctx, zip);
+            new LocationSpecimenWriter().write(new QueryInfo(schema.getTableInfoSite(ctx.getContainer()), "labs", SpecimenImporter.SITE_COLUMNS), ctx, zip);
+            new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoSpecimenPrimaryType(ctx.getContainer()), "primary_types", SpecimenImporter.PRIMARYTYPE_COLUMNS), ctx, zip);
+            new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoSpecimenAdditive(ctx.getContainer()), "additives", SpecimenImporter.ADDITIVE_COLUMNS), ctx, zip);
+            new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoSpecimenDerivative(ctx.getContainer()), "derivatives", SpecimenImporter.DERIVATIVE_COLUMNS), ctx, zip);
 
             new SpecimenWriter().write(study, ctx, zip);
         }

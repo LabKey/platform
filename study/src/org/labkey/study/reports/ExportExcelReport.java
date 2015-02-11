@@ -21,9 +21,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -171,12 +173,32 @@ public class ExportExcelReport extends RedirectReport
             //
             // PARTICIPANTS
             //
-            ResultSet rs = new SqlSelector(studySchema.getSchema(),
-                    "SELECT ParticipantId, COALESCE(Label,CAST(RowId AS VARCHAR(10))) AS Site FROM study.Participant LEFT OUTER JOIN study.Site ON study.Participant.CurrentSiteId = study.Site.RowId\n" +
-                    "WHERE study.Participant.container='" + study.getContainer().getId() + "'\n" +
-                    (locationId == 0 ? "" : "AND study.Participant.CurrentSiteId=" + locationId + "\n") +
-                    "ORDER BY 1").getResultSet();
+            //  "SELECT ParticipantId, COALESCE(Label,CAST(RowId AS VARCHAR(10))) AS Site FROM study.Participant LEFT OUTER JOIN study.Site ON study.Participant.CurrentSiteId = study.Site.RowId\n" +
+            //  "WHERE study.Participant.container='" + study.getContainer().getId() + "'\n" +
+            //  (locationId == 0 ? "" : "AND study.Participant.CurrentSiteId=" + locationId + "\n") +
+            //  "ORDER BY 1")
+            TableInfo locationTableInfo = studySchema.getTableInfoSite(getContainer());
+            TableInfo participantTableInfo = studySchema.getTableInfoParticipant();
+            if (null == locationTableInfo || null == participantTableInfo)
+                throw new IllegalStateException("TableInfo not found.");
 
+            SQLFragment sql = new SQLFragment();
+            sql.append("SELECT ParticipantId, COALESCE(Label,CAST(RowId AS VARCHAR(10))) AS Site FROM ")
+                    .append(participantTableInfo.getFromSQL("p")).append(" LEFT OUTER JOIN ")
+                    .append(locationTableInfo.getFromSQL("l")).append(" ON ")
+                    .append(participantTableInfo.getColumn("CurrentSiteId").getValueSql("p"))
+                    .append(locationTableInfo.getColumn("RowId").getValueSql("l")).append("\n")
+                    .append("WHERE ").append(participantTableInfo.getColumn("Container").getValueSql("p")).append("=?");
+            sql.add(study.getContainer());
+            sql.append("\n");
+            if (locationId != 0)
+            {
+                sql.append("AND ").append(participantTableInfo.getColumn("CurrentSiteId").getValueSql("p")).append("=?");
+                sql.add(locationId);
+                sql.append("\n");
+            }
+            sql.append("ORDER BY 1");
+            ResultSet rs = new SqlSelector(studySchema.getSchema(), sql.getSQL()).getResultSet();
             writer.createColumns(rs.getMetaData());
 
             String label = StudyService.get().getSubjectNounPlural(study.getContainer());
