@@ -130,7 +130,7 @@ public class MySqlDialect extends SimpleSqlDialect
     }
 
     @Override
-    public JdbcMetaDataLocator getMetaDataLocator(DbScope scope, final String schemaName, String tableName) throws SQLException
+    public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, final String schemaName, String tableName) throws SQLException
     {
         // MySQL treats catalogs as schemas... i.e., getSchemaName() needs to return null and getCatalogName() needs to return the schema name
         return new StandardJdbcMetaDataLocator(scope, null, tableName)

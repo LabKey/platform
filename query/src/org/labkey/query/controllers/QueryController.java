@@ -1214,7 +1214,7 @@ public class QueryController extends SpringActionController
 
             SqlDialect dialect = scope.getSqlDialect();
 
-            try (JdbcMetaDataLocator locator = dialect.getMetaDataLocator(scope, _schemaName, _tableName))
+            try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _schemaName, _tableName))
             {
                 JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
                 {
@@ -1267,7 +1267,7 @@ public class QueryController extends SpringActionController
 
             ModelAndView tablesView;
 
-            try (JdbcMetaDataLocator locator = dialect.getMetaDataLocator(scope, _schemaName, null))
+            try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _schemaName, null))
             {
                 JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
                 {

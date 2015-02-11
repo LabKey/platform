@@ -1272,7 +1272,6 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
     public Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
     {
-
         CaseInsensitiveMapWrapper<MetadataParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, MetadataParameterInfo>());
 
         try (Connection conn = scope.getConnection();
@@ -1440,6 +1439,12 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         {
             return _targetTable;
         }
+
+        @Override
+        public String toString()
+        {
+            return _schemaName + "." + _name + " -> [" + _targetDatabase + "].[" + _targetSchema + "].[" + _targetTable + "]";
+        }
     }
 
 
@@ -1450,15 +1455,43 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         {
             DbScope scope = DbScope.getDbScope(key);
 
-            SQLFragment sql = new SQLFragment("SELECT\n" +
-                "SCHEMA_NAME(s.schema_id) AS SchemaName,\n" +
-                "s.Name,\n" +
+            // A synonym in this scope can target other databases. We need to construct SQL that joins each synonym definition
+            // to the sys.objects table its own target database, so generate a crazy UNION query with one SELECT clause per
+            // unique database.
+
+            final String part1 = "SELECT s.* FROM (SELECT \n" +
+                "SCHEMA_NAME(schema_id) AS SchemaName,\n" +
+                "Name,\n" +
                 "COALESCE(PARSENAME(base_object_name, 4), @@servername) AS TargetServer,\n" +
                 "COALESCE(PARSENAME(base_object_name, 3), DB_NAME(DB_ID())) AS TargetDatabase,\n" +
                 "COALESCE(PARSENAME(base_object_name, 2), SCHEMA_NAME(SCHEMA_ID())) AS TargetSchema,\n" +
-                "PARSENAME(base_object_name, 1) AS TargetTable\n" +
-                "FROM sys.synonyms s INNER JOIN sys.objects o ON OBJECT_ID(base_object_name) = o.object_id\n" +   // Join back to objects to get synonym target type
-                "WHERE o.Type IN ('U', 'V')");                                                                  // Filter type... only tables and views
+                "PARSENAME(base_object_name, 1) AS TargetTable,\n" +
+                "OBJECT_ID(base_object_name) AS ObjectId\n" +
+                "FROM sys.synonyms) s\n" +
+                "INNER JOIN [";
+            final String part2 = "].sys.objects ON ObjectId = object_id\n" +
+                "WHERE TargetServer = @@servername AND TargetDatabase = ? AND Type IN ('U', 'V')\n";  // Filter to current server only... we don't support linked servers (yet)
+
+            final SQLFragment sql = new SQLFragment();
+
+            // Select the distinct target databases for all synonyms... and then build the UNION query
+            new SqlSelector(scope, "SELECT DISTINCT COALESCE(PARSENAME(base_object_name, 3), DB_NAME(DB_ID())) AS TargetDatabase FROM sys.synonyms").forEach(new Selector.ForEachBlock<String>()
+            {
+                @Override
+                public void exec(String dbName) throws SQLException
+                {
+                    if (!sql.isEmpty())
+                        sql.append("\nUNION\n\n");
+                    sql.append(part1);
+                    sql.append(dbName);  // dbName is in brackets, so reasonably escaped
+                    sql.append(part2);
+                    sql.add(dbName);     // this dbName can be a parameter
+                }
+            }, String.class);
+
+            // No synonyms... carry on
+            if (sql.isEmpty())
+                return Collections.emptyMap();
 
             final Map<String, Map<String, Synonym>> synonymMap = new HashMap<>();
 
@@ -1503,17 +1536,30 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
 
     @Override
-    public JdbcMetaDataLocator getMetaDataLocator(DbScope scope, String schemaName, String tableName) throws SQLException
+    public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, String schemaName, String tableName) throws SQLException
     {
         Synonym synonym = getSynonymnMap(scope, schemaName).get(tableName);
 
-        return null != synonym ? new StandardJdbcMetaDataLocator(scope, synonym.getTargetSchema(), synonym.getTargetTable()) : super.getMetaDataLocator(scope, schemaName, tableName);
+        // tableName is not a synonym... just return the standard locator
+        if (null == synonym)
+            return super.getJdbcMetaDataLocator(scope, schemaName, tableName);
+
+        // tableName is a synonym to an object in the same scope
+        if (synonym.getTargetDatabase().equals(scope.getDatabaseName()))
+            return new StandardJdbcMetaDataLocator(scope, synonym.getTargetSchema(), synonym.getTargetTable());
+
+        // tableName is a synonym to an object in a different scope... find the corresponding scope so we can use it to retrieve meta data
+        for (DbScope candidate : DbScope.getDbScopes())
+            if (candidate.getSqlDialect().isSqlServer() && null != candidate.getDatabaseName() && candidate.getDatabaseName().equals(synonym.getTargetDatabase()))
+                return new StandardJdbcMetaDataLocator(candidate, synonym.getTargetSchema(), synonym.getTargetTable());
+
+        throw new SQLException("Could not access metadata for " + synonym + ". No labkey.xml datasource is defined for the target database.");
     }
 
 
     private enum TokenType
     {
-        BEGIN, END;
+        BEGIN, END
     }
 
     private enum Token
