@@ -341,6 +341,12 @@ public class ExceptionUtil
         if (level == ExceptionReportingLevel.NONE)
             return;
 
+        if (local && ModuleLoader.getInstance().isUpgradeInProgress())
+        {
+            _logStatic.error("Not logging exception to local mothership because upgrade is in progress");
+            return;
+        }
+
         try
         {
             MothershipReport report = new MothershipReport(MothershipReport.Type.ReportException, local);
