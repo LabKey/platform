@@ -773,6 +773,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             super(colInfo);
         }
 
+        @NotNull
         @Override
         public String getFormattedValue(RenderContext ctx)
         {
@@ -784,6 +785,14 @@ public abstract class AssayProtocolSchema extends AssaySchema
             {
                 Map<String, String> decodedVals = new ObjectMapper().readValue(val.toString(), Map.class);
                 StringBuilder sb = new StringBuilder(decodedVals.remove(ParticipantVisitResolverType.Serializer.STRING_VALUE_PROPERTY_NAME));
+
+                // Issue 21126 If lookup was pasted tsv, could still get a default list entry in properties list. Fix the redisplay
+                // This addresses the issue for existing runs. New runs avoid the problem with corresponding change in ParticipantResolverType.Serializer.encode
+                if (ThawListResolverType.TEXT_NAMESPACE_SUFFIX.equals(decodedVals.get(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME)))
+                {
+                    decodedVals.remove(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME);
+                    decodedVals.remove(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME);
+                }
                 for (Map.Entry<String, String> decodedVal : decodedVals.entrySet())
                 {
                     sb.append("<br/>");

@@ -53,6 +53,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -257,7 +258,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                 String text = context.getRequest().getParameter(THAW_LIST_TEXT_AREA_INPUT_NAME);
                 if (text != null)
                 {
-                    in = new ByteArrayInputStream(text.getBytes());
+                    in = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
                 }
 
                 File uploadDir = ensureUploadDirectory(context.getContainer());

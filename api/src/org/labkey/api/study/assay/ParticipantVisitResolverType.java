@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.ExperimentException;
@@ -115,9 +116,14 @@ public interface ParticipantVisitResolverType
 
             if (resolverType.equals(ThawListResolverType.NAME))
             {
+                boolean isLookupTextType = ThawListResolverType.TEXT_NAMESPACE_SUFFIX.equals(request.getParameter(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME));
+
                 Map<String, String> values = new HashMap<>();
                 for (String name : (List<String>) Collections.list(request.getParameterNames()))
                 {
+                    // Issue 21126 If lookup was pasted tsv, could still get a default list entry in parameter map. Don't add it to properties list.
+                    if (isLookupTextType && StringUtils.startsWith(name, ThawListResolverType.NAMESPACE_PREFIX + ThawListResolverType.LIST_NAMESPACE_SUFFIX ))
+                        continue;
                     values.put(name, request.getParameter(name));
                 }
                 for (Map.Entry<String, String> entry : values.entrySet())
