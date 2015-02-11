@@ -18,7 +18,6 @@ package org.labkey.experiment.api;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
@@ -37,13 +36,10 @@ import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.util.Pair;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
 import org.labkey.experiment.samples.UploadSamplesHelper;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -136,41 +132,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
             for (Map.Entry<String, Object> entry : originalRow.entrySet())
             {
                 Object value = entry.getValue();
-                if (value instanceof MultipartFile)
-                {
-                    try
-                    {
-                        // Once we've found one, write it to disk and replace the row's value with just the File reference to it
-                        MultipartFile multipartFile = (MultipartFile)value;
-                        if (multipartFile.isEmpty())
-                        {
-                            throw new ValidationException("File " + multipartFile.getOriginalFilename() + " for field " + entry.getKey() + " has no content");
-                        }
-                        File dir = AssayFileWriter.ensureUploadDirectory(container, "sampleset");
-                        File file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
-                        multipartFile.transferTo(file);
-                        value = file;
-                    }
-                    catch (ExperimentException | IOException e)
-                    {
-                        throw new QueryUpdateServiceException(e);
-                    }
-                }
-                else if (value instanceof SpringAttachmentFile)
-                {
-                    SpringAttachmentFile saf = (SpringAttachmentFile)value;
-                    try
-                    {
-                        File dir = AssayFileWriter.ensureUploadDirectory(container, "sampleset");
-                        File file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
-                        saf.saveTo(file);
-                        value = file;
-                    }
-                    catch (IOException | ExperimentException e)
-                    {
-                        throw new QueryUpdateServiceException(e);
-                    }
-                }
+                value = saveFile(container, entry.getKey(), value, "sampleset");
                 row.put(entry.getKey(), value);
             }
             rows.add(row);

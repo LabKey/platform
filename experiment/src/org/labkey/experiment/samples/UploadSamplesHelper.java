@@ -295,28 +295,6 @@ public class UploadSamplesHelper
                         descriptors.add(prop.getPropertyDescriptor());
                     }
 
-                    // For security reasons, make sure the user hasn't tried to reference a file that's not under
-                    // the pipeline root. Otherwise, they could get access to any file on the server
-                    if (entry.getValue() instanceof File)
-                    {
-                        File file = (File)entry.getValue();
-                        PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                        if (root == null)
-                        {
-                            throw new ExperimentException("Pipeline root not available in container " + getContainer().getPath());
-
-                        }
-
-                        if (!root.isUnderRoot(file))
-                        {
-                            File resolved = root.resolvePath(file.toString());
-                            if (resolved == null)
-                                throw new ExperimentException("Cannot reference file '" + entry.getValue() + "' from " + getContainer().getPath());
-
-                            // File column values are stored as the absolute resolved path.
-                            map.put(entry.getKey(), resolved);
-                        }
-                    }
                 }
             }
 

@@ -200,7 +200,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
      * @param domain the domain from which to add all of the properties
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
      */
-    public ColumnInfo addColumns(Domain domain, String legacyName)
+    public ColumnInfo addColumns(Domain domain, @Nullable String legacyName)
     {
         ColumnInfo colProperty = null;
         if (legacyName != null && !domain.getProperties().isEmpty())

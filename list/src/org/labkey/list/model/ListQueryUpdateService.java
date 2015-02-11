@@ -593,7 +593,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                         if (StringUtils.equalsIgnoreCase(ID, col.getName()))
                             entityIdIndex = c;
 
-                        // Don't seem to have attachment information in the ColumnInfo, so we need to lookup the DomainProperty
+                        // TODO: Issue 22505: Don't seem to have attachment information in the ColumnInfo, so we need to lookup the DomainProperty
                         // UNDONE: PropertyURI is not propagated, need to use name
                         DomainProperty domainProperty = _list.getDomain().getPropertyByName(col.getName());
                         if (null == domainProperty || domainProperty.getPropertyDescriptor().getPropertyType() != PropertyType.ATTACHMENT)

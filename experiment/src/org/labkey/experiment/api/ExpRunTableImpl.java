@@ -76,6 +76,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -918,9 +919,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         PropertyColumn propColumn = (PropertyColumn)col;
                         PropertyDescriptor propertyDescriptor = propColumn.getPropertyDescriptor();
                         Object oldValue = run.getProperty(propertyDescriptor);
-                        if (value instanceof SpringAttachmentFile)
+                        if (value instanceof MultipartFile || value instanceof SpringAttachmentFile)
                         {
-                            value = saveFile(container, value);
+                            value = saveFile(container, col.getName(), value, AssayFileWriter.DIR_NAME);
                         }
                         run.setProperty(user, propertyDescriptor, value);
 
@@ -956,23 +957,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString());
             }
             return getRow(user, container, oldRow);
-        }
-
-        private Object saveFile(Container container, Object value) throws QueryUpdateServiceException
-        {
-            SpringAttachmentFile saf = (SpringAttachmentFile)value;
-            try
-            {
-                File dir = AssayFileWriter.ensureUploadDirectory(container);
-                File file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
-                saf.saveTo(file);
-                value = file;
-            }
-            catch (IOException | ExperimentException e)
-            {
-                throw new QueryUpdateServiceException(e);
-            }
-            return value;
         }
 
         private StringBuilder appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)
