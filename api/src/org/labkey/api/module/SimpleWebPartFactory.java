@@ -206,6 +206,9 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         if (null == _webPartDef)
             return false;
 
+        if (AvailableEnum.NEVER.equals(_webPartDef.getAvailable()))
+            return false;
+
         //if super thinks it should be available, return true
         if(super.isAvailable(c, location))
             return true;
