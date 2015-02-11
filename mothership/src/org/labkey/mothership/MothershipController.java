@@ -51,6 +51,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -721,6 +722,7 @@ public class MothershipController extends SpringActionController
 
     // API for inserting exceptions reported from this or other LabKey servers.
     @RequiresNoPermission
+    @AllowedDuringUpgrade
     public class ReportExceptionAction extends SimpleViewAction<ExceptionForm>
     {
         public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
