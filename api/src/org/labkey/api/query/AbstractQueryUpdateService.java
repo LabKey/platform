@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -42,11 +43,18 @@ import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.etl.TriggerDataBuilderHelper;
 import org.labkey.api.etl.WrapperDataIterator;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -585,4 +593,74 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         return _bulkLoad;
     }
+
+    /**
+     * Save uploaded file to dirName directory under file or pipeline root.
+     */
+    protected Object saveFile(Container container, String name, Object value, @Nullable String dirName) throws ValidationException, QueryUpdateServiceException
+    {
+        if (value instanceof MultipartFile)
+        {
+            try
+            {
+                // Once we've found one, write it to disk and replace the row's value with just the File reference to it
+                MultipartFile multipartFile = (MultipartFile)value;
+                if (multipartFile.isEmpty())
+                {
+                    throw new ValidationException("File " + multipartFile.getOriginalFilename() + " for field " + name + " has no content");
+                }
+                File dir = AssayFileWriter.ensureUploadDirectory(container, dirName);
+                File file = AssayFileWriter.findUniqueFileName(multipartFile.getOriginalFilename(), dir);
+                file = checkFileUnderRoot(container, file);
+                multipartFile.transferTo(file);
+                return file;
+            }
+            catch (ExperimentException | IOException e)
+            {
+                throw new QueryUpdateServiceException(e);
+            }
+        }
+        else if (value instanceof SpringAttachmentFile)
+        {
+            SpringAttachmentFile saf = (SpringAttachmentFile)value;
+            try
+            {
+                File dir = AssayFileWriter.ensureUploadDirectory(container, dirName);
+                File file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
+                file = checkFileUnderRoot(container, file);
+                saf.saveTo(file);
+                return file;
+            }
+            catch (IOException | ExperimentException e)
+            {
+                throw new QueryUpdateServiceException(e);
+            }
+        }
+        else
+        {
+            return value;
+        }
+    }
+
+    // For security reasons, make sure the user hasn't tried to reference a file that's not under
+    // the pipeline root. Otherwise, they could get access to any file on the server
+    protected File checkFileUnderRoot(Container container, File file) throws ExperimentException
+    {
+        PipeRoot root = PipelineService.get().findPipelineRoot(container);
+        if (root == null)
+            throw new ExperimentException("Pipeline root not available in container " + container.getPath());
+
+        if (!root.isUnderRoot(file))
+        {
+            File resolved = root.resolvePath(file.toString());
+            if (resolved == null)
+                throw new ExperimentException("Cannot reference file '" + file + "' from " + container.getPath());
+
+            // File column values are stored as the absolute resolved path.
+            file = resolved;
+        }
+
+        return file;
+    }
+
 }
