@@ -30,6 +30,7 @@ import org.labkey.api.util.MemTracker;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -646,6 +647,86 @@ public class Issue extends Entity implements Serializable, Cloneable
                 ret.add(v);
         }
         return ret;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Issue issue = (Issue) o;
+
+        if (issueId != issue.issueId) return false;
+        if (_added != null ? !_added.equals(issue._added) : issue._added != null) return false;
+        // note this is not a valid part of the equals because it won't get newed up when copied from form.getOldValues()
+//        if (_comments != null ? !_comments.equals(issue._comments) : issue._comments != null) return false;
+        if (_notifyList != null ? !_notifyList.equals(issue._notifyList) : issue._notifyList != null) return false;
+        if (!Arrays.equals(_ts, issue._ts)) return false;
+        if (area != null ? !area.equals(issue.area) : issue.area != null) return false;
+        if (assignedTo != null ? !assignedTo.equals(issue.assignedTo) : issue.assignedTo != null) return false;
+        if (buildFound != null ? !buildFound.equals(issue.buildFound) : issue.buildFound != null) return false;
+        if (closed != null ? !closed.equals(issue.closed) : issue.closed != null) return false;
+        if (closedBy != null ? !closedBy.equals(issue.closedBy) : issue.closedBy != null) return false;
+        if (duplicate != null ? !duplicate.equals(issue.duplicate) : issue.duplicate != null) return false;
+        if (duplicates != null ? !duplicates.equals(issue.duplicates) : issue.duplicates != null) return false;
+        if (int1 != null ? !int1.equals(issue.int1) : issue.int1 != null) return false;
+        if (int2 != null ? !int2.equals(issue.int2) : issue.int2 != null) return false;
+        if (milestone != null ? !milestone.equals(issue.milestone) : issue.milestone != null) return false;
+        if (priority != null ? !priority.equals(issue.priority) : issue.priority != null) return false;
+        if (related != null ? !related.equals(issue.related) : issue.related != null) return false;
+        if (relatedIssues != null ? !relatedIssues.equals(issue.relatedIssues) : issue.relatedIssues != null)
+            return false;
+        if (resolution != null ? !resolution.equals(issue.resolution) : issue.resolution != null) return false;
+        if (resolved != null ? !resolved.equals(issue.resolved) : issue.resolved != null) return false;
+        if (resolvedBy != null ? !resolvedBy.equals(issue.resolvedBy) : issue.resolvedBy != null) return false;
+        if (status != null ? !status.equals(issue.status) : issue.status != null) return false;
+        if (string1 != null ? !string1.equals(issue.string1) : issue.string1 != null) return false;
+        if (string2 != null ? !string2.equals(issue.string2) : issue.string2 != null) return false;
+        if (string3 != null ? !string3.equals(issue.string3) : issue.string3 != null) return false;
+        if (string4 != null ? !string4.equals(issue.string4) : issue.string4 != null) return false;
+        if (string5 != null ? !string5.equals(issue.string5) : issue.string5 != null) return false;
+        if (tag != null ? !tag.equals(issue.tag) : issue.tag != null) return false;
+        if (title != null ? !title.equals(issue.title) : issue.title != null) return false;
+        if (type != null ? !type.equals(issue.type) : issue.type != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _ts != null ? Arrays.hashCode(_ts) : 0;
+        result = 31 * result + issueId;
+        result = 31 * result + (title != null ? title.hashCode() : 0);
+        result = 31 * result + (status != null ? status.hashCode() : 0);
+        result = 31 * result + (assignedTo != null ? assignedTo.hashCode() : 0);
+        result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + (area != null ? area.hashCode() : 0);
+        result = 31 * result + (priority != null ? priority.hashCode() : 0);
+        result = 31 * result + (milestone != null ? milestone.hashCode() : 0);
+        result = 31 * result + (buildFound != null ? buildFound.hashCode() : 0);
+        result = 31 * result + (tag != null ? tag.hashCode() : 0);
+        result = 31 * result + (resolvedBy != null ? resolvedBy.hashCode() : 0);
+        result = 31 * result + (resolved != null ? resolved.hashCode() : 0);
+        result = 31 * result + (resolution != null ? resolution.hashCode() : 0);
+        result = 31 * result + (duplicate != null ? duplicate.hashCode() : 0);
+        result = 31 * result + (duplicates != null ? duplicates.hashCode() : 0);
+        result = 31 * result + (related != null ? related.hashCode() : 0);
+        result = 31 * result + (relatedIssues != null ? relatedIssues.hashCode() : 0);
+        result = 31 * result + (closedBy != null ? closedBy.hashCode() : 0);
+        result = 31 * result + (closed != null ? closed.hashCode() : 0);
+        result = 31 * result + (string1 != null ? string1.hashCode() : 0);
+        result = 31 * result + (string2 != null ? string2.hashCode() : 0);
+        result = 31 * result + (string3 != null ? string3.hashCode() : 0);
+        result = 31 * result + (string4 != null ? string4.hashCode() : 0);
+        result = 31 * result + (string5 != null ? string5.hashCode() : 0);
+        result = 31 * result + (int1 != null ? int1.hashCode() : 0);
+        result = 31 * result + (int2 != null ? int2.hashCode() : 0);
+        result = 31 * result + (_comments != null ? _comments.hashCode() : 0);
+        result = 31 * result + (_added != null ? _added.hashCode() : 0);
+        result = 31 * result + (_notifyList != null ? _notifyList.hashCode() : 0);
+        return result;
     }
 
 

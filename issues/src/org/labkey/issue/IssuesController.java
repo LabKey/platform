@@ -743,6 +743,10 @@ public class IssuesController extends SpringActionController
             requiresUpdatePermission(user, issue);
             ActionURL detailsUrl;
 
+            // check for no op
+            if (issue.equals(prevIssue))
+                return true;
+
             // clear resolution, resolvedBy, and duplicate fields
             if (ReopenAction.class.equals(form.getAction()))
                 issue.beforeReOpen(getContainer());
