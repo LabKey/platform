@@ -1466,7 +1466,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         DbScope scope = parentTable.getSchema().getScope();
         List<ImportedKey> importedKeys = new ArrayList<>();
 
-        try (JdbcMetaDataLocator locator = dialect.getMetaDataLocator(scope, schemaName, parentTable.getMetaDataName()))
+        try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, schemaName, parentTable.getMetaDataName()))
         {
             JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
             {

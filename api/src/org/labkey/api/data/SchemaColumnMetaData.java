@@ -175,7 +175,7 @@ public class SchemaColumnMetaData
         // Use TreeMap to order columns by keySeq
         Map<Integer, String> pkMap = new TreeMap<>();
 
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
         {
             JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory(){
                 @Override

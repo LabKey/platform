@@ -232,7 +232,7 @@ public class DbSchema
     {
         final Map<String, String> metaDataTableNameMap = new CaseInsensitiveHashMap<>();
 
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getMetaDataLocator(scope, schemaName, "%"))
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, "%"))
         {
             new TableMetaDataLoader(locator, ignoreTemp)
             {
@@ -353,7 +353,7 @@ public class DbSchema
 
     protected SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
     {
-        try (JdbcMetaDataLocator locator = getSqlDialect().getMetaDataLocator(getScope(), getName(), tableName))
+        try (JdbcMetaDataLocator locator = getSqlDialect().getJdbcMetaDataLocator(getScope(), getName(), tableName))
         {
             return new SingleTableMetaDataLoader(tableName, locator).load();
         }

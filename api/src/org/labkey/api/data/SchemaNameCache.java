@@ -78,7 +78,7 @@ public class SchemaNameCache
     {
         final Map<String, String> schemaNameMap = new CaseInsensitiveTreeMap<>();
 
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getMetaDataLocator(scope, null, null))
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, null, null))
         {
             JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
             {

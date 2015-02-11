@@ -866,8 +866,7 @@ public abstract class SqlDialect
     {
     }
 
-    // TODO: Make schemaName @Nullable?
-    public JdbcMetaDataLocator getMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableName) throws SQLException
+    public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
     {
         return new StandardJdbcMetaDataLocator(scope, schemaName, tableName);
     }
