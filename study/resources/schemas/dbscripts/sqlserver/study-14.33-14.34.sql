@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-EXEC core.fn_dropifexists('Participant', 'study', 'CONSTRAINT', 'FK_CurrentSiteId_Site');
-EXEC core.fn_dropifexists('Participant', 'study', 'CONSTRAINT', 'FK_EnrollmentSiteId_Site');
-EXEC core.fn_dropifexists('SampleRequest', 'study', 'CONSTRAINT', 'FK_SampleRequest_Site');
-EXEC core.fn_dropifexists('SampleRequestRequirement', 'study', 'CONSTRAINT', 'FK_SampleRequestRequirement_Site');
+EXEC core.fn_dropifexists 'Participant', 'study', 'CONSTRAINT', 'FK_CurrentSiteId_Site';
+EXEC core.fn_dropifexists 'Participant', 'study', 'CONSTRAINT', 'FK_EnrollmentSiteId_Site';
+EXEC core.fn_dropifexists 'SampleRequest', 'study', 'CONSTRAINT', 'FK_SampleRequest_Site';
+EXEC core.fn_dropifexists 'SampleRequestRequirement', 'study', 'CONSTRAINT', 'FK_SampleRequestRequirement_Site';
 
 EXEC core.executeJavaUpgradeCode 'migrateSpecimenTypeAndLocationTables';
 
