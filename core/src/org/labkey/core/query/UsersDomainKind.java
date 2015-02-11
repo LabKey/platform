@@ -161,30 +161,33 @@ public class UsersDomainKind extends SimpleTableDomainKind
 
     public static void ensureDomain(ModuleContext context)
     {
-        User user = context.getUpgradeUser();
-        String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), user);
-        Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
-
-
-        if (domain == null)
+        if (context.isNewInstall())
         {
-            try
-            {
-                domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
+            User user = context.getUpgradeUser();
+            String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), user);
+            Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
 
-                createPropertyDescriptor(domain, user, "FirstName", PropertyType.STRING, 64, false);
-                createPropertyDescriptor(domain, user, "LastName", PropertyType.STRING, 64, false);
-                createPropertyDescriptor(domain, user, "Phone", PropertyType.STRING, 64, false);
-                createPropertyDescriptor(domain, user, "Mobile", PropertyType.STRING, 64, false);
-                createPropertyDescriptor(domain, user, "Pager", PropertyType.STRING, 64, true);
-                createPropertyDescriptor(domain, user, "IM", PropertyType.STRING, 64, true);
-                createPropertyDescriptor(domain, user, "Description", PropertyType.STRING, 255, true);
 
-                domain.save(context.getUpgradeUser());
-            }
-            catch (Exception e)
+            if (domain == null)
             {
-                throw new RuntimeException(e);
+                try
+                {
+                    domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
+
+                    createPropertyDescriptor(domain, user, "FirstName", PropertyType.STRING, 64, false);
+                    createPropertyDescriptor(domain, user, "LastName", PropertyType.STRING, 64, false);
+                    createPropertyDescriptor(domain, user, "Phone", PropertyType.STRING, 64, false);
+                    createPropertyDescriptor(domain, user, "Mobile", PropertyType.STRING, 64, false);
+                    createPropertyDescriptor(domain, user, "Pager", PropertyType.STRING, 64, true);
+                    createPropertyDescriptor(domain, user, "IM", PropertyType.STRING, 64, true);
+                    createPropertyDescriptor(domain, user, "Description", PropertyType.STRING, 255, true);
+
+                    domain.save(context.getUpgradeUser());
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
