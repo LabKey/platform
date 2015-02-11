@@ -47,6 +47,10 @@ public class TableXmlUtils
         for (String tableName : dbSchema.getTableNames())
         {
             SchemaTableInfo tableInfo = dbSchema.createTableFromDatabaseMetaData(tableName);
+
+            if (null == tableInfo)
+                throw new IllegalStateException("getTableNames() returned a name that doesn't exist in the database: " + tableName);
+
             TableType xmlTable = xmlTables.addNewTable();
             tableInfo.copyToXml(xmlTable, bFull);
         }

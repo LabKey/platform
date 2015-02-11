@@ -351,7 +351,8 @@ public class DbSchema
         return ti;
     }
 
-    protected SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
+    // Could return null if the requested table doesn't exist in the database
+    protected @Nullable SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
     {
         try (JdbcMetaDataLocator locator = getSqlDialect().getJdbcMetaDataLocator(getScope(), getName(), tableName))
         {
