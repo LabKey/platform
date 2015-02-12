@@ -90,10 +90,12 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                             url : this.getViewURL(),
                             method: 'POST',
                             success: function(resp){
+                                // issue 18430, unmask before we load the HTML, just in case there is a javascript error
+                                // in the rendered content
+                                cmp.getEl().unmask();
                                 // Update the view div with the returned HTML, and make sure scripts are run
                                 LABKEY.Utils.loadAjaxContent(resp, panelId, function() {
                                     cmp.doLayout();
-                                    cmp.getEl().unmask();
                                 });
                             },
                             failure : function(resp) {this.viewFailure(cmp);},
