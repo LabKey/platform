@@ -41,6 +41,7 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -263,7 +264,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		}
 
 		@Override
-		public boolean canDelete(User user, boolean forDelete)
+		public boolean canDelete(User user, boolean forDelete, List<String> message)
 		{
 			return false;
 		}

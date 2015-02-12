@@ -72,13 +72,21 @@ public class WebdavServlet extends HttpServlet
         }
 
         String method = request.getMethod();
-        if (method.equals("GET") || method.equals("POST"))
+        if ("GET".equals(method) || "POST".equals(method))
         {
             String m = request.getHeader("Method");
             if (m == null)
                 m = helper.getParameter("method");
             if (null != m)
-                method = m;
+            {
+                if ("POST".equals(method) || "PROPFIND".equals(m) || "OPTIONS".equals(m) || "JSON".equals(m) || "LASTERROR".equals(m) || "GET".equals(m))
+                    method = m;
+                else
+                {
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                    return;
+                }
+            }
         }
 
         ActionURL dispatchUrl = new ActionURL("/" + DavController.name + "/" + method.toLowerCase() + ".view");

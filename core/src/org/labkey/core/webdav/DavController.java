@@ -29,10 +29,14 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONWriter;
+import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -89,6 +93,7 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
+import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -110,6 +115,7 @@ import javax.servlet.http.HttpSession;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import java.beans.Introspector;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -312,6 +318,8 @@ public class DavController extends SpringActionController
                 _webdavresponse.sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
                 return null;
             }
+            if (action instanceof HasViewContext)
+                ((HasViewContext)action).setViewContext(context);
             action.handleRequest(request, response);
         }
         catch (RedirectException ex)
@@ -616,6 +624,8 @@ public class DavController extends SpringActionController
 
         public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
+            clearLastError();
+
             long start=0;
             if (_log.isEnabledFor(Priority.DEBUG))
             {
@@ -667,8 +677,9 @@ public class DavController extends SpringActionController
             }
             catch (UnauthorizedException uex)
             {
+                setLastError(uex);
                 WebdavResource resource = uex.getResource();
-                String resourcePath = uex.getResourcePath();
+                Path resourcePath = uex.getResourcePath();
                 if (!getUser().isGuest())
                 {
                     getResponse().sendError(WebdavStatus.SC_FORBIDDEN, resourcePath);
@@ -686,6 +697,7 @@ public class DavController extends SpringActionController
             }
             catch (DavException dex)
             {
+                setLastError(dex);
                 if (dex.getStatus().equals(WebdavStatus.SC_NOT_FOUND))
                 {
                     SearchService ss = ServiceRegistry.get(SearchService.class);
@@ -2992,8 +3004,9 @@ public class DavController extends SpringActionController
         if (!exists)
             return notFound();
 
-        if (!resource.canDelete(getUser(),true))
-            return unauthorized(resource);
+        List<String> messages = new ArrayList<>();
+        if (!resource.canDelete(getUser(),true,messages))
+            return unauthorized(resource, messages);
 
         if (!resource.isCollection())
         {
@@ -3138,6 +3151,7 @@ public class DavController extends SpringActionController
             lockTokenHeader = "";
 
         Collection<? extends WebdavResource> children = coll.list();
+        List<String> outMessage = new ArrayList<>();
 
         for (WebdavResource child : children)
         {
@@ -3149,8 +3163,10 @@ public class DavController extends SpringActionController
             }
             else
             {
-                if (!child.canDelete(getUser(),true))
+                outMessage.clear();
+                if (!child.canDelete(getUser(),true,outMessage))
                 {
+                    setLastError(new DavException(WebdavStatus.SC_FORBIDDEN, outMessage.isEmpty() ? null : outMessage.get(0), child.getPath()));
                     errorList.put(childName, WebdavStatus.SC_FORBIDDEN);
                     continue;
                 }
@@ -4224,6 +4240,64 @@ public class DavController extends SpringActionController
     }
 
 
+
+    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "webdav errors");
+
+    private Path getErrorCacheKey()
+    {
+        Path path = getResourcePath();
+        String sessionId = getRequest().getSession(true).getId();
+        String pageId = StringUtils.defaultIfBlank(getRequest().getParameter("pageId"), "-");
+        Path p;
+        p = new Path(sessionId).append(String.valueOf(pageId)).append(path);
+        return p;
+    }
+
+
+    private void setLastError(@NotNull DavException error)
+    {
+        if (WebdavStatus.SC_NOT_FOUND == error.status)
+            return;
+        Path key = getErrorCacheKey();
+        exceptionCache.put(key, error.toJSON());
+    }
+
+
+    private void clearLastError()
+    {
+        Path key = getErrorCacheKey();
+        exceptionCache.remove(key);
+    }
+
+
+    /*
+     * JSON clients can use this API for more robust/easier error description than might be available over web-dav
+     */
+    @RequiresNoPermission
+    public class LastErrorAction extends ApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException bindErrors) throws Exception
+        {
+            Path key = getErrorCacheKey();
+
+            JSONObject x = (JSONObject)exceptionCache.get(key);
+            if (null != x)
+                exceptionCache.remove(key);
+
+            JSONObject ret = new JSONObject();
+            ret.put("success",true);
+            JSONArray errors = new JSONArray();
+            ret.put("errors", errors);
+            if (null != x)
+            {
+                errors.put(x);
+            }
+            return ret;
+        }
+    }
+
+
     static Path servletPrefix = WebdavService.getPath();
     
     /** allow html listing of this resource */
@@ -4355,7 +4429,7 @@ public class DavController extends SpringActionController
 
         // If the resource is not a collection, and the resource path ends with "/"
         if (resource.getPath().isDirectory())
-            return notFound(getURL().getURIString());
+            return notFound(resource.getPath());
 
         // Parse range specifier
         List ranges = parseRange(resource);
@@ -4664,7 +4738,7 @@ public class DavController extends SpringActionController
         else
         {
             boolean read = resource.canRead(user,false);
-            boolean delete = resource.canDelete(user,false);
+            boolean delete = resource.canDelete(user,false,null);
 
             if (read)
                 methodsAllowed.append(", GET, HEAD, COPY");
@@ -5903,7 +5977,7 @@ public class DavController extends SpringActionController
         protected WebdavStatus status;
         protected String message;
         protected WebdavResource resource;
-        protected String resourcePath;
+        protected Path resourcePath;
 
         DavException(WebdavStatus status)
         {
@@ -5914,6 +5988,21 @@ public class DavController extends SpringActionController
         {
             this.status = status;
             this.message = message;
+        }
+
+//        DavException(WebdavStatus status, String message, String path)
+//        {
+//            this.status = status;
+//            this.message = message;
+//            if (null != path)
+//                this.resourcePath = Path.parse(path);
+//        }
+
+        DavException(WebdavStatus status, String message, Path path)
+        {
+            this.status = status;
+            this.message = message;
+            this.resourcePath = path;
         }
 
         DavException(WebdavStatus status, String message, Throwable t)
@@ -5949,12 +6038,39 @@ public class DavController extends SpringActionController
             return resource;
         }
 
-        public String getResourcePath()
+        public Path getResourcePath()
         {
             if (null != resource)
-                return resource.getPath().toString();
-            Path p = DavController.this.getResourcePath();
-            return null == p ? "" : p.toString();
+                return resource.getPath();
+            else if (null != resourcePath)
+                return resourcePath;
+            return null;
+        }
+
+        JSONObject toJSON()
+        {
+            JSONObject o = new JSONObject();
+            o.put("status", status.code);
+            o.put("message", getMessage());
+            Path p = getResourcePath();
+            if (null != p)
+            {
+                o.put("resourcePath", p.toString());
+                o.put("resourceName", p.getName());
+            }
+            // check for interesting annotations
+            Map<Enum,String> map = ExceptionUtil.getExceptionDecorations(this);
+            for (Map.Entry<Enum,String> e : map.entrySet())
+            {
+                if (e.getKey() == ExceptionUtil.ExceptionInfo.ResolveURL ||
+                    e.getKey() == ExceptionUtil.ExceptionInfo.ResolveText ||
+                    e.getKey() == ExceptionUtil.ExceptionInfo.HelpURL ||
+                    e.getKey() == ExceptionUtil.ExceptionInfo.ExtraMessage)
+                {
+                    o.put(Introspector.decapitalize(e.getKey().name()), e.getValue());
+                }
+            }
+            return o;
         }
     }
 
@@ -5965,11 +6081,23 @@ public class DavController extends SpringActionController
             super(WebdavStatus.SC_UNAUTHORIZED);
             this.resource = resource;
         }
+        UnauthorizedException(WebdavResource resource, String message)
+        {
+            super(WebdavStatus.SC_UNAUTHORIZED);
+            this.resource = resource;
+            this.message = message;
+        }
     }
 
     WebdavStatus unauthorized(WebdavResource resource) throws DavException
     {
         throw new UnauthorizedException(resource);
+    }
+
+    WebdavStatus unauthorized(WebdavResource resource, List<String> messages) throws DavException
+    {
+        String message = null!=messages && !messages.isEmpty() ? messages.get(0) : null;
+        throw new UnauthorizedException(resource, message);
     }
 
     WebdavStatus notFound() throws DavException
@@ -5979,14 +6107,9 @@ public class DavController extends SpringActionController
 
     WebdavStatus notFound(Path path) throws DavException
     {
-        throw new DavException(WebdavStatus.SC_NOT_FOUND, path.toString());
+        throw new DavException(WebdavStatus.SC_NOT_FOUND, null, path);
     }
     
-    WebdavStatus notFound(String path) throws DavException
-    {
-        throw new DavException(WebdavStatus.SC_NOT_FOUND, path);
-    }
-
     private void checkReadOnly() throws DavException
     {
         if (_readOnly)

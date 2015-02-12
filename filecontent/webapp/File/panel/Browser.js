@@ -2106,16 +2106,21 @@ Ext4.define('File.panel.Browser', {
                             win.close();
                             this.onRefresh();
                         },
-                        failure : function(response) {
+                        failure : function(response, options) {
+                            var extraErrorInfo = response.errors && response.errors.length ? response.errors[0] : null;
+                            var message;
                             if (response.status == 405)
+                                message = 'Failed to create directory on server. This directory already exists.';
+                            else if (extraErrorInfo && extraErrorInfo.message)
                             {
-                                this.showErrorMsg('Error', 'Failed to create directory on server. This directory already exists.');
+                                if (extraErrorInfo.resourceName)
+                                    message = extraErrorInfo.resourceName + ": ";
+                                message += extraErrorInfo.message;
                             }
                             else
-                            {
-                                this.showErrorMsg('Error', 'Failed to create directory on server. This directory may already exist '
-                                        + 'or this may be a server configuration problem. Please contact the site administrator.');
-                            }
+                                message = 'Failed to create directory on server. This directory may already exist '
+                                        + 'or this may be a server configuration problem. Please contact the site administrator.';
+                            this.showErrorMsg('Error', message);
                         },
                         scope : this
                     });
@@ -2213,7 +2218,17 @@ Ext4.define('File.panel.Browser', {
                                     }
                                 },
                                 failure : function(response) {
-                                    this.showErrorMsg('Error', 'Failed to delete.');
+                                    var extraErrorInfo = response.errors && response.errors.length ? response.errors[0] : null;
+                                    var message = null;
+                                    if (extraErrorInfo && extraErrorInfo.message)
+                                    {
+                                        if (extraErrorInfo.resourceName)
+                                            message = extraErrorInfo.resourceName + ": ";
+                                        message += extraErrorInfo.message;
+                                    }
+                                    else
+                                        message = 'Failed to delete.';
+                                    this.showErrorMsg('Error', message);
                                 },
                                 scope : this
                             });
@@ -2404,10 +2419,20 @@ Ext4.define('File.panel.Browser', {
                     this.configureActions();
                 },
                 failure: function(response) {
-                    if (response.status == 500)
-                        this.showErrorMsg('Error', 'Failed to move file on server. This may be a server configuration problem. Please contact the site administrator.');
-                    else if (response.status == 412)
-                        this.showErrorMsg('Error', 'Failed to move file on server. File already exists in destination folder. Please remove the file in the destination folder and try again.');
+                    var extraErrorInfo = response.errors && response.errors.length ? response.errors[0] : null;
+                    var message = null;
+                    if (response.status == 412)
+                        message = 'Failed to move file on server. File already exists in destination folder. Please remove the file in the destination folder and try again.';
+                    else if (extraErrorInfo && extraErrorInfo.message)
+                    {
+                        if (extraErrorInfo.resourceName)
+                            message = extraErrorInfo.resourceName + ": ";
+                        message += extraErrorInfo.message;
+                    }
+                    else if (response.status == 500)
+                        message = 'Failed to move file on server. This may be a server configuration problem. Please contact the site administrator.';
+                    if (message)
+                        this.showErrorMsg('Error', message);
                     else
                         LABKEY.Utils.displayAjaxErrorResponse(response);
                 },

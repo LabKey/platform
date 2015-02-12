@@ -34,6 +34,7 @@ import org.labkey.pipeline.api.PipelineServiceImpl;
 import java.io.File;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -106,7 +107,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public boolean canDelete(User user, boolean forDelete)
+        public boolean canDelete(User user, boolean forDelete, List<String> msg)
         {
             return false;
         }

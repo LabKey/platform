@@ -174,7 +174,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
         
         @Override
-        public boolean canDelete(User user, boolean forDelete)
+        public boolean canDelete(User user, boolean forDelete, List<String> message)
         {
             return false;
         }
@@ -217,7 +217,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public boolean canDelete(User user, boolean forDelete)
+        public boolean canDelete(User user, boolean forDelete, List<String> message)
         {
             return false;
         }
@@ -319,7 +319,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
 
         @Override
-        public boolean canDelete(User user, boolean forDelete)
+        public boolean canDelete(User user, boolean forDelete, List<String> message)
         {
             return false;   // NYI
         }
@@ -610,7 +610,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         // so pretend we deleted it.
         public boolean delete(User user) throws IOException
         {
-            if (user != null && !canDelete(user, true))
+            if (user != null && !canDelete(user, true, null))
                 return false;
             copyFrom(user, FileStream.EMPTY);
             return true;
