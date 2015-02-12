@@ -212,7 +212,7 @@ public abstract class BaseWikiView extends JspView<Object>
 
             if (wiki.getContainerId().equals(getViewContext().getContainer().getId()))
             {
-                if (useInlineEditor && wiki.getContainerId().equals(getViewContext().getContainer().getId()))
+                if (useInlineEditor)
                 {
                     // Indlude wiki.js as a client dependency only for inline editing
                     addClientDependency(ClientDependency.fromPath("wiki/internal/Wiki.js"));
