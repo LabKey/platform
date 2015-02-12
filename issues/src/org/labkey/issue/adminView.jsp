@@ -202,7 +202,7 @@
                             </td>
                             <td>Specific Group
                                 <select name="assignedToGroup" onchange="updateAssignedToUser()"<%=disabled(null == bean.assignedToGroup)%> ><%
-                                    for (Group group : SecurityManager.getGroups(c.getProject(), true))
+                                    for (Group group : org.labkey.api.security.SecurityManager.getGroups(c.getProject(), true))
                                     {
                                         // 19532 partial. Only show Site: Users option to site admins
                                         if (!group.isGuests() && (!group.isUsers() || getUser().isSiteAdmin()))

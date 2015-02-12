@@ -671,7 +671,7 @@ String normalizeHref(Container c, Path contextPath, String href)
                     name    : 'scope',
                     id      : 'cb_<%=SearchScope.Folder.name()%>'
                 },{
-                    boxLabel: 'Current Folder & SubFolders',
+                    boxLabel: 'Current Folder & Subfolders',
                     name    : 'scope',
                     id      : 'cb_<%=SearchScope.FolderAndSubfolders.name()%>'
                 }]
