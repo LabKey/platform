@@ -737,7 +737,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         catch (Exception s)
         {
             if (SqlDialect.isObjectNotFoundException(s)) // UNDEFINED TABLE
-                return 0;
+            {
+                // CONSIDER: Can't swallow exception, because connection might be in bad state
+            }
             throw s;
         }
         return count;

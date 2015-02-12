@@ -657,59 +657,61 @@ public abstract class VisitManager
             return 0;
         }
 
-        for (int retry = 1 ; retry >= 0 ; retry--)
+        try
         {
-            try
+            DbSchema schema = StudySchema.getInstance().getSchema();
+            TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
+            TableInfo tableSpecimen = getSpecimenTable(study);
+
+            SQLFragment ptids = new SQLFragment();
+            SQLFragment studyDataPtids = studyDataPtids(study.getDatasets());
+            if (null != studyDataPtids)
             {
-                DbSchema schema = StudySchema.getInstance().getSchema();
-                TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-                TableInfo tableSpecimen = getSpecimenTable(study);
-
-                SQLFragment ptids = new SQLFragment();
-                SQLFragment studyDataPtids = studyDataPtids(study.getDatasets());
-                if (null != studyDataPtids)
-                {
-                    ptids.append(studyDataPtids);
-                    ptids.append(" UNION\n");
-                }
-                ptids.append("SELECT DISTINCT ptid AS participantid FROM ");
-                ptids.append(tableSpecimen, "_specimens_");
-
-                SQLFragment ptidsP = new SQLFragment();
-                ptidsP.append("SELECT participantid FROM ").append(tableParticipant.getSelectName()).append(" WHERE container=?");
-                ptidsP.add(study.getContainer().getId());
-                // Databases limit the size of IN clauses, so check that we won't blow the cap
-                if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
-                {
-                    // We have an explicit list of potentially deleted participants, so filter to only look at them
-                    ptidsP.append(" AND participantid ");
-                    tableParticipant.getSqlDialect().appendInClauseSql(ptidsP, potentiallyDeletedParticipants);
-                }
-
-                SQLFragment del = new SQLFragment();
-                del.append("DELETE FROM ").append(tableParticipant.getSelectName());
-                del.append("\nWHERE container=? ");
-                del.add(study.getContainer().getId());
-                del.append(" AND participantid IN\n");
-                del.append("(\n");
-                del.append("    ").append(ptidsP).append("\n");
-                del.append("    EXCEPT\n");
-                del.append("    (SELECT ParticipantId FROM (").append(ptids).append(") _existing_)\n");
-                del.append(")");
-
-                SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
-                executor.execute(del);
+                ptids.append(studyDataPtids);
+                ptids.append(" UNION\n");
             }
-            catch (Exception x)
+            ptids.append("SELECT DISTINCT ptid AS participantid FROM ");
+            ptids.append(tableSpecimen, "_specimens_");
+
+            SQLFragment ptidsP = new SQLFragment();
+            ptidsP.append("SELECT participantid FROM ").append(tableParticipant.getSelectName()).append(" WHERE container=?");
+            ptidsP.add(study.getContainer().getId());
+            // Databases limit the size of IN clauses, so check that we won't blow the cap
+            if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
             {
-                if (retry != 0 && (SqlDialect.isObjectNotFoundException(x)))
-                {
-                    StudyManager.getInstance().clearCaches(study.getContainer(), false);
-                    continue; // retry
-                }
-                throw x;
+                // We have an explicit list of potentially deleted participants, so filter to only look at them
+                ptidsP.append(" AND participantid ");
+                tableParticipant.getSqlDialect().appendInClauseSql(ptidsP, potentiallyDeletedParticipants);
             }
+
+            SQLFragment del = new SQLFragment();
+            del.append("DELETE FROM ").append(tableParticipant.getSelectName());
+            del.append("\nWHERE container=? ");
+            del.add(study.getContainer().getId());
+            del.append(" AND participantid IN\n");
+            del.append("(\n");
+            del.append("    ").append(ptidsP).append("\n");
+            del.append("    EXCEPT\n");
+            del.append("    (SELECT ParticipantId FROM (").append(ptids).append(") _existing_)\n");
+            del.append(")");
+
+            SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
+            executor.execute(del);
         }
+        catch (Exception x)
+        {
+            if (SqlDialect.isObjectNotFoundException(x))
+            {
+                StudyManager.getInstance().clearCaches(study.getContainer(), false);
+                // This is an unfortunate optimistic concurrency problem, but we don't really need to stop
+                // everything in its tracks.  However, the connection might be horked now.  Urg Postgres...
+                // CONSIDER 1: we could validate the state of the connection and continue if it's OK...
+                // CONSIDER 2: move performParticipantPurge() outside the original transaction and execute later (or asynchronously)
+                // CONSIDER 3: locking of schema changes so readers don't have tables deleted out from under them
+            }
+            throw x;
+        }
+
         return 0;
     }
 
