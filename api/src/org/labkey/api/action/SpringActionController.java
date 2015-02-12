@@ -457,7 +457,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (UserManager.hasNoUsers())
         {
             // Let the "initial user" view & post, stylesheet & javascript actions, etc. through... otherwise redirect to initial user action
-            if (action.getClass().isAnnotationPresent(AllowedBeforeInitialUserIsSet.class))
+            if (null != action && action.getClass().isAnnotationPresent(AllowedBeforeInitialUserIsSet.class))
                 return null;
             else
                 return PageFlowUtil.urlProvider(LoginUrls.class).getInitialUserURL();

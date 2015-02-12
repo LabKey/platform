@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -175,7 +176,7 @@ public interface WebdavResource extends Resource
      * @param forDelete  true if user wants to delete, false if checking capabilities (affects logging)
      * @return true if the user has permission and server has capability
      */
-    boolean canDelete(User user, boolean forDelete);
+    boolean canDelete(User user, boolean forDelete, /* OUT */ List<String> message);
     /**
      * @param user authenticated user
      * @param forRename  true if user wants to rename, false if checking capabilities (affects logging)

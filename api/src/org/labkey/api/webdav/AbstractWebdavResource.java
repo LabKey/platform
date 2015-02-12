@@ -51,6 +51,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -328,7 +329,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return canCreate(user, forCreate);
     }
 
-    public boolean canDelete(User user, boolean forDelete)
+    public boolean canDelete(User user, boolean forDelete, /* OUT */ @Nullable List<String> message)
     {
         if (user.isGuest() || !hasAccess(user))
             return false;
@@ -339,7 +340,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     public boolean canRename(User user, boolean forRename)
     {
-        return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename);
+        return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename, null);
     }
 
 
@@ -351,7 +352,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     public boolean delete(User user) throws IOException
     {
-        assert null == user || canDelete(user, true);
+        assert null == user || canDelete(user, true, null);
         return false;
     }
     

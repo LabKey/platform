@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentService;
@@ -553,11 +554,11 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
-    public boolean canDelete(User user, boolean forDelete)
+    public boolean canDelete(User user, boolean forDelete, @Nullable List<String> message)
     {
         try
         {
-            if (!super.canDelete(user, forDelete) || !hasFileSystem())
+            if (!super.canDelete(user, forDelete, message) || !hasFileSystem())
                 return false;
             File f = getFile();
             if (null == f)
@@ -566,11 +567,21 @@ public class FileSystemResource extends AbstractWebdavResource
             {
                 SecurityLogger.log("File.canWrite()==false",user,null,false);
                 if (forDelete)
+                {
+                    if (null != message)
+                        message.add("File is not writable on server");
                     _log.warn(user.getEmail() + " attempted to delete file that is not writable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                }
                 return false;
             }
             // can't delete if already processed
-            return getActions(user).isEmpty();
+            if (!getActions(user).isEmpty())
+            {
+                if (null != message)
+                    message.add("File has been imported by an assay and may not be deleted.");
+                return false;
+            }
+            return true;
         }
         finally
         {
@@ -598,7 +609,7 @@ public class FileSystemResource extends AbstractWebdavResource
     public boolean delete(User user)
     {
         File file = getFile();
-        if (file == null || (null != user && !canDelete(user, true)))
+        if (file == null || (null != user && !canDelete(user, true, null)))
             return false;
 
         try {

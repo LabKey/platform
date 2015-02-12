@@ -240,7 +240,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
 
         @Override
-        public boolean canDelete(User user, boolean forDelete)
+        public boolean canDelete(User user, boolean forDelete, List<String> message)
         {
             return false;
         }
