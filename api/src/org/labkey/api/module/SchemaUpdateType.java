@@ -15,9 +15,16 @@
  */
 package org.labkey.api.module;
 
+import com.google.common.collect.Lists;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SqlScriptRunner;
+import org.labkey.api.data.SqlScriptRunner.SqlScript;
+import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
+import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
+
+import java.util.Collection;
+import java.util.LinkedList;
 
 /**
 * User: adam
@@ -30,9 +37,17 @@ enum SchemaUpdateType
     {
         @Nullable
         @Override
-        SqlScriptRunner.SqlScript getScript(SqlScriptRunner.SqlScriptProvider provider, DbSchema schema) throws SqlScriptRunner.SqlScriptException
+        SqlScript getScript(SqlScriptProvider provider, DbSchema schema) throws SqlScriptException
         {
             return provider.getDropScript(schema);
+        }
+
+        @NotNull
+        @Override
+        Collection<DbSchema> orderSchemas(Collection<DbSchema> schemas)
+        {
+            // Execute the drop scripts in reverse order, e.g., test-drop.sql before core-drop.sql
+            return Lists.reverse(new LinkedList<>(schemas));
         }
     },
 
@@ -40,11 +55,20 @@ enum SchemaUpdateType
     {
         @Nullable
         @Override
-        SqlScriptRunner.SqlScript getScript(SqlScriptRunner.SqlScriptProvider provider, DbSchema schema) throws SqlScriptRunner.SqlScriptException
+        SqlScript getScript(SqlScriptProvider provider, DbSchema schema) throws SqlScriptException
         {
+            // Execute the drop scripts in order, e.g., core-drop.sql before test-drop.sql
             return provider.getCreateScript(schema);
+        }
+
+        @NotNull
+        @Override
+        Collection<DbSchema> orderSchemas(Collection<DbSchema> schemas)
+        {
+            return schemas;
         }
     };
 
-    abstract @Nullable SqlScriptRunner.SqlScript getScript(SqlScriptRunner.SqlScriptProvider provider, DbSchema schema) throws SqlScriptRunner.SqlScriptException;
+    abstract @NotNull Collection<DbSchema> orderSchemas(Collection<DbSchema> schemas);
+    abstract @Nullable SqlScript getScript(SqlScriptProvider provider, DbSchema schema) throws SqlScriptException;
 }

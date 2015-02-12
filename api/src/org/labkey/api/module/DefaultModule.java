@@ -337,7 +337,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public void beforeUpdate(ModuleContext moduleContext)
     {
         if (!moduleContext.isNewInstall())
-            runScripts(SchemaUpdateType.Before);
+            ModuleLoader.getInstance().runScripts(this, SchemaUpdateType.Before);
     }
 
     /**
@@ -368,30 +368,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public void afterUpdate(ModuleContext moduleContext)
     {
     }
-
-    private void runScripts(SchemaUpdateType type)
-    {
-        try
-        {
-            if (hasScripts())
-            {
-                SqlScriptProvider provider = new FileSqlScriptProvider(this);
-
-                for (DbSchema schema : provider.getSchemas())
-                {
-                    SqlScript script = type.getScript(provider, schema);
-
-                    if (null != script)
-                        SqlScriptRunner.runScripts(this, null, Arrays.asList(script));
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException("Error running scripts in module " + getName(), e);
-        }
-    }
-
 
     // TODO: Move getWebPartFactories() and _webPartFactories into Portal... shouldn't be the module's responsibility
     // This should also allow moving SimpleWebPartFactoryCache and dependencies into Internal

@@ -44,6 +44,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
+import org.labkey.api.data.SqlScriptRunner.SqlScript;
+import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -1012,7 +1014,7 @@ public class ModuleLoader implements Filter
                 // from display name, causing labkey-*-*.sql scripts to be found.
                 DbSchema labkeySchema = scope.getLabKeySchema();
                 SqlScriptManager manager = SqlScriptManager.get(provider, labkeySchema);
-                List<SqlScriptRunner.SqlScript> scripts = manager.getRecommendedScripts(to);
+                List<SqlScript> scripts = manager.getRecommendedScripts(to);
 
                 if (!scripts.isEmpty())
                 {
@@ -1022,7 +1024,7 @@ public class ModuleLoader implements Filter
 
                 manager.updateSchemaVersion(to);
             }
-            catch (SqlScriptRunner.SqlScriptException | SQLException e)
+            catch (SqlScriptException | SQLException e)
             {
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
@@ -1095,7 +1097,7 @@ public class ModuleLoader implements Filter
         _deferUsageReport = defer;
     }
 
-    private void runDropScripts() throws SqlScriptRunner.SqlScriptException, SQLException
+    private void runDropScripts() throws SqlScriptException, SQLException
     {
         synchronized (UPGRADE_LOCK)
         {
@@ -1107,7 +1109,7 @@ public class ModuleLoader implements Filter
         }
     }
 
-    private void runCreateScripts() throws SqlScriptRunner.SqlScriptException, SQLException
+    private void runCreateScripts() throws SqlScriptException, SQLException
     {
         synchronized (UPGRADE_LOCK)
         {
@@ -1116,21 +1118,28 @@ public class ModuleLoader implements Filter
         }
     }
 
-    private void runScripts(Module module, SchemaUpdateType type) throws SqlScriptRunner.SqlScriptException, SQLException
+    public void runScripts(Module module, SchemaUpdateType type)
     {
         FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
 
-        for (DbSchema schema : provider.getSchemas())
+        for (DbSchema schema : type.orderSchemas(provider.getSchemas()))
         {
-            SqlScriptRunner.SqlScript script = type.getScript(provider, schema);
+            try
+            {
+                SqlScript script = type.getScript(provider, schema);
 
-            if (null != script)
-                SqlScriptRunner.runScripts(module, null, Arrays.asList(script));
+                if (null != script)
+                    SqlScriptRunner.runScripts(module, null, Arrays.asList(script));
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Error running scripts in module " + module.getName(), e);
+            }
         }
     }
 
     // Runs the drop and create scripts in every module
-    public void recreateViews() throws SqlScriptRunner.SqlScriptException, SQLException
+    public void recreateViews() throws SqlScriptException, SQLException
     {
         synchronized (UPGRADE_LOCK)
         {
@@ -1243,7 +1252,7 @@ public class ModuleLoader implements Filter
             try
             {
                 ModuleContext ctx = getModuleContext(m);
-                ctx.setModuleState(ModuleLoader.ModuleState.Starting);
+                ctx.setModuleState(ModuleState.Starting);
                 setStartingUpMessage("Starting module '" + m.getName() + "'");
                 m.startup(ctx);
             }
@@ -1275,7 +1284,7 @@ public class ModuleLoader implements Filter
             {
                 ModuleContext ctx = getModuleContext(m);
                 m.runDeferredUpgradeTasks(ctx);
-                ctx.setModuleState(ModuleLoader.ModuleState.Started);
+                ctx.setModuleState(ModuleState.Started);
             }
             catch (Throwable x)
             {
