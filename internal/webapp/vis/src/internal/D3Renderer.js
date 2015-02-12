@@ -1288,14 +1288,24 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = geom.yScale.scale(value - error);
+            // if we have a log scale, y will be null for negative values so don't attempt to plot
+            if (y == null && geom.yScale.trans == "log") {
+                return null;
+            }
             return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
         };
         middleFn = function(d) {
-            var x, value, error;
+            var x, y1, y2, value, error;
             x = geom.getX(d);
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
-            return isNaN(x) || isNaN(value) || isNaN(error) ? null : LABKEY.vis.makeLine(x, geom.yScale.scale(value + error), x, geom.yScale.scale(value - error));
+            y1 = geom.yScale.scale(value + error);
+            y2 = geom.yScale.scale(value - error);
+            // if we have a log scale, y2 will be null for negative values so set to scale min
+            if (y2 == null && geom.yScale.trans == "log") {
+                y2 = geom.yScale.range[0];
+            }
+            return isNaN(x) || isNaN(value) || isNaN(error) ? null : LABKEY.vis.makeLine(x, y1, x, y2);
         };
 
         data.filter(function(d) {

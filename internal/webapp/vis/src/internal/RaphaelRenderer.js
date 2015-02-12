@@ -483,6 +483,10 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             y = geom.yAes.getValue(data[i]);
             error = geom.errorAes.getValue(data[i]);
             yBottom = geom.yScale.scale(y - error);
+            // if we have a log scale, yBottom will be null for negative values so set to scale min
+            if (yBottom == null && geom.yScale.trans == "log") {
+                yBottom = geom.yScale.range[0];
+            }
             yTop = geom.yScale.scale(y + error);
             color = geom.colorAes && geom.colorScale ? geom.colorScale.scale(geom.colorAes.getValue(data[i]) + geom.layerName) : geom.color;
             altColor = geom.altColor ? geom.altColor : color;
