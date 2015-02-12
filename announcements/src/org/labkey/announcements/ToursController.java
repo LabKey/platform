@@ -15,16 +15,27 @@
  */
 package org.labkey.announcements;
 
+import org.json.JSONObject;
+import org.labkey.announcements.model.TourManager;
+import org.labkey.announcements.model.TourModel;
 import org.labkey.announcements.query.AnnouncementSchema;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -32,7 +43,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public class ToursController extends SpringActionController
 {
-    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ToursController.class, GetTourAction.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ToursController.class);
 
     public ToursController() throws Exception
     {
@@ -53,7 +64,6 @@ public class ToursController extends SpringActionController
             QuerySettings settings = queryForm.getQuerySettings();
             settings.setAllowChooseView(false);
             settings.setAllowChooseQuery(false);
-
             QueryView view = QueryView.create(queryForm, errors);
             view.setShowBorders(true);
             view.setShowSurroundingBorder(true);
@@ -66,6 +76,119 @@ public class ToursController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+    public static ActionURL getEditTourURL(Container c)
+    {
+        return new ActionURL(EditTourAction.class, c);
+    }
+
+    @ActionNames("edit, editTour")
+    @RequiresPermissionClass(ReadPermission.class) //will check below
+    public class EditTourAction extends SimpleViewAction<EditTourForm>
+    {
+        @Override
+        public ModelAndView getView(EditTourForm editTourForm, BindException errors) throws Exception
+        {
+            TourModel model = null;
+            if(null != editTourForm.getRowid())
+                model = TourManager.getTour(getContainer(), Integer.parseInt(editTourForm.getRowid()));
+
+            JspView view = new JspView<>("/org/labkey/announcements/view/editTour.jsp", model);
+            return view;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    @ActionNames("tours, saveTour")
+    @RequiresPermissionClass(ReadPermission.class) //will check below
+    public class SaveTourAction extends MutatingApiAction<SimpleApiJsonForm>
+    {
+        @Override
+        public void validateForm(SimpleApiJsonForm form, Errors errors)
+        {
+            //super.validateForm(simpleApiJsonForm, errors);
+            TourModel model;
+            JSONObject json = form.getJsonObject();
+
+            if (json.getString("rowId").equals(""))
+                model = new TourModel();
+            else
+                model = TourManager.getTour(getContainer(), Integer.parseInt(json.getString("rowId")));
+
+            model.setTitle(json.getString("title"));
+            model.setDescription(json.getString("description"));
+            model.setMode(Integer.parseInt(json.getString("mode")));
+            model.setJson(json.getString("tour"));
+
+            try
+            {
+                TourModel ret;
+                if (json.getString("rowId").equals(""))
+                {
+                    ret = TourManager.insertTour(getContainer(), getUser(), model);
+                }
+                else
+                {
+                    ret = TourManager.updateTour(getUser(), model);
+                }
+                json.put("rowId", ret.getRowId());
+                form.bindProperties(json);
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, "There was an error while saving. Your changes may not have been saved.");
+                errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+            }
+
+        }
+
+        @Override
+        public Object execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        {
+            JSONObject json = form.getJsonObject();
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("rowId", json.getString("rowId"));
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetTourAction extends MutatingApiAction<SimpleApiJsonForm>
+    {
+
+        @Override
+        public Object execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        {
+            JSONObject json = form.getJsonObject();
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            response.put("Mode", TourManager.getTourMode(getContainer(), json.getInt("id")));
+            response.put("Json", TourManager.getTourJson(getContainer(), json.getInt("id")));
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    public static class EditTourForm
+    {
+        private String _rowid;
+
+        public String getRowid()
+        {
+            return _rowid;
+        }
+
+        public void setRowid(String rowid)
+        {
+            _rowid = rowid;
         }
     }
 }

@@ -18,6 +18,7 @@ package org.labkey.announcements.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.Entity;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -114,6 +115,22 @@ public class TourManager
         return tour.getMode().toString();
     }
 
+    public static String getTourEntity(@Nullable Container c, int rowId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
+        if (c != null)
+        {
+            filter.addCondition(FieldKey.fromParts("Container"), c);
+        }
+        Selector selector = new TableSelector(_comm.getTableInfoTours(), filter, null);
+        TourModel tour = selector.getObject(TourModel.class);
+
+        if (null == tour)
+            return null;
+
+        return tour.getEntityId();
+    }
+
 
     public static TourModel insertTour(Container c, User user, TourModel insert)
     {
@@ -126,6 +143,14 @@ public class TourManager
     public static TourModel updateTour(User user, TourModel update)
     {
         update.beforeUpdate(user);
+        TourModel result = Table.update(user, _comm.getTableInfoTours(), update, update.getRowId());
+
+        return result;
+    }
+
+    public static TourModel updateTour(User user, TourModel update, Entity cur)
+    {
+        update.beforeUpdate(user, cur);
         TourModel result = Table.update(user, _comm.getTableInfoTours(), update, update.getRowId());
 
         return result;

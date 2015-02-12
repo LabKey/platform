@@ -18,6 +18,7 @@ package org.labkey.announcements.query;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.announcements.ToursController;
 import org.labkey.announcements.model.TourManager;
 import org.labkey.announcements.model.TourModel;
 import org.labkey.api.announcements.CommSchema;
@@ -25,6 +26,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.AbstractBeanQueryUpdateService;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
@@ -38,6 +40,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 
 
@@ -67,6 +70,13 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         setDescription("Contains one row per tour.");
         setName(AnnouncementSchema.TOURS_TABLE_NAME);
         setPublicSchemaName(AnnouncementSchema.SCHEMA_NAME);
+
+        setInsertURL(new DetailsURL(ToursController.getEditTourURL(getContainer())));
+
+        Map<String,String> params = new HashMap<>();
+        params.put("rowid", "rowid");
+        setUpdateURL(new DetailsURL(ToursController.getEditTourURL(getContainer()), params));
+        //setUpdateURL(new DetailsURL(ToursController.getEditTourURL(getContainer())));
     }
 
     @Override

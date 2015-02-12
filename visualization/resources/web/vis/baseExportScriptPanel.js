@@ -9,6 +9,8 @@ Ext4.define('LABKEY.vis.BaseExportScriptPanel', {
 
     SCRIPT_TEMPLATE: null,
 
+    codeMirrorMode: 'text/html',
+
     constructor: function(config){
         config.padding = '10px 0 0 0';
         config.border = false;
@@ -32,10 +34,10 @@ Ext4.define('LABKEY.vis.BaseExportScriptPanel', {
             var size = cmp.getSize();
             if (el) {
                 this.codeMirror = CodeMirror.fromTextArea(el.dom, {
-                    mode            : 'text/html',
-                    lineNumbers     : true,
-                    lineWrapping    : true,
-                    indentUnit      : 3
+                    mode: this.codeMirrorMode,
+                    lineNumbers: true,
+                    lineWrapping: true,
+                    indentUnit: 3
                 });
 
                 this.codeMirror.setSize(null, size.height + 'px');

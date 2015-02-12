@@ -1,0 +1,53 @@
+
+
+/*
+ * Edit Tour Styles
+ */
+
+.uxtour .leftcolumn {
+    position:       absolute;
+    width:          550px;
+    top:            0px;
+    left:           0px;
+}
+
+.uxtour .rightcolumn {
+    position:       absolute;
+    top:            0px;
+    left:           550px;
+}
+
+.uxtour .tablewrapper {
+    position:       relative;
+    margin-left:    10px;
+    margin-top:     10px;
+}
+
+.uxtour .col-width {
+    width:          100%;
+}
+
+.uxtour .row {
+    padding-bottom: 10px;
+}
+
+.uxtour .label {
+    width:          150px;
+    margin-right:   5px;
+    margin-bottom:  10px;
+}
+
+.uxtour .input {
+    width:          473px;
+    margin-right:   5px;
+}
+
+.uxtour .select {
+    width:          473px;
+    margin-right:   5px;
+}
+
+.uxtour .button-row {
+    padding-top:    20px;
+}
+

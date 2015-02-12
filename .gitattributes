@@ -113,7 +113,6 @@ announcements/src/org/labkey/announcements/DailyDigestPage.java -text
 announcements/src/org/labkey/announcements/EmailNotificationPage.java -text
 announcements/src/org/labkey/announcements/EmailPreferencesPage.java -text
 announcements/src/org/labkey/announcements/EmailServiceImpl.java -text
-announcements/src/org/labkey/announcements/GetTourAction.java -text
 announcements/src/org/labkey/announcements/MessageAuditProvider.java -text
 announcements/src/org/labkey/announcements/MessageAuditViewFactory.java -text
 announcements/src/org/labkey/announcements/NotificationSettingsImporterFactory.java -text
@@ -172,6 +171,9 @@ announcements/src/org/labkey/announcements/query/ToursTable.java -text
 announcements/src/org/labkey/announcements/respond.jsp -text
 announcements/src/org/labkey/announcements/rss.jsp -text
 announcements/src/org/labkey/announcements/update.jsp -text
+announcements/src/org/labkey/announcements/view/editTour.jsp -text
+announcements/webapp/announcements/EditTour.css -text
+announcements/webapp/announcements/EditTour.js -text
 audit/module.properties -text
 audit/resources/schemas/dbscripts/postgresql/audit-0.00-12.30.sql -text
 audit/resources/schemas/dbscripts/postgresql/audit-13.30-14.10.sql -text
