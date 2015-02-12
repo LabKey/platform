@@ -269,8 +269,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     {
                         // (18035) presumably this is an optimistic concurrency problem and the table is gone
                         // postgres returns 42P01 in this case... SQL Server?
-                        if (!SqlDialect.isObjectNotFoundException(x))
-                            throw x;
+                        if (SqlDialect.isObjectNotFoundException(x))
+                        {
+                            // CONSIDER: unfortunately we can't swallow this exception, because Postgres leaves
+                            // the connection in an unusable state
+                        }
+                        throw x;
                     }
                 }
             }
