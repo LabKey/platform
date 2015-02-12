@@ -744,7 +744,7 @@ public class IssuesController extends SpringActionController
             ActionURL detailsUrl;
 
             // check for no op
-            if (issue.equals(prevIssue))
+            if (issue.equals(prevIssue) && UpdateAction.class.equals(form.getAction()))
                 return true;
 
             // clear resolution, resolvedBy, and duplicate fields
