@@ -12,8 +12,6 @@
     {
         var _hopscotchSessionProperty = 'hopscotch.tour.state';
         var _localStorageProperty = "LABKEY.tours.state";
-        var _hopscotchSrc = "/hopscotch/js/hopscotch.js";
-        var _hopscotchCss = "/hopscotch/css/hopscotch.css";
         var _tours = {};
         var _continue = {};
         var _queue = [];
@@ -59,7 +57,7 @@
                 {
                     resetRegistration();
                 });
-                if(typeof step == "string")
+                if (LABKEY.Utils.isString(step))
                     step = parseInt(step);
                 hopscotch.startTour(config, step || 0);
                 markSeen(config.id);
@@ -83,7 +81,7 @@
                         }
                         catch (x)
                         {
-                            if (x && x instanceof DOMException)
+                            if (x instanceof DOMException)
                             {
                                 console.error('Tour provided invalid selector:', "'" + value + "'");
                             }
@@ -143,7 +141,7 @@
                 config.step = tourstate.substring(endIdx + 1);
             }
             return config;
-        }
+        };
 
         var _init = function ()
         {
@@ -153,7 +151,7 @@
             {
                 $.each(LABKEY.tours, function (tourId, tour)
                 {
-                    if(!jQuery.isEmptyObject(config) && config.id == tourId)
+                    if (!$.isEmptyObject(config) && config.id == tourId)
                         autoShow(tourId, config.step);
                     else
                         autoShow(tourId, 0);
@@ -163,8 +161,10 @@
 
         var _initHopscotch = function (fn, scope)
         {
-            LABKEY.requiresScript(_hopscotchSrc, true, fn, scope);
-            LABKEY.requiresCss(_hopscotchCss);
+            var script = "/hopscotch/js/hopscotch" + (LABKEY.devMode ? "" : ".min") + ".js";
+            var style = "/hopscotch/css/hopscotch" + (LABKEY.devMode ? "" : ".min") + ".css";
+            LABKEY.requiresScript(script, true, fn, scope);
+            LABKEY.requiresCss(style);
         };
 
         /**
@@ -172,7 +172,7 @@
          */
         var _kickoffTours = function ()
         {
-            if(!jQuery.isEmptyObject(_continue))
+            if (!$.isEmptyObject(_continue))
                 resume(_continue.id, _continue.step);
 
             _queue = [];
@@ -184,7 +184,7 @@
                     _queue.push(key);
             });
 
-            if (jQuery.isEmptyObject(_continue))
+            if ($.isEmptyObject(_continue))
             {
                 _autoRun();
             }
@@ -232,7 +232,7 @@
         {
             var context = window.location.pathname.split("/")[1];
 
-            if(href.charAt(0) != "/")
+            if (href.charAt(0) != "/")
                 href = "/" + href;
 
             // NOTE state is not updated yet
@@ -253,7 +253,7 @@
         var continueTour = function ()
         {
             var config = _getContinue();
-            if(!jQuery.isEmptyObject(config))
+            if (!$.isEmptyObject(config))
                 return resume(id, parseInt(step));
         };
 
@@ -283,9 +283,9 @@
          */
         var register = function (config, mode, step)
         {
-            if( config.steps.length > 0)
+            if ( config.steps.length > 0)
             {
-                if(step > 0)
+                if (step > 0)
                 {
                     _continue.id = config.id;
                     _continue.step = step;

@@ -8037,9 +8037,11 @@ internal/webapp/gxt/images/gxt/tree/vnode.gif -text
 internal/webapp/gxt/images/gxt/tree/vnode_transparent.gif -text
 internal/webapp/hopscotch/LICENSE -text
 internal/webapp/hopscotch/css/hopscotch.css -text
+internal/webapp/hopscotch/css/hopscotch.min.css -text
 internal/webapp/hopscotch/img/sprite-green.png -text
 internal/webapp/hopscotch/img/sprite-orange.png -text
 internal/webapp/hopscotch/js/hopscotch.js -text
+internal/webapp/hopscotch/js/hopscotch.min.js -text
 internal/webapp/index.html -text
 internal/webapp/internal-FileDrop.lib.xml -text
 internal/webapp/internal.lib.xml -text
