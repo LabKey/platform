@@ -80,7 +80,7 @@ public class ApiJsonWriter extends ApiResponseWriter
     }
 
     @Override
-    public void complete() throws IOException
+    public void close() throws IOException
     {
         jg.flush();
     }

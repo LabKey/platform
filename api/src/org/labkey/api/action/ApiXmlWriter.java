@@ -150,9 +150,21 @@ public class ApiXmlWriter extends ApiResponseWriter
 
 
     @Override
-    public void complete() throws IOException
+    public void close() throws IOException
     {
-        closeDocument();
+        if (!_closed)
+        {
+            try
+            {
+                _xmlWriter.writeEndElement();
+                _xmlWriter.writeEndDocument();
+                _closed = true;
+            }
+            catch (XMLStreamException e)
+            {
+                throw new IOException(e);
+            }
+        }
     }
 
     protected void writeJsonObjInternal(JSONObject obj) throws IOException, XMLStreamException
@@ -178,25 +190,8 @@ public class ApiXmlWriter extends ApiResponseWriter
     {
         verifyOpen();
         assert _streamStack.size() == 1 : "called endResponse without a corresponding startResponse()!";
-        closeDocument();
+        close();
         _streamStack.pop();
-    }
-
-    private void closeDocument() throws IOException
-    {
-        if (!_closed)
-        {
-            try
-            {
-                _xmlWriter.writeEndElement();
-                _xmlWriter.writeEndDocument();
-                _closed = true;
-            }
-            catch (XMLStreamException e)
-            {
-                throw new IOException(e);
-            }
-        }
     }
 
     public void startMap(String name) throws IOException
