@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015 LabKey Corporation
+ * Copyright (c) 2008-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,15 +78,15 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         response.setContentType(isMultipartRequest ? "text/html" : CONTENT_TYPE_JSON);
     }
 
-    public ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response, String contentTypeOverride) throws IOException
+    public  ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response, String contentTypeOverride) throws IOException
     {
         this(request, response);
         if (!isMultipartRequest && null != contentTypeOverride)
             response.setContentType(contentTypeOverride);
     }
 
-    @Override
-    public void writeAndClose(ValidationException e) throws IOException
+
+    public void write(ValidationException e) throws IOException
     {
         try
         {
@@ -94,7 +94,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         }
         finally
         {
-            complete();
+            close();
         }
     }
 
@@ -157,7 +157,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         }
         finally
         {
-            complete();
+            close();
         }
     }
 
@@ -173,11 +173,11 @@ public class ExtFormResponseWriter extends ApiJsonWriter
 
         try
         {
-            write(e, status);
+            writeAndClose(e, status);
         }
         finally
         {
-            complete();
+            close();
         }
     }
 

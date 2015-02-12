@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015 LabKey Corporation
+ * Copyright (c) 2008-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import java.util.Stack;
  * Date: Feb 8, 2008
  * Time: 1:43:38 PM
  */
-public abstract class ApiResponseWriter
+public abstract class ApiResponseWriter implements AutoCloseable
 {
      /*
      * (MAB) This code defaults to using setting the response to SC_BAD_REQUEST
@@ -160,7 +160,7 @@ public abstract class ApiResponseWriter
         }
         finally
         {
-            complete();
+            close();
         }
     }
 
@@ -198,9 +198,10 @@ public abstract class ApiResponseWriter
 
     protected abstract void writeObject(Object object) throws IOException;
 
-    protected abstract void complete() throws IOException;
+    /** Completes the response, writing out closing elements/tags/etc */
+    public abstract void close() throws IOException;
 
-    public void write(Throwable e, int status) throws IOException
+    public void writeAndClose(Throwable e, int status) throws IOException
     {
         if (null == getResponse())
         {
@@ -224,9 +225,10 @@ public abstract class ApiResponseWriter
         }
         finally
         {
-            complete();
+            close();
         }
     }
+
 
     public void writeAndClose(Throwable e) throws IOException
     {
@@ -234,12 +236,12 @@ public abstract class ApiResponseWriter
 
         if (e instanceof BatchValidationException)
         {
-            writeAndClose((BatchValidationException) e);
+            write((BatchValidationException) e);
             return;
         }
         if (e instanceof ValidationException)
         {
-            writeAndClose((ValidationException) e);
+            write((ValidationException) e);
             return;
         }
         if (e instanceof NotFoundException)
@@ -249,16 +251,16 @@ public abstract class ApiResponseWriter
 
         try
         {
-            write(e, status);
+            writeAndClose(e, status);
         }
         finally
         {
-            complete();
+            close();
         }
     }
 
 
-    public void writeAndClose(BatchValidationException e) throws IOException
+    public void write(BatchValidationException e) throws IOException
     {
         if (null != getResponse())
             getResponse().setStatus(errorResponseStatus);
@@ -269,7 +271,7 @@ public abstract class ApiResponseWriter
         }
         finally
         {
-            complete();
+            close();
         }
     }
 
@@ -294,7 +296,7 @@ public abstract class ApiResponseWriter
         return obj;
     }
 
-    public void writeAndClose(ValidationException e) throws IOException
+    public void write(ValidationException e) throws IOException
     {
         if (null != getResponse())
             getResponse().setStatus(errorResponseStatus);
@@ -308,7 +310,7 @@ public abstract class ApiResponseWriter
         }
         finally
         {
-            complete();
+            close();
         }
     }
 
@@ -375,7 +377,7 @@ public abstract class ApiResponseWriter
         }
         finally
         {
-            complete();
+            close();
         }
     }
 
