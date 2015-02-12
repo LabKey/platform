@@ -24,6 +24,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.TimeChartWizard;
+import org.labkey.test.util.Crawler;
 import org.labkey.test.util.LogMethod;
 
 import java.io.File;
@@ -109,5 +110,11 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
     public List<String> getAssociatedModules()
     {
         return Arrays.asList("study");
+    }
+
+    @Override
+    protected List<Crawler.ControllerActionId> getUncrawlableActions()
+    {
+        return Arrays.asList(new Crawler.ControllerActionId("cohort", "manageCohorts")); // Page is too long with this many participants
     }
 }
