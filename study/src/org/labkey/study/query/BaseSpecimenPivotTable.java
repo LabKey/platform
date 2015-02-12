@@ -155,7 +155,18 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         public void save()
         {
             if (null != _typeNameIdMapWritable)
-                _typeNameIdMapWritable.save();
+            {
+                try
+                {
+                    _typeNameIdMapWritable.save();
+                }
+                catch (Exception e)
+                {
+                    // It's possible that two threads can attempt to save the same properties (SpecimenTest sometimes),
+                    // so ignore error; at worst we'll reconstruct these later
+                    // TODO: make a better fix that avoids the contention
+                }
+            }
         }
         public int size()
         {

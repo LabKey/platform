@@ -42,6 +42,7 @@ public class SpecimenWrapTable extends BaseStudyTable
         addWrapTypeColumn("DerivativeTypeId2", "DerivativeTypeId2");
         addWrapLocationColumn("OriginatingLocationId", "OriginatingLocationId");
         addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");
+        addWrapLocationColumn("CurrentLocation", "CurrentLocation");
 
         // wrap the rest regularly
         for (ColumnInfo columnInfo : _rootTable.getColumns())
