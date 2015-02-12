@@ -90,7 +90,7 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
     protected void setupFolder()
     {
         _containerHelper.createProject(getProjectName(), null);
-        importFolderFromZip(STUDY_FOLDER_ZIP);
+        importFolderFromZip(STUDY_FOLDER_ZIP, true, 1, false, 5 * MAX_WAIT_SECONDS * 1000);
     }
 
     @Override
