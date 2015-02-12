@@ -329,6 +329,11 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return canCreate(user, forCreate);
     }
 
+    public boolean canDelete(User user, boolean forDelete)
+    {
+        return canDelete(user,forDelete,null);
+    }
+
     public boolean canDelete(User user, boolean forDelete, /* OUT */ @Nullable List<String> message)
     {
         if (user.isGuest() || !hasAccess(user))
