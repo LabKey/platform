@@ -1999,14 +1999,14 @@ public class DataRegion extends AbstractDataRegion
         {
             out.write("You do not have permission to " +
                     (action == MODE_INSERT ? "Insert" : "Update") +
-                    " data in this container.");
+                    " data in this " + ctx.getContainer().getContainerNoun());
             return;
         }
 
         // Check if we have any value to update
         if (action == MODE_UPDATE && valueMap == null)
         {
-            out.write("Could not find row in current project or folder.");
+            out.write("Could not find data row in " + ctx.getContainer().getContainerNoun());
             return;
         }
 

@@ -108,7 +108,7 @@ public class AuthFilter implements Filter
             {
                 if (AppProps.getInstance().isDevMode())
                 {
-                    Pair<String, Integer> sslResult = HttpsUtil.testSslUrl(url, "");
+                    Pair<String, Integer> sslResult = HttpsUtil.testSslUrl(url, "This LabKey Server instance is configured to require secure connections, but it does not appear to be responding to HTTPS requests at " + url + "  Please see https://www.labkey.org/wiki/home/Documentation/page.view?name=stagingServerTips for details on how to turn off the setting without having to log into the server.");
 
                     // Non-null indicates that some problem occurred...
                     if (null != sslResult)
