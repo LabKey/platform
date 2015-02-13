@@ -3574,7 +3574,7 @@ public class AdminController extends SpringActionController
                 if (root != null && root.exists())
                     form.setRootPath(FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath());
 
-                form.setAllowReporting(true);
+                form.setAllowReporting(!AppProps.getInstance().isDevMode());
                 LookAndFeelProperties props = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
                 form.setSiteName(props.getShortName());
                 form.setNotificationEmail(props.getSystemEmailAddress());
