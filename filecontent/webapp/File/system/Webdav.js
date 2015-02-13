@@ -287,8 +287,7 @@
             Ext4.Ajax.request(
                     {
                         method: 'MKCOL',
-                        url: config.path,
-                        params : {pageId: this.pageId},
+                        url: config.path + "?pageId="+this.pageId,
                         success: function (response, options)
                         {
                             var success = false;
@@ -418,8 +417,7 @@
 
             Ext4.Ajax.request({
                 method: "MOVE",
-                url: resourcePath,
-                params : {pageId: this.pageId},
+                url: resourcePath + "?pageId=" + this.pageId,
                 failure: function (response, options)
                 {
                     File.system.Abstract.processAjaxResponse(response);
@@ -463,7 +461,7 @@
 
                         if (Ext4.isFunction(config.success))
                         {
-                            config.success.call(config.scope||this, me, config.source, config.destination);
+                            config.success.call(config.scope||this, this, config.source, config.destination);
                         }
                     }
                     else
@@ -534,7 +532,6 @@
                 Ext4.Ajax.request({
                     method: directget.method,
                     url: directget.endpoint,
-                    params : {pageId: this.pageId},
                     headers: directget.headers,
                     disableCaching: false,
                     success: function (response, options)
