@@ -366,8 +366,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     {
         try
         {
-            // Ensure that dev machines are setup with High reporting levels.  That way, if they test in production mode we'll be able to filter out those exception reports.
-            return ExceptionReportingLevel.valueOf(lookupStringValue(EXCEPTION_REPORTING_LEVEL, isDevMode() ? ExceptionReportingLevel.HIGH.toString() : ExceptionReportingLevel.MEDIUM.toString()));
+            return ExceptionReportingLevel.valueOf(lookupStringValue(EXCEPTION_REPORTING_LEVEL, isDevMode() ? ExceptionReportingLevel.NONE.toString() : ExceptionReportingLevel.MEDIUM.toString()));
         }
         catch (IllegalArgumentException e)
         {
@@ -513,7 +512,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     {
         try
         {
-            return UsageReportingLevel.valueOf(lookupStringValue(USAGE_REPORTING_LEVEL, UsageReportingLevel.MEDIUM.toString()));
+            return UsageReportingLevel.valueOf(lookupStringValue(USAGE_REPORTING_LEVEL, isDevMode() ? UsageReportingLevel.NONE.toString() : UsageReportingLevel.MEDIUM.toString()));
         }
         catch (IllegalArgumentException e)
         {
