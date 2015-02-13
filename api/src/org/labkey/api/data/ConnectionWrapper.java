@@ -85,6 +85,7 @@ public class ConnectionWrapper implements java.sql.Connection
     private static boolean _explicitLogger = _logDefault.getLevel() != null || _logDefault.getParent() != null  && _logDefault.getParent().getName().equals("org.labkey.api.data");
 
     private final @NotNull Logger _log;
+    private Throwable _suspiciousCloseStackTrace;
 
     public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, @Nullable Logger log) throws SQLException
     {
@@ -205,30 +206,35 @@ public class ConnectionWrapper implements java.sql.Connection
     public Statement createStatement()
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.createStatement());
     }
 
     public PreparedStatement prepareStatement(String sql)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.prepareStatement(sql), sql);
     }
 
     public CallableStatement prepareCall(String sql)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.prepareCall(sql), sql);
     }
 
     public String nativeSQL(String sql)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return _connection.nativeSQL(sql);
     }
 
     public void setAutoCommit(boolean autoCommit)
     throws SQLException
     {
+        checkForSuspiciousClose();
         _log.debug("setAutoCommit(" + (autoCommit?"TRUE)":"FALSE)"));
         _connection.setAutoCommit(autoCommit);
     }
@@ -236,12 +242,14 @@ public class ConnectionWrapper implements java.sql.Connection
     public boolean getAutoCommit()
     throws SQLException
     {
+        checkForSuspiciousClose();
         return _connection.getAutoCommit();
     }
 
     public void commit()
     throws SQLException
     {
+        checkForSuspiciousClose();
         _log.debug("commit()");
         _connection.commit();
     }
@@ -249,6 +257,7 @@ public class ConnectionWrapper implements java.sql.Connection
     public void rollback()
     throws SQLException
     {
+        checkForSuspiciousClose();
         _log.debug("rollback()");
         _connection.rollback();
     }
@@ -274,6 +283,7 @@ public class ConnectionWrapper implements java.sql.Connection
     public DatabaseMetaData getMetaData()
     throws SQLException
     {
+        checkForSuspiciousClose();
         final DatabaseMetaData md = _connection.getMetaData();
         return new DatabaseMetaDataWrapper(md);
     }
@@ -281,48 +291,56 @@ public class ConnectionWrapper implements java.sql.Connection
     public void setReadOnly(boolean readOnly)
     throws SQLException
     {
+        checkForSuspiciousClose();
         _connection.setReadOnly(readOnly);
     }
 
     public boolean isReadOnly()
     throws SQLException
     {
+        checkForSuspiciousClose();
         return _connection.isReadOnly();
     }
 
     public void setCatalog(String catalog)
     throws SQLException
     {
+        checkForSuspiciousClose();
         _connection.setCatalog(catalog);
     }
 
     public String getCatalog()
     throws SQLException
     {
+        checkForSuspiciousClose();
         return _connection.getCatalog();
     }
 
     public void setTransactionIsolation(int level)
     throws SQLException
     {
+        checkForSuspiciousClose();
         _connection.setTransactionIsolation(level);
     }
 
     public int getTransactionIsolation()
     throws SQLException
     {
+        checkForSuspiciousClose();
         return _connection.getTransactionIsolation();
     }
 
     public SQLWarning getWarnings()
     throws SQLException
     {
+        checkForSuspiciousClose();
         return _connection.getWarnings();
     }
 
     public void clearWarnings()
     throws SQLException
     {
+        checkForSuspiciousClose();
         _connection.clearWarnings();
     }
 
@@ -346,102 +364,119 @@ public class ConnectionWrapper implements java.sql.Connection
     public Statement createStatement(int resultSetType, int resultSetConcurrency)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.createStatement(resultSetType, resultSetConcurrency));
     }
 
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.prepareStatement(sql, resultSetType, resultSetConcurrency), sql);
     }
 
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.prepareCall(sql, resultSetType, resultSetConcurrency), sql);
     }
 
     public Map<String, Class<?>> getTypeMap()
     throws SQLException
     {
+        checkForSuspiciousClose();
         return _connection.getTypeMap();
     }
 
     public void setTypeMap(Map<String, Class<?>> map)
     throws SQLException
     {
+        checkForSuspiciousClose();
         _connection.setTypeMap(map);
     }
 
     public void setHoldability(int holdability)
     throws SQLException
     {
+        checkForSuspiciousClose();
         _connection.setHoldability(holdability);
     }
 
     public int getHoldability()
     throws SQLException
     {
+        checkForSuspiciousClose();
         return _connection.getHoldability();
     }
 
     public Savepoint setSavepoint()
     throws SQLException
     {
+        checkForSuspiciousClose();
         return _connection.setSavepoint();
     }
 
     public Savepoint setSavepoint(String name)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return _connection.setSavepoint(name);
     }
 
     public void rollback(Savepoint savepoint)
     throws SQLException
     {
+        checkForSuspiciousClose();
         _connection.rollback(savepoint);
     }
 
     public void releaseSavepoint(Savepoint savepoint)
     throws SQLException
     {
+        checkForSuspiciousClose();
         _connection.releaseSavepoint(savepoint);
     }
 
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability));
     }
 
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
     }
 
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
     }
 
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.prepareStatement(sql, autoGeneratedKeys), sql);
     }
 
     public PreparedStatement prepareStatement(String sql, int[] columnIndexes)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.prepareStatement(sql, columnIndexes), sql);
     }
 
     public PreparedStatement prepareStatement(String sql, String[] columnNames)
     throws SQLException
     {
+        checkForSuspiciousClose();
         return getStatementWrapper(this, _connection.prepareStatement(sql, columnNames), sql);
     }
 
@@ -556,6 +591,19 @@ public class ConnectionWrapper implements java.sql.Connection
     public int getNetworkTimeout() throws SQLException
     {
         throw new UnsupportedOperationException();
+    }
+
+    private void checkForSuspiciousClose() throws SQLException
+    {
+        if (_suspiciousCloseStackTrace != null && isClosed())
+        {
+            throw new SQLException("This connection has already been closed, and may have been left in a bad state. See nested exception for potentially suspect code.", _suspiciousCloseStackTrace);
+        }
+    }
+
+    public void markAsSuspiciouslyClosed()
+    {
+        _suspiciousCloseStackTrace = new Throwable("This connection may have been closed by a codepath that did not intend to leave it in this state");
     }
 
     private class DatabaseMetaDataWrapper implements DatabaseMetaData

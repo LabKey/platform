@@ -323,7 +323,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             }
 
             @Override
-            protected Connection _getConnection(Logger log) throws SQLException
+            protected ConnectionWrapper _getConnection(Logger log) throws SQLException
             {
                 return new ConnectionWrapper(null, null, null, log)
                 {

@@ -115,6 +115,7 @@ public class StorageProvisioner
             if (null == dd)
             {
                 Logger.getLogger(StorageProvisioner.class).warn("Can't find domain desciptor: " + domain.getTypeId() + " " + domain.getTypeURI());
+                transaction.commit();
                 return null;
             }
             String tableName = dd.getStorageTableName();

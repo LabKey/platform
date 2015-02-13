@@ -431,7 +431,7 @@ public class DbScope
      */
     public Transaction beginTransaction(TransactionKind transactionKind, Lock... locks)
     {
-        Connection conn = null;
+        ConnectionWrapper conn = null;
         TransactionImpl result = null;
 
         // try/finally ensures that closeConnection() works even if setAutoCommit() throws 
@@ -693,7 +693,7 @@ public class DbScope
 
     private static final int spidUnknown = -1;
 
-    protected Connection _getConnection(@Nullable Logger log) throws SQLException
+    protected ConnectionWrapper _getConnection(@Nullable Logger log) throws SQLException
     {
         Connection conn;
 
@@ -1371,7 +1371,7 @@ public class DbScope
     // transaction, and the tasks to run immediately after commit to update the shared caches with removals.
     protected class TransactionImpl implements Transaction
     {
-        private final Connection _conn;
+        private final ConnectionWrapper _conn;
         private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<>(20);
 
         // Sets so that we can coalesce identical tasks and avoid duplicating the effort
@@ -1380,11 +1380,12 @@ public class DbScope
 
         private List<List<Lock>> _locks = new ArrayList<>();
         private boolean _aborted = false;
+        private Throwable _abortedStackTrace;
         private int _closesToIgnore = 0;
         private Throwable _creation = new Throwable();
         private final TransactionKind _transactionKind;
 
-        TransactionImpl(Connection conn, TransactionKind transactionKind, Lock... extraLocks)
+        TransactionImpl(ConnectionWrapper conn, TransactionKind transactionKind, Lock... extraLocks)
         {
             _conn = conn;
             _transactionKind = transactionKind;
@@ -1463,6 +1464,7 @@ public class DbScope
                 boolean locksEmpty = decrement();
                 if (!locksEmpty)
                 {
+                    _conn.markAsSuspiciouslyClosed();
                     _aborted = true;
                 }
 
@@ -1958,6 +1960,38 @@ public class DbScope
                     Transaction t2 = getLabkeyScope().ensureTransaction();
                     t2.commit();
                     // Intentionally don't call t2.close(), make sure we blow up with an IllegalStateException
+                    t.commit();
+                }
+            }
+            finally
+            {
+                assertFalse(getLabkeyScope().isTransactionActive());
+            }
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testNestedMissingCommit()
+        {
+            try
+            {
+                try (Transaction t = getLabkeyScope().ensureTransaction())
+                {
+                    Connection c = t.getConnection();
+                    assertTrue(getLabkeyScope().isTransactionActive());
+                    try (Transaction t2 = getLabkeyScope().ensureTransaction())
+                    {
+                        // Intentionally don't call t2.commit();
+                    }
+                    try
+                    {
+                        c.prepareStatement("SELECT 1");
+                        fail("Should have gotten a SQLException");
+                    }
+                    catch (SQLException e)
+                    {
+                        assertTrue("Wrong message", e.getMessage().contains("See nested exception for potentially suspect code"));
+                        assertTrue("Wrong message", e.getCause().getMessage().contains("This connection may have been closed by a codepath that did not intend to leave it in this state"));
+                    }
                     t.commit();
                 }
             }
