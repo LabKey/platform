@@ -836,12 +836,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
      * @param {Object} urlParameters <b>NOTE: Experimental parameter; may change without warning.</b> A set of filter and sorts to apply as URL parameters when changing the view.
      */
     beforeChangeView : function(dataRegion, view, urlParameters) {
+
         delete this.offset;
-
-        // this makes interactive filters 'sticky' between view and report changes.
-        //delete this.userFilters;
-        //delete this.userSort;
-
         delete this.viewName;
         delete this.reportId;
 

@@ -30,7 +30,7 @@ if (!LABKEY.DataRegions)
     LABKEY.DataRegion2 = function(config) {
 
         if (!config || !LABKEY.Utils.isString(config.name)) {
-            console.error('"name" is required to contruct a LABKEY.DataRegion.');
+            throw '"name" is required to contruct a LABKEY.DataRegion.';
         }
 
         /**
@@ -44,6 +44,13 @@ if (!LABKEY.DataRegions)
              * All rows visible on the curreng page.
              */
             complete: false,
+
+            /**
+             * The currently applied container filter. Note, this is only if it is set on the URL, otherwise
+             * the containerFilter could come from the view configuration. Use getContainerFilter()
+             * on this object to get the right value.
+             */
+            containerFilter: undefined,
 
             /**
              * Id of the DataRegion. Same as name property.
@@ -96,7 +103,29 @@ if (!LABKEY.DataRegions)
             /**
              * Name of the custom view to which this DataRegion is bound, may be blank. Read-only.
              */
-            viewName: null
+            viewName: null,
+
+            //
+            // Asyncronous properties
+            //
+            async: false,
+            buttonBar: undefined,
+            frame: 'none',
+            metadata: undefined,
+            quickChartDisabled: false,
+            renderTo: undefined,
+            reportId: undefined,
+            timeout: undefined,
+
+            removeableContainerFilter: undefined,
+            userContainerFilter: undefined, // TODO: Incorporate this with the standard containerFilter
+
+            filters: undefined,
+            removeableFilters: undefined,
+            userFilters: {},
+
+            parameters: undefined,
+            userSort: undefined
         };
 
         var settings = $.extend({}, defaults, config);
@@ -123,6 +152,13 @@ if (!LABKEY.DataRegions)
 
         if (!LABKEY.DataRegions) {
             LABKEY.DataRegions = {};
+        }
+        else {
+            // here we can copy properties from our former self
+            var ancestor = LABKEY.DataRegions[this.name];
+            if (ancestor) {
+                this.async = ancestor.async;
+            }
         }
 
         LABKEY.DataRegions[this.name] = this;
@@ -178,15 +214,21 @@ if (!LABKEY.DataRegions)
      */
     Proto.refresh = function() {
 
-        var event = $.Event("beforerefresh");
+        //var event = $.Event("beforerefresh");
+        //
+        //$(this).trigger(event);
+        //
+        //if (event.isDefaultPrevented()) {
+        //    return;
+        //}
+        $(this).trigger('beforerefresh', this);
 
-        $(this).trigger(event);
-
-        if (event.isDefaultPrevented()) {
-            return;
+        if (this.async) {
+            _load(this);
         }
-
-        window.location.reload();
+        else {
+            window.location.reload();
+        }
     };
 
     //
@@ -205,12 +247,17 @@ if (!LABKEY.DataRegions)
      * Removes all filters from the DataRegion
      */
     Proto.clearAllFilters = function() {
-        var event = $.Event("beforeclearallfilters");
+        //var event = $.Event("beforeclearallfilters");
+        //
+        //$(this).trigger(event, this);
+        //
+        //if (event.isDefaultPrevented()) {
+        //    return;
+        //}
 
-        $(this).trigger(event, this);
-
-        if (event.isDefaultPrevented()) {
-            return;
+        if (this.async) {
+            this.offset = 0;
+            this.userFilters = {};
         }
 
         _removeParameters(this, [ALL_FILTERS_SKIP_PREFIX, OFFSET_PREFIX]);
@@ -224,17 +271,30 @@ if (!LABKEY.DataRegions)
         fieldKey = _resolveFieldKey(this, fieldKey);
 
         if (fieldKey) {
-            var columnName = fieldKey.toString();
+            var columnPrefix = '.' + fieldKey.toString() + '~';
 
-            var event = $.Event("beforeclearfilter");
+            //var event = $.Event("beforeclearfilter");
+            //
+            //$(this).trigger(event, this, columnName);
+            //
+            //if (event.isDefaultPrevented()) {
+            //    return;
+            //}
 
-            $(this).trigger(event, this, columnName);
+            if (this.async) {
+                this.offset = 0;
 
-            if (event.isDefaultPrevented()) {
-                return;
+                if (this.userFilters) {
+                    var namePrefix = this.name + columnPrefix;
+                    $.each(this.userFilters, function(name, v) {
+                        if (name.indexOf(namePrefix) >= 0) {
+                            delete this.userFilters[name];
+                        }
+                    }, this);
+                }
             }
 
-            _removeParameters(this, ["." + columnName + "~", OFFSET_PREFIX]);
+            _removeParameters(this, [columnPrefix, OFFSET_PREFIX]);
         }
     };
 
@@ -670,12 +730,17 @@ if (!LABKEY.DataRegions)
      * Removes all parameters from the DataRegion
      */
     Proto.clearAllParameters = function() {
-        var event = $.Event('beforeclearallparameters');
+        //var event = $.Event('beforeclearallparameters');
+        //
+        //$(this).trigger(event, this);
+        //
+        //if (event.isDefaultPrevented()) {
+        //    return;
+        //}
 
-        $(this).trigger(event, this);
-
-        if (event.isDefaultPrevented()) {
-            return;
+        if (this.async) {
+            this.offset = 0;
+            this.parameters = undefined;
         }
 
         _removeParameters(this, [PARAM_PREFIX, OFFSET_PREFIX]);
@@ -1362,12 +1427,16 @@ if (!LABKEY.DataRegions)
             // TODO: handle this.sql ?
             queryName: this.queryName,
             viewName: this.viewName,
-            filters: this.getUserFilterArray() || [],
             sort: this.getParameter(this.name + SORT_PREFIX),
             // NOTE: The parameterized query values from QWP are included
             parameters: this.getParameters(false),
             containerFilter: this.containerFilter
         };
+
+        var filters = this.getUserFilterArray();
+        if (filters.length > 0) {
+            config.filters = filters;
+        }
 
         // NOTE: need to account for non-removeable filters and sort in a QWP
         if (this.qwp) {
@@ -1503,6 +1572,7 @@ if (!LABKEY.DataRegions)
         // Chain updateSelected with the user-provided success callback
         var success = LABKEY.Utils.getOnSuccess(config);
         if (success) {
+            // TODO: Fix this, it is a feature of ExtJS... http://docs.sencha.com/extjs/3.4.0/#!/api/Ext.util.Functions-method-createSequence
             success = updateSelected.createSequence(success, config.scope);
         }
         else {
@@ -1515,7 +1585,7 @@ if (!LABKEY.DataRegions)
 
     var _changeFilter = function(region, newParamValPairs, newQueryString) {
 
-        var event = $.Event('beforefilterchange');
+        //var event = $.Event('beforefilterchange');
 
         var filterPairs = [], name, val;
         $.each(newParamValPairs, function(i, pair) {
@@ -1526,13 +1596,25 @@ if (!LABKEY.DataRegions)
             }
         });
 
-        $(region).trigger(event, region, filterPairs);
-        if (event.isDefaultPrevented()) {
-            return;
-        }
+        //$(region).trigger(event, region, filterPairs);
+        //if (event.isDefaultPrevented()) {
+        //    return;
+        //}
+        if (region.async) {
+            region.offset = 0;
 
-        var params = _getParameters(region, newQueryString, [region.name + OFFSET_PREFIX]);
-        region.setSearchString.call(region, region.name, _buildQueryString(region, params));
+            // reset the user filters
+            region.userFilters = {};
+            $.each(filterPairs, function(i, fp) {
+                region.userFilters[fp[0]] = fp[1];
+            });
+
+            _load(region);
+        }
+        else {
+            var params = _getParameters(region, newQueryString, [region.name + OFFSET_PREFIX]);
+            region.setSearchString.call(region, region.name, _buildQueryString(region, params));
+        }
     };
 
     var _deleteCustomView = function(region, complete, message) {
@@ -1816,7 +1898,12 @@ if (!LABKEY.DataRegions)
             });
         }
 
-        region.setSearchString.call(region, region.name, _buildQueryString(region, params));
+        if (region.async) {
+            _load(region);
+        }
+        else {
+            region.setSearchString.call(region, region.name, _buildQueryString(region, params));
+        }
     };
 
     var _hideExt3ButtonPanel = function(region, animate) {
@@ -2067,6 +2154,165 @@ if (!LABKEY.DataRegions)
 
         _getAllRowSelectors(region).each(function() { this.checked = (checked == true)});
         return ids;
+    };
+
+    var _load = function(region, callback, scope) {
+
+        var params = _getAsyncParams(region);
+        var jsonData = _getAsyncBody(region, params);
+
+        // TODO: This should be done in _getAsyncParams, but is not since _getAsyncBody relies on it. Refactor it.
+        // ensure SQL is not on the URL -- we allow any property to be pulled through when creating parameters.
+        if (params.sql) {
+            delete params.sql;
+        }
+
+        var renderTo = region.renderTo || region.name;
+
+        LABKEY.Ajax.request({
+            timeout: (region.timeout == undefined) ? 30000 : region.timeout,
+            url: LABKEY.ActionURL.buildURL('project', 'getWebPart', region.containerPath),
+            method: 'POST',
+            params: params,
+            jsonData: jsonData,
+            success: function(response) {
+
+                //var target;
+                //if (LABKEY.Utils.isString(this.renderTo)) {
+                //    target = this.renderTo;
+                //}
+                //else {
+                //    target = this.renderTo.id;
+                //}
+
+                var target = $('#' + renderTo);
+                console.log('target:', '#' + renderTo);
+                if (target.length > 0) {
+
+                    //if (dr) {
+                    //    dr.destroy();
+                    //}
+
+                    LABKEY.Utils.loadAjaxContent(response, target, function() {
+
+                        if (LABKEY.Utils.isFunction(callback)) {
+                            callback.call(scope);
+                        }
+                    });
+                }
+            },
+            scope: region
+        });
+    };
+
+    var _getAsyncBody = function(region, params) {
+        var json = {};
+
+        if (params.sql) {
+            json.sql = params.sql;
+        }
+
+        if (region.buttonBar && (region.buttonBar.position || (region.buttonBar.items && region.buttonBar.items.length > 0))) {
+            json.buttonBar = _processButtonBar(region);
+        }
+
+        // 10505: add non-removable sorts and filters to json (not url params).  These will be handled in QueryWebPart.java
+        json.filters = {};
+        if (region.filters) {
+            LABKEY.Filter.appendFilterParams(json.filters, region.filters, region.name);
+        }
+
+        if (region.metadata) {
+            json.metadata = region.metadata;
+        }
+
+        return json;
+    };
+
+    var _processButtonBar = function(region) {
+
+    };
+
+    var _getAsyncParams = function(region) {
+        var params = {
+            dataRegionName: region.name,
+            "webpart.name": 'Query',
+            schemaName: region.schemaName,
+            queryName: region.queryName
+        }, name = region.name;
+
+        if (region.viewName) {
+            params[name + VIEWNAME_PREFIX] = region.viewName;
+        }
+        if (region.reportId) {
+            params[name + '.reportId'] = region.reportId;
+        }
+
+        var cf = region.getContainerFilter.call(region);
+        if (cf) {
+            params[name + CONTAINER_FILTER_NAME] = cf;
+        }
+
+        if (region.showRows) {
+            params[name + SHOW_ROWS_PREFIX] = region.showRows;
+        }
+
+        if (region.maxRows > 0) { // lol, what?
+            params[name + MAX_ROWS_PREFIX] = region.maxRows;
+        }
+
+        if (region.offset) {
+            params[name + OFFSET_PREFIX] = region.offset;
+        }
+
+        if (region.quickChartDisabled) {
+            params[name + '.quickChartDisabled'] = region.quickChartDisabled;
+        }
+
+        //
+        // Certain parameters are only included if the region is 'async'. These
+        // were formerly a part of Query Web Part.
+        //
+        if (region.async) {
+            params[name + '.async'] = true;
+
+            if (LABKEY.Utils.isString(region.frame)) {
+                params["webpart.frame"] = region.frame
+            }
+
+            // Sorts configured by the user when interacting with the grid. We need to pass these as URL parameters.
+            if (LABKEY.Utils.isString(region.userSort) && region.userSort.length > 0) {
+                params[name + SORT_PREFIX] = region.userSort;
+            }
+
+            if (region.userFilters) {
+                $.each(region.userFilters, function(filterExp, filterValue) {
+                    params[filterExp] = filterValue;
+                });
+            }
+
+            // TODO: Get rid of this and incorporate it with the normal containerFilter checks
+            if (region.userContainerFilter) {
+                params[name + CONTAINER_FILTER_NAME] = region.userContainerFilter;
+            }
+
+            if (region.parameters) {
+                $.each(region.parameters, function(parameter, value) {
+                    var p = parameter;
+                    if (parameter.indexOf(name + PARAM_PREFIX) !== 0) {
+                        p = name + PARAM_PREFIX + parameter;
+                    }
+                    params[p] = value;
+                });
+            }
+        }
+
+        // Ext uses a param called _dc to defeat caching, and it may be
+        // on the URL if the Query web part has done a sort or filter
+        // strip it if it's there so it's not included twice (Ext always appends one)
+        delete params['_dc'];
+
+        return params;
     };
 
     var _updateFilter = function(region, filter, skipPrefixes) {
@@ -2378,4 +2624,142 @@ if (!LABKEY.DataRegions)
     };
     MsgProto.on = function(evt, callback, scope) { $(this).bind(evt, $.proxy(callback, scope)); };
 
+
+    // TODO: Make this work
+    //var qwp1 = new LABKEY.QueryWebPart({
+    //    renderTo: '<%=h(queryWebPartDivId)%>',
+    //    frame: 'none',
+    //    schemaName: 'genotyping',
+    //    sql: this.getAssignmentPivotSQL(idArr, searchId, displayId),
+    //    showDetailsColumn: false,
+    //    dataRegionName: 'report',
+    //    buttonBar: {
+    //        includeStandardButtons: false,
+    //        items:[
+    //            LABKEY.QueryWebPart.standardButtons.exportRows,
+    //            LABKEY.QueryWebPart.standardButtons.print,
+    //            LABKEY.QueryWebPart.standardButtons.pageSize
+    //        ]
+    //    }
+    //});
+
+    LABKEY.QueryWebPart2 = function(config) {
+
+        var _config = config || {};
+
+        var defaults = {
+            renderTo: undefined,
+            dataRegionName: LABKEY.Utils.id('aqwp'),
+            returnURL: window.location.href,
+            _success: LABKEY.Utils.getOnSuccess(_config),
+            _failure: LABKEY.Utils.getOnFailure(_config),
+            filters: [],
+            errorType: 'html',
+            parameters: undefined
+        };
+
+        var settings = $.extend({}, defaults, _config);
+
+        for (var s in settings) {
+            if (settings.hasOwnProperty(s)) {
+                this[s] = settings[s];
+            }
+        }
+
+        // Get/Construct the Data Region based on the current configuration
+        var region = LABKEY.DataRegions[this.dataRegionName];
+        if (region) {
+            this.region = region;
+        }
+        else {
+            this.region = new LABKEY.DataRegion2({
+                name: this.dataRegionName,
+                schemaName: this.schemaName,
+                queryName: this.queryName
+            })
+        }
+
+        // QWP's are setup to be "in-place"
+        this.region.async = true;
+
+        if (this.renderTo) {
+            this.render();
+        }
+    };
+
+    LABKEY.QueryWebPart2.prototype.render = function(renderTo) {
+
+        if (renderTo) {
+            this.renderTo = renderTo;
+        }
+
+        if (this.renderTo) {
+            _load(this.region, function() {
+                if (LABKEY.DataRegions[this.dataRegionName]) {
+                    this.region = LABKEY.DataRegions[this.dataRegionName];
+                }
+            }, this);
+        }
+        else {
+            throw '"renderTo" must be specified either upon construction or when calling LABKEY.QueryWebpart2.render.';
+        }
+    };
+
+    LABKEY.QueryWebPart2.prototype.getDataRegion = function() {
+        return this.region;
+    };
+
 })(jQuery);
+
+/**
+ * A read-only object that exposes properties representing standard buttons shown in LabKey data grids.
+ * These are used in conjunction with the buttonBar configuration. The following buttons are currently defined:
+ * <ul>
+ *  <li>LABKEY.QueryWebPart.standardButtons.query</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.views</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.insertNew</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.deleteRows</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.exportRows</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.print</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.pageSize</li>
+ * </ul>
+ * @name standardButtons
+ * @memberOf LABKEY.QueryWebPart#
+ */
+LABKEY.QueryWebPart2.standardButtons = {
+    query: 'query',
+    views: 'views',
+    insertNew: 'insert new',
+    deleteRows: 'delete',
+    exportRows: 'export',
+    print: 'print',
+    pageSize: 'page size'
+};
+
+
+/**
+ * @namespace A predefined set of aggregate types, for use in the config.aggregates array in the
+ * {@link LABKEY.QueryWebPart} constructor.
+ */
+LABKEY.AggregateTypes = {
+    /**
+     * Displays the sum of the values in the specified column
+     */
+    SUM: 'sum',
+    /**
+     * Displays the average of the values in the specified column
+     */
+    AVG: 'avg',
+    /**
+     * Displays the count of the values in the specified column
+     */
+    COUNT: 'count',
+    /**
+     * Displays the maximum value from the specified column
+     */
+    MIN: 'min',
+    /**
+     * Displays the minimum values from the specified column
+     */
+    MAX: 'max'
+};
