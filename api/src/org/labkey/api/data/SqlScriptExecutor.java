@@ -32,6 +32,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -287,7 +288,8 @@ public class SqlScriptExecutor
 
             try
             {
-                DataIteratorContext dix = new DataIteratorContext();
+                BatchValidationException errors = new BatchValidationException();
+                DataIteratorContext dix = new DataIteratorContext(errors);
                 dix.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
 
                 // TARGET TABLE
@@ -311,15 +313,17 @@ public class SqlScriptExecutor
 
                     // DataLoader.get().createLoader() doesn't work, because the loader factories are not registered yet
                     if (contentType.startsWith("text"))
-                        loader = new TabLoader(new InputStreamReader(is), true, null, false);
+                        loader = new TabLoader(new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET), true, null, false);
                     else if (contentType.contains("excel") || contentType.contains("spreadsheet"))
                         loader = new ExcelLoader(is, true, null);
                     else
                         throw new IllegalStateException("Unrecognized data file format for file: " + r.getPath());
 
                     // COPY
-                    // CONSIDER SQL Server: SET IDENTIFY ON/OFF?
+                    // CONSIDER SQL Server: SET IDENTITY ON/OFF?
                     DataIteratorUtil.copy(dix, loader, dbTable, null, null);
+                    if (errors.hasErrors())
+                        throw new IllegalStateException("Error loading data file: " + r.getPath() + errors.getMessage(), errors);
                 }
             }
             catch (IOException|BatchValidationException x)
