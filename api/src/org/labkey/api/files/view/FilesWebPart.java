@@ -142,16 +142,6 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         CustomizeFilesWebPartView.CustomizeWebPartForm form = new CustomizeFilesWebPartView.CustomizeWebPartForm(webPartDescriptor);
         getModelBean().setFolderTreeCollapsed(!form.isFolderTreeVisible());
-        String rootOffset = form.getRootOffset();
-
-        if (null != rootOffset)
-        {
-            String path = getModelBean().getRootPath();
-            path += path.endsWith("/") ? "" : "/";
-            String offset = rootOffset.replaceAll("^/", "");
-            path += offset;
-            getModelBean().setRootPath(path);
-        }
 
         String size = webPartDescriptor.getPropertyMap().get("size");
         if (size != null)
@@ -159,8 +149,10 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             getModelBean().setSize(Integer.parseInt(size));
         }
 
-        getModelBean().setRootOffset(rootOffset);
-
+        if (form.getRootOffset() != null)
+        {
+            getModelBean().setRootOffset(form.getRootOffset());
+        }
 
         setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
         setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
