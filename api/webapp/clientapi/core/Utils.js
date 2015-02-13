@@ -26,6 +26,7 @@ LABKEY.Utils = new function()
 {
     // Private array of chars to use for UUID generation
     var CHARS = '0123456789abcdefghijklmnopqrstuvwxyz'.split('');
+    var idSeed = 100;
 
     //When using Ext dateFields you can use DATEALTFORMATS for the altFormat: config option.
     var DATEALTFORMATS_Either =
@@ -558,6 +559,17 @@ LABKEY.Utils = new function()
         ensureBoxVisible : function() {
             console.warn('LABKEY.Utils.ensureBoxVisible has been migrated to the appropriate Ext scope. Consider LABKEY.ext.Utils.ensureBoxVisible or LABKEY.ext4.Util.ensureBoxVisible');
         },
+
+        /**
+         * Will generate a unique id. If you provide a prefix, consider making it DOM safe so it can be used as
+         * an element id.
+         * @param prefix
+         * @returns {*}
+         */
+        id : function(prefix) {
+            return (prefix || "lk-gen") + (++idSeed);
+        },
+
         /**
           * Returns a universally unique identifier, of the general form: "92329D39-6F5C-4520-ABFC-AAB64544E172"
           * NOTE: Do not use this for DOM id's as it does not meet the requirements for DOM id specification.
