@@ -147,6 +147,10 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         Integer labId = labIds.get(lab);
 
         String derivative = getNonNullValue(inputRow, "sample type");
+        if (StringUtils.isEmpty(derivative))
+        {
+            derivative = getNonNullValue(inputRow, "sampletype_name");
+        }
         // Check if it has a known primary type
         String primary = DERIVATIVE_PRIMARY_MAPPINGS.get(derivative);
         if (primary == null)
@@ -155,14 +159,14 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
             primary = derivative;
         }
         Integer primaryId = primaryIds.get(primary);
-        if (primaryId == null)
+        if (primaryId == null && !StringUtils.isEmpty(primary))
         {
             // Put it into our mapping so it gets written to primary_types.tsv
             primaryId = primaryIds.size() + 1;
             primaryIds.put(primary, primaryId);
         }
         Integer derivativeId = derivativeIds.get(derivative);
-        if (derivativeId == null)
+        if (derivativeId == null && !StringUtils.isEmpty(derivative))
         {
             // Put it into our mapping so it gets written to derivative.tsv
             derivativeId = derivativeIds.size() + 1;
