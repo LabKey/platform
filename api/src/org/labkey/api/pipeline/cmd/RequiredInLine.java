@@ -15,8 +15,11 @@
  */
 package org.labkey.api.pipeline.cmd;
 
-import java.util.Set;
+import org.labkey.api.pipeline.PipelineJobService;
+
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * <code>RequiredInLine</code>
@@ -24,6 +27,7 @@ import java.io.IOException;
 public class RequiredInLine extends TaskToCommandArgs
 {
     private String _value;
+    private boolean _addPipelineToolsDir = false;
 
     public String getValue()
     {
@@ -35,8 +39,23 @@ public class RequiredInLine extends TaskToCommandArgs
         _value = value;
     }
 
+    public boolean isAddPipelineToolsDir()
+    {
+        return _addPipelineToolsDir;
+    }
+
+    public void setAddPipelineToolsDir(boolean addPipelineToolsDir)
+    {
+        this._addPipelineToolsDir = addPipelineToolsDir;
+    }
+
+    protected String getFullValue(CommandTask task) throws FileNotFoundException
+    {
+        return isAddPipelineToolsDir() ? PipelineJobService.get().getExecutablePath(getValue(), null, null, null, task.getJob().getLogger()) : getValue();
+    }
+
     public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
-        return new String[] { _value };
+        return new String[] { getFullValue(task) };
     }
 }

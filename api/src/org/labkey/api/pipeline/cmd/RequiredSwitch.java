@@ -21,10 +21,9 @@ import java.io.IOException;
 /**
  * <code>RequiredSwitch</code>
 */
-public class RequiredSwitch extends TaskToCommandArgs
+public class RequiredSwitch extends RequiredInLine
 {
     private String _switchName;
-    private String _value;
 
     public String getSwitchName()
     {
@@ -36,19 +35,9 @@ public class RequiredSwitch extends TaskToCommandArgs
         _switchName = switchName;
     }
 
-    public String getValue()
-    {
-        return _value;
-    }
-
-    public void setValue(String value)
-    {
-        _value = value;
-    }
-
     public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
         // Ignore the key and job, and just return the switch.
-        return getSwitchFormat().format(getSwitchName(), getValue());
+        return getSwitchFormat().format(getSwitchName(), getFullValue(task));
     }
 }
