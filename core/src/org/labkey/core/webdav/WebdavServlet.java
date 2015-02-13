@@ -79,7 +79,8 @@ public class WebdavServlet extends HttpServlet
                 m = helper.getParameter("method");
             if (null != m)
             {
-                if ("POST".equals(method) || "PROPFIND".equals(m) || "OPTIONS".equals(m) || "JSON".equals(m) || "LASTERROR".equals(m) || "GET".equals(m))
+                m = m.toUpperCase();
+                if ("POST".equals(method) || "PROPFIND".equals(m) || "OPTIONS".equals(m) || "JSON".equals(m) || "LASTERROR".equals(m) || "ZIP".equals(m) || "GET".equals(m))
                     method = m;
                 else
                 {
