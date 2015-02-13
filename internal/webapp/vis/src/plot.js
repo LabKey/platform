@@ -1418,3 +1418,61 @@ boxPlot.render();
         return new LABKEY.vis.Plot(config);
     };
 })();
+
+/**
+ * @name LABKEY.vis.SurvivalCurvePlot
+ * @class SurvivalCurvePlot Wrapper to create a plot which shows survival curve step lines and censor points (based on output from R survival package).
+ * @description This helper will take the input data and generate stepwise data points for use with the Path geom.
+ * @param {Object} config An object that contains the following properties
+ * @param {String} [config.renderTo] The id of the div/span to insert the svg element into.
+ * @param {Number} [config.width] The chart canvas width in pixels.
+ * @param {Number} [config.height] The chart canvas height in pixels.
+ * @param {Array} [config.data] The array of step data for the survival curves.
+ * @param {String} [config.groupBy] (optional) The data array object property used to group plot lines and points.
+ * @param {Array} [config.censorData] The array of censor data to overlay on the survival step lines.
+ * @param {Function} [config.censorHoverText] (optional) Function defining the hover text to display for the censor data points.
+ */
+(function(){
+
+    LABKEY.vis.SurvivalCurvePlot = function(config){
+
+        if (config.renderTo == null){
+            throw new Error("Unable to create survival curve plot, renderTo not specified.");
+        }
+
+        if (config.data == null || config.censorData == null){
+            throw new Error("Unable to create survival curve plot, data and/or censorData array not specified.");
+        }
+
+        if (config.aes == null || config.aes.x == null || config.aes.yLeft == null) {
+            throw new Error("Unable to create survival curve plot, aes (x and yLeft) not specified.")
+        }
+
+        // TODO: convert data array for step-wise line plot
+
+        config.layers = [
+            new LABKEY.vis.Layer({
+                geom: new LABKEY.vis.Geom.Path({}),
+                aes: {
+                    pathColor: config.groupBy,
+                    group: config.groupBy
+                }
+            }),
+            new LABKEY.vis.Layer({
+                geom: new LABKEY.vis.Geom.Point(),
+                data: config.censorData,
+                aes: {
+                    color: config.groupBy,
+                    hoverText: config.censorHoverText
+                }
+            })
+        ];
+
+        config.scales = {
+            x: { scaleType: 'continuous', trans: 'linear' },
+            yLeft: { scaleType: 'continuous', trans: 'linear', domain: [0, 1] }
+        };
+
+        return new LABKEY.vis.Plot(config);
+    };
+})();
