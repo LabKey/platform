@@ -1152,7 +1152,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 }
                 else
                 {
-                    throw new IOException(x.getMessage());  // Default message starts with "Cannot parse '<query string>':"
+                    throw new IOException(x.getMessage(), x);  // Default message starts with "Cannot parse '<query string>':"
                 }
             }
             catch (IllegalArgumentException x)
