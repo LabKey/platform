@@ -91,9 +91,11 @@ public class ToursController extends SpringActionController
         @Override
         public ModelAndView getView(EditTourForm editTourForm, BindException errors) throws Exception
         {
-            TourModel model = null;
-            if(null != editTourForm.getRowid())
+            TourModel model;
+            if (null != editTourForm.getRowid())
                 model = TourManager.getTour(getContainer(), Integer.parseInt(editTourForm.getRowid()));
+            else
+                model = new TourModel();
 
             JspView view = new JspView<>("/org/labkey/announcements/view/editTour.jsp", model);
             return view;
@@ -113,11 +115,10 @@ public class ToursController extends SpringActionController
         @Override
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
-            //super.validateForm(simpleApiJsonForm, errors);
             TourModel model;
             JSONObject json = form.getJsonObject();
 
-            if (json.getString("rowId").equals(""))
+            if (Integer.parseInt(json.getString("rowId")) < 0)
                 model = new TourModel();
             else
                 model = TourManager.getTour(getContainer(), Integer.parseInt(json.getString("rowId")));
@@ -130,7 +131,7 @@ public class ToursController extends SpringActionController
             try
             {
                 TourModel ret;
-                if (json.getString("rowId").equals(""))
+                if (Integer.parseInt(json.getString("rowId")) < 0)
                 {
                     ret = TourManager.insertTour(getContainer(), getUser(), model);
                 }

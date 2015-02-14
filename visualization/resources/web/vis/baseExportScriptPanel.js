@@ -11,6 +11,10 @@ Ext4.define('LABKEY.vis.BaseExportScriptPanel', {
 
     codeMirrorMode: 'text/html',
 
+    optionButton: function(){
+        return null;
+    },
+
     constructor: function(config){
         config.padding = '10px 0 0 0';
         config.border = false;
@@ -27,7 +31,8 @@ Ext4.define('LABKEY.vis.BaseExportScriptPanel', {
             text: 'Close',
             scope: this,
             handler: function(){this.fireEvent('closeOptionsWindow');}
-        }];
+        },
+        this.optionButton()];
 
         this.on('afterrender', function(cmp){
             var el = Ext4.get(this.codeMirrorId);

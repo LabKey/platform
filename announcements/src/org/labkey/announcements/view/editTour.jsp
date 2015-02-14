@@ -40,42 +40,52 @@
     TourModel model = me.getModelBean();
 %>
 
+<script type="text/javascript">
+    LABKEY._tour.title = "<%=model.getTitle()%>";
+    LABKEY._tour.description = "<%=model.getDescription()%>";
+    LABKEY._tour.mode = <%=model.getMode()%>;
+    LABKEY._tour.json = <%=model.toJSON()%>;
+    LABKEY._tour.rowId = <%=model.getRowId()%>;
+
+</script>
+
 <span class="labkey-nav-page-header">Tour Builder</span>
 
 <labkey:form name="editTour" method="post">
-    <div class="uxtour"><input id="tour-rowid" hidden="true" value="<%=h(null!=model?model.getRowId():"")%>">
+    <div class="uxtour">
         <div class="tablewrapper">
             <div class="leftcolumn" id="leftcolumn">
+                <div class="col-width button-row">
+                    <%= button("Save").submit(false).attributes("id='tour-button-save' class='button'") %>
+                    <%= button("Save & Close").submit(false).attributes("id='tour-button-save-close' class='button'") %>
+                    <%= button("Cancel").submit(false).attributes("id='tour-button-cancel' class='button'") %>
+                    <%= button("Clear").submit(false).attributes("id='tour-button-clear' class='button'") %>
+                    <%= button("Add Step").submit(false).attributes("id='tour-button-add-step' class='button'") %>
+                    <%= button("Import").submit(false).attributes("id='tour-button-import' class='button'") %>
+                    <%= button("Export").submit(false).attributes("id='tour-button-export' class='button'") %>
+                </div>
                 <div class="col-width row">
                     <div>
                         <label class="label" for="tour-title">Title</label>
                     </div>
                     <div>
-                        <input class="input" type="text" name="tour-title" id="tour-title" value="<%=h(null!=model?model.getTitle():"")%>">
+                        <input class="input x4-form-field" type="text" name="tour-title" id="tour-title">
                     </div>
                 </div>
+                <div id="mode-dummy"></div>
                 <div class="col-width row">
                     <div>
                         <label class="label" for="tour-description">Description</label>
                     </div>
                     <div>
-                        <textarea rows="20" cols="65" id="tour-description"><%=h(null!=model?model.getDescription():"")%></textarea>
+                        <textarea rows="10" cols="65" id="tour-description"></textarea>
                     </div>
                 </div>
-                <div id="mode-dummy"><input id="mode-dummy-hidden" hidden="true" value="<%=h(null!=model?model.getMode():"")%>"></div>
-                <div class="col-width button-row">
-                    <%= button("Save").submit(false).attributes("id='tour-button-save' class='button'") %>
-                    <%= button("Save & Close").submit(false).attributes("id='tour-button-save-close' class='button'") %>
-                    <%= button("Clear").submit(false).attributes("id='tour-button-clear' class='button'") %>
-                    <%= button("Cancel").submit(false).attributes("id='tour-button-cancel' class='button'") %>
-                    <%= button("Import").submit(false).attributes("id='tour-button-import' class='button'") %>
-                    <%= button("Export").submit(false).attributes("id='tour-button-export' class='button'") %>
-                    <%= button("Add Step").submit(false).attributes("id='tour-button-add-step' class='button'") %>
-                </div>
+
             </div>
 
             <div class="rightcolumn" id="rightcolumn">
-                <div id="dummy"><input id="dummy-hidden" hidden="true" value="<%=h(null!=model ?model.targetStepObject():"")%>"></div>
+                <div id="dummy"></div>
             </div>
         </div>
     </div>

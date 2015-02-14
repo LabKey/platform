@@ -81,8 +81,8 @@ public class TourImpl implements Tour
         _model.setMode(mode);
     }
 
-    public JSONObject toJSON()
+    public JSONObject abbrevDef()
     {
-        return _model.toJSON();
+        return _model.abbrevDef();
     }
 }

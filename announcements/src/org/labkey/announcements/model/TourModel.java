@@ -15,7 +15,6 @@
  */
 package org.labkey.announcements.model;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Entity;
 
@@ -36,6 +35,11 @@ public class TourModel extends Entity implements Serializable
 
     public TourModel()
     {
+        _Title = "";
+        _Description = "";
+        _Json = "";
+        _RowId = -1;
+        _Mode = 0;
     }
 
     public Integer getRowId()
@@ -88,7 +92,7 @@ public class TourModel extends Entity implements Serializable
         _Mode = mode;
     }
 
-    public JSONObject toJSON()
+    public JSONObject abbrevDef()
     {
         JSONObject tour = new JSONObject(this);
         tour.remove("json");
@@ -105,21 +109,14 @@ public class TourModel extends Entity implements Serializable
         return tour;
     }
 
-    public String targetStepObject()
+    // JSON object for selector:step format
+    public JSONObject toJSON()
     {
-        JSONObject tour = new JSONObject(this.getJson());
-        JSONArray steps = tour.getJSONArray("steps");
         JSONObject out = new JSONObject();
-        int i = 0;
-        Object step;
-
-        while((step = steps.get(i++)) != null)
+        if (!this.getJson().equals(""))
         {
-            JSONObject jsonStep = new JSONObject(step);
-            Object target = jsonStep.remove("target");
-            out.put(target.toString(), jsonStep.toString());
+              out = new JSONObject(this.getJson());
         }
-        return out.toString();
-
+        return out;
     }
 }
