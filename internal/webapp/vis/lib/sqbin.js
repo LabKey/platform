@@ -29,8 +29,8 @@
                     bin = binsById[id] = [point];
                     bin.i = pi;
                     bin.j = pj;
-                    bin.x = pi * dx;
-                    bin.y = pj * dy;
+                    bin.x = (pi+0.5) * dx;
+                    bin.y = (pj+0.5) * dy;
                 }
             });
 
@@ -41,15 +41,14 @@
             return d3_sqbinCorners.map(function(corner) {
                 switch(corner) {
                     case 0:
-                        return [0, 0];
-                    case 1:
-                        return [side, 0];
-                    case 2:
-                        return [side, side];
-                    case 3:
-                        return [0, side];
                     case 4:
-                        return [0, 0];
+                        return [-side/2, -side/2];
+                    case 1:
+                        return [+side/2, -side/2];
+                    case 2:
+                        return [+side/2, +side/2];
+                    case 3:
+                        return [-side/2, +side/2];
                     default:
                         console.error('what happened?');
                 }
