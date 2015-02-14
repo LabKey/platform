@@ -172,7 +172,7 @@ public class PipelineController extends SpringActionController
     {
         return urlSetup(c, null);
     }
-    
+
     public static ActionURL urlSetup(Container c, ActionURL returnURL)
     {
         return urlSetup(c, returnURL, false, false);
@@ -221,7 +221,7 @@ public class PipelineController extends SpringActionController
         {
             return null;
         }
-        
+
         if (path.startsWith("\\\\"))
         {
             errors.reject(ERROR_MSG, "UNC paths are not supported for pipeline roots. Consider creating a Network Drive configuration in the Admin Console under Site Settings.");
@@ -422,7 +422,7 @@ public class PipelineController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Data Pipeline", new ActionURL(BeginAction.class, getContainer())).addChild("Data Processing Pipeline Setup");
-        }        
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -538,7 +538,7 @@ public class PipelineController extends SpringActionController
                 relativePath = relativePath.substring(1);
 
             File fileCurrent = pr.resolvePath(relativePath);
-            if (!fileCurrent.exists())
+            if (fileCurrent == null || !fileCurrent.exists())
             {
                 throw new NotFoundException("File not found: " + form.getPath());
             }
@@ -566,7 +566,7 @@ public class PipelineController extends SpringActionController
             JSONArray actions = new JSONArray();
             for (PipelineAction action : entry.getActions())
             {
-                actions.put(action.toJSON());                
+                actions.put(action.toJSON());
             }
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);

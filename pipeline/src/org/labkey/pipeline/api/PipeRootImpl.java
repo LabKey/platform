@@ -17,6 +17,7 @@
 package org.labkey.pipeline.api;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
@@ -190,6 +191,7 @@ public class PipeRootImpl implements PipeRoot
         return null;
     }
 
+    @Nullable
     public File resolvePath(String path)
     {
         if (null == path)
