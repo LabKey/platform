@@ -6,7 +6,7 @@
 
 var CD4PointLayer = new LABKEY.vis.Layer({
 	geom: new LABKEY.vis.Geom.Point({size: 5}),
-	name: 'Really Long Name That Gets Wrapped',
+	name: 'CD4+ (cells/mm3)',
 	aes: {
 		y: function(row){return row.study_LabResults_CD4.value},
 		hoverText: function(row){return row.study_LabResults_ParticipantId.value + ' CD4, Day ' + row.Days.value + ", " + row.study_LabResults_CD4.value;}
@@ -15,7 +15,7 @@ var CD4PointLayer = new LABKEY.vis.Layer({
 
 var CD4PathLayer = new LABKEY.vis.Layer({
 	geom: new LABKEY.vis.Geom.Path({size: 3, opacity: .4}),
-	name: 'Really Long Name That Gets Wrapped',
+	name: 'CD4+ (cells/mm3)',
 	aes: {
 		y: function(row){return row.study_LabResults_CD4.value}
 	}
@@ -184,7 +184,7 @@ var boxPlot = new LABKEY.vis.Plot({
     labels: {
         main: {value: 'Example Box Plot'},
         yLeft: {value: 'Age'},
-        x: {value: 'Groups of People'}
+        x: {value: 'Race'}
     },
 //    data: labResultsRows,
     data: boxPlotData,
@@ -218,7 +218,7 @@ var discreteScatter = new LABKEY.vis.Plot({
     labels: {
         main: {value: 'Scatterplot With Jitter'},
         yLeft: {value: 'Age'},
-        x: {value: 'Groups of People'}
+        x: {value: 'Race'}
     },
     data: boxPlotData,
     layers: [new LABKEY.vis.Layer({
@@ -892,6 +892,7 @@ var leveyJenningsPlot = LABKEY.vis.LeveyJenningsPlot({
         mean: 'mean',
         stdDev: 'stddev',
         xTickLabel: 'xaxislabel',
+        showTrendLine: true,
         color: 'colorlabel',
         colorRange: ['red', 'blue', 'green', 'brown'],
         hoverTextFn: function(row){return 'X-Value: ' + row.xaxislabel + '\nColor: ' + row.colorlabel + '\nY-Value: ' + row.value;}
@@ -901,6 +902,22 @@ var leveyJenningsPlot = LABKEY.vis.LeveyJenningsPlot({
         main: {value: 'Example Levey-Jennings Plot'},
         y: {value: 'Value'},
         x: {value: 'Assay'}
+    }
+});
+
+var survivalCurvePlot = LABKEY.vis.SurvivalCurvePlot({
+    renderTo: 'survivalCurve',
+    rendererType: 'd3',
+    width: 900,
+    height: 300,
+    data: survivalData,
+    censorData: survivalCensorData,
+    groupBy: 'group',
+    aes: {x: 'time', yLeft: 'percent'},
+    labels: {
+        main: {value: 'Example Survival Curve Plot'},
+        yLeft: {value: 'Survival Probability'},
+        x: {value: 'Time (Months)'}
     }
 });
 
@@ -936,5 +953,6 @@ statFnPlot.render();
 barChart.render();
 barChart2.render();
 leveyJenningsPlot.render();
+survivalCurvePlot.render();
 console.log(new Date().getTime() - start);
 renderStats();
