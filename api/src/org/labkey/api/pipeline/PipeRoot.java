@@ -52,6 +52,7 @@ public interface PipeRoot extends SecurableResource
      * is configured with an alternative file path, we'll check to see if the file exists there. If not, we'll return
      * a path relative to the root's primary path.
      */
+    @Nullable
     File resolvePath(String relativePath);
 
     /**
