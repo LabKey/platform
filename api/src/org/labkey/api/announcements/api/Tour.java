@@ -32,5 +32,5 @@ public interface Tour
     public void setJson(String json);
     public Integer getMode();
     public void setMode(Integer mode);
-    public JSONObject toJSON();
+    public JSONObject abbrevDef();
 }

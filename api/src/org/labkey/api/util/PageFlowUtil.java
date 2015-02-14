@@ -2053,7 +2053,7 @@ public class PageFlowUtil
         {
             for (Tour tour : service.getApplicableTours(container))
             {
-                tourProps.put(tour.getRowId().toString(), tour.toJSON());
+                tourProps.put(tour.getRowId().toString(), tour.abbrevDef());
             }
         }
         return tourProps;
