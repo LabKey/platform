@@ -64,9 +64,9 @@ public class CollectionUtils
     }
 
     // Returns a description of value (e.g., "a modifiable set (java.util.HashSet)") if value is an Array or value is a
-    // Collection or Map that is not a known immutable type; otherwise returns null. Currently recognizes only the
-    // standard java.util.Collections unmodifiable, empty, and singleton types as immutable.
-    // TODO: Extend to recognize apache collections Unmodifiable interface and/or guava ImmutableCollection
+    // Collection or Map that is not a known immutable type; otherwise returns null. Currently recognizes Apache collections
+    // Unmodifiable interface and the standard java.util.Collections unmodifiable, empty, and singleton types as immutable.
+    // TODO: Extend to recognize guava ImmutableCollection
     public static @Nullable String getModifiableCollectionMapOrArrayType(@Nullable Object value)
     {
         if (null == value || value instanceof Unmodifiable)
