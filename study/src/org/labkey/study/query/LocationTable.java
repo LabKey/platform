@@ -29,7 +29,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
@@ -47,6 +46,8 @@ import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -63,29 +64,41 @@ public class LocationTable extends BaseStudyTable
     public LocationTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSite(schema.getContainer()));
+        // FK on Container
+        ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("EntityId"))).setHidden(true);
+
         setName("Location");
         setPublicSchemaName("study");
         ColumnInfo inUse = new LocationInUseExpressionColumn(this);
         addColumn(inUse);
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("LdmsLabCode")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ExternalId")));
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("LabwareLabCode"))).setHidden(true);
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("LabUploadCode"))).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("LdmsLabCode")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("LabwareLabCode")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("LabUploadCode")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Label")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Sal")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Repository")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Endpoint")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Clinic")));
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("StreetAddress"))).setHidden(true);
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("City"))).setHidden(true);
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("GoverningDistrict"))).setHidden(true);
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("PostalArea"))).setHidden(true);
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("EntityId"))).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("StreetAddress")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("City")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("GoverningDistrict")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("PostalArea")));
 
-        // FK on Container
-        ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema).setHidden(true);
+        List<FieldKey> defaultColumns = new ArrayList<>(Arrays.asList(
+                inUse.getFieldKey(),
+                FieldKey.fromParts("ExternalId"),
+                FieldKey.fromParts("Label"),
+                FieldKey.fromParts("Description"),
+                FieldKey.fromParts("Sal"),
+                FieldKey.fromParts("Repository"),
+                FieldKey.fromParts("Endpoint"),
+                FieldKey.fromParts("Clinic")
+        ));
+        setDefaultVisibleColumns(defaultColumns);
     }
 
     @Override
@@ -115,18 +128,6 @@ public class LocationTable extends BaseStudyTable
         }
 
         @Override
-        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
-        {
-            if (rows.get(0).get("Label") == null)
-                throw new QueryUpdateServiceException("A Label must be entered");
-
-            if (rows.get(0).get("LdmsLabCode") == null)
-                throw new QueryUpdateServiceException("You must enter a number for the Ldms Lab Code");
-
-            return super.insertRows(user, container, rows, errors, configParameters, extraScriptContext);
-        }
-
-        @Override
         public List<Map<String, Object>> updateRows(User user, Container c, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
         {
             if (!c.hasPermission(user, AdminPermission.class))
@@ -142,12 +143,6 @@ public class LocationTable extends BaseStudyTable
             if (null == loc)
                 throw new InvalidKeyException("Location not found");
             loc.createMutable();    // Test mutability
-
-            if (map.get("Label") == null)
-                throw new QueryUpdateServiceException("A Label must be entered");
-
-            if (map.get("LdmsLabCode") == null)
-                throw new QueryUpdateServiceException("You must enter a number for the Ldms Lab Code");
 
             return super.updateRows(user, c, rows, oldKeys, configParameters, extraScriptContext);
         }
