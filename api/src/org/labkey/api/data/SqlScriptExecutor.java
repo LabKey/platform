@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 /**
  * User: adam
@@ -316,6 +317,9 @@ public class SqlScriptExecutor
                         loader = new TabLoader(new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET), true, null, false);
                     else if (contentType.contains("excel") || contentType.contains("spreadsheet"))
                         loader = new ExcelLoader(is, true, null);
+                    // NOTE: this makes the assumption all gzip files are text format!
+                    else if (contentType.contains("gzip"))
+                        loader = new TabLoader(new InputStreamReader(new GZIPInputStream(is), StringUtilsLabKey.DEFAULT_CHARSET), true, null, false);
                     else
                         throw new IllegalStateException("Unrecognized data file format for file: " + r.getPath());
 
