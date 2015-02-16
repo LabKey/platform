@@ -624,6 +624,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                         // File column values are stored as the absolute resolved path
                         map.put(pd.getName(), o);
+                        iter.set(map);
                     }
                 }
 
