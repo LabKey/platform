@@ -183,40 +183,6 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             dialect.runSql(null, badSql, bad, null, null);
             assertEquals(0, bad.getCounter());
         }
-
-//        @Test
-        public void testBulkImport()
-        {
-            String goodSql =
-                "SELECT core.bulkImport('test', 'TestTable', 'test.xls');\n" +                                         // Normal
-                "    SELECT     core.bulkImport    (    'test'  ,   'TestTable'   ,     'test.xls'   )    ;     \n" +  // Lots of whitespace
-                "SELECT core.bulkImport('test','TestTable','test.xls');\n" +                                           // Minimal whitespace
-                "select CORE.BULKIMPORT('test', 'TestTable', 'test.xls');\n" +                                         // Case insensitive
-                "SELECT core.bulkImport('test', 'TestTable', 'test.xls');";                                            // No line ending
-
-
-            String badSql =
-                "/* SELECT core.bulkImport('test', 'TestTable', 'test.xls');\n" +       // Inside block comment
-                "   more comment\n" +
-                "*/" +
-                "    -- SELECT core.bulkImport('test', 'TestTable', 'test.xls');\n" +   // Inside single-line comment
-                "SELECTcore.bulkImport('test', 'TestTable', 'test.xls');\n" +           // Bad syntax
-                "SELECT core. bulkImport('test', 'TestTable', 'test.xls');\n" +         // Bad syntax
-                "SELECT core.bulkImport('test', 'TestTable');\n" +                      // Bad syntax: only one paramter
-                "SEECT core.bulkImport('test', 'TestTable', 'test.xls');\n" +           // Misspell SELECT
-                "SELECT core.bulkkImport('test', 'TestTable', 'test.xls');\n" +         // Misspell function name
-                "SELECT core.bulkImport('test', 'TestTable', 'test.xls')\n";            // No semicolon
-
-            AtomicLong counter = SqlScriptExecutor.BULK_IMPORT_EXECUTION_COUNT;
-            long startingCount = counter.longValue();
-            SqlDialect dialect = new PostgreSql90Dialect();
-            dialect.runSql(null, goodSql, null, null, null);
-            assertEquals(5, counter.longValue() - startingCount);
-
-            startingCount = counter.longValue();
-            dialect.runSql(null, badSql, null, null, null);
-            assertEquals(0, counter.longValue() - startingCount);
-        }
     }
 
     public static class JdbcHelperTestCase extends Assert

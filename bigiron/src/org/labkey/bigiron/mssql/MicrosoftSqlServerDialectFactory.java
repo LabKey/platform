@@ -176,49 +176,6 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
             dialect.runSql(null, badSql, bad, null, null);
             assertEquals(0, bad.getCounter());
         }
-
-//        @Test
-        public void testBulkImport()
-        {
-            String goodSql =
-                "EXEC core.bulkImport 'test', 'TestTable', 'test.xls'\n" +                                    // Normal
-                "EXECUTE core.bulkImport 'test', 'TestTable', 'test.xls'\n" +                                 // EXECUTE
-                "execute core.bulkImport'test', 'TestTable', 'test.xls'\n" +                                  // execute
-                "EXEC core.bulkImport'test','TestTable','test.xls';\n" +                                      // Minimal whitespace
-                "    EXEC     core.bulkImport    'test'   ,   'TestTable'     ,     'test.xls'        \n" +   // Lots of whitespace
-                "exec CORE.BULKIMPORT 'test', 'TestTable', 'test.xls'\n" +                                    // Case insensitive
-                "execute core.bulkImport'test.TestTable', 'test.xls';\n" +                                    // execute (with ;)
-                "    EXEC     core.bulkImport    'test'  ,   'TestTable'  ,  'test.xls'    ;     \n" +        // Lots of whitespace with ; in the middle
-                "exec CORE.BULKIMPORT 'test', 'TestTable', 'test.xls';     \n" +                              // Case insensitive (with ;)
-                "EXEC core.bulkImport 'test'   ,  'TestTable',    'test.xls'    ;\n" +                        // Lots of whitespace with ; at end
-                "EXEC core.bulkImport 'test', 'TestTable', 'test.xls'";                                       // No line ending
-
-            String badSql =
-                "/* EXEC core.bulkImport 'test', 'TestTable, 'test.xls'\n" +        // Inside block comment
-                "   more comment\n" +
-                "*/" +
-                "    -- EXEC core.bulkImport 'test', 'TestTable, 'test.xls'\n" +    // Inside single-line comment
-                "EXECcore.bulkImport 'test', 'TestTable, 'test.xls'\n" +            // Bad syntax: EXECcore
-                "EXEC core. bulkImport 'test', 'TestTable, 'test.xls'\n" +          // Bad syntax: core. bulkImport...
-                "EXEC core.bulkImport 'test'\n" +                                   // Bad syntax: only one parameter
-                "EXEC core.bulkImport 'test', 'TestTable'\n" +                      // Bad syntax: only two parameters
-                "EXECUT core.bulkImport 'test', 'TestTable, 'test.xls'\n" +         // Misspell EXECUTE
-                "EXECUTEUTE core.bulkImport 'test', 'TestTable, 'test.xls'\n" +     // Misspell EXECUTE -- previous regex allowed this
-                "EXEC core.bulkIImport 'test', 'TestTable, 'test.xls'\n" +          // Misspell bulkImport
-                "EXEC core.bulkImport'test', 'TestTable, 'test.xls'\n" +            // Bad syntax: no space
-                "EXEC core.bulkImport 'test', 'TestTable, 'test.xls';;\n" +         // Bad syntax: two semicolons
-                "EXEC core.bulkImport('test', 'TestTable, 'test.xls')\n";           // Bad syntax: parentheses
-
-            AtomicLong counter = SqlScriptExecutor.BULK_IMPORT_EXECUTION_COUNT;
-            long startingCount = counter.longValue();
-            SqlDialect dialect = new MicrosoftSqlServer2008R2Dialect();
-            dialect.runSql(null, goodSql, null, null, null);
-            assertEquals(10, counter.longValue() - startingCount);
-
-            startingCount = counter.longValue();
-            dialect.runSql(null, badSql, null, null, null);
-            assertEquals(0, counter.longValue() - startingCount);
-        }
     }
 
     public static class JdbcHelperTestCase extends Assert
