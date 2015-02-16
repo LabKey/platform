@@ -563,7 +563,7 @@ LABKEY.Utils = new function()
         /**
          * Will generate a unique id. If you provide a prefix, consider making it DOM safe so it can be used as
          * an element id.
-         * @param prefix
+         * @param {string} [prefix=lk-gen] - Optional prefix to start the identifier.
          * @returns {*}
          */
         id : function(prefix) {
