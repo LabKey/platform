@@ -2744,6 +2744,7 @@ query/src/org/labkey/query/view/editApp.jsp -text
 query/src/org/labkey/query/view/editQueryWebPart.jsp -text
 query/src/org/labkey/query/view/exportTables.jsp -text
 query/src/org/labkey/query/view/externalSchema.jsp -text
+query/src/org/labkey/query/view/generateSchema.jsp -text
 query/src/org/labkey/query/view/internalDeleteView.jsp -text
 query/src/org/labkey/query/view/internalNewView.jsp -text
 query/src/org/labkey/query/view/internalSourceView.jsp -text

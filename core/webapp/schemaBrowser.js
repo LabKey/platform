@@ -1814,6 +1814,12 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
                 iconCls: 'iconFileNew',
                 tooltip: 'Manage remote connection credentials for remote LabKey server authentication.'
             });
+            tbar.push({
+                text: 'Generate Schema Export',
+                handler: function() { location.href = LABKEY.ActionURL.buildURL('query', 'generateSchema'); },
+                iconCls: 'iconFileNew',
+                tooltip: 'Generate schema export sql script for migrating a schema.'
+            });
         }
 
         return tbar;

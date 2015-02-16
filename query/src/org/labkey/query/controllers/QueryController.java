@@ -71,6 +71,7 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.Compress;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -93,6 +94,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.UTF8PrintWriter;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -141,6 +143,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -164,6 +168,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.zip.GZIPOutputStream;
 
 public class QueryController extends SpringActionController
 {
@@ -5977,6 +5982,168 @@ public class QueryController extends SpringActionController
         {
             QueryService.get().deleteNamedSet(namedSetForm.getSetName());
             return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    public static class GenerateSchemaForm extends ReturnUrlForm
+    {
+        String sourceSchema;
+        String sourceDataSource;
+        String targetSchema;
+        String targetDataSource;
+        String path;
+
+        public String getSourceSchema()
+        {
+            return sourceSchema;
+        }
+
+        public void setSourceSchema(String sourceSchema)
+        {
+            this.sourceSchema = sourceSchema;
+        }
+
+        public String getTargetSchema()
+        {
+            return targetSchema;
+        }
+
+        public void setTargetSchema(String targetSchema)
+        {
+            this.targetSchema = targetSchema;
+        }
+
+        public String getPath()
+        {
+            return path;
+        }
+
+        public void setPath(String path)
+        {
+            this.path = path;
+        }
+
+        public String getSourceDataSource()
+        {
+            return sourceDataSource;
+        }
+
+        public void setSourceDataSource(String sourceDataSource)
+        {
+            this.sourceDataSource = sourceDataSource;
+        }
+
+        public String getTargetDataSource()
+        {
+            return targetDataSource;
+        }
+
+        public void setTargetDataSource(String targetDataSource)
+        {
+            this.targetDataSource = targetDataSource;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GenerateSchemaAction extends FormViewAction<GenerateSchemaForm>
+    {
+
+        @Override
+        public void validateCommand(GenerateSchemaForm form, Errors errors)
+        {
+            // TODO validate schemaNames and dataSources are real
+            // TODO validate path is not empty string
+        }
+
+        @Override
+        public ModelAndView getView(GenerateSchemaForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/query/view/generateSchema.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(GenerateSchemaForm form, BindException errors) throws Exception
+        {
+            // TODO: consider moving these to in place but here for easy of debugging.
+            String sourceSchemaName = form.getSourceSchema();
+            String sourceDataSource = form.getSourceDataSource();
+            String targetSchemaName = form.getTargetSchema();
+            String targetDataSource = form.getTargetDataSource();
+            String outputDir = form.getPath();
+            StringBuilder importScript = new StringBuilder();
+
+            // NOTE: assuming MS SQL dialect for (argos)
+
+            DbSchema sourceSchema = DbSchema.createFromMetaData(DbScope.getDbScope(sourceDataSource), sourceSchemaName, DbSchemaType.Bare);
+            for (TableInfo table : TableSorter.sort(sourceSchema) )
+            {
+                String tableName = table.getName();
+
+                try ( Results results = new TableSelector(table).getResults())
+                {
+                    File outputFile = new File(outputDir, tableName+".tsv.gz");
+                    GZIPOutputStream outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
+                    TSVGridWriter tsv = new TSVGridWriter(results);
+
+                    tsv.write(outputStream);
+                    tsv.close();
+
+                    importScript.append("EXEC core.bulkImport '" + targetSchemaName + "', '" + tableName + "', '" + outputFile.getName() + "';\n");
+                }
+            }
+
+            PrintWriter writer = new PrintWriter( new File(outputDir, sourceSchemaName+"_updateScript.sql"), "UTF-8" );
+            writer.print(importScript.toString());
+            writer.close();
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(GenerateSchemaForm form)
+        {
+            return form.getReturnActionURL();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Generate Schema");
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetSchemasWithDataSourcesAction extends ApiAction
+    {
+
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            // NOTE: copy pasta from initSources()
+            Collection<Map<String, Object>> sourcesAndSchemas = new LinkedList<>();
+            for (DbScope scope : DbScope.getDbScopes())
+            {
+                try
+                {
+                    DataSourceInfo source = new DataSourceInfo(scope);
+                    for (String schemaName : scope.getSchemaNames())
+                    {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("dataSourceDisplayName", source.displayName);
+                        map.put("schemaName", schemaName);
+                        sourcesAndSchemas.add(map);
+                    }
+
+                }
+                catch (SQLException e)
+                {
+                    LOG.error("Exception retrieving schemas from DBScope '" + scope.getDataSourceName() + "'", e);
+                }
+            }
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("schemas", sourcesAndSchemas);
+            return response;
         }
     }
 }
