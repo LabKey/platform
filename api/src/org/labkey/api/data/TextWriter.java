@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 
 /*
@@ -82,6 +83,11 @@ public abstract class TextWriter implements AutoCloseable
         _pw = new PrintWriter(new BufferedWriter(new UTF8PrintWriter(file)));
     }
 
+    public void prepare(OutputStream os) throws IOException
+    {
+        _pw = new PrintWriter(new BufferedWriter(new UTF8PrintWriter(os)));
+    }
+
     public void prepare(StringBuilder builder)
     {
         _pw = new PrintWriter(new StringBuilderWriter(builder));
@@ -136,6 +142,13 @@ public abstract class TextWriter implements AutoCloseable
     public void write(File file) throws IOException
     {
         prepare(file);
+        write();
+        close();
+    }
+
+    public void write(OutputStream os) throws IOException
+    {
+        prepare(os);
         write();
         close();
     }
