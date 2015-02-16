@@ -1816,7 +1816,7 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
             });
             tbar.push({
                 text: 'Generate Schema Export',
-                handler: function() { location.href = LABKEY.ActionURL.buildURL('query', 'generateSchema'); },
+                handler: function() { location.href = LABKEY.ActionURL.buildURL('query', 'generateSchema', null, {returnUrl: window.location}); },
                 iconCls: 'iconFileNew',
                 tooltip: 'Generate schema export sql script for migrating a schema.'
             });

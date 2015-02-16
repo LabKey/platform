@@ -71,7 +71,6 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.CSRFUtil;
-import org.labkey.api.util.Compress;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -94,7 +93,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.writer.UTF8PrintWriter;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -5991,7 +5989,7 @@ public class QueryController extends SpringActionController
         String sourceDataSource;
         String targetSchema;
         String targetDataSource;
-        String path;
+        String path; // consider changing to outpurDir
 
         public String getSourceSchema()
         {
@@ -6064,35 +6062,33 @@ public class QueryController extends SpringActionController
         @Override
         public boolean handlePost(GenerateSchemaForm form, BindException errors) throws Exception
         {
-            // TODO: consider moving these to in place but here for easy of debugging.
-            String sourceSchemaName = form.getSourceSchema();
-            String sourceDataSource = form.getSourceDataSource();
-            String targetSchemaName = form.getTargetSchema();
-            String targetDataSource = form.getTargetDataSource();
-            String outputDir = form.getPath();
+            // NOTE: not currently using form.targetDataSource. How/where do we leverage this?
             StringBuilder importScript = new StringBuilder();
 
-            // NOTE: assuming MS SQL dialect for (argos)
-
-            DbSchema sourceSchema = DbSchema.createFromMetaData(DbScope.getDbScope(sourceDataSource), sourceSchemaName, DbSchemaType.Bare);
+            // NOTE: should we add any kind of dialect tags to the importScript output?
+            DbSchema sourceSchema = DbSchema.createFromMetaData(DbScope.getDbScope(form.getSourceDataSource()), form.getSourceSchema(), DbSchemaType.Bare);
             for (TableInfo table : TableSorter.sort(sourceSchema) )
             {
                 String tableName = table.getName();
 
                 try ( Results results = new TableSelector(table).getResults())
                 {
-                    File outputFile = new File(outputDir, tableName+".tsv.gz");
+                    File outputFile = new File(form.getPath(), tableName+".tsv.gz");
                     GZIPOutputStream outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
-                    TSVGridWriter tsv = new TSVGridWriter(results);
+                    try ( TSVGridWriter tsv = new TSVGridWriter(results) )
+                    {
+                        tsv.setApplyFormats(false);
+                        tsv.write(outputStream);
+                    }
 
-                    tsv.write(outputStream);
-                    tsv.close();
-
-                    importScript.append("EXEC core.bulkImport '" + targetSchemaName + "', '" + tableName + "', '" + outputFile.getName() + "';\n");
+                    if (sourceSchema.getSqlDialect().isPostgreSQL())
+                        importScript.append("SELECT core.bulkImport('" + form.getTargetSchema() + "', '" + tableName + "', '" + outputFile.getName() + "');\n");
+                    else
+                        importScript.append("EXEC core.bulkImport '" + form.getTargetSchema() + "', '" + tableName + "', '" + outputFile.getName() + "';\n");
                 }
             }
 
-            PrintWriter writer = new PrintWriter( new File(outputDir, sourceSchemaName+"_updateScript.sql"), "UTF-8" );
+            PrintWriter writer = new PrintWriter( new File(form.getPath(), form.getSourceSchema()+"_updateScript.sql"), "UTF-8" );
             writer.print(importScript.toString());
             writer.close();
 
@@ -6130,6 +6126,7 @@ public class QueryController extends SpringActionController
                     {
                         Map<String, Object> map = new HashMap<>();
                         map.put("dataSourceDisplayName", source.displayName);
+                        map.put("dataSourceSourceName", source.sourceName);
                         map.put("schemaName", schemaName);
                         sourcesAndSchemas.add(map);
                     }

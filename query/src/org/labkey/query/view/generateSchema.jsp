@@ -17,6 +17,9 @@
 %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.query.controllers.QueryController" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -29,6 +32,10 @@
         return resources;
     }
 %>
+<%
+    JspView<QueryController.GenerateSchemaForm> me = (JspView<QueryController.GenerateSchemaForm>) HttpView.currentView();
+    QueryController.GenerateSchemaForm bean = me.getModelBean();
+%>
 
 <labkey:errors/>
 <div id="form"></div>
@@ -40,6 +47,7 @@
             extend: 'Ext.data.Model',
             fields: [
                 {name: 'dataSourceDisplayName', type: 'string'},
+                {name: 'dataSourceSourceName', type: 'string'},
                 {name: 'schemaName', type: 'auto'}
             ]
         });
@@ -47,7 +55,8 @@
         Ext4.define('DataSource', {
             extend: 'Ext.data.Model',
             fields: [
-                {name: 'dataSourceDisplayName', type: 'string'}
+                {name: 'dataSourceDisplayName', type: 'string'},
+                {name: 'dataSourceSourceName', type: 'string'}
             ]
         });
 
@@ -102,7 +111,8 @@
             store: sourceDataSourceStore,
             queryMode: 'local',
             displayField: 'dataSourceDisplayName',
-            value: 'labkey',
+            valueField: 'dataSourceSourceName',
+            value: 'labkeyDataSource',
             listeners: {
                 scope: this,
                 change: function(combo, newValue) {
@@ -129,7 +139,8 @@
             store: targetDataSourceStore,
             queryMode: 'local',
             displayField: 'dataSourceDisplayName',
-            value: 'labkey',
+            valueField: 'dataSourceSourceName',
+            value: 'labkeyDataSource',
             listeners: {
                 scope: this,
                 change: function(combo, newValue) {
@@ -167,22 +178,28 @@
                 // get unique datasource names
                 var s = {};
                 Ext4.each(data["schemas"], function(map) {
-                    s[map["dataSourceDisplayName"]] = true;
+                    s[map["dataSourceDisplayName"]] = map['dataSourceSourceName'];
                 });
 
                 // generate those in model data format (could probably skip this)
                 var dataSourceData = [];
-                Ext4.iterate(s, function(key) {
-                    dataSourceData.push({dataSourceDisplayName:key});
+                Ext4.iterate(s, function(key, val) {
+                    dataSourceData.push({dataSourceDisplayName:key, dataSourceSourceName:val});
+//                    dataSourceData.push({dataSourceDisplayName:key});
                 });
+
+                console.log(dataSourceData);
 
                 // load up stores with dataSource model
                 sourceDataSourceStore.loadRawData(dataSourceData);
                 targetDataSourceStore.loadRawData(dataSourceData);
 
+                SS = sourceDataSourceStore;
+                SX = targetDataSourceStore;
+
                 // handle firing some events
-                sourceSchemaStore.addFilter(createDataSourceFilter('labkey'));
-                targetSchemaStore.addFilter(createDataSourceFilter('labkey'));
+                sourceSchemaStore.addFilter(createDataSourceFilter('labkeyDataSource'));
+                targetSchemaStore.addFilter(createDataSourceFilter('labkeyDataSource'));
 
                 // select first item in schema dropdowns
                 sourceSchemaCombo.select(sourceSchemaStore.getAt(0));
@@ -231,7 +248,12 @@
                             form.submit();
                         }
                     },
-                    {text: 'Cancel'} // TODO: Where am I coming from?
+                    {
+                        text: 'Cancel',
+                        handler: function() {
+                            window.location = '<%=h(bean.getReturnUrl().toString())%>';
+                        }
+                    }
                 ]
 
             }]
