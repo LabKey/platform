@@ -95,7 +95,7 @@ public interface ForeignKey
      * @return Clone of original ForeignKey with updated FieldKey substitutions.
      */
     @Nullable
-    ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping);
+    ForeignKey remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> mapping);
 
     /**
      * Suggest a set of FieldKeys from the parent table that may be needed when resolving

@@ -148,11 +148,10 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 
 
     @Override
-    public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
+    public ForeignKey remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> mapping)
     {
         boolean assertsEnabled = false;
         assert assertsEnabled = true;
-        assert _remappedFields == null : "Already remapped ForeignKey.  If we hit this we need to 'compose' the field mappings.  Original remapping stacktrace: " + appendStackTrace(_remappedStackTrace, 30);
 
         Set<FieldKey> suggested = getSuggestedColumns();
         if (suggested == null || suggested.isEmpty())
@@ -163,7 +162,9 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         boolean identityMapping = true;
         for (FieldKey originalField : suggested)
         {
-            FieldKey remappedField = mapping.get(originalField);
+            // Check if the field has already be remapped
+            FieldKey field = getRemappedField(originalField);
+            FieldKey remappedField = FieldKey.remap(field, parent, mapping);
             if (remappedField == null)
                 return null;
             remappedSuggested.put(originalField, remappedField);
