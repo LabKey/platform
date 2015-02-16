@@ -25,6 +25,7 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.util.StringExpression;
 
 import java.util.List;
 import java.util.Map;
@@ -112,16 +113,10 @@ public class PropertyColumn extends LookupColumn
             if ((schemaKey != null && queryName != null && pkFieldKey != null) || lsidColumnFieldKey != null)
             {
                 // Swap out the renderer for file properties
-                to.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        if (schemaKey != null && queryName != null && pkFieldKey != null)
-                            return new FileLinkDisplayColumn(colInfo, pd, container, schemaKey, queryName, pkFieldKey);
-                        else
-                            return new FileLinkDisplayColumn(colInfo, pd, container, lsidColumnFieldKey);
-                    }
-                });
+                if (schemaKey != null && queryName != null && pkFieldKey != null)
+                    to.setDisplayColumnFactory(new FileLinkDisplayColumn.Factory(pd, container, schemaKey, queryName, pkFieldKey));
+                else
+                    to.setDisplayColumnFactory(new FileLinkDisplayColumn.Factory(pd, container, lsidColumnFieldKey));
             }
         }
 
@@ -308,6 +303,12 @@ public class PropertyColumn extends LookupColumn
             return "file";
         else
             return super.getInputType();
+    }
+
+    @Override
+    public StringExpression getURL()
+    {
+        return super.getURL();
     }
 
     @Override

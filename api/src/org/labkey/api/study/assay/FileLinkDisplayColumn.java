@@ -17,11 +17,14 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.AbstractFileDisplayColumn;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RemappingDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.files.FileContentService;
@@ -38,6 +41,7 @@ import org.labkey.api.util.URIUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -47,6 +51,56 @@ import java.util.Set;
 */
 public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 {
+    public static class Factory implements RemappingDisplayColumnFactory
+    {
+        private final PropertyDescriptor _pd;
+        private final Container _container;
+
+        private final SchemaKey _schemaKey;
+        private final String _queryName;
+        private FieldKey _pkFieldKey;
+
+        private FieldKey _objectURIFieldKey;
+
+        public Factory(PropertyDescriptor pd, Container c, @NotNull SchemaKey schemaKey, @NotNull String queryName, @NotNull FieldKey pkFieldKey)
+        {
+            _pd = pd;
+            _container = c;
+            _schemaKey = schemaKey;
+            _queryName = queryName;
+            _pkFieldKey = pkFieldKey;
+            _objectURIFieldKey = null;
+        }
+
+        public Factory(PropertyDescriptor pd, Container c, @NotNull FieldKey lsidColumnFieldKey)
+        {
+            _pd = pd;
+            _container = c;
+            _schemaKey = null;
+            _queryName = null;
+            _pkFieldKey = null;
+            _objectURIFieldKey = lsidColumnFieldKey;
+        }
+
+        @Override
+        public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+        {
+            if (_pkFieldKey != null)
+                _pkFieldKey = FieldKey.remap(_pkFieldKey, parent, remap);
+            if (_objectURIFieldKey != null)
+                _objectURIFieldKey = FieldKey.remap(_objectURIFieldKey, parent, remap);
+        }
+
+        @Override
+        public DisplayColumn createRenderer(ColumnInfo col)
+        {
+            if (_pkFieldKey != null)
+                return new FileLinkDisplayColumn(col, _pd, _container, _schemaKey, _queryName, _pkFieldKey);
+            else
+                return new FileLinkDisplayColumn(col, _pd, _container, _objectURIFieldKey);
+        }
+    }
+
     private final Container _container;
     private FieldKey _pkFieldKey;
 

@@ -75,7 +75,10 @@ public class LookupColumn extends ColumnInfo
             return null;
         LookupColumn ret = new LookupColumn(foreignKey, lookupKey, lookupColumn, joinType);
         ret.copyAttributesFrom(lookupColumn);
-        ret.copyURLFrom(lookupColumn, foreignKey.getFieldKey(), null);
+        // Copy the URL but don't reparent the FieldKey
+        ret.copyURLFrom(lookupColumn, null, null);
+        // Reparent all column FieldKeys including the URL just copied and DisplayColumnFactories
+        ret.remapFieldKeys(foreignKey.getFieldKey(), null);
         if (prefixColumnCaption)
         {
             ret.setLabel(foreignKey.getLabel() + " " + lookupColumn.getLabel());
