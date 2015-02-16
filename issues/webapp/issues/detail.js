@@ -74,7 +74,7 @@ Ext4.define('Issues.window.MoveIssue', {
             layout: 'form',
             items: [{
                 xtype: 'container',
-                html: "<div>Select a container from the list below and click the 'Move' button</div>",
+                html: "<div>Select a folder from the list below and click the 'Move' button</div>",
                 margin: '0 0 15 0'
             }, this.moveCombo]
         };

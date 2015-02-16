@@ -1790,6 +1790,9 @@ public class IssuesController extends SpringActionController
 
         private String _relatedIssuesList;
 
+        private String _inheritFromContainer = null;
+        private String _inheritFromContainerSelect = null;
+
         public String getDirection()
         {
             return _direction;
@@ -1880,8 +1883,15 @@ public class IssuesController extends SpringActionController
             _entryPluralName = entryPluralName;
         }
 
-        public void setRequiredFields(HString[] requiredFields){_requiredFields = requiredFields;}
-        public HString[] getRequiredFields(){return _requiredFields;}
+        public void setRequiredFields(HString[] requiredFields)
+        {
+            _requiredFields = requiredFields;
+        }
+
+        public HString[] getRequiredFields()
+        {
+            return _requiredFields;
+        }
 
         public String getRelatedIssuesList()
         {
@@ -1892,13 +1902,36 @@ public class IssuesController extends SpringActionController
         {
             _relatedIssuesList = relatedIssuesList;
         }
+
+        public String getInheritFromContainer()
+        {
+            return _inheritFromContainer;
+        }
+
+        public void setInheritFromContainer(String inheritFromContainer)
+        {
+            _inheritFromContainer = inheritFromContainer;
+        }
+
+        public String getInheritFromContainerSelect()
+        {
+            return _inheritFromContainerSelect;
+        }
+
+        public void setInheritFromContainerSelect(String inheritFromContainerSelect)
+        {
+            _inheritFromContainerSelect = inheritFromContainerSelect;
+        }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
     public class ConfigureIssuesAction extends FormHandlerAction<ConfigureIssuesForm>
     {
+        private static final String INHERIT_FROM_CONTAINER = "inheritFromContainer";
+        private static final String MOVE_TO_CONTAINER = "moveToContainer";
         private Group _group = null;
         private User _user = null;
+        private Container inheritSettingsFromThisContainer = null;
         private List<Container> _moveToContainers = new LinkedList<>();
         private Sort.SortDirection _direction = Sort.SortDirection.ASC;
 
@@ -1961,10 +1994,41 @@ public class IssuesController extends SpringActionController
                 errors.reject("assignedToUser", "Invalid assigned to setting!");
             }
 
+            if(form.getInheritFromContainer().equals("DoNotInheritFromContainer"))
+            {
+
+                if (form.getInheritFromContainerSelect() != null)
+                    errors.reject(INHERIT_FROM_CONTAINER, "No 'inherit from folder' setting shouldn't include a default container!");
+            }
+            else if(form.getInheritFromContainer().equals("InheritFromSpecificContainer"))
+            {
+
+                String inheritFromContainerPath = form.getInheritFromContainerSelect();
+                if(inheritFromContainerPath != null)
+                {
+                    //get the Container to inherit/capture admin settings from
+                    Container container = ContainerManager.getForPath(inheritFromContainerPath);
+                    if(null == container)
+                    {
+                        errors.reject(INHERIT_FROM_CONTAINER, "Container does not exist!");
+                    }
+                    else
+                    {
+                        inheritSettingsFromThisContainer = container;
+                    }
+                }
+                else
+                    errors.reject(INHERIT_FROM_CONTAINER, "The 'inherit from container' option was selected with a blank.");
+            }
+            else
+            {
+                errors.reject(INHERIT_FROM_CONTAINER, "Invalid 'inherit from' setting!");
+            }
+
             if (form.getMoveToContainer().equals("NoMoveToContainer"))
             {
                 if (form.getMoveToContainerSelect() != null)
-                    errors.reject("moveToContainer", "No move to container setting shouldn't include a default container!");
+                    errors.reject(MOVE_TO_CONTAINER, "No move to container setting shouldn't include a default container!");
             }
             else if (form.getMoveToContainer().equals("SpecificMoveToContainer"))
             {
@@ -1978,18 +2042,18 @@ public class IssuesController extends SpringActionController
                         Container container = ContainerManager.getForPath(containerPath);
                         if (null == container)
                         {
-                            errors.reject("moveToContainer", "Container does not exist!");
+                            errors.reject(MOVE_TO_CONTAINER, "Container does not exist!");
                             break;
                         }
                         _moveToContainers.add(container);
                     }
                 }
                 else
-                    errors.reject("moveToContainer", "The move to specific container option was selected with a blank.");
+                    errors.reject(MOVE_TO_CONTAINER, "The move to specific container option was selected with a blank.");
             }
             else
             {
-                errors.reject("moveToContainer", "Invalid move to setting!");
+                errors.reject(MOVE_TO_CONTAINER, "Invalid move to setting!");
             }
 
             if (form.getRelatedIssuesList() != null)
@@ -2067,6 +2131,7 @@ public class IssuesController extends SpringActionController
             IssueManager.saveCommentSortDirection(getContainer(), _direction);
             IssueManager.saveDefaultAssignedToUser(getContainer(), _user);
             IssueManager.saveMoveDestinationContainers(getContainer(), _moveToContainers);
+            IssueManager.saveInheritFromContainer(getContainer(), inheritSettingsFromThisContainer);
             IssueManager.saveRelatedIssuesList(getContainer(), form.getRelatedIssuesList());
 
             CustomColumnConfiguration nccc = new CustomColumnConfiguration(getViewContext());
@@ -2624,6 +2689,7 @@ public class IssuesController extends SpringActionController
             bean.defaultUser = IssueManager.getDefaultAssignedToUser(c);
             bean.moveToContainers = IssueManager.getMoveDestinationContainers(c);
             bean.commentSort = IssueManager.getCommentSortDirection(c);
+            bean.inheritFromContainer = IssueManager.getInheritFromContainer(c);
             setModelBean(bean);
         }
     }
@@ -2642,6 +2708,8 @@ public class IssuesController extends SpringActionController
         public User defaultUser;
         public List<Container> moveToContainers;
         public Sort.SortDirection commentSort;
+        public Container inheritFromContainer;
+
 
         public AdminBean(List<ColumnInfo> columns, String requiredFields, EntryTypeNames typeNames)
         {

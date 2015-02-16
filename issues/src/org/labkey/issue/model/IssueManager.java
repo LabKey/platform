@@ -137,6 +137,9 @@ public class IssueManager
     private static final String CAT_DEFAULT_MOVE_TO_LIST = "issueDefaultMoveToList";
     private static final String PROP_DEFAULT_MOVE_TO_CONTAINER = "issueDefaultMoveToContainer";
 
+    private static final String CAT_DEFAULT_INHERIT_FROM_CONTAINER = "issueDefaultInheritFromCategory";
+    private static final String PROP_DEFAULT_INHERIT_FROM_CONTAINER = "issueDefaultInheritFromProperty";
+
     private static final String CAT_DEFAULT_RELATED_ISSUES_LIST = "issueRelatedIssuesList";
     private static final String PROP_DEFAULT_RELATED_ISSUES_LIST = "issueRelatedIssuesList";
 
@@ -807,6 +810,36 @@ public class IssueManager
 
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_MOVE_TO_LIST, true);
         props.put(PROP_DEFAULT_MOVE_TO_CONTAINER, propsValue);
+        props.save();
+    }
+
+    public static Container getInheritFromContainer(Container current)
+    {
+        Map<String, String> props = PropertyManager.getProperties(current, CAT_DEFAULT_INHERIT_FROM_CONTAINER);
+        String propsValue = props.get(PROP_DEFAULT_INHERIT_FROM_CONTAINER);
+
+        Container inheritFromContainer = null;
+
+        if(propsValue != null)
+        {
+            inheritFromContainer = ContainerManager.getForId(propsValue);
+        }
+
+        return inheritFromContainer;
+    }
+
+    public static void saveInheritFromContainer(Container current, @Nullable Container inheritFrom)
+    {
+        String propsValue = null;
+
+        if(inheritFrom != null)
+        {
+            propsValue = inheritFrom.getId();
+
+        }
+
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(current, CAT_DEFAULT_INHERIT_FROM_CONTAINER, true);
+        props.put(PROP_DEFAULT_INHERIT_FROM_CONTAINER, propsValue);
         props.save();
     }
 

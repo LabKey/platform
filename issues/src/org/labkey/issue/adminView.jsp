@@ -62,18 +62,20 @@
     CustomColumnConfiguration ccc = bean.ccc;
     Container c = getContainer();
 
-    List<String> containerIds = new LinkedList<>();
+    List<String> moveToContainerIds = new LinkedList<>();
     if (bean.moveToContainers != null)
     {
         for (Container container : bean.moveToContainers)
-            containerIds.add(container.getId());
+            moveToContainerIds.add(container.getId());
     }
+
 %>
 
 <script type="text/javascript">
     // NOTE: needed for admin.js
     var curDefaultUser = <%=bean.defaultUser == null ? null : bean.defaultUser.getUserId()%>;
-    var curDefaultContainers = <%= new JSONArray(containerIds.toString())%>;
+    var curDefaultContainers = <%= new JSONArray(moveToContainerIds.toString())%>;
+    var curInheritContainer = "<%= h(bean.inheritFromContainer == null ? "" : bean.inheritFromContainer.getId())%>";
 </script>
 
 <br>
@@ -87,9 +89,145 @@
 </table>
 <labkey:form name="entryTypeNames" action="<%=h(buildURL(ConfigureIssuesAction.class))%>" method="POST">
 
-<table><tr>
+<table>
+    <tr>
+        <td valign="top" colspan="2">
+            <table width="110%">
+                <tr><td align="center" colspan="2"><div class="labkey-form-label"><b>Configuration</b></div></td></tr>
+                <tr>
+                    <td valign=top>
+                        <table>
+                            <tr>
+                                <td>Singular item name</td>
+                                <td><input type="text" name="<%=text(ConfigureIssuesForm.ParamNames.entrySingularName.name())%>"
+                                           value="<%=h(bean.entryTypeNames.singularName)%>" size="20"/></td>
+                            </tr>
+                            <tr>
+                                <td>Plural items name</td>
+                                <td><input type="text" name="<%=text(ConfigureIssuesForm.ParamNames.entryPluralName.name())%>"
+                                           value="<%=h(bean.entryTypeNames.pluralName)%>" size="20"/></td>
+                            </tr>
+                            <tr>
+                                <td>Comment sort direction</td>
+                                <td>
+                                    <%=PageFlowUtil.strSelect(ConfigureIssuesForm.ParamNames.direction.name(), Arrays.asList(Sort.SortDirection.values()), java.util.Arrays.asList("Oldest first", "Newest first"), bean.commentSort) %>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td>
+                        <table align="right">
+                            <tr><td colspan="2">Inherit Admin Setting from folder:</td></tr>
+                            <tr>
+                                <td>
+                                    <input onchange="updateInheritFromContainerSelect()" type="radio" name="inheritFromContainer" value="DoNotInheritFromContainer"<%=checked(bean.inheritFromContainer == null)%> />
+                                </td>
+                                <td>None</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input onchange="updateInheritFromContainerSelect()" type="radio" name="inheritFromContainer" value="InheritFromSpecificContainer"<%=checked(bean.inheritFromContainer != null)%> />
+                                </td>
+                                <td>
+                                    <div class="inheritFromContainerCheckCombo"></div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <table>
+                            <tr><td colspan="2">Populate the assigned to list from:</td></tr>
+                            <tr>
+                                <td>
+                                    <input onchange="assignedToGroup.disabled=true;updateAssignedToUser();" type="radio" name="assignedToMethod" value="ProjectUsers"<%=checked(null == bean.assignedToGroup)%> />
+                                </td>
+                                <td>All Project Users</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input onchange="assignedToGroup.disabled=false;updateAssignedToUser();" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%> />
+                                </td>
+                                <td>Specific Group
+                                    <select name="assignedToGroup" onchange="updateAssignedToUser()"<%=disabled(null == bean.assignedToGroup)%> ><%
+                                    for (Group group : org.labkey.api.security.SecurityManager.getGroups(c.getProject(), true))
+                                        {
+                                            // 19532 partial. Only show Site: Users option to site admins
+                                            if (!group.isGuests() && (!group.isUsers() || getUser().isSiteAdmin()))
+                                            {
+                                                String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
+                                                out.println("<option value=\"" + group.getUserId() + "\"" + selected(null != bean.assignedToGroup && group.getUserId() == bean.assignedToGroup.getUserId()) + ">" + h(displayText) + "</option>");
+                                            }
+                                        }
+                                    %>
+                                    </select>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td>
+                        <table align="right">
+                            <tr><td colspan="2">Set move to folder:</td></tr>
+                            <tr>
+                                <td>
+                                    <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="NoMoveToContainer"<%=checked(bean.moveToContainers.size() == 0)%> />
+                                </td>
+                                <td>None</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="SpecificMoveToContainer"<%=checked(bean.moveToContainers.size() > 0)%> />
+                                </td>
+                                <td>
+                                    <div class="moveToContainerCheckCombo"></div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+
+                </tr>
+                <tr>
+                    <td>
+                        <table>
+                            <tr><td colspan="2">Set default assigned to user:</td></tr>
+                            <tr>
+                                <td>
+                                    <input onchange="defaultUser.disabled=true;" type="radio" name="assignedToUser" value="NoDefaultUser"<%=checked(null == bean.defaultUser)%> />
+                                </td>
+                                <td>No default</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input onchange="defaultUser.disabled=false;" type="radio" name="assignedToUser" value="SpecificUser"<%=checked(null != bean.defaultUser)%> />
+                                </td>
+                                <td>Specific User
+                                    <select onchange="updateCurDefaultUser();" name="defaultUser"<%=disabled(null == bean.defaultUser)%> ></select>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td>
+                        <table align="right">
+                            <td>Folder of related issues list</td>
+                            <td><input type="text" name="relatedIssuesList"
+                                    <%
+                                        Container related = IssueManager.getRelatedIssuesList(c);
+                                        String relatedStr = related == null ? "" : related.getPath();
+                                    %>
+                                       value="<%=h(relatedStr)%>" size="45"/></td>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td><%= button("Update").submit(true) %></td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
     <td valign=top>
-        <table>
+        <table width="100%">
             <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Required Fields</b></div></td></tr>
             <tr><td colspan=2>Select fields to be required when entering or updating <%=h(bean.getEntryTypeNames().getIndefiniteSingularArticle())%> <%=h(bean.getEntryTypeNames().singularName)%>:</td></tr>
             <tr><td colspan=2>&nbsp;</td></tr>
@@ -120,8 +258,8 @@
         </table><br>
     </td>
     <td valign=top>
-        <table>
-        <tr><td colspan=3 align=center><div class="labkey-form-label"><b>Custom Fields</b></div></td></tr>
+        <table width="120%">
+        <tr><td colspan=4 align="center" ><div class="labkey-form-label"><b>Custom Fields</b></div></td></tr>
         <tr><td colspan=3>Enter captions below to use custom fields in this <%=h(bean.entryTypeNames.pluralName)%> list:</td></tr>
         <tr><td colspan=3>&nbsp;</td></tr>
         <tr><td>Type</td><td><input name="type" value="<%=h(ccc.getCaption("type"))%>" size=20></td></tr>
@@ -141,121 +279,7 @@
         </table>
     </td>
 </tr>
-<tr>
-    <td valign="top" colspan="2">
-        <table width="100%">
-            <tr><td align="center" colspan="2"><div class="labkey-form-label"><b>Additional Configuration</b></div></td></tr>
-            <tr>
-                <td valign=top>
-                    <table>
-                        <tr>
-                            <td>Singular item name</td>
-                            <td><input type="text" name="<%=text(ConfigureIssuesForm.ParamNames.entrySingularName.name())%>"
-                                       value="<%=h(bean.entryTypeNames.singularName)%>" size="20"/></td>
-                        </tr>
-                        <tr>
-                            <td>Plural items name</td>
-                            <td><input type="text" name="<%=text(ConfigureIssuesForm.ParamNames.entryPluralName.name())%>"
-                                       value="<%=h(bean.entryTypeNames.pluralName)%>" size="20"/></td>
-                        </tr>
-                        <tr>
-                            <td>Comment sort direction</td>
-                            <td>
-                                <%=PageFlowUtil.strSelect(ConfigureIssuesForm.ParamNames.direction.name(), Arrays.asList(Sort.SortDirection.values()), java.util.Arrays.asList("Oldest first", "Newest first"), bean.commentSort) %>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-                <td valign="top" align="right">
-                    <table>
-                        <tr><td colspan="2">Set move to folder:</td></tr>
-                        <tr>
-                            <td>
-                                <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="NoMoveToContainer"<%=checked(bean.moveToContainers.size() == 0)%> />
-                            </td>
-                            <td>None</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="SpecificMoveToContainer"<%=checked(bean.moveToContainers.size() > 0)%> />
-                            </td>
-                            <td>
-                                <div class="moveToContainerCheckCombo"></div>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <table>
-                        <tr><td colspan="2">Populate the assigned to list from:</td></tr>
-                        <tr>
-                            <td>
-                                <input onchange="assignedToGroup.disabled=true;updateAssignedToUser();" type="radio" name="assignedToMethod" value="ProjectUsers"<%=checked(null == bean.assignedToGroup)%> />
-                            </td>
-                            <td>All Project Users</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input onchange="assignedToGroup.disabled=false;updateAssignedToUser();" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%> />
-                            </td>
-                            <td>Specific Group
-                                <select name="assignedToGroup" onchange="updateAssignedToUser()"<%=disabled(null == bean.assignedToGroup)%> ><%
-                                    for (Group group : org.labkey.api.security.SecurityManager.getGroups(c.getProject(), true))
-                                    {
-                                        // 19532 partial. Only show Site: Users option to site admins
-                                        if (!group.isGuests() && (!group.isUsers() || getUser().isSiteAdmin()))
-                                        {
-                                            String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
-                                            out.println("<option value=\"" + group.getUserId() + "\"" + selected(null != bean.assignedToGroup && group.getUserId() == bean.assignedToGroup.getUserId()) + ">" + h(displayText) + "</option>");
-                                        }
-                                    }
-                                %>
-                                </select>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-                <td>
-                    <table>
-                        <td>Folder of related issues list</td>
-                        <td><input type="text" name="relatedIssuesList"
-                                   <%
-                                       Container related = IssueManager.getRelatedIssuesList(c);
-                                       String relatedStr = related == null ? "" : related.getPath();
-                                   %>
-                                   value="<%=h(relatedStr)%>" size="20"/></td>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <table>
-                        <tr><td colspan="2">Set default assigned to user:</td></tr>
-                        <tr>
-                            <td>
-                                <input onchange="defaultUser.disabled=true;" type="radio" name="assignedToUser" value="NoDefaultUser"<%=checked(null == bean.defaultUser)%> />
-                            </td>
-                            <td>No default</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input onchange="defaultUser.disabled=false;" type="radio" name="assignedToUser" value="SpecificUser"<%=checked(null != bean.defaultUser)%> />
-                            </td>
-                            <td>Specific User
-                                <select onchange="updateCurDefaultUser();" name="defaultUser"<%=disabled(null == bean.defaultUser)%> ></select>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td><%= button("Update").submit(true) %></td>
-            </tr>
-        </table>
-    </td>
-</tr>
+
 </table>
 </labkey:form>
 

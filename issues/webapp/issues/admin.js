@@ -74,18 +74,25 @@ Ext4.onReady( function() {
         }
     });
 
-    var label = Ext4.create('Ext.Component', {
+    var moveToLabel = Ext4.create('Ext.Component', {
         tpl: new Ext4.XTemplate('<span>{text:htmlEncode}</span>'),
         data: {
             text: 'Specific Folder'
         }
     });
 
+    var inheritFromLabel = Ext4.create('Ext.Component', {
+        tpl: new Ext4.XTemplate('<span>{text:htmlEncode}</span>'),
+        data: {
+            text: 'Choose Folder'
+        }
+    });
+
     // Create the combo box, attached to the states data store
-    var comboBox = Ext4.create('Ext.form.ComboBox', {
+    var comboBoxMoveTo = Ext4.create('Ext.form.ComboBox', {
         name: 'moveToContainerSelect',
         margin: '0 0 0 5',
-        width: 250,
+        width: 400,
         multiSelect: true,
         delimiter: ';',
         store: store,
@@ -101,8 +108,26 @@ Ext4.onReady( function() {
         }
     });
 
+    var comboBoxInheritContainer = Ext4.create('Ext.form.ComboBox', {
+        name: 'inheritFromContainerSelect',
+        margin: '0 0 0 5',
+        width: 400,
+        multiSelect: false,
+        store: store,
+        queryMode: 'local',
+        allowBlank: false,
+        valueField: 'containerId',
+        displayField: 'containerPath',
+        disabled: (curInheritContainer == ""),
+        listConfig : {
+            getInnerTpl: function (displayField) {
+                return '{' + displayField + ':htmlEncode}';
+            }
+        }
+    });
+
     Ext4.create('Ext.panel.Panel', {
-        width: 380,
+        width: 500,
         renderTo: Ext4.get(Ext4.dom.Query.select('.moveToContainerCheckCombo')[0]),
         border: false, frame: false,
         bodyStyle: 'background-color: transparent',
@@ -111,12 +136,25 @@ Ext4.onReady( function() {
             align: 'stretch',
             pack: 'start'
         },
-        items: [label, comboBox]
+        items: [moveToLabel, comboBoxMoveTo]
     });
 
+    Ext4.create('Ext.panel.Panel', {
+        width: 500,
+        renderTo: Ext4.get(Ext4.dom.Query.select('.inheritFromContainerCheckCombo')[0]),
+        border: false, frame: false,
+        bodyStyle: 'background-color: transparent',
+        layout: {
+            type: 'hbox',
+            align: 'stretch',
+            pack: 'start'
+        },
+        items: [inheritFromLabel, comboBoxInheritContainer]
+    });
     // set default
-    //comboBox.reset();
-    comboBox.setValue(curDefaultContainers);
+    //comboBoxMoveTo.reset();
+    comboBoxMoveTo.setValue(curDefaultContainers);
+    comboBoxInheritContainer.setValue(curInheritContainer);
 
 });
 
@@ -128,4 +166,13 @@ function toggleMoveToContainerSelect() {
 }
 
 Ext4.onReady(toggleMoveToContainerSelect);
+
+function updateInheritFromContainerSelect() {
+    if(document.querySelector("input[name=inheritFromContainer]").checked)
+        Ext4.ComponentQuery.query('combo[@name=inheritFromContainerSelect]')[0].setDisabled(true);
+    else
+        Ext4.ComponentQuery.query('combo[@name=inheritFromContainerSelect]')[0].setDisabled(false);
+}
+Ext4.onReady(updateInheritFromContainerSelect);
+
 
