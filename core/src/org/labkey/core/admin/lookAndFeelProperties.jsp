@@ -245,7 +245,7 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize column restrictions (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Customize column restrictions (<%=text(bean.customColumnRestrictionHelpLink)%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">Restrict charting columns by measure and dimension flags</td>
