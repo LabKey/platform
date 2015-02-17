@@ -14,6 +14,7 @@ LABKEY.requiresCss("study/ReportFilterPanel.css");
  * @cfg fn A filter function that will be applied to the Ext store
  * @cfg labelField The name of the store field used to render the label for each item.  Defaults to 'label'
  * @cfg allowAll If true, a checkbox will be added to toggle selection across all items
+ * @cfg showDisplayCol If true, an additional column will be shown between the checkbox and label to use for display
  * @cfg normalWrap if true, wrap the text of the grid cells normally (i.e. removing white-space:nowrap)
  */
 Ext4.define('LABKEY.ext4.filter.SelectList', {
@@ -349,6 +350,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             // spacer column, used for category indenting
             width     : 20,
             hidden    : !this.allowAll
+        }, {
+            dataIndex : 'display',
+            hidden    : this.showDisplayCol == undefined || !this.showDisplayCol,
+            width     : 20
         },{
             xtype     : 'templatecolumn',
             flex      : 1,
@@ -654,6 +659,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
             filterPanels.push(Ext4.apply(this.sections[f],{
                 xtype : 'labkey-filterselectlist',
                 allowAll : this.allowAll,
+                showDisplayCol : this.showDisplayCol,
                 border : false,
                 frame : false,
                 panelName : this.panelName
