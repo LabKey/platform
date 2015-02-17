@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -51,14 +52,16 @@
         <input type="text" id="notificationEmail" name="notificationEmail" style="width: 100%; max-width: 40em;" value="<%=h(bean.getNotificationEmail())%>">
     </div>
 
-    <h3 style="margin-bottom: 2px;"><label for="allowReporting">Error and Usage Reporting</label></h3>
-    <div style="margin-bottom: 10px;">
-        Each installation can report information about errors and basic usage to labkey.org. This
-        helps the development team fix bugs and provides insight into LabKey Server usage.
-        No confidential data is submitted.
-        <br/>
-        <input type="checkbox" id="allowReporting" name="allowReporting"<%=checked(bean.isAllowReporting())%>> Allow reporting
-        <span style="font-size: smaller; font-style: italic;">we strongly recommend this basic level of reporting</span>
-    </div>
+    <% if (!AppProps.getInstance().isDevMode()) { %>
+        <h3 style="margin-bottom: 2px;"><label for="allowReporting">Error and Usage Reporting</label></h3>
+        <div style="margin-bottom: 10px;">
+            Each installation can report information about errors and basic usage to labkey.org. This
+            helps the development team fix bugs and provides insight into LabKey Server usage.
+            No confidential data is submitted.
+            <br/>
+            <input type="checkbox" id="allowReporting" name="allowReporting"<%=checked(bean.isAllowReporting())%>> Allow reporting
+            <span style="font-size: smaller; font-style: italic;">we strongly recommend this basic level of reporting</span>
+        </div>
+    <% } %>
     <%= button("Next").submit(true) %>
 </labkey:form>
