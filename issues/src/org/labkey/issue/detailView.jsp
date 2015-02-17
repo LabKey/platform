@@ -161,7 +161,7 @@
 }
 %>
 
-<table style="width: 60%;">
+<table class="issue-fields" style="width: 60%;">
     <tr>
         <td valign="top"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
@@ -238,9 +238,9 @@
         {
             %><div class="currentIssue" style="display: inline;"><%
         }
-        %><hr><table width="100%"><tr><td align="left"><b>
+        %><hr><table width="100%"><tr><td class="comment-created" align="left"><b>
         <%=h(bean.writeDate(comment.getCreated()))%>
-        </b></td><td align="right"><b>
+        </b></td><td class="comment-created-by" align="right"><b>
         <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>
         <%
