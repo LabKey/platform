@@ -4,150 +4,142 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-(function ($)
+(function($)
 {
+    var _idPrefix = 'tour-',
+        _idSel = '#' + _idPrefix,
+        _steps = 1,
+        _stepHandles = {},
+        _idSelector = _idPrefix + 'selector',
+        _rowId = '',
+        _rowClass = 'col-width row',
+        _labelClass = 'label',
+        _inputClass = 'input',
+        _textAreaRows = '10',
+        _textAreaCols = '65';
 
-    var _idPrefix = 'tour-';
-    var _idSel = '#' + _idPrefix;
-    var _steps = 1;
-    var _idSelector = _idPrefix + 'selector';
-
-    var _rowClass = "col-width row";
-    var _labelClass = "label";
-    var _inputClass = "input";
-    var _textAreaRows = "10";
-    var _textAreaCols = "65";
-
-    var _rowId = "";
-
-    var _stepHandles = {};
-
-    LABKEY._tour = new function ()
+    LABKEY._tour = new function()
     {
         return {
             json: {},
-            title: "",
-            description: "",
+            title: '',
+            description: '',
             mode: 0,
             rowId: 0
         };
     };
 
-    Ext4.onReady(function ()
-    {
-        Ext4.define('LABKEY._tour.TourExportJsonPanel', {
-            extend: 'LABKEY.vis.BaseExportScriptPanel',
+    Ext4.define('LABKEY._tour.TourExportJsonPanel', {
+        extend: 'LABKEY.vis.BaseExportScriptPanel',
 
-            SCRIPT_TEMPLATE: "{\n" +
-            "\"Title\":\"{{tourTitle}}\",\n" +
-            "\"Description\":\"{{tourDescription}}\",\n" +
-            "\"Mode\":\"{{tourMode}}\",\n" +
-            "\"Tour\":\n{{tourJson}}\n" +
-            "}\n",
+        SCRIPT_TEMPLATE: "{\n" +
+        "\"Title\":\"{{tourTitle}}\",\n" +
+        "\"Description\":\"{{tourDescription}}\",\n" +
+        "\"Mode\":\"{{tourMode}}\",\n" +
+        "\"Tour\":\n{{tourJson}}\n" +
+        "}\n",
 
-            codeMirrorMode: {name: "javascript", json: true},
+        codeMirrorMode: {name: "javascript", json: true},
 
-            compileTemplate: function (input)
-            {
-                return this.SCRIPT_TEMPLATE
-                        .replace('{{tourTitle}}', $(_idSel + 'title').val())
-                        .replace('{{tourDescription}}', $(_idSel + 'description').val())
-                        .replace('{{tourMode}}', $(_idSel + 'mode').val())
-                        .replace('{{tourJson}}', _generateExport());
-            }
-        });
-
-        Ext4.define('LABKEY._tour.TourImportJsonPanel', {
-            extend: 'LABKEY.vis.BaseExportScriptPanel',
-
-            SCRIPT_TEMPLATE: "",
-
-            codeMirrorMode: {name: "javascript", json: true},
-
-            optionButton: function ()
-            {
-                return {
-                    text: 'Import', scope: this, handler: function ()
-                    {
-                        _retrieveImport(this.codeMirror.getValue());
-                        this.fireEvent("closeOptionsWindow");
-                    }
-                }
-            },
-
-            compileTemplate: function (input)
-            {
-                return this.SCRIPT_TEMPLATE;
-            }
-        });
-
-        Ext4.define('LABKEY._tour.EditTour', {
-            extend: 'Ext.panel.Panel',
-            export: function ()
-            {
-                if (!this.exportTourWindow)
-                {
-                    this.editorExportTourPanel = Ext4.create('LABKEY._tour.TourExportJsonPanel', {
-                        listeners: {
-                            scope: this,
-                            closeOptionsWindow: function ()
-                            {
-                                this.exportTourWindow.hide();
-                            }
-                        }
-
-                    });
-
-                    this.exportTourWindow = Ext4.create('Ext.window.Window', {
-                        title: "Export Tour",
-                        cls: 'data-window',
-                        border: false,
-                        frame: false,
-                        modal: true,
-                        width: 800,
-                        resizable: false,
-                        closeAction: 'hide',
-                        items: [this.editorExportTourPanel]
-                    });
-                }
-                this.exportTourWindow.show();
-            },
-            import: function ()
-            {
-                if (!this.importTourWindow)
-                {
-                    this.editorImportTourPanel = Ext4.create('LABKEY._tour.TourImportJsonPanel', {
-                        listeners: {
-                            scope: this,
-                            closeOptionsWindow: function ()
-                            {
-                                this.importTourWindow.hide();
-                            }
-                        }
-                    });
-
-                    this.importTourWindow = Ext4.create('Ext.window.Window', {
-                        title: "Import Tour",
-                        cls: 'data-window',
-                        border: false,
-                        frame: false,
-                        modal: true,
-                        width: 800,
-                        resizable: false,
-                        closeAction: 'hide',
-                        items: [this.editorImportTourPanel]
-                    });
-                }
-                this.importTourWindow.show();
-            }
-        });
+        compileTemplate: function(input)
+        {
+            return this.SCRIPT_TEMPLATE
+                    .replace('{{tourTitle}}', $(_idSel + 'title').val())
+                    .replace('{{tourDescription}}', $(_idSel + 'description').val())
+                    .replace('{{tourMode}}', $(_idSel + 'mode').val())
+                    .replace('{{tourJson}}', _generateExport());
+        }
     });
 
-    var _init = function ()
+    Ext4.define('LABKEY._tour.TourImportJsonPanel', {
+        extend: 'LABKEY.vis.BaseExportScriptPanel',
+
+        SCRIPT_TEMPLATE: "",
+
+        codeMirrorMode: {name: "javascript", json: true},
+
+        optionButton: function()
+        {
+            return {
+                text: 'Import', scope: this, handler: function()
+                {
+                    _retrieveImport(this.codeMirror.getValue());
+                    this.fireEvent("closeOptionsWindow");
+                }
+            }
+        },
+
+        compileTemplate: function(input)
+        {
+            return this.SCRIPT_TEMPLATE;
+        }
+    });
+
+    Ext4.define('LABKEY._tour.EditTour', {
+        extend: 'Ext.panel.Panel',
+        showExport: function ()
+        {
+            if (!this.exportTourWindow)
+            {
+                var editorExportTourPanel = Ext4.create('LABKEY._tour.TourExportJsonPanel', {
+                    listeners: {
+                        scope: this,
+                        closeOptionsWindow: function ()
+                        {
+                            this.exportTourWindow.hide();
+                        }
+                    }
+                });
+
+                this.exportTourWindow = Ext4.create('Ext.window.Window', {
+                    title: "Export Tour",
+                    cls: 'data-window',
+                    border: false,
+                    frame: false,
+                    modal: true,
+                    width: 800,
+                    resizable: false,
+                    closeAction: 'hide',
+                    items: [editorExportTourPanel]
+                });
+            }
+            this.exportTourWindow.show();
+        },
+        showImport: function ()
+        {
+            if (!this.importTourWindow)
+            {
+                var editorImportTourPanel = Ext4.create('LABKEY._tour.TourImportJsonPanel', {
+                    listeners: {
+                        scope: this,
+                        closeOptionsWindow: function ()
+                        {
+                            this.importTourWindow.hide();
+                        }
+                    }
+                });
+
+                this.importTourWindow = Ext4.create('Ext.window.Window', {
+                    title: "Import Tour",
+                    cls: 'data-window',
+                    border: false,
+                    frame: false,
+                    modal: true,
+                    width: 800,
+                    resizable: false,
+                    closeAction: 'hide',
+                    items: [editorImportTourPanel]
+                });
+            }
+            this.importTourWindow.show();
+        }
+    });
+
+    Ext4.onReady(function()
     {
         _bindControls();
 
-        _generateMode(document.getElementById("leftcolumn"), document.getElementById("mode-dummy"));
+        _generatePrimaryFields($('.leftcolumn'));
 
         var dummy = document.getElementById("dummy");
         var parent = document.getElementById("rightcolumn");
@@ -156,27 +148,34 @@
         $(_idSel + "title").val(LABKEY._tour.title);
         $(_idSel + "description").val(LABKEY._tour.description);
 
-        var x=0;
-        var orderedSteps = [];
-        var inSteps = LABKEY._tour.json["steps"];
-        var stepIndex = 0;
+        var x = 0,
+            orderedSteps = [],
+            inSteps = LABKEY._tour.json["steps"],
+            stepIndex = 0;
 
         // If editing existing tour, first need to establish correct order of steps
-        for(var key in inSteps)
+        if (inSteps)
         {
-            if(inSteps[key].step)
-                stepIndex = inSteps[key].step-1;
-            else
-                stepIndex = x++;
+            $.each(inSteps, function(i, stepConfig)
+            {
+                if (stepConfig.step)
+                {
+                    stepIndex = stepConfig.step - 1;
+                }
+                else
+                {
+                    stepIndex = x++;
+                }
 
-            orderedSteps[stepIndex] = inSteps[key];
-            delete orderedSteps[stepIndex].step;
+                orderedSteps[stepIndex] = stepConfig;
+                delete orderedSteps[stepIndex].step;
+            });
         }
 
         // After existing tour steps ordered correctly, generate steps with values
-        for(var i=0; i<orderedSteps.length; i++)
+        for (var i=0; i < orderedSteps.length; i++)
         {
-            if(orderedSteps[i])
+            if (orderedSteps[i])
             {
                 var target = orderedSteps[i].target;
                 delete orderedSteps[i].target;
@@ -191,53 +190,50 @@
             _generateStep(_steps++, parent, dummy, null, null);
 
         _rowId = LABKEY._tour.rowId;
-    }
+    });
 
-    var _saveClose = function ()
+    var _saveClose = function()
     {
         _submit(true);
-    }
+    };
 
-    var _save = function ()
+    var _save = function()
     {
         _submit(false);
-    }
+    };
 
-    var _submit = function (close)
+    var _submit = function(close)
     {
-        var json = {};
-        var tour = {};
-        var steps = [];
-        var err = false;
+        var steps = [],
+            err = false,
+            obj, target, step;
 
         for (var i = 1; i < _steps; i++)
         {
-            var obj = {};
+            obj = {};
 
-            var target = $(_idSel + 'selector' + i).val();
-            if (target !== undefined && target != "")
+            target = $(_idSel + 'selector' + i).val();
+            step = _stepHandles[_idPrefix + 'step' + i].getValue();
+
+            if (target && step)
             {
-                var step = _stepHandles[_idPrefix + 'step' + i].getValue();
-                if (step !== undefined && step != "")
+                obj["target"] = target;
+                obj["step"] = i;
+                try
                 {
-                    obj["target"] = $(_idSel + 'selector' + i).val();
-                    obj["step"] = i;
-                    try
+                    $.each(JSON.parse(step), function(key, value)
                     {
-                        $.each(JSON.parse(step), function (key, value)
-                        {
-                            obj[key] = value;
-                        });
+                        obj[key] = value;
+                    });
 
-                        steps.push(obj);
-                    }
-                    catch (x)
+                    steps.push(obj);
+                }
+                catch (x)
+                {
+                    if (x instanceof SyntaxError)
                     {
-                        if (x instanceof SyntaxError)
-                        {
-                            LABKEY.Utils.alert("JSON syntax error in step " + i + ": " + x.message);
-                            err = true;
-                        }
+                        LABKEY.Utils.alert('Syntax Error', "JSON syntax error in step " + i + ": " + x.message);
+                        err = true;
                     }
                 }
             }
@@ -245,50 +241,52 @@
 
         if (!err)
         {
-            tour["id"] = $(_idSel + 'title').val();
-            tour["steps"] = steps;
-
-            json["title"] = $(_idSel + 'title').val();
-            json["description"] = $(_idSel + 'description').val();
-            json["mode"] = $(_idSel + 'mode').val();
-            json["rowId"] = _rowId;
-            json["tour"] = tour;
+            var tour = {
+                id: $(_idSel + 'title').val(),
+                steps: steps
+            };
 
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('tours', 'saveTour'),
-                jsonData: json,
-                success: LABKEY.Utils.getCallbackWrapper(function (result)
+                jsonData: {
+                    title: $(_idSel + 'title').val(),
+                    description: $(_idSel + 'description').val(),
+                    mode: $(_idSel + 'mode').val(),
+                    rowId: _rowId,
+                    tour: tour
+                },
+                success: LABKEY.Utils.getCallbackWrapper(function(result)
                 {
                     _success.call(this, close, result);
                 }, this, false),
-                failure: LABKEY.Utils.getCallbackWrapper(function (result)
+                failure: LABKEY.Utils.getCallbackWrapper(function(result)
                 {
                     _failure.call(result);
                 }, this, false),
                 scope: this
             });
         }
-    }
+    };
 
-    var _failure = function (result)
+    var _failure = function(result)
     {
-        LABKEY.Utils.alert("Save failed! Error: " + result);
-    }
+        LABKEY.Utils.alert('Save Failed!', 'Error: ' + result);
+    };
 
-    var _success = function (close, result)
+    var _success = function(close, result)
     {
         if (close)
             _cancel();
         else
             _rowId = result["rowId"];
-    }
+    };
 
-    var _cancel = function ()
+    var _cancel = function()
     {
-        window.location = LABKEY.ActionURL.buildURL('tours', 'begin.view')
-    }
+        window.location = LABKEY.ActionURL.buildURL('tours', 'begin.view');
+    };
 
-    var _clear = function ()
+    var _clear = function()
     {
         $(_idSel + 'title').val('');
         $(_idSel + 'description').val('');
@@ -297,31 +295,30 @@
             $(_idSel + 'selector' + i).val('');
             _stepHandles[_idPrefix + 'step' + i].setValue('');
         }
-    }
+    };
 
-    var _importTour = function ()
+    var _importTour = function()
     {
-        LABKEY._tour.EditTour.create().import();
-    }
+        Ext4.create('LABKEY._tour.EditTour').showImport();
+    };
 
-    var _exportTour = function ()
+    var _exportTour = function()
     {
-        LABKEY._tour.EditTour.create().export();
-    }
+        Ext4.create('LABKEY._tour.EditTour').showExport();
+    };
 
-    var _addStep = function ()
+    var _addStep = function()
     {
         var dummy = document.getElementById("dummy");
         var parent = document.getElementById("rightcolumn");
 
         _generateStep(_steps++, parent, dummy, null, null);
-    }
+    };
 
     /**
      * Binds all events to the form attributes of the editor.
-     * @param props
      */
-    var _bindControls = function ()
+    var _bindControls = function()
     {
         // form buttons
         $(_idSel + 'button-save-close').click(_saveClose);
@@ -331,13 +328,12 @@
         $(_idSel + 'button-import').click(_importTour);
         $(_idSel + 'button-export').click(_exportTour);
         $(_idSel + 'button-add-step').click(_addStep);
-
     };
 
-    var _retrieveImport = function (input)
+    var _retrieveImport = function(input)
     {
-        var obj;
-        var err;
+        var obj, err;
+
         try
         {
             obj = JSON.parse(input);
@@ -346,7 +342,7 @@
         {
             if (x instanceof SyntaxError)
             {
-                LABKEY.Utils.alert("Import canceled. JSON syntax error in import: " + x.message);
+                LABKEY.Utils.alert("Import canceled", "JSON syntax error in import: " + x.message);
                 err = true;
             }
         }
@@ -358,28 +354,31 @@
             $(_idSel + 'mode').val(parseInt(obj["Mode"]));
 
             var i = 1;
-            for (var step in obj["Tour"])
+            if (obj.Tour)
             {
-                if (i < _steps)
+                $.each(obj.Tour, function(selector, config)
                 {
-                    $(_idSel + 'selector' + i).val(step);
-                    _stepHandles[_idPrefix + 'step' + i].setValue(_formatStep(JSON.stringify(obj.Tour[step])));
-                }
-                else
-                {
-                    var dummy = document.getElementById("dummy");
-                    var parent = document.getElementById("rightcolumn");
-                    _generateStep(_steps++, parent, dummy, step, JSON.stringify(obj.Tour[step]));
-                }
-                i++;
+                    if (i < _steps)
+                    {
+                        $(_idSel + 'selector' + i).val(selector);
+                        _stepHandles[_idPrefix + 'step' + i].setValue(_formatStep(JSON.stringify(config)));
+                    }
+                    else
+                    {
+                        var dummy = document.getElementById("dummy");
+                        var parent = document.getElementById("rightcolumn");
+                        _generateStep(_steps++, parent, dummy, selector, JSON.stringify(config));
+                    }
+                    i++;
+                });
             }
         }
-    }
+    };
 
-    var _generateExport = function ()
+    var _generateExport = function()
     {
-        var tour = {};
-        var err = false;
+        var tour = {},
+            err = false;
         for (var i = 1; i < _steps; i++)
         {
             if ($(_idSel + 'selector' + i).val() && _stepHandles[_idPrefix + 'step' + i].getValue())
@@ -392,56 +391,58 @@
                 {
                     if (x instanceof SyntaxError)
                     {
-                        LABKEY.Utils.alert("JSON syntax error in step " + i + ": " + x.message);
+                        LABKEY.Utils.alert('Syntax Error', 'JSON syntax error in step ' + i + ': ' + x.message);
                         err = true;
                     }
                 }
             }
         }
-        if (err)
-            return null;
-        else
-            return JSON.stringify(tour, null, '\t');
-    }
 
-    var _generateMode = function (parent, element)
-    {
-        var values = ["Off", "Run Once", "Run Always"];
-
-        var rowMode = document.createElement("div");
-        rowMode.setAttribute("class", _rowClass);
-
-        var divLabelMode = document.createElement("div");
-        rowMode.appendChild(divLabelMode);
-
-        var labelMode = document.createElement("label");
-        labelMode.setAttribute("class", _labelClass);
-        labelMode.setAttribute("for", _idPrefix + "mode");
-        labelMode.appendChild(document.createTextNode("Mode"));
-        divLabelMode.appendChild(labelMode);
-
-        var divSelectMode = document.createElement("div");
-        rowMode.appendChild(divSelectMode);
-
-        var selectMode = document.createElement("select");
-        selectMode.setAttribute("id", "tour-mode");
-        selectMode.setAttribute("class", "select");
-        divSelectMode.appendChild(selectMode);
-
-        for (var i = 0; i < values.length; i++)
+        if (!err)
         {
-            var option = document.createElement("option");
-            option.value = i;
-            option.text = values[i];
-            if (LABKEY._tour.mode == i)
-                option.selected = true;
-            selectMode.appendChild(option);
+            return JSON.stringify(tour, null, '\t');
         }
 
-        parent.insertBefore(rowMode, element);
-    }
+        return null;
+    };
 
-    var _regCodeMirrorEditor = function (id, value)
+    var _generatePrimaryFields = function(parent)
+    {
+        //
+        // Title
+        //
+        var html = '<div class="' + _rowClass + '">' +
+                        '<div><label class="label" for="tour-title">Title</label></div>' +
+                        '<div><input id="tour-title" type="text" class="input" name="tour-title"></div>' +
+                   '</div>';
+
+        //
+        // Mode
+        //
+        var selectHtml = '<select id="tour-mode" class="select">';
+        $.each(['Off', 'Run Once', 'Run Always'], function(i, val)
+        {
+            selectHtml += '<option value="' + i + '" ' + (LABKEY._tour.mode == i ? 'selected' : '') + '>' + val + '</option>';
+        });
+        selectHtml += '</select>';
+
+        html += '<div class="' + _rowClass + '">' +
+                    '<div><label class="label" for="tour-mode">Mode</label></div>' +
+                    '<div>' + selectHtml + '</div>' +
+                '</div>';
+
+        //
+        // Description
+        //
+        html += '<div class="' + _rowClass + '">' +
+                    '<div><label class="label" for="tour-description">Description</label></div>' +
+                    '<div><textarea rows="10" cols="65" id="tour-description"></div>' +
+                '</div>';
+
+        parent.append(html);
+    };
+
+    var _regCodeMirrorEditor = function(id, value)
     {
         var editor = CodeMirror.fromTextArea(document.getElementById(id), {
             mode: {name: 'javascript', json: true},
@@ -450,46 +451,35 @@
             indentUnit: 0
         });
 
-        editor.setSize(474, 150)
+        editor.setSize(474, 150);
         if (null != value)
             editor.setValue(_formatStep(value));
 
         LABKEY.codemirror.RegisterEditorInstance(id, editor);
         _stepHandles[id] = editor;
-    }
+    };
 
-    var _formatGeneric = function (value)
+    var _formatGeneric = function(value)
     {
-        value = value.replace(/\\/g, "");
-        value = value.replace(/,/g, ",\n");
-        value = value.replace(/""/g, "\"");
-        return value;
-    }
+        return value.replace(/\\/g, '').replace(/,/g, ',\n').replace(/""/g, '\"');
+    };
 
-    var _formatExport = function (value)
+    var _formatExport = function(value)
     {
-        value = _formatGeneric(value);
-        value = value.replace(/}"[^},]/g, "}");
-        value = value.replace(/"{/g, "{");
-        return value;
-    }
+        return _formatGeneric(value).replace(/}"[^},]/g, '}').replace(/"{/g, '{');
+    };
 
-    var _formatStep = function (value)
+    var _formatStep = function(value)
     {
-        value = _formatGeneric(value);
-        value = value.replace(/"}"}/g, "\"");
-        return value;
-    }
+        return _formatGeneric(value).replace(/"}"}/g, '\"');
+    };
 
-    var _formatSelector = function (value)
+    var _formatSelector = function(value)
     {
-        value = value.replace(/"/g, "");
-        value = value.replace(/}/g, "");
-        value = value.replace(/{/g, "");
-        return value;
-    }
+        return value.replace(/"/g, '').replace(/}/, '').replace(/{/, '');
+    };
 
-    var _generateStep = function (index, parent, element, select, step)
+    var _generateStep = function(index, parent, element, select, step)
     {
         var rowSelector = document.createElement("div");
         rowSelector.setAttribute("class", _rowClass);
@@ -540,7 +530,5 @@
         parent.insertBefore(rowStep, element);
 
         _regCodeMirrorEditor(_idPrefix + "step" + index, step);
-    }
-
-    LABKEY.Utils.onReady(_init);
+    };
 })(jQuery);

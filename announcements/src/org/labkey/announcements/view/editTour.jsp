@@ -27,11 +27,15 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromPath("internal/jQuery"));
+        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("codemirror"));
+
+        // TODO: This seems like it might have a lot more dependencies...
+        resources.add(ClientDependency.fromPath("vis/baseExportScriptPanel.js"));
+
         resources.add(ClientDependency.fromPath("announcements/EditTour.css"));
         resources.add(ClientDependency.fromPath("announcements/EditTour.js"));
-        resources.add(ClientDependency.fromPath("vis/baseExportScriptPanel.js"));
-        resources.add(ClientDependency.fromPath("internal/jQuery"));
-        resources.add(ClientDependency.fromPath("codemirror"));
         return resources;
     }
 %>
@@ -49,41 +53,20 @@
 
 </script>
 
-<span class="labkey-nav-page-header">Tour Builder</span>
-
 <labkey:form name="editTour" method="post">
     <div class="uxtour">
         <div class="tablewrapper">
-            <div class="leftcolumn" id="leftcolumn">
+            <div class="leftcolumn">
                 <div class="col-width button-row">
-                    <%= button("Save").submit(false).attributes("id='tour-button-save' class='button'") %>
-                    <%= button("Save & Close").submit(false).attributes("id='tour-button-save-close' class='button'") %>
-                    <%= button("Cancel").submit(false).attributes("id='tour-button-cancel' class='button'") %>
-                    <%= button("Clear").submit(false).attributes("id='tour-button-clear' class='button'") %>
-                    <%= button("Add Step").submit(false).attributes("id='tour-button-add-step' class='button'") %>
-                    <%= button("Import").submit(false).attributes("id='tour-button-import' class='button'") %>
-                    <%= button("Export").submit(false).attributes("id='tour-button-export' class='button'") %>
+                    <%= button("Save").id("tour-button-save") %>
+                    <%= button("Save & Close").id("tour-button-save-close") %>
+                    <%= button("Cancel").id("tour-button-cancel") %>
+                    <%= button("Clear").id("tour-button-clear") %>
+                    <%= button("Add Step").id("tour-button-add-step") %>
+                    <%= button("Import").id("tour-button-import") %>
+                    <%= button("Export").id("tour-button-export") %>
                 </div>
-                <div class="col-width row">
-                    <div>
-                        <label class="label" for="tour-title">Title</label>
-                    </div>
-                    <div>
-                        <input class="input x4-form-field" type="text" name="tour-title" id="tour-title">
-                    </div>
-                </div>
-                <div id="mode-dummy"></div>
-                <div class="col-width row">
-                    <div>
-                        <label class="label" for="tour-description">Description</label>
-                    </div>
-                    <div>
-                        <textarea rows="10" cols="65" id="tour-description"></textarea>
-                    </div>
-                </div>
-
             </div>
-
             <div class="rightcolumn" id="rightcolumn">
                 <div id="dummy"></div>
             </div>

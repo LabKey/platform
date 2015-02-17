@@ -97,14 +97,13 @@ public class ToursController extends SpringActionController
             else
                 model = new TourModel();
 
-            JspView view = new JspView<>("/org/labkey/announcements/view/editTour.jsp", model);
-            return view;
+            return new JspView<>("/org/labkey/announcements/view/editTour.jsp", model);
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Tour Builder");
         }
     }
 
