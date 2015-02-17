@@ -1489,14 +1489,14 @@ boxPlot.render();
 
         config.layers = [
             new LABKEY.vis.Layer({
-                geom: new LABKEY.vis.Geom.Path({size:3, opacity:1}),
+                geom: new LABKEY.vis.Geom.Path({size:2, opacity:1}),
                 aes: {
                     pathColor: config.groupBy,
                     group: config.groupBy
                 }
             }),
             new LABKEY.vis.Layer({
-                geom: new LABKEY.vis.Geom.Point({size:5, opacity:.5}),
+                geom: new LABKEY.vis.Geom.Point({opacity:1}),
                 data: config.censorData,
                 aes: {
                     color: config.groupBy,
@@ -1517,19 +1517,12 @@ boxPlot.render();
 
         config.aes.mouseOutFn = mouseOutFn;
 
-        //config.aes.hoverText = hoverOverFn;
-
         return new LABKEY.vis.Plot(config);
     };
-
-    var hoverOverFn = function(row){
-        return "Group: " + row.group + ",\nTime: " + row.time + ",\nSurvival: " + Math.round(row.surv*100)/100 }
 
     var mouseOverFn = function(event, pointData, layerSel, subjectColumn) {
         var points = d3.selectAll('.point path');
         var lines = d3.selectAll('path.line');
-
-
 
         var opacityAcc = function(d) {
             if (d[subjectColumn] && d[subjectColumn] == pointData[subjectColumn])
@@ -1539,12 +1532,12 @@ boxPlot.render();
             return .3;
         };
 
-        points.attr('fill-opacity', opacityAcc);
-        lines.attr('stroke-opacity', opacityAcc);
+        points.attr('fill-opacity', opacityAcc).attr('stroke-opacity', opacityAcc);
+        lines.attr('fill-opacity', opacityAcc).attr('stroke-opacity', opacityAcc);
     };
 
     var mouseOutFn = function(event, pointData, layerSel) {
-        d3.selectAll('.point path').attr('fill-opacity',.5);
-        d3.selectAll('path.line').attr('stroke-opacity',1);
+        d3.selectAll('.point path').attr('fill-opacity', 1).attr('stroke-opacity', 1);
+        d3.selectAll('path.line').attr('fill-opacity', 1).attr('stroke-opacity', 1);
     };
 })();
