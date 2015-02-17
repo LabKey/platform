@@ -77,7 +77,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             if (tickHoverText)
                 text.attr("title", tickHoverText);
             if (tickCls)
-                text.node.setAttribute("class", tickCls);
+                text.attr("class", tickCls);
 
             xTicksSet.push(text);
 

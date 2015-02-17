@@ -1413,6 +1413,15 @@ boxPlot.render();
         if (config.properties.hoverTextFn) {
             pointLayerConfig.aes.hoverText = config.properties.hoverTextFn;
         }
+
+        // add some mouse over effects to highlight selected point
+        pointLayerConfig.aes.mouseOverFn = function(event, pointData, layerSel) {
+            d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 5).ease("elastic");
+        };
+        pointLayerConfig.aes.mouseOutFn = function(event, pointData, layerSel) {
+            d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 1).ease("elastic");
+        };
+
         config.layers.push(new LABKEY.vis.Layer(pointLayerConfig));
 
         return new LABKEY.vis.Plot(config);
