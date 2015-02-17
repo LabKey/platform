@@ -164,11 +164,11 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         {
             // Check if the field has already be remapped
             FieldKey field = getRemappedField(originalField);
-            FieldKey remappedField = FieldKey.remap(field, parent, mapping);
+            FieldKey remappedField = mapping == null ? field : mapping.get(field);
             if (remappedField == null)
                 return null;
             remappedSuggested.put(originalField, remappedField);
-            identityMapping &= originalField.equals(remappedField);
+            identityMapping &= field.equals(remappedField);
         }
         if (identityMapping)
             return this;
