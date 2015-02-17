@@ -1457,23 +1457,46 @@ boxPlot.render();
             throw new Error("Unable to create survival curve plot, aes (x and yLeft) not specified.")
         }
 
-        // TODO: convert data array for step-wise line plot
+        // Convert data array for step-wise line plot
+        var stepData = [];
+        var groupBy = config.groupBy;
+        var aesX = config.aes.x;
+        var aesY = config.aes.yLeft;
+
+        for (var i=0; i<config.data.length; i++)
+        {
+            stepData.push(config.data[i]);
+
+            if ( (i<config.data.length-1) && (config.data[i][groupBy] == config.data[i+1][groupBy])
+                    && (config.data[i][aesX] != config.data[i+1][aesX])
+                    && (config.data[i][aesY] != config.data[i+1][aesY]))
+            {
+                var point = {};
+                point[groupBy] = config.data[i][groupBy];
+                point[aesX] = config.data[i+1][aesX];
+                point[aesY] = config.data[i][aesY];
+                stepData.push(point);
+            }
+        }
+        config.data = stepData;
 
         config.layers = [
             new LABKEY.vis.Layer({
-                geom: new LABKEY.vis.Geom.Path({}),
+                geom: new LABKEY.vis.Geom.Path({size:3, opacity:1}),
                 aes: {
                     pathColor: config.groupBy,
                     group: config.groupBy
                 }
             }),
             new LABKEY.vis.Layer({
-                geom: new LABKEY.vis.Geom.Point(),
+                geom: new LABKEY.vis.Geom.Point({size:5, opacity:.5}),
                 data: config.censorData,
                 aes: {
                     color: config.groupBy,
-                    hoverText: config.censorHoverText
+                    hoverText: config.censorHoverText,
+                    shape: config.groupBy
                 }
+
             })
         ];
 
@@ -1482,6 +1505,40 @@ boxPlot.render();
             yLeft: { scaleType: 'continuous', trans: 'linear', domain: [0, 1] }
         };
 
+        config.aes.mouseOverFn = function(event, pointData, layerSel) {
+            mouseOverFn(event, pointData, layerSel, config.groupBy);
+        };
+
+        config.aes.mouseOutFn = mouseOutFn;
+
+        //config.aes.hoverText = hoverOverFn;
+
         return new LABKEY.vis.Plot(config);
+    };
+
+    var hoverOverFn = function(row){
+        return "Group: " + row.group + ",\nTime: " + row.time + ",\nSurvival: " + Math.round(row.surv*100)/100 }
+
+    var mouseOverFn = function(event, pointData, layerSel, subjectColumn) {
+        var points = d3.selectAll('.point path');
+        var lines = d3.selectAll('path.line');
+
+
+
+        var opacityAcc = function(d) {
+            if (d[subjectColumn] && d[subjectColumn] == pointData[subjectColumn])
+            {
+                return 1;
+            }
+            return .3;
+        };
+
+        points.attr('fill-opacity', opacityAcc);
+        lines.attr('stroke-opacity', opacityAcc);
+    };
+
+    var mouseOutFn = function(event, pointData, layerSel) {
+        d3.selectAll('.point path').attr('fill-opacity',.5);
+        d3.selectAll('path.line').attr('stroke-opacity',1);
     };
 })();
