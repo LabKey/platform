@@ -20,7 +20,7 @@ LABKEY.vis.Scale.ColorDiscrete = function(){
 };
 
 /**
- * An alternate darker color scale. Not currently used.
+ * An alternate darker color scale.
  */
 LABKEY.vis.Scale.DarkColorDiscrete = function(){
     // Used for discrete color scales (color assigned to categorical data)

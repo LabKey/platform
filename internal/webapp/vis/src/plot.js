@@ -601,7 +601,12 @@ boxPlot.render();
                         scale.scale = d3.scale.ordinal().domain(scale.domain).rangeBands(scale.range, 1);
                     } else {
                         // Setup scales with user provided range or default range.
-                        scale.scale = d3.scale.ordinal();
+                        if (userScale && userScale.scale) {
+                            scale.scale = userScale.scale;
+                        }
+                        else {
+                            scale.scale = d3.scale.ordinal();
+                        }
 
                         if (scale.domain) {
                             scale.scale.domain(scale.domain);
@@ -611,7 +616,9 @@ boxPlot.render();
                             scale.range = getDefaultRange(scaleName, scale);
                         }
 
-                        scale.scale.range(scale.range);
+                        if (scale.scale.range) {
+                            scale.scale.range(scale.range);
+                        }
                     }
                 } else {
                     if ((scaleName == 'color' || scaleName == 'size') && !scale.range) {
@@ -1500,10 +1507,9 @@ boxPlot.render();
             })
         ];
 
-        config.scales = {
-            x: { scaleType: 'continuous', trans: 'linear' },
-            yLeft: { scaleType: 'continuous', trans: 'linear', domain: [0, 1] }
-        };
+        if (!config.scales) config.scales = {};
+        config.scales.x = { scaleType: 'continuous', trans: 'linear' };
+        config.scales.yLeft = { scaleType: 'continuous', trans: 'linear', domain: [0, 1] };
 
         config.aes.mouseOverFn = function(event, pointData, layerSel) {
             mouseOverFn(event, pointData, layerSel, config.groupBy);
