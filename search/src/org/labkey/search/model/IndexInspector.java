@@ -24,7 +24,6 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -94,7 +93,7 @@ public class IndexInspector
         @Override
         protected void writeBody()
         {
-            try (Directory directory = FSDirectory.open(getIndexDirectory()); IndexReader reader = DirectoryReader.open(directory))
+            try (Directory directory = WritableIndexManagerImpl.openDirectory(getIndexDirectory()); IndexReader reader = DirectoryReader.open(directory))
             {
                 // Lucene provides no way to query a document for its size in the index, so we enumerate the terms and increment
                 // term counts on each document to calculate a proxy for doc size.

@@ -86,7 +86,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     // We would like to call FSDirectory.open(indexPath) and let Lucene choose the best Directory implementation,
     // however, in 3.5.0 Lucene starting choosing memory mapped files, which seem to cause all kinds of problems
     // on atlas test.  This approach mimics what Lucene 3.0 did, which seemed to work just fine.
-    private static Directory openDirectory(File path) throws IOException
+    static Directory openDirectory(File path) throws IOException
     {
         if (Constants.WINDOWS)
             return new SimpleFSDirectory(path, null);
