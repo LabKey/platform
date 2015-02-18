@@ -40,6 +40,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -285,7 +286,7 @@ public class SqlScriptExecutor
             if (_filename.contains("/"))
                 path = Path.parse(_filename).normalize();
             else
-                path = Path.parse("schemas/dbscripts/" + _filename).normalize();
+                path = Path.parse("schemas/dbscripts/datafiles/" + _filename).normalize();
 
             try
             {
@@ -294,10 +295,35 @@ public class SqlScriptExecutor
                 dix.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
 
                 // TARGET TABLE
-                DbSchema schema = DbSchema.get(_schemaName);
+                DbSchema schema = DbSchema.get(_schemaName, DbSchemaType.Bare);
                 TableInfo dbTable = schema.getTable(_tableName);
                 if (null == dbTable)
-                    throw new IllegalStateException("Table not found for data loading: " + _schemaName + "." + _tableName);
+                {
+                    // If the table was created in the same set of upgrades as the bulk import, it won't be in the schema's
+                    // table cache yet.
+                    try
+                    {
+                        DbScope scope = schema.getScope();
+                        scope.invalidateSchema(schema);
+                        schema = new DbSchema(_schemaName, DbSchemaType.Bare, scope, DbSchema.loadTableNames(scope, _schemaName));
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new IllegalStateException("Unable to retrieve table metadata for schema: " + _schemaName);
+                    }
+                    dbTable = schema.getTable(_tableName);
+                    if (null == dbTable) // if its still null, the table really doesn't exist
+                        throw new IllegalStateException("Table not found for data loading: " + _schemaName + "." + _tableName);
+                }
+
+                for (ColumnInfo col : dbTable.getColumns())
+                {
+                    if (col.isAutoIncrement())
+                    {
+                        dix.setSupportAutoIncrementKey(true);
+                        break;
+                    }
+                }
 
                 // SOURCE FILE
                 Resource r = m.getModuleResource(path);
@@ -323,8 +349,6 @@ public class SqlScriptExecutor
                     else
                         throw new IllegalStateException("Unrecognized data file format for file: " + r.getPath());
 
-                    // COPY
-                    // CONSIDER SQL Server: SET IDENTITY ON/OFF?
                     DataIteratorUtil.copy(dix, loader, dbTable, null, null);
                     if (errors.hasErrors())
                         throw new IllegalStateException("Error loading data file: " + r.getPath() + errors.getMessage(), errors);

@@ -24,6 +24,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -165,7 +167,10 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             if (_insertOption == QueryUpdateService.InsertOption.MERGE)
                 stmt = StatementUtils.mergeStatement(_conn, _table, _keyColumns, _skipColumnNames, _dontUpdate, _c, null, _selectIds, false);
             else
+            {
+                setAutoIncrement(INSERT.ON);
                 stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, constants, _selectIds, false, _context.supportsAutoIncrementKey());
+            }
 
             if (_useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex)
                 _stmts = new Parameter.ParameterMap[] {stmt, stmt.copy()};
@@ -208,6 +213,21 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         _closed = true;
         super.close();
         if (null != _scope && null != _conn)
+        {
+            setAutoIncrement(INSERT.OFF);
             _scope.releaseConnection(_conn);
+        }
+    }
+
+    private enum INSERT
+    {ON, OFF};
+
+    private void setAutoIncrement(INSERT bound)
+    {
+        if (_context.supportsAutoIncrementKey() && null != _scope && null != _conn && _scope.getSqlDialect().isSqlServer())
+        {
+            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(_table.getSelectName()).append(" ").append(bound.toString());
+            new SqlExecutor(_scope, _conn).execute(check);
+        }
     }
 }
