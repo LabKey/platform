@@ -31,6 +31,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleModule;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
@@ -161,7 +162,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
 
     public static void ensureDomain(ModuleContext context)
     {
-        if (context.isNewInstall())
+        if (ModuleLoader.getInstance().isNewInstall())
         {
             User user = context.getUpgradeUser();
             String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), user);
