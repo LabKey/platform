@@ -34,7 +34,9 @@ import org.labkey.data.xml.query.QueryType;
 import org.labkey.folder.xml.FolderDocument;
 
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -60,6 +62,7 @@ public class QueryWriter extends BaseFolderWriter
     {
         Container c = ctx.getContainer();
         List<QueryDefinition> queries = QueryService.get().getQueryDefs(ctx.getUser(), c);
+        Map<String, QueryDefinition> queryExportMap = new HashMap<>();
 
         if (queries.size() > 0)
         {
@@ -68,7 +71,14 @@ public class QueryWriter extends BaseFolderWriter
 
             for (QueryDefinition query : queries)
             {
-                try (PrintWriter pw = queriesDir.getPrintWriter(query.getName() + FILE_EXTENSION))
+                // issue 20662: handle query name collisions across schemas
+                String queryExportName = query.getName();
+                int index = 1;
+                while (queryExportMap.containsKey(queryExportName))
+                    queryExportName = query.getName() + "-" + index++;
+                queryExportMap.put(queryExportName, query);
+
+                try (PrintWriter pw = queriesDir.getPrintWriter(queryExportName + FILE_EXTENSION))
                 {
                     pw.println(query.getSql());
                 }
@@ -101,7 +111,7 @@ public class QueryWriter extends BaseFolderWriter
                     }
                 }
 
-                queriesDir.saveXmlBean(query.getName() + META_FILE_EXTENSION, qDoc);
+                queriesDir.saveXmlBean(queryExportName + META_FILE_EXTENSION, qDoc);
             }
         }
     }
