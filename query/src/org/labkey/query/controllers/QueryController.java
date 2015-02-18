@@ -6071,21 +6071,22 @@ public class QueryController extends SpringActionController
             {
                 String tableName = table.getName();
 
-                try ( Results results = new TableSelector(table).getResults())
+                Results results = new TableSelector(table).getResults(false);
+                if (results.next()) // only export tables with data
                 {
+                    results.previous();
                     File outputFile = new File(form.getPath(), tableName+".tsv.gz");
                     GZIPOutputStream outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
                     try ( TSVGridWriter tsv = new TSVGridWriter(results) )
                     {
+                        tsv.setColumnHeaderType(TSVColumnWriter.ColumnHeaderType.queryColumnName);
                         tsv.setApplyFormats(false);
                         tsv.write(outputStream);
                     }
 
-                    if (sourceSchema.getSqlDialect().isPostgreSQL())
-                        importScript.append("SELECT core.bulkImport('" + form.getTargetSchema() + "', '" + tableName + "', '" + outputFile.getName() + "');\n");
-                    else
-                        importScript.append("EXEC core.bulkImport '" + form.getTargetSchema() + "', '" + tableName + "', '" + outputFile.getName() + "';\n");
+                    importScript.append(sourceSchema.getSqlDialect().execute(DbSchema.get("core"), "bulkImport", "'" + form.getTargetSchema() + "', '" + tableName + "', '" + outputFile.getName() + "'")).append(";\n");
                 }
+
             }
 
             PrintWriter writer = new PrintWriter( new File(form.getPath(), form.getSourceSchema()+"_updateScript.sql"), "UTF-8" );

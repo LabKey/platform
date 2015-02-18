@@ -152,7 +152,6 @@
 
         var targetSchemaCombo = new Ext4.form.ComboBox({
             name: 'targetSchema',
-            editable: false,
             fieldLabel: 'Target Schema',
             store: targetSchemaStore,
             queryMode: 'local',
