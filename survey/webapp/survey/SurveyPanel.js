@@ -304,6 +304,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         }
 
         this.toggleSaveBtn(false, false);
+        this.submitBtn.disable();
+
         return true;
     },
 
@@ -420,7 +422,10 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
         var surveyLabelCmp = this.down('.textfield[itemId=surveyLabel]');
         if (this.isSurveyDirty() && surveyLabelCmp && surveyLabelCmp.isValid())
+        {
             this.toggleSaveBtn(true, false);
+            this.updateSubmitInfo();
+        }
     },
 
     saveSurveyAttachments : function() {
