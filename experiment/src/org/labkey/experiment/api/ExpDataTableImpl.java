@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
@@ -96,6 +97,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.FileExists);
         addColumn(Column.FileSize);
         addColumn(Column.FileExtension);
+        addColumn(Column.ViewOrDownload);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Name));
@@ -333,6 +335,20 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 result.setShownInInsertView(false);
                 return result;
             }
+            case ViewOrDownload:
+            {
+                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                result.setLabel("View/Download");
+                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new ViewOrDownloadDataColumn(colInfo);
+                    }
+                });
+                result.setDescription("Displays links to either download the file or view directly on the web site");
+                return result;
+            }
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -501,6 +517,31 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         protected ActionURL getURL(ExpData data)
         {
             return data.findDataHandler().getContentURL(data);
+        }
+    }
+
+    private class ViewOrDownloadDataColumn extends DataLinkColumn
+    {
+        public ViewOrDownloadDataColumn (ColumnInfo colInfo)
+        {
+            super(colInfo);
+        }
+
+        protected ActionURL getURL(ExpData data)
+        {
+            return ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true);
+        }
+
+        @Override
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            ExpData data = getData(ctx);
+            if (data != null)
+            {
+                out.write(PageFlowUtil.textLink("View File", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true)));
+                out.write("<br>");
+                out.write(PageFlowUtil.textLink("Download", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false)));
+            }
         }
     }
 }
