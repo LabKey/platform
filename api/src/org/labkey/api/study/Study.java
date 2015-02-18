@@ -136,9 +136,18 @@ public interface Study extends StudyEntity
     boolean isAllowReqLocEndpoint();
 
     // "is" prefix doesn't work with "Boolean", use get
+    /**
+     * @return true if this study is at the project-level and any studies in subfolders MAY have shared datasets.
+     */
     Boolean getShareDatasetDefinitions();
 
+    /**
+     * @return true if this study is at the project-level and any studies in subfolders MUST have shared visits.
+     */
     Boolean getShareVisitDefinitions();
 
+    /**
+     * @return true if this study is at the project-level and is a DataspaceStudyFolderType (TODO: don't rely on DataspaceStudyFolderType)
+     */
     boolean isDataspaceStudy();
 }
