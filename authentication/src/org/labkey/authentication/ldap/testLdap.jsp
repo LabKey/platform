@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.authentication.ldap.LdapController" %>
 <%@ page import="org.labkey.authentication.ldap.LdapController.TestLdapForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -50,7 +51,7 @@ client browser.
     <tr><td colspan=2 align=center style="height:50">
         <%=generateReturnUrlFormField(form)%>
         <%= button("Test").submit(true) %>
-        <%= button("Done").href(form.getReturnURLHelper()) %>
+        <%= button("Done").href(form.getReturnURLHelper(LdapController.getConfigureURL(false)))%>
     </td></tr>
 </table>
 </labkey:form>
