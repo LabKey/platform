@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 LabKey Corporation
+ * Copyright (c) 2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.sequenceanalysis;
+package org.labkey.api.sequenceanalysis.pipeline;
 
 import com.drew.lang.annotations.Nullable;
 import org.json.JSONObject;
@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.security.User;
+import org.labkey.api.sequenceanalysis.SequenceOutputFile;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -74,16 +75,43 @@ public interface SequenceOutputHandler
     public LinkedHashSet<ClientDependency> getClientDependencies();
 
     /**
-     * Allows handlers to perform processing on the input SequenceOutputFiles.  This will be run in the background as a pipeline job.
-     * The intention is to allow handlers to only implement the actual processing code they need, without a separate server-side action, pipeline job, etc.
-     * Certain handlers will not use this method, and it is recommended that they throw an IllegalArgumentException
-     * @param job The pipeline job running this task
-     * @param inputFiles The list of input files to process
+     * Provides the opportunity for the handler to validate parameters prior to running
      * @param params
-     * @param outputDir
-     * @param actions
-     * @param outputsToCreate
-     * @return A list of new SequenceOutputFile records to create
+     * @return List of error messages.  Null or empty list indicates no errors.
      */
-    public void processFiles(PipelineJob job, List<SequenceOutputFile> inputFiles, JSONObject params, File outputDir, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
+    public List<String> validateParameters(JSONObject params);
+
+    /**
+     * If true, the server will run portions of this handler on the remote server.  This is intended to be a background pipeline
+     * server, but in some cases this is also the webserver.
+     */
+    public boolean doRunRemote();
+
+    /**
+     * If true, the server will run portions of this handler on the local webserver.  In general it is a good idea to run intenstive
+     * tasks on a remotely; however, some tasks require running SQL or other processes that require the webserver.
+     */
+    public boolean doRunLocal();
+
+    public OutputProcessor getProcessor();
+
+    public interface OutputProcessor
+    {
+        /**
+         * Allows handlers to perform processing on the input SequenceOutputFiles locally.  This will be run in the background as a pipeline job.
+         * The intention is to allow handlers to only implement the actual processing code they need, without a separate server-side action, pipeline job, etc.
+         * Certain handlers will not use this method, and it is recommended that they throw an IllegalArgumentException
+         *
+         * @param job             The pipeline job running this task
+         * @param inputFiles      The list of input files to process
+         * @param params
+         * @param outputDir
+         * @param actions
+         * @param outputsToCreate
+         * @return A list of new SequenceOutputFile records to create
+         */
+        public void processFilesOnWebserver(PipelineJob job, List<SequenceOutputFile> inputFiles, JSONObject params, File outputDir, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
+
+        public void processFilesRemote(SequenceAnalysisJobSupport support, List<SequenceOutputFile> inputFiles, JSONObject params, File outputDir, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
+    }
 }

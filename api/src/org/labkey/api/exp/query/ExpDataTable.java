@@ -42,7 +42,8 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         Thumbnail,
         FileSize,
         FileExists,
-        FileExtension
+        FileExtension,
+        ViewOrDownload
     }
 
     void setExperiment(ExpExperiment experiment);

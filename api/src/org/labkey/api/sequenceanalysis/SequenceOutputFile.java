@@ -40,10 +40,11 @@ public class SequenceOutputFile implements Serializable
     private String _category;
     private Boolean _intermediate;
     private String _container;
-    private Integer createdby;
-    private Date created;
-    private Integer modifiedby;
-    private Date modified;
+    private Integer _createdby;
+    private Date _created;
+    private Integer _modifiedby;
+    private Date _modified;
+    private File _file;
 
     public Integer getRowid()
     {
@@ -157,42 +158,42 @@ public class SequenceOutputFile implements Serializable
 
     public Integer getCreatedby()
     {
-        return createdby;
+        return _createdby;
     }
 
     public void setCreatedby(Integer createdby)
     {
-        this.createdby = createdby;
+        _createdby = createdby;
     }
 
     public Date getCreated()
     {
-        return created;
+        return _created;
     }
 
     public void setCreated(Date created)
     {
-        this.created = created;
+        _created = created;
     }
 
     public Integer getModifiedby()
     {
-        return modifiedby;
+        return _modifiedby;
     }
 
     public void setModifiedby(Integer modifiedby)
     {
-        this.modifiedby = modifiedby;
+        _modifiedby = modifiedby;
     }
 
     public Date getModified()
     {
-        return modified;
+        return _modified;
     }
 
     public void setModified(Date modified)
     {
-        this.modified = modified;
+        _modified = modified;
     }
 
     public static SequenceOutputFile getForId(Integer rowId)
@@ -207,8 +208,18 @@ public class SequenceOutputFile implements Serializable
 
     public File getFile()
     {
+        if (_file != null)
+        {
+            return _file;
+        }
+
         ExpData data = getExpData();
 
         return data == null ? null : data.getFile();
+    }
+
+    public void setFile(File file)
+    {
+        _file = file;
     }
 }

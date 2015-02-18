@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.ldk.NavItem;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.security.User;
+import org.labkey.api.sequenceanalysis.pipeline.SequenceOutputHandler;
 
 import java.io.File;
 import java.util.List;

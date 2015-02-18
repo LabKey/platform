@@ -89,7 +89,7 @@ abstract public class AbstractQueryNavItem extends AbstractNavItem
         UserSchema us = QueryService.get().getUserSchema(u, getTargetContainer(c), _schema);
         if (us == null)
         {
-            _log.error("Unable to find schema: " + _schema + " in container: " + getTargetContainer(c).getPath());
+            _log.error("Unable to find schema: " + _schema + " in container: " + getTargetContainer(c).getPath(), new Exception());
             return null;
         }
 

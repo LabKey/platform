@@ -473,12 +473,15 @@ stm	text/html
 uls	text/iuls
 pas	text/pascal
 bas	text/plain
+bed	text/plain
 c++	text/plain
 cc	text/plain
 conf	text/plain
 cxx	text/plain
 def	text/plain
 g	text/plain
+gff	text/plain
+gtf	text/plain
 h	text/plain
 hh	text/plain
 idc	text/plain
