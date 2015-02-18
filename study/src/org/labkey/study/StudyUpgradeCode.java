@@ -498,30 +498,29 @@ public class StudyUpgradeCode implements UpgradeCode
     @DeferredUpgrade
     public void migrateSpecimenTypeAndLocationTables(final ModuleContext context)
     {
-        if (context.isNewInstall())
-            return;
-
-        Set<Container> allContainers = ContainerManager.getAllChildren(ContainerManager.getRoot());
-        for (Container c : allContainers)
+        if (!context.isNewInstall())
         {
-            if (null != c)
+            Set<Container> allContainers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+            for (Container c : allContainers)
             {
-                Study study = StudyManager.getInstance().getStudy(c);
-                if (null != study)
-                    migrateSpecimenTypeAndLocationTables(study, true);
+                if (null != c)
+                {
+                    Study study = StudyManager.getInstance().getStudy(c);
+                    if (null != study)
+                        migrateSpecimenTypeAndLocationTables(study, true);
+                }
+            }
+
+            for (Container c : allContainers)
+            {
+                if (null != c)
+                {
+                    Study study = StudyManager.getInstance().getStudy(c);
+                    if (null != study)
+                        migrateSpecimenTypeAndLocationTables(study, false);
+                }
             }
         }
-
-        for (Container c : allContainers)
-        {
-            if (null != c)
-            {
-                Study study = StudyManager.getInstance().getStudy(c);
-                if (null != study)
-                    migrateSpecimenTypeAndLocationTables(study, false);
-            }
-        }
-
         // Now drop the tables
         SqlDialect dialect = StudySchema.getInstance().getSchema().getScope().getSqlDialect();
         dialect.dropIfExists(StudySchema.getInstance().getSchema(), "Site", "TABLE", null);
