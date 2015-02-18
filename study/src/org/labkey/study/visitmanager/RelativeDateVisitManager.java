@@ -226,7 +226,8 @@ public class RelativeDateVisitManager extends VisitManager
                 " )\n";
         sqlUpdateVisitRowId += "WHERE Container = ?";
 
-        Container c = getStudy().getContainer();
+        Study visitStudy = StudyManager.getInstance().getStudyForVisits(getStudy());
+        Container c = visitStudy.getContainer();
         new SqlExecutor(schema).execute(sqlUpdateVisitRowId, c, c);
     }
 
@@ -263,6 +264,7 @@ public class RelativeDateVisitManager extends VisitManager
     {
         if (null != oldStartDate)
         {
+            assert !getStudy().isDataspaceStudy() : "Can't recompute dates in dataspace study";
             String c = getStudy().getContainer().getId();
             DbSchema schema = StudySchema.getInstance().getSchema();
             SqlExecutor executor = new SqlExecutor(schema);
@@ -299,6 +301,7 @@ public class RelativeDateVisitManager extends VisitManager
             "     ? = pv.Container \n" +
             "JOIN study.Visit v ON \n" +
             "     pv.VisitRowId = v.RowId AND \n" +
+            // TODO: shared visit container is different from pv.Container
             "     pv.Container = v.Container \n" +
             "GROUP BY sd.datasetid, v.sequencenummin");
         sql.add(study.getContainer());

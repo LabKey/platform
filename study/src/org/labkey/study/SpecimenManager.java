@@ -2090,7 +2090,10 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         List<Integer> visitIds = new SqlSelector(StudySchema.getInstance().getSchema(), visitIdSQL).getArrayList(Integer.class);
 
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        // Get shared visit study
+        Study visitStudy = StudyManager.getInstance().getStudyForVisits(StudyManager.getInstance().getStudy(container));
+
+        SimpleFilter filter = SimpleFilter.createContainerFilter(visitStudy.getContainer());
         filter.addInClause(FieldKey.fromParts("RowId"), visitIds);
         if (cohort != null)
             filter.addWhereClause("CohortId IS NULL OR CohortId = ?", new Object[] { cohort.getRowId() });

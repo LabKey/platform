@@ -259,8 +259,11 @@ public class SequenceVisitManager extends VisitManager
 
     private void _updateVisitDate(User user)
     {
+        Study study = getStudy();
+        Study visitStudy = StudyManager.getInstance().getStudyForVisits(getStudy());
+
         DbSchema schema = StudySchema.getInstance().getSchema();
-        Container container = getStudy().getContainer();
+        Container container = study.getContainer();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
         SqlExecutor executor = new SqlExecutor(schema);
@@ -277,7 +280,7 @@ public class SequenceVisitManager extends VisitManager
             sqlUpdateVisitDates.append("UPDATE " + tableParticipantVisit + "\n")
                 .append("SET VisitDate = NULL, Day = NULL")
                 .append(" WHERE Container=?");
-            sqlUpdateVisitDates.add(container);
+            sqlUpdateVisitDates.add(visitStudy.getContainer());
             executor.execute(sqlUpdateVisitDates);
         }
         else
@@ -300,7 +303,7 @@ public class SequenceVisitManager extends VisitManager
                     .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
                     .append("   SD.DatasetId = V.VisitDateDatasetId AND V.Container=? AND PV.Container=?\n");
 
-            sqlUpdateVisitDates.add(container);
+            sqlUpdateVisitDates.add(visitStudy.getContainer());
             sqlUpdateVisitDates.add(container);
             executor.execute(sqlUpdateVisitDates);
         }
@@ -330,9 +333,12 @@ public class SequenceVisitManager extends VisitManager
         if (null == def.getVisitDateColumnName())
             return;
 
+        Study study = getStudy();
+        Study visitStudy = StudyManager.getInstance().getStudyForVisits(getStudy());
+
         // are there any visits marking this as the visitdataset?
         boolean isVisitDateDataset = false;
-        for (Visit v : getStudy().getVisits(Visit.Order.SEQUENCE_NUM))
+        for (Visit v : study.getVisits(Visit.Order.SEQUENCE_NUM))
         {
             if (v.getVisitDateDatasetId() == def.getDatasetId())
             {
@@ -344,7 +350,7 @@ public class SequenceVisitManager extends VisitManager
             return;
 
         DbSchema schema = StudySchema.getInstance().getSchema();
-        Container container = getStudy().getContainer();
+        Container container = study.getContainer();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
         SqlExecutor executor = new SqlExecutor(schema);
@@ -369,7 +375,7 @@ public class SequenceVisitManager extends VisitManager
                 .append("   ? = V.VisitDateDatasetId AND V.Container=? AND PV.Container=?\n");
 
         sqlUpdateVisitDates.add(def.getDatasetId());
-        sqlUpdateVisitDates.add(container);
+        sqlUpdateVisitDates.add(visitStudy.getContainer());
         sqlUpdateVisitDates.add(container);
         executor.execute(sqlUpdateVisitDates);
     }
@@ -379,13 +385,15 @@ public class SequenceVisitManager extends VisitManager
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
 
+        final Study visitStudy = StudyManager.getInstance().getStudyForVisits(getStudy());
+
         SQLFragment seqnum2visit = new SQLFragment();
         seqnum2visit.append(
                 "  SELECT sequencenum, V.RowId\n" +
                 "  FROM (SELECT DISTINCT SequenceNum from study.participantvisit where Container=?) seqnumPV, study.visit V\n" +
                 "  WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container=?\n");
         seqnum2visit.add(getStudy().getContainer());
-        seqnum2visit.add(getStudy().getContainer());
+        seqnum2visit.add(visitStudy.getContainer());
 
         // NOTE (seqnum2visit.RowId != VisitRowId OR VisitRowId IS NULL) is because postgres doesn't seem to optimize
         // updating a column to the existing value

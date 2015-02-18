@@ -31,7 +31,7 @@ public class VialRequestTable extends FilteredTable<StudyQuerySchema>
     {
         super(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), schema);
         for (ColumnInfo baseColumn : _rootTable.getColumns())
-            {
+        {
             String name = baseColumn.getName();
             if ("SpecimenGlobalUniqueId".equalsIgnoreCase(name))
             {

@@ -140,7 +140,7 @@
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td align="left"><p><br>Enable sharing of visit definitions created in this project-level study.
+            <td align="left"><p><br>Enable sharing of visits created in this project-level study.
                 If this option is enabled, all studies in this project will see the visits defined in the root folder of the project.</p></td>
         </tr>
 <%}%>

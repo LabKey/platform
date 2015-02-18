@@ -219,6 +219,11 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
     public DataLoader createLoader(String filename, String contentType, InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
     {
         DataLoaderFactory factory = findFactory(filename, contentType, is, guessFormat);
+
+        // If no factory matched, attempt to use the guessFormat as the default
+        if (factory == null && guessFormat != null)
+            factory = _fileTypeToFactory.get(guessFormat);
+
         if (factory == null)
             throw new IOException("Unable to determine file format.");
 
@@ -265,6 +270,11 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
     public DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
     {
         DataLoaderFactory factory = findFactory(file, contentType, guessFormat);
+
+        // If no factory matched, attempt to use the guessFormat as the default
+        if (factory == null && guessFormat != null)
+            factory = _fileTypeToFactory.get(guessFormat);
+
         if (factory == null)
             throw new IOException("Unable to determine file format.");
 

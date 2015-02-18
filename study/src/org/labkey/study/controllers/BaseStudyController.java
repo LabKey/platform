@@ -261,6 +261,14 @@ public abstract class BaseStudyController extends SpringActionController
         throw new RedirectException(new ActionURL(StudyController.TypeNotFoundAction.class, getContainer()).addParameter("id", datasetId));
     }
 
+    /** Redirect to the project shared visit study if shared visits is turned on in the shared study. */
+    protected void redirectToSharedVisitStudy(Study study, ActionURL url) throws RedirectException
+    {
+        Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+        if (sharedStudy != null && sharedStudy.getShareVisitDefinitions() == Boolean.TRUE)
+            throw new RedirectException(url.clone().setContainer(sharedStudy.getContainer()));
+    }
+
     public static class StudyJspView<T> extends JspView<T>
     {
         public StudyJspView(StudyImpl study, String name, T bean, BindException errors)

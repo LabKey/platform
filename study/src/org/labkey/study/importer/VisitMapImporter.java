@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -198,6 +199,8 @@ public class VisitMapImporter
         StudyManager studyManager = StudyManager.getInstance();
         VisitManager visitManager = studyManager.getVisitManager(study);
 
+        Study visitStudy = studyManager.getStudyForVisits(study);
+
         for (VisitMapRecord record : records)
         {
             VisitImpl visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
@@ -208,7 +211,7 @@ public class VisitMapImporter
 
             if (visit == null)
             {
-                visit = new VisitImpl(study.getContainer(), record.getSequenceNumMin(), record.getSequenceNumMax(), record.getVisitLabel(), record.getVisitType());
+                visit = new VisitImpl(visitStudy.getContainer(), record.getSequenceNumMin(), record.getSequenceNumMax(), record.getVisitLabel(), record.getVisitType());
                 visit.setProtocolDay(record.getProtocolDay());
                 visit.setDescription(record.getVisitDescription());
                 visit.setVisitDateDatasetId(record.getVisitDatePlate());
@@ -222,6 +225,8 @@ public class VisitMapImporter
             }
             else
             {
+                assert visitStudy.getContainer().equals(visit.getContainer()) : "Existing visit should have been created in shared visit study container";
+
                 if (!StringUtils.equals(visit.getDescription(), record.getVisitDescription()))
                 {
                     visit = _ensureMutable(visit);
@@ -237,7 +242,7 @@ public class VisitMapImporter
                     visit = _ensureMutable(visit);
                     visit.setSequenceNumMax(record.getSequenceNumMax());
                 }
-                if (visit.getProtocolDay() != record.getProtocolDay())
+                if (!Objects.equals(visit.getProtocolDay(), record.getProtocolDay()))
                 {
                     visit = _ensureMutable(visit);
                     visit.setProtocolDay(record.getProtocolDay());

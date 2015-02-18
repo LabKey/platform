@@ -105,6 +105,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String STUDY_SNAPSHOT_TABLE_NAME = "StudySnapshot";
     public static final String OBJECTIVE_TABLE_NAME = "Objective";
     public static final String PERSONNEL_TABLE_NAME = "Personnel";
+    public static final String VISIT_TABLE_NAME = "Visit";
     public static final String VISIT_TAG_TABLE_NAME = "VisitTag";
     public static final String VISIT_TAG_MAP_TABLE_NAME = "VisitTagMap";
     public static final String ASSAY_SPECIMEN_TABLE_NAME = "AssaySpecimen";
@@ -264,7 +265,7 @@ public class StudyQuerySchema extends UserSchema
                 names.add(StudyService.get().getSubjectTableName(getContainer()));
                 names.add("Location");
                 if (_study.getTimepointType() != TimepointType.CONTINUOUS)
-                    names.add("Visit");
+                    names.add(VISIT_TABLE_NAME);
 
                 if (_study.getTimepointType() != TimepointType.CONTINUOUS)
                     names.add(StudyService.get().getSubjectVisitTableName(getContainer()));
@@ -574,7 +575,7 @@ public class StudyQuerySchema extends UserSchema
             SpecimenRequestStatusTable ret = new SpecimenRequestStatusTable(this);
             return ret;
         }
-        if ("Visit".equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.CONTINUOUS)
+        if (VISIT_TABLE_NAME.equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.CONTINUOUS)
         {
             VisitTable ret = new VisitTable(this);
             return ret;
@@ -1038,6 +1039,7 @@ public class StudyQuerySchema extends UserSchema
         _dataspaceProjectLevelTables.add(PRODUCT_ANTIGEN_TABLE_NAME);
         _dataspaceProjectLevelTables.add(PERSONNEL_TABLE_NAME);
         _dataspaceProjectLevelTables.add(VISIT_TAG_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(VISIT_TABLE_NAME);
 
         _dataspaceFolderLevelTables.add(TREATMENT_TABLE_NAME);
         _dataspaceFolderLevelTables.add(ASSAY_SPECIMEN_TABLE_NAME);

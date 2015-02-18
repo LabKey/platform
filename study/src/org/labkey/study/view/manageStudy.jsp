@@ -54,6 +54,7 @@
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -69,6 +70,10 @@
 <%
     StudyImpl study = getStudy();
     Container c = getContainer();
+
+    Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+    Boolean sharedDatasets = sharedStudy != null && sharedStudy.getShareDatasetDefinitions();
+    Boolean sharedVisits = sharedStudy != null && sharedStudy.getShareVisitDefinitions();
 
     String visitLabel = StudyManager.getInstance().getVisitManager(study).getPluralLabel();
     ActionURL manageCohortsURL = new ActionURL(CohortController.ManageCohortsAction.class, c);
@@ -177,8 +182,10 @@
     <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
     <tr>
         <th align="left"><%= h(visitLabel) %></th>
-        <td>This study defines <%= getVisits(Visit.Order.DISPLAY).size()%> <%=h(visitLabel.toLowerCase())%></td>
-        <td><%= textLink("Manage " + visitLabel, ManageVisitsAction.class) %></td>
+        <td>This study defines <%= getVisits(Visit.Order.DISPLAY).size()%> <%=h(visitLabel.toLowerCase())%>
+            <% if (sharedVisits) { %>(shared)<% } %>
+        </td>
+        <td><%= textLink("Manage " + (sharedVisits ? "shared " : "") + visitLabel, ManageVisitsAction.class) %></td>
     </tr>
     <% } %>
      <tr>

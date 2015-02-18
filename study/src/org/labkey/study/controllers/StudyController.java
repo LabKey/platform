@@ -29,25 +29,7 @@ import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.CustomApiForm;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormApiAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.RedirectAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.InvalidFileException;
@@ -1591,13 +1573,7 @@ public class StudyController extends BaseStudyController
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study</span>");
 
-            Container currentContainer = study.getContainer();
-            if (!currentContainer.isProject())
-            {
-                Study projectStudy = getStudy(currentContainer.getProject());
-                if (projectStudy != null && projectStudy.getShareVisitDefinitions() == Boolean.TRUE)
-                    return HttpView.redirect(new ActionURL(ManageVisitsAction.class, study.getContainer().getProject()));
-            }
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
             return new StudyJspView<>(study, _jspName(study), form, errors);
         }
@@ -1605,6 +1581,8 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
         {
             StudyImpl study = getStudyThrowIfNull().createMutable();
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
+
             study.setStartDate(form.getStartDate());
             study.setDefaultTimepointDuration(form.getDefaultTimepointDuration());
             StudyManager.getInstance().updateStudy(getUser(), study);
@@ -1885,6 +1863,13 @@ public class StudyController extends BaseStudyController
         public void validateCommand(VisitForm target, Errors errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
+
+            Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions())
+                errors.reject(null, "Can't edit visits in a study with shared visits");
+
             target.validate(errors, study);
             if (errors.getErrorCount() > 0)
                 return;
@@ -1906,6 +1891,8 @@ public class StudyController extends BaseStudyController
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous date study</span>");
 
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
+
             int id = NumberUtils.toInt((String)getViewContext().get("id"));
             _v = StudyManager.getInstance().getVisitForRowId(study, id);
             if (_v == null)
@@ -1924,11 +1911,14 @@ public class StudyController extends BaseStudyController
             if (!getContainer().getId().equals(postedVisit.getContainer().getId()))
                 throw new UnauthorizedException();
 
+            StudyImpl study = getStudyThrowIfNull();
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
+
             // UNDONE: how do I get struts to handle this checkbox?
             postedVisit.setShowByDefault(null != StringUtils.trimToNull((String)getViewContext().get("showByDefault")));
 
             // UNDONE: reshow is broken for this form, but we have to validate
-            TreeMap<Double, VisitImpl> visits = StudyManager.getInstance().getVisitManager(getStudyThrowIfNull()).getVisitSequenceMap();
+            TreeMap<Double, VisitImpl> visits = StudyManager.getInstance().getVisitManager(study).getVisitSequenceMap();
             boolean validRange = true;
             // make sure there is no overlapping visit
             for (VisitImpl v : visits.values())
@@ -2023,14 +2013,22 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(IdForm target, Errors errors)
         {
+            StudyImpl study = getStudyThrowIfNull();
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
+
+
+            Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions())
+                errors.reject(null, "Can't edit visits in a study with shared visits");
         }
 
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
             int visitId = form.getId();
             StudyImpl study = getStudyThrowIfNull();
-            if (study.getTimepointType() == TimepointType.CONTINUOUS)
-                errors.reject(null, "Unsupported operation for continuous date study");
+
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
             VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (visit != null)
@@ -2054,14 +2052,21 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateCommand(IdForm target, Errors errors)
         {
+            StudyImpl study = getStudyThrowIfNull();
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
+
+            Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions())
+                errors.reject(null, "Can't delete visits from a study with shared visits");
         }
 
         @Override
         public ModelAndView getConfirmView(IdForm idForm, BindException errors) throws Exception
         {
             StudyImpl study = getStudyThrowIfNull();
-            if (study.getTimepointType() == TimepointType.CONTINUOUS)
-                errors.reject(null, "Unsupported operation for continuous date study");
+
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
             Collection<Integer> ids = new SqlSelector(StudySchema.getInstance().getScope(),
                     new SQLFragment(
@@ -2092,8 +2097,6 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
             StudyImpl study = getStudyThrowIfNull();
-            if (study.getTimepointType() == TimepointType.CONTINUOUS)
-                errors.reject(null, "Unsupported operation for continuous date study");
 
             Collection<Integer> ids = new SqlSelector(StudySchema.getInstance().getScope(),
                     new SQLFragment(
@@ -2127,7 +2130,9 @@ public class StudyController extends BaseStudyController
             int visitId = form.getId();
             StudyImpl study = getStudyRedirectIfNull();
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
-                errors.reject(null, "Unsupported operation for continuous date study");
+                return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study</span>");
+
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
             _visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (null == _visit)
@@ -2147,7 +2152,14 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(VisitForm target, Errors errors)
         {
-            StudyImpl study = getStudyRedirectIfNull();
+            StudyImpl study = getStudyThrowIfNull();
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
+
+            Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions())
+                errors.reject(null, "Can't create visits in a study with shared visits");
+
             target.validate(errors, study);
             if (errors.getErrorCount() > 0)
                 return;
@@ -2167,6 +2179,8 @@ public class StudyController extends BaseStudyController
 
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 errors.reject(null, "Unsupported operation for continuous date study");
+
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
             form.setReshow(reshow);
             return new StudyJspView<>(study, "createVisit.jsp", form, errors);
@@ -4263,7 +4277,10 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(VisitReorderForm reorderForm, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<Object>(getStudyRedirectIfNull(), "visitOrder.jsp", reorderForm, errors);
+            StudyImpl study = getStudyRedirectIfNull();
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
+
+            return new StudyJspView<Object>(study, "visitOrder.jsp", reorderForm, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4302,9 +4319,12 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(VisitReorderForm form, BindException errors) throws Exception
         {
+            StudyImpl study = getStudyRedirectIfNull();
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
+
             Map<Integer, Integer> displayOrder = null;
             Map<Integer, Integer> chronologicalOrder = null;
-            List<VisitImpl> visits = StudyManager.getInstance().getVisits(getStudyThrowIfNull(), Visit.Order.SEQUENCE_NUM);
+            List<VisitImpl> visits = StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM);
 
             if (form.isExplicitDisplayOrder())
                 displayOrder = getVisitIdToOrderIndex(form.getDisplayOrder());
@@ -4337,8 +4357,8 @@ public class StudyController extends BaseStudyController
             }
 
             // Changing visit order can cause cohort assignments to change when advanced cohort tracking is enabled:
-            if (getStudyThrowIfNull().isAdvancedCohorts())
-                CohortManager.getInstance().updateParticipantCohorts(getUser(), getStudyThrowIfNull());
+            if (study.isAdvancedCohorts())
+                CohortManager.getInstance().updateParticipantCohorts(getUser(), study);
             return true;
         }
 
@@ -4353,7 +4373,10 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(VisitPropertyForm visitPropertyForm, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<Object>(getStudyRedirectIfNull(), "visitVisibility.jsp", visitPropertyForm, errors);
+            StudyImpl study = getStudyRedirectIfNull();
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
+
+            return new StudyJspView<Object>(study, "visitVisibility.jsp", visitPropertyForm, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4366,6 +4389,9 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(VisitPropertyForm form, BindException errors) throws Exception
         {
+            StudyImpl study = getStudyRedirectIfNull();
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
+
             int[] allIds = form.getIds() == null ? new int[0] : form.getIds();
             int[] visibleIds = form.getVisible() == null ? new int[0] : form.getVisible();
             String[] labels = form.getLabel() == null ? new String[0] : form.getLabel();
@@ -4378,7 +4404,7 @@ public class StudyController extends BaseStudyController
                 throw new IllegalStateException("Arrays must be the same length.");
             for (int i = 0; i < allIds.length; i++)
             {
-                VisitImpl def = StudyManager.getInstance().getVisitForRowId(getStudyThrowIfNull(), allIds[i]);
+                VisitImpl def = StudyManager.getInstance().getVisitForRowId(study, allIds[i]);
                 boolean show = visible.contains(allIds[i]);
                 String label = (i < labels.length) ? labels[i] : null;
                 String typeStr = (i < typeStrs.length) ? typeStrs[i] : null;
@@ -6960,7 +6986,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class UpdateStudyScheduleAction extends ApiAction<StudySchedule>
+    public class UpdateStudyScheduleAction extends MutatingApiAction<StudySchedule>
     {
         @Override
         public void validateForm(StudySchedule form, Errors errors)
@@ -7027,7 +7053,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class DefineDatasetAction extends ApiAction<DefineDatasetForm>
+    public class DefineDatasetAction extends MutatingApiAction<DefineDatasetForm>
     {
         private StudyImpl _study;
 
@@ -7490,7 +7516,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class SaveLocationsTypeSettingsAction extends ApiAction<ManageLocationTypesForm>
+    public class SaveLocationsTypeSettingsAction extends MutatingApiAction<ManageLocationTypesForm>
     {
         @Override
         public ApiResponse execute(ManageLocationTypesForm form, BindException errors) throws Exception

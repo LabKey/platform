@@ -825,9 +825,11 @@ public class StudyManager
 
     public VisitImpl createVisit(Study study, User user, VisitImpl visit, @Nullable List<VisitImpl> existingVisits)
     {
-        if (visit.getContainer() != null && !visit.getContainer().getId().equals(study.getContainer().getId()))
+        Study visitStudy = getStudyForVisits(study);
+
+        if (visit.getContainer() != null && !visit.getContainer().getId().equals(visitStudy.getContainer().getId()))
             throw new VisitCreationException("Visit container does not match study");
-        visit.setContainer(study.getContainer());
+        visit.setContainer(visitStudy.getContainer());
 
         if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
             throw new VisitCreationException("SequenceNumMin must be less than or equal to SequenceNumMax");
@@ -880,7 +882,7 @@ public class StudyManager
         if (saveIfNew && result.getRowId() == 0)
         {
             // Insert it into the database if it's new
-            return createVisit(study, user, result);
+            return createVisit(study, user, result, visits);
         }
         return result;
     }
@@ -985,7 +987,10 @@ public class StudyManager
             }
 
         }
-        return new VisitImpl(study.getContainer(), visitIdMin, visitIdMax, label, type);
+
+        // create visit in shared study
+        Study visitStudy = getStudyForVisits(study);
+        return new VisitImpl(visitStudy.getContainer(), visitIdMin, visitIdMax, label, type);
     }
 
     public void importVisitAliases(Study study, User user, List<VisitAlias> aliases) throws IOException, ValidationException
@@ -1232,17 +1237,6 @@ public class StudyManager
         return allVisitTagMap;
     }
 
-    public @NotNull Study getStudyForVisitTag(@NotNull Study study)
-    {
-        Study returnStudy = study;
-        Container projectContainer = returnStudy.getContainer().getProject();
-        assert (null != projectContainer);
-        if (projectContainer.isDataspace())
-            returnStudy = StudyService.get().getStudy(projectContainer);
-        assert (null != returnStudy);
-        return returnStudy;
-    }
-
     public Integer createVisitTagMapEntry(User user, Container container, String visitTagName, @NotNull Integer visitId, @Nullable Integer cohortId) throws SQLException
     {
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
@@ -1439,7 +1433,8 @@ public class StudyManager
             // UNDONE broken _visitHelper.delete(visit);
             try
             {
-                Table.delete(schema.getTableInfoVisit(), new Object[] {study.getContainer(), visit.getRowId()});
+                Study visitStudy = getStudyForVisits(study);
+                Table.delete(schema.getTableInfoVisit(), new Object[] {visitStudy.getContainer(), visit.getRowId()});
             }
             catch (Table.OptimisticConflictException  x)
             {
@@ -1754,19 +1749,27 @@ public class StudyManager
 
         SimpleFilter filter = null;
 
+        Study visitStudy = getStudyForVisits(study);
+
         if (cohort != null)
         {
-            filter = SimpleFilter.createContainerFilter(study.getContainer());
+            filter = SimpleFilter.createContainerFilter(visitStudy.getContainer());
             if (showCohorts(study.getContainer(), user))
                 filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
         }
 
-        return _visitHelper.get(study.getContainer(), filter, order.getSortColumns());
+        return _visitHelper.get(visitStudy.getContainer(), filter, order.getSortColumns());
     }
 
     public void clearParticipantVisitCaches(Study study)
     {
         _visitHelper.clearCache(study.getContainer());
+
+        // clear shared study
+        Study visitStudy = getStudyForVisits(study);
+        if (!study.equals(visitStudy))
+            _visitHelper.clearCache(visitStudy.getContainer());
+
         DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
         for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(study.getContainer()))
             clearParticipantVisitCaches(substudy);
@@ -1775,7 +1778,9 @@ public class StudyManager
 
     public VisitImpl getVisitForRowId(Study study, int rowId)
     {
-        return _visitHelper.get(study.getContainer(), rowId, "RowId");
+        Study visitStudy = getStudyForVisits(study);
+
+        return _visitHelper.get(visitStudy.getContainer(), rowId, "RowId");
     }
 
     private final DatabaseCache<List<QCState>> _qcStateCache = new DatabaseCache<>(StudySchema.getInstance().getScope(), 1000, "QCStates");
@@ -1877,6 +1882,9 @@ public class StudyManager
         if (dataLsids == null || dataLsids.isEmpty())
             return visits;
 
+        final Study study = def.getStudy();
+        final Study visitStudy = getStudyForVisits(study);
+
         TableInfo ds = def.getTableInfo(null, false);
 
         SQLFragment sql = new SQLFragment();
@@ -1889,11 +1897,10 @@ public class StudyManager
                 "\tpv.Container = ? AND v.Container = ?\n" +
                 "WHERE sd.lsid ");
         sql.add(def.getContainer().getId());
-        sql.add(def.getContainer().getId());
+        // shared visit container
+        sql.add(visitStudy.getContainer().getId());
 
         StudySchema.getInstance().getSqlDialect().appendInClauseSql(sql, dataLsids);
-
-        final Study study = def.getStudy();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
         {
@@ -1916,6 +1923,9 @@ public class StudyManager
         DatasetDefinition def = getDatasetDefinition(getStudy(container), datasetId);
         TableInfo ds = def.getTableInfo(null, false);
 
+        final Study study = def.getStudy();
+        final Study visitStudy = getStudyForVisits(study);
+
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT DISTINCT v.RowId AS RowId FROM ").append(ds.getFromSQL("sd")).append("\n" +
                 "JOIN study.ParticipantVisit pv ON \n" +
@@ -1925,9 +1935,9 @@ public class StudyManager
                 "\tpv.VisitRowId = v.RowId AND\n" +
                 "\tpv.Container = ? AND v.Container = ?\n");
         sql.add(container.getId());
-        sql.add(container.getId());
+        // shared visit container
+        sql.add(visitStudy.getContainer().getId());
 
-        Study study = getStudy(container);
         SqlSelector selector = new SqlSelector(StudySchema.getInstance().getSchema(), sql);
         for (Integer rowId : selector.getArray(Integer.class))
         {
@@ -2114,10 +2124,10 @@ public class StudyManager
         return null;
     }
 
-    private boolean isCohortInUse(CohortImpl cohort, TableInfo table, String... columnNames)
+    private boolean isCohortInUse(CohortImpl cohort, Container c, TableInfo table, String... columnNames)
     {
         List<Object> params = new ArrayList<>();
-        params.add(cohort.getContainer().getId());
+        params.add(c.getId());
 
         StringBuilder cols = new StringBuilder("(");
         String or = "";
@@ -2135,10 +2145,13 @@ public class StudyManager
 
     public boolean isCohortInUse(CohortImpl cohort)
     {
-        return isCohortInUse(cohort, StudySchema.getInstance().getTableInfoDataset(), "CohortId") ||
-                isCohortInUse(cohort, StudySchema.getInstance().getTableInfoParticipant(), "CurrentCohortId", "InitialCohortId") ||
-                isCohortInUse(cohort, StudySchema.getInstance().getTableInfoParticipantVisit(), "CohortId") ||
-                isCohortInUse(cohort, StudySchema.getInstance().getTableInfoVisit(), "CohortId");
+        Container c = cohort.getContainer();
+        Study visitStudy = getStudyForVisits(getStudy(c));
+
+        return isCohortInUse(cohort, c, StudySchema.getInstance().getTableInfoDataset(), "CohortId") ||
+                isCohortInUse(cohort, c, StudySchema.getInstance().getTableInfoParticipant(), "CurrentCohortId", "InitialCohortId") ||
+                isCohortInUse(cohort, c, StudySchema.getInstance().getTableInfoParticipantVisit(), "CohortId") ||
+                isCohortInUse(cohort, visitStudy.getContainer(), StudySchema.getInstance().getTableInfoVisit(), "CohortId");
     }
 
     public void deleteCohort(CohortImpl cohort) throws SQLException
@@ -4449,20 +4462,67 @@ public class StudyManager
         }
     }
 
-
-    public Study getSharedStudy(Study study)
+    /**
+     * Get the shared study in the project for the given study (excluding the shared study itself.)
+     */
+    @Nullable
+    public Study getSharedStudy(@NotNull Container c)
     {
-        if (study.getContainer().isProject())
+        if (c.isProject())
             return null;
-        Container p = study.getContainer().getProject();
+        Container p = c.getProject();
         if (null == p)
             return null;
         Study sharedStudy = getStudy(p);
         if (null == sharedStudy)
             return null;
-        if (!sharedStudy.getShareDatasetDefinitions())
+        if (!sharedStudy.isDataspaceStudy())
             return null;
         return sharedStudy;
+    }
+
+    /**
+     * Get the shared study in the project for the given study (excluding the shared study itself.)
+     */
+    @Nullable
+    public Study getSharedStudy(@NotNull Study study)
+    {
+        return getSharedStudy(study.getContainer());
+    }
+
+    /**
+     * Get the shared study in the project for the given study
+     * or just return the current study if no shared study exists.
+     */
+    public @NotNull Study getSharedStudyOrCurrent(@NotNull Study study)
+    {
+        Study sharedStudy = getSharedStudy(study);
+        return sharedStudy != null ? sharedStudy : study;
+    }
+
+    /**
+     * Get the Study to use for visits -- either the
+     * project shared study's container (if shared visits is turned on)
+     * or the current study container.
+     */
+    @NotNull
+    public Study getStudyForVisits(@NotNull Study study)
+    {
+        Study sharedStudy = getSharedStudy(study);
+        if (sharedStudy != null && sharedStudy.getShareVisitDefinitions())
+            return sharedStudy;
+
+        return study;
+    }
+
+    /**
+     * Get the Study to use for VisitTags -- either the
+     * project shared study's container or the current study container.
+     */
+    @NotNull
+    public Study getStudyForVisitTag(@NotNull Study study)
+    {
+        return getSharedStudyOrCurrent(study);
     }
 
 
@@ -5248,6 +5308,7 @@ public class StudyManager
         public void testExistingVisitBased()
         {
             StudyImpl study = new StudyImpl();
+            study.setContainer(JunitUtil.getTestContainer());
             study.setTimepointType(TimepointType.VISIT);
 
             List<VisitImpl> existingVisits = new ArrayList<>(3);
@@ -5269,6 +5330,7 @@ public class StudyManager
         public void testEmptyVisitBased()
         {
             StudyImpl study = new StudyImpl();
+            study.setContainer(JunitUtil.getTestContainer());
             study.setTimepointType(TimepointType.VISIT);
 
             List<VisitImpl> existingVisits = new ArrayList<>();
@@ -5282,6 +5344,7 @@ public class StudyManager
         public void testEmptyDateBased()
         {
             StudyImpl study = new StudyImpl();
+            study.setContainer(JunitUtil.getTestContainer());
             study.setTimepointType(TimepointType.DATE);
 
             List<VisitImpl> existingVisits = new ArrayList<>();
@@ -5305,6 +5368,7 @@ public class StudyManager
         public void testExistingDateBased()
         {
             StudyImpl study = new StudyImpl();
+            study.setContainer(JunitUtil.getTestContainer());
             study.setTimepointType(TimepointType.DATE);
 
             List<VisitImpl> existingVisits = new ArrayList<>(3);
@@ -5330,6 +5394,7 @@ public class StudyManager
         public void testCreationDateBased()
         {
             StudyImpl study = new StudyImpl();
+            study.setContainer(JunitUtil.getTestContainer());
             study.setTimepointType(TimepointType.DATE);
 
             List<VisitImpl> existingVisits = new ArrayList<>(4);
@@ -5381,6 +5446,7 @@ public class StudyManager
         public void testVisitDescription()
         {
             StudyImpl study = new StudyImpl();
+            study.setContainer(JunitUtil.getTestContainer());
             study.setTimepointType(TimepointType.DATE);
 
             List<VisitImpl> existingVisits = new ArrayList<>();
