@@ -10,22 +10,20 @@
 
     LABKEY.help.Tour = new function ()
     {
-        var _hopscotchSessionProperty = 'hopscotch.tour.state';
-        var _localStorageProperty = "LABKEY.tours.state";
-        var _tours = {};
-        var _continue = {};
-        var _queue = [];
-        var _next = 0;
-        var loads = 0;
-
-        var me = this;
-
-        var stepFnOpts = ["onPrev", "onNext", "onShow", "onCTA"];
-        var tourFnOpts = ["onNext", "onPrev", "onStart", "onEnd", "onClose", "onError"];
-        var _modeOff = "off";
-        var _modeRunOnce = "runOnce";
-        var _modeRunAlways = "runAlways";
-        var modes = [_modeOff, _modeRunOnce, _modeRunAlways];
+        var _hopscotchSessionProperty = 'hopscotch.tour.state',
+            _localStorageProperty = "LABKEY.tours.state",
+            _tours = {},
+            _continue = {},
+            _queue = [],
+            _next = 0,
+            loads = 0,
+            me = this,
+            stepFnOpts = ["onPrev", "onNext", "onShow", "onCTA"],
+            tourFnOpts = ["onNext", "onPrev", "onStart", "onEnd", "onClose", "onError"],
+            _modeOff = "off",
+            _modeRunOnce = "runOnce",
+            _modeRunAlways = "runAlways",
+            modes = [_modeOff, _modeRunOnce, _modeRunAlways];
 
         //
         // Private functions
