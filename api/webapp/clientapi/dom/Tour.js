@@ -256,14 +256,6 @@
         };
 
         /**
-         * AJAX getTour failure callback
-         */
-        var failure = function (id, result)
-        {
-            loads--;
-        };
-
-        /**
          * Mark tour as seen so autoShow() will no longer show this tour
          */
         var markSeen = function (id)
@@ -339,20 +331,26 @@
          * Show tour starting at step
          * Always loads hopscotch.js
          */
-        var show = function (id, step)
+        var show = function(id, step)
         {
             loads++;
 
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('tours', 'getTour'),
                 jsonData: {id: id},
-                success: LABKEY.Utils.getCallbackWrapper(function (result)
+                success: LABKEY.Utils.getCallbackWrapper(function(result)
                 {
-                    success.call(this, id, step, result);
+                    loads--;
+                    parseAndRegister.call(this, id, step, result);
+
+                    if (loads == 0)
+                    {
+                        _kickoffTours();
+                    }
                 }, me, false),
-                failure: LABKEY.Utils.getCallbackWrapper(function (result)
+                failure: LABKEY.Utils.getCallbackWrapper(function(result)
                 {
-                    failure.call(this, id, result);
+                    loads--;
                 }, me, false),
                 scope: this
             });
@@ -361,19 +359,30 @@
         /**
          * AJAX show() success callback
          */
-        var success = function (id, step, result)
+        var parseAndRegister = function(id, step, result)
         {
-            var json = JSON.parse(result.Json);
-            json.id = id;
+            var tour = JSON.parse(result.json);
+            tour.id = id;
 
-            _evalTourOptions(json);
-            _evalStepOptions(json);
-            register(json, result.Mode, step);
-
-            if (--loads == 0)
+            var realSteps = [];
+            $.each(tour.steps, function(i, step)
             {
-                _kickoffTours();
+                var real = eval(JSON.parse(step.step));
+                real.target = step.target;
+
+                if (!real.placement) {
+                    real.placement = 'bottom'; // required by hopscotch
+                }
+                realSteps.push(real);
+            });
+
+            if (window['_stepcontent'])
+            {
+                delete window['_stepcontent'];
             }
+
+            tour.steps = realSteps;
+            register(tour, result.mode, step);
         };
 
         LABKEY.Utils.onReady(_init);
