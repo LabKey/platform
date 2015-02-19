@@ -16,6 +16,8 @@
 
 package org.labkey.bigiron.mssql;
 
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.ColumnInfo.ImportedKey;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.InClauseGenerator;
@@ -41,6 +44,7 @@ import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.ForeignKeyResolver;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
@@ -48,8 +52,10 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -85,7 +91,7 @@ import java.util.regex.Pattern;
 public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 {
     // Cache of synonyms by datasource name. This lets admins force a re-query by clearing caches.
-    private static final Cache<String, Map<String, Map<String, Synonym>>> SYNONYM_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.YEAR, "SQL Server synonyms", new SynonymLoader());
+    private static final Cache<String, Pair<Map<String, Map<String, Synonym>>, Map<String, Map<String, MultiMap<String, Synonym>>>>> SYNONYM_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.YEAR, "SQL Server synonyms", new SynonymLoader());
 
     private volatile boolean _groupConcatInstalled = false;
 
@@ -1275,7 +1281,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         CaseInsensitiveMapWrapper<MetadataParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, MetadataParameterInfo>());
 
         try (Connection conn = scope.getConnection();
-             ResultSet rs = conn.getMetaData().getProcedureColumns(scope.getDatabaseName(),procSchema, procName, null);)
+             ResultSet rs = conn.getMetaData().getProcedureColumns(scope.getDatabaseName(),procSchema, procName, null))
         {
             while (rs.next())
             {
@@ -1310,7 +1316,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             sb.append("? = ");
             paramCount--;
         }
-        sb.append("CALL " + procSchema + "." + procName);
+        sb.append("CALL ").append(procSchema).append(".").append(procName);
         if (paramCount > 0)
             sb.append("(");
         for (int i = 0; i < paramCount; i++)
@@ -1380,6 +1386,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         {
         }
 
+        @SuppressWarnings("unused")
         public void setSchemaName(String schemaName)
         {
             _schemaName = schemaName;
@@ -1390,6 +1397,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             return _schemaName;
         }
 
+        @SuppressWarnings("unused")
         public void setName(String name)
         {
             _name = name;
@@ -1400,16 +1408,19 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             return _name;
         }
 
+        @SuppressWarnings("unused")
         public void setTargetServer(String targetServer)
         {
             _targetServer = targetServer;
         }
 
+        @SuppressWarnings("unused")   // NYI
         public String getTargetServer()
         {
             return _targetServer;
         }
 
+        @SuppressWarnings("unused")
         public void setTargetDatabase(String targetDatabase)
         {
             _targetDatabase = targetDatabase;
@@ -1420,6 +1431,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             return _targetDatabase;
         }
 
+        @SuppressWarnings("unused")
         public void setTargetSchema(String targetSchema)
         {
             _targetSchema = targetSchema;
@@ -1430,6 +1442,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             return _targetSchema;
         }
 
+        @SuppressWarnings("unused")
         public void setTargetTable(String targetTable)
         {
             _targetTable = targetTable;
@@ -1447,17 +1460,26 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         }
     }
 
+    private static final Pair<Map<String, Map<String, Synonym>>, Map<String, Map<String, MultiMap<String, Synonym>>>> NO_SYNONYMS;
 
-    private static class SynonymLoader implements CacheLoader<String, Map<String, Map<String, Synonym>>>
+    static
+    {
+        Map<String, Map<String, Synonym>> emptyMap = Collections.emptyMap();
+        Map<String, Map<String, MultiMap<String, Synonym>>> emptyReverseMap = Collections.emptyMap();
+
+        NO_SYNONYMS = new Pair<>(emptyMap, emptyReverseMap);
+    }
+
+    private static class SynonymLoader implements CacheLoader<String, Pair<Map<String, Map<String, Synonym>>, Map<String, Map<String, MultiMap<String, Synonym>>>>>
     {
         @Override
-        public Map<String, Map<String, Synonym>> load(String key, @Nullable Object argument)
+        public Pair<Map<String, Map<String, Synonym>>, Map<String, Map<String, MultiMap<String, Synonym>>>> load(String key, @Nullable Object argument)
         {
             DbScope scope = DbScope.getDbScope(key);
 
-            // A synonym in this scope can target other databases. We need to construct SQL that joins each synonym definition
+            // A synonym in this scope might target other databases. We need to construct SQL that joins each synonym definition
             // to the sys.objects table its own target database, so generate a crazy UNION query with one SELECT clause per
-            // unique database.
+            // distinct database.
 
             final String part1 = "SELECT s.* FROM (SELECT \n" +
                 "SCHEMA_NAME(schema_id) AS SchemaName,\n" +
@@ -1491,9 +1513,10 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
             // No synonyms... carry on
             if (sql.isEmpty())
-                return Collections.emptyMap();
+                return NO_SYNONYMS;
 
             final Map<String, Map<String, Synonym>> synonymMap = new HashMap<>();
+            final Map<String, Map<String, MultiMap<String, Synonym>>> reverseMap = new HashMap<>();
 
             new SqlSelector(scope, sql).forEach(new Selector.ForEachBlock<Synonym>()
             {
@@ -1509,26 +1532,55 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                     }
 
                     map.put(synonym.getName(), synonym);
+
+                    Map<String, MultiMap<String, Synonym>> schemaMap = reverseMap.get(synonym.getTargetDatabase());
+
+                    if (null == schemaMap)
+                    {
+                        schemaMap = new HashMap<>();
+                        reverseMap.put(synonym.getTargetDatabase(), schemaMap);
+                    }
+
+                    MultiMap<String, Synonym> tableMap = schemaMap.get(synonym.getTargetSchema());
+
+                    if (null == tableMap)
+                    {
+                        tableMap = new MultiHashMap<>();
+                        schemaMap.put(synonym.getTargetSchema(), tableMap);
+                    }
+
+                    tableMap.put(synonym.getTargetTable(), synonym);
                 }
             }, Synonym.class);
 
-            return Collections.unmodifiableMap(synonymMap);
+            return new Pair<>(synonymMap, reverseMap);
         }
     }
 
 
-    private @NotNull Map<String, Synonym> getSynonymnMap(DbScope scope, String schemaName)
+    // Returns a map of synonyms defined in the specified scope and schema. The returned map has the structure:
+    // [synonym name] -> Synonym
+    private static @NotNull Map<String, Synonym> getSynonymMap(DbScope scope, String schemaName)
     {
-        Map<String, Synonym> synonymMap = SYNONYM_CACHE.get(scope.getDataSourceName()).get(schemaName);
+        Map<String, Synonym> synonymMap = SYNONYM_CACHE.get(scope.getDataSourceName()).first.get(schemaName);
 
         return null == synonymMap ? Collections.<String, Synonym>emptyMap() : synonymMap;
+    }
+
+
+    // Returns a map of synonyms defined in synonymScope that target targetScope. The returned map has the structure:
+    // [target schema name] -> [target table/view name] -> Collection<Synonym> since multiple synonyms could be defined
+    // on the same table/view.
+    private static @NotNull Map<String, MultiMap<String, Synonym>> getReverseMap(DbScope synonymScope, DbScope targetScope)
+    {
+        return SYNONYM_CACHE.get(synonymScope.getDataSourceName()).second.get(targetScope.getDatabaseName());
     }
 
 
     @Override
     public void addTableNames(Map<String, String> map, DbScope scope, String schemaName)
     {
-        Map<String, Synonym> synonymMap = getSynonymnMap(scope, schemaName);
+        Map<String, Synonym> synonymMap = getSynonymMap(scope, schemaName);
 
         for (String name : synonymMap.keySet())
             map.put(name, name);
@@ -1538,22 +1590,106 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, String schemaName, String tableName) throws SQLException
     {
-        Synonym synonym = getSynonymnMap(scope, schemaName).get(tableName);
+        Pair<DbScope, Synonym> pair = getSynonym(scope, schemaName, tableName);
 
-        // tableName is not a synonym... just return the standard locator
+        if (null == pair)
+            return super.getJdbcMetaDataLocator(scope, schemaName, tableName);      // Not a synonym, so return the standard locator
+        else
+            return new SynonymJdbcMetaDataLocator(pair.first, scope, pair.second);  // tableName is a synonym, so return a synonym locator
+    }
+
+
+    @Override
+    public ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)
+    {
+        Pair<DbScope, Synonym> pair = getSynonym(scope, schemaName, tableName);
+
+        if (null == pair)
+            return super.getForeignKeyResolver(scope, schemaName, tableName);       // Not a synonym, so return the standard resolver
+        else
+            return new SynonymForeignKeyResolver(pair.first, scope, pair.second);   // tableName is a synonym, so return a synonym resolver
+    }
+
+
+    private @Nullable Pair<DbScope, Synonym> getSynonym(DbScope scope, String schemaName, String tableName)
+    {
+        Synonym synonym = getSynonymMap(scope, schemaName).get(tableName);
+
+        // tableName is not a synonym... return null
         if (null == synonym)
-            return super.getJdbcMetaDataLocator(scope, schemaName, tableName);
+            return null;
 
         // tableName is a synonym to an object in the same scope
         if (synonym.getTargetDatabase().equals(scope.getDatabaseName()))
-            return new StandardJdbcMetaDataLocator(scope, synonym.getTargetSchema(), synonym.getTargetTable());
+            return new Pair<>(scope, synonym);
 
-        // tableName is a synonym to an object in a different scope... find the corresponding scope so we can use it to retrieve meta data
+        // tableName is a synonym to an object in a different scope... find the corresponding scope so we can return it
         for (DbScope candidate : DbScope.getDbScopes())
             if (candidate.getSqlDialect().isSqlServer() && null != candidate.getDatabaseName() && candidate.getDatabaseName().equals(synonym.getTargetDatabase()))
-                return new StandardJdbcMetaDataLocator(candidate, synonym.getTargetSchema(), synonym.getTargetTable());
+                return new Pair<>(candidate, synonym);
 
-        throw new SQLException("Could not access metadata for " + synonym + ". No labkey.xml datasource is defined for the target database.");
+        throw new ConfigurationException("Could not access metadata for " + synonym + ". No labkey.xml datasource is defined for the target database.");
+    }
+
+
+    private static class SynonymJdbcMetaDataLocator extends StandardJdbcMetaDataLocator
+    {
+        private final ForeignKeyResolver _resolver;
+
+        private SynonymJdbcMetaDataLocator(DbScope targetScope, DbScope synonymScope, Synonym synonym) throws SQLException
+        {
+            super(targetScope, synonym.getTargetSchema(), synonym.getTargetTable());
+            _resolver = new SynonymForeignKeyResolver(targetScope, synonymScope, synonym);
+        }
+
+        @Override
+        public ImportedKey getImportedKey(String fkName, String pkSchemaName, String pkTableName, String pkColumnName, String colName)
+        {
+            return _resolver.getImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
+        }
+    }
+
+
+    private static class SynonymForeignKeyResolver extends StandardForeignKeyResolver
+    {
+        private final DbScope _targetScope;
+        private final DbScope _synonymScope;
+        private final Synonym _synonym;
+
+        public SynonymForeignKeyResolver(DbScope targetScope, DbScope synonymScope, Synonym synonym)
+        {
+            _targetScope = targetScope;
+            _synonymScope = synonymScope;
+            _synonym = synonym;
+        }
+
+        @Override
+        public ImportedKey getImportedKey(String fkName, String pkSchemaName, String pkTableName, String pkColumnName, String colName)
+        {
+            Map<String, MultiMap<String, Synonym>> reverseMap = getReverseMap(_synonymScope, _targetScope);
+
+            MultiMap<String, Synonym> mmap = reverseMap.get(pkSchemaName);
+
+            if (null != mmap)
+            {
+                Collection<Synonym> synonyms = mmap.get(pkTableName);
+
+                if (null != synonyms)
+                {
+                    for (Synonym synonym : synonyms)
+                    {
+                        if (_synonym.getSchemaName().equals(synonym.getSchemaName()))
+                        {
+                            return super.getImportedKey(fkName, synonym.getSchemaName(), synonym.getName(), pkColumnName, colName);
+                        }
+                    }
+
+                    // TODO: Otherwise pick the first one?
+                }
+            }
+
+            return super.getImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
+        }
     }
 
 
@@ -1570,7 +1706,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
         private EnumSet<Token> _terminatingTokens = null;
 
-        private Token(TokenType type)
+        Token(TokenType type)
         {
             _type = type;
         }
@@ -1597,7 +1733,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         {
             // EnumSet won't allow these to be called in Token constructor
             BEGIN.setTerminatingTokens(EnumSet.copyOf(Arrays.asList(END, COMMIT)));
-            CASE.setTerminatingTokens(EnumSet.copyOf(Arrays.asList(END)));
+            CASE.setTerminatingTokens(EnumSet.copyOf(Collections.singletonList(END)));
         }
     }
 
