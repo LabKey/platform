@@ -15,6 +15,8 @@
  */
 package org.labkey.query.controllers;
 
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
@@ -35,6 +37,7 @@ import org.springframework.web.servlet.ModelAndView;
 */
 
 @RequiresPermissionClass(ReadPermission.class)
+@Action(ActionType.Configure)
 public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
 {
     private QueryForm _form = null;
