@@ -6071,20 +6071,21 @@ public class QueryController extends SpringActionController
             {
                 String tableName = table.getName();
 
-                Results results = new TableSelector(table).getResults(false);
-                if (results.next()) // only export tables with data
+                try (Results results = new TableSelector(table).getResults(false))
                 {
-                    results.previous();
-                    File outputFile = new File(form.getPath(), tableName+".tsv.gz");
-                    GZIPOutputStream outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
-                    try ( TSVGridWriter tsv = new TSVGridWriter(results) )
+                    if (results.isBeforeFirst()) // only export tables with data
                     {
-                        tsv.setColumnHeaderType(TSVColumnWriter.ColumnHeaderType.queryColumnName);
-                        tsv.setApplyFormats(false);
-                        tsv.write(outputStream);
-                    }
+                        File outputFile = new File(form.getPath(), tableName + ".tsv.gz");
+                        GZIPOutputStream outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
+                        try (TSVGridWriter tsv = new TSVGridWriter(results))
+                        {
+                            tsv.setColumnHeaderType(TSVColumnWriter.ColumnHeaderType.queryColumnName);
+                            tsv.setApplyFormats(false);
+                            tsv.write(outputStream);
+                        }
 
-                    importScript.append(sourceSchema.getSqlDialect().execute(DbSchema.get("core"), "bulkImport", "'" + form.getTargetSchema() + "', '" + tableName + "', '" + outputFile.getName() + "'")).append(";\n");
+                        importScript.append(sourceSchema.getSqlDialect().execute(DbSchema.get("core"), "bulkImport", "'" + form.getTargetSchema() + "', '" + tableName + "', '" + outputFile.getName() + "'")).append(";\n");
+                    }
                 }
 
             }
