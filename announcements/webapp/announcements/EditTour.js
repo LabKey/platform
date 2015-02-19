@@ -141,53 +141,29 @@
 
         _generatePrimaryFields($('.leftcolumn'));
 
-        var dummy = document.getElementById("dummy");
-        var parent = document.getElementById("rightcolumn");
-
         // Set title and description if editing existing tour
         $(_idSel + "title").val(LABKEY._tour.title);
         $(_idSel + "description").val(LABKEY._tour.description);
 
-        var x = 0,
-            orderedSteps = [],
-            inputSteps = LABKEY._tour.json["steps"],
-            stepIndex = 0;
+        var inputSteps = LABKEY._tour.json.steps;
 
-        // If editing existing tour, first need to establish correct order of steps
         if (inputSteps)
         {
-            $.each(inputSteps, function(i, stepConfig)
+            $.each(inputSteps, function(i, istep)
             {
-                if (stepConfig.step)
+                if (istep.step)
                 {
-                    stepIndex = stepConfig.step - 1;
+                    var stepText = JSON.parse(istep.step).replace('_stepcontent = ', '');
+                    _generateStep(_steps++, istep.target, stepText);
                 }
-                else
-                {
-                    stepIndex = x++;
-                }
-
-                orderedSteps[stepIndex] = stepConfig;
-                delete orderedSteps[stepIndex].step;
             });
-        }
-
-        // After existing tour steps ordered correctly, generate steps with values
-        for (var i=0; i < orderedSteps.length; i++)
-        {
-            if (orderedSteps[i])
-            {
-                var target = orderedSteps[i].target;
-                delete orderedSteps[i].target;
-                _generateStep(_steps++, parent, dummy, target, JSON.stringify(orderedSteps[i]));
-            }
-            else
-                _generateStep(_steps++, parent, dummy, null, null);
         }
 
         // Generate steps for new tour or left over space from editing tour
         while (_steps < 4)
-            _generateStep(_steps++, parent, dummy, null, null);
+        {
+            _generateStep(_steps++);
+        }
 
         _rowId = LABKEY._tour.rowId;
     });
@@ -206,41 +182,72 @@
     {
         var steps = [],
             err = false,
-            obj, target, step;
+            obj, target, step, title = $(_idSel + 'title').val();
 
-        if( $(_idSel + 'title').val() == "" )
+        if (!title)
         {
             LABKEY.Utils.alert('Field Value Error', "Please include a title");
             err = true;
         }
         else
         {
+            var s;
             for (var i = 1; i < _steps; i++)
             {
                 obj = {};
 
                 target = $(_idSel + 'selector' + i).val();
-                step = _stepHandles[_idPrefix + 'step' + i].getValue();
 
-                if (target && step)
+                if (target)
                 {
-                    obj["target"] = target;
-                    obj["step"] = i;
-                    try
-                    {
-                        $.each(JSON.parse(step), function (key, value)
-                        {
-                            obj[key] = value;
-                        });
+                    step = _stepHandles[_idPrefix + 'step' + i].getValue();
 
-                        steps.push(obj);
-                    }
-                    catch (x)
+                    if (step)
                     {
-                        if (x instanceof SyntaxError)
+                        s = step.trim();
+
+                        if (s && s.length > 0)
                         {
-                            LABKEY.Utils.alert('Syntax Error', "JSON syntax error in step " + i + ": " + x.message);
-                            err = true;
+                            // check if using object notation
+                            if (s.indexOf('{') == 0)
+                            {
+                                if (s[s.length-1] == '}')
+                                {
+                                    s = "_stepcontent = " + s;
+                                }
+                                else
+                                {
+                                    LABKEY.Utils.alert('Syntax Error Step ' + i, 'If using object notation, must wrap both sides in { }.');
+                                    err = true;
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                // assume they need to wrap in an object
+                                s = "_stepcontent = {\n" + s + "\n}";
+                            }
+
+                            obj["target"] = target;
+                            try
+                            {
+                                var asString = JSON.stringify(s);
+
+                                // ensure the step is syntactically safe for an eval
+                                JSON.parse(asString);
+
+                                // looks like we're good
+                                obj["step"] = asString;
+                                steps.push(obj);
+                            }
+                            catch (x)
+                            {
+                                if (x instanceof SyntaxError)
+                                {
+                                    LABKEY.Utils.alert('Syntax Error', "JSON syntax error in step " + i + ": " + x.message);
+                                    err = true;
+                                }
+                            }
                         }
                     }
                 }
@@ -256,19 +263,21 @@
         if (!err)
         {
             var tour = {
-                id: $(_idSel + 'title').val(),
+                id: title,
                 steps: steps
+            };
+
+            var json = {
+                title: title,
+                description: $(_idSel + 'description').val(),
+                mode: $(_idSel + 'mode').val(),
+                rowId: _rowId,
+                tour: tour
             };
 
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('tours', 'saveTour'),
-                jsonData: {
-                    title: $(_idSel + 'title').val(),
-                    description: $(_idSel + 'description').val(),
-                    mode: $(_idSel + 'mode').val(),
-                    rowId: _rowId,
-                    tour: tour
-                },
+                jsonData: json,
                 success: LABKEY.Utils.getCallbackWrapper(function(result)
                 {
                     _success.call(this, close, result);
@@ -336,10 +345,7 @@
 
     var _addStep = function()
     {
-        var dummy = document.getElementById("dummy");
-        var parent = document.getElementById("rightcolumn");
-
-        _generateStep(_steps++, parent, dummy, null, null);
+        _generateStep(_steps++);
     };
 
     /**
@@ -378,7 +384,7 @@
         {
             $(_idSel + 'title').val(obj["Title"]);
             $(_idSel + 'description').val(obj["Description"]);
-            $(_idSel + 'mode').val(parseInt(obj["Mode"]));
+            $(_idSel + 'mode').val(parseInt(obj["mode"]));
 
             var i = 1;
             if (obj.Tour)
@@ -392,9 +398,7 @@
                     }
                     else
                     {
-                        var dummy = document.getElementById("dummy");
-                        var parent = document.getElementById("rightcolumn");
-                        _generateStep(_steps++, parent, dummy, selector, JSON.stringify(config));
+                        _generateStep(_steps++, selector, JSON.stringify(config));
                     }
                     i++;
                 });
@@ -472,15 +476,15 @@
     var _regCodeMirrorEditor = function(id, value)
     {
         var editor = CodeMirror.fromTextArea(document.getElementById(id), {
-            mode: {name: 'javascript', json: true},
+            mode: {name: 'javascript'},
             lineNumbers: true,
             lineWrapping: true,
             indentUnit: 0
         });
 
         editor.setSize(474, 150);
-        if (null != value)
-            editor.setValue(_formatStep(value));
+        if (value)
+            editor.setValue(value);
 
         LABKEY.codemirror.RegisterEditorInstance(id, editor);
         _stepHandles[id] = editor;
@@ -506,8 +510,18 @@
         return value.replace(/"/g, '').replace(/}/, '').replace(/{/, '');
     };
 
-    var _generateStep = function(index, parent, element, select, step)
+    /**
+     *
+     * @param index
+     * @param {string} [select]
+     * @param {number} [stepValue]
+     * @private
+     */
+    var _generateStep = function(index, select, stepValue)
     {
+        var element = document.getElementById("dummy");
+        var parent = document.getElementById("rightcolumn");
+
         var rowSelector = document.createElement("div");
         rowSelector.setAttribute("class", _rowClass);
 
@@ -517,7 +531,7 @@
         var labelSelector = document.createElement("label");
         labelSelector.setAttribute("class", _labelClass);
         labelSelector.setAttribute("for", _idPrefix + "selector" + index);
-        labelSelector.appendChild(document.createTextNode("Selector " + index));
+        labelSelector.appendChild(document.createTextNode("Selector " + index + ' (target)'));
         divLabelSelector.appendChild(labelSelector);
 
         var divInputSelector = document.createElement("div");
@@ -556,6 +570,6 @@
         parent.insertBefore(rowSelector, element);
         parent.insertBefore(rowStep, element);
 
-        _regCodeMirrorEditor(_idPrefix + "step" + index, step);
+        _regCodeMirrorEditor(_idPrefix + "step" + index, stepValue);
     };
 })(jQuery);

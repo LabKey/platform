@@ -170,8 +170,8 @@ public class ToursController extends SpringActionController
             JSONObject json = form.getJsonObject();
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            response.put("Mode", TourManager.getTourMode(getContainer(), json.getInt("id")));
-            response.put("Json", TourManager.getTourJson(getContainer(), json.getInt("id")));
+            response.put("mode", TourManager.getTourMode(getContainer(), json.getInt("id")));
+            response.put("json", TourManager.getTourJson(getContainer(), json.getInt("id")));
             response.put("success", true);
             return response;
         }
