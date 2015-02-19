@@ -28,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.ForeignKeyResolver;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -947,6 +948,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if ((!merge || null == fk) && xmlCol.getFk() != null)
         {
             ColumnType.Fk xfk = xmlCol.getFk();
+            DbSchema schema = getParentTable().getSchema();
+            ForeignKeyResolver resolver = getSqlDialect().getForeignKeyResolver(schema.getScope(), schema.getName(), getParentTable().getName());
+            String fkSchema = xfk.getFkDbSchema();
+            ImportedKey key = resolver.getImportedKey(null, null != fkSchema ? fkSchema : schema.getName(), xfk.getFkTable(), xfk.getFkColumnName(), null);
 
             if (!xfk.isSetFkMultiValued())
             {
@@ -957,14 +962,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                     displayColumnName = xfk.getFkDisplayColumnName().getStringValue();
                     useRawFKValue = xfk.getFkDisplayColumnName().getUseRawValue();
                 }
-                fk = new SchemaForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), false, displayColumnName, useRawFKValue);
+                fk = new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), false, displayColumnName, useRawFKValue);
             }
             else
             {
                 String type = xfk.getFkMultiValued();
 
                 if ("junction".equals(type))
-                    fk = new MultiValuedForeignKey(new SchemaForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), false), xfk.getFkJunctionLookup());
+                    fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), false), xfk.getFkJunctionLookup());
                 else
                     throw new UnsupportedOperationException("Non-junction multi-value columns NYI");
             }
@@ -1557,7 +1562,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
                 while (rsKeys.next())
                 {
-                    String pkOwnerName = rsKeys.getString(iPkTableSchema);
+                    String pkSchemaName = rsKeys.getString(iPkTableSchema);
                     String pkTableName = rsKeys.getString(iPkTableName);
                     String pkColumnName = rsKeys.getString(iPkColumnName);
                     String colName = rsKeys.getString(iFkColumnName);
@@ -1566,12 +1571,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
                     if (keySequence == 1)
                     {
-                        ImportedKey key = new ImportedKey();
-                        key.fkName = fkName;
-                        key.pkOwnerName = pkOwnerName;
-                        key.pkTableName = pkTableName;
-                        key.pkColumnNames.add(pkColumnName);
-                        key.fkColumnNames.add(colName);
+                        ImportedKey key = locator.getImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
                         importedKeys.add(key);
                     }
                     else
@@ -1618,7 +1618,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                     continue;
                 }
 
-                col.fk = new SchemaForeignKey(col, key.pkOwnerName, key.pkTableName, key.pkColumnNames.get(i), joinWithContainer);
+                col.fk = new SchemaForeignKey(col, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(i), joinWithContainer);
             }
             else
             {
@@ -1693,13 +1693,22 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
-    static class ImportedKey
+    public static class ImportedKey
     {
-        String fkName;
-        String pkOwnerName;
-        String pkTableName;
-        ArrayList<String> pkColumnNames = new ArrayList<>(2);
-        ArrayList<String> fkColumnNames = new ArrayList<>(2);
+        private final String fkName;
+        private final String pkSchemaName;
+        private final String pkTableName;
+        private final ArrayList<String> pkColumnNames = new ArrayList<>(2);
+        private final ArrayList<String> fkColumnNames = new ArrayList<>(2);
+
+        public ImportedKey(String fkName, String pkSchemaName, String pkTableName, String pkColumnName, String colName)
+        {
+            this.fkName = fkName;
+            this.pkSchemaName = pkSchemaName;
+            this.pkTableName = pkTableName;
+            pkColumnNames.add(pkColumnName);
+            fkColumnNames.add(colName);
+        }
     }
 
 

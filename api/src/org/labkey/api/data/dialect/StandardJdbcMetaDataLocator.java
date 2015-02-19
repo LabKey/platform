@@ -16,6 +16,7 @@
 package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo.ImportedKey;
 import org.labkey.api.data.DbScope;
 
 import java.sql.Connection;
@@ -94,5 +95,11 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
     public String[] getTableTypes()
     {
         return _scope.getSqlDialect().getTableTypes();
+    }
+
+    @Override
+    public ImportedKey getImportedKey(String fkName, String pkSchemaName, String pkTableName, String pkColumnName, String colName)
+    {
+        return new ImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
     }
 }

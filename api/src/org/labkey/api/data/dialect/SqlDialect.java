@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnInfo.ImportedKey;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
@@ -869,6 +870,22 @@ public abstract class SqlDialect
     public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
     {
         return new StandardJdbcMetaDataLocator(scope, schemaName, tableName);
+    }
+
+    private static final ForeignKeyResolver STANDARD_RESOLVER = new StandardForeignKeyResolver();
+
+    public ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)
+    {
+        return STANDARD_RESOLVER;
+    }
+
+    protected static class StandardForeignKeyResolver implements ForeignKeyResolver
+    {
+        @Override
+        public ImportedKey getImportedKey(String fkName, String pkSchemaName, String pkTableName, String pkColumnName, String colName)
+        {
+            return new ImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
+        }
     }
 
     protected class SQLSyntaxException extends SQLException

@@ -419,6 +419,7 @@ api/src/org/labkey/api/data/dialect/ColumnMetaDataReader.java -text
 api/src/org/labkey/api/data/dialect/DatabaseMaintenanceTask.java -text
 api/src/org/labkey/api/data/dialect/DatabaseNotSupportedException.java -text
 api/src/org/labkey/api/data/dialect/DialectStringHandler.java -text
+api/src/org/labkey/api/data/dialect/ForeignKeyResolver.java -text
 api/src/org/labkey/api/data/dialect/JdbcHelper.java -text
 api/src/org/labkey/api/data/dialect/JdbcHelperTest.java -text
 api/src/org/labkey/api/data/dialect/JdbcMetaDataLocator.java -text

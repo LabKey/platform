@@ -24,7 +24,7 @@ import java.sql.DatabaseMetaData;
  * Date: 2/8/2015
  * Time: 7:45 AM
  */
-public interface JdbcMetaDataLocator extends AutoCloseable
+public interface JdbcMetaDataLocator extends AutoCloseable, ForeignKeyResolver
 {
     @Override
     void close();
