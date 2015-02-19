@@ -50,13 +50,13 @@
     LABKEY._tour.mode = <%=model.getMode()%>;
     LABKEY._tour.json = <%=model.toJSON()%>;
     LABKEY._tour.rowId = <%=model.getRowId()%>;
-
 </script>
 
 <labkey:form name="editTour" method="post">
     <div class="uxtour">
         <div class="tablewrapper">
             <div class="leftcolumn">
+                <div id="status" class="labkey-status-info" style="display: none;"></div>
                 <div class="col-width button-row">
                     <%= button("Save").id("tour-button-save") %>
                     <%= button("Save & Close").id("tour-button-save-close") %>

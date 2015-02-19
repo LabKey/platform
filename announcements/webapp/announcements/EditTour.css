@@ -43,12 +43,16 @@
 }
 
 .uxtour .select {
-    width: 473px;
+    width: 478px;
     margin-right: 5px;
 }
 
 .uxtour .button-row {
     padding-top: 10px;
     padding-bottom: 15px;
+}
+
+.uxtour .labkey-status-info {
+    width: 478px;
 }
 

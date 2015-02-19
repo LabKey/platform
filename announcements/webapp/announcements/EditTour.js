@@ -150,13 +150,13 @@
 
         var x = 0,
             orderedSteps = [],
-            inSteps = LABKEY._tour.json["steps"],
+            inputSteps = LABKEY._tour.json["steps"],
             stepIndex = 0;
 
         // If editing existing tour, first need to establish correct order of steps
-        if (inSteps)
+        if (inputSteps)
         {
-            $.each(inSteps, function(i, stepConfig)
+            $.each(inputSteps, function(i, stepConfig)
             {
                 if (stepConfig.step)
                 {
@@ -208,35 +208,49 @@
             err = false,
             obj, target, step;
 
-        for (var i = 1; i < _steps; i++)
+        if( $(_idSel + 'title').val() == "" )
         {
-            obj = {};
-
-            target = $(_idSel + 'selector' + i).val();
-            step = _stepHandles[_idPrefix + 'step' + i].getValue();
-
-            if (target && step)
+            LABKEY.Utils.alert('Field Value Error', "Please include a title");
+            err = true;
+        }
+        else
+        {
+            for (var i = 1; i < _steps; i++)
             {
-                obj["target"] = target;
-                obj["step"] = i;
-                try
-                {
-                    $.each(JSON.parse(step), function(key, value)
-                    {
-                        obj[key] = value;
-                    });
+                obj = {};
 
-                    steps.push(obj);
-                }
-                catch (x)
+                target = $(_idSel + 'selector' + i).val();
+                step = _stepHandles[_idPrefix + 'step' + i].getValue();
+
+                if (target && step)
                 {
-                    if (x instanceof SyntaxError)
+                    obj["target"] = target;
+                    obj["step"] = i;
+                    try
                     {
-                        LABKEY.Utils.alert('Syntax Error', "JSON syntax error in step " + i + ": " + x.message);
-                        err = true;
+                        $.each(JSON.parse(step), function (key, value)
+                        {
+                            obj[key] = value;
+                        });
+
+                        steps.push(obj);
+                    }
+                    catch (x)
+                    {
+                        if (x instanceof SyntaxError)
+                        {
+                            LABKEY.Utils.alert('Syntax Error', "JSON syntax error in step " + i + ": " + x.message);
+                            err = true;
+                        }
                     }
                 }
             }
+        }
+
+        if (!err && steps.length < 1)
+        {
+            LABKEY.Utils.alert('Field Value Error', "At least one valid step required to save tour.");
+            err = true;
         }
 
         if (!err)
@@ -278,7 +292,17 @@
         if (close)
             _cancel();
         else
+        {
             _rowId = result["rowId"];
+            _setStatus("Saved.", true);
+        }
+    };
+
+    var _setStatus = function(msg, autoClear) {
+        $('#status').html(msg).attr('class', 'labkey-status-info').show();
+        if (autoClear) {
+            setTimeout(function() { $('#status').html('').hide(); }, 5000);
+        }
     };
 
     var _cancel = function()
@@ -290,6 +314,9 @@
     {
         $(_idSel + 'title').val('');
         $(_idSel + 'description').val('');
+
+        $(_idSel + 'mode option:eq(0)').prop('selected', true);
+
         for (var i = 1; i < _steps; i++)
         {
             $(_idSel + 'selector' + i).val('');

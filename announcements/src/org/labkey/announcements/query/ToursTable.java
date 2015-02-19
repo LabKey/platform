@@ -18,6 +18,7 @@ package org.labkey.announcements.query;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.ToursController;
 import org.labkey.announcements.model.TourManager;
 import org.labkey.announcements.model.TourModel;
@@ -25,6 +26,10 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.AbstractBeanQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
@@ -32,6 +37,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
@@ -39,6 +45,8 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +57,44 @@ import java.util.Map;
  */
 public class ToursTable extends FilteredTable<AnnouncementSchema>
 {
+
+    public enum Modes {
+        OFF(0), RUNONCE(1), RUNALWAYS(2);
+
+        private final int value;
+
+        Modes(int value)
+        {
+            this.value = value;
+        }
+
+        @Override
+        public String toString()
+        {
+            switch(this)
+            {
+                case RUNONCE:
+                    return "Run Once";
+
+                case RUNALWAYS:
+                    return "Run Always";
+
+                default:
+                    return "Off";
+            }
+        }
+
+        @Nullable
+        static Modes fromValue(int value)
+        {
+            for (Modes m : Modes.values())
+            {
+                if (m.value == value)
+                    return m;
+            }
+            return null;
+        }
+    }
 
     public ToursTable(AnnouncementSchema schema)
     {
@@ -67,6 +113,33 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         containerCol.setLabel("Folder");
         ContainerForeignKey.initColumn(containerCol, schema);
 
+        getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer(), true));
+        getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer(), true));
+
+        ColumnInfo modeCol = getColumn("Mode");
+        modeCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(final ColumnInfo colInfo)
+            {
+                DataColumn dc = new DataColumn(colInfo)
+                {
+                    @Override
+                    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                    {
+                        Object value = getValue(ctx);
+                        Modes m = Modes.fromValue((Integer)value);
+                        if(null != m)
+                            out.write(m.toString());
+                        else
+                            out.write(value.toString());
+                    }
+                };
+
+                return dc;
+            }
+
+        });
+
         setDescription("Contains one row per tour.");
         setName(AnnouncementSchema.TOURS_TABLE_NAME);
         setPublicSchemaName(AnnouncementSchema.SCHEMA_NAME);
@@ -76,7 +149,6 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         Map<String,String> params = new HashMap<>();
         params.put("rowid", "rowid");
         setUpdateURL(new DetailsURL(ToursController.getEditTourURL(getContainer()), params));
-        //setUpdateURL(new DetailsURL(ToursController.getEditTourURL(getContainer())));
     }
 
     @Override
