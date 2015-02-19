@@ -168,7 +168,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
                 stmt = StatementUtils.mergeStatement(_conn, _table, _keyColumns, _skipColumnNames, _dontUpdate, _c, null, _selectIds, false);
             else
             {
-                setAutoIncrement(INSERT.ON);
+                if (_insertOption == QueryUpdateService.InsertOption.IMPORT_IDENTITY)
+                    setAutoIncrement(INSERT.ON);
                 stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, constants, _selectIds, false, _context.supportsAutoIncrementKey());
             }
 
@@ -214,7 +215,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         super.close();
         if (null != _scope && null != _conn)
         {
-            setAutoIncrement(INSERT.OFF);
+            if (_insertOption == QueryUpdateService.InsertOption.IMPORT_IDENTITY)
+                setAutoIncrement(INSERT.OFF);
             _scope.releaseConnection(_conn);
         }
     }
@@ -224,7 +226,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
     private void setAutoIncrement(INSERT bound)
     {
-        if (_context.supportsAutoIncrementKey() && null != _scope && null != _conn && _scope.getSqlDialect().isSqlServer())
+        if (_context.supportsAutoIncrementKey() && null != _scope && null != _conn && _scope.getSqlDialect().isSqlServer() && _table.getSelectName() != null)
         {
             SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(_table.getSelectName()).append(" ").append(bound.toString());
             new SqlExecutor(_scope, _conn).execute(check);

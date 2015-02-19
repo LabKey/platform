@@ -53,7 +53,8 @@ public interface QueryUpdateService
         UPSERT(false, true, false, false),
         // bulk
         IMPORT(true, false, true, false),
-        MERGE(true, true, false, false);
+        MERGE(true, true, false, false),
+        IMPORT_IDENTITY(true, false, true, false);
 
         final public boolean batch;
         final public boolean mergeRows;

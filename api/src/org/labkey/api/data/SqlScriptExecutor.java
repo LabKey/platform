@@ -320,6 +320,7 @@ public class SqlScriptExecutor
                 {
                     if (col.isAutoIncrement())
                     {
+                        dix.setInsertOption(QueryUpdateService.InsertOption.IMPORT_IDENTITY);
                         dix.setSupportAutoIncrementKey(true);
                         break;
                     }
