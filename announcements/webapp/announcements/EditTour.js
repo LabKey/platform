@@ -29,17 +29,71 @@
         };
     };
 
+    Ext4.define('LABKEY._tour.BaseScriptPanel', {
+        extend: 'Ext.Panel',
+
+        SCRIPT_TEMPLATE: null,
+
+        codeMirrorMode: 'text/html',
+
+        optionButton: function(){
+            return null;
+        },
+
+        constructor: function(config){
+            config.padding = '10px 0 0 0';
+            config.border = false;
+            config.frame = false;
+            config.codeMirrorId = 'textarea-' + Ext4.id();
+            config.html = '<textarea id="' + config.codeMirrorId + '" name="export-script-textarea"'
+            + 'wrap="on" rows="23" cols="120" style="width: 100%;"></textarea>';
+
+            this.callParent([config]);
+        },
+
+        initComponent: function(){
+            this.buttons = [{
+                text: 'Close',
+                scope: this,
+                handler: function(){this.fireEvent('closeOptionsWindow');}
+            },
+                this.optionButton()];
+
+            this.on('afterrender', function(cmp){
+                var el = Ext4.get(this.codeMirrorId);
+                var size = cmp.getSize();
+                if (el) {
+                    this.codeMirror = CodeMirror.fromTextArea(el.dom, {
+                        mode: this.codeMirrorMode,
+                        lineNumbers: true,
+                        lineWrapping: true,
+                        indentUnit: 3
+                    });
+
+                    this.codeMirror.setSize(null, size.height + 'px');
+                    this.codeMirror.setValue(this.compileTemplate(this.templateConfig));
+                    LABKEY.codemirror.RegisterEditorInstance('export-script-textarea', this.codeMirror);
+                }
+            }, this);
+            this.callParent();
+        },
+
+        compileTemplate: function(input) {
+            return this.SCRIPT_TEMPLATE.replace('{{chartConfig}}', LABKEY.Utils.encode(input.chartConfig));
+        }
+    });
+
     Ext4.define('LABKEY._tour.TourExportJsonPanel', {
-        extend: 'LABKEY.vis.BaseExportScriptPanel',
+        extend: 'LABKEY._tour.BaseScriptPanel',
 
         SCRIPT_TEMPLATE: "{\n" +
-        "\"Title\":\"{{tourTitle}}\",\n" +
-        "\"Description\":\"{{tourDescription}}\",\n" +
-        "\"Mode\":\"{{tourMode}}\",\n" +
-        "\"Tour\":\n{{tourJson}}\n" +
+        "title:\"{{tourTitle}}\",\n" +
+        "description:\"{{tourDescription}}\",\n" +
+        "mode:\"{{tourMode}}\",\n" +
+        "steps:\n{{tourStep}}\n" +
         "}\n",
 
-        codeMirrorMode: {name: "javascript", json: true},
+        codeMirrorMode: {name: "javascript"},
 
         compileTemplate: function(input)
         {
@@ -47,12 +101,12 @@
                     .replace('{{tourTitle}}', $(_idSel + 'title').val())
                     .replace('{{tourDescription}}', $(_idSel + 'description').val())
                     .replace('{{tourMode}}', $(_idSel + 'mode').val())
-                    .replace('{{tourJson}}', _generateExport());
+                    .replace('{{tourStep}}', _generateExport());
         }
     });
 
     Ext4.define('LABKEY._tour.TourImportJsonPanel', {
-        extend: 'LABKEY.vis.BaseExportScriptPanel',
+        extend: 'LABKEY._tour.BaseScriptPanel',
 
         SCRIPT_TEMPLATE: "",
 
@@ -143,7 +197,8 @@
 
         // Set title and description if editing existing tour
         $(_idSel + "title").val(LABKEY._tour.title);
-        $(_idSel + "description").val(LABKEY._tour.description);
+        if (LABKEY._tour.description)
+            $(_idSel + "description").val(LABKEY._tour.description);
 
         var inputSteps = LABKEY._tour.json.steps;
 
@@ -234,7 +289,7 @@
                                 var asString = JSON.stringify(s);
 
                                 // ensure the step is syntactically safe for an eval
-                                JSON.parse(asString);
+                                eval(JSON.parse(asString));
 
                                 // looks like we're good
                                 obj["step"] = asString;
@@ -245,6 +300,11 @@
                                 if (x instanceof SyntaxError)
                                 {
                                     LABKEY.Utils.alert('Syntax Error', "JSON syntax error in step " + i + ": " + x.message);
+                                    err = true;
+                                }
+                                else
+                                {
+                                    LABKEY.Utils.alert('Error', "Evaluation error in step " + i + ": " + x.message);
                                     err = true;
                                 }
                             }
@@ -365,11 +425,23 @@
 
     var _retrieveImport = function(input)
     {
-        var obj, err;
+        var inObj, fnArray = [], err;
 
         try
         {
-            obj = JSON.parse(input);
+            inObj = eval('_a = ' + JSON.parse(JSON.stringify(input)));
+            $.each(inObj.steps, function(index, step)
+            {
+                $.each(step, function(prop, value)
+                {
+                    if(LABKEY.Utils.isFunction(value))
+                    {
+                        var fnStr = value.toString();
+                        fnArray.push(fnStr);
+                        step[prop] = fnStr;
+                    }
+                });
+            });
         }
         catch (x)
         {
@@ -382,23 +454,36 @@
 
         if (!err)
         {
-            $(_idSel + 'title').val(obj["Title"]);
-            $(_idSel + 'description').val(obj["Description"]);
-            $(_idSel + 'mode').val(parseInt(obj["mode"]));
+            $(_idSel + 'title').val(inObj["title"]);
+            $(_idSel + 'description').val(inObj["description"]);
+            $(_idSel + 'mode').val(parseInt(inObj["mode"]));
 
-            var i = 1;
-            if (obj.Tour)
+            var i = 1, strStep;
+            if (inObj.steps)
             {
-                $.each(obj.Tour, function(selector, config)
+                $.each(inObj.steps, function(index, step)
                 {
+                    if (!step.target)
+                        return;
+
+                    var target = step.target;
+                    delete step.target;
+                    $(_idSel + 'selector' + i).val(target);
+
+                    strStep = JSON.stringify(step, null, '\t').replace(/\"([^(\")"]+)\":/g, "$1:");
+
+                    $.each(fnArray, function(index, fn)
+                    {
+                        strStep = strStep.replace('"' + fn + '"', fn);
+                    });
+
                     if (i < _steps)
                     {
-                        $(_idSel + 'selector' + i).val(selector);
-                        _stepHandles[_idPrefix + 'step' + i].setValue(_formatStep(JSON.stringify(config)));
+                        _stepHandles[_idPrefix + 'step' + i].setValue(strStep);
                     }
                     else
                     {
-                        _generateStep(_steps++, selector, JSON.stringify(config));
+                        _generateStep(_steps++, target, strStep);
                     }
                     i++;
                 });
@@ -408,33 +493,57 @@
 
     var _generateExport = function()
     {
-        var tour = {},
-            err = false;
+        var steps = [];
+
         for (var i = 1; i < _steps; i++)
         {
             if ($(_idSel + 'selector' + i).val() && _stepHandles[_idPrefix + 'step' + i].getValue())
             {
                 try
                 {
-                    tour[$(_idSel + 'selector' + i).val()] = JSON.parse(_stepHandles[_idPrefix + 'step' + i].getValue());
+                    var safeStep = "_stepcontent = " + _stepHandles[_idPrefix + 'step' + i].getValue();
+                    var step = eval(JSON.parse(JSON.stringify(safeStep)));
+
+                    step.target = $(_idSel + 'selector' + i).val();
+                    steps.push(step);
                 }
                 catch (x)
                 {
                     if (x instanceof SyntaxError)
                     {
                         LABKEY.Utils.alert('Syntax Error', 'JSON syntax error in step ' + i + ': ' + x.message);
-                        err = true;
+                        return;
                     }
                 }
             }
         }
 
-        if (!err)
+        //
+        // Here we replace each property that is a function on a step with the .toString() version. This allows
+        // us to pass functions through JSON.stringify. This pattern is reversed on import.
+        //
+        var fnArray = [], strSteps, fnStr;
+        $.each(steps, function(i, step)
         {
-            return JSON.stringify(tour, null, '\t');
-        }
+            $.each(step, function(prop, value)
+            {
+                if (LABKEY.Utils.isFunction(value))
+                {
+                    fnStr = value.toString();
+                    fnArray.push(fnStr);
+                    step[prop] = fnStr;
+                }
+            });
+        });
 
-        return null;
+        strSteps = JSON.stringify(steps, null, '\t').replace(/\"([^(\")"]+)\":/g, "$1:");
+
+        $.each(fnArray, function(index, fn)
+        {
+            strSteps = strSteps.replace('"' + fn + '"', fn);
+        });
+
+        return strSteps
     };
 
     var _generatePrimaryFields = function(parent)
@@ -467,7 +576,7 @@
         //
         html += '<div class="' + _rowClass + '">' +
                     '<div><label class="label" for="tour-description">Description</label></div>' +
-                    '<div><textarea rows="10" cols="65" id="tour-description"></div>' +
+                    '<div><textarea rows="10" cols="65" id="tour-description"></textarea></div>' +
                 '</div>';
 
         parent.append(html);
@@ -531,7 +640,7 @@
         var labelSelector = document.createElement("label");
         labelSelector.setAttribute("class", _labelClass);
         labelSelector.setAttribute("for", _idPrefix + "selector" + index);
-        labelSelector.appendChild(document.createTextNode("Selector " + index + ' (target)'));
+        labelSelector.appendChild(document.createTextNode("Selector " + index));
         divLabelSelector.appendChild(labelSelector);
 
         var divInputSelector = document.createElement("div");

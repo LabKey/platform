@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%!
@@ -30,10 +31,6 @@
         resources.add(ClientDependency.fromPath("internal/jQuery"));
         resources.add(ClientDependency.fromPath("Ext4"));
         resources.add(ClientDependency.fromPath("codemirror"));
-
-        // TODO: This seems like it might have a lot more dependencies...
-        resources.add(ClientDependency.fromPath("vis/baseExportScriptPanel.js"));
-
         resources.add(ClientDependency.fromPath("announcements/EditTour.css"));
         resources.add(ClientDependency.fromPath("announcements/EditTour.js"));
         return resources;
@@ -45,8 +42,8 @@
 %>
 
 <script type="text/javascript">
-    LABKEY._tour.title = "<%=model.getTitle()%>";
-    LABKEY._tour.description = "<%=model.getDescription()%>";
+    LABKEY._tour.title = <%=PageFlowUtil.jsString(model.getTitle())%>;
+    LABKEY._tour.description = <%=PageFlowUtil.jsString(model.getDescription())%>;
     LABKEY._tour.mode = <%=model.getMode()%>;
     LABKEY._tour.json = <%=model.toJSON()%>;
     LABKEY._tour.rowId = <%=model.getRowId()%>;
