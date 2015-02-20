@@ -599,26 +599,6 @@
         _stepHandles[id] = editor;
     };
 
-    var _formatGeneric = function(value)
-    {
-        return value.replace(/\\/g, '').replace(/,/g, ',\n').replace(/""/g, '\"');
-    };
-
-    var _formatExport = function(value)
-    {
-        return _formatGeneric(value).replace(/}"[^},]/g, '}').replace(/"{/g, '{');
-    };
-
-    var _formatStep = function(value)
-    {
-        return _formatGeneric(value).replace(/"}"}/g, '\"');
-    };
-
-    var _formatSelector = function(value)
-    {
-        return value.replace(/"/g, '').replace(/}/, '').replace(/{/, '');
-    };
-
     /**
      *
      * @param index
