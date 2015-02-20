@@ -242,11 +242,8 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
         });
 
         this.formPanel = Ext4.create('Ext.form.Panel', {
-            //border  : false,
+            border  : false,
             frame   : false,
-            region  : 'west',
-            bodyPadding : 20,
-            collapsible : true,
             fieldDefaults  : {
                 labelWidth : 100,
                 width      : 325,
@@ -254,6 +251,85 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                 labelSeparator : ''
             },
             items   : items
+        });
+
+        this.configOptionsPanel = Ext4.create('Ext.panel.Panel', {
+            border: false,
+            autoScroll: true,
+            height: 370,
+            title: 'Survey Configuration Options',
+            cls: ' config-options',
+            html: '<table>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">layout</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>Options are "card" (wizard like layout with section titles listed in side bar) or "auto" (vertical display of sections). Defaults to "auto".</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Object}</span> <span class="varname">start</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>Config options for the first section of the survey.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">start.description</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The description to be added below the survey label field on the start section.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">start.labelCaption</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The label for the survey label field. Defaults to "Survey Label".</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Integer}</span> <span class="varname">start.labelWidth</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The label width for the survey label field. Defaults to 350.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">start.sectionTitle</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The title for the start section. Defaults to "Start".</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Boolean}</span> <span class="varname">start.useDefaultLabel</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>If true, the survey label will be hidden and populated with the current date/time.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Array}</span> <span class="varname">sections</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>An array of survey section panel config objects.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Boolean}</span> <span class="varname">sections.border</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>True to display a 1px border around the section. Defaults to false.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Boolean}</span> <span class="varname">sections.collapsed</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>In auto layout, true to start the section panel collapsed. Defaults to false.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Boolean}</span> <span class="varname">sections.collapsible</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>In auto layout, true to allow the section panel to be collapsed. Defaults to true.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Integer}</span> <span class="varname">sections.defaultLabelWidth</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The default width to use for the question labels in this section. Defaults to 350.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">sections.description</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The text to display at the beginning of the section panel.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">sections.extAlias</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>For custom survey development, the ext alias for a custom component.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Boolean}</span> <span class="varname">sections.initDisabled</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>In card layout, disabled the section title in the side bar. Defaults to false.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Integer}</span> <span class="varname">sections.padding</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The padding to use between questions in this section. Defaults to 10.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Boolean}</span> <span class="varname">sections.layoutHorizontal</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>If true, use a table layout with numColumns providing the number of columns. Defaults to false.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">sections.numColumns</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The number of columns to use in table layout for layoutHorizontal=true. Defaults to 1.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Array}</span> <span class="varname">sections.questions</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>An array of question config objects to use for this section.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">sections.title</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The title text to display for the section (auto layout displays title in header, card layout displays title in side bar).</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Integer}</span> <span class="varname">sideBarWidth</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>In card layout, the width of the side bar (i.e. section title) panel. Defaults to 250.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Integer}</span> <span class="varname">mainPanelWidth</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>In card layout, the width of the main section panel. Defaults to 800.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Boolean}</span> <span class="varname">showCounts</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>If true, show counts of completed questions next to the section title. Defaults to false.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Object}</span> <span class="varname">headerWiki</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>Display a wiki above the survey panel</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">headerWiki.containerPath</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The container path for the wiki. Defaults to current container.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">headerWiki.name</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The name of the wiki</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">footerWiki</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>Display a wiki below the survey panel</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">footerWiki.containerPath</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The container path for the wiki. Defaults to current container.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">footerWiki.name</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>The name of the wiki</td></tr>'
+                + '</table>'
+        });
+
+        return Ext4.create('Ext.panel.Panel', {
+            frame   : false,
+            region  : 'west',
+            collapsible : true,
+            defaults: {
+                width: 355,
+                bodyPadding : 15
+            },
+            items   : [this.formPanel, this.configOptionsPanel]
         });
 
         return this.formPanel;

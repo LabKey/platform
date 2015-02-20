@@ -239,6 +239,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                     {
                         var metadata = Ext4.JSON.decode(o.survey.metadata);
                         this.setLabelCaption(metadata);
+                        this.setStartOptions(metadata);
                         this.setShowCounts(metadata);
                         this.setSurveyLayout(metadata);
                         this.generateSurveySections(metadata);

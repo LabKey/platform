@@ -392,11 +392,15 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     addSurveyStartPanel : function() {
 
         // add an initial panel that has the survey label text field
-        var title = 'Start';
+        var title = this.startSectionTitle;
         var items = [];
 
         if (this.surveyLayout == 'card')
             items.push(this.getCardSectionHeader(title, null));
+
+        if (this.useDefaultLabel) {
+            this.surveyLabel = new Date();
+        }
 
         items.push({
             xtype: 'textfield',
@@ -411,6 +415,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             maxLength: 200,
             allowBlank: false,
             readOnly: !this.canEdit,
+            hidden: this.useDefaultLabel,
             width: 800,
             listeners: {
                 scope: this,
@@ -423,6 +428,14 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 }
             }
         });
+
+        if (this.startSectionDescription) {
+            items.push({
+                xtype: 'displayfield',
+                hideLabel: true,
+                value: this.startSectionDescription
+            });
+        }
 
         this.sections.push(Ext4.create('Ext.panel.Panel', {
             title: title,
@@ -750,6 +763,21 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
         if (surveyConfig.survey && surveyConfig.survey.labelWidth)
             this.labelWidth = surveyConfig.survey.labelWidth;
+    },
+
+    setStartOptions : function(surveyConfig) {
+        this.startSectionTitle = "Start";
+        this.startSectionDescription = null;
+        this.useDefaultLabel = false;
+
+        if (surveyConfig.survey && surveyConfig.survey.start) {
+            // call the setLabelCaption function for backwards compatibility with the labelCaption and labelWidth options
+            this.setLabelCaption({survey: surveyConfig.survey.start});
+
+            this.startSectionTitle = surveyConfig.survey.start.sectionTitle || this.startSectionTitle;
+            this.startSectionDescription = surveyConfig.survey.start.description || this.startSectionDescription;
+            this.useDefaultLabel = surveyConfig.survey.start.useDefaultLabel || this.useDefaultLabel;
+        }
     },
 
     setShowCounts : function(surveyConfig) {

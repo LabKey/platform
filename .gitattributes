@@ -4172,6 +4172,7 @@ survey/src/org/labkey/survey/view/surveyWizard.jsp -text
 survey/webapp/survey/AttachmentField.js -text
 survey/webapp/survey/BaseSurveyPanel.js -text
 survey/webapp/survey/Survey.css -text
+survey/webapp/survey/SurveyDesign.css -text
 survey/webapp/survey/SurveyGridQuestion.js -text
 survey/webapp/survey/SurveyPanel.js -text
 survey/webapp/survey/UsersCombo.js -text

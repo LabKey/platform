@@ -1,0 +1,16 @@
+
+.config-options td {
+    font-size: 11px;
+}
+
+.config-options span.vartype {
+    color: #C0C0C0;
+}
+
+.config-options span.varname {
+    font-weight: bold;
+}
+
+.config-options .spacer {
+    width: 20px;
+}
