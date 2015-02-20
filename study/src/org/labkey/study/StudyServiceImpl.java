@@ -50,6 +50,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -86,7 +87,12 @@ import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VialDomainKind;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyReloadSourceJob;
+import org.labkey.study.query.AdditiveTypeTable;
+import org.labkey.study.query.BaseStudyTable;
 import org.labkey.study.query.DatasetTableImpl;
+import org.labkey.study.query.DerivativeTypeTable;
+import org.labkey.study.query.LocationTable;
+import org.labkey.study.query.PrimaryTypeTable;
 import org.labkey.study.query.SimpleSpecimenTable;
 import org.labkey.study.query.SpecimenDetailTable;
 import org.labkey.study.query.SpecimenSummaryTable;
@@ -99,6 +105,7 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -749,7 +756,7 @@ public class StudyServiceImpl implements StudyService.Service
                     filterFragmentMap.put(t, filterFragments.get(c));
             }
         }
-        return createUnionTable(schemaDefault, tables, "SpecimensUnion", new SpecimenDomainKind(), filterFragmentMap, dontAliasColumns, useParticipantIdName);
+        return createUnionTable(schemaDefault, tables, containers, "SpecimensUnion", new SpecimenDomainKind(), filterFragmentMap, dontAliasColumns, useParticipantIdName);
     }
 
 
@@ -788,7 +795,7 @@ public class StudyServiceImpl implements StudyService.Service
                 tables.add(t);
             }
         }
-        return createUnionTable(schemaDefault, tables, "VialsUnion", new VialDomainKind(), new HashMap<TableInfo, SQLFragment>(), false, true);
+        return createUnionTable(schemaDefault, tables, containers, "VialsUnion", new VialDomainKind(), new HashMap<TableInfo, SQLFragment>(), false, true);
     }
 
     @Override
@@ -824,7 +831,7 @@ public class StudyServiceImpl implements StudyService.Service
                     filterFragmentMap.put(t, filterFragments.get(c));
             }
         }
-        return createUnionTable(schemaDefault, tables, "SpecimensUnion", new SpecimenDomainKind(), filterFragmentMap, dontAliasColumns, useParticipantIdName);
+        return createUnionTable(schemaDefault, tables, containers, "SpecimensUnion", new SpecimenDomainKind(), filterFragmentMap, dontAliasColumns, useParticipantIdName);
     }
 
     @Override
@@ -860,7 +867,7 @@ public class StudyServiceImpl implements StudyService.Service
                     filterFragmentMap.put(t, filterFragments.get(c));
             }
         }
-        return createUnionTable(schemaDefault, tables, "SpecimensUnion",  new SpecimenDomainKind(), filterFragmentMap, dontAliasColumns, useParticipantIdName);
+        return createUnionTable(schemaDefault, tables, containers, "SpecimensUnion",  new SpecimenDomainKind(), filterFragmentMap, dontAliasColumns, useParticipantIdName);
     }
 
 
@@ -897,10 +904,10 @@ public class StudyServiceImpl implements StudyService.Service
                     filterFragmentMap.put(t, filterFragments.get(c));
             }
         }
-        return createUnionTable(schemaDefault, tables, "SpecimensUnion", new SpecimenDomainKind(), filterFragmentMap, dontAliasColumns, useParticipantIdName);
+        return createUnionTable(schemaDefault, tables, containers, "SpecimensUnion", new SpecimenDomainKind(), filterFragmentMap, dontAliasColumns, useParticipantIdName);
     }
 
-    TableInfo createUnionTable(StudyQuerySchema schemaDefault, List<TableInfo> terms, String tableName, DomainKind kind,
+    private TableInfo createUnionTable(StudyQuerySchema schemaDefault, List<TableInfo> terms, final List<Container> containers, String tableName, DomainKind kind,
                      @NotNull Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         if (null == terms || terms.isEmpty())
@@ -927,7 +934,9 @@ public class StudyServiceImpl implements StudyService.Service
         Map<String,ColumnInfo> unionColumns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,ColumnInfo>());
         for (TableInfo t : terms)
         {
-            String subjectColumnName = ((StudyQuerySchema)t.getUserSchema()).getSubjectColumnName();
+            final StudyQuerySchema studyQuerySchema = (StudyQuerySchema)t.getUserSchema();
+            assert null != studyQuerySchema;        // All tables must be in StudyQuerySchema
+            String subjectColumnName = studyQuerySchema.getSubjectColumnName();
             for (ColumnInfo c : t.getColumns())
             {
                 String name = c.getName();
@@ -937,7 +946,7 @@ public class StudyServiceImpl implements StudyService.Service
                 ColumnInfo unionCol = unionColumns.get(name);
                 if (null == unionCol)
                 {
-                    unionCol = new AliasedColumn(null,new FieldKey(null,name),c,true)
+                    unionCol = new AliasedColumn(null, new FieldKey(null,name), c, true)
                     {
                         @Override
                         public SQLFragment getValueSql(String tableAlias)
@@ -948,13 +957,66 @@ public class StudyServiceImpl implements StudyService.Service
                     unionCol.setJdbcType(type);
                     unionCol.setAlias(aliasManager.decideAlias(name));
                     if (!mandatory.contains(name))
+                    {
                         unionCol.setFk(null);
+                    }
+                    else if ("primarytype".equalsIgnoreCase(name))
+                    {
+                        unionCol.setFk(new LookupForeignKey()
+                        {
+                            @Override
+                            public TableInfo getLookupTableInfo()
+                            {
+                                return StudyService.get().getTypeTableUnion(PrimaryTypeTable.class, studyQuerySchema, containers, studyQuerySchema.getDontAliasColumns());
+                            }
+                        });
+                    }
+                    else if ("derivativetype".equalsIgnoreCase(name))
+                    {
+                        unionCol.setFk(new LookupForeignKey()
+                        {
+                            @Override
+                            public TableInfo getLookupTableInfo()
+                            {
+                                return StudyService.get().getTypeTableUnion(DerivativeTypeTable.class, studyQuerySchema, containers, studyQuerySchema.getDontAliasColumns());
+                            }
+                        });
+                    }
+                    else if ("additivetype".equalsIgnoreCase(name))
+                    {
+                        unionCol.setFk(new LookupForeignKey()
+                        {
+                            @Override
+                            public TableInfo getLookupTableInfo()
+                            {
+                                return StudyService.get().getTypeTableUnion(AdditiveTypeTable.class, studyQuerySchema, containers, studyQuerySchema.getDontAliasColumns());
+                            }
+                        });
+                    }
+                    else if ("processinglocation".equalsIgnoreCase(name))
+                    {
+                        unionCol.setFk(new LookupForeignKey("RowId")
+                        {
+                            @Override
+                            public TableInfo getLookupTableInfo()
+                            {
+                                return StudyService.get().getTypeTableUnion(LocationTable.class, studyQuerySchema, containers, studyQuerySchema.getDontAliasColumns());
+                            }
+                        });
+                    }
+
                     unionColumns.put(name,unionCol);
                 }
                 unionCol.setJdbcType(JdbcType.promote(unionCol.getJdbcType(), c.getJdbcType()));
             }
         }
 
+        SQLFragment sqlf = getUnionSql(terms, filterFragmentMap, dontAliasColumns, dialect, unionColumns);
+        return new _UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf);
+    }
+
+    private SQLFragment getUnionSql(List<TableInfo> terms, Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns, SqlDialect dialect, Map<String, ColumnInfo> unionColumns)
+    {
         SQLFragment sqlf = new SQLFragment();
         String union = "";
         int counter = 1;
@@ -999,7 +1061,82 @@ public class StudyServiceImpl implements StudyService.Service
 
             union = "\nUNION ALL\n";
         }
-        return new _UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf);
+        return sqlf;
+    }
+
+    @Override
+    public TableInfo getTypeTableUnion(Class<? extends TableInfo> tableClass, QuerySchema qsDefault, List<Container> containers, boolean dontAliasColumns)
+    {
+        assert BaseStudyTable.class.isAssignableFrom(tableClass);      // BaseStudyTable could not be in declaration because not visible to interface
+        if (!(qsDefault instanceof StudyQuerySchema))
+            throw new IllegalArgumentException("expected study schema");
+        StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
+        User user = schemaDefault.getUser();
+
+        List<TableInfo> tables = new ArrayList<>();
+        try
+        {
+            if (null == containers || containers.isEmpty())
+            {
+                BaseStudyTable t = (BaseStudyTable)tableClass.getConstructor(StudyQuerySchema.class).newInstance(schemaDefault);
+                t.setPublic(false);
+                return t;
+            }
+            else
+            {
+                for (Container c : containers)
+                {
+                    Study s = StudyManager.getInstance().getStudy(c);
+                    StudyQuerySchema schema = schemaDefault;
+                    if (null != s)
+                        schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
+                    BaseStudyTable t = (BaseStudyTable)tableClass.getConstructor(StudyQuerySchema.class).newInstance(schema);
+                    t.setPublic(false);
+                    tables.add(t);
+                }
+            }
+        }
+        catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
+        {
+            throw new IllegalStateException("Unable to construct class instance.");
+        }
+
+        return createTypeUnionTable(schemaDefault, tables, "TypeUnion", Collections.EMPTY_MAP, dontAliasColumns);
+    }
+
+    TableInfo createTypeUnionTable(StudyQuerySchema schemaDefault, List<TableInfo> terms, String tableName,
+                               @NotNull Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns)
+    {
+        if (null == terms || terms.isEmpty())
+            return null;
+
+        // For these tables, all columns must be the same
+
+        SqlDialect dialect = terms.get(0).getSqlDialect();
+        AliasManager aliasManager = new AliasManager(terms.get(0).getSchema());
+
+        Map<String, ColumnInfo> unionColumns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,ColumnInfo>());
+        for (ColumnInfo c : terms.get(0).getColumns())
+        {
+            String name = c.getName();
+            JdbcType type = c.getJdbcType();
+            ColumnInfo unionCol = new AliasedColumn(null, new FieldKey(null,name), c, true)
+            {
+                @Override
+                public SQLFragment getValueSql(String tableAlias)
+                {
+                    return new SQLFragment(tableAlias + "." + getAlias());
+                }
+            };
+            unionCol.setJdbcType(type);
+            unionCol.setAlias(aliasManager.decideAlias(name));
+            unionColumns.put(name, unionCol);
+
+            unionCol.setJdbcType(JdbcType.promote(unionCol.getJdbcType(), c.getJdbcType()));
+        }
+
+        SQLFragment sqlf = getUnionSql(terms, filterFragmentMap, dontAliasColumns, dialect, unionColumns);
+        return new _UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf, terms.get(0).getTitleColumn());
     }
 
     @Override
@@ -1044,6 +1181,12 @@ public class StudyServiceImpl implements StudyService.Service
     {
         StudyQuerySchema _studyQuerySchema;
         SQLFragment _sqlInner;
+
+        _UnionTable(StudyQuerySchema studyQuerySchema, String tableName, Collection<ColumnInfo> cols, SQLFragment sqlf, String titleColumn)
+        {
+            this(studyQuerySchema, tableName, cols, sqlf);
+            _titleColumn = titleColumn;
+        }
 
         _UnionTable(StudyQuerySchema studyQuerySchema, String tableName, Collection<ColumnInfo> cols, SQLFragment sqlf)
         {

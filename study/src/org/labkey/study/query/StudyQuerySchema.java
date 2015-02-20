@@ -429,6 +429,15 @@ public class StudyQuerySchema extends UserSchema
 
         if ("Site".equalsIgnoreCase(name) || "Location".equalsIgnoreCase(name))
         {
+            if (_study.isAncillaryStudy())
+            {
+                List<Container> containers = new ArrayList<>();
+                containers.add(_study.getContainer());
+                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
+                containers.add(sourceStudyContainer);
+
+                return StudyService.get().getTypeTableUnion(LocationTable.class, this, containers, _dontAliasColumns);
+            }
             LocationTable ret = new LocationTable(this);
             return ret;
         }
@@ -597,16 +606,43 @@ public class StudyQuerySchema extends UserSchema
         }
         if ("SpecimenAdditive".equalsIgnoreCase(name))
         {
+            if (_study.isAncillaryStudy())
+            {
+                List<Container> containers = new ArrayList<>();
+                containers.add(_study.getContainer());
+                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
+                containers.add(sourceStudyContainer);
+
+                return StudyService.get().getTypeTableUnion(AdditiveTypeTable.class, this, containers, _dontAliasColumns);
+            }
             FilteredTable ret = new AdditiveTypeTable(this);
             return ret;
         }
         if ("SpecimenDerivative".equalsIgnoreCase(name))
         {
+            if (_study.isAncillaryStudy())
+            {
+                List<Container> containers = new ArrayList<>();
+                containers.add(_study.getContainer());
+                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
+                containers.add(sourceStudyContainer);
+
+                return StudyService.get().getTypeTableUnion(DerivativeTypeTable.class, this, containers, _dontAliasColumns);
+            }
             FilteredTable ret = new DerivativeTypeTable(this);
             return ret;
         }
         if ("SpecimenPrimaryType".equalsIgnoreCase(name))
         {
+            if (_study.isAncillaryStudy())
+            {
+                List<Container> containers = new ArrayList<>();
+                containers.add(_study.getContainer());
+                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
+                containers.add(sourceStudyContainer);
+
+                return StudyService.get().getTypeTableUnion(PrimaryTypeTable.class, this, containers, _dontAliasColumns);
+            }
             FilteredTable ret = new PrimaryTypeTable(this);
             return ret;
         }
