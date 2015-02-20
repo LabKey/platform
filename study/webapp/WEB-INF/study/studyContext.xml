@@ -91,6 +91,18 @@
                             <bean id="createReloadSource" class="org.labkey.api.pipeline.TaskId">
                                 <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyReloadSourceTask</value></constructor-arg>
                             </bean>
+                            <bean id="reloadInitialTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.importer.StudyImportInitialTask</value></constructor-arg>
+                            </bean>
+                            <bean id="reloadDatasetTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyImportDatasetTask</value></constructor-arg>
+                            </bean>
+                            <bean id="reloadSpecimenTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyImportSpecimenTask</value></constructor-arg>
+                            </bean>
+                            <bean id="reloadFinalTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.importer.StudyImportFinalTask</value></constructor-arg>
+                            </bean>
                         </list>
                     </property>
                 </bean>

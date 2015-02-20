@@ -15,12 +15,21 @@
  */
 package org.labkey.study.pipeline;
 
+import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.importer.StudyImportContext;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.Serializable;
@@ -31,12 +40,20 @@ import java.sql.SQLException;
  */
 public class StudyReloadSourceJob extends StudyBatch implements Serializable, StudyReloadSourceJobSupport
 {
+    private final StudyImportContext _ctx;
+    private final VirtualFile _root;
     private String _reloadSourceName;
+    private BindException _errors;
 
     public StudyReloadSourceJob(ViewBackgroundInfo info, PipeRoot root, String reloadSourceName) throws SQLException
     {
         super(info, null, root);
         _reloadSourceName = reloadSourceName;
+        _root = new FileSystemFile(root.getRootPath());
+        File studyXml = new File(root.getRootPath(), "study.xml");
+
+        _ctx = new StudyImportContext(info.getUser(), info.getContainer(), studyXml, new PipelineJobLoggerGetter(this), _root);
+        _errors = new NullSafeBindException(new Object(), "reloadSource");
 
         File logFile = new File(root.getRootPath(), FileUtil.makeFileNameWithTimestamp("study_reload_source", "log"));
         setLogFile(logFile);
@@ -57,5 +74,58 @@ public class StudyReloadSourceJob extends StudyBatch implements Serializable, St
     public TaskPipeline getTaskPipeline()
     {
         return PipelineJobService.get().getTaskPipeline(new TaskId(StudyReloadSourceJob.class));
+    }
+
+    @Override
+    public StudyImpl getStudy()
+    {
+        StudyImpl study = StudyManager.getInstance().getStudy(_ctx.getContainer());
+        if (study == null)
+        {
+            throw new IllegalStateException("Study does not exist.");
+        }
+        return study;
+    }
+
+    @Override
+    public StudyImpl getStudy(boolean allowNullStudy)
+    {
+        return getStudy();
+    }
+
+    @Override
+    public StudyImportContext getImportContext()
+    {
+        return _ctx;
+    }
+
+    @Override
+    public VirtualFile getRoot()
+    {
+        return _root;
+    }
+
+    @Override
+    public String getOriginalFilename()
+    {
+        return "study.xml";
+    }
+
+    @Override
+    public BindException getSpringErrors()
+    {
+        return _errors;
+    }
+
+    @Override
+    public File getSpecimenArchive() throws ImportException, SQLException
+    {
+        return _ctx.getSpecimenArchive(_root);
+    }
+
+    @Override
+    public boolean isMerge()
+    {
+        return false;
     }
 }

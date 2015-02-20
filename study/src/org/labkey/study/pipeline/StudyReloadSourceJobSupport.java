@@ -15,10 +15,12 @@
  */
 package org.labkey.study.pipeline;
 
+import org.labkey.study.importer.StudyJobSupport;
+
 /**
  * Created by klum on 2/9/2015.
  */
-public interface StudyReloadSourceJobSupport
+public interface StudyReloadSourceJobSupport extends StudyJobSupport
 {
     String getStudyReloadSource();
 }
