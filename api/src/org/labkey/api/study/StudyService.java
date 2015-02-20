@@ -184,6 +184,7 @@ public class StudyService
         TableInfo getSpecimenDetailTableUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
         TableInfo getSpecimenWrapTableUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
         TableInfo getSpecimenSummaryTableUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
+        TableInfo getTypeTableUnion(Class<? extends TableInfo> tableClass, QuerySchema qsDefault, List<Container> containers, boolean dontAliasColumns);
 
         /**
          * Register an implementation of a reload source. A StudyReloadSource is a potential source for
