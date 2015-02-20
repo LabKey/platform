@@ -42,6 +42,18 @@
                 resetRegistration();
         };
 
+        var _autoShowDb = function (id, step)
+        {
+            if (modes[parseInt(LABKEY.tours[id].mode)] == _modeOff && step < 1)
+                return false;
+
+            if (modes[parseInt(LABKEY.tours[id].mode)] == _modeRunOnce && seen(id) && step < 1)
+                return false;
+
+            _load(id, step);
+            return true;
+        };
+
         var _display = function (config, step)
         {
             _initHopscotch(function ()
@@ -60,51 +72,6 @@
                 hopscotch.startTour(config, step || 0);
                 markSeen(config.id);
             }, me);
-        };
-
-        /**
-         * Evaluate javascript in JSON defining tour options and step options
-         */
-        var _evalStepOptions = function (config)
-        {
-            config["steps"].forEach(function (step)
-            {
-                $.each(step, function (key, value)
-                {
-                    if (key == "target")
-                    {
-                        try
-                        {
-                            step[key] = document.querySelector(value);
-                        }
-                        catch (x)
-                        {
-                            if (x instanceof DOMException)
-                            {
-                                console.error('Tour provided invalid selector:', "'" + value + "'");
-                            }
-                        }
-                    }
-                    else if (stepFnOpts.indexOf(key) > -1)
-                    {
-                        var jsonFn = new Function("", "return " + value + ";");
-                        step[key] = jsonFn.call();
-                    }
-                });
-            });
-        };
-
-
-        var _evalTourOptions = function (config)
-        {
-            $.each(config, function (key, value)
-            {
-                if (tourFnOpts.indexOf(key) > -1)
-                {
-                    var jsonFn = new Function("", "return " + config[key] + ";");
-                    config[key] = jsonFn.call();
-                }
-            });
         };
 
         var _get = function (idOrConfig)
@@ -150,9 +117,9 @@
                 $.each(LABKEY.tours, function (tourId, tour)
                 {
                     if (!$.isEmptyObject(config) && config.id == tourId)
-                        autoShow(tourId, config.step);
+                        _autoShowDb(tourId, config.step);
                     else
-                        autoShow(tourId, 0);
+                        _autoShowDb(tourId, 0);
                 });
             }
         };
@@ -189,6 +156,86 @@
             _continue = {};
         };
 
+        /**
+         * Show tour starting at step
+         * Always loads hopscotch.js
+         */
+        var _load = function(id, step)
+        {
+            loads++;
+
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('tours', 'getTour'),
+                jsonData: {id: id},
+                success: LABKEY.Utils.getCallbackWrapper(function(result)
+                {
+                    loads--;
+                    _parseAndRegister.call(this, id, step, result);
+
+                    if (loads == 0)
+                    {
+                        _kickoffTours();
+                    }
+                }, me, false),
+                failure: LABKEY.Utils.getCallbackWrapper(function(result)
+                {
+                    loads--;
+                }, me, false),
+                scope: this
+            });
+        };
+
+        /**
+         * AJAX show() success callback
+         */
+        var _parseAndRegister = function(id, step, result)
+        {
+            var tour = JSON.parse(result.json);
+            tour.id = id;
+
+            var realSteps = [];
+            $.each(tour.steps, function(i, step)
+            {
+                var real = eval(JSON.parse(step.step));
+                real.target = step.target;
+
+                if (!real.placement) {
+                    real.placement = 'bottom'; // required by hopscotch
+                }
+                realSteps.push(real);
+            });
+
+            if (window['_stepcontent'])
+            {
+                delete window['_stepcontent'];
+            }
+
+            tour.steps = realSteps;
+            _register(tour, step);
+        };
+
+        /**
+         * @param config
+         * @param {number} step
+         */
+        var _register = function(config, step)
+        {
+            if (!config.id)
+                throw "'id' is required to define a tour.";
+            if (!config.steps || !LABKEY.Utils.isArray(config.steps))
+                throw "'steps' is required to be an Array to define a tour.";
+
+            if (config.steps.length > 0)
+            {
+                if (step > 0)
+                {
+                    _continue.id = config.id;
+                    _continue.step = step;
+                }
+                _tours[config.id] = config;
+            }
+        };
+
         //
         // Public Functions
         //
@@ -196,15 +243,12 @@
          * Show tour if it has never been shown before.
          * Conditionally loads hopscotch.js if the tour needs to be shown.
          */
-        var autoShow = function (id, step)
+        var autoShow = function (id)
         {
-            if (modes[parseInt(LABKEY.tours[id].mode)] == _modeOff && step < 1)
+            if (seen(id))
                 return false;
 
-            if (modes[parseInt(LABKEY.tours[id].mode)] == _modeRunOnce && seen(id) && step < 1)
-                return false;
-
-            show(id, step);
+            show(id, 0);
             return true;
         };
 
@@ -252,7 +296,7 @@
         {
             var config = _getContinue();
             if (!$.isEmptyObject(config))
-                return resume(id, parseInt(step));
+                return resume(config.id, parseInt(config.step));
         };
 
         /**
@@ -269,19 +313,11 @@
         };
 
         /**
-         * Define a tour
+         * @param config
          */
-        var register = function (config, mode, step)
+        var register = function(config)
         {
-            if ( config.steps.length > 0)
-            {
-                if (step > 0)
-                {
-                    _continue.id = config.id;
-                    _continue.step = step;
-                }
-                _tours[config.id] = config;
-            }
+            _register(config, 0);
         };
 
         var reset = function ()
@@ -327,63 +363,12 @@
             return "seen" == state[id];
         };
 
-        /**
-         * Show tour starting at step
-         * Always loads hopscotch.js
-         */
         var show = function(id, step)
         {
-            loads++;
-
-            LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('tours', 'getTour'),
-                jsonData: {id: id},
-                success: LABKEY.Utils.getCallbackWrapper(function(result)
-                {
-                    loads--;
-                    parseAndRegister.call(this, id, step, result);
-
-                    if (loads == 0)
-                    {
-                        _kickoffTours();
-                    }
-                }, me, false),
-                failure: LABKEY.Utils.getCallbackWrapper(function(result)
-                {
-                    loads--;
-                }, me, false),
-                scope: this
-            });
-        };
-
-        /**
-         * AJAX show() success callback
-         */
-        var parseAndRegister = function(id, step, result)
-        {
-            var tour = JSON.parse(result.json);
-            tour.id = id;
-
-            var realSteps = [];
-            $.each(tour.steps, function(i, step)
-            {
-                var real = eval(JSON.parse(step.step));
-                real.target = step.target;
-
-                if (!real.placement) {
-                    real.placement = 'bottom'; // required by hopscotch
-                }
-                realSteps.push(real);
-            });
-
-            if (window['_stepcontent'])
-            {
-                delete window['_stepcontent'];
-            }
-
-            tour.steps = realSteps;
-            register(tour, result.mode, step);
-        };
+            var tour = _get(id);
+            if (tour)
+                _display(tour, step);
+        }
 
         LABKEY.Utils.onReady(_init);
 
