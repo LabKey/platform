@@ -683,6 +683,8 @@ if (typeof LABKEY == "undefined")
                 '/vis/lib/patches.js',
                 '/vis/lib/d3-3.3.9.min.js',
                 '/vis/lib/d3pie.min.js',
+                '/vis/lib/hexbin.min.js',
+                '/vis/lib/sqbin.min.js',
                 '/vis/lib/raphael-min-2.1.0.js'
             ];
 
