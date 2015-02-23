@@ -87,7 +87,7 @@ public class JdbcMetaDataSelector
             {
                 String message = e.getMessage();
 
-                // Retry on deadlock, up to five times, see #22148 and #15640.
+                // Retry on deadlock, up to five times, see #22607, #22148 and #15640.
                 if (null == message || !message.contains("deadlocked") || tries++ >= DEADLOCK_RETRIES)
                     throw e;
             }
