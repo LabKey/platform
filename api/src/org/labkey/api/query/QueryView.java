@@ -43,8 +43,10 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
+import org.labkey.api.study.UnionTable;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -79,6 +81,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -1389,7 +1392,13 @@ public class QueryView extends WebPartView<Object>
             button.addMenuItem(item);
         }
 
+        boolean isUnionTable = false;
         TableInfo t = getTable();
+        if (t instanceof UnionTable)
+        {
+            t = ((UnionTable) t).getComponentTable();   // check against a component table
+            isUnionTable = true;                        // UnionTable implies CurrentAndSubFolder (TODO: can other multi-folder cases occur?)
+        }
         if (t instanceof ContainerFilterable && t.supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
         {
             button.addSeparator();
@@ -1412,7 +1421,8 @@ public class QueryView extends WebPartView<Object>
 
                 filterItem.setId(getBaseMenuId() + ":Views:Folder Filter:" + filterType.toString());
 
-                if (selectedFilter.getType() == filterType)
+                if ((!isUnionTable && selectedFilter.getType() == filterType) ||
+                    (isUnionTable && ContainerFilter.Type.CurrentAndSubfolders.equals(filterType)))
                 {
                     filterItem.setSelected(true);
                 }
@@ -2398,6 +2408,32 @@ public class QueryView extends WebPartView<Object>
             return _table;
         _table = createTable();
 
+        if (_table instanceof ContainerFilterable && _table.supportsContainerFilter())
+        {
+            ContainerFilter filter = getContainerFilter();
+            if (filter != null)
+            {
+                // If table has a Union version, apply the filter to the Union
+                UserSchema userSchema = _table.getUserSchema();
+                if (ContainerFilter.Type.Current != filter.getType() && null != userSchema && userSchema.hasUnionTable(_table))
+                {
+                    Collection<GUID> containerIds = filter.getIds(getContainer());
+                    if (null != containerIds)
+                    {
+                        List<Container> containers = new ArrayList<>();
+                        for (GUID id : containerIds)
+                            containers.add(ContainerManager.getForId(id));
+                        _table = userSchema.getUnionTable(_table, containers);
+                    }
+                }
+                else
+                {
+                    ContainerFilterable fTable = (ContainerFilterable) _table;
+                    fTable.setContainerFilter(filter);
+                }
+            }
+        }
+
         if (_table instanceof AbstractTableInfo)
         {
             // Setting URLs is not supported on SchemaTableInfos, which are singletons anyway and therefore
@@ -2433,15 +2469,6 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (_table instanceof ContainerFilterable && _table.supportsContainerFilter())
-        {
-            ContainerFilter filter = getContainerFilter();
-            if (filter != null)
-            {
-                ContainerFilterable fTable = (ContainerFilterable) _table;
-                fTable.setContainerFilter(filter);
-            }
-        }
         return _table;
     }
 

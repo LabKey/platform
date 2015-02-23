@@ -639,4 +639,15 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     {
         return "UserSchema: " + getSchemaPath() + " in " + getContainer().getPath();
     }
+
+    // The schema for any table that has a Union version should override these
+    public boolean hasUnionTable(TableInfo tableInfo)
+    {
+        return false;
+    }
+
+    public TableInfo getUnionTable(TableInfo tableInfo, List<Container> containers)
+    {
+        return tableInfo;
+    }
 }
