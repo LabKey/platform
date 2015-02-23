@@ -42,16 +42,27 @@
                 resetRegistration();
         };
 
-        var _autoShowDb = function (id, step)
+        var _autoShowFromDb = function (id, step)
         {
-            if (modes[parseInt(LABKEY.tours[id].mode)] == _modeOff && step < 1)
-                return false;
+            if( LABKEY.tours[id].mode != undefined)
+            {
+                var modeIndex = parseInt(LABKEY.tours[id].mode);
 
-            if (modes[parseInt(LABKEY.tours[id].mode)] == _modeRunOnce && seen(id) && step < 1)
-                return false;
+                if (modeIndex > modes.length)
+                {
+                    console.warn("Invalid mode value. TourId: " + id + ", Mode: " + modeIndex);
+                    return false;
+                }
+                if (modes[modeIndex] == _modeOff && step < 1)
+                    return false;
 
-            _load(id, step);
-            return true;
+                if (modes[modeIndex] == _modeRunOnce && seen(id) && step < 1)
+                    return false;
+
+                _load(id, step);
+                return true;
+            }
+            console.warn("Tour mode not found. TourId: " + id);
         };
 
         var _display = function (config, step)
@@ -117,9 +128,9 @@
                 $.each(LABKEY.tours, function (tourId, tour)
                 {
                     if (!$.isEmptyObject(config) && config.id == tourId)
-                        _autoShowDb(tourId, config.step);
+                        _autoShowFromDb(tourId, config.step);
                     else
-                        _autoShowDb(tourId, 0);
+                        _autoShowFromDb(tourId, 0);
                 });
             }
         };
@@ -186,7 +197,7 @@
         };
 
         /**
-         * AJAX show() success callback
+         * AJAX _load() success callback
          */
         var _parseAndRegister = function(id, step, result)
         {
@@ -370,6 +381,11 @@
                 _display(tour, step);
         }
 
+        var showFromDb = function(id, step)
+        {
+            _load(id,step);
+        }
+
         LABKEY.Utils.onReady(_init);
 
         return {
@@ -381,7 +397,8 @@
             reset: reset,
             resume: resume,
             seen: seen,
-            show: show
+            show: show,
+            showFromDb: showFromDb
         }
     };
 

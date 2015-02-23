@@ -62,7 +62,7 @@ public class PopupHelpView extends PopupMenuView
                     for (Tour t : tours)
                     {
                         NavTree tourLink = new NavTree(t.getTitle());
-                        tourLink.setScript("LABKEY.help.Tour.show(" + PageFlowUtil.jsString(t.getRowId().toString()) + ")");
+                        tourLink.setScript("LABKEY.help.Tour.showFromDb(" + PageFlowUtil.jsString(t.getRowId().toString()) + ", 0)");
                         toursMenu.addChild(tourLink);
                     }
                     menu.addChild(toursMenu);
