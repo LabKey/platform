@@ -17,7 +17,6 @@ package org.labkey.api.data;
 
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
-import org.springframework.dao.DeadlockLoserDataAccessException;
 
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -84,10 +83,12 @@ public class JdbcMetaDataSelector
             {
                 return handler.handle(_factory.getResultSet(_locator.getDatabaseMetaData(), _locator));
             }
-            catch (DeadlockLoserDataAccessException e)
+            catch (SQLException e)
             {
+                String message = e.getMessage();
+
                 // Retry on deadlock, up to five times, see #22148 and #15640.
-                if (tries++ >= DEADLOCK_RETRIES)
+                if (null == message || !message.contains("deadlocked") || tries++ >= DEADLOCK_RETRIES)
                     throw e;
             }
         }
