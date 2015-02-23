@@ -877,276 +877,267 @@ public class ResultSetWrapper implements ResultSet
         resultset.updateArray(s, array);
     }
 
-
-    // The following methods are "implemented" to allow compiling and running on JDK/JRE 6.0 while still supporting
-    // JDK/JRE 5.0.  If/when we require JDK/JRE 6.0, these methods should be properly implemented.
-
+    // The next group of methods was introduced in JDBC 4.0 (Java 6)
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.isWrapperFor(iface);
     }
-
 
     public <T> T unwrap(Class<T> iface) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.unwrap(iface);
     }
-
-
-    // The following methods are "implemented" to allow compiling and running on JDK/JRE 6.0 while still supporting
-    // JDK/JRE 5.0.  If/when we require JDK/JRE 6.0, these methods should delegate to the wrapped resultset.
-
 
     public int getHoldability() throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getHoldability();
     }
 
     public Reader getNCharacterStream(int columnIndex) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getNCharacterStream(columnIndex);
     }
 
     public Reader getNCharacterStream(String columnLabel) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getNCharacterStream(columnLabel);
     }
 
     public NClob getNClob(int columnIndex) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getNClob(columnIndex);
     }
 
     public NClob getNClob(String columnLabel) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getNClob(columnLabel);
     }
 
     public String getNString(int columnIndex) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getNString(columnIndex);
     }
 
     public String getNString(String columnLabel) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getNString(columnLabel);
     }
 
     public RowId getRowId(int columnIndex) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getRowId(columnIndex);
     }
 
     public RowId getRowId(String columnLabel) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getRowId(columnLabel);
     }
 
     public SQLXML getSQLXML(int columnIndex) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getSQLXML(columnIndex);
     }
 
     public SQLXML getSQLXML(String columnLabel) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getSQLXML(columnLabel);
     }
 
     public boolean isClosed() throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.isClosed();
     }
 
     public void updateAsciiStream(int columnIndex, InputStream x) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateAsciiStream(columnIndex, x);
     }
 
     public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateAsciiStream(columnIndex, x, length);
     }
 
     public void updateAsciiStream(String columnLabel, InputStream x) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateAsciiStream(columnLabel, x);
     }
 
     public void updateAsciiStream(String columnLabel, InputStream x, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateAsciiStream(columnLabel, x, length);
     }
 
     public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateBinaryStream(columnIndex, x);
     }
 
     public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateBinaryStream(columnIndex, x, length);
     }
 
     public void updateBinaryStream(String columnLabel, InputStream x) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateBinaryStream(columnLabel, x);
     }
 
     public void updateBinaryStream(String columnLabel, InputStream x, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateBinaryStream(columnLabel, x, length);
     }
 
     public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateBlob(columnIndex, inputStream);
     }
 
     public void updateBlob(int columnIndex, InputStream inputStream, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateBlob(columnIndex, inputStream, length);
     }
 
     public void updateBlob(String columnLabel, InputStream inputStream) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateBlob(columnLabel, inputStream);
     }
 
     public void updateBlob(String columnLabel, InputStream inputStream, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateBlob(columnLabel, inputStream, length);
     }
 
     public void updateCharacterStream(int columnIndex, Reader x) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateCharacterStream(columnIndex, x);
     }
 
     public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateCharacterStream(columnIndex, x, length);
     }
 
     public void updateCharacterStream(String columnLabel, Reader reader) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateCharacterStream(columnLabel, reader);
     }
 
     public void updateCharacterStream(String columnLabel, Reader reader, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateCharacterStream(columnLabel, reader, length);
     }
 
     public void updateClob(int columnIndex, Reader reader) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateClob(columnIndex, reader);
     }
 
     public void updateClob(int columnIndex, Reader reader, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateClob(columnIndex, reader, length);
     }
 
     public void updateClob(String columnLabel, Reader reader) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateClob(columnLabel, reader);
     }
 
     public void updateClob(String columnLabel, Reader reader, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateClob(columnLabel, reader, length);
     }
 
     public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNCharacterStream(columnIndex, x);
     }
 
     public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNCharacterStream(columnIndex, x, length);
     }
 
     public void updateNCharacterStream(String columnLabel, Reader reader) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNCharacterStream(columnLabel, reader);
     }
 
     public void updateNCharacterStream(String columnLabel, Reader reader, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNCharacterStream(columnLabel, reader, length);
     }
 
     public void updateNClob(int columnIndex, NClob nClob) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNClob(columnIndex, nClob);
     }
 
     public void updateNClob(int columnIndex, Reader reader) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNClob(columnIndex, reader);
     }
 
     public void updateNClob(int columnIndex, Reader reader, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNClob(columnIndex, reader, length);
     }
 
     public void updateNClob(String columnLabel, NClob nClob) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNClob(columnLabel, nClob);
     }
 
     public void updateNClob(String columnLabel, Reader reader) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNClob(columnLabel, reader);
     }
 
     public void updateNClob(String columnLabel, Reader reader, long length) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNClob(columnLabel, reader, length);
     }
 
     public void updateNString(int columnIndex, String nString) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNString(columnIndex, nString);
     }
 
     public void updateNString(String columnLabel, String nString) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateNString(columnLabel, nString);
     }
 
     public void updateRowId(int columnIndex, RowId x) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateRowId(columnIndex, x);
     }
 
     public void updateRowId(String columnLabel, RowId x) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateRowId(columnLabel, x);
     }
 
     public void updateSQLXML(int columnIndex, SQLXML xmlObject) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateSQLXML(columnIndex, xmlObject);
     }
 
     public void updateSQLXML(String columnLabel, SQLXML xmlObject) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        resultset.updateSQLXML(columnLabel, xmlObject);
     }
 
-    // JDBC 4.1 methods below must be here so we compile on JDK 7
+    // The next group of methods was introduced in JDBC 4.1 (Java 7)
 
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getObject(columnIndex, type);
     }
 
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return resultset.getObject(columnLabel, type);
     }
 }

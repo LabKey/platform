@@ -35,4 +35,5 @@ public interface JdbcMetaDataLocator extends AutoCloseable, ForeignKeyResolver
     String getSchemaName();
     String getTableName();
     String[] getTableTypes();
+    boolean supportsSchemas();
 }

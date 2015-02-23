@@ -102,4 +102,10 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
     {
         return new ImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
     }
+
+    @Override
+    public boolean supportsSchemas()
+    {
+        return true;
+    }
 }

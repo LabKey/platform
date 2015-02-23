@@ -90,7 +90,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
 
 
     /*
-        Construtor is not normally used... see CachedResultSets for static factory methods.
+        Constructor is not normally used... see CachedResultSets for static factory methods.
 
         stackTrace is used to set an alternate stack trace -- good for async queries, to indicate original creation stack trace
      */

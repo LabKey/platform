@@ -85,8 +85,8 @@ public class SchemaNameCache
                 @Override
                 public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
                 {
-                    // null catalog name tells us that this dialect treats schemas as catalogs (e.g., MySQL)
-                    return null == locator.getCatalogName() ? dbmd.getCatalogs() : dbmd.getSchemas();
+                    // Most dialects support schemas, but MySQL treats them as catalogs
+                    return locator.supportsSchemas() ? dbmd.getSchemas() : dbmd.getCatalogs();
                 }
             });
 

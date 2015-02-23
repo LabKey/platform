@@ -360,6 +360,7 @@ api/src/org/labkey/api/data/ResultSetSelector.java -text
 api/src/org/labkey/api/data/ResultSetSelectorTestCase.java -text
 api/src/org/labkey/api/data/Results.java -text
 api/src/org/labkey/api/data/ResultsImpl.java -text
+api/src/org/labkey/api/data/RowTrackingResultSetWrapper.java -text
 api/src/org/labkey/api/data/RuntimeSQLException.java -text
 api/src/org/labkey/api/data/SQLFragment.java -text
 api/src/org/labkey/api/data/SQLGenerationException.java -text
