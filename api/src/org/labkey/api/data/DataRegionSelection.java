@@ -72,7 +72,7 @@ public class DataRegionSelection
                 return result;
             }
         }
-        return Collections.emptySet();
+        return new LinkedHashSet<>();
     }
 
     /**

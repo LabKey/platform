@@ -16,16 +16,19 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertingWrapDynaBean;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ButtonBarConfig;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -269,93 +272,15 @@ public class QueryWebPart extends VBox
 
             if (queryDef != null)
             {
-                QueryView queryView = _schema.createView(getViewContext(), _settings);
-                String linkTarget = _properties.get("linkTarget");
-                if (linkTarget != null)
+                try
                 {
-                    queryView.setLinkTarget(linkTarget);
+                    QueryView queryView = createQueryView();
+                    view = queryView;
                 }
-                queryView.setShadeAlternatingRows(true);
-                queryView.setShowBorders(true);
-
-                ConvertingWrapDynaBean dynaBean = new ConvertingWrapDynaBean(queryView);
-                for (String key : _properties.keySet())
+                catch (RuntimeSQLException | IllegalArgumentException | ConversionException x)
                 {
-                    if ("buttonBarPosition".equals(key))
-                        continue;
-                    String value = _properties.get(key);
-                    if (value != null)
-                    {
-                        try
-                        {
-                            dynaBean.set(key, value);
-                        }
-                        catch (IllegalArgumentException e)
-                        {
-                            // just ignore non-queryview properties
-                        }
-                    }
+                    view = new HtmlView("<span class=error>" + PageFlowUtil.filter(x.getMessage()) + "</span>");
                 }
-
-                String buttonBarPositionProp = _properties.get("buttonBarPosition");
-                if (null != buttonBarPositionProp)
-                {
-                    try
-                    {
-                        queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.valueOf(buttonBarPositionProp.toUpperCase()));
-                    }
-                    catch(IllegalArgumentException ignore) {}
-                    if (queryView._buttonBarPosition == DataRegion.ButtonBarPosition.NONE)
-                        queryView.setShowRecordSelectors(false);
-                }
-
-                if (null != _extendedProperties)
-                {
-                    if (_extendedProperties.get("buttonBar") instanceof JSONObject)
-                    {
-                        ButtonBarConfig bbarConfig = new ButtonBarConfig((JSONObject)_extendedProperties.get("buttonBar"));
-                        queryView.setButtonBarConfig(bbarConfig);
-                    }
-
-                    // 10505 : add QueryWebPart filters to QuerySettings base sort/filter so they won't be changeable in the DataRegion UI.
-                    if (_extendedProperties.get("filters") instanceof JSONObject)
-                    {
-                        JSONObject filters = (JSONObject)_extendedProperties.get("filters");
-                        if (filters.size() > 0)
-                        {
-                            // UNDONE: there should be an easier way to convert into a Filter than having to serialize them onto an ActionUrl and back out.
-                            // Issue 17411: Support multiple filters and aggregates on the same column.
-                            // If the value is a JSONArray of values, add each filter or aggregate as an additional URL parameter.
-                            ActionURL url = new ActionURL();
-                            for (String paramName : filters.keySet())
-                            {
-                                JSONArray arr = filters.optJSONArray(paramName);
-                                if (arr != null)
-                                    for (Object value : arr.toArray())
-                                        url.addParameter(paramName, String.valueOf(value));
-                                else
-                                    url.addParameter(paramName, String.valueOf(filters.get(paramName)));
-                            }
-
-                            SimpleFilter filter = _settings.getBaseFilter();
-                            filter.addUrlFilters(url, queryView.getDataRegionName());
-
-                            Sort sort = _settings.getBaseSort();
-                            sort.addURLSort(url, queryView.getDataRegionName());
-
-                            List<Aggregate> aggregates = _settings.getAggregates();
-                            aggregates.addAll(Aggregate.fromURL(url, queryView.getDataRegionName()));
-                            
-                            // XXX: containerFilter
-                        }
-                    }
-                }
-
-
-                if (null != _properties.get("showRecordSelectors"))
-                    queryView.setShowRecordSelectors(Boolean.parseBoolean(_properties.get("showRecordSelectors")));
-
-                view = queryView;
             }
         }
 
@@ -378,5 +303,97 @@ public class QueryWebPart extends VBox
 
             _views.add(view);
         }
+    }
+
+    private QueryView createQueryView()
+    {
+        NullSafeBindException errors = new NullSafeBindException(new Object(), "form");
+        QueryView queryView = _schema.createView(getViewContext(), _settings, errors);
+        String linkTarget = _properties.get("linkTarget");
+        if (linkTarget != null)
+        {
+            queryView.setLinkTarget(linkTarget);
+        }
+        queryView.setShadeAlternatingRows(true);
+        queryView.setShowBorders(true);
+
+        ConvertingWrapDynaBean dynaBean = new ConvertingWrapDynaBean(queryView);
+        for (String key : _properties.keySet())
+        {
+            if ("buttonBarPosition".equals(key))
+                continue;
+            String value = _properties.get(key);
+            if (value != null)
+            {
+                try
+                {
+                    dynaBean.set(key, value);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // just ignore non-queryview properties
+                }
+            }
+        }
+
+        String buttonBarPositionProp = _properties.get("buttonBarPosition");
+        if (null != buttonBarPositionProp)
+        {
+            try
+            {
+                queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.valueOf(buttonBarPositionProp.toUpperCase()));
+            }
+            catch(IllegalArgumentException ignore) {}
+            if (queryView._buttonBarPosition == DataRegion.ButtonBarPosition.NONE)
+                queryView.setShowRecordSelectors(false);
+        }
+
+        if (null != _extendedProperties)
+        {
+            if (_extendedProperties.get("buttonBar") instanceof JSONObject)
+            {
+                ButtonBarConfig bbarConfig = new ButtonBarConfig((JSONObject)_extendedProperties.get("buttonBar"));
+                queryView.setButtonBarConfig(bbarConfig);
+            }
+
+            // 10505 : add QueryWebPart filters to QuerySettings base sort/filter so they won't be changeable in the DataRegion UI.
+            if (_extendedProperties.get("filters") instanceof JSONObject)
+            {
+                JSONObject filters = (JSONObject)_extendedProperties.get("filters");
+                if (filters.size() > 0)
+                {
+                    // UNDONE: there should be an easier way to convert into a Filter than having to serialize them onto an ActionUrl and back out.
+                    // Issue 17411: Support multiple filters and aggregates on the same column.
+                    // If the value is a JSONArray of values, add each filter or aggregate as an additional URL parameter.
+                    ActionURL url = new ActionURL();
+                    for (String paramName : filters.keySet())
+                    {
+                        JSONArray arr = filters.optJSONArray(paramName);
+                        if (arr != null)
+                            for (Object value : arr.toArray())
+                                url.addParameter(paramName, String.valueOf(value));
+                        else
+                            url.addParameter(paramName, String.valueOf(filters.get(paramName)));
+                    }
+
+                    // NOTE: Creating filters may throw IllegalArgumentException or ConversionException.  See Issue 22456.
+                    SimpleFilter filter = _settings.getBaseFilter();
+                    filter.addUrlFilters(url, queryView.getDataRegionName());
+
+                    Sort sort = _settings.getBaseSort();
+                    sort.addURLSort(url, queryView.getDataRegionName());
+
+                    List<Aggregate> aggregates = _settings.getAggregates();
+                    aggregates.addAll(Aggregate.fromURL(url, queryView.getDataRegionName()));
+
+                    // XXX: containerFilter
+                }
+            }
+        }
+
+
+        if (null != _properties.get("showRecordSelectors"))
+            queryView.setShowRecordSelectors(Boolean.parseBoolean(_properties.get("showRecordSelectors")));
+        return queryView;
     }
 }

@@ -452,7 +452,7 @@ public enum CompareType
                 {
                     Object[] values = ((Collection)value).toArray();
                     if (values.length != 2)
-                        throw new IllegalArgumentException("Between filter requires exactly two parameter values");
+                        throw new IllegalArgumentException("Between filter on '" + fieldKey + "' column requires exactly two parameter values separated by comma instead of '" + value.toString() + "'");
 
                     return new BetweenClause(fieldKey, values[0], values[1], false);
                 }
@@ -461,7 +461,7 @@ public enum CompareType
                     String s = Objects.toString(value, "");
                     String[] values = s.split(BetweenClause.SEPARATOR);
                     if (values.length != 2)
-                        throw new IllegalArgumentException("Between filter requires exactly two parameter values");
+                        throw new IllegalArgumentException("Between filter on '" + fieldKey + "' column requires exactly two parameter values separated by comma instead of '" + value.toString() + "'");
 
                     return new BetweenClause(fieldKey, values[0], values[1], false);
                 }
@@ -486,7 +486,7 @@ public enum CompareType
                 {
                     Object[] values = ((Collection)value).toArray();
                     if (values.length != 2)
-                        throw new IllegalArgumentException("Not between filter requires exactly two parameter values");
+                        throw new IllegalArgumentException("Not between filter on '" + fieldKey + "' column requires exactly two parameter values separated by comma instead of '" + value.toString() + "'");
 
                     return new BetweenClause(fieldKey, values[0], values[1], true);
                 }
@@ -495,7 +495,7 @@ public enum CompareType
                     String s = Objects.toString(value, "");
                     String[] values = s.split(BetweenClause.SEPARATOR);
                     if (values.length != 2)
-                        throw new IllegalArgumentException("Not between filter requires exactly two parameter values");
+                        throw new IllegalArgumentException("Not between filter on '" + fieldKey + "' column requires exactly two parameter values separated by comma instead of '" + value.toString() + "'");
 
                     return new BetweenClause(fieldKey, values[0], values[1], true);
                 }
@@ -1315,10 +1315,10 @@ public enum CompareType
         private Object validateValue(Object value)
         {
             if (value == null)
-                throw new IllegalArgumentException("Between filter requires exactly two non-null and non-empty parameter values");
+                throw new IllegalArgumentException(_comparison._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
 
             if (value instanceof String && ((String)value).length() == 0)
-                throw new IllegalArgumentException("Between filter requires exactly two non-null and non-empty parameter values");
+                throw new IllegalArgumentException(_comparison._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
 
             return value;
         }
