@@ -1095,7 +1095,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // save the dataregion
         this.panelDataRegionName = wp.dataRegionName;
 
-        // issue 21418
+        // issue 21418: support for parameterized queries
         wp.on('render', function(){
             if (wp.parameters)
                 this.updateQueryParameters(wp.parameters);

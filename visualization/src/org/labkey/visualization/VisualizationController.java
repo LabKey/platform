@@ -500,7 +500,7 @@ public class VisualizationController extends SpringActionController
 
             QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), schemaName, sql);
 
-            QuerySettings settings = new QuerySettings(getViewContext(), "visualization", def.getName());
+            QuerySettings settings = new QuerySettings(context, "visualization", def.getName());
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string

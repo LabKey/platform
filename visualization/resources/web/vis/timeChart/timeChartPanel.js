@@ -122,9 +122,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.savedChartInfo = Ext4.encode(this.chartInfo);
         }
 
-        var params = LABKEY.ActionURL.getParameters();
-        this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
-
         // hold on to the x and y axis measure index
         var xAxisIndex = LABKEY.vis.TimeChartHelper.getAxisIndex(this.chartInfo.axis, "x-axis");
         var leftAxisIndex = LABKEY.vis.TimeChartHelper.getAxisIndex(this.chartInfo.axis, "y-axis", "left");
@@ -399,7 +396,17 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.viewChartBtn = Ext4.create('Ext.button.Button', {text: "View Chart(s)", handler: function(){
             // hide/show the appropriate buttons in the top toolbar
             this.toggleButtonsForGrid(true);
-            this.renderLineChart();
+
+            // issue 21418: support for parameterized queries
+            if (this.parameters) {
+                this.loaderFn = this.renderLineChart;
+                this.loaderName = 'renderLineChart';
+                this.getChartData();
+            }
+            else {
+                this.renderLineChart();
+            }
+
         }, scope: this, hidden: true});
         this.refreshChart = new Ext4.util.DelayedTask(function(){
             this.getChartData();
@@ -450,8 +457,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                                 this.optionsButtonClicked(btn, this.editorSavePanel, 850, 420, 'right');
                         }, scope: this});
 
+        var params = LABKEY.ActionURL.getParameters();
+        this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
+
+        // issue 21418: support for parameterized queries
+        var urlQueryParams = LABKEY.Filter.getQueryParamsFromUrl(params['filterUrl']);
+        this.parameters = this.chartInfo.parameters ? this.chartInfo.parameters : urlQueryParams;
+        this.chartInfo.parameters = this.parameters;
+
         // if edit mode, then add the editor panel buttons and save buttons
-        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.editorSavePanel.isSavedReport()) && this.allowEditMode;
+        this.editMode = (params.edit == "true" || !this.editorSavePanel.isSavedReport()) && this.allowEditMode;
         var toolbarButtons = [
             this.viewGridBtn,
             this.viewChartBtn,
@@ -870,6 +885,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         simplified.errorBars = config.errorBars ? config.errorBars : defaultConfig.errorBars;
         simplified.aggregateType = config.aggregateType ? config.aggregateType : defaultConfig.aggregateType;
         simplified.filterUrl = config.filterUrl;
+        simplified.parameters = config.parameters;
         simplified.title = config.title;
         simplified.hideDataPoints = config.hideDataPoints ? config.hideDataPoints : defaultConfig.hideDataPoints;
         simplified.lineWidth = config.lineWidth ? config.lineWidth : defaultConfig.lineWidth;
@@ -1264,6 +1280,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 autoEl: {tag: 'div'}
             });
             var dataGridPanel = Ext4.create('Ext.panel.Panel', {
+                minHeight: 620,
                 autoScroll: true,
                 border: false,
                 padding: 10,
@@ -1283,6 +1300,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 schemaName: this.tempGridInfo.schema,
                 queryName: this.tempGridInfo.query,
                 sort: this.tempGridInfo.sortCols ? this.tempGridInfo.sortCols.join(", ") : null,
+                parameters: this.chartInfo.parameters,
                 allowChooseQuery : false,
                 allowChooseView  : false,
                 allowHeaderLock  : false,
@@ -1297,11 +1315,24 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 // redo the layout of the qwp panel to set reset the auto height
                 qwpPanelDiv.doLayout();
 
+                if (chartQueryWebPart.parameters)
+                    this.updateQueryParameters(chartQueryWebPart);
+
                 this.unmaskPanel();
             }, this);
 
             this.chart.removeAll();
             this.chart.add(dataGridPanel);
+        }
+    },
+
+    updateQueryParameters : function(qwp) {
+        for (var param in qwp.parameters)
+        {
+            var pref = qwp.dataRegionName + ".param.";
+            if (param.indexOf(pref) == 0) {
+                this.parameters[param.replace(pref, "")] = qwp.parameters[param];
+            }
         }
     },
 
@@ -1413,6 +1444,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 queryName: config.measures[0].measure.queryName
             });
         }
+
+        config.parameters = this.parameters;
 
         return config;
     },

@@ -1016,6 +1016,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                 measures: config.chartInfo.measures,
                 sorts: generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased, config.nounSingular),
                 limit : config.dataLimit || 10000,
+                parameters : config.chartInfo.parameters,
                 filterUrl: config.chartInfo.filterUrl,
                 filterQuery: config.chartInfo.filterQuery
             });
@@ -1048,6 +1049,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                 ],
                 sorts: generateDataSortArray(config.chartInfo.subject, config.chartInfo.measures[0], isDateBased, config.nounSingular),
                 limit : config.dataLimit || 10000,
+                parameters : config.chartInfo.parameters,
                 filterUrl: config.chartInfo.filterUrl,
                 filterQuery: config.chartInfo.filterQuery
             });
