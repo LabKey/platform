@@ -179,11 +179,13 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     _doRenderGrid : function(cmp) {
         var filters = LABKEY.Filter.getFiltersFromUrl(this.initialURL, this.reportConfig.dataRegionName);
         var sort = LABKEY.Filter.getSortFromUrl(this.initialURL, this.reportConfig.dataRegionName);
+        var params = LABKEY.Filter.getQueryParamsFromUrl(this.initialURL, this.reportConfig.dataRegionName);
 
         var config = {
             schemaName  : this.reportConfig.schemaName,
             queryName   : this.reportConfig.queryName,
             viewName    : this.reportConfig.viewName,
+            parameters  : params,
             removeableFilters   : filters,
             removeableSort      : sort,
             dataRegionName      : this.reportConfig.dataRegionName + '_report',
