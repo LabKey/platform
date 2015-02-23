@@ -17,13 +17,17 @@ package org.labkey.bigiron.sas;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ResultSetMetaDataWrapper;
-import org.labkey.api.data.ResultSetWrapper;
+import org.labkey.api.data.RowTrackingResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
+import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -314,9 +318,28 @@ public abstract class SasDialect extends SimpleSqlDialect
     }
 
 
-    // Ensures that SAS ResultSets return ResultSetMetaData that meets JDBC 4.0 specifications
-    private static class SasResultSetWrapper extends ResultSetWrapper
+    @Override
+    public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable final String schemaName, @Nullable String tableName) throws SQLException
     {
+        return new StandardJdbcMetaDataLocator(scope, schemaName, tableName)
+        {
+            @Override
+            public String getCatalogName()
+            {
+                return schemaName;
+            }
+        };
+    }
+
+
+    // This class fixes three problems with the ResultSets returned by the SAS JDBC driver:
+    // - Their ResultSetMetaData don't meet the JDBC 4.0 specifications (the SasResultSetMetaData we return fixes this)
+    // - getRow() always throws (RowTrackingResultSetWrapper manually tracks current row to fix this)
+    // - isClosed() always throws (we track closed below to fix this)
+    private static class SasResultSetWrapper extends RowTrackingResultSetWrapper
+    {
+        private boolean _closed = false;
+
         public SasResultSetWrapper(ResultSet rs)
         {
             super(rs);
@@ -327,11 +350,24 @@ public abstract class SasDialect extends SimpleSqlDialect
         {
             return new SasResultSetMetaData(super.getMetaData());
         }
+
+        @Override
+        public void close() throws SQLException
+        {
+            _closed = true;
+            super.close();
+        }
+
+        @Override
+        public boolean isClosed() throws SQLException
+        {
+            return _closed;
+        }
     }
 
 
     // Makes SAS ResultSetMetaData behave according to the JDBC 4.0 spec, which states that name-based ResultSet getters
-    // should use the values returns by getColumnLabel(). See #21444, #21259, and #19869.
+    // should use the values returned by getColumnLabel(). See #21444, #21259, and #19869.
     private static class SasResultSetMetaData extends ResultSetMetaDataWrapper
     {
         public SasResultSetMetaData(ResultSetMetaData rsmd)

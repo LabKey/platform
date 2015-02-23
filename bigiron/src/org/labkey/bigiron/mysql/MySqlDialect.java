@@ -140,6 +140,12 @@ public class MySqlDialect extends SimpleSqlDialect
             {
                 return schemaName;
             }
+
+            @Override
+            public boolean supportsSchemas()
+            {
+                return false;
+            }
         };
     }
 
