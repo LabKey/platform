@@ -3427,8 +3427,17 @@ public class AdminController extends SpringActionController
             if (loader.isNewInstall())
                 bean.nextURL = new ActionURL(AdminController.NewInstallSiteSettingsAction.class, ContainerManager.getRoot());
             else if (form.getReturnURL() != null)
-                bean.nextURL = form.getReturnActionURL();
-            else
+            {
+                try
+                {
+                    bean.nextURL = form.getReturnActionURL();
+                }
+                catch (URLException x)
+                {
+                    // might not be an ActionURL e.g. /labkey/_webdav/home
+                }
+            }
+            if (null == bean.nextURL)
                 bean.nextURL = new ActionURL(AdminController.InstallCompleteAction.class, ContainerManager.getRoot());
 
             if (loader.isNewInstall())
