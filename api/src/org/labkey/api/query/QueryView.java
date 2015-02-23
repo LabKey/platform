@@ -2247,6 +2247,8 @@ public class QueryView extends WebPartView<Object>
         if (table != null)
         {
             ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView) : getExcelWriter(docType);
+            if (headerType == null)
+                headerType = getExcelColumnHeaderType();
             ew.setCaptionType(headerType);
             ew.setShowInsertableColumnsOnly(insertColumnsOnly);
             if (prefix != null)
