@@ -75,10 +75,6 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
         {
             throw new RuntimeException(e);
         }
-        finally
-        {
-            saveTypeNameIdMap();
-        }
     }
 
     /*

@@ -37,45 +37,38 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
         setDescription("Contains up to one row of Specimen Derivative Type totals by Requesting Location for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 
-        try
+        Container container = getContainer();
+        Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
+        Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(container);
+        Map<Integer, NameLabelPair> locationMap = getSiteMap(getContainer());
+
+        for (ColumnInfo col : getRealTable().getColumns())
         {
-            Container container = getContainer();
-            Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
-            Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(container);
-            Map<Integer, NameLabelPair> locationMap = getSiteMap(getContainer());
+            // look for the primary/derivative pivot encoding
+            String parts[] = col.getName().split(AGGREGATE_DELIM);
 
-            for (ColumnInfo col : getRealTable().getColumns())
+            if (parts != null && parts.length == 2)
             {
-                // look for the primary/derivative pivot encoding
-                String parts[] = col.getName().split(AGGREGATE_DELIM);
+                String types[] = parts[0].split(TYPE_DELIM);
 
-                if (parts != null && parts.length == 2)
+                if (types != null && types.length == 3)
                 {
-                    String types[] = parts[0].split(TYPE_DELIM);
+                    int primaryId = NumberUtils.toInt(types[0]);
+                    int derivativeId = NumberUtils.toInt(types[1]);
+                    int locationId = NumberUtils.toInt(types[2]);
 
-                    if (types != null && types.length == 3)
+                    if (primaryTypeMap.containsKey(primaryId) && derivativeTypeMap.containsKey(derivativeId) && locationMap.containsKey(locationId))
                     {
-                        int primaryId = NumberUtils.toInt(types[0]);
-                        int derivativeId = NumberUtils.toInt(types[1]);
-                        int locationId = NumberUtils.toInt(types[2]);
-
-                        if (primaryTypeMap.containsKey(primaryId) && derivativeTypeMap.containsKey(derivativeId) && locationMap.containsKey(locationId))
-                        {
-                            wrapPivotColumn(col,
-                                    COLUMN_DESCRIPTION_FORMAT,
-                                    primaryTypeMap.get(primaryId),
-                                    derivativeTypeMap.get(derivativeId),
-                                    locationMap.get(locationId));
-                        }
+                        wrapPivotColumn(col,
+                                COLUMN_DESCRIPTION_FORMAT,
+                                primaryTypeMap.get(primaryId),
+                                derivativeTypeMap.get(derivativeId),
+                                locationMap.get(locationId));
                     }
                 }
             }
-            setDefaultVisibleColumns(getDefaultVisibleColumns());
-            addWrapColumn(_rootTable.getColumn("Container"));
         }
-        finally
-        {
-            saveTypeNameIdMap();
-        }
+        setDefaultVisibleColumns(getDefaultVisibleColumns());
+        addWrapColumn(_rootTable.getColumn("Container"));
     }
 }

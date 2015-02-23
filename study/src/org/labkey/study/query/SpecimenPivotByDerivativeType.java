@@ -67,7 +67,5 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
         }
         setDefaultVisibleColumns(getDefaultVisibleColumns());
         addWrapColumn(_rootTable.getColumn("Container"));
-
-        saveTypeNameIdMap();
     }
 }

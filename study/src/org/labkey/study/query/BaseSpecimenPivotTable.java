@@ -85,8 +85,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
 
                 if (!_typeNameIdMapWrapper.containsKey(key, rowId))
                 {
-                    int id = _typeNameIdMapWrapper.size() + 1;
-                    _typeNameIdMapWrapper.put(key, rowId, String.valueOf(id));
+                    _typeNameIdMapWrapper.put(key, rowId);
                 }
             }
         }
@@ -133,47 +132,29 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         public boolean containsKey(String key, int rowId)
         {
             String keyWithId = getKeyWithId(key, rowId);
-            if (null != _typeNameIdMapWritable)
-                return _typeNameIdMapWritable.containsKey(keyWithId);
             return _typeNameIdMap.containsKey(keyWithId);
         }
         public String get(String key, int rowId)
         {
             String keyWithId = getKeyWithId(key, rowId);
-            if (null != _typeNameIdMapWritable)
-                return _typeNameIdMapWritable.get(keyWithId);
-             return _typeNameIdMap.get(keyWithId);
+            return _typeNameIdMap.get(keyWithId);
         }
-        public void put(String key, int rowId, String value)
-        {
-            String keyWithId = getKeyWithId(key, rowId);
-            if (null == _typeNameIdMapWritable)
-                _typeNameIdMapWritable = PropertyManager.getWritableProperties(_container, CATEGORY_NAME, true);
-            _typeNameIdMapWritable.put(keyWithId, value);
 
-        }
-        public void save()
+        synchronized public void put(String key, int rowId)
         {
-            if (null != _typeNameIdMapWritable)
+            PropertyMap typeNameIdMapWritable = PropertyManager.getWritableProperties(_container, CATEGORY_NAME, true);
+
+            String keyWithId = getKeyWithId(key, rowId);
+            if (!typeNameIdMapWritable.containsKey(keyWithId))
             {
-                try
-                {
-                    _typeNameIdMapWritable.save();
-                }
-                catch (Exception e)
-                {
-                    // It's possible that two threads can attempt to save the same properties (SpecimenTest sometimes),
-                    // so ignore error; at worst we'll reconstruct these later
-                    // TODO: make a better fix that avoids the contention
-                }
+                int id = typeNameIdMapWritable.size() + 1;
+                String value = String.valueOf(id);
+                typeNameIdMapWritable.put(keyWithId, value);
+                typeNameIdMapWritable.save();
             }
+            _typeNameIdMap = typeNameIdMapWritable;
         }
-        public int size()
-        {
-            if (null != _typeNameIdMapWritable)
-                return _typeNameIdMapWritable.size();
-            return _typeNameIdMap.size();
-        }
+
         private String getKeyWithId(String key, int rowId)
         {
             return (rowId >= 0) ? key + rowId : key;
@@ -197,11 +178,6 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         addWrapColumn(_rootTable.getColumn("Visit"));
 
         _typeNameIdMapWrapper = new PropertyMapWrapper(getContainer());
-    }
-
-    protected void saveTypeNameIdMap()
-    {
-        _typeNameIdMapWrapper.save();
     }
 
     protected ColumnInfo wrapPivotColumn(ColumnInfo col, String descriptionFormat, NameLabelPair ...parts)
