@@ -54,6 +54,7 @@
         </ns:columns>
     </ns:table>
     <ns:table tableName="TestTable3" tableDbType="UNKNOWN">
+        <ns:description>This is used to test synonyms on SQL Server</ns:description>
         <ns:columns>
             <ns:column columnName="_ts"/>
             <ns:column columnName="EntityId"/>
@@ -72,6 +73,7 @@
         </ns:columns>
     </ns:table>
     <ns:table tableName="Containers2" tableDbType="UNKNOWN">
+        <ns:description>This is used to test synonyms on SQL Server</ns:description>
         <ns:columns>
             <ns:column columnName="_ts"/>
             <ns:column columnName="RowId"/>
@@ -88,12 +90,14 @@
         </ns:columns>
     </ns:table>
     <ns:table tableName="ContainerAliases2" tableDbType="UNKNOWN">
+        <ns:description>This is used to test synonyms on SQL Server</ns:description>
         <ns:columns>
             <ns:column columnName="Path"/>
             <ns:column columnName="ContainerId"/>
         </ns:columns>
     </ns:table>
     <ns:table tableName="Users2" tableDbType="UNKNOWN">
+        <ns:description>This is used to test synonyms on SQL Server</ns:description>
         <ns:columns>
             <ns:column columnName="Email"/>
             <ns:column columnName="_ts"/>
