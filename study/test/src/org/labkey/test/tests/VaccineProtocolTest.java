@@ -111,20 +111,20 @@ public class VaccineProtocolTest extends BaseWebDriverTest
 
         designer.finishEditing();
 
-        waitForText("This is a very important protocol", WAIT_FOR_JAVASCRIPT);
+        waitForText(WAIT_FOR_JAVASCRIPT, "This is a very important protocol");
 
         assertTextPresent("Immunogen3", "Fowlpox", "Immunogen3|Adjuvant1", "Pre-immunization");
 
         designer.editDesign();
 
-        waitForText("This is a very important protocol", WAIT_FOR_JAVASCRIPT);
+        waitForText(WAIT_FOR_JAVASCRIPT, "This is a very important protocol");
 
         designer.addAssayTimepoint(null, "8", null);
         designer.setAssayRequiredForTimepoint("Neutralizing Antibodies Panel 1", "8 days");
 
         designer.finishEditing();
 
-        waitForText("This is a very important protocol", WAIT_FOR_JAVASCRIPT);
+        waitForText(WAIT_FOR_JAVASCRIPT, "This is a very important protocol");
 
         clickButton("Create Study Folder");
         setFormElement(Locator.name("beginDate"), "2007-01-01");
