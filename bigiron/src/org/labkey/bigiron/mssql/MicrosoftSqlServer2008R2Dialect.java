@@ -19,6 +19,7 @@ package org.labkey.bigiron.mssql;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -52,7 +53,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -90,6 +90,8 @@ import java.util.regex.Pattern;
 // Dialect specifics for Microsoft SQL Server
 public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 {
+    private static final Logger LOG = Logger.getLogger(MicrosoftSqlServer2008R2Dialect.class);
+
     // Cache of synonyms by datasource name. This lets admins force a re-query by clearing caches.
     private static final Cache<String, Pair<Map<String, Map<String, Synonym>>, Map<String, Map<String, MultiMap<String, Synonym>>>>> SYNONYM_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.YEAR, "SQL Server synonyms", new SynonymLoader());
 
@@ -1593,7 +1595,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         Pair<DbScope, Synonym> pair = getSynonym(scope, schemaName, tableName);
 
         if (null == pair)
-            return super.getJdbcMetaDataLocator(scope, schemaName, tableName);      // Not a synonym, so return the standard locator
+            return super.getJdbcMetaDataLocator(scope, schemaName, tableName);      // Not a valid synonym, so return the standard locator
         else
             return new SynonymJdbcMetaDataLocator(pair.first, scope, pair.second);  // tableName is a synonym, so return a synonym locator
     }
@@ -1625,10 +1627,12 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
         // tableName is a synonym to an object in a different scope... find the corresponding scope so we can return it
         for (DbScope candidate : DbScope.getDbScopes())
-            if (candidate.getSqlDialect().isSqlServer() && null != candidate.getDatabaseName() && candidate.getDatabaseName().equals(synonym.getTargetDatabase()))
+            if (candidate.getSqlDialect().isSqlServer() && null != candidate.getDatabaseName() && candidate.getDatabaseName().equalsIgnoreCase(synonym.getTargetDatabase()))
                 return new Pair<>(candidate, synonym);
 
-        throw new ConfigurationException("Could not access metadata for " + synonym + ". No labkey.xml datasource is defined for the target database.");
+        LOG.error("Could not access metadata for " + synonym + ". No labkey.xml datasource is defined for the target database.");
+
+        return null;
     }
 
 
