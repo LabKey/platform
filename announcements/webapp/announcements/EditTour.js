@@ -16,7 +16,8 @@
         _labelClass = 'label',
         _inputClass = 'input',
         _textAreaRows = '10',
-        _textAreaCols = '65';
+        _textAreaCols = '65',
+        _formClean;
 
     LABKEY._tour = new function()
     {
@@ -220,8 +221,37 @@
             _generateStep(_steps++);
         }
 
+        _formClean = _serializeAll();
+        window.onbeforeunload = LABKEY.beforeunload(_isDirty);
+
         _rowId = LABKEY._tour.rowId;
     });
+
+    var _isDirty = function()
+    {
+        var _formDirty = _serializeAll();
+        if (_formDirty != _formClean)
+        {
+            return true;
+        }
+        return false;
+
+    };
+
+    var _serializeAll = function()
+    {
+        var form = $('[name="editTour"]').serialize();
+
+        form = form.concat("Mode=" + $(_idSel + "mode").val());
+        form = form.concat("Description=" + $(_idSel + "description").val());
+
+        //Code mirror values do not get serialized with form, so tack them on at end
+        for (var i = 1; i < _steps; i++)
+        {
+            form = form.concat("Step" + i + "=" + _stepHandles[_idPrefix + "step" + i].getValue());
+        }
+        return form;
+    };
 
     var _saveClose = function()
     {
@@ -358,6 +388,7 @@
 
     var _success = function(close, result)
     {
+        _formClean = _serializeAll();
         if (close)
             _cancel();
         else
