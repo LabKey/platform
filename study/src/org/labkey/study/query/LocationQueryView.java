@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -50,6 +51,9 @@ public class LocationQueryView extends QueryView
     public LocationQueryView(UserSchema schema, QuerySettings settings, @Nullable Errors errors)
     {
         super(schema, settings, errors);
+        ColumnInfo containerColumn = getTable().getColumn("Container");
+        if (null != containerColumn)
+            containerColumn.setRequired(true);
     }
 
     @Override

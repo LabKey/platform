@@ -1146,6 +1146,14 @@ public class QueryServiceImpl extends QueryService
 
         ArrayList<ColumnInfo> ret = new ArrayList<>(columns);
 
+        // Add container column if needed
+        ColumnInfo containerColumn = table.getColumn("Container");
+        if (null != containerColumn && !columnMap.containsKey(containerColumn.getFieldKey()) && containerColumn.isRequired())
+        {
+            ret.add(containerColumn);
+            columnMap.put(FieldKey.fromString("Container"), containerColumn);
+        }
+
         if (filter != null)
         {
             for (FieldKey fieldKey : filter.getWhereParamFieldKeys())

@@ -21,6 +21,11 @@ import org.labkey.api.study.StudyService;
 
 public class SimpleSpecimenTable extends AbstractSpecimenTable
 {
+    public SimpleSpecimenTable(StudyQuerySchema schema)
+    {
+        this(schema, true);
+    }
+
     public SimpleSpecimenTable(StudyQuerySchema schema, boolean skipPermissionChecks)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), skipPermissionChecks, true);

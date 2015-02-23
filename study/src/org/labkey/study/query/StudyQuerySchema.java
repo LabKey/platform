@@ -776,6 +776,38 @@ public class StudyQuerySchema extends UserSchema
         return null;
     }
 
+    @Override
+    public boolean hasUnionTable(TableInfo tableInfo)
+    {
+        return (SpecimenTable.class == tableInfo.getClass() || VialTable.class == tableInfo.getClass() ||
+                SpecimenDetailTable.class == tableInfo.getClass() || SpecimenWrapTable.class == tableInfo.getClass() ||
+                SpecimenSummaryTable.class == tableInfo.getClass() || LocationTable.class == tableInfo.getClass() ||
+                PrimaryTypeTable.class == tableInfo.getClass() || DerivativeTypeTable.class == tableInfo.getClass() ||
+                AdditiveTypeTable.class == tableInfo.getClass());
+    }
+
+    @Override
+    public TableInfo getUnionTable(TableInfo tableInfo, List<Container> containers)
+    {
+        StudyService.Service studyService = StudyService.get();
+        assert null != studyService;
+
+        if (SpecimenTable.class == tableInfo.getClass())
+            return studyService.getSpecimenTableUnion(this, containers, new HashMap<Container, SQLFragment>(), _dontAliasColumns, false);
+        if (VialTable.class == tableInfo.getClass())
+            return studyService.getVialTableUnion(this, containers);
+        if (SpecimenDetailTable.class == tableInfo.getClass())
+            return studyService.getSpecimenDetailTableUnion(this, containers, new HashMap<Container, SQLFragment>(), _dontAliasColumns, false);
+        if (SpecimenWrapTable.class == tableInfo.getClass())
+            return studyService.getSpecimenWrapTableUnion(this, containers, new HashMap<Container, SQLFragment>(), _dontAliasColumns, false);
+        if (SpecimenSummaryTable.class == tableInfo.getClass())
+            return studyService.getSpecimenSummaryTableUnion(this, containers, new HashMap<Container, SQLFragment>(), _dontAliasColumns, false);
+        if (LocationTable.class == tableInfo.getClass() || PrimaryTypeTable.class == tableInfo.getClass() ||
+                DerivativeTypeTable.class == tableInfo.getClass() || AdditiveTypeTable.class == tableInfo.getClass())
+            return studyService.getTypeTableUnion(tableInfo.getClass(), this, containers, _dontAliasColumns);
+
+        throw new IllegalStateException("Table '" + tableInfo.getName() + "' does not have a Union table.");
+    }
 
     // Simple helper to keep us consistent... try getting by name first, then by label
     private @Nullable
