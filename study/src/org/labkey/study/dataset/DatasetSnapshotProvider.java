@@ -22,6 +22,7 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -212,7 +213,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     StringBuilder sb = new StringBuilder();
                     TSVGridWriter tsvWriter = new TSVGridWriter(results);
                     tsvWriter.setApplyFormats(false);
-                    tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+                    tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
                     tsvWriter.write(sb);
 
                     try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
@@ -411,7 +412,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         StringBuilder sb = new StringBuilder();
                         TSVGridWriter tsvWriter = new TSVGridWriter(results);
                         tsvWriter.setApplyFormats(false);
-                        tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+                        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
                         tsvWriter.write(sb);
 
                         try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())

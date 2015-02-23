@@ -7446,7 +7446,7 @@ public class StudyController extends BaseStudyController
                 TSVGridWriter writer = new TSVGridWriter(rs);
                 writer.setApplyFormats(false);
                 writer.setFilenamePrefix("ParticipantTransforms");
-                writer.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+                writer.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
                 writer.write(getViewContext().getResponse()); // NOTE: TSVGridWriter closes PrintWriter and ResultSet
 
                 return null;

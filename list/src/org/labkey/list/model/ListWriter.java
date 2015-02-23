@@ -20,6 +20,7 @@ import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
@@ -157,7 +158,7 @@ public class ListWriter
                     Results rs = QueryService.get().select(ti, columns, null, sort);
                     TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns);
                     tsvWriter.setApplyFormats(false);
-                    tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+                    tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
                     PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
                     tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
 

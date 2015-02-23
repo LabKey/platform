@@ -27,6 +27,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -984,11 +985,14 @@ public class SpecimenQueryView extends BaseStudyQueryView
     }
 
     @Override
-    protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()
+    protected ColumnHeaderType getColumnHeaderType()
     {
         // Return the sort of column names that should be used in TSV export.
-        // Consider: maybe all query types should use "queryColumnName".  That has
+        // Consider: maybe all query types should use "ColumnHeaderType.DisplayFieldKey".  That has
         // dots separating foreign keys, but otherwise looks really nice.
-        return TSVGridWriter.ColumnHeaderType.caption;
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE))
+            return ColumnHeaderType.DisplayFieldKey;
+        else
+            return ColumnHeaderType.Caption;
     }
 }

@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -138,7 +139,7 @@ public class TableWriter
                     Results rs = QueryService.get().select(tableInfo, columns, null, sort);
                     TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns);
                     tsvWriter.setApplyFormats(false);
-                    tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+                    tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
                     PrintWriter out = dir.getPrintWriter(queryDef.getName() + ".tsv");
                     tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
                 }

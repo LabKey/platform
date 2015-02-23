@@ -18,6 +18,7 @@ package org.labkey.di.pipeline;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataIteratorResultsImpl;
 import org.labkey.api.data.DbScope;
@@ -251,7 +252,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             String extension = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.extension);
             File outputFile = new File(outputDir, baseName + "." + extension);
             TSVGridWriter tsv = new TSVGridWriter(new DataIteratorResultsImpl(source.getDataIterator(context)));
-            tsv.setColumnHeaderType(TSVColumnWriter.ColumnHeaderType.queryColumnName);
+            tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
 
             String specialChar = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.columnDelimiter);
             if (specialChar != null)

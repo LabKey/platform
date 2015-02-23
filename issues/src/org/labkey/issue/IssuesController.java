@@ -42,6 +42,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -337,7 +338,7 @@ public class IssuesController extends SpringActionController
                 @Override
                 protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
                 {
-                    writer.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.caption);
+                    writer.setColumnHeaderType(ColumnHeaderType.Caption);
                     writer.write(getViewContext().getResponse());
                 }
             };

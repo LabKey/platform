@@ -1443,7 +1443,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    abstract class _ExportQuery<K extends QueryForm> extends SimpleViewAction<K>
+    abstract class _ExportQuery<K extends ExportQueryForm> extends SimpleViewAction<K>
     {
         public ModelAndView getView(K form, BindException errors) throws Exception
         {
@@ -1511,9 +1511,9 @@ public class QueryController extends SpringActionController
     @Action(ActionType.Export)
     public class ExportRowsExcelAction extends _ExportQuery
     {
-        void _export(QueryForm form, QueryView view) throws Exception
+        void _export(ExportQueryForm form, QueryView view) throws Exception
         {
-            view.exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xls);
+            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xls);
         }
     }
 
@@ -1521,33 +1521,31 @@ public class QueryController extends SpringActionController
     @Action(ActionType.Export)
     public class ExportRowsXLSXAction extends _ExportQuery
     {
-        void _export(QueryForm form, QueryView view) throws Exception
+        void _export(ExportQueryForm form, QueryView view) throws Exception
         {
-            view.exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xlsx);
+            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xlsx);
         }
     }
 
-    public static class TemplateForm extends QueryForm
+    public static class TemplateForm extends ExportQueryForm
     {
-        ExcelWriter.CaptionType captionType = ExcelWriter.CaptionType.Label;
         boolean insertColumnsOnly = true;
         String filenamePrefix;
 
-        public void setCaptionType(String s)
+        public TemplateForm()
         {
-            try
-            {
-                captionType = ExcelWriter.CaptionType.valueOf(s);
-            }
-            catch (Exception x)
-            {
-
-            }
+            _headerType = ColumnHeaderType.Caption;
         }
 
-        public String getCaptionType()
+        // "captionType" field backwards compatibiilty
+        public void setCaptionType(ColumnHeaderType headerType)
         {
-            return captionType.name();
+            this._headerType = headerType;
+        }
+
+        public ColumnHeaderType getCaptionType()
+        {
+            return _headerType;
         }
 
         public String getFilenamePrefix()
@@ -1583,11 +1581,26 @@ public class QueryController extends SpringActionController
         void _export(TemplateForm form, QueryView view) throws Exception
         {
             boolean respectView = form.getViewName() != null;
-            view.exportToExcelTemplate(getViewContext().getResponse(), form.captionType, form.insertColumnsOnly, respectView, form.getFilenamePrefix());
+            view.exportToExcelTemplate(getViewContext().getResponse(), form.getHeaderType(), form.insertColumnsOnly, respectView, form.getFilenamePrefix());
         }
     }
 
-    public static class ExportRowsTsvForm extends QueryForm
+    public static class ExportQueryForm extends QueryForm
+    {
+        protected ColumnHeaderType _headerType = null; // QueryView will provide a default header type if the user doesn't select one
+
+        public ColumnHeaderType getHeaderType()
+        {
+            return _headerType;
+        }
+
+        public void setHeaderType(ColumnHeaderType headerType)
+        {
+            _headerType = headerType;
+        }
+    }
+
+    public static class ExportRowsTsvForm extends ExportQueryForm
     {
         private TSVWriter.DELIM _delim = TSVWriter.DELIM.TAB;
         private TSVWriter.QUOTE _quote = TSVWriter.QUOTE.DOUBLE;
@@ -1624,7 +1637,7 @@ public class QueryController extends SpringActionController
 
         void _export(ExportRowsTsvForm form, QueryView view) throws Exception
         {
-            view.exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage(), form.getDelim(), form.getQuote());
+            view.exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage(), form.getDelim(), form.getQuote(), form.getHeaderType());
         }
     }
 
@@ -6079,7 +6092,7 @@ public class QueryController extends SpringActionController
                         GZIPOutputStream outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
                         try (TSVGridWriter tsv = new TSVGridWriter(results))
                         {
-                            tsv.setColumnHeaderType(TSVColumnWriter.ColumnHeaderType.queryColumnName);
+                            tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey);
                             tsv.setApplyFormats(false);
                             tsv.write(outputStream);
                         }

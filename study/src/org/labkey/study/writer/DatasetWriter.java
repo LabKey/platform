@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -239,7 +240,7 @@ public class DatasetWriter implements InternalStudyWriter
     {
         TSVGridWriter tsvWriter = new TSVGridWriter(rs);
         tsvWriter.setApplyFormats(false);
-        tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
         PrintWriter out = vf.getPrintWriter(fileName);
         tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
     }

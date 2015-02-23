@@ -17,6 +17,7 @@ package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -89,7 +90,7 @@ public abstract class DefaultStudyDesignWriter
     {
         TSVGridWriter tsvWriter = new TSVGridWriter(rs);
         tsvWriter.setApplyFormats(false);
-        tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
         PrintWriter out = vf.getPrintWriter(fileName);
         tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
     }

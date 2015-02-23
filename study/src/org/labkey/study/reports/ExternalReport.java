@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TSVGridWriter;
@@ -210,7 +211,7 @@ public class ExternalReport extends AbstractReport
             }
 
             TSVGridWriter tsv = new TSVGridWriter(rs);
-            tsv.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
+            tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead
             tsv.write(dataFile);
 
             List<String> params = new LinkedList<>();

@@ -200,6 +200,10 @@ public class QueryModule extends DefaultModule
 
         AdminConsole.addExperimentalFeatureFlag(DataRegion.EXPERIMENTAL_MIGRATE_DATA_REGION, "Data Region & Query Web Part Migration",
                 "Use the ExtJS independent Data Region and Query Web Part components for all grids.", false);
+
+        AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE,
+                "Column Header Export Type",
+                "Add column header type option to the excel and tsv export panel in grids", false);
     }
 
 
