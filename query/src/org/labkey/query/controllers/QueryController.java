@@ -2219,9 +2219,9 @@ public class QueryController extends SpringActionController
                 errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
                 return false;
             }
-            catch (DataIntegrityViolationException dive)
+            catch (DataIntegrityViolationException | Table.OptimisticConflictException e)
             {
-                errors.reject(ERROR_MSG, dive.getMessage());
+                errors.reject(ERROR_MSG, e.getMessage());
                 return false;
             }
             catch (BatchValidationException x)
