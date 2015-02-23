@@ -292,9 +292,20 @@ LABKEY.Query.Visualization = new function() {
                 params.measures.push(measure);
             }
 
+            // issue 21418: support for parameterized queries
+            var urlParams = {};
+            if (config.parameters)
+            {
+                for (var propName in config.parameters)
+                {
+                    if (config.parameters.hasOwnProperty(propName))
+                        urlParams['visualization.param.' + propName] = config.parameters[propName];
+                }
+            }
+
             LABKEY.Ajax.request(
             {
-                url : LABKEY.ActionURL.buildURL("visualization", "getData", config.containerPath),
+                url : LABKEY.ActionURL.buildURL("visualization", "getData", config.containerPath, urlParams),
                 method : 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
