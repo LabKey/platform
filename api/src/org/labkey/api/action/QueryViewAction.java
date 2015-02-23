@@ -17,6 +17,7 @@
 package org.labkey.api.action;
 
 import com.drew.lang.annotations.Nullable;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.query.ExportScriptModel;
@@ -71,17 +72,17 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         _form = form;
         if (QueryAction.exportRowsExcel.name().equals(form.getExportType()))
         {
-            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xls);
+            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xls);
             return null;
         }
         if (QueryAction.exportRowsXLSX.name().equals(form.getExportType()))
         {
-            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xlsx);
+            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xlsx);
             return null;
         }
         else if (QueryAction.exportRowsTsv.name().equals(form.getExportType()))
         {
-            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage(), form.getDelim(), form.getQuote());
+            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage(), form.getDelim(), form.getQuote(), form.getHeaderType());
             return null;
         }
         else if (QueryView.EXCEL_WEB_QUERY_EXPORT_TYPE.equals(form.getExportType()))
@@ -149,6 +150,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         private boolean _exportAsWebPage;
         private TSVWriter.DELIM _delim;
         private TSVWriter.QUOTE _quote;
+        private ColumnHeaderType _headerType;
 
         public String getScriptType()
         {
@@ -217,6 +219,16 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         public void setQuote(TSVWriter.QUOTE quote)
         {
             _quote = quote;
+        }
+
+        public ColumnHeaderType getHeaderType()
+        {
+            return _headerType;
+        }
+
+        public void setHeaderType(ColumnHeaderType headerType)
+        {
+            _headerType = headerType;
         }
     }
 }

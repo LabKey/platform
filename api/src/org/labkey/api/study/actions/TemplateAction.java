@@ -55,6 +55,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause("0 = 1", new Object[]{});
 
+        // CONSIDER: Export template using FieldKey instead
         // reset all captions to the property descriptor names, since names are expected by the importer
         for (DisplayColumn dc : dr.getDisplayColumns())
             dc.setCaption(colNameToPdname.get(dc.getName()));

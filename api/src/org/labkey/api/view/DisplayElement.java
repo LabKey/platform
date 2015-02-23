@@ -129,7 +129,7 @@ public abstract class DisplayElement implements View, Cloneable
     {
         checkLocked();
         _caption = StringExpressionFactory.create(caption);
-        assert _caption.toString().equals(caption);
+        assert _caption.toString().equals(caption) : "Caption expression '" + _caption.toString() + "' doesn't match caption '" + caption + "'";
     }
 
 

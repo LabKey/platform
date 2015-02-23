@@ -59,24 +59,6 @@ import java.util.regex.Pattern;
 
 public class ExcelWriter implements ExportWriter
 {
-    public enum CaptionType
-    {
-        Name {
-            @Override
-            public String getText(ExcelColumn c)
-            {
-                return c.getName();
-            }},
-        Label {
-            @Override
-            public String getText(ExcelColumn c)
-            {
-                return c.getCaption();
-            }};
-
-        public abstract String getText(ExcelColumn c);
-    }
-
     public enum ExcelDocumentType
     {
         xls
@@ -154,7 +136,7 @@ public class ExcelWriter implements ExportWriter
     private String _filenamePrefix;
     private List<String> _headers;
     private List<String> _commentLines;
-    private CaptionType _captionType = CaptionType.Label;
+    private ColumnHeaderType _captionType = ColumnHeaderType.Caption;
     private boolean _insertableColumnsOnly = false;
     private ArrayList<ExcelColumn> _columns = new ArrayList<>(10);
     private boolean _captionRowFrozen = true;
@@ -234,7 +216,7 @@ public class ExcelWriter implements ExportWriter
     }
 
 
-    public void setCaptionType(CaptionType type)
+    public void setCaptionType(ColumnHeaderType type)
     {
         _captionType = type;
     }
@@ -811,7 +793,7 @@ public class ExcelWriter implements ExportWriter
 
     public void renderColumnCaptions(Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException
     {
-        if (!_captionRowVisible)
+        if (!_captionRowVisible || _captionType == ColumnHeaderType.None)
             return;
 
         for (int column = 0; column < visibleColumns.size(); column++)

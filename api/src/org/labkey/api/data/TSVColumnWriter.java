@@ -16,10 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.jfree.util.StringUtils;
-import org.labkey.api.exp.MvColumn;
-import org.labkey.api.query.FieldKey;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,9 +29,7 @@ import java.util.List;
  */
 public abstract class TSVColumnWriter extends TSVWriter
 {
-    public enum ColumnHeaderType {caption, propertyName, queryColumnName}
-
-    private ColumnHeaderType _columnHeaderType = ColumnHeaderType.caption;
+    private ColumnHeaderType _columnHeaderType = ColumnHeaderType.Caption;
     private boolean _applyFormats = true;
 
     public ColumnHeaderType getColumnHeaderType()
@@ -60,7 +54,8 @@ public abstract class TSVColumnWriter extends TSVWriter
 
     protected void writeColumnHeaders(RenderContext ctx, Iterable<DisplayColumn> columns)
     {
-        writeLine(getColumnHeaders(ctx, columns));
+        if (_columnHeaderType != null && _columnHeaderType != ColumnHeaderType.None)
+            writeLine(getColumnHeaders(ctx, columns));
     }
 
     protected Iterable<String> getColumnHeaders(RenderContext ctx, Iterable<DisplayColumn> columns)
@@ -70,44 +65,13 @@ public abstract class TSVColumnWriter extends TSVWriter
         {
             if (dc.isVisible(ctx))
             {
-                headers.add(getColumnHeader(dc));
+                headers.add(_columnHeaderType.getText(dc));
             }
         }
 
         return headers;
     }
 
-    protected String getColumnHeader(DisplayColumn dc)
-    {
-        switch(_columnHeaderType)
-        {
-            case queryColumnName:
-            {
-                ColumnInfo columnInfo = dc.getColumnInfo();
-                String name;
-                if (columnInfo != null)
-                {
-                    name = columnInfo.getName();
-                    // Importers don't expect "_MVIndicator"
-                    if (columnInfo.isMvIndicatorColumn() && StringUtils.endsWithIgnoreCase(name, "_" + MvColumn.MV_INDICATOR_SUFFIX))
-                        name = name.substring(0, name.length()-MvColumn.MV_INDICATOR_SUFFIX.length()-1) + MvColumn.MV_INDICATOR_SUFFIX;
-                    name = FieldKey.fromString(name).toDisplayString();
-                }
-                else
-                {
-                    name = dc.getName();
-                }
-                return name;
-            }
-
-            case propertyName:
-                return dc.getName();
-
-            default:
-            case caption:
-                return dc.getCaption(null, false);
-        }
-    }
 
     /** Get the unquoted column values. */
     protected Iterable<String> getValues(RenderContext ctx, Iterable<DisplayColumn> displayColumns)

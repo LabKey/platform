@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.annotations.RefactorIn15_1;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -100,6 +101,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class QueryView extends WebPartView<Object>
 {
     public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
+    public static final String EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE = "export-column-header-type";
     public static final String EXCEL_WEB_QUERY_EXPORT_TYPE = "excelWebQuery";
     public static final String DATAREGIONNAME_DEFAULT = "query";
 
@@ -981,12 +983,14 @@ public class QueryView extends WebPartView<Object>
         private final String _dataRegionName;
         private final String _exportRegionName;
         private final String _selectionKey;
+        private final ColumnHeaderType _headerType;
 
-        protected ExportOptionsBean(String dataRegionName, String exportRegionName, String selectionKey)
+        protected ExportOptionsBean(String dataRegionName, String exportRegionName, String selectionKey, ColumnHeaderType headerType)
         {
             _dataRegionName = dataRegionName;
             _exportRegionName = exportRegionName;
             _selectionKey = selectionKey;
+            _headerType = headerType;
         }
 
         public String getDataRegionName()
@@ -1010,6 +1014,10 @@ public class QueryView extends WebPartView<Object>
             return !selected.isEmpty();
         }
 
+        public ColumnHeaderType getHeaderType()
+        {
+            return _headerType;
+        }
     }
 
     public static class ExcelExportOptionsBean extends ExportOptionsBean
@@ -1018,9 +1026,11 @@ public class QueryView extends WebPartView<Object>
         private final ActionURL _xlsxURL;
         private final ActionURL _iqyURL;
 
-        public ExcelExportOptionsBean(String dataRegionName, String exportRegionName, String selectionKey, ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL)
+        public ExcelExportOptionsBean(
+                String dataRegionName, String exportRegionName, String selectionKey, ColumnHeaderType headerType,
+                ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL)
         {
-            super(dataRegionName, exportRegionName, selectionKey);
+            super(dataRegionName, exportRegionName, selectionKey, headerType);
             _xlsURL = xlsURL;
             _xlsxURL = xlsxURL;
             _iqyURL = iqyURL;
@@ -1047,9 +1057,11 @@ public class QueryView extends WebPartView<Object>
     {
         private final ActionURL _tsvURL;
 
-        public TextExportOptionsBean(String dataRegionName, String exportRegionName, String selectionKey, ActionURL tsvURL)
+        public TextExportOptionsBean(
+                String dataRegionName, String exportRegionName, String selectionKey, ColumnHeaderType headerType,
+                ActionURL tsvURL)
         {
-            super(dataRegionName, exportRegionName, selectionKey);
+            super(dataRegionName, exportRegionName, selectionKey, headerType);
             _tsvURL = tsvURL;
         }
 
@@ -1067,6 +1079,7 @@ public class QueryView extends WebPartView<Object>
                 getDataRegionName(),
                 getExportRegionName(),
                 getSettings().getSelectionKey(),
+                getExcelColumnHeaderType(),
                 urlFor(QueryAction.exportRowsExcel),
                 urlFor(QueryAction.exportRowsXLSX),
                 _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null
@@ -1078,7 +1091,7 @@ public class QueryView extends WebPartView<Object>
         {
             tsvURL.replaceParameter("exportAsWebPage", "true");
         }
-        TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), getSettings().getSelectionKey(), tsvURL);
+        TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), getSettings().getSelectionKey(), getColumnHeaderType(), tsvURL);
         exportButton.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", textBean));
 
         if (_allowExportExternalQuery)
@@ -1987,15 +2000,33 @@ public class QueryView extends WebPartView<Object>
     }
 
 
-    protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()
+    @RefactorIn15_1 // Switch to using ColumnHeaderType.DisplayFieldKey instead of ColumnHeaderType.Name
+    protected ColumnHeaderType getColumnHeaderType()
     {
         // Return the sort of column names that should be used in TSV export.
-        // Consider: maybe all query types should use "queryColumnName".  That has
+        // Consider: maybe all query types should use "ColumnHeaderType.DisplayFieldKey".  That has
         // dots separating foreign keys, but otherwise looks really nice.
-        return TSVGridWriter.ColumnHeaderType.propertyName;
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE))
+            return ColumnHeaderType.DisplayFieldKey;
+        else
+            return ColumnHeaderType.Name;
+    }
+
+    @RefactorIn15_1 // Remove this method and make default headers the same for tsv and excel.
+    protected ColumnHeaderType getExcelColumnHeaderType()
+    {
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE))
+            return ColumnHeaderType.DisplayFieldKey;
+        else
+            return ColumnHeaderType.Caption;
     }
 
     public TSVGridWriter getTsvWriter() throws IOException
+    {
+        return getTsvWriter(getColumnHeaderType());
+    }
+
+    protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType) throws IOException
     {
         _initializeButtonBar = false;
         DataView view = createDataView();
@@ -2010,7 +2041,7 @@ public class QueryView extends WebPartView<Object>
             Results rs = rgn.getResultSet(rc);
             TSVGridWriter tsv = new TSVGridWriter(rs, getExportColumns(rgn.getDisplayColumns()));
             tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
-            tsv.setColumnHeaderType(getColumnHeaderType());
+            tsv.setColumnHeaderType(headerType);
             return tsv;
         }
         catch (SQLException e)
@@ -2190,33 +2221,33 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToExcel(HttpServletResponse response) throws IOException
     {
-        exportToExcel(response, ExcelWriter.ExcelDocumentType.xls);
+        exportToExcel(response, getExcelColumnHeaderType(), ExcelWriter.ExcelDocumentType.xls);
     }
 
-    public void exportToExcel(HttpServletResponse response, ExcelWriter.ExcelDocumentType docType) throws IOException
+    public void exportToExcel(HttpServletResponse response, ColumnHeaderType headerType, ExcelWriter.ExcelDocumentType docType) throws IOException
     {
-        exportToExcel(response, false, ExcelWriter.CaptionType.Label, false, docType, false, null);
+        exportToExcel(response, false, headerType, false, docType, false, null);
     }
 
-    public void exportToExcelTemplate(HttpServletResponse response, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly) throws IOException
+    public void exportToExcelTemplate(HttpServletResponse response, ColumnHeaderType headerType, boolean insertColumnsOnly) throws IOException
     {
-        exportToExcelTemplate(response, captionType, insertColumnsOnly, false, null);
+        exportToExcelTemplate(response, headerType, insertColumnsOnly, false, null);
     }
 
     // Export with no data rows -- just captions
-    public void exportToExcelTemplate(HttpServletResponse response, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, boolean respectView, @Nullable String prefix) throws IOException
+    public void exportToExcelTemplate(HttpServletResponse response, ColumnHeaderType headerType, boolean insertColumnsOnly, boolean respectView, @Nullable String prefix) throws IOException
     {
-        exportToExcel(response, true, captionType, insertColumnsOnly, ExcelWriter.ExcelDocumentType.xls, respectView, prefix);
+        exportToExcel(response, true, headerType, insertColumnsOnly, ExcelWriter.ExcelDocumentType.xls, respectView, prefix);
     }
 
-    protected void exportToExcel(HttpServletResponse response, boolean templateOnly, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, ExcelWriter.ExcelDocumentType docType, boolean respectView, @Nullable String prefix) throws IOException
+    protected void exportToExcel(HttpServletResponse response, boolean templateOnly, ColumnHeaderType headerType, boolean insertColumnsOnly, ExcelWriter.ExcelDocumentType docType, boolean respectView, @Nullable String prefix) throws IOException
     {
         _exportView = true;
         TableInfo table = getTable();
         if (table != null)
         {
             ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView) : getExcelWriter(docType);
-            ew.setCaptionType(captionType);
+            ew.setCaptionType(headerType);
             ew.setShowInsertableColumnsOnly(insertColumnsOnly);
             if (prefix != null)
                 ew.setFilenamePrefix(prefix);
@@ -2237,7 +2268,7 @@ public class QueryView extends WebPartView<Object>
             try (OutputStream stream = new BufferedOutputStream(byteStream))
             {
                 ExcelWriter ew = getExcelWriter(ExcelWriter.ExcelDocumentType.xls);
-                ew.setCaptionType(ExcelWriter.CaptionType.Label);
+                ew.setCaptionType(getExcelColumnHeaderType());
                 ew.setShowInsertableColumnsOnly(false);
                 ew.write(stream);
                 stream.flush();
@@ -2253,25 +2284,25 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToTsv(HttpServletResponse response) throws IOException
     {
-        exportToTsv(response, false, TSVWriter.DELIM.TAB, TSVWriter.QUOTE.DOUBLE);
+        exportToTsv(response, false, TSVWriter.DELIM.TAB, TSVWriter.QUOTE.DOUBLE, getColumnHeaderType());
     }
 
-    public void exportToTsv(final HttpServletResponse response, final boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote) throws IOException
+    public void exportToTsv(final HttpServletResponse response, final boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType) throws IOException
     {
         _exportView = true;
         TableInfo table = getTable();
 
         if (table != null)
         {
-            int rowCount = doExport(response, isExportAsWebPage, delim, quote);
+            int rowCount = doExport(response, isExportAsWebPage, delim, quote, headerType);
             logAuditEvent("Exported to TSV", rowCount);
         }
     }
 
 
-    private int doExport(HttpServletResponse response, boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote) throws IOException
+    private int doExport(HttpServletResponse response, boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType) throws IOException
     {
-        TSVGridWriter tsv = getTsvWriter();
+        TSVGridWriter tsv = getTsvWriter(headerType);
         tsv.setExportAsWebPage(isExportAsWebPage);
         tsv.setDelimiterCharacter(delim);
         tsv.setQuoteCharacter(quote);

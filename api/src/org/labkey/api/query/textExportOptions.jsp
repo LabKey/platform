@@ -23,12 +23,17 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.data.ColumnHeaderType" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
+    QueryView.TextExportOptionsBean model = (QueryView.TextExportOptionsBean)HttpView.currentModel();
+
     String guid = GUID.makeGUID();
     String delimGUID = "delim_" + guid;
     String quoteGUID = "quote_" + guid;
+    String headerGUID = "header_" + guid;
     String exportSelectedId = "exportSelected_" + guid;
     String exportButtonId = "export_" + guid;
 
@@ -42,7 +47,15 @@
     quoteMap.put(TSVWriter.QUOTE.DOUBLE.name(), "Double (" + TSVWriter.QUOTE.DOUBLE.quoteChar + ")");
     quoteMap.put(TSVWriter.QUOTE.SINGLE.name(), "Single (" + TSVWriter.QUOTE.SINGLE.quoteChar + ")");
 
-    QueryView.TextExportOptionsBean model = (QueryView.TextExportOptionsBean)HttpView.currentModel();
+    Map<ColumnHeaderType, String> headerMap = new LinkedHashMap<>();
+    headerMap.put(ColumnHeaderType.None, ColumnHeaderType.None.getOptionText());
+    headerMap.put(ColumnHeaderType.Caption, ColumnHeaderType.Caption.getOptionText());
+    // Don't include Name by default since Caption of DisplayFieldKey are better defaults
+    if (model.getHeaderType() == ColumnHeaderType.Name)
+        headerMap.put(ColumnHeaderType.Name, ColumnHeaderType.Name.getOptionText());
+    headerMap.put(ColumnHeaderType.DisplayFieldKey, ColumnHeaderType.DisplayFieldKey.getOptionText());
+    headerMap.put(ColumnHeaderType.FieldKey, ColumnHeaderType.FieldKey.getOptionText());
+
     boolean hasSelected = model.hasSelected(getViewContext());
     String exportRegionName = model.getExportRegionName();
     String DRNamespace = DataRegion.useExperimentalDataRegion() ? "LABKEY.DataRegion2" : "LABKEY.DataRegion";
@@ -64,6 +77,20 @@
             </select>
         </td>
     </tr>
+    <% if (AppProps.getInstance().isExperimentalFeatureEnabled(QueryView.EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE)) { %>
+    <tr>
+        <td><label>Column headers:</label></td>
+        <td>
+            <select id="<%=text(headerGUID)%>" name="headerType">
+                <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
+            </select>
+        </td>
+    </tr>
+    <% } else { %>
+    <tr style="display:none"><td>
+    <input id="<%=text(headerGUID)%>" name="headerType" value="<%=h(model.getHeaderType().toString())%>">
+    </td></tr>
+    <% } %>
     <tr><td colspan="2"></td></tr>
     <tr>
         <td valign="center" colspan="2">
@@ -82,7 +109,8 @@
             var delimEl = $("#<%=h(delimGUID)%>"),
                 quoteEl = $("#<%=h(quoteGUID)%>"),
                 exportSelectedEl = $("#<%=h(exportSelectedId)%>"),
-                exportSelectedLabelEl = $("#<%=h(exportSelectedId + "_label")%>");
+                exportSelectedLabelEl = $("#<%=h(exportSelectedId + "_label")%>"),
+                headerEl = $("#<%=h(headerGUID)%>");
 
             var doTsvExport = function() {
                 var exportRegionName = <%=PageFlowUtil.jsString(exportRegionName)%>;
@@ -98,7 +126,9 @@
                     url = url + '&' + exportRegionName + '.selectionKey=' + dr.selectionKey;
                 }
 
-                url = url + '&delim=' + delimEl.value + '&quote=' + quoteEl.value;
+                url = url + '&delim=' + delimEl.val() + '&quote=' + quoteEl.val();
+                if (headerEl && headerEl.val())
+                    url = url + '&headerType=' + headerEl.val();
 
                 dr.addMessage({
                     html: '<div class=\"labkey-message\"><strong>Text export started.</strong></div>',

@@ -1504,7 +1504,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         if (templates.size() == 0)
         {
             ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
-            url.addParameter("captionType", ExcelWriter.CaptionType.Name.name());
+            url.addParameter("headerType", ColumnHeaderType.Name.name()); // CONSIDER: Use DisplayFieldKey instead
             if(url != null)
                 templates.add(Pair.of("Download Template", url.toString()));
         }

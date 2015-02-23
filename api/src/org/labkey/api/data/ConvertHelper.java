@@ -113,10 +113,14 @@ public class ConvertHelper implements PropertyEditorRegistrar
         @Override
         public Converter lookup(Class clazz)
         {
+            Converter c = super.lookup(clazz);
+            if (c != null)
+                return c;
+
             if (clazz != null && clazz.isEnum())
                 return _enumConverter;
 
-            return super.lookup(clazz);
+            return null;
         }
     }
 
@@ -177,6 +181,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new FieldKey.Converter(), FieldKey.class);
         _register(new JSONTypeConverter(), JSONObject.class);
         _register(new ShortURLRecordConverter(), ShortURLRecord.class);
+        _register(new ColumnHeaderType.Converter(), ColumnHeaderType.class);
     }
 
 
@@ -792,7 +797,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 }
                 // That's OK, not an ordinal value for the enum
                 catch (NumberFormatException ignored) {}
-                throw e;
+
+                throw new ConversionException(e);
             }
         }
     }

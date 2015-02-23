@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -409,7 +410,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         }
 
         TSVGridWriter tsv = new TSVGridWriter(r, dataColumns);
-        tsv.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
+        tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead
 
         return tsv;
     }

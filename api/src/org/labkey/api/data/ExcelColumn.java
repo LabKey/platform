@@ -420,10 +420,10 @@ public class ExcelColumn extends RenderColumn
         return row;
     }
 
-    protected void renderCaption(Sheet sheet, int rowNumber, int column, CellStyle cellFormat, ExcelWriter.CaptionType captionType)
+    protected void renderCaption(Sheet sheet, int rowNumber, int column, CellStyle cellFormat, ColumnHeaderType headerType)
     {
         Cell cell = getRow(sheet, rowNumber).createCell(column);
-        cell.setCellValue(captionType.getText(this));
+        cell.setCellValue(headerType.getText(this.getDisplayColumn()));
         cell.setCellStyle(cellFormat);
     }
 

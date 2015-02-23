@@ -172,9 +172,9 @@ public class ResultsQueryView extends AssayBaseQueryView
         }
     }
 
-    protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()
+    protected ColumnHeaderType getColumnHeaderType()
     {
-        return TSVGridWriter.ColumnHeaderType.caption;
+        return ColumnHeaderType.Caption;
     }
 
     public static class ResultsDataRegion extends DataRegion
