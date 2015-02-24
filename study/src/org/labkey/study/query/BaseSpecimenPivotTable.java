@@ -120,9 +120,8 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
 
     private class PropertyMapWrapper
     {
-        private PropertyMap _typeNameIdMapWritable = null;
-        private Map<String, String> _typeNameIdMap = null;
-        private Container _container = null;
+        private Map<String, String> _typeNameIdMap;
+        final private Container _container;
 
         public PropertyMapWrapper(Container container)
         {
@@ -140,19 +139,22 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
             return _typeNameIdMap.get(keyWithId);
         }
 
-        synchronized public void put(String key, int rowId)
+        public void put(String key, int rowId)
         {
-            PropertyMap typeNameIdMapWritable = PropertyManager.getWritableProperties(_container, CATEGORY_NAME, true);
-
-            String keyWithId = getKeyWithId(key, rowId);
-            if (!typeNameIdMapWritable.containsKey(keyWithId))
+            synchronized (_container)
             {
-                int id = typeNameIdMapWritable.size() + 1;
-                String value = String.valueOf(id);
-                typeNameIdMapWritable.put(keyWithId, value);
-                typeNameIdMapWritable.save();
+                PropertyMap typeNameIdMapWritable = PropertyManager.getWritableProperties(_container, CATEGORY_NAME, true);
+
+                String keyWithId = getKeyWithId(key, rowId);
+                if (!typeNameIdMapWritable.containsKey(keyWithId))
+                {
+                    int id = typeNameIdMapWritable.size() + 1;
+                    String value = String.valueOf(id);
+                    typeNameIdMapWritable.put(keyWithId, value);
+                    typeNameIdMapWritable.save();
+                    _typeNameIdMap = PropertyManager.getProperties(_container, CATEGORY_NAME);
+                }
             }
-            _typeNameIdMap = typeNameIdMapWritable;
         }
 
         private String getKeyWithId(String key, int rowId)
