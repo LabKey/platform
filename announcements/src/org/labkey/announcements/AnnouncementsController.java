@@ -62,6 +62,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.digest.DailyMessageDigest;
@@ -69,6 +70,7 @@ import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
@@ -804,6 +806,16 @@ public class AnnouncementsController extends SpringActionController
             catch (IOException e)
             {
                 errors.reject(ERROR_MSG, "Your changes have been saved, though some file attachments were not:");
+                errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+            }
+            catch (RuntimeValidationException e)
+            {
+                errors.reject(ERROR_MSG, "There was an issue with inserting the announcment:");
+                errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+            }
+            catch (NullPointerException e)
+            {
+                errors.reject(ERROR_MSG, "There was an issue with inserting the announcment:");
                 errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
             }
 
