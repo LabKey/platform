@@ -138,11 +138,14 @@ LABKEY.Utils = new function(impl, $) {
      * @param msg
      */
     impl.alert = function(title, msg) {
-        if (LABKEY.Utils.isFunction(window['sweetAlert'])) {
-            sweetAlert(title, msg, 'error');
+        if (Ext4) {
+            Ext4.Msg.alert(title, msg);
+        }
+        else if (Ext) {
+            Ext.Msg.alert(title, msg);
         }
         else {
-            console.error(title + ":", msg);
+            alert(title + ' : ' + msg);
         }
     };
 

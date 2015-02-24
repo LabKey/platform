@@ -1633,8 +1633,6 @@ public class PageFlowUtil
 
         F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
 
-        F.format(link, AppProps.getInstance().getContextPath() + "/internal/jQuery/sweet-alert.css");
-
         ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
         if (!c.isRoot())

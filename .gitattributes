@@ -8088,16 +8088,12 @@ internal/webapp/internal/jQuery/jquery-1.11.2.js -text
 internal/webapp/internal/jQuery/jquery-1.11.2.min.js -text
 internal/webapp/internal/jQuery/jquery-dateFormat.js -text
 internal/webapp/internal/jQuery/jquery-dateFormat.min.js -text
-internal/webapp/internal/jQuery/sweet-alert.css -text
-internal/webapp/internal/jQuery/sweet-alert.min.js -text
 internal/webapp/js_color_picker_v2.css -text
 internal/webapp/js_color_picker_v2.js -text
 internal/webapp/labkey.js -text
 internal/webapp/miniprofiler.lib.xml -text
 internal/webapp/mothership.js -text
 internal/webapp/nav/betanav.css -text
-internal/webapp/query/column.gif -text
-internal/webapp/query/expressionColumn.gif -text
 internal/webapp/slider/css/boxsizing.htc -text
 internal/webapp/slider/css/handle.horizontal.hover.png -text
 internal/webapp/slider/css/handle.horizontal.png -text

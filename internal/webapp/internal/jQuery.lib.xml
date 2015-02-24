@@ -4,6 +4,5 @@
         <script path="internal/jQuery/jquery-1.11.2.min.js" mode="production"/>
         <script path="internal/jQuery/jquery-dateFormat.js" mode="dev"/>
         <script path="internal/jQuery/jquery-dateFormat.min.js" mode="production"/>
-        <script path="internal/jQuery/sweet-alert.min.js" />
     </library>
 </libraries>
