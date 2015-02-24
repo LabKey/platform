@@ -1332,7 +1332,7 @@ public class SimpleFilter implements Filter
             if (clause instanceof CompareClause)
             {
                 CompareClause compClause = (CompareClause) clause;
-                if (compClause.getComparison() == CompareType.EQUAL &&
+                if (compClause.getCompareType() == CompareType.EQUAL &&
                         compClause.getFieldKeys().size() == 1 &&
                         CONTAINER_FIELD_KEY.equals(compClause.getFieldKeys().get(0)))
                     return true;

@@ -242,29 +242,12 @@ public class ConditionalFormat extends GWTConditionalFormat
                 for (SimpleFilter.FilterClause filterClause : simpleFilter.getClauses())
                 {
                     ConditionalFormatFilterType xmlFilter = xmlFormat.getFilters().addNewFilter();
-                    if (filterClause instanceof CompareType.CompareClause)
+
+                    if (filterClause instanceof CompareType.AbstractCompareClause)
                     {
-                        CompareType.CompareClause compareClause = (CompareType.CompareClause) filterClause;
-                        xmlFilter.setOperator(compareClause.getComparison().getXmlType());
-                        Object[] paramValues = compareClause.getParamVals();
-                        if (paramValues != null && paramValues.length > 0 && paramValues[0] != null)
-                        {
-                            xmlFilter.setValue(paramValues[0].toString());
-                        }
-                    }
-                    else if (filterClause instanceof SimpleFilter.MultiValuedFilterClause)
-                    {
-                        SimpleFilter.MultiValuedFilterClause multiValuedFilterClause = (SimpleFilter.MultiValuedFilterClause) filterClause;
-                        xmlFilter.setOperator(multiValuedFilterClause.getCompareType().getXmlType());
-                        StringBuilder values = new StringBuilder();
-                        String separator = "";
-                        for (Object inValue : multiValuedFilterClause.getParamVals())
-                        {
-                            values.append(separator);
-                            separator = ";";
-                            values.append(inValue == null ? "" : inValue.toString());
-                        }
-                        xmlFilter.setValue(values.toString());
+                        CompareType.AbstractCompareClause compareClause = (CompareType.AbstractCompareClause)filterClause;
+                        xmlFilter.setOperator(compareClause.getCompareType().getXmlType());
+                        xmlFilter.setValue(compareClause.toURLParamValue());
                     }
                     else
                     {

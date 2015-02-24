@@ -915,15 +915,10 @@ public enum CompareType
             return fragment;
         }
 
-        public CompareType getComparison()
-        {
-            return _comparison;
-        }
-
         @Override
         public boolean meetsCriteria(Object value)
         {
-            return getComparison().meetsCriteria(value, getParamVals());
+            return getCompareType().meetsCriteria(value, getParamVals());
         }
     }
 

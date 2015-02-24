@@ -118,7 +118,7 @@ public abstract class ExportScriptModel
 
             //two kinds of clauses can be used on URLs: CompareClause and MultiValuedFilterClause
             if (clause instanceof CompareType.CompareClause)
-                operator = ((CompareType.CompareClause)clause).getComparison();
+                operator = ((CompareType.CompareClause)clause).getCompareType();
             else if (clause instanceof SimpleFilter.ContainsOneOfClause)
                 operator = clause.isNegated() ? CompareType.CONTAINS_NONE_OF : CompareType.CONTAINS_ONE_OF;
             else if (clause instanceof SimpleFilter.InClause)
