@@ -34,11 +34,12 @@ Ext4.define('LABKEY.sqv.Model', {
                 {name : 'isUserDefined', type : 'boolean'},
                 {name : 'title',         type : 'string', sortType: 'asUCString'},
                 {name : 'name',          type : 'string', sortType: 'asUCString'},
-                {name : 'label',         type : 'string', sortType: 'asUCString', convert: function(value, record){
-                    if (record.data.title != null && record.data.title != '')
-                        return record.data.name != record.data.title ? record.data.name + ' (' + record.data.title + ')' : record.data.title;
-                    else
-                        return record.data.name;
+                {name : 'label',         type : 'string', sortType: 'asUCString', convert: function(value, record) {
+                    var data = record.data;
+                    if (!Ext4.isEmpty(data.title)) {
+                        return data.name != data.title ? data.name + ' (' + data.title + ')' : data.title;
+                    }
+                    return data.name;
                 }},
                 {name : 'viewDataURL',   type : 'string'},
                 {name : 'listId',        type : 'string'}
@@ -345,11 +346,11 @@ Ext4.define('LABKEY.sqv.Model', {
         return config;
     },
 
-    onContainerChange : function (newValue, oldValue) {
+    onContainerChange : function (newValue/*, oldValue*/) {
         this.changeSchemaStore(newValue);
     },
 
-    onSchemaChange : function (newValue, oldValue) {
+    onSchemaChange : function (newValue/*, oldValue*/) {
         var containerId = null;
         if (this.containerCombo) {
             containerId = this.containerCombo.getValue();
@@ -363,7 +364,7 @@ Ext4.define('LABKEY.sqv.Model', {
         }
     },
 
-    onQueryChange : function (newValue, oldValue) {
+    onQueryChange : function (newValue/*, oldValue*/) {
         var containerId = null;
         if (this.containerCombo) {
             containerId = this.containerCombo.getValue();
@@ -405,13 +406,11 @@ Ext4.define('LABKEY.sqv.Model', {
                 containerPath: selectedContainerId,
                 success : function (schemasInfo) {
                     this.schemaCombo.setLoading(false);
-                    var schemaData = schemasInfo,
-                        arrayedData = [];
-                    for (var i = 0; i < schemaData.schemas.length; i++) {
-                        arrayedData.push({"schema" : schemaData.schemas[i]});
+                    var schemas = [];
+                    for (var i = 0; i < schemasInfo.schemas.length; i++) {
+                        schemas.push({schema : schemasInfo.schemas[i]});
                     }
-                    schemaData = arrayedData;
-                    this.schemaStore.loadData(arrayedData);
+                    this.schemaStore.loadData(schemas);
                     this.setComboValues(this.schemaCombo, currentSchema);
                     this.schemaCombo.setDisabled(false);
                     this.schemaCombo.fireEvent('dataloaded', this.schemaCombo);
@@ -479,7 +478,7 @@ Ext4.define('LABKEY.sqv.Model', {
                 containerPath: selectedContainerId,
                 schemaName : selectedSchema,
                 queryName : selectedQuery,
-                successCallback : function (details) {
+                success : function (details) {
                     this.viewCombo.setLoading(false);
                     var filteredViews = [];
                     for (var i = 0; i < details.views.length; i++) {
@@ -509,7 +508,7 @@ Ext4.define('LABKEY.sqv.Model', {
 
     // Sets the values on a combobox if a corresponding record is found in the store.
     setComboValues : function (combo, values) {
-        if (values !== undefined) {
+        if (Ext4.isDefined(values)) {
             if (combo.multiSelect) {
                 if (Ext4.isString(values))
                     values = values.split(",");
@@ -528,13 +527,11 @@ Ext4.define('LABKEY.sqv.Model', {
                                 records.push(combo.store.getAt(idx));
                         }
                         combo.setValue(records);
-                        //combo.fireEvent('select', combo);
                     }
                 }
             }
             else if (combo.store.getById(values)) {
                 combo.setValue(values);
-                //combo.fireEvent('select', combo);
             }
         }
     }
@@ -544,20 +541,17 @@ Ext4.define('LABKEY.sqv.Model', {
 Ext4.define('LABKEY.sqv.Picker', {
     extend : 'Ext.Panel',
 
-    constructor : function (config) {
-        this.border = false;
-        this.callParent([config]);
-    },
+    border: false,
 
     initComponent : function () {
 
         var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
 
-        var schemaCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeSchemaComboConfig({}));
-        var queryCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({}));
-        var viewCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeViewComboConfig({}));
-
-        this.items = [schemaCombo, queryCombo, viewCombo];
+        this.items = [
+            Ext4.create('Ext.form.field.ComboBox', sqvModel.makeSchemaComboConfig({})),
+            Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({})),
+            Ext4.create('Ext.form.field.ComboBox', sqvModel.makeViewComboConfig({}))
+        ];
 
         this.callParent();
     }

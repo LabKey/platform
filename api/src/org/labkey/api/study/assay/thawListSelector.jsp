@@ -83,7 +83,9 @@
             id : 'thawListContainer',
             fieldLabel: 'Folder',
             value: <%= text(container == null ? "null" : PageFlowUtil.jsString(container.getPath())) %>,
-            width: 500
+            width: 500,
+            typeAhead: true,
+            forceSelection: true
         }));
 
         var schemaCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeSchemaComboConfig({
