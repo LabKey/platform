@@ -178,13 +178,13 @@ public class StudyService
 
         ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
 
-        TableInfo getSpecimenTableUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
-        TableInfo getSpecimenTableUnion(QuerySchema from, List<Container> containers);
-        TableInfo getVialTableUnion(QuerySchema from, List<Container> containers);
-        TableInfo getSpecimenDetailTableUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
-        TableInfo getSpecimenWrapTableUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
-        TableInfo getSpecimenSummaryTableUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
-        TableInfo getTypeTableUnion(Class<? extends TableInfo> tableClass, QuerySchema qsDefault, List<Container> containers, boolean dontAliasColumns);
+        TableInfo getSpecimenTableUnion(QuerySchema qsDefault, Set<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
+        TableInfo getSpecimenTableUnion(QuerySchema from, Set<Container> containers);
+        TableInfo getVialTableUnion(QuerySchema from, Set<Container> containers);
+        TableInfo getSpecimenDetailTableUnion(QuerySchema qsDefault, Set<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
+        TableInfo getSpecimenWrapTableUnion(QuerySchema qsDefault, Set<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
+        TableInfo getSpecimenSummaryTableUnion(QuerySchema qsDefault, Set<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
+        TableInfo getTypeTableUnion(Class<? extends TableInfo> tableClass, QuerySchema qsDefault, Set<Container> containers, boolean dontAliasColumns);
 
         /**
          * Register an implementation of a reload source. A StudyReloadSource is a potential source for

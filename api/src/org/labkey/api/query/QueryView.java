@@ -2448,16 +2448,26 @@ public class QueryView extends WebPartView<Object>
             {
                 // If table has a Union version, apply the filter to the Union
                 UserSchema userSchema = _table.getUserSchema();
-                if (ContainerFilter.Type.Current != filter.getType() && null != userSchema && userSchema.hasUnionTable(_table))
+                if (ContainerFilter.Type.Current != filter.getType() && null != userSchema && ((ContainerFilterable)_table).hasUnionTable())
                 {
-                    Collection<GUID> containerIds = filter.getIds(getContainer());
-                    if (null != containerIds)
+                    Set<Container> containers = new HashSet<>();
+                    if (ContainerFilter.Type.AllFolders != filter.getType())
                     {
-                        List<Container> containers = new ArrayList<>();
-                        for (GUID id : containerIds)
-                            containers.add(ContainerManager.getForId(id));
-                        _table = userSchema.getUnionTable(_table, containers);
+                        Collection<GUID> containerIds = filter.getIds(getContainer());
+                        if (null != containerIds)
+                        {
+                            for (GUID id : containerIds)
+                                containers.add(ContainerManager.getForId(id));
+                        }
                     }
+                    else
+                    {
+                        containers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+                    }
+
+                    if (!containers.isEmpty())
+                        _table = userSchema.getUnionTable(_table, containers);
+
                 }
                 else
                 {

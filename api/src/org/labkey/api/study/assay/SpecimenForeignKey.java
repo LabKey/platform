@@ -236,7 +236,10 @@ public class SpecimenForeignKey extends LookupForeignKey
         List<Container> list = _containerList;
         if (null == _containerList || _containerList.isEmpty())
             list = Collections.singletonList(_defaultTargetContainer);
-        TableInfo vialTableInfo = StudyService.get().getVialTableUnion(studySchema, list);
+        Set<Container> containerSet = new HashSet<>();
+        for (Container container : list)
+            containerSet.add(container);
+        TableInfo vialTableInfo = StudyService.get().getVialTableUnion(studySchema, containerSet);
         return vialTableInfo;
     }
 
@@ -248,7 +251,10 @@ public class SpecimenForeignKey extends LookupForeignKey
         List<Container> list = _containerList;
         if (null == _containerList || _containerList.isEmpty())
             list = Collections.singletonList(_defaultTargetContainer);
-        TableInfo specimenTableInfo = StudyService.get().getSpecimenTableUnion(studySchema, list);
+        Set<Container> containerSet = new HashSet<>();
+        for (Container container : list)
+            containerSet.add(container);
+        TableInfo specimenTableInfo = StudyService.get().getSpecimenTableUnion(studySchema, containerSet);
         return specimenTableInfo;
     }
 

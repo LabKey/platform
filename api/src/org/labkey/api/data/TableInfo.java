@@ -454,6 +454,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     public boolean isLocked();
 
     public boolean supportsContainerFilter();
+    public boolean hasUnionTable();
 
     /**
      * Returns a ContainerContext for this table or null if ContainerContext is not supported.

@@ -1471,6 +1471,12 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     }
 
     @Override
+    public boolean hasUnionTable()
+    {
+        return false;
+    }
+
+    @Override
     public String getImportMessage()
     {
         return _importMsg;

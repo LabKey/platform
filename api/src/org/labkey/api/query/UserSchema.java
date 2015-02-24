@@ -641,12 +641,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
     // The schema for any table that has a Union version should override these
-    public boolean hasUnionTable(TableInfo tableInfo)
-    {
-        return false;
-    }
-
-    public TableInfo getUnionTable(TableInfo tableInfo, List<Container> containers)
+    public TableInfo getUnionTable(TableInfo tableInfo, Set<Container> containers)
     {
         return tableInfo;
     }

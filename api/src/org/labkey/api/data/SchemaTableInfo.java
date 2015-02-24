@@ -989,6 +989,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
+    public boolean hasUnionTable()
+    {
+        return false;
+    }
+
+    @Override
     public String getImportMessage()
     {
         return _importMsg;
