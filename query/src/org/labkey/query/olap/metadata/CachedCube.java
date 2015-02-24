@@ -825,7 +825,12 @@ public class CachedCube extends MetadataElementBase implements Cube
             {
                 T t = get(i);
                 Integer prev = indexMap.put(getName(t), i);
-                assert null == prev : getName(t) + " found twice" ;
+                if (null != prev)
+                {
+                    throw new IllegalStateException("Found cube member with duplicate name: " + getName(t) + "\n" +
+                            "This is likely due to a misconfiguration of the cube definition involving 'column', 'nameColumn', and 'ordinalColumn'"
+                        );
+                }
             }
             assert indexMap.size() == this.size();
         }

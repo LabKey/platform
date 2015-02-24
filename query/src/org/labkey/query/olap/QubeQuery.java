@@ -216,7 +216,20 @@ public class QubeQuery
     }
 
 
+
     Member _getMember(String memberUniqueName, Hierarchy h, Level l) throws OlapException
+    {
+        Member m = _getMemberInner(memberUniqueName, h, l);
+        if (null == m)
+            return null;
+        // Don't allow selection of hidden measures
+        if (m.getMemberType() == Member.Type.MEASURE && m.getName().startsWith("_"))
+            return null;
+        return m;
+    }
+
+
+    Member _getMemberInner(String memberUniqueName, Hierarchy h, Level l) throws OlapException
     {
         Object mde = uniqueNameMap.get(memberUniqueName);
         if (mde instanceof Member)
