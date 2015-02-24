@@ -357,7 +357,7 @@ public class ModuleLoader implements Filter
         initializeAndPruneModules();
 
         // Clear the map to remove schemas associated with modules that failed to load
-        _schemaNameToSchemaDetails.clear();
+        clearAllSchemaDetails();
 
         // Now that the core module is upgraded, upgrade the "labkey" schema in all module-required external data sources
         // to match the core module version. Each external data source records their upgrade scripts and versions their
@@ -1296,7 +1296,7 @@ public class ModuleLoader implements Filter
         // Finally, fire the startup complete event
         ContextListener.moduleStartupComplete(_servletContext);
 
-        _schemaNameToSchemaDetails.clear();
+        clearAllSchemaDetails();
         setStartupState(StartupState.StartupComplete);
         setStartingUpMessage("Module startup complete");
     }

@@ -40,7 +40,6 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -295,26 +294,12 @@ public class SqlScriptExecutor
                 dix.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
 
                 // TARGET TABLE
+                // Make sure cached database meta data reflects all previously executed SQL
+                CacheManager.clearAllKnownCaches();
                 DbSchema schema = DbSchema.get(_schemaName, DbSchemaType.Bare);
                 TableInfo dbTable = schema.getTable(_tableName);
                 if (null == dbTable)
-                {
-                    // If the table was created in the same set of upgrades as the bulk import, it won't be in the schema's
-                    // table cache yet.
-                    try
-                    {
-                        DbScope scope = schema.getScope();
-                        scope.invalidateSchema(schema);
-                        schema = new DbSchema(_schemaName, DbSchemaType.Bare, scope, DbSchema.loadTableNames(scope, _schemaName));
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new IllegalStateException("Unable to retrieve table metadata for schema: " + _schemaName);
-                    }
-                    dbTable = schema.getTable(_tableName);
-                    if (null == dbTable) // if its still null, the table really doesn't exist
-                        throw new IllegalStateException("Table not found for data loading: " + _schemaName + "." + _tableName);
-                }
+                    throw new IllegalStateException("Table not found for data loading: " + _schemaName + "." + _tableName);
 
                 for (ColumnInfo col : dbTable.getColumns())
                 {
