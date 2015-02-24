@@ -247,7 +247,9 @@ public class ConditionalFormat extends GWTConditionalFormat
                     {
                         CompareType.AbstractCompareClause compareClause = (CompareType.AbstractCompareClause)filterClause;
                         xmlFilter.setOperator(compareClause.getCompareType().getXmlType());
-                        xmlFilter.setValue(compareClause.toURLParamValue());
+                        String value = compareClause.toURLParamValue();
+                        if (value != null)
+                            xmlFilter.setValue(value);
                     }
                     else
                     {
