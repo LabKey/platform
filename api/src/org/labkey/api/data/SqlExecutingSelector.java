@@ -323,7 +323,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             }
             catch (SQLException outer)
             {
-                if (scope.isTransactionActive() || !SqlDialect.isTransactionException(outer))
+                if (conn.isClosed() || !conn.getAutoCommit() || scope.isTransactionActive() || !SqlDialect.isTransactionException(outer))
                     throw outer;
                 // retry if simple transaction exception
                 try
