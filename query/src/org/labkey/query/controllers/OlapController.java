@@ -583,7 +583,11 @@ public class OlapController extends SpringActionController
                 ViewContext ctx = getViewContext();
                 HttpServletResponse response = ctx.getResponse();
                 String key = ctx.getContainer().getId() + ":" + sql;
-//                byte[] bytes = resultsCache.get(key, form, new MDXCacheLoader());
+
+                // to understand why one might need to double query Mondrian...
+                // see 22479: Inconsistent aggregate results when querying MetricAdherence cube
+                // see http://jira.pentaho.com/browse/MONDRIAN-2296
+                new MDXCacheLoader().load(key,form);
                 byte[] bytes = new MDXCacheLoader().load(key,form);
 
                 response.setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
@@ -627,12 +631,12 @@ public class OlapController extends SpringActionController
                 stmt = conn.createStatement();
                 String query = form.getQuery();
                 QueryProfiler.getInstance().ensureListenerEnvironment();
-                Logger.getLogger(this.getClass()).debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n" + query);
+                OlapController._log.debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n" + query);
                 long ms = System.currentTimeMillis();
                 cs = stmt.executeOlapQuery(query);
                 long d = System.currentTimeMillis() - ms;
                 QueryProfiler.getInstance().track(null, "-- MDX\n" + query + sd.getQueryTag(), null, d, null, true, QueryLogging.emptyQueryLogging());
-                Logger.getLogger(this.getClass()).debug("\nEND executeOlapQuery: " + DateUtil.formatDuration(d) + " --------------------------    --------------------------    --------------------------\n");
+                OlapController._log.debug("\nEND executeOlapQuery: " + DateUtil.formatDuration(d) + " --------------------------    --------------------------    --------------------------\n");
 
                 StringWriter sw = new StringWriter();
                 Olap4Js.convertCellSet(cs, sw);
