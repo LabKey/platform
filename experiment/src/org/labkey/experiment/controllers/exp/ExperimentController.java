@@ -199,6 +199,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -3535,7 +3536,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (NumberFormatException e)
             {
-                throw new NotFoundException(dataIds.toString());
+                throw new NotFoundException(Arrays.toString(dataIds));
             }
         }
     }
