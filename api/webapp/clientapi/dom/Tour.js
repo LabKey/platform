@@ -379,12 +379,12 @@
             var tour = _get(id);
             if (tour)
                 _display(tour, step);
-        }
+        };
 
         var showFromDb = function(id, step)
         {
             _load(id,step);
-        }
+        };
 
         LABKEY.Utils.onReady(_init);
 
