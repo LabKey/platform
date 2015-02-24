@@ -141,6 +141,8 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             public int compare(PipelineAction action1, PipelineAction action2)
             {
                 int rc;
+                if (action1.equals(action2))
+                    return 0;
                 File[] files1 = action1.getFiles();
                 File[] files2 = action2.getFiles();
                 if (files1 == files2)
