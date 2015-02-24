@@ -23,7 +23,7 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
 {
     public SimpleSpecimenTable(StudyQuerySchema schema)
     {
-        this(schema, true);
+        this(schema, false);
     }
 
     public SimpleSpecimenTable(StudyQuerySchema schema, boolean skipPermissionChecks)

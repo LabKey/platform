@@ -65,7 +65,9 @@ public class LocationTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSite(schema.getContainer()));
         // FK on Container
-        ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema).setHidden(true);
+        ColumnInfo containerColumn = ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema);
+        containerColumn.setHidden(true);
+        containerColumn.setRequired(true);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("EntityId"))).setHidden(true);
 
@@ -248,5 +250,11 @@ public class LocationTable extends BaseStudyTable
 
             return studyContainers;
         }
+    }
+
+    @Override
+    public boolean hasUnionTable()
+    {
+        return true;
     }
 }

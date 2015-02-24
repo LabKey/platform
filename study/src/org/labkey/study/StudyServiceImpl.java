@@ -720,13 +720,13 @@ public class StudyServiceImpl implements StudyService.Service
      */
 
     @Override
-    public TableInfo getSpecimenTableUnion(QuerySchema qsDefault, List<Container> containers)
+    public TableInfo getSpecimenTableUnion(QuerySchema qsDefault, Set<Container> containers)
     {
         return getSpecimenTableUnion(qsDefault, containers, new HashMap<Container, SQLFragment>(), false, true);
     }
 
     @Override
-    public TableInfo getSpecimenTableUnion(QuerySchema qsDefault, List<Container> containers,
+    public TableInfo getSpecimenTableUnion(QuerySchema qsDefault, Set<Container> containers,
                         @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         return getOneOfSpecimenTablesUnion(qsDefault, containers, filterFragments, new SpecimenDomainKind(),
@@ -734,14 +734,14 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @Override
-    public TableInfo getVialTableUnion(QuerySchema qsDefault, List<Container> containers)
+    public TableInfo getVialTableUnion(QuerySchema qsDefault, Set<Container> containers)
     {
         return getOneOfSpecimenTablesUnion(qsDefault, containers, new HashMap<Container, SQLFragment>(), new VialDomainKind(),
                 VialTable.class, false, true);
     }
 
     @Override
-    public TableInfo getSpecimenDetailTableUnion(QuerySchema qsDefault, List<Container> containers,
+    public TableInfo getSpecimenDetailTableUnion(QuerySchema qsDefault, Set<Container> containers,
                         @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         return getOneOfSpecimenTablesUnion(qsDefault, containers, filterFragments, new SpecimenDomainKind(),
@@ -749,7 +749,7 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @Override
-    public TableInfo getSpecimenWrapTableUnion(QuerySchema qsDefault, List<Container> containers,
+    public TableInfo getSpecimenWrapTableUnion(QuerySchema qsDefault, Set<Container> containers,
                         @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         return getOneOfSpecimenTablesUnion(qsDefault, containers, filterFragments, new SpecimenDomainKind(),
@@ -757,14 +757,14 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @Override
-    public TableInfo getSpecimenSummaryTableUnion(QuerySchema qsDefault, List<Container> containers,
+    public TableInfo getSpecimenSummaryTableUnion(QuerySchema qsDefault, Set<Container> containers,
                         @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         return getOneOfSpecimenTablesUnion(qsDefault, containers, filterFragments, new SpecimenDomainKind(),
                                            SpecimenSummaryTable.class, dontAliasColumns, useParticipantIdName);
     }
 
-    private TableInfo getOneOfSpecimenTablesUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments,
+    private TableInfo getOneOfSpecimenTablesUnion(QuerySchema qsDefault, Set<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments,
                                                   DomainKind kind, Class<? extends BaseStudyTable> tableClass,
                                                   boolean dontAliasColumns, boolean useParticipantIdName)
     {
@@ -772,14 +772,14 @@ public class StudyServiceImpl implements StudyService.Service
             throw new IllegalArgumentException("expceted study schema");
         StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
         User user = schemaDefault.getUser();
+        String publicName = null;
 
-        List<TableInfo> tables = new ArrayList<>();
+        Map<Container, BaseStudyTable> tables = new HashMap<>();
         Map<TableInfo, SQLFragment> filterFragmentMap = new HashMap<>();
         try
         {
             if (null == containers || containers.isEmpty())
             {
-                // TODO: what if current container doesn't have a vial table?  use template?
                 BaseStudyTable t = tableClass.getConstructor(StudyQuerySchema.class).newInstance(schemaDefault);
                 t.setPublic(false);
                 return t;
@@ -793,10 +793,14 @@ public class StudyServiceImpl implements StudyService.Service
                     if (null != s)
                         schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
                     BaseStudyTable t = tableClass.getConstructor(StudyQuerySchema.class).newInstance(schema);
-                    t.setPublic(false);
-                    tables.add(t);
-                    if (filterFragments.containsKey(c))
-                        filterFragmentMap.put(t, filterFragments.get(c));
+                    if (!tables.containsKey(c))
+                    {
+                        t.setPublic(false);
+                        tables.put(c, t);
+                        if (filterFragments.containsKey(c))
+                            filterFragmentMap.put(t, filterFragments.get(c));
+                        publicName = t.getPublicName();
+                    }
                 }
             }
         }
@@ -804,11 +808,11 @@ public class StudyServiceImpl implements StudyService.Service
         {
             throw new IllegalStateException("Unable to construct class instance.");
         }
-        return createUnionTable(schemaDefault, tables, containers, tables.get(0).getPublicName(), kind, filterFragmentMap,
+        return createUnionTable(schemaDefault, tables.values(), containers, publicName, kind, filterFragmentMap,
                                 dontAliasColumns, useParticipantIdName);
     }
 
-    private TableInfo createUnionTable(StudyQuerySchema schemaDefault, List<TableInfo> terms, final List<Container> containers, String tableName, DomainKind kind,
+    private TableInfo createUnionTable(StudyQuerySchema schemaDefault, Collection<BaseStudyTable> terms, final Set<Container> containers, String tableName, DomainKind kind,
                      @NotNull Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         if (null == terms || terms.isEmpty())
@@ -818,8 +822,9 @@ public class StudyServiceImpl implements StudyService.Service
         //if (terms.size() == 1)
         //    return terms.get(0);
 
-        SqlDialect dialect = terms.get(0).getSqlDialect();
-        AliasManager aliasManager = new AliasManager(terms.get(0).getSchema());
+        BaseStudyTable table = (BaseStudyTable)terms.toArray()[0];
+        SqlDialect dialect = table.getSqlDialect();
+        AliasManager aliasManager = new AliasManager(table.getSchema());
         Set<String> mandatory = new CaseInsensitiveHashSet(kind.getMandatoryPropertyNames(null));
         mandatory.add("specimen");          // alias for specimenid
         mandatory.add("container");
@@ -930,19 +935,20 @@ public class StudyServiceImpl implements StudyService.Service
         }
 
         SQLFragment sqlf = getUnionSql(terms, filterFragmentMap, dontAliasColumns, dialect, unionColumns);
-        return new UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf, terms.get(0));
+        return new UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf, table);
     }
 
     @Override
-    public TableInfo getTypeTableUnion(Class<? extends TableInfo> tableClass, QuerySchema qsDefault, List<Container> containers, boolean dontAliasColumns)
+    public TableInfo getTypeTableUnion(Class<? extends TableInfo> tableClass, QuerySchema qsDefault, Set<Container> containers, boolean dontAliasColumns)
     {
         assert BaseStudyTable.class.isAssignableFrom(tableClass);      // BaseStudyTable could not be in declaration because not visible to interface
         if (!(qsDefault instanceof StudyQuerySchema))
             throw new IllegalArgumentException("expected study schema");
         StudyQuerySchema schemaDefault = (StudyQuerySchema)qsDefault;
         User user = schemaDefault.getUser();
+        String publicName = null;
 
-        List<TableInfo> tables = new ArrayList<>();
+        Map<Container, BaseStudyTable> tables = new HashMap<>();
         try
         {
             if (null == containers || containers.isEmpty())
@@ -960,8 +966,12 @@ public class StudyServiceImpl implements StudyService.Service
                     if (null != s)
                         schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
                     BaseStudyTable t = (BaseStudyTable)tableClass.getConstructor(StudyQuerySchema.class).newInstance(schema);
-                    t.setPublic(false);
-                    tables.add(t);
+                    if (!tables.containsKey(c))
+                    {
+                        t.setPublic(false);
+                        tables.put(c, t);
+                        publicName = t.getPublicName();
+                    }
                 }
             }
         }
@@ -970,10 +980,10 @@ public class StudyServiceImpl implements StudyService.Service
             throw new IllegalStateException("Unable to construct class instance.");
         }
 
-        return createTypeUnionTable(schemaDefault, tables, containers, tables.get(0).getPublicName(), Collections.EMPTY_MAP, dontAliasColumns);
+        return createTypeUnionTable(schemaDefault, tables.values(), containers, publicName, Collections.EMPTY_MAP, dontAliasColumns);
     }
 
-    TableInfo createTypeUnionTable(StudyQuerySchema schemaDefault, List<TableInfo> terms, List<Container> containers, String tableName,
+    private TableInfo createTypeUnionTable(StudyQuerySchema schemaDefault, Collection<BaseStudyTable> terms, Set<Container> containers, String tableName,
                                    @NotNull Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns)
     {
         if (null == terms || terms.isEmpty())
@@ -983,20 +993,21 @@ public class StudyServiceImpl implements StudyService.Service
         assert null != studyService;
 
         // For these tables, all columns must be the same
-        SqlDialect dialect = terms.get(0).getSqlDialect();
-        AliasManager aliasManager = new AliasManager(terms.get(0).getSchema());
+        BaseStudyTable table = (BaseStudyTable)terms.toArray()[0];
+        SqlDialect dialect = table.getSqlDialect();
+        AliasManager aliasManager = new AliasManager(table.getSchema());
 
         Map<String, ColumnInfo> unionColumns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,ColumnInfo>());
-        for (ColumnInfo c : terms.get(0).getColumns())
+        for (ColumnInfo c : table.getColumns())
         {
             unionColumns.put(c.getName(), makeUnionColumn(c, aliasManager, containers));
         }
 
         SQLFragment sqlf = getUnionSql(terms, filterFragmentMap, dontAliasColumns, dialect, unionColumns);
-        return new UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf, terms.get(0), terms.get(0).getTitleColumn());
+        return new UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf, table, table.getTitleColumn());
     }
 
-    private ColumnInfo makeUnionColumn(ColumnInfo column, AliasManager aliasManager, List<Container> containers)
+    private ColumnInfo makeUnionColumn(ColumnInfo column, AliasManager aliasManager, Set<Container> containers)
     {
         String name = column.getName();
         ColumnInfo unionCol = new AliasedColumn(null, new FieldKey(null,name), column, true)
@@ -1022,7 +1033,7 @@ public class StudyServiceImpl implements StudyService.Service
         return unionCol;
     }
 
-    private SQLFragment getUnionSql(List<TableInfo> terms, Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns, SqlDialect dialect, Map<String, ColumnInfo> unionColumns)
+    private SQLFragment getUnionSql(Collection<BaseStudyTable> terms, Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns, SqlDialect dialect, Map<String, ColumnInfo> unionColumns)
     {
         SQLFragment sqlf = new SQLFragment();
         String union = "";

@@ -116,4 +116,10 @@ public class SpecimenTable extends AbstractSpecimenTable
         sql.append(alias);
         return sql;
     }
+
+    @Override
+    public boolean hasUnionTable()
+    {
+        return true;
+    }
 }

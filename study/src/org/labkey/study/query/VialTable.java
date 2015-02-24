@@ -78,4 +78,10 @@ public class VialTable extends BaseStudyTable
         ret.appendComment("</org.labkey.study.query.VialTable>",getSqlDialect());
         return ret;
     }
+
+    @Override
+    public boolean hasUnionTable()
+    {
+        return true;
+    }
 }

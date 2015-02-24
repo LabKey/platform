@@ -51,9 +51,6 @@ public class LocationQueryView extends QueryView
     public LocationQueryView(UserSchema schema, QuerySettings settings, @Nullable Errors errors)
     {
         super(schema, settings, errors);
-        ColumnInfo containerColumn = getTable().getColumn("Container");
-        if (null != containerColumn)
-            containerColumn.setRequired(true);
     }
 
     @Override

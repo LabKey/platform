@@ -39,4 +39,10 @@ public class AdditiveTypeTable extends BaseStudyTable
         ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema).setHidden(true);
         setTitleColumn("Description");
     }
+
+    @Override
+    public boolean hasUnionTable()
+    {
+        return true;
+    }
 }

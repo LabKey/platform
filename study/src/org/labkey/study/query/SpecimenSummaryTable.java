@@ -184,6 +184,12 @@ public class SpecimenSummaryTable extends BaseStudyTable
         return null;
     }
 
+    @Override
+    public boolean hasUnionTable()
+    {
+        return true;
+    }
+
 
     public static class CommentDisplayColumn extends DataColumn
     {

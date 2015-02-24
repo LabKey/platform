@@ -419,4 +419,10 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     {
         return "CAST (? AS " + schema.getSqlDialect().getGuidType() + ") AS Container";
     }
+
+    @Override
+    public boolean hasUnionTable()
+    {
+        return true;
+    }
 }

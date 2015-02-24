@@ -71,4 +71,10 @@ public class SpecimenWrapTable extends BaseStudyTable
     {
         return _notificationKey;
     }
+
+    @Override
+    public boolean hasUnionTable()
+    {
+        return true;
+    }
 }
