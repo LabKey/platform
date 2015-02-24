@@ -505,7 +505,7 @@
 
                     $.each(fnArray, function(index, fn)
                     {
-                        strStep = strStep.replace('"' + fn + '"', fn);
+                        strStep = strStep.replace(JSON.stringify(fn), fn);
                     });
 
                     if (i < _steps)
@@ -571,7 +571,7 @@
 
         $.each(fnArray, function(index, fn)
         {
-            strSteps = strSteps.replace('"' + fn + '"', fn);
+            strSteps = strSteps.replace(JSON.stringify(fn), fn);
         });
 
         return strSteps
