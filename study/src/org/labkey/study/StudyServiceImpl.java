@@ -853,7 +853,7 @@ public class StudyServiceImpl implements StudyService.Service
                 ColumnInfo unionCol = unionColumns.get(name);
                 if (null == unionCol)
                 {
-                    unionCol = makeUnionColumn(c, aliasManager, containers);
+                    unionCol = makeUnionColumn(c, aliasManager, containers, name);
                     if (!mandatory.contains(name))
                     {
                         unionCol.setFk(null);
@@ -1000,16 +1000,15 @@ public class StudyServiceImpl implements StudyService.Service
         Map<String, ColumnInfo> unionColumns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,ColumnInfo>());
         for (ColumnInfo c : table.getColumns())
         {
-            unionColumns.put(c.getName(), makeUnionColumn(c, aliasManager, containers));
+            unionColumns.put(c.getName(), makeUnionColumn(c, aliasManager, containers, c.getName()));
         }
 
         SQLFragment sqlf = getUnionSql(terms, filterFragmentMap, dontAliasColumns, dialect, unionColumns);
         return new UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf, table, table.getTitleColumn());
     }
 
-    private ColumnInfo makeUnionColumn(ColumnInfo column, AliasManager aliasManager, Set<Container> containers)
+    private ColumnInfo makeUnionColumn(ColumnInfo column, AliasManager aliasManager, Set<Container> containers, String name)
     {
-        String name = column.getName();
         ColumnInfo unionCol = new AliasedColumn(null, new FieldKey(null,name), column, true)
         {
             @Override
