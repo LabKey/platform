@@ -138,10 +138,10 @@ LABKEY.Utils = new function(impl, $) {
      * @param msg
      */
     impl.alert = function(title, msg) {
-        if (Ext4) {
+        if (window.Ext4) {
             Ext4.Msg.alert(title, msg);
         }
-        else if (Ext) {
+        else if (window.Ext) {
             Ext.Msg.alert(title, msg);
         }
         else {
