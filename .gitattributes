@@ -1317,6 +1317,8 @@ api/src/org/labkey/api/security/roles/CanSeeAuditLogRole.java -text
 api/src/org/labkey/api/security/roles/ContextualRole.java -text
 api/src/org/labkey/api/security/roles/DeveloperRole.java -text
 api/src/org/labkey/api/security/roles/EditorRole.java -text
+api/src/org/labkey/api/security/roles/EmailNonUsersPermission.java -text
+api/src/org/labkey/api/security/roles/EmailNonUsersRole.java -text
 api/src/org/labkey/api/security/roles/FolderAdminRole.java -text
 api/src/org/labkey/api/security/roles/HasContextualRoles.java -text
 api/src/org/labkey/api/security/roles/NoPermissionsRole.java -text

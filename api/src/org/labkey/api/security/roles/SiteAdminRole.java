@@ -41,6 +41,7 @@ public class SiteAdminRole extends AbstractContextualRole
                 AdminPermission.class,
                 EditSharedViewPermission.class,
                 SeeUserEmailAddressesPermission.class,
+                EmailNonUsersPermission.class,
                 EnableRestrictedModules.class,
                 CanSeeAuditLogPermission.class);
     }

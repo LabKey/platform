@@ -70,6 +70,7 @@ public class RoleManager
         registerRole(new TroubleshooterRole());
         registerRole(new SeeEmailAddressesRole());
         registerRole(new CanSeeAuditLogRole());
+        registerRole(new EmailNonUsersRole());
     }
 
     public static Role getRole(String name)
