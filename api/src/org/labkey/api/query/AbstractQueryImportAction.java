@@ -342,6 +342,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             response.put("rowCount", rowCount);
             return new ApiSimpleResponse(response);
         }
+        catch (IOException e)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            throw errors;
+        }
         finally
         {
             if (null != file)
