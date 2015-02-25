@@ -488,7 +488,8 @@ public class WikiController extends SpringActionController
             bean.possibleParents = WikiSelectManager.getPossibleParents(getContainer(), _wiki);
             bean.showChildren = SHOW_CHILD_REORDERING;
 
-            HttpView manageView = new JspView<>("/org/labkey/wiki/view/wikiManage.jsp", bean, errors);
+            JspView manageView = new JspView<>("/org/labkey/wiki/view/wikiManage.jsp", bean, errors);
+            manageView.setTitle("Wiki Configuration");
             getPageConfig().setFocusId("name");
 
             return manageView;

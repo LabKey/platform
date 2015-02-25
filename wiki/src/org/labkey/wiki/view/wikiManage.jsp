@@ -18,17 +18,18 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.HString"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.wiki.WikiController.ManageAction.ManageBean" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
+<%@ page import="org.labkey.wiki.model.WikiTree" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.FieldError" %>
-<%@ page import="org.labkey.wiki.model.WikiTree" %>
-<%@ page import="org.labkey.wiki.WikiController" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+
 <%
     ManageBean bean = ((HttpView<ManageBean>)HttpView.currentView()).getModelBean();
     ViewContext context = getViewContext();
@@ -95,11 +96,13 @@
     }
 </script>
 
+
+
 <labkey:form method="post" name="manage" action="<%=h(buildURL(WikiController.ManageAction.class))%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
 <input type="hidden" name="containerPath" value="<%=h(c.getPath())%>">
 
-<table width="100%"><tr>
-  <td><table width="100">
+<table><tr>
+  <td><table>
 <%
     FieldError nameError = errors.getFieldError("name");
 	if (null != nameError)
@@ -109,23 +112,18 @@
   %>
     <tr>
       <td class='labkey-form-label'><label for="name">Name</label></td>
-      <td><input type="text" size="40" id="name" name="name" value="<%=h(wiki.getName()) %>"></td>
+      <td><input type="text" style="width:400px" id="name" name="name" value="<%=h(wiki.getName()) %>"></td>
     </tr>
     <tr>
-      <td></td>
-      <td>WARNING: Changing a page's name will break any links to the page.</td>
+      <td></td><td style="width:400px">WARNING: Changing a page's name will break any links to the page.</td>
     </tr>
     <tr>
       <td class='labkey-form-label'><label for="title">Title</label></td>
-      <td><input type="text" size="40" name="title" id="title" value="<%=h(wiki.getLatestVersion().getTitle()) %>"></td>
-    </tr>
-    <tr>
-      <td class='labkey-form-label'><label for="shouldIndex">Index</label></td>
-      <td><input type="checkbox" name="shouldIndex" id="shouldIndex"<%=checked(wiki.isShouldIndex())%>></td>
+      <td><input type="text" style="width:400px" name="title" id="title" value="<%=h(wiki.getLatestVersion().getTitle()) %>"></td>
     </tr>
     <tr>
       <td class='labkey-form-label'><label for="parent">Parent</label></td>
-      <td><select name="parent" id="parent" onChange="document.manage.nextAction.value = <%= PageFlowUtil.jsString(WikiController.NextAction.manage.name()) %>; submit();">
+      <td><select name="parent" id="parent" style="width:403px" onChange="document.manage.nextAction.value = <%= PageFlowUtil.jsString(WikiController.NextAction.manage.name()) %>; submit();">
         <option<%=selected(wiki.getParent() == -1)%> value="-1">[none]</option><%
 
     for (WikiTree possibleParent : bean.possibleParents)
@@ -140,63 +138,65 @@
 %>
       </select></td>
     </tr>
-  </table></td>
-
-  <td><table width="100%">
     <tr>
-      <td class='labkey-form-label'><label for="siblings">Sibling Order</label></td>
-      <td>
-        <table>
-          <tr>
-            <td><select name="siblings" id="siblings" size="10"><%
-
-        for (WikiTree sibling : bean.siblings)
+        <td class='labkey-form-label'><label for="shouldIndex">Index</label></td>
+        <td><input type="checkbox" name="shouldIndex" id="shouldIndex"<%=checked(wiki.isShouldIndex())%>></td>
+    </tr>
+    <tr>
+        <td class='labkey-form-label'><label for="siblings">Sibling Order</label></td>
+        <td>
+            <table>
+                <tr>
+                    <td><select name="siblings" id="siblings" size="10"><%
+                         for (WikiTree sibling : bean.siblings)
+                        {
+                    %>
+                        <option<%=selected(sibling.getRowId() == wiki.getRowId())%> value="<%= sibling.getRowId() %>"><%= sibling.getTitle() %> (<%= sibling.getName() %>)</option><%
+                            }
+                        %>
+                    </select></td>
+                    <td valign="top" >
+                        <%= button("Move Up").attributes("style='width:200px'").submit(true).onClick("return LABKEY._wiki.manage.orderModule('siblings', 0, 'siblingOrder', " + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
+                        <br><br>
+                        <%= button("Move Down").submit(true).onClick("return LABKEY._wiki.manage.orderModule('siblings', 1, 'siblingOrder', "  + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
+                    </td>
+                </tr>
+            </table>
+            <input type="hidden" name="siblingOrder" value="">
+        </td>
+    </tr>
+    <%
+        if (bean.showChildren && wiki.hasChildren())
         {
-%>
-              <option<%=selected(sibling.getRowId() == wiki.getRowId())%> value="<%= sibling.getRowId() %>"><%= sibling.getTitle() %> (<%= sibling.getName() %>)</option><%
-        }
-%>
-            </select></td>
-            <td align="center" valign="middle">
-              <%= button("Move Up").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder')") %><br><br>
-              <%= button("Move Down").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder')") %>
-            </td>
-          </tr>
+    %>
+    <tr>
+        <td class='labkey-form-label'><label for="children">Child Order</label></td>
+        <td><table>
+            <tr>
+                <td>
+                    <select name="children" id="children" size="10">
+                        <%
+                            for (Wiki child : wiki.children())
+                            {
+                        %>
+                        <option value="<%= child.getRowId() %>"><%= child.getLatestVersion().getTitle() %> (<%= child.getName() %>)</option><%
+                        }
+                    %>
+                   </select>
+                </td>
+                <td valign="top">
+                    <%= button("Move Up").attributes("style='width:200px'").submit(true).onClick("return orderModule('children', 0, 'childOrder')")%>
+                    <br><br>
+                    <%= button("Move Down").submit(true).onClick("return orderModule('children', 1, 'childOrder')")%>
+                </td>
+            </tr>
         </table>
-        <input type="hidden" name="siblingOrder" value="">
-      </td>
+            <input type="hidden" name="childOrder" value="">
+        </td>
     </tr>
-<%
-    if (bean.showChildren && wiki.hasChildren())
-    {
-%>
-    <tr>
-      <td class='labkey-form-label'><label for="children">Child Order</label></td>
-      <td><table>
-        <tr>
-          <td>
-            <select name="children" id="children" size="10">
-<%
-        for (Wiki child : wiki.children())
-        {
-%>
-              <option value="<%= child.getRowId() %>"><%= child.getLatestVersion().getTitle() %> (<%= child.getName() %>)</option><%
+    <%
         }
-%>
-            </select>
-          </td>
-          <td align="center" valign="middle">
-            <%= button("Move Up").submit(true).onClick("return orderModule('children', 0, 'childOrder')")%><br><br>
-            <%= button("Move Down").submit(true).onClick("return orderModule('children', 1, 'childOrder')")%>
-          </td>
-        </tr>
-      </table>
-      <input type="hidden" name="childOrder" value="">
-      </td>
-    </tr>
-<%
-    }
-%>
+    %>
   </table></td>
 </tr></table>
 
