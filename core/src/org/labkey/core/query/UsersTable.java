@@ -178,31 +178,34 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         if (domain != null)
         {
             UsersDomainKind domainKind = (UsersDomainKind)PropertyService.get().getDomainKindByName(UsersDomainKind.NAME);
-            Set<String> reserved = domainKind.getWrappedColumns();
-            User user = getUserSchema().getUser();
-
-            for (DomainProperty dp : domain.getProperties())
+            if (null != domainKind)
             {
-                PropertyDescriptor pd = dp.getPropertyDescriptor();
-                ColumnInfo propColumn = new PropertyColumn(pd, getObjectUriColumn(), getContainer(), user, false);
+                Set<String> reserved = domainKind.getWrappedColumns();
+                User user = getUserSchema().getUser();
 
-                if (reserved.contains(propColumn.getName()))
+                for (DomainProperty dp : domain.getProperties())
                 {
-                    // merge property descriptor settings into the built in columns
-                    ColumnInfo col = getColumn(propColumn.getName());
-                    if (col != null)
+                    PropertyDescriptor pd = dp.getPropertyDescriptor();
+                    ColumnInfo propColumn = new PropertyColumn(pd, getObjectUriColumn(), getContainer(), user, false);
+
+                    if (reserved.contains(propColumn.getName()))
                     {
-                        assert col.getScale() == pd.getScale() : "Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale();
-                        pd.copyTo(col);
-                        if (!col.isHidden())
-                            defaultCols.add(FieldKey.fromParts(col.getName()));
+                        // merge property descriptor settings into the built in columns
+                        ColumnInfo col = getColumn(propColumn.getName());
+                        if (col != null)
+                        {
+                            assert col.getScale() == pd.getScale() : "Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale();
+                            pd.copyTo(col);
+                            if (!col.isHidden())
+                                defaultCols.add(FieldKey.fromParts(col.getName()));
+                        }
                     }
-                }
-                else if (getColumn(propColumn.getName()) == null)
-                {
-                    if (!pd.isHidden())
-                        defaultCols.add(FieldKey.fromParts(propColumn.getName()));
-                    addColumn(propColumn);
+                    else if (getColumn(propColumn.getName()) == null)
+                    {
+                        if (!pd.isHidden())
+                            defaultCols.add(FieldKey.fromParts(propColumn.getName()));
+                        addColumn(propColumn);
+                    }
                 }
             }
         }
