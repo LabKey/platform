@@ -150,6 +150,27 @@ public class IssueManager
     {
     }
 
+    /**
+     * Identifies whether the (Issue List) admin settings of container c were inherited by other containers.
+     * Example: Folder_B has inherited it's admin settings from Folder_A. If param c is Folder_A, then this
+     * method will return true, since Folder_B has inherited admin settings from Folder_A.
+     * @param c
+     * @return  true if (one) container with inherited settings from c was found, false otherwise.
+     */
+    public static boolean hasInheritingContainers(@NotNull Container c)
+    {
+
+        for(Container possibleChild :  ContainerManager.getAllChildren(ContainerManager.getRoot()))
+        {
+            Map<String, String> props = PropertyManager.getProperties(possibleChild, CAT_DEFAULT_INHERIT_FROM_CONTAINER);
+            String propsValue = props.get(PROP_DEFAULT_INHERIT_FROM_CONTAINER);
+
+            if(propsValue != null && c.getId().equals(propsValue))
+                return true;
+        }
+
+        return false;
+    }
 
     public static Issue getIssue(@Nullable Container c, int issueId)
     {
@@ -464,8 +485,28 @@ public class IssueManager
         private final CustomColumnMap _map;
 
         // Values are being loaded from the database
-        public CustomColumnConfiguration(@NotNull Map<String, CustomColumn> map)
+        public CustomColumnConfiguration(@NotNull Map<String, CustomColumn> map, Container c)
         {
+
+            Container inheritFrom = getInheritFromContainer(c); //get the container from which c inherited it's admin settings from
+
+
+            //if c has inherited it's admin settings, then merge the non-conflicting custom column values.
+            //Non-conflicting custom column values are values such that container c and inheritFrom are
+            //not occupying the same Custom Column. For example: if Type and String3 has values in container c, but is
+            //empty in inheritFrom, then container c will keep the values of Type and String3, otherwise all other Custom Column
+            // values of container c will be overridden with the values from inheritFrom container.
+            if(inheritFrom != null)
+            {
+                CustomColumnConfiguration inheritFromCCC = getCustomColumnConfiguration(inheritFrom);
+                Collection<CustomColumn> inheritFromCC = inheritFromCCC.getCustomColumns();
+
+                for(CustomColumn cc : inheritFromCC)
+                {
+                    map.put(cc.getName(), cc);
+                }
+            }
+
             _map = new CustomColumnMap(map);
         }
 
@@ -489,10 +530,10 @@ public class IssueManager
 
             List<String> perms = context.getList("permissions");
             // Should have one for each string column (we don't support permissions on int columns yet)
-            assert perms.size() == 5;
+            assert perms.size() <= 5; //if custom column values are inherited from a different container, then perms.size() can be less than 5.
             Map<String, Class<? extends Permission>> permMap = new HashMap<>();
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < perms.size(); i++)
             {
                 String simplePerm = perms.get(i);
                 Class<? extends Permission> perm = "admin".equals(simplePerm) ? AdminPermission.class : "insert".equals(simplePerm) ? InsertPermission.class : ReadPermission.class;
@@ -722,10 +763,48 @@ public class IssueManager
         }
     }
 
+    /**
+     * @param c
+     * @return Container c itself or the container from which admin settings were inherited from
+     */
+    public static Container getInheritFromOrCurrentContainer(Container c)
+    {
+        Container inheritFrom = getInheritFromContainer(c);
+
+        //Return the container from which admin settings were inherited from
+        if(inheritFrom != null)
+            return inheritFrom;
+        return c;
+    }
+
+
     @NotNull
     public static EntryTypeNames getEntryTypeNames(Container container)
     {
-        Map<String,String> props = PropertyManager.getProperties(container, CAT_ENTRY_TYPE_NAMES);
+        Map<String,String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(container), CAT_ENTRY_TYPE_NAMES);
+        EntryTypeNames ret = new EntryTypeNames();
+        if (props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
+            ret.singularName = new HString(props.get(PROP_ENTRY_TYPE_NAME_SINGULAR), true);
+        if (props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
+            ret.pluralName = new HString(props.get(PROP_ENTRY_TYPE_NAME_PLURAL), true);
+        return ret;
+    }
+
+    /**
+     *
+     * @param container
+     * @param inheritingVals
+     * @return EntryTypeNames of a container with inherited settings, or of current container.
+     */
+    public static EntryTypeNames getEntryTypeNames(Container container, boolean inheritingVals)
+    {
+        Container c;
+        if(inheritingVals)
+            c = getInheritFromOrCurrentContainer(container);
+        else
+            c = container;
+
+        Map<String,String> props = PropertyManager.getProperties(c, CAT_ENTRY_TYPE_NAMES);
         EntryTypeNames ret = new EntryTypeNames();
         if (props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
             ret.singularName = new HString(props.get(PROP_ENTRY_TYPE_NAME_SINGULAR), true);
@@ -736,16 +815,16 @@ public class IssueManager
 
     public static void saveEntryTypeNames(Container container, EntryTypeNames names)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, CAT_ENTRY_TYPE_NAMES, true);
-        props.put(PROP_ENTRY_TYPE_NAME_SINGULAR, names.singularName.getSource());
-        props.put(PROP_ENTRY_TYPE_NAME_PLURAL, names.pluralName.getSource());
-        props.save();
+            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, CAT_ENTRY_TYPE_NAMES, true);
+            props.put(PROP_ENTRY_TYPE_NAME_SINGULAR, names.singularName.getSource());
+            props.put(PROP_ENTRY_TYPE_NAME_PLURAL, names.pluralName.getSource());
+            props.save();
     }
 
 
     public static @Nullable Group getAssignedToGroup(Container c)
     {
-        Map<String, String> props = PropertyManager.getProperties(c, CAT_ASSIGNED_TO_LIST);
+        Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_ASSIGNED_TO_LIST);
 
         String groupId = props.get(PROP_ASSIGNED_TO_GROUP);
 
@@ -757,15 +836,15 @@ public class IssueManager
 
     public static void saveAssignedToGroup(Container c, @Nullable Group group)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_ASSIGNED_TO_LIST, true);
-        props.put(PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
-        props.save();
-        uncache(c);  // uncache the assigned to list
+            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_ASSIGNED_TO_LIST, true);
+            props.put(PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
+            props.save();
+            uncache(c);  // uncache the assigned to list
     }
 
     public static @Nullable User getDefaultAssignedToUser(Container c)
     {
-        Map<String, String> props = PropertyManager.getProperties(c, CAT_DEFAULT_ASSIGNED_TO_LIST);
+        Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_DEFAULT_ASSIGNED_TO_LIST);
         String userId = props.get(PROP_DEFAULT_ASSIGNED_TO_USER);
         if (null == userId)
             return null;
@@ -786,7 +865,7 @@ public class IssueManager
 
     public static List<Container> getMoveDestinationContainers(Container c)
     {
-        Map<String, String> props = PropertyManager.getProperties(c, CAT_DEFAULT_MOVE_TO_LIST);
+        Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_DEFAULT_MOVE_TO_LIST);
         String propsValue = props.get(PROP_DEFAULT_MOVE_TO_CONTAINER);
         List<Container> containers = new LinkedList<>();
 
@@ -799,20 +878,24 @@ public class IssueManager
 
     public static void saveMoveDestinationContainers(Container c, @Nullable List<Container> containers)
     {
-        String propsValue = null;
-        if (containers != null && containers.size() != 0)
-        {
-            StringBuilder sb = new StringBuilder();
-            for (Container container : containers)
-                sb.append(String.format(";%s", container.getId()));
-            propsValue = sb.toString().substring(1);
-        }
+            String propsValue = null;
+            if (containers != null && containers.size() != 0)
+            {
+                StringBuilder sb = new StringBuilder();
+                for (Container container : containers)
+                    sb.append(String.format(";%s", container.getId()));
+                propsValue = sb.toString().substring(1);
+            }
 
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_MOVE_TO_LIST, true);
-        props.put(PROP_DEFAULT_MOVE_TO_CONTAINER, propsValue);
-        props.save();
+            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_MOVE_TO_LIST, true);
+            props.put(PROP_DEFAULT_MOVE_TO_CONTAINER, propsValue);
+            props.save();
     }
 
+    /**
+     * @param current
+     * @return Container from which current's admin settings are inherited from
+     */
     public static Container getInheritFromContainer(Container current)
     {
         Map<String, String> props = PropertyManager.getProperties(current, CAT_DEFAULT_INHERIT_FROM_CONTAINER);
@@ -828,6 +911,13 @@ public class IssueManager
         return inheritFromContainer;
     }
 
+    /**
+     * Sets the property of 'current' container with id of a inheritFrom container.
+     * 'current' container's settings will "point" to 'inheritFrom' container's
+     * admin settings.
+     * @param current
+     * @param inheritFrom
+     */
     public static void saveInheritFromContainer(Container current, @Nullable Container inheritFrom)
     {
         String propsValue = null;
@@ -835,7 +925,6 @@ public class IssueManager
         if(inheritFrom != null)
         {
             propsValue = inheritFrom.getId();
-
         }
 
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(current, CAT_DEFAULT_INHERIT_FROM_CONTAINER, true);
@@ -845,15 +934,16 @@ public class IssueManager
 
     public static void saveRelatedIssuesList(Container c, @Nullable String relatedIssuesList)
     {
-        String propsValue = null;
-        if (relatedIssuesList != null)
-        {
-            propsValue = relatedIssuesList;
-        }
 
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_RELATED_ISSUES_LIST, true);
-        props.put(PROP_DEFAULT_RELATED_ISSUES_LIST, propsValue);
-        props.save();
+            String propsValue = null;
+            if (relatedIssuesList != null)
+            {
+                propsValue = relatedIssuesList;
+            }
+
+            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_RELATED_ISSUES_LIST, true);
+            props.put(PROP_DEFAULT_RELATED_ISSUES_LIST, propsValue);
+            props.save();
     }
 
     public static @Nullable Container getRelatedIssuesList(Container c)
@@ -867,7 +957,7 @@ public class IssueManager
 
     public static Sort.SortDirection getCommentSortDirection(Container c)
     {
-        Map<String, String> props = PropertyManager.getProperties(c, CAT_COMMENT_SORT);
+        Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_COMMENT_SORT);
         String direction = props.get(CAT_COMMENT_SORT);
         if (direction != null)
         {
@@ -882,10 +972,10 @@ public class IssueManager
 
     public static void saveCommentSortDirection(Container c, @NotNull Sort.SortDirection direction)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_COMMENT_SORT, true);
-        props.put(CAT_COMMENT_SORT, direction.toString());
-        props.save();
-        uncache(c);  // uncache the assigned to list
+            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_COMMENT_SORT, true);
+            props.put(CAT_COMMENT_SORT, direction.toString());
+            props.save();
+            uncache(c);  // uncache the assigned to list
     }
 
 
@@ -1001,9 +1091,43 @@ public class IssueManager
         return message;
     }
 
+    /**
+     *
+     * @param container
+     * @return combined Required fields of "current" and "inherited from" container if admin settings are inherited
+     */
     public static String getRequiredIssueFields(Container container)
     {
-        Map<String, String> map = PropertyManager.getProperties(container, ISSUES_PREF_MAP);
+        Map<String, String> map = PropertyManager.getProperties(getInheritFromOrCurrentContainer(container), ISSUES_PREF_MAP);
+        String requiredFields = map.get(ISSUES_REQUIRED_FIELDS);
+
+        if(getInheritFromContainer(container) != null)
+        {
+            return getMyRequiredIssueFields(container) + ";" + requiredFields;
+        }
+        return null == requiredFields ? IssuesController.DEFAULT_REQUIRED_FIELDS : requiredFields.toLowerCase();
+    }
+
+    /**
+     *
+     * @param container
+     * @return Required fields of the current container
+     */
+    public static String getMyRequiredIssueFields(Container container)
+    {
+        Map<String, String> mapCurrent = PropertyManager.getProperties(container, ISSUES_PREF_MAP);
+        String requiredFieldsCurrent = mapCurrent.get(ISSUES_REQUIRED_FIELDS);
+        return (null == requiredFieldsCurrent) ? IssuesController.DEFAULT_REQUIRED_FIELDS : requiredFieldsCurrent.toLowerCase();
+    }
+
+    /**
+     *
+     * @param container
+     * @return Required fields of the container from which current container's admin settings were inherited from
+     */
+    public static String getInheritedRequiredIssueFields(Container container)
+    {
+        Map<String, String> map = PropertyManager.getProperties(getInheritFromOrCurrentContainer(container), ISSUES_PREF_MAP);
         String requiredFields = map.get(ISSUES_REQUIRED_FIELDS);
         return null == requiredFields ? IssuesController.DEFAULT_REQUIRED_FIELDS : requiredFields.toLowerCase();
     }
@@ -1021,25 +1145,25 @@ public class IssueManager
 
     public static void setRequiredIssueFields(Container container, HString[] requiredFields)
     {
-        final StringBuilder sb = new StringBuilder();
-        if (requiredFields.length > 0)
-        {
-            String sep = "";
-            for (HString field : requiredFields)
+            final StringBuilder sb = new StringBuilder();
+            if (requiredFields.length > 0)
             {
-                sb.append(sep);
-                sb.append(field);
-                sep = ";";
+                String sep = "";
+                for (HString field : requiredFields)
+                {
+                    sb.append(sep);
+                    sb.append(field);
+                    sep = ";";
+                }
             }
-        }
-        setRequiredIssueFields(container, sb.toString());
+            setRequiredIssueFields(container, sb.toString());
     }
 
     public static void setLastIndexed(String containerId, int issueId, long ms)
     {
         new SqlExecutor(_issuesSchema.getSchema()).execute(
-            "UPDATE issues.issues SET lastIndexed=? WHERE container=? AND issueId=?",
-            new Timestamp(ms), containerId, issueId);
+                "UPDATE issues.issues SET lastIndexed=? WHERE container=? AND issueId=?",
+                new Timestamp(ms), containerId, issueId);
     }
     
 

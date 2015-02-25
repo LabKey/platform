@@ -1932,7 +1932,7 @@ public class IssuesController extends SpringActionController
         private static final String MOVE_TO_CONTAINER = "moveToContainer";
         private Group _group = null;
         private User _user = null;
-        private Container inheritSettingsFromThisContainer = null;
+        private Container _inheritSettingsFromThisContainer = null;
         private List<Container> _moveToContainers = new LinkedList<>();
         private Sort.SortDirection _direction = Sort.SortDirection.ASC;
 
@@ -1959,47 +1959,55 @@ public class IssuesController extends SpringActionController
                 errors.reject(ERROR_MSG, "Custom field names must be unique.");
             }
 
-            if (form.getAssignedToMethod().equals("ProjectUsers"))
+            if (form.getAssignedToMethod() != null)
             {
-                if (form.getAssignedToGroup() != 0)
-                    errors.reject("assignedToGroup", "Project users setting shouldn't include a group!");
-            }
-            else if (form.getAssignedToMethod().equals("Group"))
-            {
-                int groupId = form.getAssignedToGroup();
-                _group = SecurityManager.getGroup(groupId);
+                if (form.getAssignedToMethod().equals("ProjectUsers"))
+                {
+                    if (form.getAssignedToGroup() != 0)
+                        errors.reject("assignedToGroup", "Project users setting shouldn't include a group!");
+                }
+                else if (form.getAssignedToMethod().equals("Group"))
+                {
+                    int groupId = form.getAssignedToGroup();
+                    _group = SecurityManager.getGroup(groupId);
 
-                if (null == _group)
-                    errors.reject("assignedToGroup", "Group does not exist!");
-            }
-            else
-            {
-                errors.reject("assignedToGroup", "Invalid assigned to setting!");
+                    if (null == _group)
+                        errors.reject("assignedToGroup", "Group does not exist!");
+                }
+                else
+                {
+                    errors.reject("assignedToGroup", "Invalid assigned to setting!");
+                }
             }
 
-            if (form.getAssignedToUser().equals("NoDefaultUser"))
+            if(form.getAssignedToUser() != null)
             {
-                if (form.getDefaultUser() != 0)
-                    errors.reject("assignedToUser", "No default user setting shouldn't include a default user!");
-            }
-            else if (form.getAssignedToUser().equals("SpecificUser"))
-            {
-                int userId = form.getDefaultUser();
-                _user = UserManager.getUser(userId);
 
-                if (null == _user)
-                    errors.reject("assignedToUser", "User does not exist!");
-            }
-            else
-            {
-                errors.reject("assignedToUser", "Invalid assigned to setting!");
+                if (form.getAssignedToUser().equals("NoDefaultUser"))
+                {
+                    if (form.getDefaultUser() != 0)
+                        errors.reject("assignedToUser", "No default user setting shouldn't include a default user!");
+                }
+                else if (form.getAssignedToUser().equals("SpecificUser"))
+                {
+                    int userId = form.getDefaultUser();
+                    _user = UserManager.getUser(userId);
+
+                    if (null == _user)
+                        errors.reject("assignedToUser", "User does not exist!");
+                }
+                else
+                {
+                    errors.reject("assignedToUser", "Invalid assigned to setting!");
+                }
             }
 
             if(form.getInheritFromContainer().equals("DoNotInheritFromContainer"))
             {
-
                 if (form.getInheritFromContainerSelect() != null)
+                {
                     errors.reject(INHERIT_FROM_CONTAINER, "No 'inherit from folder' setting shouldn't include a default container!");
+                }
             }
             else if(form.getInheritFromContainer().equals("InheritFromSpecificContainer"))
             {
@@ -2015,7 +2023,7 @@ public class IssuesController extends SpringActionController
                     }
                     else
                     {
-                        inheritSettingsFromThisContainer = container;
+                        _inheritSettingsFromThisContainer = container;
                     }
                 }
                 else
@@ -2026,35 +2034,38 @@ public class IssuesController extends SpringActionController
                 errors.reject(INHERIT_FROM_CONTAINER, "Invalid 'inherit from' setting!");
             }
 
-            if (form.getMoveToContainer().equals("NoMoveToContainer"))
+            if(form.getMoveToContainer() != null)
             {
-                if (form.getMoveToContainerSelect() != null)
-                    errors.reject(MOVE_TO_CONTAINER, "No move to container setting shouldn't include a default container!");
-            }
-            else if (form.getMoveToContainer().equals("SpecificMoveToContainer"))
-            {
-                String moveToContainers = form.getMoveToContainerSelect();
-                if (moveToContainers != null)
+                if (form.getMoveToContainer().equals("NoMoveToContainer"))
                 {
-                    String[] containerPaths = StringUtils.split(moveToContainers, ';');
-
-                    for (String containerPath : containerPaths)
+                    if (form.getMoveToContainerSelect() != null)
+                        errors.reject(MOVE_TO_CONTAINER, "No move to container setting shouldn't include a default container!");
+                }
+                else if (form.getMoveToContainer().equals("SpecificMoveToContainer"))
+                {
+                    String moveToContainers = form.getMoveToContainerSelect();
+                    if (moveToContainers != null)
                     {
-                        Container container = ContainerManager.getForPath(containerPath);
-                        if (null == container)
+                        String[] containerPaths = StringUtils.split(moveToContainers, ';');
+
+                        for (String containerPath : containerPaths)
                         {
-                            errors.reject(MOVE_TO_CONTAINER, "Container does not exist!");
-                            break;
+                            Container container = ContainerManager.getForPath(containerPath);
+                            if (null == container)
+                            {
+                                errors.reject(MOVE_TO_CONTAINER, "Container does not exist!");
+                                break;
+                            }
+                            _moveToContainers.add(container);
                         }
-                        _moveToContainers.add(container);
                     }
+                    else
+                        errors.reject(MOVE_TO_CONTAINER, "The move to specific container option was selected with a blank.");
                 }
                 else
-                    errors.reject(MOVE_TO_CONTAINER, "The move to specific container option was selected with a blank.");
-            }
-            else
-            {
-                errors.reject(MOVE_TO_CONTAINER, "Invalid move to setting!");
+                {
+                    errors.reject(MOVE_TO_CONTAINER, "Invalid move to setting!");
+                }
             }
 
             if (form.getRelatedIssuesList() != null)
@@ -2064,10 +2075,26 @@ public class IssuesController extends SpringActionController
                     errors.reject("Related Issues List", "Invalid folder path for folder of related issues list.");
             }
 
+
+            // This is a hack (sort of), and is required for this scenario: User switches from previously inheriting
+            // from a container to 'None'. This causes form.getEntrySingularName() and form.getEntryPluralName()
+            // to be null. This hack is required (unless there is a better solution) to set the form values of
+            // the "current" container so that it doesn't err and reject the form submission,
+            // and also so that it doesn't save the null values in handlePost() for pluralName and singularName for the
+            // current container.
+            if(_inheritSettingsFromThisContainer == null && (StringUtils.isEmpty(form.getEntrySingularName()) || StringUtils.isEmpty(form.getEntryPluralName())))
+            {
+                EntryTypeNames etn = IssueManager.getEntryTypeNames(getContainer(), false);
+                if (StringUtils.isNotEmpty(etn.pluralName))
+                    form.setEntryPluralName(etn.pluralName);
+                if (StringUtils.isNotEmpty(etn.singularName))
+                    form.setEntrySingularName(etn.singularName);
+            }
+
             if (form.getEntrySingularName() == null || form.getEntrySingularName().trimToEmpty().length() == 0)
-                errors.reject(ConfigureIssuesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
-            if (form.getEntryPluralName()== null || form.getEntryPluralName().trimToEmpty().length() == 0)
-                errors.reject(ConfigureIssuesForm.ParamNames.entryPluralName.name(), "You must specify a value for the entry type plural name!");
+                    errors.reject(ConfigureIssuesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
+            if (form.getEntryPluralName() == null || form.getEntryPluralName().trimToEmpty().length() == 0)
+                    errors.reject(ConfigureIssuesForm.ParamNames.entryPluralName.name(), "You must specify a value for the entry type plural name!");
 
             try
             {
@@ -2122,24 +2149,29 @@ public class IssuesController extends SpringActionController
 
         public boolean handlePost(ConfigureIssuesForm form, BindException errors)
         {
-            EntryTypeNames names = new EntryTypeNames();
+            //save only if not inheriting settings from a different container
+            if(IssueManager.getInheritFromContainer(getContainer()) == null)
+            {
+                EntryTypeNames names = new EntryTypeNames();
 
-            names.singularName = form.getEntrySingularName();
-            names.pluralName = form.getEntryPluralName();
+                names.singularName = form.getEntrySingularName();
+                names.pluralName = form.getEntryPluralName();
 
-            IssueManager.saveEntryTypeNames(getContainer(), names);
-            IssueManager.saveAssignedToGroup(getContainer(), _group);
-            IssueManager.saveCommentSortDirection(getContainer(), _direction);
-            IssueManager.saveDefaultAssignedToUser(getContainer(), _user);
-            IssueManager.saveMoveDestinationContainers(getContainer(), _moveToContainers);
-            IssueManager.saveInheritFromContainer(getContainer(), inheritSettingsFromThisContainer);
-            IssueManager.saveRelatedIssuesList(getContainer(), form.getRelatedIssuesList());
+                IssueManager.saveEntryTypeNames(getContainer(), names);
+                IssueManager.saveAssignedToGroup(getContainer(), _group);
+                IssueManager.saveCommentSortDirection(getContainer(), _direction);
+                IssueManager.saveDefaultAssignedToUser(getContainer(), _user);
+                IssueManager.saveMoveDestinationContainers(getContainer(), _moveToContainers);
+                IssueManager.saveRelatedIssuesList(getContainer(), form.getRelatedIssuesList());
+            }
 
             CustomColumnConfiguration nccc = new CustomColumnConfiguration(getViewContext());
             IssueManager.saveCustomColumnConfiguration(getContainer(), nccc);
 
             IssueManager.setRequiredIssueFields(getContainer(), form.getRequiredFields());
+            IssueManager.saveInheritFromContainer(getContainer(), _inheritSettingsFromThisContainer);
             return true;
+
         }
 
         public ActionURL getSuccessURL(ConfigureIssuesForm form)
@@ -2676,8 +2708,12 @@ public class IssuesController extends SpringActionController
             Set<String> columnNames = new LinkedHashSet<>();
             columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
 
-            for (CustomColumn cc : IssueManager.getCustomColumnConfiguration(c).getCustomColumns())
+            Collection<CustomColumn> customColumns = IssueManager.getCustomColumnConfiguration(c).getCustomColumns();
+
+            for (CustomColumn cc : customColumns)
+            {
                 columnNames.add(cc.getName());
+            }
 
             List<ColumnInfo> cols = IssuesSchema.getInstance().getTableInfoIssues().getColumns(columnNames.toArray(new String[columnNames.size()]));
 
@@ -2691,7 +2727,62 @@ public class IssuesController extends SpringActionController
             bean.moveToContainers = IssueManager.getMoveDestinationContainers(c);
             bean.commentSort = IssueManager.getCommentSortDirection(c);
             bean.inheritFromContainer = IssueManager.getInheritFromContainer(c);
+
+
+            //handle custom column and required field section if admin settings are inherited
+            if(bean.inheritFromContainer != null)
+            {
+                bean.inheritFromContainerExists = true;
+                for (CustomColumn cc : customColumns)
+                {
+                    String columnLabel = cc.getName();
+                    String caption = cc.getCaption();
+                    int i = cc.getContainer().compareTo(bean.inheritFromContainer);
+                    if(i == 0)
+                        setColumnFlag(columnLabel, caption, bean);
+                }
+
+                bean.setRequiredFieldsofCurrentFolder(IssueManager.getMyRequiredIssueFields(c));
+                bean.setRequiredFieldsofParentFolder(IssueManager.getInheritedRequiredIssueFields(c));
+            }
+
+            bean.inheritingContainersExists = IssueManager.hasInheritingContainers(c);
             setModelBean(bean);
+        }
+
+        //set column flags if column values are inherited
+        private void setColumnFlag(String colLabel, String caption, AdminBean bean)
+        {
+            if (StringUtils.isNotEmpty(caption))
+            {
+                if(colLabel.equals(bean.TYPE))
+                    bean.typeInherited = true;
+                else if(colLabel.equals(bean.AREA))
+                    bean.areaInherited = true;
+                else if(colLabel.equals(bean.PRIORITY))
+                    bean.priorityInherited = true;
+                else if(colLabel.equals(bean.MILESTONE))
+                    bean.milestoneInherited = true;
+                else if(colLabel.equals(bean.RESOLUTION))
+                    bean.resolutionInherited = true;
+                else if(colLabel.equals(bean.RELATED))
+                    bean.relatedInherited = true;
+                else if(colLabel.equals(bean.INT1))
+                    bean.int1Inherited = true;
+                else if(colLabel.equals(bean.INT2))
+                    bean.int2Inherited = true;
+                else if(colLabel.equals(bean.STRING1))
+                    bean.string1Inherited = true;
+                else if(colLabel.equals(bean.STRING2))
+                    bean.string2Inherited = true;
+                else if(colLabel.equals(bean.STRING3))
+                    bean.string3Inherited = true;
+                else if(colLabel.equals(bean.STRING4))
+                    bean.string4Inherited = true;
+                else if(colLabel.equals(bean.STRING5))
+                    bean.string5Inherited = true;
+            }
+
         }
     }
 
@@ -2700,6 +2791,9 @@ public class IssuesController extends SpringActionController
     {
         private List<ColumnInfo> _columns;
         private String _requiredFields;
+        private String _requiredFieldsOfCurrentFolder;
+        private String _requiredFieldsofParentFolder;
+
         private EntryTypeNames _entryTypeNames;
 
         public CustomColumnConfiguration ccc;
@@ -2710,7 +2804,38 @@ public class IssuesController extends SpringActionController
         public List<Container> moveToContainers;
         public Sort.SortDirection commentSort;
         public Container inheritFromContainer;
+        public boolean inheritFromContainerExists = false; //flag will be set to 'true' if current Issues List has inherited admin settings (from a different Folder)
+        public boolean inheritingContainersExists = false; //flag will be set to 'true' if current Issues List has propagated its settings to different folders
 
+        //Custom Column settings
+        protected static final String TYPE = "type";
+        protected static final String AREA = "area";
+        protected static final String PRIORITY = "priority";
+        protected static final String MILESTONE = "milestone";
+        protected static final String RESOLUTION = "resolution";
+        protected static final String RELATED = "related";
+        protected static final String INT1 = "int1";
+        protected static final String INT2 = "int2";
+        protected static final String STRING1 = "string1";
+        protected static final String STRING2 = "string2";
+        protected static final String STRING3 = "string3";
+        protected static final String STRING4 = "string4";
+        protected static final String STRING5 = "string5";
+
+        //flags to set to 'true' when admin settings are inherited
+        protected boolean typeInherited = false;
+        protected boolean areaInherited = false;
+        protected boolean priorityInherited = false;
+        protected boolean milestoneInherited = false;
+        protected boolean resolutionInherited = false;
+        protected boolean relatedInherited = false;
+        protected boolean int1Inherited = false;
+        protected boolean int2Inherited = false;
+        protected boolean string1Inherited = false;
+        protected boolean string2Inherited = false;
+        protected boolean string3Inherited = false;
+        protected boolean string4Inherited = false;
+        protected boolean string5Inherited = false;
 
         public AdminBean(List<ColumnInfo> columns, String requiredFields, EntryTypeNames typeNames)
         {
@@ -2722,6 +2847,149 @@ public class IssuesController extends SpringActionController
         public List<ColumnInfo> getColumns(){return _columns;}
         public String getRequiredFields(){return _requiredFields;}
         public EntryTypeNames getEntryTypeNames() {return _entryTypeNames;}
+
+
+        public boolean isTypeInherited()
+        {
+            return typeInherited;
+        }
+
+        public boolean isAreaInherited()
+        {
+            return areaInherited;
+        }
+
+        public boolean isPriorityInherited()
+        {
+            return priorityInherited;
+        }
+
+        public boolean isMilestoneInherited()
+        {
+            return milestoneInherited;
+        }
+
+        public boolean isResolutionInherited()
+        {
+            return resolutionInherited;
+        }
+
+        public boolean isRelatedInherited()
+        {
+            return relatedInherited;
+        }
+
+        public boolean isInt1Inherited()
+        {
+            return int1Inherited;
+        }
+
+        public boolean isInt2Inherited()
+        {
+            return int2Inherited;
+        }
+
+        public boolean isString1Inherited()
+        {
+            return string1Inherited;
+        }
+
+        public boolean isString2Inherited()
+        {
+            return string2Inherited;
+        }
+
+        public boolean isString3Inherited()
+        {
+            return string3Inherited;
+        }
+
+        public boolean isString4Inherited()
+        {
+            return string4Inherited;
+        }
+
+        public boolean isString5Inherited()
+        {
+            return string5Inherited;
+        }
+
+        /**
+         *
+         * @param columnName
+         * @return true if custom column is a inherited value
+         */
+        public boolean getInheritedFlag(String columnName)
+        {
+            switch (columnName.toLowerCase())
+            {
+                case TYPE:
+                    return isTypeInherited();
+                case AREA:
+                    return isAreaInherited();
+                case PRIORITY:
+                    return isPriorityInherited();
+                case MILESTONE:
+                    return isMilestoneInherited();
+                case RESOLUTION:
+                    return isResolutionInherited();
+                case INT1:
+                    return isInt1Inherited();
+                case INT2:
+                    return isInt2Inherited();
+                case STRING1:
+                    return isString1Inherited();
+                case STRING2:
+                    return isString2Inherited();
+                case STRING3:
+                    return isString3Inherited();
+                case STRING4:
+                    return isString4Inherited();
+                case STRING5:
+                    return isString5Inherited();
+                default:
+                    return false;
+            }
+
+        }
+
+        public void setRequiredFieldsofCurrentFolder(String rf)
+        {
+            _requiredFieldsOfCurrentFolder = rf;
+        }
+
+        public void setRequiredFieldsofParentFolder(String rf)
+        {
+            _requiredFieldsofParentFolder = rf;
+        }
+
+        public String getRequiredFieldsOfCurrentFolder()
+        {
+            return _requiredFieldsOfCurrentFolder;
+        }
+
+        /**
+         *
+         * @param requiredField
+         * @return true if required field is an inherited value
+         */
+        public boolean isRequiredFieldInherited(String requiredField)
+        {
+            String rf = _requiredFieldsofParentFolder;
+
+            assert (StringUtils.isNotEmpty(rf));
+
+            String[] requiredFieldVals = rf.split(";");
+
+
+            for (int i = 0; i < requiredFieldVals.length; i++)
+            {
+                if(requiredField.toLowerCase().equals(requiredFieldVals[i].toLowerCase()))
+                 return true;
+            }
+            return false;
+        }
+
     }
 
 
@@ -2737,7 +3005,7 @@ public class IssuesController extends SpringActionController
         {
             super("/org/labkey/issue/keywordAdmin.jsp");
             setModelBean(_keywordPickers);
-            _c = c;
+            _c = IssueManager.getInheritFromOrCurrentContainer(c);
             _ccc = ccc;
         }
 

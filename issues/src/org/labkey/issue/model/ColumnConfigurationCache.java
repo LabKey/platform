@@ -55,7 +55,7 @@ public class ColumnConfigurationCache
                     }
                 }, IssueManager.CustomColumn.class);
 
-            return new CustomColumnConfiguration(map);
+            return new CustomColumnConfiguration(map, c);
         }
     });
 

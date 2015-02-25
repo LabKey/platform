@@ -76,6 +76,138 @@
     var curDefaultUser = <%=bean.defaultUser == null ? null : bean.defaultUser.getUserId()%>;
     var curDefaultContainers = <%= new JSONArray(moveToContainerIds.toString())%>;
     var curInheritContainer = "<%= h(bean.inheritFromContainer == null ? "" : bean.inheritFromContainer.getId())%>";
+    function submitFormUserConfirm()
+    {
+
+        var inheritingContainerExists = "<%=h(bean.inheritingContainersExists)%>";
+
+        var customFieldValType = document.querySelector("input[name=type]").value;
+        var customFieldValTypeStored = "<%=h(ccc.getCaption("type"))%>";
+
+        var customFieldValArea = document.querySelector("input[name=area]").value;
+        var customFieldValAreaStored = "<%=h(ccc.getCaption("area"))%>";
+
+        var customFieldValPriority = document.querySelector("input[name=priority]").value;
+        var customFieldValPriorityStored = "<%=h(ccc.getCaption("priority"))%>";
+
+        var customFieldValMilestone = document.querySelector("input[name=milestone]").value;
+        var customFieldValMilestoneStored = "<%=h(ccc.getCaption("milestone"))%>";
+
+        var customFieldValResolution = document.querySelector("input[name=resolution]").value;
+        var customFieldValResolutionStored = "<%=h(ccc.getCaption("resolution"))%>";
+
+        var customFieldValRelated = document.querySelector("input[name=related]").value;
+        var customFieldValRelatedStored = "<%=h(ccc.getCaption("related"))%>";
+
+        var customFieldValInteger1 = document.querySelector("input[name=int1]").value;
+        var customFieldValInteger1Stored = "<%=h(ccc.getCaption("int1"))%>";
+
+        var customFieldValInteger2 = document.querySelector("input[name=int2]").value;
+        var customFieldValInteger2Stored = "<%=h(ccc.getCaption("int2"))%>";
+
+        var customFieldValString1 = document.querySelector("input[name=string1]").value;
+        var customFieldValString1Stored = "<%=h(ccc.getCaption("string1"))%>";
+
+        var customFieldValString2 = document.querySelector("input[name=string2]").value;
+        var customFieldValString2Stored = "<%=h(ccc.getCaption("string2"))%>";
+
+        var customFieldValString3 = document.querySelector("input[name=string3]").value;
+        var customFieldValString3Stored = "<%=h(ccc.getCaption("string3"))%>";
+
+        var customFieldValString4 = document.querySelector("input[name=string4]").value;
+        var customFieldValString4Stored = "<%=h(ccc.getCaption("string4"))%>";
+
+        var customFieldValString5 = document.querySelector("input[name=string5]").value;
+        var customFieldValString5Stored = "<%=h(ccc.getCaption("string5"))%>";
+
+        //for current folder inheriting settings from another folder for the very first time
+        if(document.querySelector("input[name=inheritFromContainerSelect]").disabled == false && curInheritContainer == "")
+        {
+            if(isCustomColumnOccupied(customFieldValType) || isCustomColumnOccupied(customFieldValArea) ||
+                    isCustomColumnOccupied(customFieldValPriority) || isCustomColumnOccupied(customFieldValMilestone) ||
+                    isCustomColumnOccupied(customFieldValResolution) || isCustomColumnOccupied(customFieldValRelated) ||
+                    isCustomColumnOccupied(customFieldValInteger1) || isCustomColumnOccupied(customFieldValInteger2) ||
+                    isCustomColumnOccupied(customFieldValString1) || isCustomColumnOccupied(customFieldValString2) ||
+                    isCustomColumnOccupied(customFieldValString3) || isCustomColumnOccupied(customFieldValString4) ||
+                    isCustomColumnOccupied(customFieldValString5))
+            {
+
+                var result =  confirm("Custom Field value(s) of current folder may be overridden.");
+
+                //submit only if user clicks on OK
+                if(result == true)
+                {
+                    document.getElementById("adminViewOfIssueList").submit();
+                    return;
+                }
+                //do nothing otherwise.
+                else
+                {
+                    location.reload();
+                    return;
+                }
+            }
+        }
+
+        //for current folder with inheriting folders
+        if(inheritingContainerExists == "true")
+        {
+            if(isCustomColumnModified(customFieldValType, customFieldValTypeStored) ||
+                    isCustomColumnModified(customFieldValArea, customFieldValAreaStored) ||
+                    isCustomColumnModified(customFieldValPriority, customFieldValPriorityStored) ||
+                    isCustomColumnModified(customFieldValMilestone, customFieldValMilestoneStored) ||
+                    isCustomColumnModified(customFieldValResolution, customFieldValResolutionStored) ||
+                    isCustomColumnModified(customFieldValRelated, customFieldValRelatedStored) ||
+                    isCustomColumnModified(customFieldValInteger1, customFieldValInteger1Stored) ||
+                    isCustomColumnModified(customFieldValInteger2, customFieldValInteger2Stored) ||
+                    isCustomColumnModified(customFieldValString1, customFieldValString1Stored) ||
+                    isCustomColumnModified(customFieldValString2, customFieldValString2Stored) ||
+                    isCustomColumnModified(customFieldValString3, customFieldValString3Stored) ||
+                    isCustomColumnModified(customFieldValString4, customFieldValString4Stored) ||
+                    isCustomColumnModified(customFieldValString5, customFieldValString5Stored))
+            {
+
+                    var result2 = confirm("Found one or more folders with settings inherited from the current folder: Adding new Custom Fields will override Custom Fields of inheriting folders.");
+
+
+                    if (result2 == true)
+                    {
+                        document.getElementById("adminViewOfIssueList").submit();
+                        return;
+                    }
+                    //do nothing otherwise.
+                    else
+                    {
+                        location.reload();
+                        return;
+                    }
+            }
+
+        }
+
+        //'submit' by default when user clicks on "Update" - only exception is the above one where we ask user to confirm whether
+        //to submit or not.
+        document.getElementById("adminViewOfIssueList").submit();
+    }
+
+    function isCustomColumnModified(str1, str2)
+    {
+     if(str1 != "" && str2 =="")
+        return true;
+
+        return false;
+    }
+
+    function isCustomColumnOccupied(str1)
+    {
+        if(str1 != "")
+            return true;
+
+        return false;
+    }
+
+
+
 </script>
 
 <br>
@@ -87,7 +219,7 @@
 <tr><td>&nbsp;</td></tr>
 <%=formatMissedErrorsInTable("form", 1)%>
 </table>
-<labkey:form name="entryTypeNames" action="<%=h(buildURL(ConfigureIssuesAction.class))%>" method="POST">
+<labkey:form id="adminViewOfIssueList" name="entryTypeNames" action="<%=h(buildURL(ConfigureIssuesAction.class))%>" method="POST">
 
 <table>
     <tr>
@@ -99,39 +231,67 @@
                         <table>
                             <tr>
                                 <td>Singular item name</td>
-                                <td><input type="text" name="<%=text(ConfigureIssuesForm.ParamNames.entrySingularName.name())%>"
-                                           value="<%=h(bean.entryTypeNames.singularName)%>" size="20"/></td>
+                                        <td><input type="text" name="<%=text(ConfigureIssuesForm.ParamNames.entrySingularName.name())%>"
+                                           value="<%=h(bean.entryTypeNames.singularName)%>" size="20" <%=disabled(bean.inheritFromContainerExists)%> /></td>
+
+
                             </tr>
                             <tr>
                                 <td>Plural items name</td>
-                                <td><input type="text" name="<%=text(ConfigureIssuesForm.ParamNames.entryPluralName.name())%>"
-                                           value="<%=h(bean.entryTypeNames.pluralName)%>" size="20"/></td>
+                                       <td><input type="text" name="<%=text(ConfigureIssuesForm.ParamNames.entryPluralName.name())%>"
+                                           value="<%=h(bean.entryTypeNames.pluralName)%>" size="20" <%=disabled(bean.inheritFromContainerExists)%> /></td>
                             </tr>
                             <tr>
-                                <td>Comment sort direction</td>
+                                <td> Comment sort direction </td>
                                 <td>
-                                    <%=PageFlowUtil.strSelect(ConfigureIssuesForm.ParamNames.direction.name(), Arrays.asList(Sort.SortDirection.values()), java.util.Arrays.asList("Oldest first", "Newest first"), bean.commentSort) %>
+                                    <%--not sure how to disable this --%>
+                                        <%=PageFlowUtil.strSelect(ConfigureIssuesForm.ParamNames.direction.name(),
+                                                Arrays.asList(Sort.SortDirection.values()), java.util.Arrays.asList("Oldest first", "Newest first"), bean.commentSort)%>
+
                                 </td>
                             </tr>
                         </table>
                     </td>
                     <td>
                         <table align="right">
+
                             <tr><td colspan="2">Inherit Admin Setting from folder:</td></tr>
                             <tr>
                                 <td>
-                                    <input onchange="updateInheritFromContainerSelect()" type="radio" name="inheritFromContainer" value="DoNotInheritFromContainer"<%=checked(bean.inheritFromContainer == null)%> />
+                                    <input onchange="updateInheritFromContainerSelect()" type="radio" name="inheritFromContainer" value="DoNotInheritFromContainer"<%=checked(bean.inheritFromContainer == null)%>/>
                                 </td>
                                 <td>None</td>
                             </tr>
+                            <% // if "children" exists, disable this section
+                                if(bean.inheritingContainersExists)
+                                {
+                            %>
+                            <tr><td colspan="2"><span style="font-style: italic" color=#4169e1> Unable to inherit admin settings from other folders: Found one or more </span></td></tr>
+                            <tr><td colspan="2"><span style="font-style: italic" color=#4169e1> folders with settings inherited from the current folder. </span></td></tr>
                             <tr>
-                                <td>
-                                    <input onchange="updateInheritFromContainerSelect()" type="radio" name="inheritFromContainer" value="InheritFromSpecificContainer"<%=checked(bean.inheritFromContainer != null)%> />
-                                </td>
-                                <td>
-                                    <div class="inheritFromContainerCheckCombo"></div>
-                                </td>
-                            </tr>
+                                        <td>
+                                            <input onchange="updateInheritFromContainerSelect()" type="radio" name="inheritFromContainer" value="InheritFromSpecificContainer"<%=checked(bean.inheritFromContainer != null)%> disabled />
+                                        </td>
+                                        <td>
+                                            <div class="inheritFromContainerCheckCombo"></div>
+                                        </td>
+                                    </tr>
+                            <%
+                                }
+                                else
+                                {
+                            %>
+                                    <tr>
+                                        <td>
+                                            <input onchange="updateInheritFromContainerSelect()" type="radio" name="inheritFromContainer" value="InheritFromSpecificContainer"<%=checked(bean.inheritFromContainer != null)%> />
+                                        </td>
+                                        <td>
+                                            <div class="inheritFromContainerCheckCombo"></div>
+                                        </td>
+                                    </tr>
+                            <%
+                                }
+                            %>
                         </table>
                     </td>
                 </tr>
@@ -141,28 +301,30 @@
                             <tr><td colspan="2">Populate the assigned to list from:</td></tr>
                             <tr>
                                 <td>
-                                    <input onchange="assignedToGroup.disabled=true;updateAssignedToUser();" type="radio" name="assignedToMethod" value="ProjectUsers"<%=checked(null == bean.assignedToGroup)%> />
+                                    <input onchange="assignedToGroup.disabled=true;updateAssignedToUser();" type="radio" name="assignedToMethod" value="ProjectUsers"<%=checked(null == bean.assignedToGroup)%> <%=disabled(bean.inheritFromContainerExists)%> />
                                 </td>
                                 <td>All Project Users</td>
                             </tr>
                             <tr>
                                 <td>
-                                    <input onchange="assignedToGroup.disabled=false;updateAssignedToUser();" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%> />
+                                            <input onchange="assignedToGroup.disabled=false;updateAssignedToUser();" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%> disabled />
+                                            <td>Specific Group
+                                                <select name="assignedToGroup" onchange="updateAssignedToUser()"<%=disabled(null == bean.assignedToGroup)%> <%=disabled(bean.inheritFromContainerExists)%> >
+                                                <%
+                                                    for (Group group : org.labkey.api.security.SecurityManager.getGroups(c.getProject(), true))
+                                                    {
+                                                        // 19532 partial. Only show Site: Users option to site admins
+                                                        if (!group.isGuests() && (!group.isUsers() || getUser().isSiteAdmin()))
+                                                        {
+                                                            String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
+                                                            out.println("<option value=\"" + group.getUserId() + "\"" + selected(null != bean.assignedToGroup && group.getUserId() == bean.assignedToGroup.getUserId()) + ">" + h(displayText) + "</option>");
+                                                        }
+                                                    }
+                                                %>
+                                                </select>
+                                            </td>
                                 </td>
-                                <td>Specific Group
-                                    <select name="assignedToGroup" onchange="updateAssignedToUser()"<%=disabled(null == bean.assignedToGroup)%> ><%
-                                    for (Group group : org.labkey.api.security.SecurityManager.getGroups(c.getProject(), true))
-                                        {
-                                            // 19532 partial. Only show Site: Users option to site admins
-                                            if (!group.isGuests() && (!group.isUsers() || getUser().isSiteAdmin()))
-                                            {
-                                                String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
-                                                out.println("<option value=\"" + group.getUserId() + "\"" + selected(null != bean.assignedToGroup && group.getUserId() == bean.assignedToGroup.getUserId()) + ">" + h(displayText) + "</option>");
-                                            }
-                                        }
-                                    %>
-                                    </select>
-                                </td>
+
                             </tr>
                         </table>
                     </td>
@@ -171,13 +333,13 @@
                             <tr><td colspan="2">Set move to folder:</td></tr>
                             <tr>
                                 <td>
-                                    <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="NoMoveToContainer"<%=checked(bean.moveToContainers.size() == 0)%> />
+                                   <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="NoMoveToContainer"<%=checked(bean.moveToContainers.size() == 0)%> <%=disabled(bean.inheritFromContainerExists)%> />
                                 </td>
                                 <td>None</td>
                             </tr>
                             <tr>
                                 <td>
-                                    <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="SpecificMoveToContainer"<%=checked(bean.moveToContainers.size() > 0)%> />
+                                     <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="SpecificMoveToContainer"<%=checked(bean.moveToContainers.size() > 0)%> <%=disabled(bean.inheritFromContainerExists)%> />
                                 </td>
                                 <td>
                                     <div class="moveToContainerCheckCombo"></div>
@@ -193,16 +355,16 @@
                             <tr><td colspan="2">Set default assigned to user:</td></tr>
                             <tr>
                                 <td>
-                                    <input onchange="defaultUser.disabled=true;" type="radio" name="assignedToUser" value="NoDefaultUser"<%=checked(null == bean.defaultUser)%> />
+                                   <input onchange="defaultUser.disabled=true;" type="radio" name="assignedToUser" value="NoDefaultUser"<%=checked(null == bean.defaultUser)%> <%=disabled(bean.inheritFromContainerExists)%> />
                                 </td>
                                 <td>No default</td>
                             </tr>
                             <tr>
                                 <td>
-                                    <input onchange="defaultUser.disabled=false;" type="radio" name="assignedToUser" value="SpecificUser"<%=checked(null != bean.defaultUser)%> />
+                                    <input onchange="defaultUser.disabled=false;" type="radio" name="assignedToUser" value="SpecificUser"<%=checked(null != bean.defaultUser)%> <%=disabled(bean.inheritFromContainerExists)%> />
                                 </td>
                                 <td>Specific User
-                                    <select onchange="updateCurDefaultUser();" name="defaultUser"<%=disabled(null == bean.defaultUser)%> ></select>
+                                    <select onchange="updateCurDefaultUser();" name="defaultUser"<%=disabled(null == bean.defaultUser)%> <%=disabled(bean.inheritFromContainerExists)%> ></select>
                                 </td>
                             </tr>
                         </table>
@@ -210,17 +372,16 @@
                     <td>
                         <table align="right">
                             <td>Folder of related issues list</td>
-                            <td><input type="text" name="relatedIssuesList"
-                                    <%
-                                        Container related = IssueManager.getRelatedIssuesList(c);
-                                        String relatedStr = related == null ? "" : related.getPath();
-                                    %>
-                                       value="<%=h(relatedStr)%>" size="45"/></td>
+                            <td>
+                                <input type="text" name="relatedIssuesList"
+                                            <%
+                                                Container related = IssueManager.getRelatedIssuesList(c);
+                                                String relatedStr = related == null ? "" : related.getPath();
+                                            %>
+                                        value="<%=h(relatedStr)%>" size="45" <%=disabled(bean.inheritFromContainerExists)%> />
+                            </td>
                         </table>
                     </td>
-                </tr>
-                <tr>
-                    <td><%= button("Update").submit(true) %></td>
                 </tr>
             </table>
         </td>
@@ -232,7 +393,9 @@
             <tr><td colspan=2>Select fields to be required when entering or updating <%=h(bean.getEntryTypeNames().getIndefiniteSingularArticle())%> <%=h(bean.getEntryTypeNames().singularName)%>:</td></tr>
             <tr><td colspan=2>&nbsp;</td></tr>
             <tr>
-                <td><input type="checkbox" name="requiredFields"<%=checked(isRequired("comment", bean.getRequiredFields()))%> value="comment">Comments (new issues only)</td><%
+                    <td><input type="checkbox" name="requiredFields"<%=checked(isRequired("comment", bean.getRequiredFields()))%>
+                            <%=disabled(bean.inheritFromContainerExists)%> value="comment">Comments (new issues only)</td>
+            <%
             List<ColumnInfo> columns = bean.getColumns();
             for (int i = 0; i < columns.size(); i++)
             {
@@ -240,42 +403,53 @@
                 boolean startNewRow = i % 2 == 1;
                 if (startNewRow)
                 {
-        %>
-            <tr><%
-
+            %>
+            <tr>
+            <%
                 }
-        %>
-                <td><input type="checkbox" name="requiredFields"<%=checked(isRequired(info.getName(), bean.getRequiredFields()))%><%=disabled(isPickList(ccc, info) && !hasKeywords(c, info))%> value="<%=h(info.getName())%>"><%=h(getCaption(ccc, info))%></td><%
+            %>
+            <td><input type="checkbox" name="requiredFields"<%=checked(isRequired(info.getName(), bean.getRequiredFields()))%>
+            <%=disabled((isPickList(ccc, info) && !hasKeywords(c, info)) || (bean.inheritFromContainerExists && bean.isRequiredFieldInherited(info.getName())) || (bean.getInheritedFlag(info.getColumnName())))%>
+                       value="<%=h(info.getName())%>"><%=h(getCaption(ccc, info))%>
 
+            </td>
+            <%
                 if (!startNewRow)
                 {
-        %>
-            </tr><%
+            %>
+            </tr>
+            <%
 
                 }
             }
-        %>
-        </table><br>
+            %>
+
+        </table><br/>
     </td>
     <td valign=top>
         <table width="120%">
-        <tr><td colspan=4 align="center" ><div class="labkey-form-label"><b>Custom Fields</b></div></td></tr>
-        <tr><td colspan=3>Enter captions below to use custom fields in this <%=h(bean.entryTypeNames.pluralName)%> list:</td></tr>
-        <tr><td colspan=3>&nbsp;</td></tr>
-        <tr><td>Type</td><td><input name="type" value="<%=h(ccc.getCaption("type"))%>" size=20></td></tr>
-        <tr><td>Area</td><td><input name="area" value="<%=h(ccc.getCaption("area"))%>" size=20></td></tr>
-        <tr><td>Priority</td><td><input name="priority" value="<%=h(ccc.getCaption("priority"))%>" size=20></td></tr>
-        <tr><td>Milestone</td><td><input name="milestone" value="<%=h(ccc.getCaption("milestone"))%>" size=20></td></tr>
-        <tr><td>Resolution</td><td><input name="resolution" value="<%=h(ccc.getCaption("resolution"))%>" size=20></td></tr>
-        <tr><td>Related</td><td><input name="related" value="<%=h(ccc.getCaption("related"))%>" size=20></td></tr>
-        <tr><td>Integer1</td><td><input name="int1" value="<%=h(ccc.getCaption("int1"))%>" size=20></td></tr>
-        <tr><td>Integer2</td><td><input name="int2" value="<%=h(ccc.getCaption("int2"))%>" size=20></td></tr>
-        <%=text(getStringFieldHtml(ccc, "string1"))%>
-        <%=text(getStringFieldHtml(ccc, "string2"))%>
-        <%=text(getStringFieldHtml(ccc, "string3"))%>
-        <%=text(getStringFieldHtml(ccc, "string4"))%>
-        <%=text(getStringFieldHtml(ccc, "string5"))%>
+        <tr><td colspan=2 align="center" ><div class="labkey-form-label"><b>Custom Fields</b></div></td></tr>
+        <tr><td colspan=2>Enter captions below to use custom fields in this <%=h(bean.entryTypeNames.pluralName)%> list:</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
+            <tr><td>Type</td><td><input name="type" value="<%=h(ccc.getCaption("type"))%>" size=20 <%=disabled(bean.isTypeInherited())%>></td></tr>
+            <tr><td>Area</td><td><input name="area" value="<%=h(ccc.getCaption("area"))%>" size=20 <%=disabled(bean.isAreaInherited())%>></td></tr>
+            <tr><td>Priority</td><td><input name="priority" value="<%=h(ccc.getCaption("priority"))%>" size=20 <%=disabled(bean.isPriorityInherited())%>></td></tr>
+            <tr><td>Milestone</td><td><input name="milestone" value="<%=h(ccc.getCaption("milestone"))%>" size=20 <%=disabled(bean.isMilestoneInherited())%>></td></tr>
+            <tr><td>Resolution</td><td><input name="resolution" value="<%=h(ccc.getCaption("resolution"))%>" size=20 <%=disabled(bean.isResolutionInherited())%>></td></tr>
+            <tr><td>Related</td><td><input name="related" value="<%=h(ccc.getCaption("related"))%>" size=20 <%=disabled(bean.isRelatedInherited())%>></td></tr>
+            <tr><td>Integer1</td><td><input name="int1" value="<%=h(ccc.getCaption("int1"))%>" size=20 <%=disabled(bean.isInt1Inherited())%>></td></tr>
+            <tr><td>Integer2</td><td><input name="int2" value="<%=h(ccc.getCaption("int2"))%>" size=20 <%=disabled(bean.isInt2Inherited())%>></td></tr>
+            <%=text(getStringFieldHtml(bean, ccc, "string1"))%>
+            <%=text(getStringFieldHtml(bean, ccc, "string2"))%>
+            <%=text(getStringFieldHtml(bean, ccc, "string3"))%>
+            <%=text(getStringFieldHtml(bean, ccc, "string4"))%>
+            <%=text(getStringFieldHtml(bean, ccc, "string5"))%>
+        <tr><td colspan=2>&nbsp;</td></tr>
+            <tr>
+                <td colspan="2" align="right">
+                    <%=button("Update").onClick("submitFormUserConfirm()") %>
+                </td>
+            </tr>
         </table>
     </td>
 </tr>
@@ -306,8 +480,9 @@
     public boolean hasKeywords(Container c, ColumnInfo col)
     {
         ColumnType type = ColumnType.forName(col.getColumnName());
+        Container con = IssueManager.getInheritFromOrCurrentContainer(c);//get "parent's" settings, if any.
 
-        return (null == type || KeywordManager.getKeywords(c, type).size() > 0);
+        return (null == type || KeywordManager.getKeywords(con, type).size() > 0);
     }
 
     public boolean isPickList(CustomColumnConfiguration ccc, ColumnInfo col)
@@ -327,16 +502,35 @@
         return (null != type && type.isStandard());
     }
 
-    public String getStringFieldHtml(CustomColumnConfiguration ccc, String name)
+
+    public String getStringFieldHtml(AdminBean bean, CustomColumnConfiguration ccc, String name)
     {
+
+        String input = null;
+        String select = null;
+        String inputCheckbox = null;
         StringBuilder sb = new StringBuilder("        <tr><td>");
         sb.append(StringUtils.capitalize(name));
         sb.append("</td><td>");
-        sb.append("<input name=\"");
+
+        if(bean.getInheritedFlag(name))
+        {
+            input = "<input disabled name=\"";
+            select = "<td><select disabled name=\"permissions\">";
+            inputCheckbox = "\" size=20> <input disabled type=\"checkbox\" name=\"";
+        }
+        else
+        {
+            input = "<input name=\"";
+            select = "<td><select name=\"permissions\">";
+            inputCheckbox = "\" size=20> <input type=\"checkbox\" name=\"";
+        }
+
+        sb.append(input);
         sb.append(name);
         sb.append("\" value=\"");
         sb.append(h(ccc.getCaption(name)));
-        sb.append("\" size=20> <input type=\"checkbox\" name=\"");
+        sb.append(inputCheckbox);
         sb.append(IssueManager.PICK_LIST_NAME);
         sb.append("\" value=\"");
         sb.append(name);
@@ -347,7 +541,7 @@
         CustomColumn cc = ccc.getCustomColumn(name);
         Class<? extends Permission> perm = null != cc ? cc.getPermission() : ReadPermission.class;
 
-        sb.append("<td><select name=\"permissions\">");
+        sb.append(select);
         sb.append("<option value=\"read\"" + selected(perm.equals(ReadPermission.class)) + ">Read</option>");
         sb.append("<option value=\"insert\"" + selected(perm.equals(InsertPermission.class)) + ">Insert</option>");
         sb.append("<option value=\"admin\"" + selected(perm.equals(AdminPermission.class)) + ">Admin</option>");
