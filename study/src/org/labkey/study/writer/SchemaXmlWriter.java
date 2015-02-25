@@ -169,6 +169,8 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
                 // We don't include assay runs in study exports, so the link target won't be available in the target system
                 columnXml.unsetUrl();
             }
+            // TODO: The fix for Issue 20302 in ListWriter writes the property descriptor's URL, which has the substitution markers (eg :none)
+            // Similar fix here would be nice, but property descriptors are not readily available.
 
             if (column.isUnselectable())
             {

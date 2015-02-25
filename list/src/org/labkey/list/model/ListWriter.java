@@ -31,6 +31,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -362,10 +363,15 @@ public class ListWriter
             }
             else
             {
-                PropertyType propType = _properties.get(columnName).getPropertyDescriptor().getPropertyType();
+                PropertyDescriptor propertyDescriptor =_properties.get(columnName).getPropertyDescriptor();
+                PropertyType propType = propertyDescriptor.getPropertyType();
 
                 if (propType == PropertyType.ATTACHMENT)
                     columnXml.setDatatype(propType.getXmlName());
+
+                // Write URL, if exists, from property descriptor
+                if (null != propertyDescriptor.getURL())
+                    columnXml.setUrl(propertyDescriptor.getURL().getSource());
             }
         }
 
