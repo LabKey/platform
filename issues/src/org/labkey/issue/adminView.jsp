@@ -262,36 +262,23 @@
                                 </td>
                                 <td>None</td>
                             </tr>
-                            <% // if "children" exists, disable this section
+                            <% // if inheriting containers exists, show this message
                                 if(bean.inheritingContainersExists)
                                 {
                             %>
-                            <tr><td colspan="2"><span style="font-style: italic" color=#4169e1> Unable to inherit admin settings from other folders: Found one or more </span></td></tr>
-                            <tr><td colspan="2"><span style="font-style: italic" color=#4169e1> folders with settings inherited from the current folder. </span></td></tr>
-                            <tr>
-                                        <td>
-                                            <input onchange="updateInheritFromContainerSelect()" type="radio" name="inheritFromContainer" value="InheritFromSpecificContainer"<%=checked(bean.inheritFromContainer != null)%> disabled />
-                                        </td>
-                                        <td>
-                                            <div class="inheritFromContainerCheckCombo"></div>
-                                        </td>
-                                    </tr>
-                            <%
-                                }
-                                else
-                                {
-                            %>
-                                    <tr>
-                                        <td>
-                                            <input onchange="updateInheritFromContainerSelect()" type="radio" name="inheritFromContainer" value="InheritFromSpecificContainer"<%=checked(bean.inheritFromContainer != null)%> />
-                                        </td>
-                                        <td>
-                                            <div class="inheritFromContainerCheckCombo"></div>
-                                        </td>
-                                    </tr>
+                                    <tr><td colspan="2"><span style="font-style: italic" color=#4169e1> Unable to inherit admin settings from other folders: Found one or more </span></td></tr>
+                                    <tr><td colspan="2"><span style="font-style: italic" color=#4169e1> folders with settings inherited from the current folder. </span></td></tr>
                             <%
                                 }
                             %>
+                                <tr>
+                                    <td>
+                                        <input onchange="updateInheritFromContainerSelect()" type="radio" name="inheritFromContainer" value="InheritFromSpecificContainer"<%=checked(bean.inheritFromContainer != null)%> <%=disabled(bean.inheritingContainersExists)%> />
+                                    </td>
+                                    <td>
+                                        <div class="inheritFromContainerCheckCombo"></div>
+                                    </td>
+                                </tr>
                         </table>
                     </td>
                 </tr>
