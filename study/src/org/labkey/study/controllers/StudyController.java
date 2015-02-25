@@ -1204,6 +1204,8 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(ImportVisitMapForm form, boolean reshow, BindException errors) throws Exception
         {
+            StudyImpl study = getStudyThrowIfNull();
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
             return new StudyJspView<>(getStudyRedirectIfNull(), "importVisitMap.jsp", null, errors);
         }
 
