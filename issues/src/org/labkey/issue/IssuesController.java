@@ -1935,9 +1935,12 @@ public class IssuesController extends SpringActionController
         private Container _inheritSettingsFromThisContainer = null;
         private List<Container> _moveToContainers = new LinkedList<>();
         private Sort.SortDirection _direction = Sort.SortDirection.ASC;
+        private Container _currentContainer;
 
         public void validateCommand(ConfigureIssuesForm form, Errors errors)
         {
+            _currentContainer = getViewContext().getContainer();
+
             checkPickLists(form, errors);
             
             CustomColumnConfiguration ccc = new CustomColumnConfiguration(getViewContext());
@@ -2075,26 +2078,14 @@ public class IssuesController extends SpringActionController
                     errors.reject("Related Issues List", "Invalid folder path for folder of related issues list.");
             }
 
-
-            // This is a hack (sort of), and is required for this scenario: User switches from previously inheriting
-            // from a container to 'None'. This causes form.getEntrySingularName() and form.getEntryPluralName()
-            // to be null. This hack is required (unless there is a better solution) to set the form values of
-            // the "current" container so that it doesn't err and reject the form submission,
-            // and also so that it doesn't save the null values in handlePost() for pluralName and singularName for the
-            // current container.
-            if(_inheritSettingsFromThisContainer == null && (StringUtils.isEmpty(form.getEntrySingularName()) || StringUtils.isEmpty(form.getEntryPluralName())))
+            //only check for null values if there is no inheriting container of the current container
+            if((_currentContainer != null) && _currentContainer.equals(IssueManager.getInheritFromOrCurrentContainer(_currentContainer)))
             {
-                EntryTypeNames etn = IssueManager.getEntryTypeNames(getContainer(), false);
-                if (StringUtils.isNotEmpty(etn.pluralName))
-                    form.setEntryPluralName(etn.pluralName);
-                if (StringUtils.isNotEmpty(etn.singularName))
-                    form.setEntrySingularName(etn.singularName);
-            }
-
-            if (form.getEntrySingularName() == null || form.getEntrySingularName().trimToEmpty().length() == 0)
+                if (form.getEntrySingularName() == null || form.getEntrySingularName().trimToEmpty().length() == 0)
                     errors.reject(ConfigureIssuesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
-            if (form.getEntryPluralName() == null || form.getEntryPluralName().trimToEmpty().length() == 0)
+                if (form.getEntryPluralName() == null || form.getEntryPluralName().trimToEmpty().length() == 0)
                     errors.reject(ConfigureIssuesForm.ParamNames.entryPluralName.name(), "You must specify a value for the entry type plural name!");
+            }
 
             try
             {
