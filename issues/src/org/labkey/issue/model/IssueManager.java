@@ -355,6 +355,7 @@ public class IssueManager
 
     public static CustomColumnConfiguration getCustomColumnConfiguration(Container c)
     {
+        ColumnConfigurationCache.uncache(c);
         return ColumnConfigurationCache.get(c);
     }
 
