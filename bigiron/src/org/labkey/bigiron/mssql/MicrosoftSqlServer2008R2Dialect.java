@@ -1748,7 +1748,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     public Collection<String> getScriptWarnings(String sql)
     {
         // At the moment, we're only checking for stored procedure definitions that aren't followed immediately by a GO
-        // statement or end of the script. Theese will cause major problem if they are missed during script consolidation
+        // statement or end of the script. These will cause major problem if they are missed during script consolidation
 
         // Dumb little parser that, within stored procedure definitions, matches up each BEGIN with COMMIT/END.
         String[] tokens = sql.replace(";", "").split("\\s+");
