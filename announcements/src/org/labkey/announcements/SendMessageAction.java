@@ -16,7 +16,6 @@
 
 package org.labkey.announcements;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
@@ -26,6 +25,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.SecurityManager;
@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
 import org.labkey.api.util.MailHelper;
 import org.springframework.validation.BindException;
 
@@ -51,7 +52,6 @@ import java.util.Set;
 @RequiresPermissionClass(ReadPermission.class)
 public class SendMessageAction extends MutatingApiAction<SendMessageAction.MessageForm>
 {
-    private boolean _allowUnregisteredUser;
     private Map<String, Set<String>> _recipientMap = new HashMap<>();
 
     enum Props
@@ -59,8 +59,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         msgFrom,
         msgRecipients,
         msgSubject,
-        msgContent,
-        allowUnregisteredUser,
+        msgContent
     }
 
     enum MsgContent
@@ -83,7 +82,6 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
         String from = json.getString(Props.msgFrom.name());
         String subject = json.getString(Props.msgSubject.name());
-        _allowUnregisteredUser = BooleanUtils.toBoolean(json.getString(Props.allowUnregisteredUser.name()));
         JSONArray recipients;
         JSONArray contents;
 
@@ -128,12 +126,12 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         {
             ValidEmail validEmail = new ValidEmail(email);
 
-            if (!_allowUnregisteredUser)
+            if (!canEmailNonUsers(getUser()))
             {
                 User user = UserManager.getUser(validEmail);
 
                 if (user == null)
-                    throw new IllegalArgumentException("The user email: " + email + " does not exist in the system.");
+                    throw new IllegalArgumentException("The email address '" + email + "' is not associated with a user account, and the current user does not have permission to send to it.");
             }
             return validEmail.getAddress();
         }
@@ -141,6 +139,12 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         {
             throw new IllegalArgumentException("Invalid email format.", e);
         }
+    }
+
+    private boolean canEmailNonUsers(User user)
+    {
+        return getContainer().hasPermission(user, SeeUserEmailAddressesPermission.class) ||
+            ContainerManager.getRoot().hasPermission(user, SeeUserEmailAddressesPermission.class);
     }
 
     private String[] resolveEmailAddress(JSONObject recipient)
