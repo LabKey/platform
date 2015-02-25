@@ -98,17 +98,7 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
         int len = rs.getMetaData().getColumnCount();
 
         // Stuff current row into rowMap
-        int currentRow;
-
-        try
-        {
-            currentRow = rs.getRow();
-        }
-        catch (SQLException e)
-        {
-            currentRow = 1;   // TODO: Implement a counter for SAS
-        }
-
+        int currentRow = rs.getRow();
         List<Object> _list = map.getRow();
 
         if (0 == _list.size())
