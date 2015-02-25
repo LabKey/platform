@@ -56,6 +56,7 @@ public class StudySnapshot
     private long _created;
     private int _modifiedBy;
     private long _modified;
+    private StudySnapshotType _type;
 
     private boolean _refresh;  // Saved in settings as well, but dedicated refresh column allows quick filtering
     private SnapshotSettings _settings;
@@ -189,6 +190,16 @@ public class StudySnapshot
         return _settings;
     }
 
+    public StudySnapshotType getType()
+    {
+        return _type;
+    }
+
+    public void setType(StudySnapshotType type)
+    {
+        _type = type;
+    }
+
     // Hold the actual snapshot settings... this is serialized to (and deserialized from) the
     // database via Jackson. To serialize/deserialize another property, create a new member, a getter method,
     // and initialize it appropriately in the constructor below.
@@ -196,7 +207,6 @@ public class StudySnapshot
     public static class SnapshotSettings
     {
         /* General Setup */
-        private StudySnapshotType type;
         private String description;
         /* Participants */
         private List<Integer> participantGroups = new ArrayList<>();
@@ -252,7 +262,6 @@ public class StudySnapshot
 
         private void loadGeneralSetup(ChildStudyDefinition def)
         {
-            type = def.getMode();
             if (def.getDescription() != null)
                 description = def.getDescription();
         }
@@ -489,11 +498,6 @@ public class StudySnapshot
         public List<String> getReports()
         {
             return reports;
-        }
-
-        public StudySnapshotType getType()
-        {
-            return type;
         }
 
         public Integer getSpecimenRequestId()

@@ -15,6 +15,7 @@
  */
 package org.labkey.study;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -34,7 +35,9 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -51,11 +54,13 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.CommandLineSplitter;
@@ -63,10 +68,14 @@ import org.labkey.study.reports.DefaultCommandLineSplitter;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.WindowsCommandLineSplitter;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -573,6 +582,83 @@ public class StudyUpgradeCode implements UpgradeCode
            .append(fieldName).append("_").append(tableInfoWithFK.getMetaDataName()).append("_").append(newDestTableInfo.getMetaDataName())
            .append(" FOREIGN KEY (").append(fieldName).append(") REFERENCES ").append(newDestTableInfo.getSelectName()).append(" (RowId)");
         new SqlExecutor(tableInfoWithFK.getSchema()).execute(sql);
+    }
+
+    // invoked by study-13.23-13.24.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void upgradeStudySnapshotsType(final ModuleContext context)
+    {
+        StudySchema studySchema = StudySchema.getInstance();
+
+        TableInfo tableInfo = studySchema.getTableInfoStudySnapshot();
+
+        List<List<?>> paramsList = new ArrayList<>();
+
+        // NOTE: avoiding getArrayList(StudySnapshot.class) because bean could change (and did change with this upgrade).
+        for ( Map<String, Object> snapshot : new TableSelector(tableInfo).getMapArray())
+        {
+            HashMap<String, Object> settings;
+            ObjectMapper mapper = new ObjectMapper();
+            try
+            {
+                settings = mapper.readValue((String)snapshot.get("settings"), HashMap.class);
+            }
+            catch (IOException e)
+            {
+                // In previous usage of GSON, there was potential for unhandled exception from gson.fromJson().
+                // Jackson explicitly throws exceptions, but there's still nothing we can do about it if one happens here.
+                _log.error("Error passing settings json into map.", e);
+                continue;
+            }
+
+            String type;
+            int rowId = (int)snapshot.get("rowid");
+            if (settings != null)
+            {
+                if (settings.get("type") != null)
+                    type = (String)settings.get("type");
+                else
+                {
+                    if(settings.get("visits") == null)
+                        type = StudySnapshotType.ancillary.toString();
+                    else
+                        type = StudySnapshotType.publish.toString();
+                }
+                settings.remove("type");
+            }
+            else
+                type = StudySnapshotType.publish.toString();
+
+            String settingsStr;
+            try
+            {
+                settingsStr = mapper.writeValueAsString(settings);
+            }
+            catch (IOException e)
+            {
+                // In previous usage of GSON, there was potential for unhandled exception from gson.fromJson().
+                // Jackson explicitly throws exceptions, but there's still nothing we can do about it if one happens here.
+                _log.error("Error parsing settings map into json.", e);
+                continue;
+            }
+
+            paramsList.add(Arrays.asList(type, settingsStr, rowId));
+        }
+        String sql = "UPDATE " + tableInfo + " SET type=?,settings=? WHERE rowid=?";
+
+        try (DbScope.Transaction transaction = studySchema.getSchema().getScope().ensureTransaction())
+        {
+            try
+            {
+                Table.batchExecute(studySchema.getSchema(), sql, paramsList);
+            }
+            catch (SQLException e)
+            {
+                _log.error("Error upgrading study type.", e);
+            }
+            transaction.commit();
+        }
     }
 
 }

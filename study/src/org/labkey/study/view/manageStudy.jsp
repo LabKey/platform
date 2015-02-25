@@ -395,17 +395,8 @@
 <script type="text/javascript">
     function showCreateStudyWizard(mode)
     {
-        Ext.onReady(function(){
-
-            var wizard = new LABKEY.study.CreateStudyWizard({
-                mode: mode,
-                studyName : <%=q(availableStudyName)%>
-            });
-
-            wizard.on('success', function(info){}, this);
-
-            // run the wizard
-            wizard.show();
-        });
+//        Ext.onReady(
+                LABKEY.study.openCreateStudyWizard(mode, <%=q(availableStudyName)%>)
+//        );
     }
 </script>

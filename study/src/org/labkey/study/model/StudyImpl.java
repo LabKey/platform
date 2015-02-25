@@ -835,7 +835,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(getStudySnapshot());
             if (snapshot != null)
             {
-                _studySnapshotType = snapshot.getSnapshotSettings().getType();
+                _studySnapshotType = snapshot.getType();
             }
 
             // prior to 15.1, we didn't store the snapshot type in the SnapshotSettings, so use the "guess type" method

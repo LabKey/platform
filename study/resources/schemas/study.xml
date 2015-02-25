@@ -2091,6 +2091,7 @@
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="Source"/>
+      <ns:column columnName="Type"/>
       <ns:column columnName="Destination"/>
       <ns:column columnName="CreatedBy"/>
       <ns:column columnName="Created"/>

@@ -65,6 +65,8 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
         ContainerForeignKey.initColumn(source, getUserSchema());
         addColumn(source);
 
+        addColumn(new AliasedColumn(this, "Type", _rootTable.getColumn(FieldKey.fromParts("type"))));
+
         ColumnInfo destination = new AliasedColumn(this, "Destination", _rootTable.getColumn("destination"));
         final User user = schema.getUser();
         destination.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -133,7 +135,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
                 dependencies.add("study/StudyWizard.js");
 
                 String availableStudyName = ContainerManager.getAvailableChildContainerName(getContainer(), "New Study");
-                String javaScriptEvent = "onclick=\"LABKEY.study.openCreateStudyWizard(${RowId:jsString}, '" + availableStudyName + "');\"";
+                String javaScriptEvent = "onclick=\"LABKEY.study.openRepublishStudyWizard(${RowId:jsString}, '" + availableStudyName + "');\"";
 
                 return new JavaScriptDisplayColumn(colInfo, dependencies, javaScriptEvent, "labkey-text-link")
                 {

@@ -5,6 +5,7 @@
  */
 
 // TODO: I am pretty sure this is stashing the input and output into different variables.
+// TODO: factor out EditorGridPanel for regular ext GridPanel (via Nick) -- No reason for editor here?
 // We should look to reuse those objects as we are not using the initial values for anything are we?
 
 Ext.namespace("LABKEY.study");
@@ -12,10 +13,12 @@ Ext.namespace("LABKEY.study");
 Ext.QuickTips.init();
 Ext.GuidedTips.init();
 
-LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName) {
+//NOTE: The margin-left 2px which are placed sporadically here fix some rendering on Mac but appears not to be an issue with any other browser...
+
+LABKEY.study.openRepublishStudyWizard = function(snapshotId, availableContainerName) {
     // get the rest of the study snapshot details/settings from the server
 
-    var sql = "SELECT c.DisplayName as PreviousStudy, u.DisplayName as CreatedBy, ss.Created, ss.Settings " +
+    var sql = "SELECT c.DisplayName as PreviousStudy, u.DisplayName as CreatedBy, ss.Created, ss.Settings, ss.Type " +
               "FROM study.StudySnapshot AS ss LEFT JOIN core.Users AS u ON ss.CreatedBy = u.UserId " +
               "LEFT JOIN core.Containers AS c ON c.EntityId = ss.Destination WHERE ss.RowId = " + parseInt(snapshotId);
 
@@ -27,7 +30,7 @@ LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName
             var row = data.rows[0];
             var settings = Ext.decode(row.Settings);
             var config = {
-                mode: (settings && settings.type ? settings.type : 'publish'),
+                mode: row.Type,
                 studyName: availableContainerName,
                 settings: settings,
                 previousStudy: row.PreviousStudy,
@@ -48,7 +51,7 @@ LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName
             }
 
             // issue 22076: snapshot settings prior to 15.1 didn't have type specific so we guess between publish and ancillary
-            if (settings.type == undefined && settings.visits == null) {
+            if (row.Type == undefined && settings.visits == null) {
                 config.mode = 'ancillary';
             }
 
@@ -59,6 +62,47 @@ LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName
         }
     });
 
+};
+
+// NOTE: consider wrapping in Ext.onReady
+LABKEY.study.openCreateStudyWizard = function(mode, studyName) {
+    // TODO: consider container scope (containerFilter: LABKEY.Query.containerFilter.allFolders)
+    LABKEY.Query.selectRows({
+        schemaName: 'study',
+        queryName: 'StudySnapshot',
+        columns: ['Created', 'CreatedBy/DisplayName', 'Destination'],
+        filterArray: [
+            LABKEY.Filter.create('type', mode)
+        ],
+        success: function (data) {
+            var config = {
+                mode: mode,
+                studyName : studyName
+            };
+
+            // Do some clean up of each row (fix keys)
+            Ext.each(data.rows, function(row) {
+                // NOTE: assume if _labkeyurl_Destination is set, then permissions are good to go
+                var urlParts = row._labkeyurl_Destination.split('/');
+                // NOTE: there should be a better way to do this but not seeing it in ext3
+                row.Destination = Object.keys(Ext.urlDecode(urlParts[urlParts.length-2]))[0];
+            });
+
+            // NOTE: time to handle destination rollup (StudySnapshotTable.java:70)
+            //var permissions = LABKEY.Security.getUserPermissions({
+            //    userId: LABKEY.Security.currentUser.id,
+                //success: function(userPermsInfo) {
+                //    var currentPermissions = userPermsInfo.container.effectivePermissions;
+                //    LABKEY.Security.hasEffectivePermission(currentPermissions, LABKEY.Security.effectivePermissions.read);
+                //}
+            //});
+
+            if (data.rowCount > 0) config.previousStudies = data.rows;
+
+            var wizard = new LABKEY.study.CreateStudyWizard(config);
+            wizard.show();
+        }
+    });
 };
 
 LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
@@ -73,7 +117,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             subject : LABKEY.getModuleContext("study").subject
         });
         Ext.apply(this, config);
-        this.pageOptions = this.initPages();
+        this.pageOptions = this.initPageOptions();
         this.requestId = config.requestId;
         Ext.util.Observable.prototype.constructor.call(this, config);
         this.sideBarTemplate = new Ext.XTemplate(
@@ -109,52 +153,58 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         return setObj;
     },
 
-    initPages : function(){
-        var pages = [];
-        pages[0] = {
-            panelType : 'name',
-            active :  (this.namePanel == false) ? false : this.mode == 'publish' || this.mode == 'ancillary' || this.mode == 'specimen' || this.namePanel
+    initPageOptions : function(){
+        var pages = {
+            previousSettings: {
+                panelType: 'previousSettings',
+                active: this.previousStudies ? true : false
+            },
+            name: {
+                panelType: 'name',
+                active: this.mode == 'publish' || this.mode == 'ancillary' || this.mode == 'specimen'
+            },
+            participants: {
+                panelType: 'participants',
+                active: this.mode == 'publish' || this.mode == 'ancillary'
+            },
+            datasets: {
+                panelType: 'datasets',
+                active: this.mode == 'publish' || this.mode == 'ancillary' || this.mode == 'specimen'
+            },
+            visits: {
+                panelType: 'visits',
+                active: this.mode == 'publish'
+            },
+            specimens: {
+                panelType: 'specimens',
+                active: this.mode == 'publish'
+            },
+            studyProps: {
+                panelType: 'studyProps',
+                active: this.mode == 'publish'
+            },
+            lists: {
+                panelType: 'lists',
+                active: this.mode == 'publish'
+            },
+            views: {
+                panelType: 'views',
+                active: this.mode == 'publish'
+            },
+            reports: {
+                panelType: 'reports',
+                active: this.mode == 'publish'
+            },
+            folderProps: {
+                panelType: 'folderProps',
+                active: this.mode == 'publish'
+            },
+            publishOptions: {
+                panelType: 'publishOptions',
+                active: this.mode == 'publish'
+            }
         };
-        pages[1] = {
-            panelType : 'participants',
-            active : (this.participantsPanel == false) ? false : this.mode == 'publish' || this.mode == 'ancillary' || this.participantsPanel
-        };
-        pages[2] = {
-            panelType : 'datasets',
-            active : (this.datasetsPanel == false) ? false : this.mode == 'publish' || this.mode == 'ancillary' || this.mode == 'specimen' || this.datasetsPanel
-        };
-        pages[3] = {
-            panelType : 'visits',
-            active : (this.visitsPanel == false) ? false : this.mode == 'publish' || this.visitsPanel
-        };
-        pages[4] = {
-            panelType : 'specimens',
-            active : (this.specimensPanel == false) ? false : this.mode == 'publish' || this.specimensPanel
-        };
-        pages[5] = {
-            panelType : 'studyProps',
-            active : (this.studyPropertiesPanel == false) ? false : this.mode == 'publish' || this.studyPropertiesPanel
-        };
-        pages[6] = {
-            panelType : 'lists',
-            active : (this.listsPanel == false) ? false : this.mode == 'publish' || this.listsPanel
-        };
-        pages[7] = {
-            panelType : 'views',
-            active : (this.viewsPanel == false) ? false : this.mode == 'publish' || this.viewsPanel
-        };
-        pages[8] = {
-            panelType : 'reports',
-            active : (this.reportsPanel == false) ? false : this.mode == 'publish' || this.reportsPanel
-        };
-        pages[9] = {
-            panelType : 'FolderProps',
-            active : (this.folderPropertiesPanel == false) ? false : this.mode == 'publish' || this.folderPropertiesPanel
-        };
-        pages[10] = {
-            panelType : 'publishOptions',
-            active : (this.publishOptionsPanel == false) ? false : this.mode == 'publish' || this.publishOptionsPanel
-        };
+
         return pages;
     },
 
@@ -205,18 +255,20 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.lastStep = 0;
 
         //TODO:  This format is not pleasing.
-        if(this.pageOptions[0].active == true) this.steps.push(this.getNamePanel());
-        if(this.pageOptions[1].active == true) this.steps.push(this.getParticipantsPanel());
-        if(this.pageOptions[2].active == true) this.steps.push(this.getDatasetsPanel());
+        if(this.pageOptions.previousSettings.active) this.steps.push(this.getPreviousSettingsPanel());
 
-        if(this.pageOptions[3].active == true) this.steps.push(this.getVisitsPanel());
-        if(this.pageOptions[4].active == true) this.steps.push(this.getSpecimensPanel());
-        if(this.pageOptions[5].active == true) this.steps.push(this.getStudyPropsPanel());
-        if(this.pageOptions[6].active == true) this.steps.push(this.getListsPanel());
-        if(this.pageOptions[7].active == true) this.steps.push(this.getViewsPanel());
-        if(this.pageOptions[8].active == true) this.steps.push(this.getReportsPanel());
-        if(this.pageOptions[9].active == true) this.steps.push(this.getFolderPropsPanel());
-        if(this.pageOptions[10].active == true) this.steps.push(this.getPublishOptionsPanel());
+        if(this.pageOptions.name.active) this.steps.push(this.getNamePanel());
+        if(this.pageOptions.participants.active) this.steps.push(this.getParticipantsPanel());
+        if(this.pageOptions.datasets.active) this.steps.push(this.getDatasetsPanel());
+
+        if(this.pageOptions.visits.active) this.steps.push(this.getVisitsPanel());
+        if(this.pageOptions.specimens.active) this.steps.push(this.getSpecimensPanel());
+        if(this.pageOptions.studyProps.active) this.steps.push(this.getStudyPropsPanel());
+        if(this.pageOptions.lists.active) this.steps.push(this.getListsPanel());
+        if(this.pageOptions.views.active) this.steps.push(this.getViewsPanel());
+        if(this.pageOptions.reports.active) this.steps.push(this.getReportsPanel());
+        if(this.pageOptions.folderProps.active) this.steps.push(this.getFolderPropsPanel());
+        if(this.pageOptions.publishOptions.active) this.steps.push(this.getPublishOptionsPanel());
 
         this.prevBtn = new Ext.Button({text: 'Previous', disabled: true, scope: this, handler: function(){
             this.lastStep = this.currentStep;
@@ -248,37 +300,26 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             bbar: ['->', this.prevBtn, this.nextBtn]
         });
 
-        var setup = [
-            {value: 'General Setup', currentStep: true}
-         ];
-        if(this.pageOptions[1].active) {
-            setup.push({value: this.subject.nounPlural, currentStep: false});
-        }
-        else {
-            setup.push({value : 'Participants', currentStep : false});
-        }
-        setup.push({value: 'Datasets', currentStep: false});
-
-        if(this.studyType){
-            setup.push({value: this.studyType == "VISIT" ? 'Visits' : 'Timepoints', currentStep: false});
-        }
-
-        setup.push(
-                {value: 'Specimens', currentStep: false},
-                {value: 'Study Objects', currentStep: false},
-                {value: 'Lists', currentStep: false},
-                {value: 'Views', currentStep: false},
-                {value: 'Reports', currentStep: false},
-                {value: 'Folder Objects', currentStep: false},
-                {value: 'Publish Options', currentStep: false}
-        );
+        // TODO: look at merging this with pageOptions (not sure why these aren't the same object)
+        var setup = {
+            previousSettings: {value: 'Previous Settings', currentStep: this.previousStudies ? true : false},
+            name: {value: 'General Setup', currentStep: this.previousStudies ? false : true},
+            participants:  {value: this.pageOptions.participants.active ? this.subject.nounPlural : 'Participants', currentStep: false},
+            datasets: {value: 'Datasets', currentStep: false},
+            visits: {value: this.studyType == "VISIT" ? 'Visits' : 'Timepoints', currentStep: false},
+            specimens: {value: 'Specimens', currentStep: false},
+            studyProps: {value: 'Study Objects', currentStep: false},
+            lists: {value: 'Lists', currentStep: false},
+            views: {value: 'Views', currentStep: false},
+            reports: {value: 'Reports', currentStep: false},
+            folderProps: {value: 'Folder Objects', currentStep: false},
+            publishOptions: {value: 'Publish Options', currentStep: false}
+        };
 
         var steps = [];
-        for(var i = 0; i < this.pageOptions.length; i++){
-            if(this.pageOptions[i].active == true){
-                steps.push(setup[i]);
-            }
-        }
+        Ext.iterate(this.pageOptions, function(name, pageOption){
+            if(pageOption.active) steps.push(setup[name]);
+        });
 
         this.sideBar = new Ext.Panel({
             //This is going to be where the sidebar content goes.
@@ -423,6 +464,108 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 scope : this
             });
         }
+    },
+
+    getPreviousSettingsPanel : function() {
+        var headerTxt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Previous Settings'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+
+        var selModel = new Ext.grid.CheckboxSelectionModel({checkOnly:true,singleSelect:true});
+
+        var grid = new Ext.grid.GridPanel({
+            selModel: selModel,
+            columns: [
+                selModel,
+                {dataIndex: 'Created', header: 'Created', width: 100, sortable: true},
+                {dataIndex: 'CreatedBy/DisplayName', header: 'Created By', width: 100, sortable: true},
+                {dataIndex: 'Destination', header: 'Destination', width: 200, sortable: true},
+                {dataIndex: 'RowId', hidden: true}
+            ],
+            store: new Ext.data.JsonStore({
+                fields: ['Created', 'CreatedBy/DisplayName', 'Destination', 'RowId'],
+                data: this.previousStudies
+            }),
+            viewConfig: {forceFit: true},
+            loadMask: {msg: "Loading, please wait..."},
+            enableFilters: true,
+            pageSize: 300000,
+            height: 175,
+            cls: 'studyWizardPreviousStudiesList',
+            bbarCfg: [{hidden:true}],
+            tbarCfg: [{hidden:true}]
+        });
+
+        var republishRadio = new Ext.form.Radio({
+            height: 20,
+            style: 'margin-left: 2px',
+            boxLabel: (this.mode == 'publish' ? 'Republish' : 'Recreate anciliary study') + ' starting with the settings from a previous publication',
+            name: 'publishType',
+            checked: true,
+            inputValue: 'republish',
+            listeners: {
+                check: function(radio, checked){
+                    (!checked) ? grid.disable() : grid.enable();
+                }
+            }
+        });
+
+        var publishRadio = new Ext.form.Radio({
+            height: 20,
+            style: 'margin-left: 2px',
+            boxLabel: (this.mode == 'publish' ? 'Publish new study' : 'Create anciliary study') +  ' from scratch',
+            name: 'publishType',
+            inputValue: 'publish'
+        });
+
+        var panel = new Ext.Panel({
+            cls: 'extContainer',
+            border: false,
+            name:  'Previous Settings',
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: [
+                {xtype:'displayfield', html: headerTxt},
+                republishRadio,
+                grid,
+                publishRadio
+            ]
+        });
+
+        panel.on('beforehide', function(cmp){
+            if (republishRadio.getValue() && !grid.getSelectionModel().getSelected())
+            {
+                Ext.MessageBox.alert('Error', 'If republishing a study, please select a study to republish.');
+                this.currentStep--;
+                this.updateStep();
+                return false;
+            }
+
+            // TODO: explore abstraction (copy pasta from openRepublishStudyWizard)
+            var data = grid.getSelectionModel().getSelected().data
+            var snapshotId = data.RowId;
+            var sql = "SELECT c.DisplayName as PreviousStudy, u.DisplayName as CreatedBy, ss.Created, ss.Settings, ss.Type " +
+                    "FROM study.StudySnapshot AS ss LEFT JOIN core.Users AS u ON ss.CreatedBy = u.UserId " +
+                    "LEFT JOIN core.Containers AS c ON c.EntityId = ss.Destination WHERE ss.RowId = " + parseInt(snapshotId);
+
+            LABKEY.Query.executeSql({
+                schemaName: 'study',
+                sql: sql,
+                containerFilter: LABKEY.Query.containerFilter.allFolders,
+                scope: this,
+                success: function(data) {
+                    var row = data.rows[0];
+                    var settings = Ext.decode(row.Settings);
+                    this.settings = settings;
+                }
+            });
+
+            return true;
+        }, this);
+
+        return panel;
     },
 
     getNamePanel : function() {
@@ -867,7 +1010,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
             return true;
         }, this);
-        this.pageOptions[1].value = this.selectedParticipantGroups;
+        this.pageOptions.participants.value = this.selectedParticipantGroups;
         return this.participantPanel;
     },
 
@@ -1189,7 +1332,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 return false;
             }, this);
         }, this);
-        this.pageOptions[7].value = this.selectedViews;
+        this.pageOptions.views.value = this.selectedViews;
         return panel;
     },
 
@@ -1372,7 +1515,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         }, this);
 
-        this.pageOptions[8].value = this.selectedReports;
+        this.pageOptions.reports.value = this.selectedReports;
         return new Ext.Panel({
             border: false,
             name: "Reports",
@@ -1536,7 +1679,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         };
 
         panel.on('beforehide', validate, this);
-        this.pageOptions[3].value = this.selectedVisits;
+        this.pageOptions.visits.value = this.selectedVisits;
         return panel;
     },
 
@@ -1625,7 +1768,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             items: items
         });
-        this.pageOptions[6].value = this.selectedLists;
+        this.pageOptions.lists.value = this.selectedLists;
         return panel;
     },
 
@@ -1857,7 +2000,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var hiddenFields = [];
 
-        if(this.pageOptions[1].active){
+        if(this.pageOptions.participants.active){
             if(this.existingGroupRadio.checked)
             {
                 // If we chose an existing group then we just pass the rowid of the group, because of a bug in ie
@@ -1898,10 +2041,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         params.copyParticipantGroups = true;
 
-        this.pageOptions[3].value = this.selectedVisits;
-        this.pageOptions[6].value = this.selectedLists;
-        this.pageOptions[7].value = this.selectedViews;
-        this.pageOptions[8].value = this.selectedReports;
+        this.pageOptions.visits.value = this.selectedVisits;
+        this.pageOptions.lists.value = this.selectedLists;
+        this.pageOptions.views.value = this.selectedViews;
+        this.pageOptions.reports.value = this.selectedReports;
 
         if(this.requestId){
             id = Ext.id();
@@ -1909,7 +2052,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             this.nameFormPanel.add({xtype: 'hidden', id : id, name : 'requestId', value : this.requestId});
         }
 
-        if (this.pageOptions[5].active && this.selectedStudyObjects)
+        if (this.pageOptions.studyProps.active && this.selectedStudyObjects)
         {
             var studyProps = [];
             id = Ext.id();
@@ -1923,7 +2066,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 params.studyPropsAll = true;
             }
         }
-        if (this.pageOptions[8].active && this.selectedFolderObjects)
+        if (this.pageOptions.folderProps.active && this.selectedFolderObjects)
         {
             var folderProps = [];
             id = Ext.id();
@@ -1942,7 +2085,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         //TODO:  Get rid of mode here, or at least make it work in the context.
         if(this.mode == 'publish'){
 
-            if(this.pageOptions[3].active){
+            if(this.pageOptions.visits.active){
                 for(i = 0; i < this.selectedVisits.length; i++){
                     var visit = this.selectedVisits[i];
                     id = Ext.id();
@@ -1950,7 +2093,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'visits', value: visit.data.RowId});
                 }
             }
-            if(this.pageOptions[6].active){
+            if(this.pageOptions.lists.active){
                 for(i = 0; i < this.selectedLists.length; i++){
                     var list = this.selectedLists[i];
                     id = Ext.id();
@@ -1958,7 +2101,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'lists', value: list.data.id});
                 }
             }
-            if(this.pageOptions[7].active){
+            if(this.pageOptions.views.active){
                 for(i = 0; i < this.selectedViews.length; i++){
                     var view = this.selectedViews[i];
                     id = Ext.id();
@@ -1970,7 +2113,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     params.viewsAll = true;
                 }
             }
-            if(this.pageOptions[8].active){
+            if(this.pageOptions.reports.active){
                 for(i = 0; i < this.selectedReports.length; i++){
                     var report = this.selectedReports[i];
                     id = Ext.id();
