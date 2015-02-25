@@ -4109,7 +4109,10 @@ study/src/org/labkey/study/writer/TreatmentDataWriter.java -text
 study/src/org/labkey/study/writer/ViewCategoryWriter.java -text
 study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
+study/test/sampledata/study/Demographics.tsv -text
 study/test/sampledata/study/LotsOfPtidsStudy.folder.zip -text
+study/test/sampledata/study/LotsOfPtidsStudy_NoData.folder.zip -text
+study/test/sampledata/study/Results.tsv -text
 study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageAssayScheduleTester.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageStudyProductsTester.java -text
