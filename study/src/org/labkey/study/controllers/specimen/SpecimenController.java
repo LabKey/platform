@@ -800,7 +800,21 @@ public class SpecimenController extends BaseStudyController
                     specimensToAdd.add(SpecimenManager.getInstance().getVial(getContainer(), getUser(), id));
             }
 
-            SpecimenManager.getInstance().createRequestSampleMapping(getUser(), request, specimensToAdd, true, true);
+            try
+            {
+                SpecimenManager.getInstance().createRequestSampleMapping(getUser(), request, specimensToAdd, true, true);
+            }
+            catch (RequestabilityManager.InvalidRuleException e)
+            {
+                errors.reject(ERROR_MSG, "The samples could not be added because a requestability rule is configured incorrectly. " +
+                        "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                return false;
+            }
+            catch (SpecimenManager.SpecimenRequestException e)
+            {
+                errors.reject(ERROR_MSG, "A vial that was available for request has become unavailable.");
+                return false;
+            }
             return true;
         }
 
@@ -1780,6 +1794,11 @@ public class SpecimenController extends BaseStudyController
                         {
                             errors.reject(ERROR_MSG, "The request could not be created because a requestability rule is configured incorrectly. " +
                                     "Please report this problem to an administrator.  Error details: " + e.getMessage());
+                            return false;
+                        }
+                        catch (SpecimenManager.SpecimenRequestException e)
+                        {
+                            errors.reject(ERROR_MSG, "A vial that was available for request has become unavailable.");
                             return false;
                         }
                     }

@@ -1405,7 +1405,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     private static final ReentrantLock REQUEST_ADDITION_LOCK = new ReentrantLock();
     public void createRequestSampleMapping(User user, SpecimenRequest request, List<Vial> vials, boolean createEvents, boolean createRequirements)
-            throws SQLException, RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
+            throws SQLException, RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException,
+                   SpecimenRequestException
     {
         if (vials == null || vials.size() == 0)
             return;
@@ -1419,7 +1420,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                     throw new IllegalStateException("Mismatched containers.");
 
                 if (!vial.isAvailable())
-                    throw new IllegalStateException(RequestabilityManager.makeSpecimenUnavailableMessage(vial, null));
+                    throw new SpecimenRequestException();
             }
 
             for (Vial vial : vials)

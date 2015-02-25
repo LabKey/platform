@@ -432,6 +432,11 @@ public class SpecimenApiController extends BaseStudyController
                                 "Please report this problem to an administrator.  Error details: "  + e.getMessage());
                     return null;
                 }
+                catch (SpecimenManager.SpecimenRequestException e)
+                {
+                    errors.reject(ERROR_MSG, RequestabilityManager.makeSpecimenUnavailableMessage(vial, null));
+                    return null;
+                }
 
             }
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
@@ -530,6 +535,11 @@ public class SpecimenApiController extends BaseStudyController
                 {
                     errors.reject(ERROR_MSG, "The samples could not be added because a requestability rule is configured incorrectly. " +
                                 "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                    return null;
+                }
+                catch (SpecimenManager.SpecimenRequestException e)
+                {
+                    errors.reject(ERROR_MSG, "A vial that was available for request has become unavailable.");
                     return null;
                 }
             }
