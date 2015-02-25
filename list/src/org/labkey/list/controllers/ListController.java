@@ -362,8 +362,21 @@ public class ListController extends SpringActionController
         {
             for(int i = 0; i < _listIDs.size(); i++)
             {
-                ListService.get().getList(_containers.get(i), _listIDs.get(i)).delete(getUser());
+                ListDefinition listDefinition = ListService.get().getList(_containers.get(i), _listIDs.get(i));
+                if (null != listDefinition)
+                {
+                    try
+                    {
+                        listDefinition.delete(getUser());
+                    }
+                    catch (Exception e)
+                    {
+                        errors.reject(ERROR_MSG, "Error deleting list '" + listDefinition.getName() + "'; another user may have deleted it.");
+                    }
+                }
             }
+            if (errors.hasErrors())
+                return false;
             return true;
         }
 
