@@ -586,7 +586,6 @@ public class StudyUpgradeCode implements UpgradeCode
 
     // invoked by study-13.23-13.24.sql
     @SuppressWarnings({"UnusedDeclaration"})
-    @DeferredUpgrade
     public void upgradeStudySnapshotsType(final ModuleContext context)
     {
         StudySchema studySchema = StudySchema.getInstance();
