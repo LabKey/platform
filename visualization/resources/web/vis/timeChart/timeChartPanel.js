@@ -885,7 +885,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         simplified.errorBars = config.errorBars ? config.errorBars : defaultConfig.errorBars;
         simplified.aggregateType = config.aggregateType ? config.aggregateType : defaultConfig.aggregateType;
         simplified.filterUrl = config.filterUrl;
-        simplified.parameters = config.parameters;
+        simplified.parameters = config.parameters ? config.parameters : defaultConfig.parameters;
         simplified.title = config.title;
         simplified.hideDataPoints = config.hideDataPoints ? config.hideDataPoints : defaultConfig.hideDataPoints;
         simplified.lineWidth = config.lineWidth ? config.lineWidth : defaultConfig.lineWidth;
@@ -1364,7 +1364,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             aggregateType: "Mean",
             subject: {},
             filterUrl: LABKEY.Query.Visualization.getDataFilterFromURL(),
-            filterQuery: this.getFilterQuery()
+            filterQuery: this.getFilterQuery(),
+            parameters: {}
         }
     },
 
