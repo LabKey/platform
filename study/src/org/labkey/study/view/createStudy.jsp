@@ -50,7 +50,7 @@
             <th style="text-align:left;width:18em">Subject Column Name<%=helpPopup("Subject Column Name", "The column header for subject IDs.  Examples include \"ParticipantId\", \"MouseId\", or \"YeastId\".  This value cannot be changed after study creation.", true)%></th>
             <td align="left"><input type="text" size="40" name="subjectColumnName" value="<%= h(form.getSubjectColumnName()) %>"></td>
         </tr>
-        <% if (form.isShareVisits()) { %>
+        <% if (!form.isShareVisits()) { %>
         <tr>
             <td colspan="2" class="labkey-announcement-title"><span>Visit/Timepoint Tracking</span></td>
         </tr>

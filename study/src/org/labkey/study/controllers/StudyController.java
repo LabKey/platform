@@ -1260,6 +1260,10 @@ public class StudyController extends BaseStudyController
             {
                 form.setDefaultTimepointDuration(1);
             }
+            // NOTE: should be a better way to do this (e.g. get the correct value in the form/backend to begin with)
+            Study sharedStudy = getStudy(getContainer().getProject());
+            if (sharedStudy != null)
+                form.setShareVisits(sharedStudy.getShareVisitDefinitions());
             return new StudyJspView<>(null, "createStudy.jsp", form, errors);
         }
 
