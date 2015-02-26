@@ -32,12 +32,12 @@ public class IssueGroupListener implements GroupListener
     // Any change to a group could change assigned to lists
     public void principalAddedToGroup(Group g, UserPrincipal user)
     {
-        IssueManager.uncache(null);
+        IssueManager.uncache();
     }
 
     public void principalDeletedFromGroup(Group g, UserPrincipal user)
     {
-        IssueManager.uncache(null);
+        IssueManager.uncache();
     }
 
     public void propertyChange(PropertyChangeEvent evt)

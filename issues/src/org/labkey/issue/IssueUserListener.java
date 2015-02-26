@@ -35,17 +35,17 @@ public class IssueUserListener implements UserListener
     public void userDeletedFromSite(User user)
     {
         IssueManager.deleteUserEmailPreferences(user);
-        IssueManager.uncache(null);                     // Might change assigned to lists
+        IssueManager.uncache();                     // Might change assigned to lists
     }
 
     public void userAccountDisabled(User user)
     {
-        IssueManager.uncache(null);
+        IssueManager.uncache();
     }
 
     public void userAccountEnabled(User user)
     {
-        IssueManager.uncache(null);
+        IssueManager.uncache();
     }
 
     public void propertyChange(PropertyChangeEvent evt)
