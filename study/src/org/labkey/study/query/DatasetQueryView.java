@@ -205,7 +205,10 @@ public class DatasetQueryView extends StudyQueryView
             FieldKey qcStateKey = FieldKey.fromParts(DatasetTableImpl.QCSTATE_ID_COLNAME, "rowid");
             Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(table, Collections.singleton(qcStateKey));
             ColumnInfo qcStateColumn = qcStateColumnMap.get(qcStateKey);
-            filter.addClause(new SimpleFilter.SQLClause(_qcStateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getFieldKey()));
+            if (qcStateColumn != null)
+            {
+                filter.addClause(new SimpleFilter.SQLClause(_qcStateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getFieldKey()));
+            }
         }
 
         ColumnInfo sourceLsidCol = table.getColumn("SourceLsid");
