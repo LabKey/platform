@@ -15,7 +15,6 @@
  */
 package org.labkey.announcements.api;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.ToursController;
 import org.labkey.announcements.model.TourManager;
 import org.labkey.announcements.model.TourModel;
@@ -37,7 +36,7 @@ public class TourServiceImpl implements TourService.Interface
         return new ActionURL(ToursController.BeginAction.class, container);
     }
 
-    public List<Tour> getApplicableTours(@Nullable Container container)
+    public List<Tour> getApplicableTours(Container container)
     {
         List<Tour> tours = new ArrayList<>();
         for(TourModel model : TourManager.getApplicableTours(container))

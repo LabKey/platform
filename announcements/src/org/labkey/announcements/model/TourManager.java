@@ -18,12 +18,8 @@ package org.labkey.announcements.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.Entity;
-import org.labkey.api.data.Selector;
-import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 
@@ -36,107 +32,67 @@ public class TourManager
 {
     private static final CommSchema _comm = CommSchema.getInstance();
 
+
     public TourManager()
     {
     }
 
-    public static TourModel getTour(@Nullable Container c, String entityId)
+    private static TourCache.TourCacheLoader<TourCollections> tourLoader = new TourCache.TourCacheLoader<TourCollections>()
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
-        if (c != null)
+        @Override
+        TourCollections load(String key, Container c)
         {
-            filter.addCondition(FieldKey.fromParts("Container"), c);
+            return new TourCollections(c);
         }
-        Selector selector = new TableSelector(_comm.getTableInfoTours(), filter, null);
-        TourModel[] tours = selector.getArray(TourModel.class);
+    };
 
-        if (tours.length < 1)
-            return null;
-
-        return tours[0];
+    private static TourCollections getTourCollections(Container c)
+    {
+        return TourCache.getTourCollections(c, tourLoader);
     }
 
-    public static TourModel getTour(@Nullable Container c, int rowId)
+    public static TourModel getTour(Container c, String entityId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        if (null != c)
-        {
-            filter.addCondition(FieldKey.fromParts("Container"), c);
-        }
-        Selector selector = new TableSelector(_comm.getTableInfoTours(), filter, null);
-        TourModel tour = selector.getObject(TourModel.class);
-
-        if (null == tour)
-            return null;
-
-        return tour;
+        return getTourCollections(c).getTourByEntityId(entityId);
     }
 
-    public static List<TourModel> getApplicableTours(@Nullable Container c)
+    public static TourModel getTour(Container c, int rowId)
     {
-        SimpleFilter filter = new SimpleFilter();
-
-        if( null != c)
-        {
-            filter.addCondition(FieldKey.fromParts("Container"), c);
-        }
-
-        return new TableSelector(_comm.getTableInfoTours(), filter, null).getArrayList(TourModel.class);
+        return getTourCollections(c).getTourByRowId(rowId);
     }
 
-    public static String getTourJson(@Nullable Container c, int rowId)
+    public static List<TourModel> getApplicableTours(Container c)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        if (c != null)
-        {
-            filter.addCondition(FieldKey.fromParts("Container"), c);
-        }
-        Selector selector = new TableSelector(_comm.getTableInfoTours(), filter, null);
-        TourModel tour = selector.getObject(TourModel.class);
+        return getTourCollections(c).getTourList();
+    }
 
-        if (null == tour)
+    @Nullable
+    public static String getTourJson(Container c, int rowId)
+    {
+        TourModel tour = getTourCollections(c).getTourByRowId(rowId);
+
+        if(null == tour)
             return null;
 
         return tour.getJson();
     }
 
-    public static String getTourMode(@Nullable Container c, int rowId)
+    @Nullable
+    public static String getTourMode(Container c, int rowId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        if (c != null)
-        {
-            filter.addCondition(FieldKey.fromParts("Container"), c);
-        }
-        Selector selector = new TableSelector(_comm.getTableInfoTours(), filter, null);
-        TourModel tour = selector.getObject(TourModel.class);
+        TourModel tour = getTourCollections(c).getTourByRowId(rowId);
 
-        if (null == tour)
+        if(null==tour)
             return null;
 
         return tour.getMode().toString();
     }
 
-    public static String getTourEntity(@Nullable Container c, int rowId)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        if (c != null)
-        {
-            filter.addCondition(FieldKey.fromParts("Container"), c);
-        }
-        Selector selector = new TableSelector(_comm.getTableInfoTours(), filter, null);
-        TourModel tour = selector.getObject(TourModel.class);
-
-        if (null == tour)
-            return null;
-
-        return tour.getEntityId();
-    }
-
-
     public static TourModel insertTour(Container c, User user, TourModel insert)
     {
         insert.beforeInsert(user, c.getId());
         TourModel result = Table.insert(user, _comm.getTableInfoTours(), insert);
+        TourCache.uncache(c);
 
         return result;
     }
@@ -145,14 +101,7 @@ public class TourManager
     {
         update.beforeUpdate(user);
         TourModel result = Table.update(user, _comm.getTableInfoTours(), update, update.getRowId());
-
-        return result;
-    }
-
-    public static TourModel updateTour(User user, TourModel update, Entity cur)
-    {
-        update.beforeUpdate(user, cur);
-        TourModel result = Table.update(user, _comm.getTableInfoTours(), update, update.getRowId());
+        TourCache.uncache(ContainerManager.getForId(update.getContainerId()));
 
         return result;
     }
@@ -160,11 +109,13 @@ public class TourManager
     private static void deleteTour(TourModel tour)
     {
         Table.delete(_comm.getTableInfoTours(), tour.getRowId());
+        TourCache.uncache(ContainerManager.getForId(tour.getContainerId()));
     }
 
     public static void purgeContainer(Container c)
     {
         ContainerUtil.purgeTable(_comm.getTableInfoTours(), c, null);
+        TourCache.uncache(c);
     }
 
     public static void deleteTour(Container c, int rowId)

@@ -160,6 +160,8 @@ announcements/src/org/labkey/announcements/model/SecureMessageBoardPermissions.j
 announcements/src/org/labkey/announcements/model/SecureMessageBoardReadPermission.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardRespondPermission.java -text
 announcements/src/org/labkey/announcements/model/TourAdministratorPermissions.java -text
+announcements/src/org/labkey/announcements/model/TourCache.java -text
+announcements/src/org/labkey/announcements/model/TourCollections.java -text
 announcements/src/org/labkey/announcements/model/TourManager.java -text
 announcements/src/org/labkey/announcements/model/TourModel.java -text
 announcements/src/org/labkey/announcements/query/AbstractSubscriptionTable.java -text
