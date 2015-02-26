@@ -1300,7 +1300,7 @@ public class PageFlowUtil
     {
         return "<a href=\"" + filter(href) +"\"" +
             " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-            "><img id=\"" + imageId + "\" title=\"" + filter(text) + "\"src=\"" + imageSrc + "\" " +
+            "><img id=\"" + imageId + "\" title=\"" + filter(text) + "\" src=\"" + imageSrc + "\" " +
             (imageHeight == null ? "" : " height=\"" + imageHeight + "\"") + (imageWidth == null ? "" : " width=\"" + imageWidth + "\"") + "/></a>";
     }
 
@@ -2093,12 +2093,21 @@ public class PageFlowUtil
             _errors = errors;
         }
 
+        @Override
+        public void processingInstruction(String target, String data) throws SAXException
+        {
+            if (!_reported.contains("processingInstruction"))
+            {
+                _reported.add("processingInstruction");
+                _errors.add("Illegal processing instruction <?" + target + ">.");
+            }
+        }
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException
         {
             String e = qName.toLowerCase();
-            if ((e.startsWith("?") || _illegalElements.contains(e)) && !_reported.contains(e))
+            if ((e.startsWith("?") || e.startsWith("<") || _illegalElements.contains(e)) && !_reported.contains(e))
             {
                 _reported.add(e);
                 _errors.add("Illegal element <" + qName + ">. For permissions to use this element, contact your system administrator.");

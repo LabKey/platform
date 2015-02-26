@@ -78,6 +78,8 @@ public class TidyUtil
         tidy.setOutputEncoding("UTF-8");
         tidy.setDropEmptyParas(false); // radeox wikis use <p/> -- don't remove them
         tidy.setTrimEmptyElements(false); // keeps tidy from converting <p/> to <br><br>
+        tidy.setWraplen(0);
+        tidy.setWrapAttVals(false);
 
         return tidy;
     }
