@@ -444,15 +444,14 @@
             <%=text(getStringFieldHtml(bean, ccc, "string4"))%>
             <%=text(getStringFieldHtml(bean, ccc, "string5"))%>
         <tr><td colspan=2>&nbsp;</td></tr>
-            <tr>
-                <td colspan="2" align="right">
-                    <%=button("Update").onClick("submitFormUserConfirm()") %>
-                </td>
-            </tr>
         </table>
     </td>
 </tr>
-
+    <tr>
+        <td colspan="2">
+            <%=button("Update").onClick("submitFormUserConfirm()") %>
+        </td>
+    </tr>
 </table>
 </labkey:form>
 
