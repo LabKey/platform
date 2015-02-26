@@ -1029,11 +1029,14 @@ public class Portal
     @Nullable
     public static FolderTab getFolderTabFromId(ViewContext context, String id)
     {
-        for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
+        if (null != id)
         {
-            if (folderTab instanceof FolderTab.PortalPage && id.equalsIgnoreCase(folderTab.getName()))
+            for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
             {
-                return folderTab;
+                if (folderTab instanceof FolderTab.PortalPage && id.equalsIgnoreCase(folderTab.getName()))
+                {
+                    return folderTab;
+                }
             }
         }
         return null;
