@@ -62,7 +62,7 @@ public class MothershipModule extends DefaultModule
 
     public double getVersion()
     {
-        return 14.32;
+        return 15.10;
     }
 
     protected void init()

@@ -48,7 +48,7 @@ public class DemoModule extends DefaultModule
 
     public double getVersion()
     {
-        return 14.30;
+        return 15.10;
     }
 
     protected void init()
@@ -59,16 +59,17 @@ public class DemoModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory("Demo Summary", WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT) {
-                {
-                    addLegacyNames("Narrow Demo Summary");
-                }
+        return new ArrayList<WebPartFactory>(Collections.singletonList(new BaseWebPartFactory("Demo Summary", WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
+        {
+            {
+                addLegacyNames("Narrow Demo Summary");
+            }
 
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-                {
-                    return new DemoWebPart();
-                }
-            }));
+            public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+            {
+                return new DemoWebPart();
+            }
+        }));
     }
 
     public boolean hasScripts()

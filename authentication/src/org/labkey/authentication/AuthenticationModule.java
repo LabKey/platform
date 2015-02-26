@@ -47,7 +47,7 @@ public class AuthenticationModule extends DefaultModule
 
     public double getVersion()
     {
-        return 14.30;
+        return 15.10;
     }
 
     @NotNull
