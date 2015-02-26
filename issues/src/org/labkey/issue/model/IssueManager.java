@@ -160,9 +160,9 @@ public class IssueManager
     public static boolean hasInheritingContainers(@NotNull Container c)
     {
 
-        for(Container possibleChild :  ContainerManager.getAllChildren(ContainerManager.getRoot()))
+        for(Container possibleInheritor :  ContainerManager.getAllChildren(ContainerManager.getRoot()))
         {
-            Map<String, String> props = PropertyManager.getProperties(possibleChild, CAT_DEFAULT_INHERIT_FROM_CONTAINER);
+            Map<String, String> props = PropertyManager.getProperties(possibleInheritor, CAT_DEFAULT_INHERIT_FROM_CONTAINER);
             String propsValue = props.get(PROP_DEFAULT_INHERIT_FROM_CONTAINER);
 
             if(propsValue != null && c.getId().equals(propsValue))
@@ -355,7 +355,6 @@ public class IssueManager
 
     public static CustomColumnConfiguration getCustomColumnConfiguration(Container c)
     {
-        ColumnConfigurationCache.uncache(c);
         return ColumnConfigurationCache.get(c);
     }
 
@@ -474,7 +473,7 @@ public class IssueManager
         }
         finally
         {
-            ColumnConfigurationCache.uncache(c);
+            ColumnConfigurationCache.uncache();
         }
     }
 
@@ -492,7 +491,7 @@ public class IssueManager
             Container inheritFrom = getInheritFromContainer(c); //get the container from which c inherited it's admin settings from
 
 
-            //if c has inherited it's admin settings, then merge the non-conflicting custom column values.
+            //Merge non-conflicting Custom Column values if inheriting.
             //Non-conflicting custom column values are values such that container c and inheritFrom are
             //not occupying the same Custom Column. For example: if Type and String3 has values in container c, but is
             //empty in inheritFrom, then container c will keep the values of Type and String3, otherwise all other Custom Column
@@ -840,7 +839,7 @@ public class IssueManager
             PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_ASSIGNED_TO_LIST, true);
             props.put(PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
             props.save();
-            uncache(c);  // uncache the assigned to list
+            uncache();  // uncache the assigned to list
     }
 
     public static @Nullable User getDefaultAssignedToUser(Container c)
@@ -976,7 +975,7 @@ public class IssueManager
             PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_COMMENT_SORT, true);
             props.put(CAT_COMMENT_SORT, direction.toString());
             props.save();
-            uncache(c);  // uncache the assigned to list
+            uncache();  // uncache the assigned to list
     }
 
 
@@ -1033,12 +1032,9 @@ public class IssueManager
         return new TableSelector(_issuesSchema.getTableInfoIssues(), SimpleFilter.createContainerFilter(c), null).getRowCount();
     }
 
-    public static void uncache(@Nullable Container c)
+    public static void uncache()
     {
-        if (c != null)
-            ASSIGNED_TO_CACHE.remove(getCacheKey(c));
-        else
-            ASSIGNED_TO_CACHE.clear();
+        ASSIGNED_TO_CACHE.clear(); //Lazy uncache: uncache ALL the containers for updated values in case any folder is inheriting its Admin settings.
     }
 
     public static void purgeContainer(Container c)
