@@ -283,19 +283,21 @@
          */
         var continueAtLocation = function (href)
         {
-            var context = window.location.pathname.split("/")[1];
+            var context = LABKEY.contextPath;
 
             if (href.charAt(0) != "/")
                 href = "/" + href;
 
-            // NOTE state is not updated yet
-            // var hopscotchState = sessionStorage.getItem(this._hopscotchSessionProperty);
+            href = context + href;
+
             if (!hopscotch.getCurrTour())
-                window.location = window.location.origin + "/" + context + href;
+            {
+                window.location = href;
+            }
             var hopscotchState = hopscotch.getCurrTour().id + ":" + hopscotch.getCurrStepNum();
 
             var a = document.createElement("A");
-            a.href = window.location.origin + "/" + context + href;
+            a.href = href;
             a.hash = 'tourstate:' + hopscotchState;
             window.location = a.href;
         };
