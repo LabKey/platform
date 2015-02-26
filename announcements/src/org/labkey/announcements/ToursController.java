@@ -97,6 +97,9 @@ public class ToursController extends SpringActionController
             else
                 model = new TourModel();
 
+            if (null == model)
+                model = new TourModel();
+
             return new JspView<>("/org/labkey/announcements/view/editTour.jsp", model);
         }
 
@@ -121,6 +124,9 @@ public class ToursController extends SpringActionController
                 model = new TourModel();
             else
                 model = TourManager.getTour(getContainer(), Integer.parseInt(json.getString("rowId")));
+
+            if( null == model)
+                model = new TourModel();
 
             model.setTitle(json.getString("title"));
             model.setDescription(json.getString("description"));

@@ -1,5 +1,6 @@
 package org.labkey.announcements.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -40,6 +41,7 @@ public class TourCache
         return "tours/" + c.getId();
     }
 
+    @Nullable
     private static <V> V get(Container c, TourCacheLoader<V> loader)
     {
         if (c == null)

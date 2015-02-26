@@ -48,14 +48,20 @@ public class TourManager
 
     private static TourCollections getTourCollections(Container c)
     {
-        return TourCache.getTourCollections(c, tourLoader);
+        TourCollections collection = TourCache.getTourCollections(c, tourLoader);
+        if ( null == collection )
+            collection = new TourCollections(null);
+
+        return collection;
     }
 
+    @Nullable
     public static TourModel getTour(Container c, String entityId)
     {
         return getTourCollections(c).getTourByEntityId(entityId);
     }
 
+    @Nullable
     public static TourModel getTour(Container c, int rowId)
     {
         return getTourCollections(c).getTourByRowId(rowId);
@@ -82,7 +88,7 @@ public class TourManager
     {
         TourModel tour = getTourCollections(c).getTourByRowId(rowId);
 
-        if(null==tour)
+        if(null==tour || null==tour.getMode())
             return null;
 
         return tour.getMode().toString();

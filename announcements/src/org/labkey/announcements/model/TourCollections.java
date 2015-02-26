@@ -26,10 +26,11 @@ public class TourCollections
     public TourCollections(Container c)
     {
         SimpleFilter filter = new SimpleFilter();
-        if (c != null)
-        {
+        if (c == null)
+            return;
+        else
             filter.addCondition(FieldKey.fromParts("Container"), c);
-        }
+
         Selector selector = new TableSelector(_comm.getTableInfoTours(), filter, null);
         TourModel[] tours = selector.getArray(TourModel.class);
         for(TourModel tour : tours)
