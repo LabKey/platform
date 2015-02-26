@@ -31,7 +31,6 @@ import org.labkey.api.study.assay.AssayDataCollector;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.PlateSamplePropertyHelper;
 import org.labkey.api.study.assay.ThawListResolverType;
-import org.labkey.api.view.NotFoundException;
 
 import java.io.File;
 import java.util.Collections;
@@ -143,14 +142,14 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
                     {
                         if (dataFile != null)
                         {
-                            throw new IllegalStateException(getProvider().getResourceName() + " runs are expected to produce a single file output. " +
+                            throw new ExperimentException(getProvider().getResourceName() + " runs are expected to produce a single file output. " +
                                     dataFile.getPath() + " and " + possibleFile.getPath() + " are both associated with run " + reRun.getRowId());
                         }
                         dataFile = possibleFile;
                     }
                 }
                 if (dataFile == null)
-                    throw new IllegalStateException(getProvider().getResourceName() + " runs are expected to produce a file output.");
+                    throw new ExperimentException(getProvider().getResourceName() + " runs are expected to produce a file output.");
 
                 if (dataFile.exists())
                 {
