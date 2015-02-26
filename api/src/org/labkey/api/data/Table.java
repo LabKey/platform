@@ -153,15 +153,28 @@ public class Table
         }
     }
 
-    /** @return if this is a statement that starts with SELECT, ignoring comment lines that start with "--" */
+    /** @return if this is a statement that starts with SELECT and contains FROM, ignoring comment lines that start with "--" */
     public static boolean isSelect(String sql)
     {
+        boolean select = false;
+
         for (String sqlLine : sql.split("\\r?\\n"))
         {
             sqlLine = sqlLine.trim();
             if (!sqlLine.startsWith("--"))
             {
-                return StringUtils.startsWithIgnoreCase(sqlLine, "SELECT");
+                // First non-comment line must start with SELECT
+                if (!select)
+                {
+                    if (StringUtils.startsWithIgnoreCase(sqlLine, "SELECT"))
+                        select = true;
+                    else
+                        return false;
+                }
+
+                // We must also see a FROM clause so we don't flag stored procedure invocations, #22648
+                if (StringUtils.containsIgnoreCase(sqlLine, "FROM"))
+                    return true;
             }
         }
         return false;
@@ -173,7 +186,6 @@ public class Table
     {
         Connection conn = schema.getScope().getConnection();
         PreparedStatement stmt = null;
-
 
         try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
         {
