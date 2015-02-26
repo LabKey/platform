@@ -64,8 +64,9 @@ public class ColumnConfigurationCache
         return CACHE.get(c);
     }
 
-    static void uncache(Container c)
+    static void uncache()
     {
-        CACHE.remove(c);
+        //Lazy uncache: uncache ALL the containers for updated values in case any folder is inheriting its Admin settings.
+        CACHE.clear();
     }
 }
