@@ -118,6 +118,7 @@ announcements/src/org/labkey/announcements/MessageAuditViewFactory.java -text
 announcements/src/org/labkey/announcements/NotificationSettingsImporterFactory.java -text
 announcements/src/org/labkey/announcements/NotificationSettingsWriterFactory.java -text
 announcements/src/org/labkey/announcements/SendMessageAction.java -text
+announcements/src/org/labkey/announcements/TourListener.java -text
 announcements/src/org/labkey/announcements/ToursController.java -text
 announcements/src/org/labkey/announcements/announcementEmailDefaults.jsp -text
 announcements/src/org/labkey/announcements/announcementListLinkBar.jsp -text

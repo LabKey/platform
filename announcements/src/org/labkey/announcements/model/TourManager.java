@@ -25,6 +25,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ContainerUtil;
 
 import java.util.List;
 
@@ -161,6 +162,10 @@ public class TourManager
         Table.delete(_comm.getTableInfoTours(), tour.getRowId());
     }
 
+    public static void purgeContainer(Container c)
+    {
+        ContainerUtil.purgeTable(_comm.getTableInfoTours(), c, null);
+    }
 
     public static void deleteTour(Container c, int rowId)
     {

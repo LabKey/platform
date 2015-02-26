@@ -159,6 +159,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         AuditLogService.registerAuditType(new MessageAuditProvider());
         ServiceRegistry.get().registerService(EmailService.I.class, new EmailServiceImpl());
 
+        TourListener tourListener = new TourListener();
+        ContainerManager.addContainerListener(tourListener);
+
         // Editors can read and respond to secure message boards
         RoleManager.registerPermission(new SecureMessageBoardReadPermission());
         RoleManager.registerPermission(new SecureMessageBoardRespondPermission());
