@@ -104,7 +104,7 @@ public abstract class VisitManager
         updateParticipantVisits(user, changedDatasets, null, null, true, null);
     }
 
-    private void info(@Nullable Logger logger, String message)
+    protected void info(@Nullable Logger logger, String message)
     {
         if (null != logger)
             logger.info(message);
@@ -135,16 +135,16 @@ public abstract class VisitManager
                 it.hasNext();
                 DatasetDefinition ds = it.next();
                 info(logger, "Updating participant visit table for single dataset " + ds.getName());
-                updateParticipantVisitTableAfterInsert(user, ds, potentiallyAddedParticipants);
+                updateParticipantVisitTableAfterInsert(user, ds, potentiallyAddedParticipants, logger);
             }
             else
             {
                 info(logger, "Updating participant visit table");
-                updateParticipantVisitTable(user);
+                updateParticipantVisitTable(user, logger);
             }
         }
         info(logger, "Updating visit table");
-        updateVisitTable(user);
+        updateVisitTable(user, logger);
 
         info(logger, "Updating cohorts");
         Integer cohortDatasetId = _study.getParticipantCohortDatasetId();
@@ -191,12 +191,14 @@ public abstract class VisitManager
         return "Visits";
     }
 
-    protected abstract void updateParticipantVisitTable(@Nullable User user);
-    protected void updateParticipantVisitTableAfterInsert(@Nullable User user, @Nullable DatasetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants)
+    protected abstract void updateParticipantVisitTable(@Nullable User user, @Nullable Logger logger);
+
+    protected void updateParticipantVisitTableAfterInsert(@Nullable User user, @Nullable DatasetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Logger logger)
     {
-        updateParticipantVisitTable(user);
+        updateParticipantVisitTable(user, logger);
     }
-    protected abstract void updateVisitTable(User user);
+
+    protected abstract void updateVisitTable(User user, @Nullable Logger logger);
 
     // Produce appropriate SQL for getVisitSummary().  The SQL must select dataset ID, sequence number, and then the specified statistics;
     // it also needs to filter by cohort and qcstates.  Tables providing the statistics must be aliased using the provided alias.

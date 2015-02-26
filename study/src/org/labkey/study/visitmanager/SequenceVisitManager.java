@@ -16,6 +16,7 @@
 
 package org.labkey.study.visitmanager;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -64,7 +65,7 @@ public class SequenceVisitManager extends VisitManager
                 StudySchema.getInstance().getTableInfoStudyDataVisible(getStudy(), null);
         TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
 
-        SQLFragment studyDataContainerFilter = new SQLFragment(alias + ".container=?", _study.getContainer());
+        SQLFragment studyDataContainerFilter = new SQLFragment(alias + ".Container = ?", _study.getContainer());
         if (_study.isDataspaceStudy())
             studyDataContainerFilter = new DataspaceContainerFilter(user).getSQLFragment(studyData.getSchema(), new SQLFragment(alias+".container"),getStudy().getContainer());
 
@@ -77,7 +78,7 @@ public class SequenceVisitManager extends VisitManager
          sqlSequenceVisitMap.append("\n\tFROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV"));
         if (!_study.isDataspaceStudy())
         {
-            sqlSequenceVisitMap.append("\n\tWHERE ").append("PV.container=?");
+            sqlSequenceVisitMap.append("\n\tWHERE ").append("PV.Container = ?");
             sqlSequenceVisitMap.add(_study.getContainer());
         }
         sqlSequenceVisitMap.append("\n\tGROUP BY Container, SequenceNum");
@@ -147,8 +148,9 @@ public class SequenceVisitManager extends VisitManager
     // TODO: we should be incrementally updating ParticipantVisit, rather than trying to speed up resync!
     // TDOO: see 19867: Speed issues when inserting into study datasets
     */
-    protected void updateParticipantVisitTableAfterInsert(@Nullable User user, DatasetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants)
+    protected void updateParticipantVisitTableAfterInsert(@Nullable User user, DatasetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Logger logger)
     {
+        info(logger, "SequenceVisitManager: updateParticipantVisitTableAfterInsert");
         DbSchema schema = StudySchema.getInstance().getSchema();
         Container container = getStudy().getContainer();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
@@ -166,9 +168,8 @@ public class SequenceVisitManager extends VisitManager
             schema.getSqlDialect().appendInClauseSql(sqlSelect, potentiallyAddedParticipants);
         }
         sqlSelect.append("\nEXCEPT\n");
-        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container=?");
+        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container = ?");
         sqlSelect.add(container);
-
 
         SQLFragment sqlInsertParticipantVisit = new SQLFragment();
         sqlSelect.appendComment("<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
@@ -182,12 +183,12 @@ public class SequenceVisitManager extends VisitManager
         SqlExecutor executor = new SqlExecutor(schema);
         executor.execute(sqlInsertParticipantVisit);
 
-        _updateVisitRowId(false);
-        _updateVisitDate(user, ds);
+        _updateVisitRowId(false, logger);
+        _updateVisitDate(user, ds, logger);
     }
 
 
-    protected void updateParticipantVisitTable(@Nullable User user)
+    protected void updateParticipantVisitTable(@Nullable User user, @Nullable Logger logger)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         SqlDialect d = schema.getSqlDialect();
@@ -247,10 +248,10 @@ public class SequenceVisitManager extends VisitManager
         //
         // fill in VisitRowId (need this to do the VisitDate computation)
         //
-        _updateVisitRowId(true);
+        _updateVisitRowId(true, logger);
 
         //
-        // upate VisitDate
+        // update VisitDate
         //
 
         _updateVisitDate(user);
@@ -279,7 +280,7 @@ public class SequenceVisitManager extends VisitManager
             SQLFragment sqlUpdateVisitDates = new SQLFragment();
             sqlUpdateVisitDates.append("UPDATE " + tableParticipantVisit + "\n")
                 .append("SET VisitDate = NULL, Day = NULL")
-                .append(" WHERE Container=?");
+                .append(" WHERE Container = ?");
             sqlUpdateVisitDates.add(visitStudy.getContainer());
             executor.execute(sqlUpdateVisitDates);
         }
@@ -301,7 +302,7 @@ public class SequenceVisitManager extends VisitManager
 
             sqlUpdateVisitDates.append("\n WHERE  PV.VisitRowId = V.RowId AND")    // 'join' V
                     .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
-                    .append("   SD.DatasetId = V.VisitDateDatasetId AND V.Container=? AND PV.Container=?\n");
+                    .append("   SD.DatasetId = V.VisitDateDatasetId AND V.Container = ? AND PV.Container = ?\n");
 
             sqlUpdateVisitDates.add(visitStudy.getContainer());
             sqlUpdateVisitDates.add(container);
@@ -328,8 +329,9 @@ public class SequenceVisitManager extends VisitManager
     }
 
 
-    private void _updateVisitDate(User user, DatasetDefinition def)
+    private void _updateVisitDate(User user, DatasetDefinition def, @Nullable Logger logger)
     {
+        info(logger, "Update visit dates");
         if (null == def.getVisitDateColumnName())
             return;
 
@@ -364,15 +366,15 @@ public class SequenceVisitManager extends VisitManager
         sqlUpdateVisitDates.append("\n").append("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
                 .append(" (\n")
                 .append(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
-                .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD,  ")
+                .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD, ")
                 .append(tableVisit.getFromSQL("V"));
 
         if (schema.getSqlDialect().isSqlServer())
             sqlUpdateVisitDates.append(", ").append(tableParticipantVisit.getFromSQL("PV"));     // Have to put the "PV" here for MSSQL
 
-        sqlUpdateVisitDates.append("\n WHERE  PV.VisitRowId = V.RowId AND")    // 'join' V
+        sqlUpdateVisitDates.append("\n WHERE PV.VisitRowId = V.RowId AND")    // 'join' V
                 .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
-                .append("   ? = V.VisitDateDatasetId AND V.Container=? AND PV.Container=?\n");
+                .append("   ? = V.VisitDateDatasetId AND V.Container = ? AND PV.Container = ?\n");
 
         sqlUpdateVisitDates.add(def.getDatasetId());
         sqlUpdateVisitDates.add(visitStudy.getContainer());
@@ -381,17 +383,18 @@ public class SequenceVisitManager extends VisitManager
     }
 
 
-    private void _updateVisitRowId(boolean updateAll)
+    private void _updateVisitRowId(boolean updateAll, @Nullable Logger logger)
     {
+        info(logger, "Update visit row IDs");
         DbSchema schema = StudySchema.getInstance().getSchema();
 
         final Study visitStudy = StudyManager.getInstance().getStudyForVisits(getStudy());
 
         SQLFragment seqnum2visit = new SQLFragment();
         seqnum2visit.append(
-                "  SELECT sequencenum, V.RowId\n" +
-                "  FROM (SELECT DISTINCT SequenceNum from study.participantvisit where Container=?) seqnumPV, study.visit V\n" +
-                "  WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container=?\n");
+                "  SELECT SequenceNum, V.RowId\n" +
+                "  FROM (SELECT DISTINCT SequenceNum FROM study.ParticipantVisit WHERE Container = ?) seqnumPV, study.Visit V\n" +
+                "  WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container = ?\n");
         seqnum2visit.add(getStudy().getContainer());
         seqnum2visit.add(visitStudy.getContainer());
 
@@ -401,13 +404,13 @@ public class SequenceVisitManager extends VisitManager
         if (schema.getSqlDialect().isPostgreSQL())
         {
             sqlUpdateVisitRowId.append(
-                "UPDATE study.participantvisit PV\n" +
+                "UPDATE study.ParticipantVisit PV\n" +
                 "        SET VisitRowId = RowId\n" +
                 "        FROM (\n");
             sqlUpdateVisitRowId.append(seqnum2visit);
             sqlUpdateVisitRowId.append(
                 ") seqnum2visit\n" +
-                "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND (VisitRowId IS NULL OR seqnum2visit.RowId IS NULL OR seqnum2visit.RowId <> VisitRowId) AND PV.Container=?");
+                "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND (VisitRowId IS NULL OR seqnum2visit.RowId IS NULL OR seqnum2visit.RowId <> VisitRowId) AND PV.Container = ?");
             sqlUpdateVisitRowId.add(getStudy().getContainer());
         }
         else
@@ -415,32 +418,34 @@ public class SequenceVisitManager extends VisitManager
             sqlUpdateVisitRowId.append(
                 "UPDATE PV\n" +
                 "        SET VisitRowId = RowId\n" +
-                "        FROM study.participantvisit PV, (\n");
+                "        FROM study.ParticipantVisit PV, (\n");
             sqlUpdateVisitRowId.append(seqnum2visit);
             sqlUpdateVisitRowId.append(
                 ") seqnum2visit\n" +
-                "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND (VisitRowId IS NULL OR seqnum2visit.RowId IS NULL OR seqnum2visit.RowId <> VisitRowId) AND PV.Container=?");
+                "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND (VisitRowId IS NULL OR seqnum2visit.RowId IS NULL OR seqnum2visit.RowId <> VisitRowId) AND PV.Container = ?");
             sqlUpdateVisitRowId.add(getStudy().getContainer());
         }
         if (!updateAll)
             sqlUpdateVisitRowId.append(" AND VisitRowId IS NULL");
+
         new SqlExecutor(schema).execute(sqlUpdateVisitRowId);
     }
 
 
     /** Make sure there is a Visit for each row in StudyData otherwise rows will be orphaned */
-    protected void updateVisitTable(User user)
+    protected void updateVisitTable(User user, @Nullable Logger logger)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
 
         SQLFragment sql = new SQLFragment("SELECT DISTINCT SequenceNum\n" +
                 "FROM " + tableParticipantVisit + "\n"+
-                "WHERE container = ? AND VisitRowId IS NULL");
+                "WHERE Container = ? AND VisitRowId IS NULL");
         sql.add(getStudy().getContainer().getId());
 
         final TreeSet<Double> sequenceNums = new TreeSet<>();
 
+        info(logger, "Select distinct sequence numbers from participant visit table");
         new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<ResultSet>()
         {
             @Override
@@ -452,8 +457,9 @@ public class SequenceVisitManager extends VisitManager
 
         if (sequenceNums.size() > 0)
         {
+            info(logger, "Ensure visits for " + sequenceNums.size() + " distinct sequence numbers");
             StudyManager.getInstance().ensureVisits(getStudy(), user, sequenceNums, null);
-            _updateVisitRowId(true);
+            _updateVisitRowId(true, logger);
         }
     }
 
@@ -462,12 +468,11 @@ public class SequenceVisitManager extends VisitManager
     {
         SQLFragment sql = new SQLFragment();
         sql.append(
-            "SELECT x.datasetid as datasetid, CAST(x.SequenceNum AS FLOAT) AS sequencenum\n" +
-            "FROM (" +
-            "     SELECT DISTINCT SequenceNum, DatasetId\n" +
-            "     FROM ").append(StudySchema.getInstance().getTableInfoStudyData(getStudy(), null).getFromSQL("SD") + "").append(
-            ") x\n" +
-            "ORDER BY datasetid,sequencenum");
+                "SELECT x.DatasetId AS DatasetId, CAST(x.SequenceNum AS FLOAT) AS SequenceNum\n" +
+                        "FROM (" +
+                        "     SELECT DISTINCT SequenceNum, DatasetId\n" +
+                        "     FROM ").append(StudySchema.getInstance().getTableInfoStudyData(getStudy(), null).getFromSQL("SD")).append(
+                ") x\nORDER BY DatasetId, SequenceNum");
         return sql;
     }
 }

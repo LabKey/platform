@@ -17,6 +17,7 @@
 package org.labkey.study.visitmanager;
 
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -126,7 +127,7 @@ public class RelativeDateVisitManager extends VisitManager
 
 
     /* call updateParticipants() first */
-    protected void updateParticipantVisitTable(@Nullable User user)
+    protected void updateParticipantVisitTable(@Nullable User user, @Nullable Logger logger)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         Container container = getStudy().getContainer();
@@ -233,7 +234,7 @@ public class RelativeDateVisitManager extends VisitManager
 
 
     /** Make sure there is a Visit for each row in StudyData otherwise rows will be orphaned */
-    protected void updateVisitTable(final User user)
+    protected void updateVisitTable(final User user, @Nullable Logger logger)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();

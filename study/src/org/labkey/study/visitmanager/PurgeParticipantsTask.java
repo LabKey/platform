@@ -39,7 +39,7 @@ public class PurgeParticipantsTask extends TimerTask
 
     public PurgeParticipantsTask(Map<Container, Set<String>> potentiallyDeletedParticipants)
     {
-        this._potentiallyDeletedParticipants = potentiallyDeletedParticipants;
+        _potentiallyDeletedParticipants = potentiallyDeletedParticipants;
     }
 
     @Override
@@ -75,7 +75,7 @@ public class PurgeParticipantsTask extends TimerTask
                         int deleted = VisitManager.performParticipantPurge(study, potentiallyDeletedParticipants);
                         if (deleted > 0)
                         {
-                            StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null);
+                            StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null, null);
                         }
                     }
                     catch (RuntimeSQLException|ConcurrencyFailureException x)
