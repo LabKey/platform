@@ -1935,11 +1935,10 @@ public class IssuesController extends SpringActionController
         private Container _inheritSettingsFromThisContainer = null;
         private List<Container> _moveToContainers = new LinkedList<>();
         private Sort.SortDirection _direction = Sort.SortDirection.ASC;
-        private Container _currentContainer;
 
         public void validateCommand(ConfigureIssuesForm form, Errors errors)
         {
-            _currentContainer = getViewContext().getContainer();
+            Container currentContainer = getViewContext().getContainer();
 
             checkPickLists(form, errors);
             
@@ -2079,7 +2078,7 @@ public class IssuesController extends SpringActionController
             }
 
             //only check for null values if there is no inheriting container of the current container
-            if((_currentContainer != null) && _currentContainer.equals(IssueManager.getInheritFromOrCurrentContainer(_currentContainer)))
+            if(currentContainer.equals(IssueManager.getInheritFromOrCurrentContainer(currentContainer)))
             {
                 if (form.getEntrySingularName() == null || form.getEntrySingularName().trimToEmpty().length() == 0)
                     errors.reject(ConfigureIssuesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
