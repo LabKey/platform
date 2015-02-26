@@ -2795,6 +2795,7 @@ query/webapp/reports/grid_shared.gif -text
 query/webapp/reports/icon_draft.png -text
 query/webapp/reports/icon_final.png -text
 query/webapp/reports/icon_locked.png -text
+query/webapp/reports/icon_private_view.png -text
 query/webapp/reports/icon_query_view.png -text
 query/webapp/reports/icon_unlocked.png -text
 query/webapp/reports/image.png -text
