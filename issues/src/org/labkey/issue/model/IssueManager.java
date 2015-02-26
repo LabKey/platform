@@ -948,7 +948,7 @@ public class IssueManager
 
     public static @Nullable Container getRelatedIssuesList(Container c)
     {
-        Map<String, String> props = PropertyManager.getProperties(c, CAT_DEFAULT_RELATED_ISSUES_LIST);
+        Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_DEFAULT_RELATED_ISSUES_LIST);
         String containerStr = props.get(PROP_DEFAULT_RELATED_ISSUES_LIST);
         Container container = containerStr == null ? null : ContainerManager.getForPath(containerStr);
 
