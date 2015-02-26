@@ -584,10 +584,6 @@ public class OlapController extends SpringActionController
                 HttpServletResponse response = ctx.getResponse();
                 String key = ctx.getContainer().getId() + ":" + sql;
 
-                // to understand why one might need to double query Mondrian...
-                // see 22479: Inconsistent aggregate results when querying MetricAdherence cube
-                // see http://jira.pentaho.com/browse/MONDRIAN-2296
-                new MDXCacheLoader().load(key,form);
                 byte[] bytes = new MDXCacheLoader().load(key,form);
 
                 response.setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
