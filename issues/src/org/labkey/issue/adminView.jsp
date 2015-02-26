@@ -244,9 +244,21 @@
                             <tr>
                                 <td> Comment sort direction </td>
                                 <td>
-                                    <%--not sure how to disable this --%>
+                                    <%
+                                        if(bean.inheritFromContainerExists)
+                                        {
+                                    %>
+                                            <input type="text" value="<%=h(bean.commentSort.getSqlDir().equals("ASC") ? "Oldest first" : "Newest first")%>" disabled>
+                                    <%
+                                        }
+                                        else
+                                        {
+                                    %>
                                         <%=PageFlowUtil.strSelect(ConfigureIssuesForm.ParamNames.direction.name(),
                                                 Arrays.asList(Sort.SortDirection.values()), java.util.Arrays.asList("Oldest first", "Newest first"), bean.commentSort)%>
+                                    <%
+                                        }
+                                    %>
 
                                 </td>
                             </tr>
@@ -294,22 +306,22 @@
                             </tr>
                             <tr>
                                 <td>
-                                            <input onchange="assignedToGroup.disabled=false;updateAssignedToUser();" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%> disabled />
-                                            <td>Specific Group
-                                                <select name="assignedToGroup" onchange="updateAssignedToUser()"<%=disabled(null == bean.assignedToGroup)%> <%=disabled(bean.inheritFromContainerExists)%> >
-                                                <%
-                                                    for (Group group : org.labkey.api.security.SecurityManager.getGroups(c.getProject(), true))
-                                                    {
-                                                        // 19532 partial. Only show Site: Users option to site admins
-                                                        if (!group.isGuests() && (!group.isUsers() || getUser().isSiteAdmin()))
-                                                        {
-                                                            String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
-                                                            out.println("<option value=\"" + group.getUserId() + "\"" + selected(null != bean.assignedToGroup && group.getUserId() == bean.assignedToGroup.getUserId()) + ">" + h(displayText) + "</option>");
-                                                        }
-                                                    }
-                                                %>
-                                                </select>
-                                            </td>
+                                    <input onchange="assignedToGroup.disabled=false;updateAssignedToUser();" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%> <%=disabled(bean.inheritFromContainerExists)%> />
+                                    <td>Specific Group
+                                        <select name="assignedToGroup" onchange="updateAssignedToUser()"<%=disabled(null == bean.assignedToGroup)%> <%=disabled(bean.inheritFromContainerExists)%> >
+                                        <%
+                                            for (Group group : org.labkey.api.security.SecurityManager.getGroups(c.getProject(), true))
+                                            {
+                                                // 19532 partial. Only show Site: Users option to site admins
+                                                if (!group.isGuests() && (!group.isUsers() || getUser().isSiteAdmin()))
+                                                {
+                                                    String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
+                                                    out.println("<option value=\"" + group.getUserId() + "\"" + selected(null != bean.assignedToGroup && group.getUserId() == bean.assignedToGroup.getUserId()) + ">" + h(displayText) + "</option>");
+                                                }
+                                            }
+                                        %>
+                                        </select>
+                                    </td>
                                 </td>
 
                             </tr>
