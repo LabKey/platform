@@ -1260,6 +1260,8 @@ boxPlot.render();
  * @param {Number} [config.properties.topMargin] (Optional) The top margin for the plot.
  * @param {Number} [config.properties.xTickTagIndex] (Optional) The index/value of the x-axis label to be tagged (i.e. class="xticktag").
  * @param {Boolean} [config.properites.showTrendLine] (Optional) Whether or not to show a line connecting the data points. Default false.
+ * @param {Boolean} [config.properties.disableRangeDisplay] (Optional) Whether or not to show the mean/stdev ranges in the plot. Defaults to false.
+ * @param {String} [config.properties.xTick] (Optional) The data property to use for unique x-axis tick marks. Defaults to sequence from 1:data length.
  * @param {String} [config.properties.yAxisScale] (Optional) Whether the y-axis should be plotted with linear or log scale. Default linear.
  * @param {Array} [config.properties.yAxisDomain] (Optional) Y-axis min/max values. Example: [0,20].
  * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
@@ -1284,25 +1286,15 @@ boxPlot.render();
         {
             throw new Error("Unable to create Levey-Jennings plot, properties object not specified. "
                     + "Required: value, mean, stdDev, xTickLabel. Optional: topMargin, color, colorRange, hoverTextFn, "
-                    + "showTrendLine, yAxisScale, yAxisDomain, xTickTagIndex.");
-        }
-
-        // min x-axis tick length is 10 by default
-        if (config.data.length < 10) {
-            for (var i = config.data.length; i < 10; i++) {
-                var temp = {};
-                temp[config.properties.xTickLabel] = "";
-                if (config.properties.color && config.data[0]) {
-                    temp[config.properties.color] = config.data[0][config.properties.color];
-                }
-                config.data.push(temp);
-            }
+                    + "showTrendLine, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
         }
 
         // create a sequencial index to use for the x-axis value and keep a map from that index to the tick label
+        // also, pull out the meanStdDev data for the unique x-axis values
         var tickLabelMap = {};
         var distinctColorValues = [];
-        var index = 0;
+        var index = -1, xTickIndex = {};
+        var meanStdDevData = [];
         for (var i = 0; i < config.data.length; i++)
         {
             var row = config.data[i];
@@ -1312,9 +1304,34 @@ boxPlot.render();
                 distinctColorValues.push(row[config.properties.color]);
             }
 
+            // if we are grouping x values based on the xTick property, only increment index if we have a new xTick value
+            if (config.properties.xTick)
+            {
+                if (xTickIndex[row[config.properties.xTick]] == undefined) {
+                    xTickIndex[row[config.properties.xTick]] = ++index;
+                }
+            }
+            else {
+                index++;
+            }
+
             tickLabelMap[index] = row[config.properties.xTickLabel];
-            config.data[i].seqValue = index;
-            index++;
+            row.seqValue = index;
+
+            if (!meanStdDevData[index]) {
+                meanStdDevData[index] = row;
+            }
+        }
+
+        // min x-axis tick length is 10 by default
+        for (var i = config.data[config.data.length - 1].seqValue + 1; i < 10; i++)
+        {
+            var temp = {seqValue: i};
+            temp[config.properties.xTickLabel] = "";
+            if (config.properties.color && config.data[0]) {
+                temp[config.properties.color] = config.data[0][config.properties.color];
+            }
+            config.data.push(temp);
         }
 
         // we only need the color aes if there is > 1 distinct value in the color variable
@@ -1332,7 +1349,7 @@ boxPlot.render();
                 scaleType: 'discrete',
                 tickFormat: function(index) {
                     // only show a max of 35 labels on the x-axis to avoid overlap
-                    if (index % Math.ceil(config.data.length/35) == 0) {
+                    if (index % Math.ceil(config.data[config.data.length-1].seqValue / 35) == 0) {
                         return tickLabelMap[index];
                     }
                     else {
@@ -1374,7 +1391,7 @@ boxPlot.render();
         // +/- 3 standard deviation displayed using the ErrorBar geom with different colors
         var stdDev3Layer = new LABKEY.vis.Layer({
             geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'red', dashed: true, altColor: 'darkgrey', width: barWidth}),
-            data: config.data,
+            data: meanStdDevData,
             aes: {
                 error: function(row){return row[config.properties.stdDev] * 3;},
                 yLeft: function(row){return row[config.properties.mean];}
@@ -1382,7 +1399,7 @@ boxPlot.render();
         });
         var stdDev2Layer = new LABKEY.vis.Layer({
             geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'blue', dashed: true, altColor: 'darkgrey', width: barWidth}),
-            data: config.data,
+            data: meanStdDevData,
             aes: {
                 error: function(row){return row[config.properties.stdDev] * 2;},
                 yLeft: function(row){return row[config.properties.mean];}
@@ -1390,7 +1407,7 @@ boxPlot.render();
         });
         var stdDev1Layer = new LABKEY.vis.Layer({
             geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'green', dashed: true, altColor: 'darkgrey', width: barWidth}),
-            data: config.data,
+            data: meanStdDevData,
             aes: {
                 error: function(row){return row[config.properties.stdDev];},
                 yLeft: function(row){return row[config.properties.mean];}
@@ -1398,14 +1415,14 @@ boxPlot.render();
         });
         var meanLayer = new LABKEY.vis.Layer({
             geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'darkgrey', width: barWidth}),
-            data: config.data,
+            data: meanStdDevData,
             aes: {
                 error: function(row){return 0;},
                 yLeft: function(row){return row[config.properties.mean];}
             }
         });
 
-        config.layers = [stdDev3Layer, stdDev2Layer, stdDev1Layer, meanLayer];
+        config.layers = config.properties.disableRangeDisplay ? [] : [stdDev3Layer, stdDev2Layer, stdDev1Layer, meanLayer];
 
         if (config.properties.showTrendLine) {
             var pathLayerConfig = { geom: new LABKEY.vis.Geom.Path({ opacity: .6, size: 2 }) };

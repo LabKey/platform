@@ -166,3 +166,10 @@ LABKEY.vis.getColumnAlias = function(aliasArray, measureInfo) {
 LABKEY.vis.isValid = function(value) {
     return !(value == undefined || value == null || (typeof value == "number" && isNaN(value)));
 };
+
+LABKEY.vis.arrayObjectIndexOf = function(myArray, searchTerm, property) {
+    for (var i = 0; i < myArray.length; i++) {
+        if (myArray[i][property] === searchTerm) return i;
+    }
+    return -1;
+};
