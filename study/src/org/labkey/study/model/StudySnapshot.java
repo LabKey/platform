@@ -69,6 +69,7 @@ public class StudySnapshot
 
     public StudySnapshot(StudyExportContext ctx, Container destination, boolean specimenRefresh, ChildStudyDefinition def)
     {
+        _type = def.getMode();
         _source = ctx.getContainer().getEntityId();
         _destination = destination.getEntityId();
         _refresh = specimenRefresh;

@@ -70,7 +70,7 @@ LABKEY.study.openCreateStudyWizard = function(mode, studyName) {
     LABKEY.Query.selectRows({
         schemaName: 'study',
         queryName: 'StudySnapshot',
-        columns: ['Created', 'CreatedBy/DisplayName', 'Destination'],
+        columns: ['Created', 'CreatedBy/DisplayName', 'Destination', 'Settings'],
         filterArray: [
             LABKEY.Filter.create('type', mode)
         ],
@@ -82,10 +82,14 @@ LABKEY.study.openCreateStudyWizard = function(mode, studyName) {
 
             // Do some clean up of each row (fix keys)
             Ext.each(data.rows, function(row) {
-                // NOTE: assume if _labkeyurl_Destination is set, then permissions are good to go
-                var urlParts = row._labkeyurl_Destination.split('/');
-                // NOTE: there should be a better way to do this but not seeing it in ext3
-                row.Destination = Object.keys(Ext.urlDecode(urlParts[urlParts.length-2]))[0];
+                row.Destination = "";
+                if (row._labkeyurl_Destination)
+                {
+                    // NOTE: assume if _labkeyurl_Destination is set, then permissions are good to go
+                    var urlParts = row._labkeyurl_Destination.split('/');
+                    // NOTE: there should be a better way to do this but not seeing it in ext3
+                    row.Destination = Object.keys(Ext.urlDecode(urlParts[urlParts.length-2]))[0];
+                }
             });
 
             // NOTE: time to handle destination rollup (StudySnapshotTable.java:70)
@@ -470,20 +474,21 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var headerTxt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Previous Settings'}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
 
-        var selModel = new Ext.grid.CheckboxSelectionModel({checkOnly:true,singleSelect:true});
-
         var grid = new Ext.grid.GridPanel({
-            selModel: selModel,
             columns: [
-                selModel,
                 {dataIndex: 'Created', header: 'Created', width: 100, sortable: true},
                 {dataIndex: 'CreatedBy/DisplayName', header: 'Created By', width: 100, sortable: true},
                 {dataIndex: 'Destination', header: 'Destination', width: 200, sortable: true},
-                {dataIndex: 'RowId', hidden: true}
+                {dataIndex: 'RowId', hidden: true},
+                {dataIndex: 'Settings', hidden: true}
             ],
             store: new Ext.data.JsonStore({
-                fields: ['Created', 'CreatedBy/DisplayName', 'Destination', 'RowId'],
-                data: this.previousStudies
+                fields: ['Created', 'CreatedBy/DisplayName', 'Destination', 'RowId', 'Settings'],
+                data: this.previousStudies,
+                sortInfo: {
+                    field: 'Created',
+                    direction: 'DESC'
+                }
             }),
             viewConfig: {forceFit: true},
             loadMask: {msg: "Loading, please wait..."},
@@ -494,6 +499,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             bbarCfg: [{hidden:true}],
             tbarCfg: [{hidden:true}]
         });
+        grid.initialValue = null; // used for dirty logic
 
         var republishRadio = new Ext.form.Radio({
             height: 20,
@@ -505,6 +511,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             listeners: {
                 check: function(radio, checked){
                     (!checked) ? grid.disable() : grid.enable();
+                    grid.getSelectionModel().clearSelections();
                 }
             }
         });
@@ -535,34 +542,29 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         panel.on('beforehide', function(cmp){
-            if (republishRadio.getValue() && !grid.getSelectionModel().getSelected())
+            if (republishRadio.getValue())
             {
-                Ext.MessageBox.alert('Error', 'If republishing a study, please select a study to republish.');
-                this.currentStep--;
-                this.updateStep();
-                return false;
+                if (!grid.getSelectionModel().getSelected())
+                {
+                    Ext.MessageBox.alert('Error', 'If republishing a study, please select a study to republish.');
+                    this.currentStep--;
+                    this.updateStep();
+                    return false;
+                }
+
+                var data = grid.getSelectionModel().getSelected().data;
+                var settings = Ext.decode(data.Settings);
+                this.settings = settings;
             }
 
-            // TODO: explore abstraction (copy pasta from openRepublishStudyWizard)
-            var data = grid.getSelectionModel().getSelected().data
-            var snapshotId = data.RowId;
-            var sql = "SELECT c.DisplayName as PreviousStudy, u.DisplayName as CreatedBy, ss.Created, ss.Settings, ss.Type " +
-                    "FROM study.StudySnapshot AS ss LEFT JOIN core.Users AS u ON ss.CreatedBy = u.UserId " +
-                    "LEFT JOIN core.Containers AS c ON c.EntityId = ss.Destination WHERE ss.RowId = " + parseInt(snapshotId);
-
-            LABKEY.Query.executeSql({
-                schemaName: 'study',
-                sql: sql,
-                containerFilter: LABKEY.Query.containerFilter.allFolders,
-                scope: this,
-                success: function(data) {
-                    var row = data.rows[0];
-                    var settings = Ext.decode(row.Settings);
-                    this.settings = settings;
-                }
-            });
+            if (republishRadio.isDirty() || grid.initialValue != grid.getSelectionModel().getSelected()) {
+                grid.initialValue = grid.getSelectionModel().getSelected();
+                republishRadio.originalValue = republishRadio.getValue();
+                this.fireEvent('settingsChange');
+            }
 
             return true;
+
         }, this);
 
         return panel;
@@ -754,29 +756,42 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             });
         }
 
+        formItems.push({
+            xtype: 'textfield',
+            fieldLabel: 'Name',
+            autoCreate: {tag: 'input', type: 'text', size: '20', autocomplete: 'off', maxlength: '255'},
+            allowBlank: false,
+            name: 'studyName',
+            value: this.info.name,
+            enableKeyEvents: true,
+            listeners: {change: nameChange, keyup:nameChange, scope:this}
+        });
+
+        var descriptionTextArea = new Ext.form.TextArea({
+            fieldLabel: 'Description',
+            name: 'studyDescription',
+            height: '100',
+            emptyText: 'Type Description here',
+            listeners: {
+                change:function(cmp, newValue, oldValue) {this.info.description = newValue;},
+                scope:this
+            }
+        });
+
+        var afterRenderFunc = function() {
+            if(this.settings)
+            {
+                descriptionTextArea.setValue(this.settings.description);
+                this.info.description = this.settings.description;
+            }
+        };
+
+        if (!this.previousStudies) // only needed when not in republish extended wizard
+            descriptionTextArea.on('afterrender', afterRenderFunc, this);
+
+        formItems.push(descriptionTextArea);
+
         formItems.push([
-            {
-                xtype: 'textfield',
-                fieldLabel: 'Name',
-                autoCreate: {tag: 'input', type: 'text', size: '20', autocomplete: 'off', maxlength: '255'},
-                allowBlank: false,
-                name: 'studyName',
-                value: this.info.name,
-                enableKeyEvents: true,
-                listeners: {change: nameChange, keyup:nameChange, scope:this}
-            },
-            {
-                xtype: 'textarea',
-                fieldLabel: 'Description',
-                name: 'studyDescription',
-                height: '100',
-                emptyText: 'Type Description here',
-                listeners: {
-                    change:function(cmp, newValue, oldValue) {this.info.description = newValue;},
-                    afterrender: function(cmp) { if(this.settings){ cmp.setValue(this.settings.description); this.info.description = this.settings.description;}},
-                    scope:this
-                }
-            },
             protocolDocField,
             locationField,
             folderTree
@@ -807,6 +822,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             items: items
         });
 
+        this.on('settingsChange', afterRenderFunc, this);
+
         panel.on('beforehide', function(cmp){
             if (this.nameFormPanel && !this.nameFormPanel.getForm().isValid())
             {
@@ -816,10 +833,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 return false;
             }
             return true;
-        }, this);
-
-        panel.on('show', function(cmp){
-            locationField.setVisible(true);
         }, this);
 
         return panel;
@@ -902,7 +915,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 direction: 'ASC'
             },
             listeners: {
-                load: function(store, records, options){
+                load: function(store, records){
                     if(records.length > 0){
                         this.existingGroupRadio.setValue(true);
                     } else {
@@ -964,9 +977,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             ]
         });
 
-        grid.on('viewready', function(grid){
+        var viewReadyFunc = function(){
             if (this.settings && this.settings.participants != null)
             {
+                grid.getSelectionModel().clearSelections();
                 if (Ext.isDefined(this.settings.participantGroups) && this.settings.participantGroups == null)
                 {
                     this.gridSelectAll(grid);
@@ -977,7 +991,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('id') in participantGroups); }).getRange(), true);
                 }
             }
-        }, this);
+        };
+
+        grid.on('viewready', viewReadyFunc, this);
 
         this.participantGroupTemplate = new Ext.DomHelper.createTemplate(
                 '<span style="margin-left:10px;" class="labkey-link">{0}</span>&nbsp;<span class="labkey-disabled">' +
@@ -995,6 +1011,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 pack: 'start'
             }
         });
+
+        this.participantPanel.on('afterrender', function() {
+            // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
+            // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            this.on('settingsChange', viewReadyFunc, this);
+        }, this);
+
 
         this.participantPanel.on('beforehide', function(cmp){
             // if the prev button was pressed, we don't care about validation
@@ -1106,9 +1129,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         hiddenGrid.on('columnmodelcustomize', this.customizeColumnModel, this);
         hiddenGrid.selModel.on('selectionchange', function(cmp){this.info.hiddenDatasets = cmp.getSelections();}, this);
 
-        var viewReadyFunc = function(grid){
+        var viewReadyFunc = function(){
             if (this.settings)
             {
+                grid.getSelectionModel().clearSelections();
                 if (!this.settings.datasets)
                 {
                     this.gridSelectAll(grid);
@@ -1192,6 +1216,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 pack: 'start'
             }
         });
+
+        panel.on('afterrender', function(cmp) {
+            // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
+            // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            cmp.on('show', viewReadyFunc, this);
+        }, this);
         
         return panel;
     },
@@ -1269,14 +1299,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         items.push(grid);
 
-        grid.on('render', function(cmp){
-            //This is to hide the background color of the bbar/tbar.
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
-        grid.on('viewready', function(grid){
+        var viewReadyFunc = function() {
             if (this.settings)
             {
+                grid.getSelectionModel().clearSelections();
                 if (!this.settings.views)
                 {
                     this.gridSelectAll(grid);
@@ -1287,7 +1313,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in views); }).getRange(), true);
                 }
             }
-        }, this);
+        };
+
+        grid.on('render', function(cmp){
+            //This is to hide the background color of the bbar/tbar.
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
+        grid.on('viewready', viewReadyFunc, this);
 
         var panel = new Ext.Panel({
             border: false,
@@ -1299,6 +1332,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             items: items
         });
+
+        panel.on('afterrender', function(cmp) {
+            // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
+            // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            this.on('settingsChange', viewReadyFunc, this);
+        }, this);
 
         panel.on('activate', function(){
             // Filter out the views that will not be exported.
@@ -1361,7 +1400,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.loadWriters(studyStore, true);
 
-        var selectionGrid = new Ext.grid.EditorGridPanel({
+        var grid = new Ext.grid.EditorGridPanel({
             cls : 'studyObjects',
             store: studyStore,
             selModel: selectionModel,
@@ -1379,14 +1418,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             tbar: [{hidden:true}]
         });
 
-        selectionGrid.on('render', function(cmp){
-            //This is to hide the background color of the bbar/tbar.
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
-        selectionGrid.on('viewready', function(grid){
+        var viewReadyFunc = function(){
             if (this.settings)
             {
+                grid.getSelectionModel().clearSelections();
                 if (!this.settings.studyObjects)
                 {
                     this.gridSelectAll(grid);
@@ -1397,15 +1432,29 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in studyObjects); }).getRange(), true);
                 }
             }
-        }, this);
+        };
+
+        grid.on('render', function(cmp){
+            //This is to hide the background color of the bbar/tbar.
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
+        grid.on('viewready', viewReadyFunc, this);
 
         this.studyPropsPanel = new Ext.FormPanel({
             name : 'Study Objects',
             html : txt,
             border : false,
             layout : 'vbox',
-            items : selectionGrid
+            items : grid
         });
+
+        this.studyPropsPanel.on('afterrender', function(cmp) {
+            // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
+            // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            this.on('settingsChange', viewReadyFunc, this);
+        }, this);
+
         return this.studyPropsPanel;
     },
 
@@ -1495,14 +1544,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         items.push(grid);
 
-        grid.on('render', function(cmp){
-            //This is to hide the background color of the bbar/tbar.
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
-        grid.on('viewready', function(grid){
+        var viewReadyFunc = function(){
             if (this.settings)
             {
+                grid.getSelectionModel().clearSelections();
                 if (!this.settings.reports)
                 {
                     this.gridSelectAll(grid);
@@ -1513,10 +1558,18 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.data['name'] in reports); }).getRange(), true);
                 }
             }
-        }, this);
+        };
+
+        grid.on('render', function(cmp){
+            //This is to hide the background color of the bbar/tbar.
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
+        grid.on('viewready', viewReadyFunc, this);
 
         this.pageOptions.reports.value = this.selectedReports;
-        return new Ext.Panel({
+
+        var panel = new Ext.Panel({
             border: false,
             name: "Reports",
             layout: 'vbox',
@@ -1527,6 +1580,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             items: items
         });
 
+        panel.on('afterrender', function(cmp) {
+            // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
+            // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            this.on('settingsChange', viewReadyFunc, this);
+        }, this);
+
+        return panel;
     },
 
     getSpecimensPanel: function(){
@@ -1563,14 +1623,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             items: [
                 {boxLabel: 'One-time snapshot', name: 'specimenRefresh', inputValue: 'false', checked: true, style:"margin-left: 2px"},
                 {boxLabel: 'Nightly refresh', name: 'specimenRefresh', inputValue: 'true', style:"margin-left: 2px"}
-            ],
-            listeners: {
-                scope: this,
-                afterrender: function(cmp) {
-                    if (this.settings) cmp.setValue(this.settings.specimenRefresh.toString());
-                }
-            }
+            ]
         });
+
+        var afterRenderFunc = function() {
+            if (this.settings) this.specimenRefreshRadioGroup.setValue(this.settings.specimenRefresh.toString());
+        };
+
+        this.specimenRefreshRadioGroup.on('afterrender', afterRenderFunc, this);
 
         var optionsPanel = new Ext.form.FormPanel({
             defaults: {labelSeparator: ''},
@@ -1586,7 +1646,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
         items.push(optionsPanel);
 
-        return new Ext.Panel({
+        var panel = new Ext.Panel({
             border: false,
             name: "Specimens",
             layout: 'vbox',
@@ -1596,6 +1656,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             items: items
         });
+
+        panel.on('afterrender', function(cmp) {
+            // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
+            // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            this.on('settingsChange', afterRenderFunc, this);
+        }, this);
+
+        return panel;
     },
 
     getVisitsPanel: function(){
@@ -1634,9 +1702,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
         grid.on('columnmodelcustomize', this.customizeVisitColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.selectedVisits = cmp.getSelections();}, this);
-        grid.on('viewready', function(grid){
+
+        var viewReadyFunc = function(){
             if (this.settings)
             {
+                grid.getSelectionModel().clearSelections();
                 if (!this.settings.visits)
                 {
                     this.gridSelectAll(grid);
@@ -1651,7 +1721,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         grid.getSelectionModel().selectRecords(records, true);
                 }
             }
-        }, this);
+        };
+
+        grid.on('viewready', viewReadyFunc, this);
 
         var panel = new Ext.Panel({
             border: false,
@@ -1679,6 +1751,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         };
 
         panel.on('beforehide', validate, this);
+
+        panel.on('afterrender', function(cmp) {
+            // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
+            // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            this.on('settingsChange', viewReadyFunc, this);
+        }, this);
+
         this.pageOptions.visits.value = this.selectedVisits;
         return panel;
     },
@@ -1743,9 +1822,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
-        grid.on('viewready', function(grid){
+
+        var viewReadyFunc = function(){
             if (this.settings)
             {
+                grid.getSelectionModel().clearSelections();
                 if(!this.settings.lists)
                 {
                     this.gridSelectAll(grid);
@@ -1756,7 +1837,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in lists); }).getRange(), true);
                 }
             }
-        }, this);
+        };
+
+        grid.on('viewready', viewReadyFunc, this);
 
         var panel = new Ext.Panel({
             border: false,
@@ -1768,6 +1851,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             items: items
         });
+
+        panel.on('afterrender', function(cmp) {
+            // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
+            // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            this.on('settingsChange', viewReadyFunc, this);
+        }, this);
+
         this.pageOptions.lists.value = this.selectedLists;
         return panel;
     },
@@ -1797,7 +1887,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.loadWriters(folderStore, false);
 
-        var selectionGrid = new Ext.grid.EditorGridPanel({
+        var grid = new Ext.grid.EditorGridPanel({
             cls: 'folderObjects',
             store: folderStore,
             selModel: selectionModel,
@@ -1815,14 +1905,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             tbar: [{hidden:true}]
         });
 
-        selectionGrid.on('render', function(cmp){
+        grid.on('render', function(cmp){
             //This is to hide the background color of the bbar/tbar.
             cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
-        selectionGrid.on('viewready', function(grid){
+
+        var viewReadyFunc = function(){
             if (this.settings)
             {
+                grid.getSelectionModel().clearSelections();
                 if (!this.settings.folderObjects)
                 {
                     this.gridSelectAll(grid);
@@ -1841,15 +1933,24 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     }
                 }
             }
-        }, this);
+        };
+
+        grid.on('viewready', viewReadyFunc, this);
 
         this.folderPropsPanel = new Ext.FormPanel({
             name : 'Folder Objects',
             html : txt,
             border : false,
             layout : 'vbox',
-            items : selectionGrid
+            items : grid
         });
+
+        this.folderPropsPanel.on('afterrender', function(cmp) {
+            // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
+            // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            this.on('settingsChange', viewReadyFunc, this);
+        }, this);
+
         return this.folderPropsPanel;
     },
 
@@ -1896,7 +1997,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             return '<div style="white-space:normal !important;">'+ val +'</div>';
         };
 
-        var selectionGrid = new Ext.grid.EditorGridPanel({
+        var grid = new Ext.grid.EditorGridPanel({
             cls: 'studyWizardPublishOptionsList',
             store: publishOptionsStore,
             selModel: selectionModel,
@@ -1915,12 +2016,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             tbar: [{hidden:true}]
         });
 
-        selectionGrid.on('render', function(cmp){
+        grid.on('render', function(cmp){
             //This is to hide the background color of the bbar/tbar.
             cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
-        selectionGrid.on('viewready', function(grid){
+
+        var viewReadyFunc = function(){
             if (this.settings)
             {
                 var publishOptions = {};
@@ -1928,20 +2030,29 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 publishOptions['removeProtectedColumns'] = this.settings.removeProtectedColumns;
                 publishOptions['shiftDates'] = this.settings.shiftDates;
                 publishOptions['useAlternateParticipantIds'] = this.settings.useAlternateParticipantIds;
+                grid.getSelectionModel().clearSelections();
                 if (this.settings.maskClinic && this.settings.removeProtectedColumns && this.settings.shiftDates && this.settings.useAlternateParticipantIds)
                     this.gridSelectAll(grid);
                 else
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return publishOptions[rec.get('option')]; }).getRange(), true);
             }
-        }, this);
+        };
+
+        grid.on('viewready', viewReadyFunc, this);
 
         this.publishOptionsPanel = new Ext.Panel({
             border: false,
             name: "Publish Options",
             layout: 'vbox',
             html: txt,
-            items: selectionGrid
+            items: grid
         });
+
+        this.publishOptionsPanel.on('afterrender', function(cmp) {
+            // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
+            // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            this.on('settingsChange', viewReadyFunc, this);
+        }, this);
 
         return this.publishOptionsPanel;
     },
