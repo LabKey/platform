@@ -18,6 +18,7 @@ package org.labkey.study.controllers;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.ActionNames;
@@ -292,7 +293,7 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermissionClass(DeletePermission.class)
-    public class DeleteTreatmentAction extends ApiAction<IdForm>
+    public class DeleteTreatmentAction extends MutatingApiAction<IdForm>
     {
         @Override
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
@@ -307,7 +308,7 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermissionClass(DeletePermission.class)
-    public class DeleteStudyProductAction extends ApiAction<IdForm>
+    public class DeleteStudyProductAction extends MutatingApiAction<IdForm>
     {
         @Override
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
@@ -322,7 +323,7 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermissionClass(UpdatePermission.class)
-    public class UpdateStudyTreatmentScheduleAction extends ApiAction<StudyTreatmentSchedule>
+    public class UpdateStudyTreatmentScheduleAction extends MutatingApiAction<StudyTreatmentSchedule>
     {
         @Override
         public void validateForm(StudyTreatmentSchedule form, Errors errors)
@@ -407,7 +408,7 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermissionClass(DeletePermission.class)
-    public class DeleteCohortAction extends ApiAction<IdForm>
+    public class DeleteCohortAction extends MutatingApiAction<IdForm>
     {
         @Override
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
@@ -437,7 +438,7 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermissionClass(UpdatePermission.class)
-    public class CreateVisitAction extends ApiAction<VisitForm>
+    public class CreateVisitAction extends MutatingApiAction<VisitForm>
     {
         @Override
         public void validateForm(VisitForm form, Errors errors)
@@ -475,7 +476,7 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermissionClass(UpdatePermission.class)
-    public class UpdateAssayPlanAction extends ApiAction<AssayPlanForm>
+    public class UpdateAssayPlanAction extends MutatingApiAction<AssayPlanForm>
     {
         @Override
         public ApiResponse execute(AssayPlanForm form, BindException errors) throws Exception
