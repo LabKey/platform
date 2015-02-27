@@ -132,7 +132,7 @@
                     isCustomColumnOccupied(customFieldValString5))
             {
 
-                var result =  confirm("Custom Field value(s) of current folder may be overridden.");
+                var result =  confirm("Custom Fields of current folder will get overridden.");
 
                 //submit only if user clicks on OK
                 if(result == true)
@@ -300,15 +300,15 @@
                             <tr><td colspan="2">Populate the assigned to list from:</td></tr>
                             <tr>
                                 <td>
-                                    <input onchange="assignedToGroup.disabled=true;updateAssignedToUser();" type="radio" name="assignedToMethod" value="ProjectUsers"<%=checked(null == bean.assignedToGroup)%> <%=disabled(bean.inheritFromContainerExists)%> />
+                                    <input onchange="assignedToGroup.disabled=true;updateAssignedToUser();" type="radio" name="assignedToMethod" value="ProjectUsers"<%=checked(null == bean.assignedToGroup)%> />
                                 </td>
                                 <td>All Project Users</td>
                             </tr>
                             <tr>
                                 <td>
-                                    <input onchange="assignedToGroup.disabled=false;updateAssignedToUser();" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%> <%=disabled(bean.inheritFromContainerExists)%> />
+                                    <input onchange="assignedToGroup.disabled=false;updateAssignedToUser();" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%>/>
                                     <td>Specific Group
-                                        <select name="assignedToGroup" onchange="updateAssignedToUser()"<%=disabled(null == bean.assignedToGroup)%> <%=disabled(bean.inheritFromContainerExists)%> >
+                                        <select name="assignedToGroup" onchange="updateAssignedToUser()"<%=disabled(null == bean.assignedToGroup)%> >
                                         <%
                                             for (Group group : org.labkey.api.security.SecurityManager.getGroups(c.getProject(), true))
                                             {
@@ -354,16 +354,16 @@
                             <tr><td colspan="2">Set default assigned to user:</td></tr>
                             <tr>
                                 <td>
-                                   <input onchange="defaultUser.disabled=true;" type="radio" name="assignedToUser" value="NoDefaultUser"<%=checked(null == bean.defaultUser)%> <%=disabled(bean.inheritFromContainerExists)%> />
+                                   <input onchange="defaultUser.disabled=true;" type="radio" name="assignedToUser" value="NoDefaultUser"<%=checked(null == bean.defaultUser)%> />
                                 </td>
                                 <td>No default</td>
                             </tr>
                             <tr>
                                 <td>
-                                    <input onchange="defaultUser.disabled=false;" type="radio" name="assignedToUser" value="SpecificUser"<%=checked(null != bean.defaultUser)%> <%=disabled(bean.inheritFromContainerExists)%> />
+                                    <input onchange="defaultUser.disabled=false;" type="radio" name="assignedToUser" value="SpecificUser"<%=checked(null != bean.defaultUser)%> />
                                 </td>
                                 <td>Specific User
-                                    <select onchange="updateCurDefaultUser();" name="defaultUser"<%=disabled(null == bean.defaultUser)%> <%=disabled(bean.inheritFromContainerExists)%> ></select>
+                                    <select onchange="updateCurDefaultUser();" name="defaultUser"<%=disabled(null == bean.defaultUser)%> ></select>
                                 </td>
                             </tr>
                         </table>
@@ -430,12 +430,12 @@
         <tr><td colspan=2 align="center" ><div class="labkey-form-label"><b>Custom Fields</b></div></td></tr>
         <tr><td colspan=2>Enter captions below to use custom fields in this <%=h(bean.entryTypeNames.pluralName)%> list:</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
-            <tr><td>Type</td><td><input name="type" value="<%=h(ccc.getCaption("type"))%>" size=20 <%=disabled(bean.isTypeInherited())%>></td></tr>
-            <tr><td>Area</td><td><input name="area" value="<%=h(ccc.getCaption("area"))%>" size=20 <%=disabled(bean.isAreaInherited())%>></td></tr>
-            <tr><td>Priority</td><td><input name="priority" value="<%=h(ccc.getCaption("priority"))%>" size=20 <%=disabled(bean.isPriorityInherited())%>></td></tr>
-            <tr><td>Milestone</td><td><input name="milestone" value="<%=h(ccc.getCaption("milestone"))%>" size=20 <%=disabled(bean.isMilestoneInherited())%>></td></tr>
-            <tr><td>Resolution</td><td><input name="resolution" value="<%=h(ccc.getCaption("resolution"))%>" size=20 <%=disabled(bean.isResolutionInherited())%>></td></tr>
-            <tr><td>Related</td><td><input name="related" value="<%=h(ccc.getCaption("related"))%>" size=20 <%=disabled(bean.isRelatedInherited())%>></td></tr>
+            <tr><td>Type</td><td><input name="type" value="<%=h(ccc.getCaption("type"))%>" size=20 <%=disabled(bean.inheritFromContainerExists)%>></td></tr>
+            <tr><td>Area</td><td><input name="area" value="<%=h(ccc.getCaption("area"))%>" size=20 <%=disabled(bean.inheritFromContainerExists)%>></td></tr>
+            <tr><td>Priority</td><td><input name="priority" value="<%=h(ccc.getCaption("priority"))%>" size=20 <%=disabled(bean.inheritFromContainerExists)%>></td></tr>
+            <tr><td>Milestone</td><td><input name="milestone" value="<%=h(ccc.getCaption("milestone"))%>" size=20 <%=disabled(bean.inheritFromContainerExists)%>></td></tr>
+            <tr><td>Resolution</td><td><input name="resolution" value="<%=h(ccc.getCaption("resolution"))%>" size=20 <%=disabled(bean.inheritFromContainerExists)%>></td></tr>
+            <tr><td>Related</td><td><input name="related" value="<%=h(ccc.getCaption("related"))%>" size=20 <%=disabled(bean.inheritFromContainerExists)%>></td></tr>
             <tr><td>Integer1</td><td><input name="int1" value="<%=h(ccc.getCaption("int1"))%>" size=20 <%=disabled(bean.isInt1Inherited())%>></td></tr>
             <tr><td>Integer2</td><td><input name="int2" value="<%=h(ccc.getCaption("int2"))%>" size=20 <%=disabled(bean.isInt2Inherited())%>></td></tr>
             <%=text(getStringFieldHtml(bean, ccc, "string1"))%>
