@@ -593,4 +593,9 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             }
         }
     }
+
+    public File getWorkingCopyForInput(File f)
+    {
+        return _copiedInputs.get(f);
+    }
 }
