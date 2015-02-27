@@ -15,6 +15,7 @@
  */
 package org.labkey.api.sequenceanalysis;
 
+import org.json.JSONObject;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpData;
@@ -221,5 +222,21 @@ public class SequenceOutputFile implements Serializable
     public void setFile(File file)
     {
         _file = file;
+    }
+
+    public JSONObject toJSON()
+    {
+        JSONObject ret = new JSONObject();
+        ret.put("name", _name);
+        ret.put("category", _category);
+        ret.put("description", _description);
+        ret.put("dataId", _dataId);
+        ExpData d = getExpData();
+        if (d != null)
+        {
+            ret.put("fileName", d.getFile().getName());
+        }
+
+        return ret;
     }
 }

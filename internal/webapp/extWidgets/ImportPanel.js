@@ -60,7 +60,7 @@ Ext4.define('LABKEY.ext.ImportPanel', {
                 listeners: {
                     uploadcomplete: function(panel, response){
                         Ext4.Msg.alert("Success", response.successMessage, function(btn){
-                            window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin');
+                            window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL') || LABKEY.ActionURL.getParameter('returnUrl') || LABKEY.ActionURL.buildURL('project', 'begin');
                         }, this);
                     }
                 }

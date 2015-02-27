@@ -22,6 +22,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -80,15 +81,9 @@ abstract public class AbstractParameterizedOutputHandler implements Parameterize
     }
 
     @Override
-    final public LinkedHashSet<ClientDependency> getClientDependencies()
+    final public LinkedHashSet<String> getClientDependencies()
     {
-        LinkedHashSet<ClientDependency> ret = new LinkedHashSet<>();
-        for (String path : _dependencies)
-        {
-            ret.add(ClientDependency.fromFilePath(path));
-        }
-
-        return ret;
+        return _dependencies;
     }
 
     @Override

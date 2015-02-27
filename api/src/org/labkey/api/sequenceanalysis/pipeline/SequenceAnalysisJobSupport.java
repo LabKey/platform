@@ -18,7 +18,7 @@ package org.labkey.api.sequenceanalysis.pipeline;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.sequenceanalysis.model.AnalysisModel;
-import org.labkey.api.sequenceanalysis.model.ReadsetModel;
+import org.labkey.api.sequenceanalysis.model.Readset;
 
 import java.io.File;
 import java.io.Serializable;
@@ -38,11 +38,11 @@ public interface SequenceAnalysisJobSupport extends Serializable
 
     public Map<Integer, File> getAllCachedData();
 
-    public ReadsetModel getCachedReadset(int rowId);
+    public Readset getCachedReadset(Integer rowId);
 
     public AnalysisModel getCachedAnalysis(int rowId);
 
-    public List<ReadsetModel> getCachedReadsets();
+    public List<Readset> getCachedReadsets();
 
     public List<AnalysisModel> getCachedAnalyses();
 

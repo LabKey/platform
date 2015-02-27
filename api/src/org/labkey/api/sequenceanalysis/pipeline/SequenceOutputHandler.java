@@ -72,7 +72,7 @@ public interface SequenceOutputHandler
     /**
      * An ordered list of ClientDependencies, which allows this handler to declare any client-side resources it depends upon.
      */
-    public LinkedHashSet<ClientDependency> getClientDependencies();
+    public LinkedHashSet<String> getClientDependencies();
 
     /**
      * Provides the opportunity for the handler to validate parameters prior to running
@@ -97,6 +97,18 @@ public interface SequenceOutputHandler
 
     public interface OutputProcessor
     {
+        /**
+         * Allows handlers to perform setup on the webserver prior to remote running.  This will be run in the background as a pipeline job.
+         * @param job             The pipeline job running this task
+         * @param inputFiles      The list of input files to process
+         * @param params
+         * @param outputDir
+         * @param actions
+         * @param outputsToCreate
+         * @return A list of new SequenceOutputFile records to create
+         */
+        public void init(PipelineJob job, List<SequenceOutputFile> inputFiles, JSONObject params, File outputDir, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
+
         /**
          * Allows handlers to perform processing on the input SequenceOutputFiles locally.  This will be run in the background as a pipeline job.
          * The intention is to allow handlers to only implement the actual processing code they need, without a separate server-side action, pipeline job, etc.

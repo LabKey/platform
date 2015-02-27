@@ -16,7 +16,7 @@
 package org.labkey.api.sequenceanalysis.pipeline;
 
 import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.api.sequenceanalysis.model.ReadsetModel;
+import org.labkey.api.sequenceanalysis.model.Readset;
 
 import java.io.File;
 
@@ -27,7 +27,7 @@ import java.io.File;
  */
 public interface BamProcessingStep extends PipelineStep
 {
-    public BamProcessingStep.Output processBam(ReadsetModel rs, File inputBam, ReferenceGenome referenceGenome, File outputDirectory) throws PipelineJobException;
+    public BamProcessingStep.Output processBam(Readset rs, File inputBam, ReferenceGenome referenceGenome, File outputDirectory) throws PipelineJobException;
 
     public static interface Output extends PipelineStepOutput
     {

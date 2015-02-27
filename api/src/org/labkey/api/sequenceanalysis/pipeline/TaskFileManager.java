@@ -18,6 +18,7 @@ package org.labkey.api.sequenceanalysis.pipeline;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
+import org.labkey.api.util.Pair;
 
 import java.io.File;
 import java.util.Collection;
@@ -83,5 +84,5 @@ public interface TaskFileManager
 
     public void processUnzippedInputs();
 
-    public void decompressInputFiles(List<File> inputFiles, List<RecordedAction> actions);
+    public void decompressInputFiles(Pair<File, File> pair, List<RecordedAction> actions);
 }

@@ -22,6 +22,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.ldk.NavItem;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.security.User;
+import org.labkey.api.sequenceanalysis.model.ReadData;
+import org.labkey.api.sequenceanalysis.model.Readset;
 import org.labkey.api.sequenceanalysis.pipeline.SequenceOutputHandler;
 
 import java.io.File;
@@ -57,4 +59,8 @@ abstract public class SequenceAnalysisService
     abstract public void registerDataProvider(SequenceDataProvider p);
 
     abstract public List<NavItem> getNavItems(Container c, User u, SequenceDataProvider.SequenceNavItemCategory category);
+
+    abstract public ReadData getReadData(int rowId, User u);
+
+    abstract public Readset getReadset(int readsetId, User u);
 }

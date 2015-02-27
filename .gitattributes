@@ -1342,7 +1342,8 @@ api/src/org/labkey/api/sequenceanalysis/SequenceAnalysisService.java -text
 api/src/org/labkey/api/sequenceanalysis/SequenceDataProvider.java -text
 api/src/org/labkey/api/sequenceanalysis/SequenceOutputFile.java -text
 api/src/org/labkey/api/sequenceanalysis/model/AnalysisModel.java -text
-api/src/org/labkey/api/sequenceanalysis/model/ReadsetModel.java -text
+api/src/org/labkey/api/sequenceanalysis/model/ReadData.java -text
+api/src/org/labkey/api/sequenceanalysis/model/Readset.java -text
 api/src/org/labkey/api/sequenceanalysis/pipeline/AbstractAlignmentStepProvider.java -text
 api/src/org/labkey/api/sequenceanalysis/pipeline/AbstractAnalysisStepProvider.java -text
 api/src/org/labkey/api/sequenceanalysis/pipeline/AbstractParameterizedOutputHandler.java -text
@@ -1371,6 +1372,10 @@ api/src/org/labkey/api/sequenceanalysis/pipeline/TaskFileManager.java -text
 api/src/org/labkey/api/sequenceanalysis/pipeline/ToolParameterDescriptor.java -text
 api/src/org/labkey/api/sequenceanalysis/pipeline/VariantCallingStep.java -text
 api/src/org/labkey/api/sequenceanalysis/pipeline/VariantPostProcessingStep.java -text
+api/src/org/labkey/api/sequenceanalysis/run/AbstractCommandPipelineStep.java -text
+api/src/org/labkey/api/sequenceanalysis/run/AbstractCommandWrapper.java -text
+api/src/org/labkey/api/sequenceanalysis/run/CommandWrapper.java -text
+api/src/org/labkey/api/sequenceanalysis/run/ToolPreferences.java -text
 api/src/org/labkey/api/services/ServiceRegistry.java -text
 api/src/org/labkey/api/settings/AbstractSettingsGroup.java -text
 api/src/org/labkey/api/settings/AbstractWriteableSettingsGroup.java -text

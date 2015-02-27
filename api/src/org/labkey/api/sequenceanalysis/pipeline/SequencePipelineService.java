@@ -16,7 +16,10 @@
 package org.labkey.api.sequenceanalysis.pipeline;
 
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 
 import java.io.File;
 import java.util.List;
@@ -54,4 +57,8 @@ abstract public class SequencePipelineService
     abstract public <StepType extends PipelineStep> List<PipelineStepProvider<StepType>> getSteps(PipelineJob job, Class<StepType> stepType);
 
     abstract public File getExeForPackage(String packageName, String exe);
+
+    abstract public void ensureSequenceDictionaryExists(File referenceFasta, Logger log, boolean forceRecreate) throws PipelineJobException;
+
+    abstract public String getUnzippedBaseName(String filename);
 }
