@@ -1070,11 +1070,10 @@ public class SpecimenImporter
         }
     }
 
-    protected static SpecimenTableType _labsTableType;
-    protected static SpecimenTableType _additivesTableType;
-    protected static SpecimenTableType _derivativesTableType;
-    protected static SpecimenTableType _primaryTypesTableType;
-
+    protected final SpecimenTableType _labsTableType;
+    protected final SpecimenTableType _additivesTableType;
+    protected final SpecimenTableType _derivativesTableType;
+    protected final SpecimenTableType _primaryTypesTableType;
     protected final SpecimenTableType _specimensTableType;
 
     public @Nullable SpecimenTableType getForName(String name)
