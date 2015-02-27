@@ -328,7 +328,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.sideBar = new Ext.Panel({
             //This is going to be where the sidebar content goes.
             name: 'sidebar',
-            width: 180,
+            width: 195,
             border: false,
             cls: 'extContainer',
             tpl: this.sideBarTemplate,
@@ -471,17 +471,30 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     },
 
     getPreviousSettingsPanel : function() {
+        var message;
+        if (this.mode == 'ancillary')
+            message = "This study was previously used to create an ancillary study. ";
+        else
+            message = "This study was published previously. ";
+        message += "You can republish (populating the wizard with the previous settings) or publish the new study with no default settings.";
+
+        (this.mode == 'ancillary' ? 'ancillary' : 'published')
+
         var headerTxt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Previous Settings'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
+                Ext.DomHelper.markup({tag:'div', html:message}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
 
         var grid = new Ext.grid.GridPanel({
             columns: [
-                {dataIndex: 'Created', header: 'Created', width: 100, sortable: true},
-                {dataIndex: 'CreatedBy/DisplayName', header: 'Created By', width: 100, sortable: true},
-                {dataIndex: 'Destination', header: 'Destination', width: 200, sortable: true},
+                {dataIndex: 'Created', header: '&nbsp;Created', width: 100, sortable: true,
+                 renderer: Ext.util.Format.dateRenderer(LABKEY.extDefaultDateFormat) },
+                {dataIndex: 'CreatedBy/DisplayName', header: '&nbsp;Created By', width: 100, sortable: true},
+                {dataIndex: 'Destination', header: '&nbsp;Destination', width: 200, sortable: true},
                 {dataIndex: 'RowId', hidden: true},
                 {dataIndex: 'Settings', hidden: true}
             ],
+            selModel: new Ext.grid.RowSelectionModel({singleSelect:true}),
             store: new Ext.data.JsonStore({
                 fields: ['Created', 'CreatedBy/DisplayName', 'Destination', 'RowId', 'Settings'],
                 data: this.previousStudies,
@@ -493,16 +506,20 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             viewConfig: {forceFit: true},
             loadMask: {msg: "Loading, please wait..."},
             enableFilters: true,
+            stripeRows: true,
             pageSize: 300000,
-            height: 175,
-            cls: 'studyWizardPreviousStudiesList',
+            flex: 1,
+            style: {
+                paddingLeft: '22px',
+                paddingBottom: '10px'
+            },
             bbarCfg: [{hidden:true}],
             tbarCfg: [{hidden:true}]
         });
         grid.initialValue = null; // used for dirty logic
 
         var republishRadio = new Ext.form.Radio({
-            height: 20,
+            height: 30,
             style: 'margin-left: 2px',
             boxLabel: (this.mode == 'publish' ? 'Republish' : 'Recreate anciliary study') + ' starting with the settings from a previous publication',
             name: 'publishType',
@@ -517,7 +534,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var publishRadio = new Ext.form.Radio({
-            height: 20,
+            height: 30,
             style: 'margin-left: 2px',
             boxLabel: (this.mode == 'publish' ? 'Publish new study' : 'Create anciliary study') +  ' from scratch',
             name: 'publishType',
@@ -556,6 +573,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 var settings = Ext.decode(data.Settings);
                 this.settings = settings;
             }
+            else
+                this.settings = null;
 
             if (republishRadio.isDirty() || grid.initialValue != grid.getSelectionModel().getSelected()) {
                 grid.initialValue = grid.getSelectionModel().getSelected();
@@ -874,25 +893,27 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         }
 
-        items.push(
-                {
-                    xtype: 'radiogroup',
-                    columns: 2,
-                    fieldLabel: '',
-                    style:"padding-bottom: 10px;",
-                    labelWidth: 5,
-                    items: [
-                        this.existingGroupRadio,
-                        this.noGroupRadio
-                    ],
-                    listeners: {
-                        scope: this,
-                        afterrender: function(cmp) {
-                            if (this.settings && this.settings.participants == null) cmp.setValue('all');
-                        }
-                    }
-                }
-        );
+        var radioGroup = new Ext.form.RadioGroup({
+            columns: 2,
+            fieldLabel: '',
+            style:"padding-bottom: 10px;",
+            labelWidth: 5,
+            items: [
+                this.existingGroupRadio,
+                this.noGroupRadio
+            ]
+        });
+
+        var afterRenderFunc = function() {
+            if (this.settings && this.settings.participants == null)
+                radioGroup.setValue('all');
+            else
+                radioGroup.setValue('existing');
+        };
+
+        radioGroup.on('afterrender', afterRenderFunc, this);
+
+        items.push(radioGroup);
 
         var participantGroupStore = new Ext.data.JsonStore({
             proxy: new Ext.data.HttpProxy({
@@ -978,9 +999,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var viewReadyFunc = function(){
+            grid.getSelectionModel().clearSelections();
             if (this.settings && this.settings.participants != null)
             {
-                grid.getSelectionModel().clearSelections();
                 if (Ext.isDefined(this.settings.participantGroups) && this.settings.participantGroups == null)
                 {
                     this.gridSelectAll(grid);
@@ -1016,6 +1037,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
             // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
             this.on('settingsChange', viewReadyFunc, this);
+            this.on('settingsChange', afterRenderFunc, this);
         }, this);
 
 
@@ -1129,24 +1151,30 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         hiddenGrid.on('columnmodelcustomize', this.customizeColumnModel, this);
         hiddenGrid.selModel.on('selectionchange', function(cmp){this.info.hiddenDatasets = cmp.getSelections();}, this);
 
-        var viewReadyFunc = function(){
-            if (this.settings)
+        var viewReadyFunc = function(grid){
+            return function()
             {
                 grid.getSelectionModel().clearSelections();
-                if (!this.settings.datasets)
+                if (this.settings)
                 {
-                    this.gridSelectAll(grid);
-                }
-                else
-                {
-                    var datasets = this.setify(this.settings.datasets);
-                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('DataSetId') in datasets); }).getRange(), true);
+                    if (!this.settings.datasets)
+                    {
+                        this.gridSelectAll(grid);
+                    }
+                    else
+                    {
+                        var datasets = this.setify(this.settings.datasets);
+                        grid.getSelectionModel().selectRecords(grid.store.queryBy(function (rec)
+                        {
+                            return (rec.get('DataSetId') in datasets);
+                        }).getRange(), true);
+                    }
                 }
             }
         };
 
-        grid.on('viewready', viewReadyFunc, this);
-        hiddenGrid.on('viewready', viewReadyFunc, this);
+        grid.on('viewready', viewReadyFunc(grid), this);
+        hiddenGrid.on('viewready', viewReadyFunc(hiddenGrid), this);
 
         var syncTip = '' +
             '<div>' +
@@ -1174,29 +1202,31 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 '</div>' +
             '</div>';
 
+        var radioGroup = new Ext.form.RadioGroup({
+            fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, width: 300, height: 75, defaults: {style:"margin: 0 0 2px 2px"},
+            items: [
+                {name: 'refreshType', boxLabel: 'None', inputValue: 'None', checked: this.mode != 'ancillary', hidden: this.mode == 'ancillary'},
+                {name: 'refreshType', boxLabel: 'Automatic', inputValue: 'Automatic', checked: this.mode == 'ancillary'},
+                {name: 'refreshType', boxLabel: 'Manual', inputValue: 'Manual'}
+            ]
+        });
+
+        var afterRenderFunc = function(cmp) {
+            if (this.settings && Ext.isDefined(this.settings.datasetRefresh)) {
+                if (!this.settings.datasetRefresh && this.mode != 'ancillary') radioGroup.setValue('None');
+                else if (this.settings.datasetRefreshDelay == null) radioGroup.setValue('Manual');
+                else radioGroup.setValue('Automatic');
+            }
+            else
+                radioGroup.setValue('None');
+        };
+
+        radioGroup.on('afterrender', afterRenderFunc, this);
+
         if(this.allowRefresh)
         {
             this.snapshotOptions = new Ext.form.FormPanel({
-                items: [
-                    {
-                        xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, width: 300, height: 75, defaults: {style:"margin: 0 0 2px 2px"},
-                        items: [
-                            {name: 'refreshType', boxLabel: 'None', inputValue: 'None', checked: this.mode != 'ancillary', hidden: this.mode == 'ancillary'},
-                            {name: 'refreshType', boxLabel: 'Automatic', inputValue: 'Automatic', checked: this.mode == 'ancillary'},
-                            {name: 'refreshType', boxLabel: 'Manual', inputValue: 'Manual'}
-                        ],
-                        listeners: {
-                            scope: this,
-                            afterrender: function(cmp) {
-                                if (this.settings && Ext.isDefined(this.settings.datasetRefresh)) {
-                                    if (!this.settings.datasetRefresh && this.mode != 'ancillary') cmp.setValue('None');
-                                    else if (this.settings.datasetRefreshDelay == null) cmp.setValue('Manual');
-                                    else cmp.setValue('Automatic');
-                                }
-                            }
-                        }
-                    }
-                ],
+                items: [radioGroup],
                 padding: '10px 0 0 0',
                 border: false,
                 height: 85,
@@ -1220,7 +1250,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         panel.on('afterrender', function(cmp) {
             // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
             // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
-            cmp.on('show', viewReadyFunc, this);
+            cmp.on('show', viewReadyFunc(grid), this);
+            cmp.on('show', viewReadyFunc(hiddenGrid), this);
+            if(this.allowRefresh)
+                cmp.on('show', afterRenderFunc, this);
         }, this);
         
         return panel;
@@ -1300,9 +1333,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         items.push(grid);
 
         var viewReadyFunc = function() {
+            grid.getSelectionModel().clearSelections();
             if (this.settings)
             {
-                grid.getSelectionModel().clearSelections();
                 if (!this.settings.views)
                 {
                     this.gridSelectAll(grid);
@@ -1419,9 +1452,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var viewReadyFunc = function(){
+            grid.getSelectionModel().clearSelections();
             if (this.settings)
             {
-                grid.getSelectionModel().clearSelections();
                 if (!this.settings.studyObjects)
                 {
                     this.gridSelectAll(grid);
@@ -1545,9 +1578,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         items.push(grid);
 
         var viewReadyFunc = function(){
+            grid.getSelectionModel().clearSelections();
             if (this.settings)
             {
-                grid.getSelectionModel().clearSelections();
                 if (!this.settings.reports)
                 {
                     this.gridSelectAll(grid);
@@ -1627,7 +1660,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var afterRenderFunc = function() {
-            if (this.settings) this.specimenRefreshRadioGroup.setValue(this.settings.specimenRefresh.toString());
+            if (this.settings)
+                this.specimenRefreshRadioGroup.setValue(this.settings.specimenRefresh.toString());
+            else
+                this.specimenRefreshRadioGroup.setValue(false);
         };
 
         this.specimenRefreshRadioGroup.on('afterrender', afterRenderFunc, this);
@@ -1704,9 +1740,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         grid.selModel.on('selectionchange', function(cmp){this.selectedVisits = cmp.getSelections();}, this);
 
         var viewReadyFunc = function(){
+            grid.getSelectionModel().clearSelections();
             if (this.settings)
             {
-                grid.getSelectionModel().clearSelections();
                 if (!this.settings.visits)
                 {
                     this.gridSelectAll(grid);
@@ -1824,9 +1860,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var viewReadyFunc = function(){
+            grid.getSelectionModel().clearSelections();
             if (this.settings)
             {
-                grid.getSelectionModel().clearSelections();
                 if(!this.settings.lists)
                 {
                     this.gridSelectAll(grid);
@@ -1912,9 +1948,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var viewReadyFunc = function(){
+            grid.getSelectionModel().clearSelections();
             if (this.settings)
             {
-                grid.getSelectionModel().clearSelections();
                 if (!this.settings.folderObjects)
                 {
                     this.gridSelectAll(grid);
@@ -2023,6 +2059,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var viewReadyFunc = function(){
+            grid.getSelectionModel().clearSelections();
             if (this.settings)
             {
                 var publishOptions = {};
@@ -2030,7 +2067,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 publishOptions['removeProtectedColumns'] = this.settings.removeProtectedColumns;
                 publishOptions['shiftDates'] = this.settings.shiftDates;
                 publishOptions['useAlternateParticipantIds'] = this.settings.useAlternateParticipantIds;
-                grid.getSelectionModel().clearSelections();
                 if (this.settings.maskClinic && this.settings.removeProtectedColumns && this.settings.shiftDates && this.settings.useAlternateParticipantIds)
                     this.gridSelectAll(grid);
                 else
