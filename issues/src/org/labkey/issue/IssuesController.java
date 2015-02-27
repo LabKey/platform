@@ -2084,19 +2084,19 @@ public class IssuesController extends SpringActionController
                     errors.reject(ConfigureIssuesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
                 if (form.getEntryPluralName() == null || form.getEntryPluralName().trimToEmpty().length() == 0)
                     errors.reject(ConfigureIssuesForm.ParamNames.entryPluralName.name(), "You must specify a value for the entry type plural name!");
-            }
 
-            try
-            {
-                if (form.getDirection() == null)
+                try
                 {
-                    errors.reject(ConfigureIssuesForm.ParamNames.direction.name(), "You must specify a comment sort direction!");
+                    if (form.getDirection() == null)
+                    {
+                        errors.reject(ConfigureIssuesForm.ParamNames.direction.name(), "You must specify a comment sort direction!");
+                    }
+                    _direction = Sort.SortDirection.valueOf(form.getDirection());
                 }
-                _direction = Sort.SortDirection.valueOf(form.getDirection());
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ConfigureIssuesForm.ParamNames.direction.name(), "You must specify a valid comment sort direction!");
+                catch (IllegalArgumentException e)
+                {
+                    errors.reject(ConfigureIssuesForm.ParamNames.direction.name(), "You must specify a valid comment sort direction!");
+                }
             }
         }
 
