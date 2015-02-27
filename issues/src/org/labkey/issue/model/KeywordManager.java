@@ -50,13 +50,15 @@ public class KeywordManager
 
     public static Collection<Keyword> getKeywords(final Container c, final ColumnType type)
     {
-        return KEYWORD_CACHE.get(getCacheKey(c, type), c, new CacheLoader<String, Collection<Keyword>>() {
+        final Container currentOrInheritFrom = IssueManager.getInheritFromOrCurrentContainer(c);
+
+        return KEYWORD_CACHE.get(getCacheKey(currentOrInheritFrom, type), currentOrInheritFrom, new CacheLoader<String, Collection<Keyword>>() {
             @Override
             public Collection<Keyword> load(String key, @Nullable Object argument)
             {
                 assert type.getOrdinal() > 0;   // Ordinal 0 ==> no pick list (e.g., custom integer columns)
 
-                SimpleFilter filter = SimpleFilter.createContainerFilter(c).addCondition(FieldKey.fromParts("Type"), type.getOrdinal());
+                SimpleFilter filter = SimpleFilter.createContainerFilter(currentOrInheritFrom).addCondition(FieldKey.fromParts("Type"), type.getOrdinal());
                 Sort sort = new Sort("Keyword");
 
                 Selector selector = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueKeywords(), PageFlowUtil.set("Keyword", "Default", "Container", "Type"), filter, sort);
@@ -69,8 +71,8 @@ public class KeywordManager
                     if (initialValues.length > 0)
                     {
                         // First reference in this container... save away initial values & default
-                        addKeyword(c, type, initialValues);
-                        setKeywordDefault(c, type, type.getInitialDefaultValue());
+                        addKeyword(currentOrInheritFrom, type, initialValues);
+                        setKeywordDefault(currentOrInheritFrom, type, type.getInitialDefaultValue());
                     }
 
                     keywords = selector.getCollection(Keyword.class);
@@ -84,6 +86,10 @@ public class KeywordManager
 
     public static void addKeyword(Container c, ColumnType type, String... keywords)
     {
+        //if inheriting settings from a different container, do not allow adding new keywords.
+        if(IssueManager.getInheritFromContainer(c) != null)
+            return;
+
         synchronized (KEYWORD_LOCK)
         {
             SqlExecutor executor = new SqlExecutor(IssuesSchema.getInstance().getSchema());
@@ -102,6 +108,11 @@ public class KeywordManager
     // Clear old default value and set new one
     public static void setKeywordDefault(Container c, ColumnType type, String keyword)
     {
+
+        //if inheriting settings from a different container, do not allow adding new keywords.
+        if(IssueManager.getInheritFromContainer(c) != null)
+            return;
+
         clearKeywordDefault(c, type);
 
         String selectName = IssuesSchema.getInstance().getTableInfoIssueKeywords().getColumn("Default").getSelectName();
@@ -117,6 +128,10 @@ public class KeywordManager
     // Clear existing default value
     public static void clearKeywordDefault(Container c, ColumnType type)
     {
+        //if inheriting settings from a different container, do not allow clearing
+        if(IssueManager.getInheritFromContainer(c) != null)
+            return;
+
         String selectName = IssuesSchema.getInstance().getTableInfoIssueKeywords().getColumn("Default").getSelectName();
 
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(
@@ -129,6 +144,10 @@ public class KeywordManager
 
     public static void deleteKeyword(Container c, ColumnType type, String keyword)
     {
+        //if inheriting settings from a different container, do not allow deleting
+        if(IssueManager.getInheritFromContainer(c) != null)
+            return;
+
         Collection<Keyword> keywords;
 
         synchronized (KEYWORD_LOCK)
