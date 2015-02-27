@@ -1435,7 +1435,7 @@ public class QueryView extends WebPartView<Object>
                 filterItem.setId(getBaseMenuId() + ":Views:Folder Filter:" + filterType.toString());
 
                 if ((!isUnionTable && selectedFilter.getType() == filterType) ||
-                    (isUnionTable && ContainerFilter.Type.CurrentAndSubfolders.equals(filterType)))
+                    (isUnionTable && ContainerFilter.Type.CurrentAndSubfolders.equals(filterType)))         // TODO: Not quite right for Ancillary study
                 {
                     filterItem.setSelected(true);
                 }
@@ -2448,7 +2448,7 @@ public class QueryView extends WebPartView<Object>
             {
                 // If table has a Union version, apply the filter to the Union
                 UserSchema userSchema = _table.getUserSchema();
-                if (ContainerFilter.Type.Current != filter.getType() && null != userSchema && ((ContainerFilterable)_table).hasUnionTable())
+                if (ContainerFilter.Type.Current != filter.getType() && null != userSchema && _table.hasUnionTable())
                 {
                     Set<Container> containers = new HashSet<>();
                     if (ContainerFilter.Type.AllFolders != filter.getType())
