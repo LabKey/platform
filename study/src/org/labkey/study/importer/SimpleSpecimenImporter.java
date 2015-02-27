@@ -220,7 +220,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         lookupTables.put("additive_type", new LookupTable(StudySchema.getInstance().getTableInfoSpecimenAdditive(container), container, _additivesTableType, "additive_type_id", "additive_id", "additive", "Additive"));
         lookupTables.put("derivative_type", new LookupTable(StudySchema.getInstance().getTableInfoSpecimenDerivative(container), container, _derivativesTableType, "derivative_type_id", "derivative_id", "derivative", "Derivative"));
         lookupTables.put("primary_specimen_type", new LookupTable(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container), container, _primaryTypesTableType, "primary_specimen_type_id", "primary_type_id", "primary_type", "PrimaryType"));
-        LabLookupTable labLookup =  new LabLookupTable(container);
+        LabLookupTable labLookup =  new LabLookupTable(StudySchema.getInstance().getTableInfoSite(container), container, _labsTableType);
         lookupTables.put("lab", labLookup);
 
         List<Map<String, Object>> specimenRows = new ArrayList<>();
@@ -409,9 +409,9 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         static final String DEFAULT_LAB = "Not Specified";
         private final Integer defaultLabId;
 
-        LabLookupTable(Container c) throws SQLException
+        LabLookupTable(TableInfo tableInfo, Container c, SpecimenTableType tableType) throws SQLException
         {
-            super(StudySchema.getInstance().getTableInfoSite(c), c, _labsTableType, "lab_id", "lab_id", "lab_name", "Label");
+            super(tableInfo, c, tableType, "lab_id", "lab_id", "lab_name", "Label");
             defaultLabId = getVal(DEFAULT_LAB);
         }
 
