@@ -15,6 +15,7 @@
  */
 package org.labkey.issue.model;
 
+import com.allen_sauer.gwt.dnd.client.util.StringUtil;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -491,18 +492,41 @@ public class IssueManager
             Container inheritFrom = getInheritFromContainer(c); //get the container from which c inherited it's admin settings from
 
 
-            //Merge non-conflicting Custom Column values if inheriting.
+            //Merge non-conflicting Custom Column values for Integer1, Integer2, String 1 to String 5 if inheriting.
             //Non-conflicting custom column values are values such that container c and inheritFrom are
-            //not occupying the same Custom Column. For example: if Type and String3 has values in container c, but is
-            //empty in inheritFrom, then container c will keep the values of Type and String3, otherwise all other Custom Column
-            // values of container c will be overridden with the values from inheritFrom container.
+            //not occupying the same Custom Column.
             if(inheritFrom != null)
             {
+                //Simply iterating through the map and using remove() throws java.util.ConcurrentModificationException.
+                // Hence, using a iterator to avoid this exception.
+                Iterator<Map.Entry<String, CustomColumn>> iter = map.entrySet().iterator();
+
+                while(iter.hasNext())
+                {
+                    Map.Entry<String, CustomColumn> col = iter.next();
+                    String colName = col.getKey();
+
+                    //Remove any pre-exisiting values for these six custom columns of the current container
+                    //to be able to inherit these from inheritFrom container, even if empty.
+                    //Rationale: Enabling to modify these custom col fields if not inherited, would also
+                    //modify the name in the 'Keyword' section.
+                    //For example: user inherits 'Type Options' in the Keyword section, and 'Type' under
+                    // 'Custom Column' is enabled, allowing to add a custom field value for 'Type' will
+                    // modify 'Type Options' to '<User defined Type name> Options' (in the Keyword section).
+                    if(colName != null && (colName.equals("type") || colName.equals("area") || colName.equals("priority")
+                            || colName.equals("milestone") || colName.equals("resolution")
+                            || colName.equals("related")))
+                    {
+                        iter.remove();
+                    }
+                }
+
                 CustomColumnConfiguration inheritFromCCC = getCustomColumnConfiguration(inheritFrom);
                 Collection<CustomColumn> inheritFromCC = inheritFromCCC.getCustomColumns();
 
                 for(CustomColumn cc : inheritFromCC)
                 {
+                    //override with inheritFrom container
                     map.put(cc.getName(), cc);
                 }
             }
