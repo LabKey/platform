@@ -2047,7 +2047,7 @@ public class PageFlowUtil
         JSONObject tourProps = new JSONObject();
         TourService.Interface service = TourService.get();
 
-        if (null != service)
+        if (null != service && null != container)
         {
             for (Tour tour : service.getApplicableTours(container))
             {
