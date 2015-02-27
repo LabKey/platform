@@ -39,7 +39,7 @@ LABKEY.study.openRepublishStudyWizard = function(snapshotId, availableContainerN
             };
 
             //issue 22070: specimen study republish needs to include requestId
-            if (settings.type == 'specimen')
+            if (row.Type == 'specimen')
             {
                 if (!settings.specimenRequestId) {
                     config.mode = 'publish';
