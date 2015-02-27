@@ -324,7 +324,16 @@ public class StudyController extends BaseStudyController
     protected NavTree _appendNavTrailVisitAdmin(NavTree root)
     {
         _appendManageStudy(root);
-        return root.addChild("Manage " + getVisitLabelPlural(), new ActionURL(ManageVisitsAction.class, getContainer()));
+
+        StringBuilder sb = new StringBuilder("Manage ");
+
+        Study visitStudy = StudyManager.getInstance().getStudyForVisits(getStudy());
+        if (visitStudy != null && visitStudy.getShareVisitDefinitions() == Boolean.TRUE)
+            sb.append("Shared ");
+
+        sb.append(getVisitLabelPlural());
+
+        return root.addChild(sb.toString(), new ActionURL(ManageVisitsAction.class, getContainer()));
     }
 
     @RequiresPermissionClass(ReadPermission.class)
