@@ -227,9 +227,10 @@ public class RelativeDateVisitManager extends VisitManager
                 " )\n";
         sqlUpdateVisitRowId += "WHERE Container = ?";
 
-        Study visitStudy = StudyManager.getInstance().getStudyForVisits(getStudy());
+        Study study = getStudy();
+        Study visitStudy = StudyManager.getInstance().getStudyForVisits(study);
         Container c = visitStudy.getContainer();
-        new SqlExecutor(schema).execute(sqlUpdateVisitRowId, c, c);
+        new SqlExecutor(schema).execute(sqlUpdateVisitRowId, c, study.getContainer());
     }
 
 

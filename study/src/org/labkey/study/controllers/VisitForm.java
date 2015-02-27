@@ -16,11 +16,13 @@
 package org.labkey.study.controllers;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewForm;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.springframework.validation.Errors;
 
@@ -110,13 +112,20 @@ public class VisitForm extends ViewForm
         setBean(visit);
     }
 
+    private Container getVisitContainer()
+    {
+        Study study = StudyManager.getInstance().getStudy(getContainer());
+        Study visitStudy = StudyManager.getInstance().getStudyForVisits(study);
+        return visitStudy.getContainer();
+    }
+
 
     public VisitImpl getBean()
     {
         if (null == _visit)
             _visit = new VisitImpl();
 
-        _visit.setContainer(getContainer());
+        _visit.setContainer(getVisitContainer());
 
         if (getTypeCode() != null)
             _visit.setTypeCode(getTypeCode());
