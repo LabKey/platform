@@ -1036,7 +1036,13 @@
                      * A boolean flag for whether results containing rows with a count of 0 will be a part of the response. Defaults to true.
                      * (optional)
                      */
-                    showEmpty: config.showEmpty === true
+                    showEmpty: config.showEmpty === true,
+
+                    /**
+                     * A boolean flag for whether returned counts should include the [#null] member. Defaults to true for backward compatibility.
+                     * (optional)
+                     */
+                    includeNullMemberInCount: !(config.includeNullMemberInCount === false)
                 },
                 log : config.log,
                 originalConfig : config,

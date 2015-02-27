@@ -73,6 +73,7 @@ public class QubeQuery
 
     // for count distinct queries
     Level countDistinctLevel;       // [Subject].[Subject]
+    boolean includeNullMemberInCount = true;
     QubeExpr countFilters;          // subset the members that are counted (e.g. restrict [Subject].[Subject] by [Species].[Homo Sapiens])
 
     Level joinLevel;                // [Subject].[SubjectVisit], affects how onRows,onColumns,wherefilters intersect
@@ -330,6 +331,9 @@ public class QubeQuery
         this.errors = errors;
         Object v = json.get("showEmpty");
         showEmpty = null==v ? false : (Boolean)ConvertUtils.convert(v.toString(), Boolean.class);
+
+        v = json.get("includeNullMemberInCount");
+        includeNullMemberInCount = null==v ? true : (Boolean)ConvertUtils.convert(v.toString(), Boolean.class);
 
         onRows = parseJsonExpr(json.get("onRows"), OP.MEMBERS, OP.XINTERSECT);
 
