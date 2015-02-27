@@ -224,7 +224,7 @@ public class JsonWriter
 
             props.put("shortCaption", cinfo.getShortLabel());
 
-            if (dc instanceof MultiValuedDisplayColumn || !cinfo.getParentTable().getSqlDialect().isSortableDataType(cinfo.getSqlTypeName()))
+            if (dc instanceof MultiValuedDisplayColumn || (cinfo.getParentTable() != null && cinfo.getParentTable().getSqlDialect() != null && !cinfo.getParentTable().getSqlDialect().isSortableDataType(cinfo.getSqlTypeName())))
             {
                 // Disallow faceted filtering when the column is multi-valued, as the value that comes out of the
                 // database likely has a different delimeter compared to what the user wants to see and therefore
