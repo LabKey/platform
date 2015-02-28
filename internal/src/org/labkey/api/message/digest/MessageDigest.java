@@ -50,11 +50,7 @@ public abstract class MessageDigest
          * Returns the list of containers that have messages within the date ranges to
          * include in the digest.
          */
-        public List<Container> getContainersWithNewMessages(Date start, Date end) throws Exception;
-        /**
-         * Sends a digest for the container and date range
-         */
-        public void sendDigest(Container c, Date min, Date max) throws Exception;
+        public void sendDigestForAllContainers(Date start, Date end) throws Exception;
     }
 
     public void addProvider(Provider provider)
@@ -73,10 +69,7 @@ public abstract class MessageDigest
 
         for (Provider provider : _providers)
         {
-            List<Container> containers = provider.getContainersWithNewMessages(start, end);
-
-            for (Container c : containers)
-                provider.sendDigest(c, start, end);
+            provider.sendDigestForAllContainers(start, end);
         }
 
         setLastSuccessful(end);

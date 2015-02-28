@@ -23,12 +23,5 @@ import java.util.Map;
 
 public abstract class NotificationInfoProvider
 {
-    protected Map<String, Map<Integer, List<NotificationInfo>>> _notificationInfoMap = null;
-
     public abstract Map<String, Map<Integer, List<NotificationInfo>>> getNotificationInfoMap(Date modifiedRangeStart, Date modifiedRangeEnd);
-
-    public void clearNotificationInfoMap()
-    {
-        _notificationInfoMap = null;
-    }
 }
