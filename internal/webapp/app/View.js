@@ -324,6 +324,9 @@ Ext.define('LABKEY.app.controller.View', {
     changeView : function(controller, view, viewContext) {
         var hashDelimiter = '/';
         var hash = encodeURIComponent(controller);
+
+        this.fireEvent('beforechangeview', controller, view, this.activeContext, viewContext);
+
         if (view) {
             hash += hashDelimiter + encodeURIComponent(view);
 
