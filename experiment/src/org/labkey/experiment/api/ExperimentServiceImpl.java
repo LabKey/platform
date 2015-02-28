@@ -883,10 +883,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.add(container);
         sql.add(Boolean.TRUE);
 
-        Experiment exp = new SqlSelector(getSchema(), sql).getObject(Experiment.class);
-        if (exp != null)
+        List<Experiment> exp = new SqlSelector(getSchema(), sql).getArrayList(Experiment.class);
+        if (!exp.isEmpty())
         {
-            return new ExpExperimentImpl(exp);
+            // We don't care which one we use. It's possible to have multiple matches if a run was deleted that was
+            // already part of a hidden run group.
+            return new ExpExperimentImpl(exp.get(0));
         }
         else
         {

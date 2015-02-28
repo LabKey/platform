@@ -3480,11 +3480,16 @@ public class SpecimenImporter
         ComputedColumn lsidCol = new ComputedColumn()
         {
             public String getName() { return "LSID"; }
-            public Object getValue(Map<String, Object> row)
+            public Object getValue(Map<String, Object> row) throws ValidationException
             {
                 String id = (String) row.get(GLOBAL_UNIQUE_ID_TSV_COL);
                 if (id == null)
                     id = (String) row.get(SPEC_NUMBER_TSV_COL);
+
+                if (id == null)
+                {
+                    throw new ValidationException("GlobalUniqueId is required but was not supplied");
+                }
 
                 Lsid lsid = SpecimenService.get().getSpecimenMaterialLsid(_container, id);
                 return lsid.toString();
