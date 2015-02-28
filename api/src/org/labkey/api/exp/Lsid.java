@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -86,7 +87,7 @@ public class Lsid
     }
 
     /** Assumes that the separate parts are not encoded  */
-    public Lsid(String namespacePrefix, String namespaceSuffix, String objectId)
+    public Lsid(String namespacePrefix, String namespaceSuffix, @NotNull String objectId)
     {
         this(namespacePrefix, namespaceSuffix, objectId, AppProps.getInstance());
     }

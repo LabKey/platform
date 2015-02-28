@@ -16,6 +16,7 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
@@ -72,7 +73,7 @@ public class SpecimenService
 
         Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user) throws SQLException;
 
-        Lsid getSpecimenMaterialLsid(Container studyContainer, String id);
+        Lsid getSpecimenMaterialLsid(@NotNull Container studyContainer, @NotNull String id);
 
         void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException;
 
