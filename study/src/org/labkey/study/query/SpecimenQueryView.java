@@ -139,8 +139,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     private static class VialRestrictedDataRegion extends SpecimenDataRegion
     {
-        private String _historyLinkBase = null;
-
         protected boolean isRecordSelectorEnabled(RenderContext ctx)
         {
             return isAvailable(ctx);
@@ -177,10 +175,10 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
         private String getHistoryLink(RenderContext ctx)
         {
-            if (_historyLinkBase == null)
-                _historyLinkBase = getHistoryLinkBase(ctx.getViewContext());
+            String containerId = (String) ctx.getRow().get("Container");
+            String historyLinkBase = getHistoryLinkBase(ctx.getViewContext(), containerId);
             Long specimenId = (Long) ctx.getRow().get("RowId");
-            return _historyLinkBase + specimenId;
+            return historyLinkBase + specimenId;
         }
 
         private boolean isAvailable(RenderContext ctx)
@@ -189,9 +187,10 @@ public class SpecimenQueryView extends BaseStudyQueryView
         }
     }
 
-    protected static String getHistoryLinkBase(ViewContext ctx)
+    protected static String getHistoryLinkBase(ViewContext ctx, String containerId)
     {
-        ActionURL historyLink = new ActionURL(SpecimenController.SampleEventsAction.class, ctx.getContainer());
+        Container container = null != containerId ? ContainerManager.getForId(containerId) : ctx.getContainer();
+        ActionURL historyLink = new ActionURL(SpecimenController.SampleEventsAction.class, container);
         historyLink.addParameter(ActionURL.Param.returnUrl, ctx.getActionURL().getLocalURIString());
         return historyLink.toString() + "&id=";
     }
@@ -718,6 +717,10 @@ public class SpecimenQueryView extends BaseStudyQueryView
             else
                 rgn = new SpecimenDataRegion();
             rgn.setRecordSelectorValueColumns("RowId");
+
+            // NOTE: Setting here instead of in table ctor because if set when SpecimenDetail is sub-query, we have too many columns in sub-query (Dave)
+            if (ViewType.VIALS.equals(_viewType))
+                getTable().getColumn("Container").setRequired(true);
         }
         else
         {
@@ -827,9 +830,20 @@ public class SpecimenQueryView extends BaseStudyQueryView
         {
             if (_showHistoryLinks)
             {
-                String eventsBase = getHistoryLinkBase(getViewContext());
-                cols.add(0, new SimpleDisplayColumn("<a href=\"" + eventsBase + "${rowid}&selected=" +
-                        Boolean.toString(_participantVisitFiltered) + "\">[history]</a>"));
+                cols.add(0, new SimpleDisplayColumn("[history]")
+                {
+                    @Override
+                    public String renderURL(RenderContext ctx)
+                    {
+                        StringBuilder url = new StringBuilder();
+                        String containerId = (String) ctx.getRow().get("Container");
+                        Long specimenId = (Long) ctx.getRow().get("RowId");
+                        url.append(getHistoryLinkBase(ctx.getViewContext(), containerId))
+                           .append(specimenId.toString()).append("&selected=")
+                           .append(Boolean.toString(_participantVisitFiltered));
+                        return url.toString();
+                    }
+                });
             }
         }
 
