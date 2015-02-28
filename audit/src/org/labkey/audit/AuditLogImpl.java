@@ -38,7 +38,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.SimpleFilter.NotClause;
@@ -665,27 +664,22 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     @Override
     public boolean hasEventTypeMigrated(String eventType)
     {
-        Map<String, String> props = PropertyManager.getProperties(AUDIT_MIGRATE_PROPSET);
-        if ("true".equalsIgnoreCase(props.get(eventType)))
-            return true;
-
-        return false;
+        // We need to be case-insensitive to support resolving the queries correctly
+        Map<String, String> props = new CaseInsensitiveHashMap<>(PropertyManager.getProperties(AUDIT_MIGRATE_PROPSET));
+        return Boolean.parseBoolean(props.get(eventType));
     }
 
     @Override
     public boolean isMigrateComplete()
     {
         Map<String, String> props = PropertyManager.getProperties(AUDIT_MIGRATE_PROPSET);
-        if ("true".equalsIgnoreCase(props.get(AUDIT_MIGRATE_COMPLETE)))
-            return true;
-
-        return false;
+        return Boolean.parseBoolean(props.get(AUDIT_MIGRATE_COMPLETE));
     }
 
     private void setMigrateComplete(boolean completed)
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUDIT_MIGRATE_PROPSET, true);
-        props.put(AUDIT_MIGRATE_COMPLETE, completed ? "true" : "false");
+        props.put(AUDIT_MIGRATE_COMPLETE, Boolean.toString(completed));
         props.save();
     }
 
