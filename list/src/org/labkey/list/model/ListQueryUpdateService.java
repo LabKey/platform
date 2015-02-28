@@ -347,7 +347,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             result = getRow(user, container, result);
 
-            if (null != result.get(ID))
+            if (null != result && null != result.get(ID))
             {
                 ListManager mgr = ListManager.get();
                 String entityId = (String) result.get(ID);
