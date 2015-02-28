@@ -29,14 +29,13 @@ import java.util.Set;
  */
 public class LoggingResultSetWrapper extends ResultSetWrapper
 {
-    protected final QueryLogging _queryLogging;
-    private Set<Object> _dataLoggingValues = new HashSet<>();
+    private final QueryLogging _queryLogging;
+    private final Set<Object> _dataLoggingValues = new HashSet<>();
 
 
     public LoggingResultSetWrapper(ResultSet rs, @NotNull QueryLogging queryLogging)
     {
         super(rs);
-        resultset = rs;
         _queryLogging = queryLogging;
     }
 
@@ -44,7 +43,7 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
     @Override
     public boolean next() throws SQLException
     {
-        boolean isNext = resultset.next();
+        boolean isNext = super.next();
         if (isNext)
             updateQueryLogging();
         return isNext;
@@ -60,14 +59,14 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
             selectQueryAuditEvent.setDataLogging(_queryLogging, _dataLoggingValues);
             AuditLogService.get().addEvent(_queryLogging.getUser(), selectQueryAuditEvent);
         }
-        resultset.close();
+        super.close();
     }
 
 
     @Override
     public boolean first() throws SQLException
     {
-        boolean isValid = resultset.first();
+        boolean isValid = super.first();
         if (isValid)
             updateQueryLogging();
         return isValid;
@@ -77,7 +76,7 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
     @Override
     public boolean last() throws SQLException
     {
-        boolean isValid = resultset.last();
+        boolean isValid = super.last();
         if (isValid)
             updateQueryLogging();
         return isValid;
@@ -87,7 +86,7 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
     @Override
     public boolean absolute(int i) throws SQLException
     {
-        boolean isValid = resultset.absolute(i);
+        boolean isValid = super.absolute(i);
         if (isValid)
             updateQueryLogging();
         return isValid;
@@ -97,7 +96,7 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
     @Override
     public boolean relative(int i) throws SQLException
     {
-        boolean isValid = resultset.relative(i);
+        boolean isValid = super.relative(i);
         if (isValid)
             updateQueryLogging();
         return isValid;
@@ -107,7 +106,7 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
     @Override
     public boolean previous() throws SQLException
     {
-        boolean isValid = resultset.previous();
+        boolean isValid = super.previous();
         if (isValid)
             updateQueryLogging();
         return isValid;
@@ -120,7 +119,7 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
         {
             for (ColumnInfo dataLoggingColumn : _queryLogging.getDataLoggingColumns())
             {
-                Object obj = resultset.getObject(dataLoggingColumn.getAlias());
+                Object obj = getObject(dataLoggingColumn.getAlias());
                 if (null == obj)
                     throw new UnauthorizedException("Unable to read expected data logging column.");
                 _dataLoggingValues.add(obj);
