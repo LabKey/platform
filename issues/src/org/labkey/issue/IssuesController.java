@@ -2148,15 +2148,16 @@ public class IssuesController extends SpringActionController
                 names.pluralName = form.getEntryPluralName();
 
                 IssueManager.saveEntryTypeNames(getContainer(), names);
-                IssueManager.saveAssignedToGroup(getContainer(), _group);
                 IssueManager.saveCommentSortDirection(getContainer(), _direction);
-                IssueManager.saveDefaultAssignedToUser(getContainer(), _user);
                 IssueManager.saveMoveDestinationContainers(getContainer(), _moveToContainers);
                 IssueManager.saveRelatedIssuesList(getContainer(), form.getRelatedIssuesList());
             }
 
             CustomColumnConfiguration nccc = new CustomColumnConfiguration(getViewContext());
             IssueManager.saveCustomColumnConfiguration(getContainer(), nccc);
+
+            IssueManager.saveAssignedToGroup(getContainer(), _group);
+            IssueManager.saveDefaultAssignedToUser(getContainer(), _user);
 
             IssueManager.setRequiredIssueFields(getContainer(), form.getRequiredFields());
             IssueManager.saveInheritFromContainer(getContainer(), _inheritSettingsFromThisContainer);

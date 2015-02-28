@@ -848,7 +848,7 @@ public class IssueManager
 
     public static @Nullable Group getAssignedToGroup(Container c)
     {
-        Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_ASSIGNED_TO_LIST);
+        Map<String, String> props = PropertyManager.getProperties(c, CAT_ASSIGNED_TO_LIST);
 
         String groupId = props.get(PROP_ASSIGNED_TO_GROUP);
 
@@ -868,7 +868,7 @@ public class IssueManager
 
     public static @Nullable User getDefaultAssignedToUser(Container c)
     {
-        Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_DEFAULT_ASSIGNED_TO_LIST);
+        Map<String, String> props = PropertyManager.getProperties(c, CAT_DEFAULT_ASSIGNED_TO_LIST);
         String userId = props.get(PROP_DEFAULT_ASSIGNED_TO_USER);
         if (null == userId)
             return null;
