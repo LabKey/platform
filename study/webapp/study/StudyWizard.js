@@ -473,10 +473,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     getPreviousSettingsPanel : function() {
         var message;
         if (this.mode == 'ancillary')
-            message = "This study was previously used to create an ancillary study. ";
+            message = "This study was previously used to create an ancillary study. You can republish (populating the wizard with the previous settings) or create a new ancillary study with no default settings.";
         else
-            message = "This study was published previously. ";
-        message += "You can republish (populating the wizard with the previous settings) or publish the new study with no default settings.";
+            message = "This study was published previously. You can republish (populating the wizard with the previous settings) or publish the new study with no default settings.";
 
         (this.mode == 'ancillary' ? 'ancillary' : 'published')
 
@@ -1218,7 +1217,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 else radioGroup.setValue('Automatic');
             }
             else
-                radioGroup.setValue('None');
+                radioGroup.setValue(this.mode == 'ancillary' ? 'Automatic' : 'None');
         };
 
         radioGroup.on('afterrender', afterRenderFunc, this);
@@ -1642,12 +1641,18 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     if (!checked)
                         this.specimenRefreshRadioGroup.reset();
                 },
-                afterrender: function(cb) {
-                    if (this.settings) cb.setValue(this.settings.includeSpecimens);
-                },
                 scope: this
             }
         });
+
+        var afterRenderFuncCb = function(cb) {
+            if (this.settings)
+                this.includeSpecimensCheckBox.setValue(this.settings.includeSpecimens);
+            else
+                this.includeSpecimensCheckBox.setValue(true);
+        }
+
+        this.includeSpecimensCheckBox.on('afterrender', afterRenderFuncCb, this);
 
         this.specimenRefreshRadioGroup = new Ext.form.RadioGroup({
             xtype: 'radiogroup',
@@ -1696,6 +1701,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         panel.on('afterrender', function(cmp) {
             // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
             // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            this.on('settingsChange', afterRenderFuncCb, this);
             this.on('settingsChange', afterRenderFunc, this);
         }, this);
 
