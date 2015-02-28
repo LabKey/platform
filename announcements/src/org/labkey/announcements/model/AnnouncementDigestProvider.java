@@ -52,8 +52,8 @@ import java.util.List;
  */
 public class AnnouncementDigestProvider implements MessageDigest.Provider
 {
-    private static CommSchema _comm = CommSchema.getInstance();
-    private static CoreSchema _core = CoreSchema.getInstance();
+    private static final CommSchema _comm = CommSchema.getInstance();
+    private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Logger _log = Logger.getLogger(AnnouncementDigestProvider.class);
 
     // Retrieve from this container all messages with a body or attachments posted during the given timespan
@@ -71,28 +71,23 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             "ORDER BY Earliest, Thread, Created";
 
     @Override
-    public List<Container> getContainersWithNewMessages(Date start, Date end) throws SQLException
+    public void sendDigestForAllContainers(Date start, Date end) throws Exception
     {
         SQLFragment sql = new SQLFragment("SELECT DISTINCT(Container) FROM " + _comm.getTableInfoAnnouncements() + " WHERE Created >= ? and Created < ?", start, end);
         Collection<String> containerIds = new SqlSelector(_comm.getSchema(), sql).getCollection(String.class);
-
-        List<Container> containers = new ArrayList<>(containerIds.size());
 
         for (String id : containerIds)
         {
             Container c = ContainerManager.getForId(id);
             if (c != null)
-                containers.add(c);
+                sendDigest(c, start, end);
         }
-
-        return containers;
     }
 
-    @Override
-    public void sendDigest(Container c, Date min, Date max) throws Exception
+    private void sendDigest(Container c, Date start, Date end) throws Exception
     {
         DiscussionService.Settings settings = AnnouncementManager.getMessageBoardSettings(c);
-        AnnouncementModel[] announcementModels = getRecentAnnouncementsInContainer(c, min, max);
+        AnnouncementModel[] announcementModels = getRecentAnnouncementsInContainer(c, start, end);
 
         DailyDigestEmailPrefsSelector sel = new DailyDigestEmailPrefsSelector(c);
 

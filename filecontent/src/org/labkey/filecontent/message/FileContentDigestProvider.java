@@ -71,7 +71,7 @@ import java.util.Set;
 public class FileContentDigestProvider implements MessageDigest.Provider
 {
     private static final Logger _log = Logger.getLogger(FileContentDigestProvider.class);
-    private int _notificationOption;    // the notification option to match : (short digest, daily digest)
+    private final int _notificationOption;    // the notification option to match : (short digest, daily digest)
 
     public FileContentDigestProvider(int notificationOption)
     {
@@ -79,7 +79,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
     }
 
     @Override
-    public List<Container> getContainersWithNewMessages(Date start, Date end) throws Exception
+    public void sendDigestForAllContainers(Date start, Date end) throws Exception
     {
         Set<Container> containers = new HashSet<>();
 
@@ -112,7 +112,9 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                     containers.add(c);
             }
         }
-        return Arrays.asList(containers.toArray(new Container[containers.size()]));
+
+        for (Container c : containers)
+            sendDigest(c, start, end);
     }
 
     private User getLimitedUser()
@@ -178,8 +180,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         }
     }
 
-    @Override
-    public void sendDigest(Container c, Date min, Date max) throws Exception
+    private void sendDigest(Container c, Date min, Date max) throws Exception
     {
         List<AuditLogEvent> events = getAuditEvents(c, min, max);
         Map<Path, List<AuditLogEvent>> recordMap = new LinkedHashMap<>();

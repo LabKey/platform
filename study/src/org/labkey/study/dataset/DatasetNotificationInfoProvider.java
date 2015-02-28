@@ -38,34 +38,34 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DatasetNotificationInfoProvider extends NotificationInfoProvider
+public final class DatasetNotificationInfoProvider extends NotificationInfoProvider
 {
     @Override
     public Map<String, Map<Integer, List<NotificationInfo>>> getNotificationInfoMap(Date modifiedRangeStart, Date modifiedRangeEnd)
     {
-        if (null == _notificationInfoMap)
+        final Map<String, Map<Integer, List<NotificationInfo>>> notificationInfoMap = new HashMap<>();
+        TableInfo reportTableInfo = StudySchema.getInstance().getTableInfoDataset();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addBetween(FieldKey.fromString("Modified"), modifiedRangeStart, modifiedRangeEnd);
+        Sort sort = new Sort("DisplayOrder");
+        TableSelector selector = new TableSelector(reportTableInfo, filter, sort);
+        selector.forEach(new Selector.ForEachBlock<DatasetDB>()
         {
-            final Map<String, Map<Integer, List<NotificationInfo>>> notificationInfoMap = new HashMap<>();
-            TableInfo reportTableInfo = StudySchema.getInstance().getTableInfoDataset();
-            SimpleFilter filter = new SimpleFilter();
-            filter.addBetween(FieldKey.fromString("Modified"), modifiedRangeStart, modifiedRangeEnd);
-            Sort sort = new Sort("DisplayOrder");
-            TableSelector selector = new TableSelector(reportTableInfo, filter, sort);
-            selector.forEach(new Selector.ForEachBlock<DatasetDB>()
+            @Override
+            public void exec(DatasetDB report) throws SQLException
             {
-                @Override
-                public void exec(DatasetDB report) throws SQLException
+                String containerId = report.getContainer();
+                if (!notificationInfoMap.containsKey(containerId))
+                    notificationInfoMap.put(containerId, new HashMap<Integer, List<NotificationInfo>>());
+                Map<Integer, List<NotificationInfo>> subMap = notificationInfoMap.get(containerId);
+                if (null != report.getContainer())
                 {
-                    String containerId = report.getContainer();
-                    if (!notificationInfoMap.containsKey(containerId))
-                        notificationInfoMap.put(containerId, new HashMap<Integer, List<NotificationInfo>>());
-                    Map<Integer, List<NotificationInfo>> subMap = notificationInfoMap.get(containerId);
-                    if (null != report.getContainer())
+                    Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(report.getContainer()));
+                    if (null != study)
                     {
-                        Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(report.getContainer()));
-                        if (null != study)
+                        DatasetDefinition datasetDefinition = StudyManager.getInstance().getDatasetDefinition(study, report.getDatasetId());
+                        if (null != datasetDefinition)
                         {
-                            DatasetDefinition datasetDefinition = StudyManager.getInstance().getDatasetDefinition(study, report.getDatasetId());
                             NotificationInfo notificationInfo = new NotificationInfo(report, !datasetDefinition.isShowByDefault());
                             if (null != notificationInfo.getContainer() && !notificationInfo.isHidden() && notificationInfo.isShared())
                             {
@@ -78,10 +78,9 @@ public class DatasetNotificationInfoProvider extends NotificationInfoProvider
                         }
                     }
                 }
-            }, DatasetDB.class);
-            _notificationInfoMap = notificationInfoMap;
-        }
-        return _notificationInfoMap;
+            }
+        }, DatasetDB.class);
+        return notificationInfoMap;
     }
 }
 

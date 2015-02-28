@@ -47,10 +47,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-public class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDatasetChangeDigestProvider
+public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDatasetChangeDigestProvider
 {
-    private Set<NotificationInfoProvider> _notificationInfoProviders = new HashSet<>();
+    final private List<NotificationInfoProvider> _notificationInfoProviders = new CopyOnWriteArrayList<>();
 
     public ReportAndDatasetChangeDigestProviderImpl()
     {
@@ -63,46 +64,53 @@ public class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDatasetCh
     }
 
     @Override
-    public List<Container> getContainersWithNewMessages(Date start, Date end) throws SQLException
+    public void sendDigestForAllContainers(Date start, Date end) throws Exception
     {
 
-        List<Container> containers = new ArrayList<>();
+        Map<String, Map<Integer, List<NotificationInfo>>> allProvidersInfoMap = null;
         for (NotificationInfoProvider provider : _notificationInfoProviders)
         {
-            provider.clearNotificationInfoMap();
-            Map<String, Map<Integer, List<NotificationInfo>>> reportInfoMap = provider.getNotificationInfoMap(start, end);
-            for (String containerId : reportInfoMap.keySet())
+            Map<String, Map<Integer, List<NotificationInfo>>> providerReportInfoMap = provider.getNotificationInfoMap(start, end);
+            if (null == allProvidersInfoMap)
+                allProvidersInfoMap = providerReportInfoMap;
+            else
             {
-                Container container = ContainerManager.getForId(containerId);
-                if (null != container && !containers.contains(container))
-                    containers.add(container);
-            }
-        }
-        return containers;
-    }
-
-    @Override
-    public void sendDigest(Container container, Date min, Date max) throws Exception
-    {
-        Map<Integer, List<NotificationInfo>> reportInfosByCategory = null;
-        for (NotificationInfoProvider provider : _notificationInfoProviders)
-        {
-            Map<Integer, List<NotificationInfo>> reportInfosForContainer = provider.getNotificationInfoMap(min, max).get(container.getId()); // could be null
-            if (null == reportInfosByCategory)
-                reportInfosByCategory = reportInfosForContainer;
-            else if (null != reportInfosForContainer)
-            {
-                for (Map.Entry<Integer, List<NotificationInfo>> categoryEntry : reportInfosForContainer.entrySet())
+                // Merge into map for all providers
+                for (Map.Entry<String, Map<Integer, List<NotificationInfo>>> infoMapEntry : providerReportInfoMap.entrySet())
                 {
-                    if (!reportInfosByCategory.containsKey(categoryEntry.getKey()))
-                        reportInfosByCategory.put(categoryEntry.getKey(), new ArrayList<NotificationInfo>());
-                    reportInfosByCategory.get(categoryEntry.getKey()).addAll(categoryEntry.getValue());
+                    Map<Integer, List<NotificationInfo>> providerReportInfosForContainer = infoMapEntry.getValue();
+                    if (null != providerReportInfosForContainer)
+                    {
+                        Map<Integer, List<NotificationInfo>> allProvidersInfosByCategory = allProvidersInfoMap.get(infoMapEntry.getKey());
+                        if (null == allProvidersInfosByCategory)
+                            allProvidersInfoMap.put(infoMapEntry.getKey(), providerReportInfosForContainer);
+                        else
+                        {
+                            for (Map.Entry<Integer, List<NotificationInfo>> categoryEntry : providerReportInfosForContainer.entrySet())
+                            {
+                                if (!allProvidersInfosByCategory.containsKey(categoryEntry.getKey()))
+                                    allProvidersInfosByCategory.put(categoryEntry.getKey(), new ArrayList<NotificationInfo>());
+                                allProvidersInfosByCategory.get(categoryEntry.getKey()).addAll(categoryEntry.getValue());
+                            }
+                        }
+                    }
                 }
             }
-
-            provider.clearNotificationInfoMap();
         }
 
+        if (null != allProvidersInfoMap)
+        {
+            for (String containerId : allProvidersInfoMap.keySet())
+            {
+                Container container = ContainerManager.getForId(containerId);
+                if (null != container)
+                    sendDigest(container, allProvidersInfoMap.get(container.getId()));
+            }
+        }
+    }
+
+    private void sendDigest(Container container, Map<Integer, List<NotificationInfo>> reportInfosByCategory) throws Exception
+    {
         if (null == reportInfosByCategory)
             return;
 
@@ -114,23 +122,24 @@ public class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDatasetCh
                 EmailService.I emailService = EmailService.get();
                 List<EmailMessage> messages = new ArrayList<>();
 
+                SortedSet<Integer> allCategories = new TreeSet<>();     // In case we need ALL categories
+                for (ViewCategory viewCategory : ViewCategoryManager.getInstance().getAllCategories(container))
+                    allCategories.add(viewCategory.getRowId());
+                allCategories.add(ViewCategoryManager.UNCATEGORIZED_ROWID);
+
                 for (Map.Entry<Integer, SortedSet<Integer>> userEntry : categoriesByUser.entrySet())
                 {
                     User user = UserManager.getUser(userEntry.getKey());
                     if (null != user)
                     {
                         Map<Integer, List<NotificationInfo>> reportsForUserInitial = new HashMap<>();
-                        SortedSet<Integer> categories = userEntry.getValue();
+                        SortedSet<Integer> categories = userEntry.getValue();       // Set has a NotifyOption in it
                         NotifyOption notifyOption = ReportContentEmailManager.removeNotifyOption(categories);
                         if (!NotifyOption.NONE.equals(notifyOption))
                         {
                             if (NotifyOption.ALL.equals(notifyOption))
-                            {
-                                categories = new TreeSet<>();
-                                for (ViewCategory viewCategory : ViewCategoryManager.getInstance().getAllCategories(container))
-                                    categories.add(viewCategory.getRowId());
-                                categories.add(ViewCategoryManager.UNCATEGORIZED_ROWID);
-                            }
+                                categories = allCategories;
+
                             for (Integer category : categories)
                             {
                                 if (null != category)
