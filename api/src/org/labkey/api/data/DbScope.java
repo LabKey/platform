@@ -1380,7 +1380,6 @@ public class DbScope
 
         private List<List<Lock>> _locks = new ArrayList<>();
         private boolean _aborted = false;
-        private Throwable _abortedStackTrace;
         private int _closesToIgnore = 0;
         private Throwable _creation = new Throwable();
         private final TransactionKind _transactionKind;

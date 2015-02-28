@@ -24,9 +24,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class DateValidator extends AbstractColumnValidator
 {
-    // this is are postgres ranges, sql server supports a wide range
-    static long minTimestamp =  DateUtil.parseISODateTime("1753-01-01");
-    static long maxTimestamp = DateUtil.parseISODateTime("9999-12-31") + TimeUnit.DAYS.toMillis(1);
+    // This is the SQLServer DATETIME range, Postgres supports a wide range, as do SQLServer DATETIME2 fields
+    // https://msdn.microsoft.com/en-us/library/ms187819.aspx
+    static final long MIN_TIMESTAMP =  DateUtil.parseISODateTime("1753-01-01");
+    static final long MAX_TIMESTAMP = DateUtil.parseISODateTime("9999-12-31") + TimeUnit.DAYS.toMillis(1);
 
     public DateValidator(String columnName)
     {
@@ -39,7 +40,7 @@ public class DateValidator extends AbstractColumnValidator
         if (!(value instanceof java.util.Date))
             return null;
         long t = ((java.util.Date)value).getTime();
-        if (t >= minTimestamp && t < maxTimestamp)
+        if (t >= MIN_TIMESTAMP && t < MAX_TIMESTAMP)
             return null;
         return "Only dates between January 1, 1753 and December 31, 9999 are accepted.";
     }

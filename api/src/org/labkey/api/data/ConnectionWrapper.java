@@ -107,16 +107,9 @@ public class ConnectionWrapper implements java.sql.Connection
         MemTracker.getInstance().put(this);
         _allocatingThreadName = Thread.currentThread().getName();
 
-        //noinspection ConstantConditions
-        assert null == _openConnections.put(this,  new Pair<>(Thread.currentThread(), new Throwable())) || true;
+        _openConnections.put(this,  new Pair<>(Thread.currentThread(), new Throwable()));
 
         _log = log != null ? log : getConnectionLogger();
-    }
-
-
-    public void untrack()
-    {
-        _openConnections.remove(this);
     }
 
 
@@ -265,8 +258,7 @@ public class ConnectionWrapper implements java.sql.Connection
     public void close()
     throws SQLException
     {
-        //noinspection ConstantConditions
-        assert null != _openConnections.remove(this) || true;
+        _openConnections.remove(this);
         _loggedLeaks.remove(this);
         // The Tomcat connection pool violates the API for close() - it throws an exception
         // if it's already been closed instead of doing a no-op
@@ -501,6 +493,12 @@ public class ConnectionWrapper implements java.sql.Connection
         return iface.isAssignableFrom(_connection.getClass());
     }
 
+    @Override
+    protected void finalize() throws Throwable
+    {
+        super.finalize();
+        close();
+    }
 
     public <T> T unwrap(Class<T> iface) throws SQLException
     {
