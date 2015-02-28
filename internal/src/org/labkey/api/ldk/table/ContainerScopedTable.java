@@ -304,6 +304,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
             catch (ConversionException e)
             {
                 _log.error("Unable to convert value for column: " + _pseudoPk + " to class: " + pkCol.getJavaClass() + " for table: " + getPublicSchemaName() + "." + getName(), e);
+                return false;
             }
 
             boolean exists = _encounteredKeys.contains(key);
