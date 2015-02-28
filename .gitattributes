@@ -923,7 +923,6 @@ core/webapp/editInPlaceElement.js -text
 core/webapp/fileAddRemoveIcon.css -text
 core/webapp/fileBrowser.js -text
 core/webapp/printStyle.css -text
-core/webapp/schemaBrowser.js -text
 core/webapp/stylesheet.css -text
 dataintegration/Dataintegration.iml -text
 dataintegration/module.properties -text

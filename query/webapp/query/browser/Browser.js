@@ -9,6 +9,8 @@ Ext4.define('LABKEY.query.browser.Browser', {
     sspPrefix: 'ssp-', // schema summary
     historyPrefix: 'sbh-',
 
+    cls: 'schemabrowser',
+
     constructor : function(config) {
         this.callParent([config]);
         this.addEvents('schemasloaded', 'selectschema', 'selectquery');

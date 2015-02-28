@@ -1,32 +1,35 @@
-.schemabrowser .x4-border-layout-ct {
+.schemabrowser .x4-border-layout-ct
+{
     background-color: #FFFFFF;
 }
 
-.schemabrowser .x4-toolbar-default {
+.schemabrowser .x4-toolbar-default
+{
     border-color: #b4b4b4;
 }
 
-.schemabrowser .x4-grid-body {
-    border-width: 0px;
+.schemabrowser .x4-grid-body
+{
+    border-width: 0;
 }
 
-.lk-qd-loading
+.schemabrowser .lk-qd-loading
 {
     font-style: italic;
 }
 
-.lk-qd-links
+.schemabrowser .lk-qd-links
 {
     text-align: right;
 }
 
-.lk-qd-name
+.schemabrowser .lk-qd-name
 {
     font-size: x-large;
     font-weight: bold;
 }
 
-.lk-qd-name span
+.schemabrowser .lk-qd-name span
 {
     font-size: 12px;
     font-weight: normal;
@@ -34,30 +37,31 @@
     float: right;
 }
 
-.lk-qd-description
+.schemabrowser .lk-qd-description
 {
     padding-top: 10px !important;
     padding-bottom: 10px !important;
 }
 
-.lk-qd-query-link
+.schemabrowser .lk-qd-query-link
 {
     margin-left: 4px !important;
 }
 
-.lk-qd-coltable
+.schemabrowser .lk-qd-coltable
 {
     border-collapse: collapse;
 }
 
-.lk-qd-coltable td
+.schemabrowser .lk-qd-coltable td
 {
     border-bottom: 1px solid #CCCCCC;
     padding: 2px;
     vertical-align: top;
 }
 
-.lk-qd-coltable td.lk-qd-colheader, .lk-qd-coltable th
+.schemabrowser .lk-qd-coltable td.lk-qd-colheader,
+.schemabrowser .lk-qd-coltable th
 {
     font-weight: bold;
     padding: 2px;
@@ -65,70 +69,70 @@
     background-color: #F0F0F0;
 }
 
-.lk-qd-colrow-expanded td
+.schemabrowser .lk-qd-colrow-expanded td
 {
     border-bottom: 0;
 }
 
-.lk-qd-coltable td.lk-qd-collist-title
+.schemabrowser .lk-qd-coltable td.lk-qd-collist-title
 {
     background-color: #F0F0F0;
-    border-bottom: 0px;
+    border-bottom: 0;
     color: #000000;
     font-weight: bold;
 }
 
-.lk-qd-nested-container
+.schemabrowser .lk-qd-nested-container
 {
     padding-left: 30px !important;
     padding-bottom: 30px !important;
 }
 
-.lk-qd-error
+.schemabrowser .lk-qd-error
 {
     color: red;
     padding: 5px !important;
 }
 
-.lk-sb-instructions
+.schemabrowser .lk-sb-instructions
 {
     padding-top: 5px !important;
     padding-bottom: 5px !important;
 }
 
-.lk-sb-button
+.schemabrowser .lk-sb-button
 {
     margin: 5px !important;
 }
 
-.lk-vq-status-frame
+.schemabrowser .lk-vq-status-frame
 {
     border: 2px solid #AAAAAA;
     padding: 5px !important;
 }
 
-.lk-vq-status
+.schemabrowser .lk-vq-status
 {
     padding-left: 21px !important;
     background-repeat: no-repeat;
     background-position: center left;
 }
 
-.lk-vq-errors-table
+.schemabrowser .lk-vq-errors-table
 {
     border-collapse: collapse;
     margin-left: 20px !important;
     margin-top: 10px !important;
 }
 
-.lk-vq-errors-table th
+.schemabrowser .lk-vq-errors-table th
 {
     font-weight: bold;
     padding: 2px;
     border-bottom: 1px solid #000000;
 }
 
-.lk-vq-errors-table td
+.schemabrowser .lk-vq-errors-table td
 {
     border-bottom: 1px solid #CCCCCC;
     padding: 2px 5px 2px 2px;
@@ -136,48 +140,47 @@
     background-color: #FFAAAA;
 }
 
-.lk-vq-status-error
+.schemabrowser .lk-vq-status-error
 {
     border: 2px solid #FF5555 !important;
     background-color: #FFDDDD;
 }
 
-.lk-vq-status-all-ok
+.schemabrowser .lk-vq-status-all-ok
 {
     border: 2px solid #55FF55 !important;
     background-color: #DDFFDD;
 }
 
-.lk-vq-errors-frame
+.schemabrowser .lk-vq-errors-frame
 {
     padding-left: 10px !important;
     padding-top: 10px !important;
 }
 
-.lk-vq-error
+.schemabrowser .lk-vq-error
 {
     padding-bottom: 10px !important;
 }
 
-.lk-vq-error-name
+.schemabrowser .lk-vq-error-name
 {
     font-weight: bold !important;
 }
 
-.lk-vq-error-message
+.schemabrowser .lk-vq-error-message
 {
     color: #FF0000 !important;
     padding-left: 5px !important;
 }
 
-.lk-vq-warn-message
+.schemabrowser .lk-vq-warn-message
 {
     color: #E87600 !important;
     padding-left: 5px !important;
 }
 
-.lk-vq-info-message
+.schemabrowser .lk-vq-info-message
 {
-    /*color: #FFFF00 !important;*/
     padding-left: 5px !important;
 }

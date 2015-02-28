@@ -32,7 +32,7 @@
 <%
     String renderId = "query-browser-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
-<div id="<%=h(renderId)%>" class="schemabrowser"></div>
+<div id="<%=h(renderId)%>"></div>
 <!-- Fields required for history management -->
 <form id="history-form" class="x4-hidden">
     <input type="hidden" id="x4-history-field" />
