@@ -1,0 +1,17 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="query/browser/Caches.js"/>
+        <script path="query/browser/Tree.js"/>
+        <script path="query/browser/view/Base.js"/>
+        <script path="query/browser/view/Home.js"/>
+        <script path="query/browser/view/QueryDetails.js"/>
+        <script path="query/browser/view/SchemaDetails.js"/>
+        <script path="query/browser/view/Validate.js"/>
+        <script path="query/browser/Browser.js"/>
+    </library>
+    <dependencies>
+        <dependency path="clientapi/ext4" /> <!-- needed for resizeToViewport -->
+        <dependency path="query/schemaBrowser.css" />
+        <dependency path="_images/icons.css" />
+    </dependencies>
+</libraries>

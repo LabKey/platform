@@ -17,36 +17,38 @@
 %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("clientapi/ext4"));
-        resources.add(ClientDependency.fromPath("schemaBrowser.css"));
-        resources.add(ClientDependency.fromPath("_images/icons.css"));
-        resources.add(ClientDependency.fromPath("schemaBrowser.js"));
+        resources.add(ClientDependency.fromPath("query/browser"));
         return resources;
     }
 %>
-<div id="browserContainer">
-    <div id="browser" class="schemabrowser"></div>
-</div>
+<%
+    String renderId = "query-browser-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+%>
+<div id="<%=h(renderId)%>" class="schemabrowser"></div>
 <!-- Fields required for history management -->
-<form id="history-form" class="x-hidden">
-    <input type="hidden" id="x-history-field" />
-    <iframe id="x-history-frame"></iframe>
+<form id="history-form" class="x4-hidden">
+    <input type="hidden" id="x4-history-field" />
+    <iframe id="x4-history-frame"></iframe>
 </form>
 <script type="text/javascript">
+    Ext4.onReady(function() {
+        Ext4.Ajax.timeout = 60 * 1000; // 1 minute
+        Ext4.QuickTips.init();
+        Ext4.History.init();
 
-    Ext4.onReady(function(){
-        Ext4.create('LABKEY.ext4.SchemaBrowser', {
-            renderTo: 'browser',
+        Ext4.create('LABKEY.query.browser.Browser', {
+            renderTo: <%=q(renderId)%>,
             boxMinHeight: 600,
-            boxMinWidth: 900,
-            useHistory: true,
-            bindURLParams: true
+            boxMinWidth: 450,
+            useHistory: true
         });
     });
 </script>

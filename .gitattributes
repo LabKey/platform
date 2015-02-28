@@ -923,7 +923,6 @@ core/webapp/editInPlaceElement.js -text
 core/webapp/fileAddRemoveIcon.css -text
 core/webapp/fileBrowser.js -text
 core/webapp/printStyle.css -text
-core/webapp/schemaBrowser.css -text
 core/webapp/schemaBrowser.js -text
 core/webapp/stylesheet.css -text
 dataintegration/Dataintegration.iml -text
@@ -2547,6 +2546,7 @@ query/src/org/labkey/query/ModuleCustomViewDef.java -text
 query/src/org/labkey/query/ModuleCustomViewInfo.java -text
 query/src/org/labkey/query/ModuleQueryDef.java -text
 query/src/org/labkey/query/ModuleQueryMetadataDef.java -text
+query/src/org/labkey/query/QueryBrowserWebPartFactory.java -text
 query/src/org/labkey/query/QueryDefinitionImpl.java -text
 query/src/org/labkey/query/QueryImporter.java -text
 query/src/org/labkey/query/QueryModule.java -text
@@ -2780,6 +2780,15 @@ query/webapp/dataview/ManageNotifications.js -text
 query/webapp/dataviews.lib.xml -text
 query/webapp/query/ExportTablePanel.js -text
 query/webapp/query/QueryEditorPanel.js -text
+query/webapp/query/browser.lib.xml -text
+query/webapp/query/browser/Browser.js -text
+query/webapp/query/browser/Caches.js -text
+query/webapp/query/browser/Tree.js -text
+query/webapp/query/browser/view/Base.js -text
+query/webapp/query/browser/view/Home.js -text
+query/webapp/query/browser/view/QueryDetails.js -text
+query/webapp/query/browser/view/SchemaDetails.js -text
+query/webapp/query/browser/view/Validate.js -text
 query/webapp/query/columnPicker.js -text
 query/webapp/query/columnProperties.gif -text
 query/webapp/query/delete.gif -text
@@ -2788,6 +2797,7 @@ query/webapp/query/moveup.gif -text
 query/webapp/query/olap.js -text
 query/webapp/query/query.png -text
 query/webapp/query/queryDesigner.js -text
+query/webapp/query/schemaBrowser.css -text
 query/webapp/query/sql.gif -text
 query/webapp/query/validateQueries.js -text
 query/webapp/reports/ScriptReportPanel.css -text
