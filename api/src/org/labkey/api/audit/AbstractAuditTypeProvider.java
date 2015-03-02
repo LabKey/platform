@@ -43,11 +43,16 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.view.ActionURL;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -75,6 +80,13 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String OLD_RECORD_PROP_CAPTION = "Old Record Values";
     public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
     public static final String NEW_RECORD_PROP_CAPTION = "New Record Values";
+
+    public AbstractAuditTypeProvider()
+    {
+        // Issue 20310: initalize AuditTypeProvider when registered during startup
+        User auditUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+        initializeProvider(auditUser);
+    }
 
     protected abstract AbstractAuditDomainKind getDomainKind();
 
