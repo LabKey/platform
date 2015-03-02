@@ -17,7 +17,6 @@ package org.labkey.freezerpro;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
@@ -27,26 +26,32 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.pipeline.AbstractSpecimenTransformTask;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.UTF8PrintWriter;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -110,19 +115,57 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
 
             DataLoader loader = df.createLoader(input, true, _job.getContainer());
             loader.setInferTypes(false);
-            List<Map<String, Object>> inputRows = loader.load();
-            List<Map<String, Object>> outputRows = transformRows(inputRows);
+            Set<String> hashes = new HashSet<>();
+            int rowIndex = 0;
+            int rowCount = 0;
+            Iterator<Map<String, Object>> it = loader.iterator();
 
-            if (outputRows.size() > 0)
-                info("After removing duplicates, there are " + outputRows.size() + " rows of data");
-            else
-                throw new PipelineJobException("There are no rows of data");
-
-            // Create a ZIP archive with the appropriate TSVs
             try (ZipOutputStream zOut = new ZipOutputStream(new FileOutputStream(output)))
             {
-                writeTSV(zOut, outputRows, "specimens");
+                // Add a new file to the ZIP
+                zOut.putNextEntry(new ZipEntry("specimens.tsv"));
+                PrintWriter writer = new UTF8PrintWriter(zOut);
 
+                try
+                {
+                    FreezerProTSVWriter tsvWriter = null;
+                    while (it.hasNext())
+                    {
+                        Map<String, Object> inputRow = it.next();
+                        rowIndex++;
+
+                        // Check if it's a duplicate row
+                        if (hashes.add(hashRow(inputRow)))
+                        {
+                            Map<String, Object> outputRow = transformRow(inputRow, rowIndex, getLabIds(), getPrimaryIds(), getDerivativeIds());
+                            if (outputRow != null)
+                            {
+                                // lazily init the tsv writer and write out each row as we transform it to avoid running out of heap for
+                                // large repositories
+                                if (tsvWriter == null)
+                                {
+                                    tsvWriter = new FreezerProTSVWriter(outputRow.keySet());
+                                    tsvWriter.setFileHeader(Collections.singletonList("# " + "specimens"));
+                                    tsvWriter.setPrintWriter(writer);
+                                }
+                                tsvWriter.writeRow(outputRow);
+                                rowCount++;
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    writer.flush();
+                    zOut.closeEntry();
+                }
+
+                if (rowCount > 0)
+                    info("After removing duplicates, there are " + rowCount + " rows of data");
+                else
+                    throw new PipelineJobException("There are no rows of data");
+
+                // write out the remainder of the specimen archive
                 writeLabs(getLabIds(), zOut);
                 writePrimaries(getPrimaryIds(), zOut);
                 writeDerivatives(getDerivativeIds(), zOut);
@@ -178,6 +221,11 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         if (ptid == null)
         {
             warn("Skipping data row could not find 'patient id' value, row number " + rowIndex);
+            return null;
+        }
+        else if (ptid.length() > 32)
+        {
+            warn("Skipping data row, 'patient id' value exceeds max of 32 characters : " + ptid + ", row number " + rowIndex);
             return null;
         }
         outputRow.put("ptid", ptid);
@@ -311,6 +359,27 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
     protected Map<String, Integer> getAdditiveIds()
     {
         return Collections.emptyMap();
+    }
+
+    private static class FreezerProTSVWriter extends TSVMapWriter
+    {
+        private int _rowCount;
+        public FreezerProTSVWriter(Collection<String> columns)
+        {
+            super(columns, null);
+        }
+
+        @Override
+        public void writeRow(Map<String, Object> row)
+        {
+            if (_rowCount == 0)
+            {
+                writeFileHeader();
+                writeColumnHeaders();
+            }
+            super.writeRow(row);
+            _rowCount++;
+        }
     }
 
     public static class TestCase extends Assert

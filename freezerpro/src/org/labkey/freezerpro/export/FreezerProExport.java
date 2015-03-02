@@ -388,7 +388,7 @@ public class FreezerProExport
                         }
                         start += limit;
                         done = (response.getTotalRecords() == 0) || (start >= response.getTotalRecords());
-                        _job.info("Location informatation = retrieved " + start + " records out of a total of " + response.getTotalRecords());
+                        _job.info("Location information = retrieved " + start + " records out of a total of " + response.getTotalRecords());
                     }
                     else
                     {
@@ -527,7 +527,7 @@ public class FreezerProExport
                         }
                         start += limit;
                         done = (response.getTotalRecords() == 0) || (start >= response.getTotalRecords());
-                        _job.info("Vial informatation = retrieved " + start + " records out of a total of " + response.getTotalRecords());
+                        _job.info("Vial information = retrieved " + start + " records out of a total of " + response.getTotalRecords());
                     }
                     else
                     {
