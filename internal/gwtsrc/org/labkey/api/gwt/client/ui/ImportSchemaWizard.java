@@ -51,6 +51,8 @@ class ImportSchemaWizard extends DialogBox
                 "<b>Label</b> - Optional. Name that users will see for the field<br>\n" +
                 "<b>NotNull</b> - Optional. Set to TRUE if this value is required<br>\n" +
                 "<b>Hidden</b> - Optional. Set to TRUE if this field should not be shown in default grid views<br>\n" +
+                "<b>LookupSchema</b> - Optional. If there is a lookup defined on this column, this is the target schema<br>\n" +
+                "<b>LookupQuery</b> - Optional. If there is a lookup defined on this column, this is the target query or table name<br>\n" +
                 "<b>Description</b> - Optional. Description of the field</p>");
         vPanel.add(html);
 

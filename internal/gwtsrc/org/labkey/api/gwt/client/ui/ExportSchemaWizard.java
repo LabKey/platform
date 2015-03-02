@@ -80,7 +80,8 @@ public class ExportSchemaWizard extends DialogBox
         sb.append("NotNull").append("\t");
         sb.append("Hidden").append("\t");
         sb.append("MvEnabled").append("\t");
-        sb.append("Description").append("\n");
+        sb.append("LookupSchema").append("\t");
+        sb.append("LookupQuery").append("\n");
 
         int numProps = propertiesEditor.getPropertyCount();
 
@@ -96,6 +97,16 @@ public class ExportSchemaWizard extends DialogBox
                 sb.append(getStringValue(prop.isRequired())).append("\t");
                 sb.append(getStringValue(prop.isHidden())).append("\t");
                 sb.append(getStringValue(prop.getMvEnabled())).append("\t");
+                String lookupContainer = prop.getLookupContainer();
+                if (null == lookupContainer || 0 == lookupContainer.length()) // CONSIDER handle lookups with container column
+                {
+                    sb.append(getStringValue(prop.getLookupSchema())).append("\t");
+                    sb.append(getStringValue(prop.getLookupQuery())).append("\t");
+                }
+                else
+                {
+                    sb.append("\t\t");
+                }
                 sb.append(getStringValue(prop.getDescription())).append("\n");
             }
         }

@@ -93,6 +93,8 @@ public class GWTTabLoader
             prop.setFormat(row.get("format"));
             prop.setMvEnabled(isMvEnabled(row));
             prop.setHidden(isHidden(row));
+            prop.setLookupSchema(row.get("lookupschema"));
+            prop.setLookupQuery(row.get("lookupquery"));
             properties.add(prop);
             rowNumber++;
         }
