@@ -1273,8 +1273,13 @@ public class StudyController extends BaseStudyController
             }
             // NOTE: should be a better way to do this (e.g. get the correct value in the form/backend to begin with)
             Study sharedStudy = getStudy(getContainer().getProject());
-            if (sharedStudy != null)
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions() == Boolean.TRUE)
+            {
                 form.setShareVisits(sharedStudy.getShareVisitDefinitions());
+                form.setTimepointType(sharedStudy.getTimepointType());
+                form.setStartDate(sharedStudy.getStartDate());
+                form.setDefaultTimepointDuration(sharedStudy.getDefaultTimepointDuration());
+            }
             return new StudyJspView<>(null, "createStudy.jsp", form, errors);
         }
 

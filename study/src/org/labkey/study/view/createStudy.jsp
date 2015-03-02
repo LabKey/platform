@@ -73,8 +73,9 @@
             </td>
         </tr>
         <% } else { %>
-        <input type="hidden" name="timepointType" value="<%=TimepointType.VISIT%>" <%=checked(form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null)%> >
+        <input type="hidden" name="timepointType" value="<%= form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null ? TimepointType.VISIT : TimepointType.DATE %>" >
         <input type="hidden" name="startDate" value="<%=formatDate(form.getStartDate())%>">
+        <input type="hidden" name="defaultTimepointDuration" value="<%=form.getDefaultTimepointDuration()%>">
         <% } %>
         <tr>
             <td colspan="2" class="labkey-announcement-title"><span>Specimen Management</span></td>
@@ -137,7 +138,7 @@
         </tr>
         <tr><td>&nbsp;</td></tr>
         <tr>
-            <th style="text-align:left;width:18em">Shared Visits</th>
+            <th style="text-align:left;width:18em">Shared Timepoints</th>
             <td align="left">
                 <input type="radio" name="shareVisits" value="false" checked> disabled
                 <input type="radio" name="shareVisits" value="true"> enabled
