@@ -144,7 +144,7 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
                                 // large repositories
                                 if (tsvWriter == null)
                                 {
-                                    tsvWriter = new FreezerProTSVWriter(outputRow.keySet());
+                                    tsvWriter = new FreezerProTSVWriter(outputRow.keySet(), Collections.singleton(outputRow));
                                     tsvWriter.setFileHeader(Collections.singletonList("# " + "specimens"));
                                     tsvWriter.setPrintWriter(writer);
                                 }
@@ -364,9 +364,9 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
     private static class FreezerProTSVWriter extends TSVMapWriter
     {
         private int _rowCount;
-        public FreezerProTSVWriter(Collection<String> columns)
+        public FreezerProTSVWriter(Collection<String> columns, Iterable<Map<String, Object>> rows)
         {
-            super(columns, null);
+            super(columns, rows);
         }
 
         @Override
