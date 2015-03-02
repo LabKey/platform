@@ -56,6 +56,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -134,8 +135,9 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     {
         synchronized (STARTUP_LOCK)
         {
+            // Issue 20310: initalize AuditTypeProvider when registered during startup
             // Ensure audit provider's domains have been initialized.  This must happen before flushing the temporary event queues.
-            initializeProviders();
+            //initializeProviders();
 
             // Migrate audit providers if needed. We need to perform migration after the
             // server is fully started to ensure all audit providers have been registered and
@@ -553,6 +555,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     @Override
     public void registerAuditType(AuditTypeProvider provider)
     {
+        assert ModuleLoader.getInstance().isStartupInProgress() : "Audit types must be registered in Module.doStartup()";
         AuditLogService.registerAuditType(provider);
     }
 
