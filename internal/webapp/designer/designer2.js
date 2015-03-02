@@ -582,13 +582,14 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             var storeRecords = tab.getList().getStore().getRange();
             var checkedFieldKeys = { };
             for (var i = 0; i < storeRecords.length; i++)
-                checkedFieldKeys[storeRecords[i].get("fieldKey")] = true;
+                checkedFieldKeys[storeRecords[i].get("fieldKey").toUpperCase()] = true;
 
             // suspend check events so checked items aren't re-added to the tab's store
             this.fieldsTree.suspendEvents();
             this.fieldsTree.root.cascade(function () {
                 var fieldKey = this.attributes.fieldKey;
-                this.getUI().toggleCheck(fieldKey in checkedFieldKeys);
+                if (fieldKey)
+                    this.getUI().toggleCheck(fieldKey.toUpperCase() in checkedFieldKeys);
             });
             this.fieldsTree.resumeEvents();
         }
@@ -944,7 +945,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
         this.columnStore = new Ext.data.JsonStore({
             fields: ['name', 'fieldKey', 'title', 'aggregate'],
             root: 'columns',
-            idProperty: 'fieldKey',
+            idProperty: function (json) { return json.fieldKey.toUpperCase() },
             data: this.customView,
             remoteSort: true
         });
@@ -961,7 +962,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 var agg = this.customView.aggregates[i];
                 if (!agg.fieldKey && !agg.type)
                     continue;
-                var columnRecord = this.columnStore.getById(agg.fieldKey);
+                var columnRecord = this.columnStore.getById(agg.fieldKey.toUpperCase());
                 if (!columnRecord)
                     continue;
 
@@ -1057,7 +1058,8 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
     createAggregateStore: function(){
         return new Ext.data.ArrayStore({
             fields: ['fieldKey', 'type', 'label'],
-            remoteSort: true
+            remoteSort: true,
+            idProperty: function (json) { return json.fieldKey.toUpperCase() }
         });
     },
 
@@ -1300,7 +1302,8 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     hasField : function (fieldKey) {
-        return this.columnStore.findExact("fieldKey", fieldKey) != -1;
+        // Find fieldKey using case-insensitive comparison
+        return this.columnStore.find("fieldKey", fieldKey, 0, false, false) != -1;
     },
 
     revert : function () {
@@ -1380,6 +1383,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         this.filterStore = new Ext.data.JsonStore({
             fields: ['fieldKey', 'items', 'urlParameter'],
             root: 'filter',
+            idProperty: function (json) { return json.fieldKey.toUpperCase() },
             data: { filter: filters },
             remoteSort: true
         });
@@ -1710,7 +1714,8 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
     hasField : function (fieldKey) {
         // filterStore may have more than one filter for a fieldKey
-        return this.filterStore.findExact("fieldKey", fieldKey) != -1;
+        // Find fieldKey using case-insensitive comparison
+        return this.filterStore.find("fieldKey", fieldKey, 0, false, false) != -1;
     },
 
     revert : function () {
@@ -1834,7 +1839,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
         this.sortStore = new Ext.data.JsonStore({
             fields: ['fieldKey', 'dir', {name: 'urlParameter', type: 'boolean', defaultValue: false}],
             root: 'sort',
-            //idProperty: 'fieldKey',
+            idProperty: function (json) { return json.fieldKey.toUpperCase() },
             data: this.customView,
             remoteSort: true
         });
@@ -1979,7 +1984,8 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
     getList : function () { return this.sortList; },
 
     hasField : function (fieldKey) {
-        return this.sortStore.findExact("fieldKey", fieldKey) != -1;
+        // Find fieldKey using case-insensitive comparison
+        return this.sortStore.find("fieldKey", fieldKey, 0, false, false) != -1;
     },
 
     revert : function () {
