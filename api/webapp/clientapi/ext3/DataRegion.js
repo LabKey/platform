@@ -2219,7 +2219,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         scope: self
                     }, self.view);
 
-                    LABKEY.DataRegion.saveCustomizeViewPrompt(config);
+                    // 22678: Need to load customzie view
+                    LABKEY.initializeViewDesigner(function()
+                    {
+                        LABKEY.DataRegion.saveCustomizeViewPrompt(config);
+                    }, this);
                 }
 
                 // Get the canEditSharedViews permission and candidate targetContainers.
