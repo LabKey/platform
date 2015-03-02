@@ -367,6 +367,7 @@ public class IssueManager
         private String _caption;
         private boolean _pickList;
         private Class<? extends Permission> _permissionClass;
+        private boolean _inherited;
 
         // Used via reflection by data access layer
         @SuppressWarnings({"UnusedDeclaration"})
@@ -438,8 +439,17 @@ public class IssueManager
         {
             return _container.hasPermission(user, _permissionClass);
         }
-    }
 
+        public void setInherited(boolean isInherited)
+        {
+            _inherited = isInherited ;
+        }
+
+        public boolean isInherited()
+        {
+            return _inherited;
+        }
+    }
 
     static class CustomColumnMap extends LinkedHashMap<String, CustomColumn>
     {
@@ -509,13 +519,13 @@ public class IssueManager
                     //Remove any pre-exisiting values for these six custom columns of the current container
                     //to be able to inherit these from inheritFrom container, even if empty.
                     //Rationale: Enabling to modify these custom col fields if not inherited, would also
-                    //modify the name in the 'Keyword' section.
+                    //modify the name in the 'Keyword' section/Options section (last/bottom section of the Admin page).
                     //For example: user inherits 'Type Options' in the Keyword section, and 'Type' under
                     // 'Custom Column' is enabled, allowing to add a custom field value for 'Type' will
                     // modify 'Type Options' to '<User defined Type name> Options' (in the Keyword section).
-                    if(colName != null && (colName.equals("type") || colName.equals("area") || colName.equals("priority")
-                            || colName.equals("milestone") || colName.equals("resolution")
-                            || colName.equals("related")))
+                    if(colName != null && (colName.equals(ColumnType.TYPE) || colName.equals(ColumnType.AREA)
+                            || colName.equals(ColumnType.PRIORITY) || colName.equals(ColumnType.MILESTONE)
+                            || colName.equals(ColumnType.RESOLUTION) || colName.equals(ColumnType.RELATED)))
                     {
                         iter.remove();
                     }

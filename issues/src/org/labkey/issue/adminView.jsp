@@ -408,7 +408,9 @@
                 }
             %>
             <td><input type="checkbox" name="requiredFields"<%=checked(isRequired(info.getName(), bean.getRequiredFields()))%>
-            <%=disabled((isPickList(ccc, info) && !hasKeywords(c, info)) || (bean.inheritFromContainerExists && bean.isRequiredFieldInherited(info.getName())) || (bean.getInheritedFlag(info.getColumnName())))%>
+            <%=disabled((isPickList(ccc, info) && !hasKeywords(c, info)) ||
+                    (bean.inheritFromContainerExists && bean.isRequiredFieldInherited(info.getName())) ||
+                    (bean.getInheritedFlag(info.getColumnName())))%>
                        value="<%=h(info.getName())%>"><%=h(getCaption(ccc, info))%>
 
             </td>
@@ -478,9 +480,7 @@
     public boolean hasKeywords(Container c, ColumnInfo col)
     {
         ColumnType type = ColumnType.forName(col.getColumnName());
-        Container con = IssueManager.getInheritFromOrCurrentContainer(c);//get "parent's" settings, if any.
-
-        return (null == type || KeywordManager.getKeywords(con, type).size() > 0);
+        return (null == type || KeywordManager.getKeywords(c, type).size() > 0);
     }
 
     public boolean isPickList(CustomColumnConfiguration ccc, ColumnInfo col)

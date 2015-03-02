@@ -2684,18 +2684,6 @@ public class IssuesController extends SpringActionController
         {
             super("/org/labkey/issue/adminView.jsp", null, errors);
 
-            KeywordAdminView keywordView = new KeywordAdminView(c, ccc);
-            keywordView.addKeywordPicker(ColumnType.TYPE);
-            keywordView.addKeywordPicker(ColumnType.AREA);
-            keywordView.addKeywordPicker(ColumnType.PRIORITY);
-            keywordView.addKeywordPicker(ColumnType.MILESTONE);
-            keywordView.addKeywordPicker(ColumnType.RESOLUTION);
-            keywordView.addKeywordPicker(ColumnType.STRING1);
-            keywordView.addKeywordPicker(ColumnType.STRING2);
-            keywordView.addKeywordPicker(ColumnType.STRING3);
-            keywordView.addKeywordPicker(ColumnType.STRING4);
-            keywordView.addKeywordPicker(ColumnType.STRING5);
-
             Set<String> columnNames = new LinkedHashSet<>();
             columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
 
@@ -2711,14 +2699,12 @@ public class IssuesController extends SpringActionController
             AdminBean bean = new AdminBean(cols, IssueManager.getRequiredIssueFields(c), IssueManager.getEntryTypeNames(c));
 
             bean.ccc = ccc;
-            bean.keywordView = keywordView;
             bean.entryTypeNames = IssueManager.getEntryTypeNames(c);
             bean.assignedToGroup = IssueManager.getAssignedToGroup(c);
             bean.defaultUser = IssueManager.getDefaultAssignedToUser(c);
             bean.moveToContainers = IssueManager.getMoveDestinationContainers(c);
             bean.commentSort = IssueManager.getCommentSortDirection(c);
             bean.inheritFromContainer = IssueManager.getInheritFromContainer(c);
-
 
             //handle custom column and required field section if admin settings are inherited
             if(bean.inheritFromContainer != null)
@@ -2730,12 +2716,29 @@ public class IssuesController extends SpringActionController
                     String caption = cc.getCaption();
                     int i = cc.getContainer().compareTo(bean.inheritFromContainer);
                     if(i == 0)
+                    {
                         setColumnFlag(columnLabel, caption, bean);
+                        cc.setInherited(true);
+                    }
                 }
-
                 bean.setRequiredFieldsofCurrentFolder(IssueManager.getMyRequiredIssueFields(c));
                 bean.setRequiredFieldsofParentFolder(IssueManager.getInheritedRequiredIssueFields(c));
             }
+
+            //add/set keywords after its established whether custom fields are inherited or not.
+            KeywordAdminView keywordView = new KeywordAdminView(c, ccc);
+            keywordView.addKeywordPicker(ColumnType.TYPE);
+            keywordView.addKeywordPicker(ColumnType.AREA);
+            keywordView.addKeywordPicker(ColumnType.PRIORITY);
+            keywordView.addKeywordPicker(ColumnType.MILESTONE);
+            keywordView.addKeywordPicker(ColumnType.RESOLUTION);
+            keywordView.addKeywordPicker(ColumnType.STRING1);
+            keywordView.addKeywordPicker(ColumnType.STRING2);
+            keywordView.addKeywordPicker(ColumnType.STRING3);
+            keywordView.addKeywordPicker(ColumnType.STRING4);
+            keywordView.addKeywordPicker(ColumnType.STRING5);
+
+            bean.keywordView = keywordView;
 
             bean.inheritingContainersExists = IssueManager.hasInheritingContainers(c);
             setModelBean(bean);
@@ -2996,7 +2999,7 @@ public class IssuesController extends SpringActionController
         {
             super("/org/labkey/issue/keywordAdmin.jsp");
             setModelBean(_keywordPickers);
-            _c = IssueManager.getInheritFromOrCurrentContainer(c);
+            _c = c;
             _ccc = ccc;
         }
 
