@@ -39,6 +39,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
@@ -250,6 +251,12 @@ public class LocationTable extends BaseStudyTable
 
             return studyContainers;
         }
+    }
+
+    @Override
+    public ContainerContext getContainerContext()
+    {
+        return new ContainerContext.FieldKeyContext(new FieldKey(null,"Container"));
     }
 
     @Override
