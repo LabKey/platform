@@ -101,6 +101,14 @@ public class DatasetViewProvider implements DataViewProvider
         {
             Study study = StudyService.get().getStudy(container);
 
+            // check if we have a shared stufy
+            if (!container.isProject())
+            {
+                Study sharedStudy = StudyService.get().getStudy(container.getProject());
+                if (sharedStudy != null && sharedStudy.getShareVisitDefinitions() == Boolean.TRUE)
+                    study = sharedStudy;
+            }
+
             if (null != study)
             {
                 for (Dataset ds : study.getDatasets())
