@@ -277,7 +277,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         clickProject(project);
         portalHelper.addWebPart("Data Pipeline");
         clickButton("Setup");
-        File dir = getTestTempDir();
+        File dir = TestFileUtils.getTestTempDir();
         dir.mkdirs();
 
         setPipelineRoot(dir.getAbsolutePath());
