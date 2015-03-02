@@ -1472,7 +1472,8 @@ public class QueryView extends WebPartView<Object>
         // To make generating menu items easier, create a default custom view if it doesn't exist yet.
         if (!hasDefault)
         {
-            CustomView defaultView = getQueryDef().createCustomView(getUser(), null);
+            // don't pass getUser() as owner, we want the default view to appear as "public"
+            CustomView defaultView = getQueryDef().createCustomView(null, null);
             views.add(0, defaultView);
         }
 
@@ -1526,6 +1527,8 @@ public class QueryView extends WebPartView<Object>
             }
             if (view.isShared())
                 description.append("Shared ");
+            else
+                description.append("Private ");
 
             if (view.getContainer() != null && !view.getContainer().equals(getContainer()))
                 description.append("Inherited from '").append(PageFlowUtil.filter(view.getContainer().getPath())).append("'");
@@ -1539,7 +1542,7 @@ public class QueryView extends WebPartView<Object>
                 if (null != view.getCustomIconUrl())
                     iconUrl = new URLHelper(view.getCustomIconUrl());
                 else
-                    iconUrl = new URLHelper(view.isShared() ? "/reports/grid_shared.gif" : "/reports/grid.gif");
+                    iconUrl = new URLHelper(view.isShared() ? "/reports/grid.gif" : "/reports/icon_private_view.png");
                 iconUrl.setContextPath(AppProps.getInstance().getParsedContextPath());
                 item.setImageSrc(iconUrl);
             }
