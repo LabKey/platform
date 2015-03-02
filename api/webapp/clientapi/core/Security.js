@@ -191,7 +191,7 @@ LABKEY.Security = new function()
         getGroupPermissions : function(config)
         {
             var params = {};
-            if(config.includeSubfolders != undefined)
+            if (config.includeSubfolders != undefined)
                 params.includeSubfolders = config.includeSubfolders;
 
             return LABKEY.Ajax.request({
@@ -206,8 +206,8 @@ LABKEY.Security = new function()
         /**
          * Returns true if the permission passed in 'perm' is on in the permissions
          * set passed as 'perms'. This is a local function and does not make a call to the server.
-         * @param {integer} perms The permission set, typically retrieved for a given user or group.
-         * @param {integer} perm A specific permission bit to check for.
+         * @param {int} perms The permission set, typically retrieved for a given user or group.
+         * @param {int} perm A specific permission bit to check for.
          */
         hasPermission : function(perms, perm)
         {
@@ -219,13 +219,16 @@ LABKEY.Security = new function()
          * array passed as 'effectivePermissions'. This is a local function and does not make a call to the server.
          * @param {Array} effectivePermissions The permission set, typically retrieved for a given user or group.
          * @param {String} desiredPermission A specific permission bit to check for.
+         * @returns {boolean}
          */
         hasEffectivePermission : function(effectivePermissions, desiredPermission)
         {
             for (var i = 0; i < effectivePermissions.length; i++)
             {
                 if (effectivePermissions[i] == desiredPermission)
+                {
                     return true;
+                }
             }
             return false;
         },
@@ -234,16 +237,21 @@ LABKEY.Security = new function()
          * Returns the name of the security role represented by the permissions passed as 'perms'.
          * The return value will be the name of a property in the LABKEY.Security.roles map.
          * This is a local function, and does not make a call to the server.
-         * @param perms The permissions set
+         * @param {int} perms The permissions set
          * @deprecated Do not use this anymore. Use the roles array in the various responses and the
          * getRoles() method to obtain extra information about each role.
          */
         getRole : function(perms)
         {
-            for(var role in LABKEY.Security.roles)
+            for (var role in LABKEY.Security.roles)
             {
-                if(perms == LABKEY.Security.roles[role])
-                    return role;
+                if (LABKEY.Security.roles.hasOwnProperty(role))
+                {
+                    if (perms == LABKEY.Security.roles[role])
+                    {
+                        return role;
+                    }
+                }
             }
         },
 
@@ -251,8 +259,8 @@ LABKEY.Security = new function()
          * Returns information about a user's permissions within a container. If you don't specify a user id, this
          * will return information about the current user.
          * @param config A configuration object containing the following properties
-         * @param {Integer} config.userId The id of the user. Omit to get the current user's information
-         * @param {String} config.userEmail The email address (user name) of the user (specify only userId or userEmail, not both)
+         * @param {int} config.userId The id of the user. Omit to get the current user's information
+         * @param {string} config.userEmail The email address (user name) of the user (specify only userId or userEmail, not both)
          * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -315,7 +323,7 @@ LABKEY.Security = new function()
          * @param {boolean} [config.includeSubfolders] Set to true to recurse down the subfolders (defaults to false)
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
-         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
+         * @param {Object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -345,7 +353,7 @@ LABKEY.Security = new function()
         /**
          * Returns a list of users given selection criteria. This may be called by any logged-in user.
          * @param config A configuration object containing the following properties
-         * @param {integer} [config.groupId] The id of a project group for which you want the members.
+         * @param {int} [config.groupId] The id of a project group for which you want the members.
          * @param {string} [config.group] The name of a project group for which you want the members (specify groupId or group, not both).
          * @param {string} [config.name] The first part of the user name, useful for user name completion. If specified,
          * only users whose email address or display name starts with the value supplied will be returned.
@@ -862,10 +870,12 @@ LABKEY.Security = new function()
          */
         ensureLogin : function(config)
         {
-            if(LABKEY.Security.currentUser.isGuest || config.force)
+            if (LABKEY.Security.currentUser.isGuest || config.force)
             {
-                if(config.useSiteLoginPage)
+                if (config.useSiteLoginPage)
+                {
                     window.location = LABKEY.ActionURL.buildURL("login", "login") + "?returnUrl=" + window.location;
+                }
                 else
                 {
                     return LABKEY.Ajax.request({
@@ -1143,11 +1153,10 @@ LABKEY.Security = new function()
          */
         getPolicy : function(config)
         {
-            var params = {resourceId: config.resourceId};
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "getPolicy", config.containerPath),
                 method: "GET",
-                params: params,
+                params: { resourceId: config.resourceId },
                 success: LABKEY.Utils.getCallbackWrapper(function(data, req){
                     data.policy.requestedResourceId = config.resourceId;
                     var policy = new LABKEY.SecurityPolicy(data.policy);
@@ -1184,13 +1193,12 @@ LABKEY.Security = new function()
          */
         deletePolicy : function(config)
         {
-            var params = {resourceId: config.resourceId};
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "deletePolicy", config.containerPath),
                 method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
-                jsonData: params,
+                jsonData: { resourceId: config.resourceId },
                 headers : {
                     'Content-Type' : 'application/json'
                 }
@@ -1345,13 +1353,12 @@ LABKEY.Security = new function()
          * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
          */
         renameGroup : function(config) {
-            var params = {id: config.groupId, newName: config.newName};
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "renameGroup", config.containerPath),
                 method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
-                jsonData: params,
+                jsonData: { id: config.groupId, newName: config.newName },
                 headers : {
                     'Content-Type' : 'application/json'
                 }
@@ -1363,7 +1370,7 @@ LABKEY.Security = new function()
          * Adds a new member to an existing group.
          * @param config A configuration object with the following properties:
          * @param {int} config.groupId The id of the group to which you want to add the member.
-         * @param {int or Array} config.principalIds An integer id or array of ids of the users or groups you want to add as members.
+         * @param {int|int[]} config.principalIds An integer id or array of ids of the users or groups you want to add as members.
          * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -1407,7 +1414,7 @@ LABKEY.Security = new function()
          * Removes a member from an existing group.
          * @param config A configuration object with the following properties:
          * @param {int} config.groupId The id of the group from which you want to remove the member.
-         * @param {int or Array} config.principalIds An integer id or array of ids of the users or groups you want to remove.
+         * @param {int|int[]} config.principalIds An integer id or array of ids of the users or groups you want to remove.
          * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>

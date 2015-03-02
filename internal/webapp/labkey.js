@@ -9,9 +9,7 @@
 if (typeof LABKEY == "undefined")
 {
     /**
-     * @class LABKEY
-     * LabKey core API and utilities.
-     * @singleton
+     * @namespace Namespace used to encapsulate LabKey core API and utilities.
      */
     LABKEY = new function()
     {
@@ -137,7 +135,7 @@ if (typeof LABKEY == "undefined")
         // instance of scripting cache used by public methods
         var scriptCache = new ScriptCache();
 
-        /**** Public Method Definitions ****/
+        // Public Method Definitions
 
         var addElemToHead = function(elemName, attributes)
         {
@@ -393,11 +391,9 @@ if (typeof LABKEY == "undefined")
             }
         };
 
-        /**
-         * Mimic the results handed down by Ext3.lib.xml
-         */
         var requiresExt3 = function(immediate, callback, scope)
         {
+            // Mimic the results handed down by Ext3.lib.xml
             if (arguments.length < 1) immediate = true;
 
             // Require that these CSS files be placed first in the <head> block so that they can be overridden by user customizations
@@ -410,11 +406,9 @@ if (typeof LABKEY == "undefined")
             ], immediate, callback, scope, true);
         };
 
-        /**
-         * Mimic the results handed down by clientapi/ext3.lib.xml
-         */
         var requiresExt3ClientAPI = function(immediate, callback, scope)
         {
+            // Mimic the results handed down by clientapi/ext3.lib.xml
             if (arguments.length < 1) immediate = true;
 
             var scripts;
@@ -494,7 +488,7 @@ if (typeof LABKEY == "undefined")
                     "extWidgets/Ext4FormPanel.js",
                     "extWidgets/Ext4GridPanel.js",
                     "extWidgets/DetailsPanel.js"
-                ]
+                ];
             }
             else
             {
@@ -656,7 +650,7 @@ if (typeof LABKEY == "undefined")
                                 script.onreadystatechange = null;
                                 cacheLoader();
                             }
-                        }
+                        };
                     }
                     else
                     {
@@ -735,7 +729,7 @@ if (typeof LABKEY == "undefined")
 
         return {
 
-            /**** Variables ****/
+            // -- Variables
 
             contextPath: configs.contextPath,
 
@@ -758,8 +752,15 @@ if (typeof LABKEY == "undefined")
             verbose: configs.verbose,
             widget: configs.widget,
 
-            /**** Methods ****/
+            // -- Methods
 
+            /**
+             * Appends an element to the head of the document
+             * @private
+             * @param {String} elemName First argument for docoument.createElement
+             * @param {Object} [attributes]
+             * @returns {*}
+             */
             addElemToHead: addElemToHead,
 
             // TODO: Eligible for removal after util.js is migrated

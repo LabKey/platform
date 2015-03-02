@@ -274,7 +274,7 @@ LABKEY.Utils = new function()
          * and call another success function passing that parsed JSON.
          * @param fn The callback function to wrap
          * @param scope The scope for the callback function
-         * @param isErrorCallback Set to true if the function is an error callback.  If true, and you do not provide a separate callback, alert will popup showing the error message
+         * @param {boolean} [isErrorCallback=false] Set to true if the function is an error callback.  If true, and you do not provide a separate callback, alert will popup showing the error message
          */
         getCallbackWrapper : function(fn, scope, isErrorCallback) {
             return function(response, options)

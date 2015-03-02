@@ -878,38 +878,42 @@ LABKEY.Query = new function()
         deleteRows : function(config)
         {
             if (arguments.length > 1)
+            {
                 config = configFromArgs(arguments);
+            }
             config.action = "deleteRows";
             return sendJsonQueryRequest(config);
         },
 
         /**
-        * Build and return an object suitable for passing to the
-        * <a href = "http://www.extjs.com/deploy/dev/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
-        * @param {String} schemaName Name of a schema defined within the current container.  See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
-					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {String} queryName Name of a query table associated with the chosen schema.   See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
-					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Array} [filterArray] Array of objects created by {@link LABKEY.Filter.create}.
-        * @param {String} [sort]  String description of the sort.  It includes the column names
-        *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
-        *       descending order). In the case of a multi-column sort, up to three column names can be
-        *       included, separated by commas.
-        * @returns {Object} Object suitable for passing to the
-        * <a href = "http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
-        */
-
+         * Build and return an object suitable for passing to the
+         * <a href = "http://www.extjs.com/deploy/dev/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
+         * @param {string} schemaName Name of a schema defined within the current container.  See also: <a class="link"
+         href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+         How To Find schemaName, queryName &amp; viewName</a>.
+         * @param {string} queryName Name of a query table associated with the chosen schema.   See also: <a class="link"
+         href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+         How To Find schemaName, queryName &amp; viewName</a>.
+         * @param {LABKEY.Filter[]} [filterArray] Array of objects created by {@link LABKEY.Filter.create}.
+         * @param {string} [sort]  String description of the sort.  It includes the column names
+         *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
+         *       descending order). In the case of a multi-column sort, up to three column names can be
+         *       included, separated by commas.
+         * @param {string} [dataRegionName=query]
+         * @returns {Object} Object suitable for passing to the
+         * <a href = "http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
+         */
         buildQueryParams: function(schemaName, queryName, filterArray, sort, dataRegionName)
         {
             dataRegionName = dataRegionName || "query";
             var params = {};
             params.dataRegionName = dataRegionName;
             params[dataRegionName + '.queryName'] = queryName;
-            params['schemaName'] = schemaName;
+            params.schemaName = schemaName;
             if (sort)
+            {
                 params[dataRegionName + '.sort'] = sort;
+            }
 
             LABKEY.Filter.appendFilterParams(params, filterArray, dataRegionName);
 
@@ -1331,7 +1335,7 @@ LABKEY.Query = new function()
 
         /**
          * Converts a javascript date into a format suitable for using in a LabKey SQL query, includes time but not milliseconds.
-         * @param {Date} javascript date
+         * @param {Date} date JavaScript date
          * @param {Boolean} withMS include milliseconds
          * @returns {String} a date and time literal formatted to be used in a LabKey query
          */
@@ -1357,8 +1361,8 @@ LABKEY.Query = new function()
 
 
         /**
-         * Converts a javascript date into a format suitable for using in a LabKey SQL query, does not include time.
-         * @param {Date} javascript date
+         * Converts a JavaScript date into a format suitable for using in a LabKey SQL query, does not include time.
+         * @param {Date} date JavaScript date
          * @returns {String} a date literal formatted to be used in a LabKey query
          */
         sqlDateLiteral : function(date)
@@ -1382,9 +1386,9 @@ LABKEY.Query = new function()
 
 
         /**
-         * Converts a javascript string into a format suitable for using in a LabKey SQL query.
-         * @param {String} value to use in query
-         * @returns {String} value formatted for use in a LabKey query.  Will property escape single quote characters.
+         * Converts a JavaScript string into a format suitable for using in a LabKey SQL query.
+         * @param {string} str String to use in query
+         * @returns {string} value formatted for use in a LabKey query.  Will property escape single quote characters.
          */
         sqlStringLiteral : function(str)
         {
@@ -1394,9 +1398,7 @@ LABKEY.Query = new function()
             return "'" + str.replace("'","''") + "'";
         },
 
-
-
-                URL_COLUMN_PREFIX: "_labkeyurl_"
+        URL_COLUMN_PREFIX: "_labkeyurl_"
     };
 };
 

@@ -24,44 +24,46 @@
  */
 LABKEY.NavTrail = new function()
 {
-    // public methods:
     /** @scope LABKEY.NavTrail */
     return {
         /**
-        * Set the nav trail's elements.
-        * @param {String} currentPageTitle The title for the current page
-        * @param {Array} [ancestorArray] An array of objects that describe the ancestor pages. Each
-        * object in this array can have two properties: url (which contains the URL for the page);
-        * and title (which contains the title for the page). These will be assembled into the
-        * full list of ancestor pages at the top of the nav trail.
-        * @example Example: <pre name="code" class="xml">
-LABKEY.NavTrail.setTrail("People View",
-    [{url: LABKEY.ActionURL.buildURL('project', 'begin'),
-      title: "API Example"}]
-    );
- </pre>
-        */
-        setTrail: function (currentPageTitle, ancestorArray, documentTitle)
+         * Set the nav trail's elements.
+         * @param {string} currentPageTitle The title for the current page
+         * @param {Object[]} [ancestors] An array of objects that describe the ancestor pages. Each
+         * object in this array can have two properties: url (which contains the URL for the page);
+         * and title (which contains the title for the page). These will be assembled into the full list of ancestor pages at the top of the nav trail.
+         * @param {string} [documentTitle] Document title
+         * @example
+<pre name="code" class="xml">
+var ancestorURL = LABKEY.ActionURL.buildURL('project', 'begin');
+LABKEY.NavTrail.setTrail("People View", [{url: ancestorURL, title: "API Example"}]);
+</pre>
+         */
+        setTrail: function (currentPageTitle, ancestors, documentTitle)
         {
             var elem = document.getElementById("labkey-nav-trail-current-page");
-            if(elem)
+            if (elem)
             {
                 elem.innerHTML = currentPageTitle;
                 elem.style.visibility = "visible";
             }
 
             elem = document.getElementById("navTrailAncestors");
-            if(elem && ancestorArray)
+            if (elem && ancestors)
             {
-                var html = "";
-                var sep = "";
-                for(var idx = 0; idx < ancestorArray.length; ++idx)
+                var html = "",
+                    sep = "";
+                for (var idx = 0; idx < ancestors.length; ++idx)
                 {
                     html += sep;
-                    if(ancestorArray[idx].url && ancestorArray[idx].title)
-                        html += "<a href='" + ancestorArray[idx].url + "'>" + ancestorArray[idx].title + "</a>";
-                    else if(ancestorArray[idx].title)
-                        html += ancestorArray[idx].title;
+                    if (ancestors[idx].url && ancestors[idx].title)
+                    {
+                        html += "<a href='" + ancestors[idx].url + "'>" + ancestors[idx].title + "</a>";
+                    }
+                    else if (ancestors[idx].title)
+                    {
+                        html += ancestors[idx].title;
+                    }
                     sep = ' &gt; ';
                 }
                 elem.innerHTML = html;

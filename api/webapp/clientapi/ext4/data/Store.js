@@ -8,7 +8,7 @@
  * Constructs an extended ExtJS 4.2.1 Ext.data.Store configured for use in LabKey client-side applications.
  * @name LABKEY.ext4.data.Store
  * @class
- * LabKey extension to the <a href="http://docs.sencha.com/ext-js/4-0/#!/api/Ext.data.Store">Ext.data.Store</a> class,
+ * LabKey extension to the <a href="http://docs.sencha.com/extjs/4.2.1/#!/api/Ext.data.Store">Ext.data.Store</a> class,
  * which can retrieve data from a LabKey server, track changes, and update the server upon demand. This is most typically
  * used with data-bound user interface widgets, such as the Ext.grid.Panel.
  *

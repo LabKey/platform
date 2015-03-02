@@ -1,13 +1,38 @@
-/*
- * Copyright (c) 2014-2015 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+/**
+ * @fileOverview
+ * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
+ * @license Copyright (c) 2008-2015 LabKey Corporation
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * <p/>
  */
 (function ($)
 {
-    if (!('help' in LABKEY))
+    if (!LABKEY.help)
+    {
         LABKEY.help = {};
+    }
 
+    /**
+     * @private
+     * @namespace API that provides the capability to run a Tour on the page highlighing different areas and aspects
+     *      to show users. <p/>
+     *            <p>Additional Documentation:
+     *              <ul>
+     *                  <li><span>Not yet provided.</span></li>
+     *              </ul>
+     *           </p>
+     */
     LABKEY.help.Tour = new function ()
     {
         var _hopscotchSessionProperty = 'hopscotch.tour.state',
@@ -18,8 +43,6 @@
             _next = 0,
             loads = 0,
             me = this,
-            stepFnOpts = ["onPrev", "onNext", "onShow", "onCTA"],
-            tourFnOpts = ["onNext", "onPrev", "onStart", "onEnd", "onClose", "onError"],
             _modeOff = "off",
             _modeRunOnce = "runOnce",
             _modeRunAlways = "runAlways",
@@ -44,7 +67,7 @@
 
         var _autoShowFromDb = function (id, step)
         {
-            if( LABKEY.tours[id].mode != undefined)
+            if (LABKEY.tours[id].mode != undefined)
             {
                 var modeIndex = parseInt(LABKEY.tours[id].mode);
 
@@ -228,6 +251,7 @@
         /**
          * @param config
          * @param {number} step
+         * @private
          */
         var _register = function(config, step)
         {
@@ -251,13 +275,17 @@
         // Public Functions
         //
         /**
-         * Show tour if it has never been shown before.
-         * Conditionally loads hopscotch.js if the tour needs to be shown.
+         * Show tour if it has never been shown before. Conditionally loads hopscotch.js if the tour needs to be shown.
+         * @param id
+         * @returns {boolean}
+         * @private
          */
         var autoShow = function (id)
         {
             if (seen(id))
+            {
                 return false;
+            }
 
             show(id, 0);
             return true;
@@ -265,28 +293,31 @@
 
         /**
          * continueAtLocation() and continueTour() make a simple pattern for multi-page tours
-         *
-         * when leaving a page
-         *
-         * onNext: function()
-         * {
-         *     LABKEY.help.Tour.continueAtLocation("?pageId=study.DATA_ANALYSIS");
-         * }
-         *
-         * and
-         *
-         * LABKEY.Utils.onReady(function(){
-         *      LABKEY.help.Tour.continueTour();
-         * })
-         *
-         * @param href
+         * @param {string} href
+         * @private
+         * @example
+<pre name="code">
+var tourConfig = {
+    // ...
+    onNext: function() {
+        var url = LABKEY.ActionURL.buildURL('project', 'begin');
+        LABKEY.help.Tour.continueAtLocation(url);
+    }
+    // ...
+};
+LABKEY.Utils.onReady(function() {
+    LABKEY.help.Tour.continueTour();
+});
+</pre>
          */
         var continueAtLocation = function (href)
         {
             var context = LABKEY.contextPath;
 
             if (href.charAt(0) != "/")
+            {
                 href = "/" + href;
+            }
 
             href = context + href;
 
@@ -304,23 +335,30 @@
 
         /**
         * see continueAtLocation()
+         * @private
         */
         var continueTour = function ()
         {
             var config = _getContinue();
             if (!$.isEmptyObject(config))
+            {
                 return resume(config.id, parseInt(config.step));
+            }
         };
 
         /**
          * Mark tour as seen so autoShow() will no longer show this tour
+         * @param id
+         * @private
          */
         var markSeen = function (id)
         {
             var state = {};
             var v = localStorage.getItem(_localStorageProperty);
             if (v)
+            {
                 state = LABKEY.Utils.decode(v);
+            }
             state[id] = "seen";
             localStorage.setItem(_localStorageProperty, LABKEY.Utils.encode(state));
         };
@@ -333,6 +371,9 @@
             _register(config, 0);
         };
 
+        /**
+         * @private
+         */
         var reset = function ()
         {
             localStorage.setItem(_localStorageProperty, "{}");
@@ -350,6 +391,7 @@
         /**
          * Countinue tour if it is currently on the indicated step, useful for multi-page tours
          * Always loads hopscotch.js
+         * @private
          */
         var resume = function (id, step)
         {
@@ -366,23 +408,43 @@
             }
         };
 
+        /**
+         * Determines if the given tour (by id) has already been seen by the user
+         * @param id
+         * @returns {boolean}
+         * @private
+         */
         var seen = function (id)
         {
             // use one item for all tours, this is a little more complicated, but makes it easier to reset state
             var state = {};
             var v = localStorage.getItem(_localStorageProperty);
             if (v)
+            {
                 state = LABKEY.Utils.decode(v);
+            }
             return "seen" == state[id];
         };
 
+        /**
+         * @param id
+         * @param step
+         * @private
+         */
         var show = function(id, step)
         {
             var tour = _get(id);
             if (tour)
+            {
                 _display(tour, step);
+            }
         };
 
+        /**
+         * @param id
+         * @param step
+         * @private
+         */
         var showFromDb = function(id, step)
         {
             _load(id,step);
@@ -401,7 +463,7 @@
             seen: seen,
             show: show,
             showFromDb: showFromDb
-        }
+        };
     };
 
 })(jQuery);
