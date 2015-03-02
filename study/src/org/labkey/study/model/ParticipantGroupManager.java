@@ -295,14 +295,14 @@ public class ParticipantGroupManager
                     }
                     button.addMenuItem(item);
                     if (cls.isShared())
-                        item.setImageSrc(new ResourceURL("/reports/grid_shared.gif"));
+                        item.setImageSrc(new ResourceURL("/reports/icon_query_view.png"));
                 }
                 else if (null != groups && groups.length == 1)
                 {
                     Pair<FieldKey, String> filterColValue = groups[0].getFilterColAndValue(container);
                     NavTree item = button.addMenuItem(groups[0].getLabel(), null, getSelectionReplaceScript(dataRegionName, filterColValue, filterColValue.first.getParent().getName()), selected.contains(groups[0]));
                     if (cls.isShared())
-                        item.setImageSrc(new ResourceURL("/reports/grid_shared.gif"));
+                        item.setImageSrc(new ResourceURL("/reports/icon_query_view.png"));
                 }
             }
 
