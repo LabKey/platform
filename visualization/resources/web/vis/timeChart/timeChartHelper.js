@@ -13,9 +13,10 @@ if(!LABKEY.vis) {
  */
 LABKEY.vis.TimeChartHelper = new function() {
 
-    var studyNounSingular = 'Participant';
-    var studyNounPlural = 'Participants';
-    var studyNounColumnName = 'ParticipantId';
+    var studyNounSingular = 'Participant',
+        studyNounPlural = 'Participants',
+        studyNounColumnName = 'ParticipantId';
+
     if (LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject)
     {
         studyNounSingular = LABKEY.moduleContext.study.subject.nounSingular;
@@ -74,9 +75,9 @@ LABKEY.vis.TimeChartHelper = new function() {
         if (config.measures.length == 0)
             throw "There must be at least one specified measure in the chartInfo config!";
 
-        var xMin = null, xMax = null, xTrans = null, xTickFormat, xTickHoverText;
-        var yLeftMin = null, yLeftMax = null, yLeftTrans = null, yLeftTickFormat;
-        var yRightMin = null, yRightMax = null, yRightTrans = null, yRightTickFormat;
+        var xMin = null, xMax = null, xTrans = null, xTickFormat, xTickHoverText,
+            yLeftMin = null, yLeftMax = null, yLeftTrans = null, yLeftTickFormat,
+            yRightMin = null, yRightMax = null, yRightTrans = null, yRightTickFormat;
 
         for (var i = 0; i < config.axis.length; i++)
         {
@@ -114,7 +115,7 @@ LABKEY.vis.TimeChartHelper = new function() {
 
             xTickHoverText = function(value) {
                 return tickMap[value] ? tickMap[value].description : "";
-            }
+            };
         }
 
         return {
@@ -182,10 +183,13 @@ LABKEY.vis.TimeChartHelper = new function() {
         var tickMap = {};
         for (var rowId in visitMap)
         {
-            tickMap[visitMap[rowId].displayOrder] = {
-                label: visitMap[rowId].displayName,
-                description: visitMap[rowId].description || visitMap[rowId].displayName
-            };
+            if (visitMap.hasOwnProperty(rowId))
+            {
+                tickMap[visitMap[rowId].displayOrder] = {
+                    label: visitMap[rowId].displayName,
+                    description: visitMap[rowId].description || visitMap[rowId].displayName
+                };
+            }
         }
 
         return tickMap;
@@ -207,7 +211,7 @@ LABKEY.vis.TimeChartHelper = new function() {
 
         var xAes;
         if (config.measures[0].time == "date")
-            xAes = function(row) { return (row[intervalKey] ? row[intervalKey].value : null); }
+            xAes = function(row) { return (row[intervalKey] ? row[intervalKey].value : null); };
         else
             xAes = function(row) { return visitMap[row[intervalKey].value].displayOrder; };
 
@@ -215,10 +219,10 @@ LABKEY.vis.TimeChartHelper = new function() {
 
         return {
             x: xAes,
-            color: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null) },
-            group: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null) },
-            shape: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null) },
-            pathColor: function(rows) { return (rows[0][individualSubjectColumn] ? rows[0][individualSubjectColumn].value : null) }
+            color: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null); },
+            group: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null); },
+            shape: function(row) { return (row[individualSubjectColumn] ? row[individualSubjectColumn].value : null); },
+            pathColor: function(rows) { return (rows[0][individualSubjectColumn] ? rows[0][individualSubjectColumn].value : null); }
         };
     };
 
@@ -291,7 +295,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                         var errorVal = row[errorColumn].value ? row[errorColumn].value : 'n/a';
                         return ' ' + subject + ',\n ' + intervalKey + ': ' + row[intervalKey].value + ',\n ' + name + ': ' + row[columnName].value +
                                 ',\n ' + errorType + ': ' + errorVal;
-                    }
+                    };
                 }
                 else
                 {
@@ -548,16 +552,16 @@ LABKEY.vis.TimeChartHelper = new function() {
         // (if 'automatic across charts' is selected for the given axis)
         if (config.chartLayout != "single")
         {
-            var leftMeasures = [];
-            var rightMeasures = [];
-            var xName, xFunc;
-            var min, max, tempMin, tempMax, errorBarType;
-            var leftAccessor, leftAccessorMax, leftAccessorMin, rightAccessorMax, rightAccessorMin, rightAccessor;
-            var columnAliases = data.individual ? data.individual.columnAliases : (data.aggregate ? data.aggregate.columnAliases : null);
-            var isDateBased = config.measures[0].time == "date";
-            var xAxisIndex = getAxisIndex(config.axis, "x-axis");
-            var leftAxisIndex = getAxisIndex(config.axis, "y-axis", "left");
-            var rightAxisIndex = getAxisIndex(config.axis, "y-axis", "right");
+            var leftMeasures = [],
+                rightMeasures = [],
+                xName, xFunc,
+                min, max, tempMin, tempMax, errorBarType,
+                leftAccessor, leftAccessorMax, leftAccessorMin, rightAccessorMax, rightAccessorMin, rightAccessor,
+                columnAliases = data.individual ? data.individual.columnAliases : (data.aggregate ? data.aggregate.columnAliases : null),
+                isDateBased = config.measures[0].time == "date",
+                xAxisIndex = getAxisIndex(config.axis, "x-axis"),
+                leftAxisIndex = getAxisIndex(config.axis, "y-axis", "left"),
+                rightAxisIndex = getAxisIndex(config.axis, "y-axis", "right");
 
             for (var i = 0; i < seriesList.length; i++)
             {
@@ -599,8 +603,10 @@ LABKEY.vis.TimeChartHelper = new function() {
             if (leftAxisIndex > -1)
             {
                 // If we have a left axis then we need to find the min/max
-                min = null, max = null, tempMin = null, tempMax = null;
-                leftAccessor = function(row){return (row[leftMeasures[i]] ? row[leftMeasures[i]].value : null);};
+                min = null; max = null; tempMin = null; tempMax = null;
+                leftAccessor = function(row) {
+                    return (row[leftMeasures[i]] ? row[leftMeasures[i]].value : null);
+                };
 
                 if (errorBarType)
                 {
@@ -653,7 +659,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             if (rightAxisIndex > -1)
             {
                 // If we have a right axis then we need to find the min/max
-                min = null, max = null, tempMin = null, tempMax = null;
+                min = null; max = null; tempMin = null; tempMax = null;
                 rightAccessor = function(row){
                     return row[rightMeasures[i]].value
                 };
@@ -708,9 +714,9 @@ LABKEY.vis.TimeChartHelper = new function() {
      * @returns {Array}
      */
     var generatePlotConfigs = function(config, data, seriesList, applyClipRect, maxCharts, nounColumnName) {
-        var plotConfigInfoArr = [];
+        var plotConfigInfoArr = [],
+            subjectColumnName = null;
 
-        var subjectColumnName = null;
         if (data.individual)
             subjectColumnName = LABKEY.vis.getColumnAlias(data.individual.columnAliases, nounColumnName || studyNounColumnName);
 
@@ -747,20 +753,23 @@ LABKEY.vis.TimeChartHelper = new function() {
             var dataPerParticipant = getDataWithSeriesCheck(data.individual.rows, function(row){return row[subjectColumnName].value}, seriesList, data.individual.columnAliases);
             for (var participant in dataPerParticipant)
             {
-                // skip the group if there is no data for it
-                if (!dataPerParticipant[participant].hasSeriesData)
-                    continue;
+                if (dataPerParticipant.hasOwnProperty(participant))
+                {
+                    // skip the group if there is no data for it
+                    if (!dataPerParticipant[participant].hasSeriesData)
+                        continue;
 
-                plotConfigInfoArr.push({
-                    title: concatChartTitle(config.title, participant),
-                    series: seriesList,
-                    individualData: dataPerParticipant[participant].data,
-                    style: config.subject.values.length > 1 ? 'border-bottom: solid black 1px;' : null,
-                    applyClipRect: applyClipRect
-                });
+                    plotConfigInfoArr.push({
+                        title: concatChartTitle(config.title, participant),
+                        series: seriesList,
+                        individualData: dataPerParticipant[participant].data,
+                        style: config.subject.values.length > 1 ? 'border-bottom: solid black 1px;' : null,
+                        applyClipRect: applyClipRect
+                    });
 
-                if (plotConfigInfoArr.length > maxCharts)
-                    break;
+                    if (plotConfigInfoArr.length > maxCharts)
+                        break;
+                }
             }
         }
         else if (config.chartLayout == "per_group")
@@ -873,12 +882,13 @@ LABKEY.vis.TimeChartHelper = new function() {
      * Get the index in the axes array for a given axis (ie left y-axis).
      * @param {Array} axes The array of specified axis information for this chart.
      * @param {String} axisName The chart axis (i.e. x-axis or y-axis).
-     * @param {String} side The y-axis side (i.e. left or right).
+     * @param {String} [side] The y-axis side (i.e. left or right).
      * @returns {number}
      */
     var getAxisIndex = function(axes, axisName, side) {
         var index = -1;
-        for(var i = 0; i < axes.length; i++){
+        for (var i = 0; i < axes.length; i++)
+        {
             if (!side && axes[i].name == axisName)
             {
                 index = i;
@@ -940,8 +950,13 @@ LABKEY.vis.TimeChartHelper = new function() {
             var trimmedVisits = [];
             for (var v in origVisitMap)
             {
-                if (visitsInDataArr.indexOf(v) != -1)
-                    trimmedVisits.push(Ext4.apply({id: v}, origVisitMap[v]));
+                if (origVisitMap.hasOwnProperty(v))
+                {
+                    if (visitsInDataArr.indexOf(v) != -1)
+                    {
+                        trimmedVisits.push(Ext4.apply({id: v}, origVisitMap[v]));
+                    }
+                }
             }
             // sort the trimmed visit list by displayOrder and then reset displayOrder starting at 1
             trimmedVisits.sort(function(a,b){return a.displayOrder - b.displayOrder});
@@ -1059,7 +1074,8 @@ LABKEY.vis.TimeChartHelper = new function() {
     /**
      * Generate the number format functions for the left and right y-axis and attach them to the chart data object
      * @param {Object} config The chart configuration object that defines the selected measures, axis info, subjects/groups, etc.
-     * * @param {Object} data The data object, from getChartData.
+     * @param {Object} data The data object, from getChartData.
+     * @param {Object} defaultNumberFormat
      */
     var generateNumberFormats = function(config, data, defaultNumberFormat) {
         var fields = data.individual ? data.individual.metaData.fields : data.aggregate.metaData.fields;
@@ -1176,8 +1192,11 @@ LABKEY.vis.TimeChartHelper = new function() {
      * @returns {Object}
      */
     var validateChartData = function(data, config, seriesList, limit) {
-        var message = "";
-        var sep = "";
+        var message = "",
+            sep = "",
+            msg = "",
+            commaSep = "",
+            noDataCounter = 0;
 
         // warn the user if the data limit has been reached
         if ((data.individual && data.individual.rows.length == limit) || (data.aggregate && data.aggregate.rows.length == limit))
@@ -1194,8 +1213,6 @@ LABKEY.vis.TimeChartHelper = new function() {
         }
 
         // check to see if any of the measures don't have data
-        var msg = ""; var commaSep = "";
-        var noDataCounter = 0;
         Ext4.iterate(data.aggregate ? data.aggregate.hasData : data.individual.hasData, function(key, value) {
             if (!value)
             {
