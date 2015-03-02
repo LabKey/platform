@@ -1249,10 +1249,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         panel.on('afterrender', function(cmp) {
             // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
             // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
-            cmp.on('show', viewReadyFunc(grid), this);
-            cmp.on('show', viewReadyFunc(hiddenGrid), this);
+            cmp.on('settingsChange', viewReadyFunc(grid), this);
+            cmp.on('settingsChange', viewReadyFunc(hiddenGrid), this);
             if(this.allowRefresh)
-                cmp.on('show', afterRenderFunc, this);
+                cmp.on('settingsChange', afterRenderFunc, this);
         }, this);
         
         return panel;
