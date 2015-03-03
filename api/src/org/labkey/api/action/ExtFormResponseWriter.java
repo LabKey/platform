@@ -19,7 +19,6 @@ import org.json.JSONObject;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -160,27 +159,6 @@ public class ExtFormResponseWriter extends ApiJsonWriter
             close();
         }
     }
-
-    @Override
-    public void writeAndClose(Throwable e) throws IOException
-    {
-        int status;
-
-        if (e instanceof NotFoundException)
-            status = HttpServletResponse.SC_NOT_FOUND;
-        else
-            status = errorResponseStatus;
-
-        try
-        {
-            writeAndClose(e, status);
-        }
-        finally
-        {
-            close();
-        }
-    }
-
 
     @Override
     protected Writer getWriter()
