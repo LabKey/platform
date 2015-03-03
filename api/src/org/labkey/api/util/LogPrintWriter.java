@@ -21,12 +21,12 @@ import org.apache.log4j.Logger;
 import java.io.PrintWriter;
 
 /**
+ * A PrintWriter that sends its output to a log4j Logger, flushing at each line break.
+ *
  * User: adam
  * Date: 6/24/2014
  * Time: 10:28 PM
  */
-
-// A PrintWriter that sends its output to a log4j Logger, flushing at each line break.
 public class LogPrintWriter extends PrintWriter
 {
     public LogPrintWriter(Logger logger, Level level)
