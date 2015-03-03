@@ -140,7 +140,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         return dps;
     }
 
-    public List<DomainProperty> getNamePDs()
+    public List<? extends DomainProperty> getNamePDs()
     {
         if (_sampleSet != null)
         {
