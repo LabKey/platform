@@ -10,6 +10,8 @@
     // TODO: Some weird dependencies
     // LABKEY.Utils
 
+    Ext4.ns('LABKEY.ext4');
+
     // TODO: Get these off the global 'Date' object
     Ext4.ns('Date.patterns');
     Ext4.applyIf(Date.patterns, {
@@ -17,15 +19,8 @@
         ISO8601Short:"Y-m-d"
     });
 
-    if (!LABKEY.ext4) {
-        /**
-         * @namespace Namespace for LabKey components that are built using ExtJS 4.x
-         */
-        LABKEY.ext4 = {};
-    }
-
     /**
-     * @class LABKEY.ext4.Util
+     * @name LABKEY.ext4.Util
      * @class
      * Ext4 utilities, contains functions to return an Ext config object to create an Ext field based on
      * the supplied metadata.
@@ -35,7 +30,9 @@
     var Util = LABKEY.ext4.Util;
 
     var caseInsensitiveEquals = function(a, b) {
-        return String(a).toLowerCase() === String(b).toLowerCase();
+        a = String(a);
+        b = String(b);
+        return a.toLowerCase() == b.toLowerCase();
     };
 
     Ext4.apply(Util, {
@@ -185,33 +182,31 @@
 
             var fields = store.model.getFields();
             var columns = store.getColumns();
-            var cols = [];
+            var cols = new Array();
 
-            Ext4.each(fields, function(field) {
+            var col;
+            Ext4.each(fields, function(field, idx){
                 var col;
 
-                if (field.shownInGrid === false) {
+                if(field.shownInGrid === false)
                     return;
-                }
 
-                for (var i=0; i<columns.length; i++) {
+                for (var i=0;i<columns.length;i++){
                     var c = columns[i];
-                    if (c.dataIndex == field.dataIndex) {
+                    if(c.dataIndex == field.dataIndex){
                         col = c;
                         break;
                     }
                 }
 
-                if (!col) {
+                if(!col)
                     col = {dataIndex: field.dataIndex};
-                }
 
                 //NOTE: In Ext4.1 if your store does not provide a key field, Ext will create a new column called 'id'
                 //this is somewhat of a problem, since it is difficult to differentiate this as automatically generated
                 var cfg = Util.getColumnConfig(store, col, config, grid);
-                if (cfg) {
+                if (cfg)
                     cols.push(cfg);
-                }
             }, this);
 
             return cols;
@@ -228,7 +223,7 @@
         getColumnUrl: function(displayValue, value, col, meta, record) {
             //wrap in <a> if url is present in the record's original JSON
             var url;
-            if (meta.buildUrl) {
+            if(meta.buildUrl)
                 url = meta.buildUrl({
                     displayValue: displayValue,
                     value: value,
@@ -236,11 +231,9 @@
                     meta: meta,
                     record: record
                 });
-            }
-            else if (record.raw && record.raw[meta.name] && record.raw[meta.name].url) {
+            else if(record.raw && record.raw[meta.name] && record.raw[meta.name].url)
                 url = record.raw[meta.name].url;
-            }
-            return Ext4.htmlEncode(url);
+            return Ext4.util.Format.htmlEncode(url);
         },
 
         /**
@@ -253,15 +246,14 @@
          * Note: you can provide any Ext config options using the editorConfig or formEditorConfig objects
          * These config options can also be used to pass arbitrary config options used by your specific Ext component
          *
-         * @param {Object} config A configuration object with the following properties:
          * @param {string} [config.type] e.g. 'string','int','boolean','float', or 'date'. for consistency this will be translated into the property jsonType
          * @param {object} [config.editable]
          * @param {object} [config.required]
          * @param {string} [config.label] used to generate fieldLabel
          * @param {string} [config.name] used to generate fieldLabel (if header is null)
          * @param {string} [config.caption] used to generate fieldLabel (if label is null)
-         * @param {int} [config.cols] if input is a textarea, sets the width (style:width is better)
-         * @param {int} [config.rows] if input is a textarea, sets the height (style:height is better)
+         * @param {integer} [config.cols] if input is a textarea, sets the width (style:width is better)
+         * @param {integer} [config.rows] if input is a textarea, sets the height (style:height is better)
          * @param {string} [config.lookup.schemaName] the schema used for the lookup.  schemaName also supported
          * @param {string} [config.lookup.queryName] the query used for the lookup.  queryName also supported
          * @param {Array} [config.lookup.columns] The columns used by the lookup store.  If not set, the <code>[keyColumn, displayColumn]</code> will be used.
@@ -301,31 +293,31 @@
          * header -> caption
          * xtype -> set within getDefaultEditorConfig() based on jsonType, unless otherwise provided
          */
-        getDefaultEditorConfig : function(config) {
+        getDefaultEditorConfig: function(meta) {
             var field = {
                 //added 'caption' for assay support
-                fieldLabel       : Ext4.util.Format.htmlEncode(config.label || config.caption || config.caption || config.header || config.name),
-                originalConfig   : config,
+                fieldLabel       : Ext4.util.Format.htmlEncode(meta.label || meta.caption || meta.caption || meta.header || meta.name),
+                originalConfig   : meta,
                 //we assume the store's translateMeta() will handle this
-                allowBlank       : (config.allowBlank === true) || (config.required !==true),
-                //disabled: config.editable===false,
-                name             : config.name,
-                dataIndex        : config.dataIndex || config.name,
-                value            : config.value || config.defaultValue,
-                width            : config.width,
-                height           : config.height,
+                allowBlank       : (meta.allowBlank === true) || (meta.required !==true),
+                //disabled: meta.editable===false,
+                name             : meta.name,
+                dataIndex        : meta.dataIndex || meta.name,
+                value            : meta.value || meta.defaultValue,
+                width            : meta.width,
+                height           : meta.height,
                 msgTarget        : 'qtip',
                 validateOnChange : true
             };
 
-            var helpPopup = config.helpPopup || (function() {
+            var helpPopup = meta.helpPopup || (function() {
                 var array = [];
 
-                if (config.friendlyType)
-                    array.push(config.friendlyType);
+                if (meta.friendlyType)
+                    array.push(meta.friendlyType);
 
-                if (config.description)
-                    array.push(Ext4.util.Format.htmlEncode(config.description));
+                if (meta.description)
+                    array.push(Ext4.util.Format.htmlEncode(meta.description));
 
                 if (!field.allowBlank)
                     array.push("This field is required.");
@@ -337,27 +329,27 @@
                 helpPopup = helpPopup.join('<br>');
             field.helpPopup = helpPopup;
 
-            if (config.hidden) {
+            if (meta.hidden) {
                 field.xtype = 'hidden';
                 field.hidden = true;
             }
-            else if (config.editable === false) {
+            else if (meta.editable === false) {
                 field.xtype = 'displayfield';
             }
-            else if (config.lookup && config.lookup.public !== false && config.lookups !== false && config.facetingBehaviorType != 'ALWAYS_OFF') {
-                var l = config.lookup;
+            else if (meta.lookup && meta.lookup['public'] !== false && meta.lookups !== false && meta.facetingBehaviorType != 'ALWAYS_OFF') {
+                var l = meta.lookup;
 
                 //test whether the store has been created.  create if necessary
-                if (Ext4.isObject(config.store) && config.store.events) {
-                    field.store = config.store;
+                if (Ext4.isObject(meta.store) && meta.store.events) {
+                    field.store = meta.store;
                 }
                 else {
-                    field.store = Util.getLookupStore(config);
+                    field.store = Util.getLookupStore(meta);
                 }
 
                 Ext4.apply(field, {
                     // the purpose of this is to allow other editors like multiselect, checkboxGroup, etc.
-                    xtype           : (config.xtype || 'labkey-combo'),
+                    xtype           : (meta.xtype || 'labkey-combo'),
                     forceSelection  : true,
                     typeAhead       : true,
                     queryMode       : 'local',
@@ -365,67 +357,67 @@
                     valueField      : l.keyColumn,
                     //NOTE: supported for non-combo components
                     initialValue    : field.value,
-                    showValueInList : config.showValueInList,
-                    nullCaption     : config.nullCaption
+                    showValueInList : meta.showValueInList,
+                    nullCaption     : meta.nullCaption
                 });
             }
             else {
-                switch (config.jsonType) {
+                switch (meta.jsonType) {
                     case "boolean":
-                        field.xtype = config.xtype || 'checkbox';
+                        field.xtype = meta.xtype || 'checkbox';
                             if (field.value === true){
                                 field.checked = true;
                             }
                         break;
                     case "int":
-                        field.xtype = config.xtype || 'numberfield';
+                        field.xtype = meta.xtype || 'numberfield';
                         field.allowDecimals = false;
                         break;
                     case "float":
-                        field.xtype = config.xtype || 'numberfield';
+                        field.xtype = meta.xtype || 'numberfield';
                         field.allowDecimals = true;
                         break;
                     case "date":
-                        field.xtype = config.xtype || 'datefield';
-                        field.format = config.extFormat || Date.patterns.ISO8601Long;
+                        field.xtype = meta.xtype || 'datefield';
+                        field.format = meta.extFormat || Date.patterns.ISO8601Long;
                         field.altFormats = LABKEY.Utils.getDateAltFormats();
                         break;
                     case "string":
-                        if (config.inputType == 'textarea') {
-                            field.xtype = config.xtype || 'textarea';
-                            field.width = config.width;
-                            field.height = config.height;
+                        if (meta.inputType=='textarea') {
+                            field.xtype = meta.xtype || 'textarea';
+                            field.width = meta.width;
+                            field.height = meta.height;
                             if (!this._textMeasure) {
                                 this._textMeasure = {};
                                 var ta = Ext4.DomHelper.append(document.body,{tag:'textarea', rows:10, cols:80, id:'_hiddenTextArea', style:{display:'none'}});
                                 this._textMeasure.height = Math.ceil(Ext4.util.TextMetrics.measure(ta,"GgYyJjZ==").height * 1.2);
                                 this._textMeasure.width  = Math.ceil(Ext4.util.TextMetrics.measure(ta,"ABCXYZ").width / 6.0);
                             }
-                            if (config.rows && !config.height) {
-                                if (config.rows == 1) {
+                            if (meta.rows && !meta.height) {
+                                if (meta.rows == 1) {
                                     field.height = undefined;
                                 }
                                 else {
                                     // estimate at best!
-                                    var textHeight = this._textMeasure.height * config.rows;
+                                    var textHeight = this._textMeasure.height * meta.rows;
                                     if (textHeight) {
                                         field.height = textHeight;
                                     }
                                 }
                             }
-                            if (config.cols && !config.width) {
-                                var textWidth = this._textMeasure.width * config.cols;
+                            if (meta.cols && !meta.width) {
+                                var textWidth = this._textMeasure.width * meta.cols;
                                 if (textWidth) {
                                     field.width = textWidth;
                                 }
                             }
                         }
                         else {
-                            field.xtype = config.xtype || 'textfield';
+                            field.xtype = meta.xtype || 'textfield';
                         }
                         break;
                     default:
-                        field.xtype = config.xtype || 'textfield';
+                        field.xtype = meta.xtype || 'textfield';
                 }
             }
 
@@ -997,19 +989,17 @@
         },
 
         /**
-         * This method takes an object that is/extends an Ext4.Container (Panels, Toolbars, Viewports, Menus, etc) and
+         * This method takes an object that is/extends an Ext4.Container (e.g. Panels, Toolbars, Viewports, Menus) and
          * resizes it so the Container fits inside the viewable region of the window. This is generally used in the case
          * where the Container is not rendered to a webpart but rather displayed on the page itself (e.g. SchemaBrowser,
          * manageFolders, etc).
-         * @param {Object} extContainer outer container which is the target to be resized
-         * @param {int} width width of the viewport. In many cases, the window width. If a negative width is passed than
+         * @param extContainer - (Required) outer container which is the target to be resized
+         * @param width - (Required) width of the viewport. In many cases, the window width. If a negative width is passed than
          *                           the width will not be set.
-         * @param {int} height height of the viewport. In many cases, the window height. If a negative height is passed than
+         * @param height - (Required) height of the viewport. In many cases, the window height. If a negative height is passed than
          *                           the height will not be set.
-         * @param {int} [paddingX] - distance from the right edge of the viewport. Defaults to 35.
-         * @param {int} [paddingY] - distance from the bottom edge of the viewport. Defaults to 35.
-         * @param {int} [offsetX]
-         * @param {int} [offsetY]
+         * @param paddingX - distance from the right edge of the viewport. Defaults to 35.
+         * @param paddingY - distance from the bottom edge of the viewport. Defaults to 35.
          */
         resizeToViewport: function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
         {
