@@ -140,18 +140,18 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         setFormElement(Locator.name("participantTSV"), cohorts);
         clickButton("Next");
         String specimens = "Vial Id\tSample Id\tDate\tTimepoint Number\tVolume\tUnits\tSpecimen Type\tderivative_type\tAdditive Type\tSubject Id\n" +
- "V1-0\tV1-0\t2007-01-01\t1.0000\t\t\tBlood\tSerum\t\tV1\n" +
- "P1-0\tP1-0\t2007-06-01\t1.0000\t\t\tBlood\tSerum\t\tP1\n" +
- "P2-0\tP2-0\t2007-06-01\t1.0000\t\t\tBlood\tSerum\t\tP2\n" +
- "V2-0\tV2-0\t2007-11-01\t1.0000\t\t\tBlood\tSerum\t\tV2\n" +
- "V3-0\tV3-0\t2007-11-01\t1.0000\t\t\tBlood\tSerum\t\tV3\n" +
- "V4-0\tV4-0\t2007-11-01\t1.0000\t\t\tBlood\tSerum\t\tV4\n" +
- "V1-8\tV1-8\t2007-01-09\t2.0000\t\t\tBlood\tSerum\t\tV1\n" +
- "P1-8\tP1-8\t2007-06-09\t2.0000\t\t\tBlood\tSerum\t\tP1\n" +
- "P2-8\tP2-8\t2007-11-09\t2.0000\t\t\tBlood\tSerum\t\tP2\n" +
- "V2-8\tV2-8\t2007-11-09\t2.0000\t\t\tBlood\tSerum\t\tV2\n" +
- "V3-8\tV3-8\t2007-11-09\t2.0000\t\t\tBlood\tSerum\t\tV3\n" +
- "V4-8\tV4-8\t2007-11-09\t2.0000\t\t\tBlood\tSerum\t\tV4";
+                "V1-0\tV1-0\t2007-01-01\t1.0000\t\t\tBlood\tSerum\t\tV1\n" +
+                "P1-0\tP1-0\t2007-06-01\t1.0000\t\t\tBlood\tSerum\t\tP1\n" +
+                "P2-0\tP2-0\t2007-06-01\t1.0000\t\t\tBlood\tSerum\t\tP2\n" +
+                "V2-0\tV2-0\t2007-11-01\t1.0000\t\t\tBlood\tSerum\t\tV2\n" +
+                "V3-0\tV3-0\t2007-11-01\t1.0000\t\t\tBlood\tSerum\t\tV3\n" +
+                "V4-0\tV4-0\t2007-11-01\t1.0000\t\t\tBlood\tSerum\t\tV4\n" +
+                "V1-8\tV1-8\t2007-01-09\t2.0000\t\t\tBlood\tSerum\t\tV1\n" +
+                "P1-8\tP1-8\t2007-06-09\t2.0000\t\t\tBlood\tSerum\t\tP1\n" +
+                "P2-8\tP2-8\t2007-11-09\t2.0000\t\t\tBlood\tSerum\t\tP2\n" +
+                "V2-8\tV2-8\t2007-11-09\t2.0000\t\t\tBlood\tSerum\t\tV2\n" +
+                "V3-8\tV3-8\t2007-11-09\t2.0000\t\t\tBlood\tSerum\t\tV3\n" +
+                "V4-8\tV4-8\t2007-11-09\t2.0000\t\t\tBlood\tSerum\t\tV4";
         setFormElement(Locator.name("specimenTSV"), specimens);
         clickButton("Next");
         clickButton("Finish");
@@ -188,9 +188,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
 
         portalHelper.addWebPart("Datasets");
         clickAndWait(Locator.linkWithText("TestAssay1"));
-        assertTextPresent("P1");
-        assertTextPresent("V3");
-        assertTextPresent("V4-8");
+        assertTextPresent("P1", "V3", "V4-8");
 
 /*
         clickAndWait(Locator.linkContainingText("Manage Study"));
@@ -234,8 +232,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.addCustomizeViewColumn("Day");
         _customizeViewsHelper.applyCustomView();
-        assertTextPresent("-120");
-        assertTextPresent("320");
+        assertTextPresent("-120", "320");
         clickAndWait(Locator.linkWithText(STUDY_FOLDER + " Study"));
         clickAndWait(Locator.linkWithText("Study Navigator"));
         assertTextPresent("Day 320");
