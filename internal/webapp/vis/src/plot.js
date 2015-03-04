@@ -1386,7 +1386,7 @@ boxPlot.render();
         };
 
         // determine the width the error bars
-        var barWidth = Math.max(config.width / config.data.length / 5, 3);
+        var barWidth = Math.max(config.width / config.data[config.data.length-1].seqValue / 5, 3);
 
         // +/- 3 standard deviation displayed using the ErrorBar geom with different colors
         var stdDev3Layer = new LABKEY.vis.Layer({
@@ -1430,7 +1430,13 @@ boxPlot.render();
         }
 
         // points based on the data value, color and hover text can be added via params to config
-        var pointLayerConfig = { geom: new LABKEY.vis.Geom.Point({size: 3}), aes: {} };
+        var pointLayerConfig = {
+            geom: new LABKEY.vis.Geom.Point({
+                position: 'jitter',
+                size: 3
+            }),
+            aes: {}
+        };
         if (config.properties.color) {
             pointLayerConfig.aes.color = function(row){return row[config.properties.color];};
         }

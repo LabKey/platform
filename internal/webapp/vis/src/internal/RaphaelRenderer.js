@@ -364,7 +364,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         GEOM STUFF BELOW HERE
      */
     var renderPointGeom = function(data, geom) {
-        var i, x, y, color, size, shape, xBinWidth = null, yBinWidth = null;
+        var i, x, y, color, size, shape, xBinWidth = null, yBinWidth = null, jitterIndex = {};
         var defaultShape = function(s) { // It's a circle.
             return "M0," + s + "A" + s + "," + s + " 0 1,1 0," + -s + "A" + s + "," + s + " 0 1,1 0," + s + "Z";
         };
@@ -396,7 +396,10 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             }
 
             if (xBinWidth != null && geom.position == 'jitter') {
-                x = (x - (xBinWidth / 2)) +(Math.random()*(xBinWidth));
+                // don't jitter the first data point for the given X (i.e. if we only have one it shouldn't be jittered)
+                var xIndex = geom.xAes.getValue(data[i]);
+                x = jitterIndex[xIndex] ? (x - (xBinWidth / 2)) +(Math.random()*(xBinWidth)) : x;
+                jitterIndex[xIndex] = true;
             }
 
             if (yBinWidth != null && geom.position == 'jitter') {

@@ -1176,15 +1176,19 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var renderPointGeom = function(data, geom) {
         var layer, anchorSel, pointsSel, xAcc, yAcc, xBinWidth = null, yBinWidth = null, defaultShape, translateAcc,
-                colorAcc, sizeAcc, shapeAcc, hoverTextAcc;
+                colorAcc, sizeAcc, shapeAcc, hoverTextAcc, jitterIndex = {};
         layer = getLayer.call(this, geom);
 
         if (geom.xScale.scaleType == 'discrete' && geom.position == 'jitter') {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
             xAcc = function(row) {
+                var x = geom.xAes.getValue(row);
                 var value = geom.getX(row);
                 if (value == null) {return null;}
-                return value - (xBinWidth / 2) + (Math.random() * xBinWidth);
+                // don't jitter the first data point for the given X (i.e. if we only have one it shouldn't be jittered)
+                value = jitterIndex[x] ? value - (xBinWidth / 2) + (Math.random() * xBinWidth) : value;
+                jitterIndex[x] = true;
+                return value;
             };
         } else {
             xAcc = function(row) {return geom.getX(row);};
@@ -1236,6 +1240,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             if (shapeAcc != defaultShape) { shapeAcc(d);}
             return x !== null && y !== null;
         }, this);
+
+        // reset the jitterIndex since we will call xAxx again via translateAcc
+        jitterIndex = {};
 
         anchorSel = layer.selectAll('.point').data(data);
         anchorSel.exit().remove();
