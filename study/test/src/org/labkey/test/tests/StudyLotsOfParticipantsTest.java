@@ -33,7 +33,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-@Category({Disabled.class}) //({DailyB.class, Study.class}) TODO: Pipeline job takes too long on TeamCity, causing collateral failures
+@Category({DailyB.class, Study.class})
 public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
 {
     // Study folder archive with > 130,000 participants, 2 datasets, 11 visits, 3 cohorts, and 3 participants groups
