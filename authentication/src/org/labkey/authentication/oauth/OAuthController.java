@@ -64,8 +64,6 @@ public class OAuthController extends SpringActionController
 
             // openid return_to
             URLHelper return_to = new ActionURL(ReturnAction.class,getContainer());
-            request.getSession().setAttribute(GoogleOAuthProvider.class.getName() + "$return_to", null==return_to ? null : return_to);
-
             String redirect = GoogleOAuthProvider.getAuthenticationUrl(request, response, return_to);
             throw new RedirectException(redirect);
         }
