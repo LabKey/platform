@@ -255,6 +255,9 @@ authentication/src/org/labkey/authentication/ldap/LdapAuthenticationProvider.jav
 authentication/src/org/labkey/authentication/ldap/LdapController.java -text
 authentication/src/org/labkey/authentication/ldap/configure.jsp -text
 authentication/src/org/labkey/authentication/ldap/testLdap.jsp -text
+authentication/src/org/labkey/authentication/oauth/GoogleOAuthProvider.java -text
+authentication/src/org/labkey/authentication/oauth/OAuthController.java -text
+authentication/src/org/labkey/authentication/oauth/configure.jsp -text
 authentication/src/org/labkey/authentication/openid/GoogleOpenIdProvider.java -text
 authentication/src/org/labkey/authentication/openid/OpenIdController.java -text
 authentication/src/org/labkey/authentication/opensso/OpenSSOController.java -text

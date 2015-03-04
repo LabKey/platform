@@ -102,10 +102,10 @@
                     hasGoogle = true;
             if (hasGoogle)
             {
-                ActionURL toGoogle = new ActionURL("openid","redirect",ContainerManager.getRoot()).addParameter("provider","Google").addParameter("returnUrl",returnURL.getLocalURIString());
-    %><a href="<%=h(toGoogle)%>"><img class="auth-item" src="<%=getContextPath()%>/authentication/openid_google.png"></a><%
+                ActionURL toGoogle = new ActionURL("oauth","redirect",ContainerManager.getRoot()).addParameter("provider","Google").addParameter("returnUrl",returnURL.getLocalURIString());
+                %><a href="<%=h(toGoogle)%>"><img class="auth-item" src="<%=getContextPath()%>/authentication/openid_google.png"></a><%
+            }
         }
-    }
 %>
 </div>
 <script type="text/javascript">

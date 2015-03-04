@@ -27,6 +27,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.authentication.ldap.LdapController;
+import org.labkey.authentication.oauth.GoogleOAuthProvider;
+import org.labkey.authentication.oauth.OAuthController;
 import org.labkey.authentication.openid.GoogleOpenIdProvider;
 import org.labkey.authentication.openid.OpenIdController;
 import org.labkey.authentication.saml.SamlProvider;
@@ -64,13 +66,13 @@ public class AuthenticationModule extends DefaultModule
     protected void init()
     {
         addController("ldap", LdapController.class);
-        addController("openid", OpenIdController.class);
+        addController("oauth", OAuthController.class);
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_OPENID_GOOGLE, "Login using your Google account", "Authenticate using Google and OpenId.", true);
 
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
 
         if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_OPENID_GOOGLE))
-            AuthenticationManager.registerProvider(new GoogleOpenIdProvider(), Priority.Low);
+            AuthenticationManager.registerProvider(new GoogleOAuthProvider(), Priority.Low);
 
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_SAML_SERVICE_PROVIDER, "Login using SAML", "Authenticate using a SAML Identity Provider.", true);
         if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_SAML_SERVICE_PROVIDER))
