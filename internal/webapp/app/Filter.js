@@ -617,6 +617,78 @@ Ext.define('LABKEY.app.model.Filter', {
         Operators: {
             UNION: 'UNION',
             INTERSECT: 'INTERSECT'
+        },
+
+        sorters: {
+            SORT_EMPTY_FIRST: false,
+            _reA: /[^a-zA-Z]/g,
+            _reN: /[^0-9]/g,
+            /**
+             * A valid Array.sort() function that sorts an Array of strings alphanumerically. This sort is case-insensitive
+             * and only permits valid instances of string (not undefined, null, etc).
+             * @param a
+             * @param b
+             * @returns {number}
+             */
+            alphaNum : function(a, b) {
+                a = a.toLowerCase(); b = b.toLowerCase();
+                if (LABKEY.app.model.Filter.sorters.SORT_EMPTY_FIRST && (a == 'null' || b == 'null')) {
+                    var aEmpty = a == 'null'; var bEmpty = b == 'null';
+                    if (aEmpty && bEmpty) {
+                        return 0;
+                    }
+                    return aEmpty ? -1 : 1;
+                }
+                var aA = a.replace(LABKEY.app.model.Filter.sorters._reA, "");
+                var bA = b.replace(LABKEY.app.model.Filter.sorters._reA, "");
+                if (aA === bA) {
+                    var aN = parseInt(a.replace(LABKEY.app.model.Filter.sorters._reN, ""), 10);
+                    var bN = parseInt(b.replace(LABKEY.app.model.Filter.sorters._reN, ""), 10);
+                    return aN === bN ? 0 : aN > bN ? 1 : -1;
+                }
+                return aA > bA ? 1 : -1;
+            },
+            natural : function (as, bs) {
+                // http://stackoverflow.com/questions/19247495/alphanumeric-sorting-an-array-in-javascript
+                var a, b, a1, b1, i= 0, n, L,
+                        rx=/(\.\d+)|(\d+(\.\d+)?)|([^\d.]+)|(\.\D+)|(\.$)/g;
+                if (as === bs) return 0;
+                a = as.toLowerCase().match(rx);
+                b = bs.toLowerCase().match(rx);
+                if (LABKEY.app.model.Filter.sorters.SORT_EMPTY_FIRST && (a == 'null' || b == 'null')) {
+                    var aEmpty = a == 'null'; var bEmpty = b == 'null';
+                    if (aEmpty && bEmpty) {
+                        return 0;
+                    }
+                    return aEmpty ? -1 : 1;
+                }
+                L = a.length;
+                while (i < L) {
+                    if (!b[i]) return 1;
+                    a1 = a[i]; b1 = b[i++];
+                    if (a1 !== b1) {
+                        n = a1 - b1;
+                        if (!isNaN(n)) return n;
+                        return a1 > b1 ? 1 : -1;
+                    }
+                }
+                return b[i] ? -1 : 0;
+            },
+            resolveSortStrategy : function(sortStrategy) {
+                switch (sortStrategy) {
+                    case 'ALPHANUM':
+                        return LABKEY.app.model.Filter.sorters.alphaNum;
+                    case 'ALPHANUM-RANGE':
+                        return function(a, b) {
+                            return LABKEY.app.model.Filter.sorters.alphaNum(a.split('-')[0], b.split('-')[0]);
+                        };
+                    case 'NATURAL':
+                        return LABKEY.app.model.Filter.sorters.natural;
+                    case 'SERVER':
+                    default:
+                        return false;
+                }
+            }
         }
     },
 
