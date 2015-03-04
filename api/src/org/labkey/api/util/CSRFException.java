@@ -27,7 +27,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class CSRFException extends UnauthorizedException
 {
-    CSRFException()
+    public CSRFException()
     {
         this(null);
     }
