@@ -1267,7 +1267,9 @@ boxPlot.render();
  * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
  * @param {Array} [config.properties.colorRange] (Optional) The array of color values to use for the data points.
  * @param {Function} [config.properties.hoverTextFn] (Optional) The hover text to display for each data point. The parameter
-*                  to that function will be a row of data with access to all values for that row.
+ *                  to that function will be a row of data with access to all values for that row.
+ * @param {Function} [config.properties.pointClickFn] (Optional) The function to call on data point click. The parameters to
+ *                  that function will be the click event and the row of data for the selected point.
  */
 (function(){
 
@@ -1286,7 +1288,7 @@ boxPlot.render();
         {
             throw new Error("Unable to create Levey-Jennings plot, properties object not specified. "
                     + "Required: value, mean, stdDev, xTickLabel. Optional: topMargin, color, colorRange, hoverTextFn, "
-                    + "showTrendLine, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
+                    + "pointClickFn, showTrendLine, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
         }
 
         // create a sequencial index to use for the x-axis value and keep a map from that index to the tick label
@@ -1442,6 +1444,9 @@ boxPlot.render();
         }
         if (config.properties.hoverTextFn) {
             pointLayerConfig.aes.hoverText = config.properties.hoverTextFn;
+        }
+        if (config.properties.pointClickFn) {
+            pointLayerConfig.aes.pointClickFn = config.properties.pointClickFn;
         }
 
         // add some mouse over effects to highlight selected point
