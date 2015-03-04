@@ -544,7 +544,7 @@ public class IssueManager
             _map = new CustomColumnMap(map);
         }
 
-        // Valued are being posted from the admin page
+        // Values are being posted from the admin page
         public CustomColumnConfiguration(ViewContext context)
         {
             Container c = context.getContainer();
@@ -562,16 +562,32 @@ public class IssueManager
             else
                 pickListColumnNames = new HashSet<>((List<String>)pickList);
 
+            //need a better way to do this. this code assumes that permissions are listed as per string values: string1 will have permission in 0 location in the list, etc.
+            // what if string1 and string2 are inherited? then string3-string5 values are now listed in the perms.
             List<String> perms = context.getList("permissions");
+
+            int totalCustomColsWithPerms = 5;
             // Should have one for each string column (we don't support permissions on int columns yet)
-            assert perms.size() <= 5; //if custom column values are inherited from a different container, then perms.size() can be less than 5.
+            assert perms.size() <= totalCustomColsWithPerms; //if custom column values are inherited from a different container, then perms.size() can be less than 5.
             Map<String, Class<? extends Permission>> permMap = new HashMap<>();
 
-            for (int i = 0; i < perms.size(); i++)
+            int index = 0;//perms index counter
+
+            for (int i = 0; i < totalCustomColsWithPerms; i++)
             {
-                String simplePerm = perms.get(i);
-                Class<? extends Permission> perm = "admin".equals(simplePerm) ? AdminPermission.class : "insert".equals(simplePerm) ? InsertPermission.class : ReadPermission.class;
-                permMap.put("string" + (i + 1), perm);
+                String stringCustCol = "string" + (i + 1);
+                String stringCustColVal = (String) map.get(stringCustCol); //look for non-inherited custom strings (only non-inherited strings will be captured in the context map).
+
+                //if custom string is not empty
+                if(StringUtils.isNotEmpty(stringCustColVal))
+                {
+                    //get custom string column's permission, which should be listed in a list starting from index 0. For example: first non-inherited custom string (say, string3) will have it's permission value in index 0.
+                    String simplePerm = perms.get(index);
+
+                    Class<? extends Permission> perm = "admin".equals(simplePerm) ? AdminPermission.class : "insert".equals(simplePerm) ? InsertPermission.class : ReadPermission.class;
+                    permMap.put(stringCustCol, perm);
+                    index++;
+                }
             }
 
             Map<String, CustomColumn> ccMap = new HashMap<>();
