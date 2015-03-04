@@ -1292,11 +1292,11 @@ boxPlot.render();
         }
 
         // create a sequencial index to use for the x-axis value and keep a map from that index to the tick label
-        // also, pull out the meanStdDev data for the unique x-axis values
+        // also, pull out the meanStdDev data for the unique x-axis values and calculate average values for the trend line data
         var tickLabelMap = {};
         var distinctColorValues = [];
         var index = -1, xTickIndex = {};
-        var meanStdDevData = [];
+        var meanStdDevData = [], groupedTrendlineData = [];
         for (var i = 0; i < config.data.length; i++)
         {
             var row = config.data[i];
@@ -1309,8 +1309,18 @@ boxPlot.render();
             // if we are grouping x values based on the xTick property, only increment index if we have a new xTick value
             if (config.properties.xTick)
             {
-                if (xTickIndex[row[config.properties.xTick]] == undefined) {
+                var xTickValue = row[config.properties.xTick];
+                if (xTickIndex[xTickValue] == undefined) {
                     xTickIndex[row[config.properties.xTick]] = ++index;
+                    groupedTrendlineData.push({seqValue: index, sum: 0, count: 0});
+                }
+
+                // calculate average values for the trend line data (used when grouping x by unique value)
+                if (row[config.properties.value])
+                {
+                    groupedTrendlineData[index].sum += row[config.properties.value];
+                    groupedTrendlineData[index].count++;
+                    groupedTrendlineData[index][config.properties.value] = groupedTrendlineData[index].sum / groupedTrendlineData[index].count;
                 }
             }
             else {
@@ -1427,7 +1437,12 @@ boxPlot.render();
         config.layers = config.properties.disableRangeDisplay ? [] : [stdDev3Layer, stdDev2Layer, stdDev1Layer, meanLayer];
 
         if (config.properties.showTrendLine) {
-            var pathLayerConfig = { geom: new LABKEY.vis.Geom.Path({ opacity: .6, size: 2 }) };
+            var pathLayerConfig = {
+                geom: new LABKEY.vis.Geom.Path({
+                    opacity: .6,
+                    size: 2 }),
+                data: config.properties.xTick ? groupedTrendlineData : undefined // default to using the data for the plot
+            };
             config.layers.push(new LABKEY.vis.Layer(pathLayerConfig));
         }
 
