@@ -4144,6 +4144,7 @@ study/test/src/org/labkey/test/pages/studydesigncontroller/ManageStudyProductsTe
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageTreatmentsTester.java -text
 study/test/src/org/labkey/test/tests/StudyLotsOfParticipantsTest.java -text
 study/test/src/org/labkey/test/tests/StudyProtocolDesignerTest.java -text
+study/test/src/org/labkey/test/tests/StudySharedVisitsTest.java -text
 study/test/src/org/labkey/test/tests/VaccineProtocolTest.java -text
 study/test/test_study.iml -text
 study/webapp/WEB-INF/study/studyContext.xml -text
