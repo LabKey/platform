@@ -39,7 +39,9 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
     // Study folder archive with > 130,000 participants, 2 datasets, 11 visits, 3 cohorts, and 3 participants groups
     private static final File STUDY_FOLDER_ZIP = TestFileUtils.getSampleData("study/LotsOfPtidsStudy.folder.zip");
     private static final File STUDY_FOLDER_NODATA_ZIP = TestFileUtils.getSampleData("study/LotsOfPtidsStudy_NoData.folder.zip");
-    private static final File DATA_DEMOGRAPHICS = TestFileUtils.getSampleData("study/Demographics.tsv");
+    private static final File DATA_DEMOGRAPHICS1 = TestFileUtils.getSampleData("study/Demographics.tsv");
+    private static final File DATA_DEMOGRAPHICS2 = TestFileUtils.getSampleData("study/Demographics2.tsv");
+    private static final File DATA_DEMOGRAPHICS3 = TestFileUtils.getSampleData("study/Demographics3.tsv");
     private static final File DATA_RESULTS = TestFileUtils.getSampleData("study/Results.tsv");
 
     @BeforeClass
@@ -97,7 +99,9 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
 
         clickTab("Clinical and Assay Data");
         waitAndClickAndWait(Locator.linkWithText("Demographics"));
-        _listHelper.importDataFromFile(DATA_DEMOGRAPHICS);
+        _listHelper.importDataFromFile(DATA_DEMOGRAPHICS1);
+        _listHelper.importDataFromFile(DATA_DEMOGRAPHICS2);
+        _listHelper.importDataFromFile(DATA_DEMOGRAPHICS3);
 
         clickTab("Clinical and Assay Data");
         waitAndClickAndWait(Locator.linkWithText("Results"));
