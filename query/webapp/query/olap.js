@@ -717,11 +717,25 @@
         getHierarchy : function(uniqueName) {
             var level = this._cube.getByUniqueName(uniqueName), hierarchy;
 
-            if (level && level.hierarchy) {
-                hierarchy = level.hierarchy;
-            }
-            else if (level && level.dimension) {
-                hierarchy = level;
+            if (level)
+            {
+                if (level.hierarchy) {
+                    // we found a level, so pass back the hierarchy
+                    hierarchy = level.hierarchy;
+                }
+                else if (level.dimension) {
+                    // we found the hierarchy by uniqueName
+                    hierarchy = level;
+                }
+                else if (level.hierarchies) {
+                    // if we found a dimension by the unique name, see if it has an hierarchies of the same name
+                    for (var i = 0; i < level.hierarchies.length; i++) {
+                        if (uniqueName == level.hierarchies[i].uniqueName) {
+                            hierarchy = level.hierarchies[i];
+                            break;
+                        }
+                    }
+                }
             }
 
             return hierarchy;
