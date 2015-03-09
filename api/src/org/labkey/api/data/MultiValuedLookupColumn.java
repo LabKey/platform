@@ -23,9 +23,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
-* User: adam
-* Date: Sep 14, 2010
-* Time: 1:10:47 PM
+ * Special kind of lookup column that can join and display multiple values, through a junction table, instead of a
+ * single, standard foreign-key type relationship.
+ *
+ * User: adam
+ * Date: Sep 14, 2010
 */
 public class MultiValuedLookupColumn extends LookupColumn
 {

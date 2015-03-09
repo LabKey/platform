@@ -26,9 +26,12 @@ import java.util.Collections;
 import java.util.ArrayList;
 
 /**
+ * Configuration for a NestedQueryView that understands which columns should be associated with the outer and inner
+ * grids. Also tracks the URL at which a specific nested grid can be requested independently via AJAX.
+ *
  * User: jeckels
-* Date: Apr 9, 2007
-*/
+ * Date: Apr 9, 2007
+ */
 public class QueryNestingOption
 {
     private FieldKey _rowIdFieldKey;

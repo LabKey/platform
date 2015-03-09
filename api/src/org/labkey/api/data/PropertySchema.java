@@ -18,10 +18,10 @@ package org.labkey.api.data;
 import org.labkey.api.data.dialect.SqlDialect;
 
 /**
-* User: adam
-* Date: 10/8/13
-* Time: 10:57 PM
-*/
+ * Convenience wrapper around the "prop" DbSchema.
+ * User: adam
+ * Date: 10/8/13
+ */
 public class PropertySchema
 {
     private static final PropertySchema _instance = new PropertySchema();

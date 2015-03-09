@@ -25,9 +25,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
+ * A PropertyStore that encrypts its contents when writing to the database, and automatically decrypts on read. Uses
+ * the MasterEncryptionKey, stored as a property in labkey.xml (or its equivalent deployment descriptor).
+ *
  * User: adam
  * Date: 10/11/13
- * Time: 4:34 PM
  */
 public class EncryptedPropertyStore extends AbstractPropertyStore
 {

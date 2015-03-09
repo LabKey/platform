@@ -28,6 +28,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Used to render columns that persist their values into two separate database columns - the raw value, and a separate
+ * String column that indicates if the value is considered out-of-range (OOR) or not. Similar to MVDisplayColumn, although
+ * OOR indicators can be arbitrary strings instead of a discrete list of values.
+ *
+ * Rendered as the raw value prefixed by the OOR indicator (if any).
+ *
  * User: jeckels
  * Date: Jul 30, 2007
  */

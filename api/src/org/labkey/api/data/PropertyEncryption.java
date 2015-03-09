@@ -25,16 +25,15 @@ import java.util.Map;
 import java.util.zip.DataFormatException;
 
 /**
-* User: adam
-* Date: 10/24/13
-* Time: 3:20 PM
-*/
+ * Encryption techniques that are available for property stores. Do not change the serialized names or implementations
+ * of these algorithms once they are in use.
+ * User: adam
+ * Date: 10/24/13
+ */
 
-// Encryption techniques that are available for property stores. Do not change the serialized names or implementations
-// of these algorithms once they are in use.
 public enum PropertyEncryption
 {
-    // Just a marker enum for unencrypted property store
+    /** Just a marker enum for unencrypted property store */
     None
         {
             @NotNull
@@ -58,7 +57,7 @@ public enum PropertyEncryption
                 return "None";
             }
         },
-    // Not real encryption either, just for testing
+    /** Not real encryption either, just for testing */
     Test
         {
             @NotNull
@@ -89,7 +88,7 @@ public enum PropertyEncryption
                 return "Test";
             }
         },
-    // No master encryption key was specified in labkey.xml, so throw ConfigurationException
+    /** No master encryption key was specified in labkey.xml, so throw ConfigurationException */
     NoKey
         {
             @NotNull

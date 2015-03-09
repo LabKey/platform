@@ -27,7 +27,7 @@ import java.util.Map;
 
 /**
  * Shows a button with a drop-down arrow. When clicked, the button renders a subpanel
- * with a tabbed UI, similar to a ribbon bar in Office
+ * with a tabbed UI, similar to a ribbon bar in Office.
  * User: jeckels
  * Date: Dec 11, 2009
  */

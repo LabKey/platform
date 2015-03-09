@@ -26,9 +26,16 @@ import org.labkey.api.view.GridView;
 import java.util.List;
 
 /**
-* User: jeckels
-* Date: May 1, 2012
-*/
+ * A QueryView variant that renders nested grids. Some of the columns (typically those one one side of a foreign key
+ * relationship) are shown in the outer grid, while other columns are rendered in a separate grid that's associated
+ * with the outer set of rows. There are many nested grids.
+ *
+ * Among other things, ensures that the ResultSet is sorting such that all of the nested grid rows are returned together
+ * so that they are correctly affiliated with the correct outer grid row.
+ *
+ * User: jeckels
+ * Date: May 1, 2012
+ */
 public abstract class NestableQueryView extends QueryView
 {
     protected QueryNestingOption _selectedNestingOption;

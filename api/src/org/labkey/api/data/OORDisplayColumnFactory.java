@@ -21,6 +21,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.AliasedColumn;
 
 /**
+ * Factory for creating OutOfRangeDisplayColumns. Connects the separate indicator and raw value columns together.
+ *
  * User: jeckels
  * Date: Aug 1, 2007
  */

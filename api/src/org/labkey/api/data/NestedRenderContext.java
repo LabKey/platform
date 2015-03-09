@@ -33,9 +33,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Constructs the right context for showing a NestedQueryView, including translating sorts and filters to operate
+ * on the right columns (and in the right sequence for sorts).
+ *
  * User: jeckels
-* Date: Apr 11, 2007
-*/
+ * Date: Apr 11, 2007
+ */
 public class NestedRenderContext extends RenderContext
 {
     private QueryNestingOption _nestingOption;

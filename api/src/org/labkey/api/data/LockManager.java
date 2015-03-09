@@ -54,6 +54,7 @@ public class LockManager<T>
 
     public ReentrantLock getLock(@NotNull T instance)
     {
+        // Choose the lock to use based on the object's hashCode()
         int lockIndex = (0x7fff & instance.hashCode()) % _locks.size();
         return _locks.get(lockIndex);
     }

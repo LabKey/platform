@@ -24,6 +24,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Common methods for fields/properties that may be referred to by various names in incoming data. Useful so that
+ * can resolve them in a consistent way across different data types.
+ *
  * User: jeckels
  * Date: Sep 17, 2010
  */

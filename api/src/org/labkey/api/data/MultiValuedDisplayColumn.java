@@ -25,18 +25,16 @@ import java.util.List;
 import java.util.Set;
 
 /**
-* User: adam
-* Date: Sep 14, 2010
-* Time: 1:09:32 PM
-*/
+ * Wraps any DisplayColumn and causes it to render each value separately. Often used in conjunction with
+ * MultiValuedLookupColumn
+ *
+ * User: adam
+ * Date: Sep 14, 2010
+ */
 
-// Wraps any DisplayColumn and causes it to render each value separately
 public class MultiValuedDisplayColumn extends DisplayColumnDecorator
 {
     private final Set<FieldKey> _fieldKeys = new HashSet<>();
-
-//    private ColumnInfo _junctionCol;
-//    private DisplayColumn _junctionDisplayCol;
 
     public MultiValuedDisplayColumn(DisplayColumn dc)
     {
@@ -48,10 +46,6 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
     {
         super(dc);
 
-//        _junctionCol = getJunctionColumn(dc);
-//        if (_junctionCol != null)
-//            _junctionDisplayCol = new DataColumn(_junctionCol);
-
         addQueryFieldKeys(_fieldKeys);
         assert _fieldKeys.contains(getColumnInfo().getFieldKey());
         if (boundColumnIsNotMultiValued)
@@ -60,26 +54,6 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
             // and iterate through individual values
             _fieldKeys.remove(getColumnInfo().getFieldKey());
         }
-    }
-
-    private static ColumnInfo getJunctionColumn(DisplayColumn dc)
-    {
-        ColumnInfo colInfo = dc.getColumnInfo();
-        if (colInfo.getFk() instanceof MultiValuedForeignKey)
-        {
-            MultiValuedForeignKey mvfk = (MultiValuedForeignKey)colInfo.getFk();
-            ColumnInfo junctionCol = mvfk.createJunctionLookupColumn(colInfo);
-            return junctionCol;
-        }
-        return null;
-    }
-
-    @Override
-    public void addQueryFieldKeys(Set<FieldKey> keys)
-    {
-        super.addQueryFieldKeys(keys);
-//        if (_junctionDisplayCol != null)
-//            _junctionDisplayCol.addQueryFieldKeys(_fieldKeys);
     }
 
     @Override
@@ -174,16 +148,10 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
     {
         List<Object> values = new LinkedList<>();
 
-//        // UNDONE: Use junction column as input value instead of wrapped column
-//        DisplayColumn d = _column;
-//        if (_junctionDisplayCol != null)
-//            d = _junctionDisplayCol;
-
         MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
         while (mvCtx.next())
         {
             Object v = super.getInputValue(mvCtx);
-            //Object v = d.getInputValue(mvCtx);
             values.add(v);
         }
 
