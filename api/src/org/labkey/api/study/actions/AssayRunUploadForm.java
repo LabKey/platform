@@ -64,6 +64,7 @@ import java.net.BindException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -428,15 +429,29 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         DefaultValueService.get().clearDefaultValues(getContainer(), domain, getUser());
     }
 
+    // Issue 22698 - don't retain uploaded files as default values
+    private void stripFileProperties(Map<DomainProperty, Object> values)
+    {
+        for (DomainProperty prop: values.keySet())
+        {
+            if (prop.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK)
+            {
+                values.put(prop, null);
+            }
+        }
+    }
+
     public void saveDefaultBatchValues() throws ExperimentException
     {
         Map<DomainProperty, Object> objectMap = new HashMap<DomainProperty, Object>(getBatchProperties());
+        stripFileProperties(objectMap);
         DefaultValueService.get().setDefaultValues(getContainer(), objectMap, getUser());
     }
 
     public void saveDefaultRunValues() throws ExperimentException
     {
         Map<DomainProperty, Object> objectMap = new HashMap<DomainProperty, Object>(getRunProperties());
+        stripFileProperties(objectMap);
         DefaultValueService.get().setDefaultValues(getContainer(), objectMap, getUser());
     }
 
