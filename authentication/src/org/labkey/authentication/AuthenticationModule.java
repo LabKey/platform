@@ -25,6 +25,8 @@ import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.authentication.duo.DuoController;
+import org.labkey.authentication.duo.DuoProvider;
 import org.labkey.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.authentication.ldap.LdapController;
 import org.labkey.authentication.oauth.GoogleOAuthProvider;
@@ -39,6 +41,7 @@ public class AuthenticationModule extends DefaultModule
     private static Logger _log = Logger.getLogger(AuthenticationModule.class);
     public static final String EXPERIMENTAL_OPENID_GOOGLE = "experimental-openid-google";
     public static final String EXPERIMENTAL_SAML_SERVICE_PROVIDER = "experimental-saml-sp";
+    public static final String EXPERIMENTAL_DUO_TWO_FACTOR_AUTHENTICATION = "experimental-duo";
 
     public String getName()
     {
@@ -75,6 +78,13 @@ public class AuthenticationModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_SAML_SERVICE_PROVIDER, "Login using SAML", "Authenticate using a SAML Identity Provider.", true);
         if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_SAML_SERVICE_PROVIDER))
             AuthenticationManager.registerProvider(new SamlProvider(), Priority.Low);
+
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_DUO_TWO_FACTOR_AUTHENTICATION, "Require 2 factor authentication", "Require entry of second key sent by Duo directly to user.", true);
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DUO_TWO_FACTOR_AUTHENTICATION))
+        {
+            addController("duo", DuoController.class);
+            AuthenticationManager.registerProvider(new DuoProvider(), Priority.Low);
+        }
     }
 
     public void doStartup(ModuleContext moduleContext)
