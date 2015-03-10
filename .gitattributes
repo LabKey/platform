@@ -1,4 +1,9 @@
 * text=auto !eol
+api/src/com/duosecurity/duoweb/Base64.java -text
+api/src/com/duosecurity/duoweb/DuoWeb.java -text
+api/src/com/duosecurity/duoweb/DuoWebException.java -text
+api/src/com/duosecurity/duoweb/LICENSE -text
+api/src/com/duosecurity/duoweb/Util.java -text
 api/src/com/onelogin/AccountSettings.java -text
 api/src/com/onelogin/AppSettings.java -text
 api/src/com/onelogin/LICENSE -text
