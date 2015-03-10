@@ -54,6 +54,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
@@ -3663,10 +3664,47 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ManageRemoteConnectionsAction extends SimpleViewAction<QueryForm>
+
+    public static class ResetRemoteConnectionsForm
     {
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        private boolean _reset;
+
+        public boolean isReset()
+        {
+            return _reset;
+        }
+
+        public void setReset(boolean reset)
+        {
+            _reset = reset;
+        }
+    }
+
+    @CSRF
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ManageRemoteConnectionsAction extends FormViewAction<ResetRemoteConnectionsForm>
+    {
+        @Override
+        public void validateCommand(ResetRemoteConnectionsForm target, Errors errors) {}
+
+        @Override
+        public boolean handlePost(ResetRemoteConnectionsForm form, BindException errors) throws Exception
+        {
+            if (form.isReset())
+            {
+                PropertyManager.getEncryptedStore().deletePropertySet(getContainer(), RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY);
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ResetRemoteConnectionsForm queryForm)
+        {
+            return new ActionURL(ManageRemoteConnectionsAction.class, getContainer());
+        }
+
+        @Override
+        public ModelAndView getView(ResetRemoteConnectionsForm queryForm, boolean reshow, BindException errors) throws Exception
         {
             Map<String, String> connectionMap;
             try
