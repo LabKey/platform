@@ -101,7 +101,7 @@ public class Aggregate
                     @Override
                     public JdbcType returnType(JdbcType jdbcType)
                     {
-                        if (jdbcType.isNumeric() || jdbcType.isDateOrTime() || jdbcType.isText())
+                        if (jdbcType.isNumeric() || jdbcType.isDateOrTime() || jdbcType.isText() || jdbcType.equals(JdbcType.BINARY))
                             return jdbcType;
 
                         return null;
@@ -112,7 +112,7 @@ public class Aggregate
                     @Override
                     public JdbcType returnType(JdbcType jdbcType)
                     {
-                        if (jdbcType.isNumeric() || jdbcType.isDateOrTime() || jdbcType.isText())
+                        if (jdbcType.isNumeric() || jdbcType.isDateOrTime() || jdbcType.isText() || jdbcType.equals(JdbcType.BINARY))
                             return jdbcType;
 
                         return null;

@@ -121,10 +121,7 @@ public interface QueryUpdateService
      * @param container The container in which the data should exist.
      * @param rows The row values provided using a DataIterator.
      * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers.
-     * @return The row values after insert. If the rows have an automatically-assigned
-     * primary key value(s), those should be added to the returned map. However, the
-     * implementation should not completely refetch the row data. The caller will use
-     * <code>getRows()</code> to refetch if that behavior is necessary.
+     * @return The number of rows imported
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
     public int importRows(User user, Container container, DataIteratorBuilder rows,
@@ -139,10 +136,7 @@ public interface QueryUpdateService
      * @param rows The row values provided using a DataIterator.
      * @param configParameters
      * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers.
-     * @return The row values after insert. If the rows have an automatically-assigned
-     * primary key value(s), those should be added to the returned map. However, the
-     * implementation should not completely refetch the row data. The caller will use
-     * <code>getRows()</code> to refetch if that behavior is necessary.
+     * @return The number of affected rows
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
     public int mergeRows(User user, Container container, DataIteratorBuilder rows,

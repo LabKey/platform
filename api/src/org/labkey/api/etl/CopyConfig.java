@@ -39,6 +39,7 @@ public class CopyConfig
     protected SchemaKey _sourceSchema;
     protected String _sourceQuery;
     protected String _sourceTimestampColumnName = null;
+    protected String _sourceRunColumnName = null;
     protected SourceOptions _sourceOptions = null;
     protected boolean _useSource = true;
     protected boolean _useFilterStrategy = true;
@@ -146,6 +147,16 @@ public class CopyConfig
     public void setSourceTimestampColumnName(String sourceTimestampColumnName)
     {
         this._sourceTimestampColumnName = sourceTimestampColumnName;
+    }
+
+    public String getSourceRunColumnName()
+    {
+        return _sourceRunColumnName;
+    }
+
+    public void setSourceRunColumnName(String sourceRunColumnName)
+    {
+        _sourceRunColumnName = sourceRunColumnName;
     }
 
     public SchemaKey getTargetSchema()

@@ -43,7 +43,7 @@ public class SystemProperty
     public SystemProperty(String propertyURI, PropertyType type, String name)
     {
         if (_registered)
-            throw new IllegalStateException("System properties can only be registered at stDartup");
+            throw new IllegalStateException("System properties can only be registered at startup");
         if (_systemProperties.containsKey(propertyURI))
             throw new IllegalArgumentException("System property " + propertyURI + " is already registered.");
         _systemProperties.put(propertyURI, this);
