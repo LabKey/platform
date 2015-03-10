@@ -47,6 +47,7 @@
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromPath("clientapi/ext3"));
+        resources.add(ClientDependency.fromPath("FileUploadField.js"));
         return resources;
     }
 
@@ -108,7 +109,7 @@
     }
 %>
 
-<labkey:form onsubmit="return validateKey();" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="post">
+<labkey:form onsubmit="return validateKey();" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="post" id="sampleSetUploadForm">
 <labkey:errors />
     <p>If you have an existing sample set definition in the XAR file format (a .xar or .xar.xml file), you can
         <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getContainer()) %>">upload the XAR file directly</a>
@@ -158,7 +159,7 @@
                 <br>
             <% } %>
             <br>
-            <textarea id="textbox" onchange="updateIds(this)" rows=25 cols="120" style="width: 100%;" name="data" wrap="off"><%=h(form.getData())%></textarea>
+            <textarea id="textbox" onchange="updateIds(this.value.trim())" rows=25 cols="120" style="width: 100%;" name="data" wrap="off"><%=h(form.getData())%></textarea>
             <script type="text/javascript">
                 Ext.EventManager.on('textbox', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
             </script>
@@ -240,8 +241,9 @@
     </tr>
 
 </table>
-
-<div style="display:none" id="uploading"><blink>Please wait while data is uploaded.</blink></div>
+<input type="hidden" name="tsvData" value=""/>
+<input type="hidden" name="filepath" value=""/>
+<div style="display:none" id="uploading">Please wait while data is uploaded.</div>
 </labkey:form>
 <script type="text/javascript">
 var fields = [];
@@ -293,12 +295,11 @@ function updateIdSelect(select, header, allowBlank)
     if (select.id in {idCol1:true, idCol2:true, idCol3:true})
         select.disabled = nameColIndex != -1;
 }
-function updateIds(textbox)
+function updateIds(txt)
 {
-    var txt = textbox.value.trim();
-    var rows = txt.split("\n");
+    var rows = txt.trim().split("\n");
     header = [];
-    fields = new Array();
+    fields = [];
     if (rows.length >= 2)
     {
         for (var i = 0; i < rows.length; i++)
@@ -328,7 +329,7 @@ function clearValues()
 {
     var textbox = document.getElementById("textbox");
     textbox.value = "";
-    updateIds(textbox);
+    updateIds(textbox.value);
 }
 
 function validateKey()
@@ -352,13 +353,6 @@ function validateKey()
         }
     <% } %>
 
-    var text = document.getElementById("textbox");
-    updateIds(text);
-    if (text.value.match("/^\\s*\$/"))
-    {
-        alert("Please paste data in text field.");
-        return false;
-    }
     if (fields == null || fields.length < 2)
     {
         alert("Please paste data with at least a header and one row of data.");
@@ -482,5 +476,70 @@ function validateKey()
     document.getElementById("uploading").style.display = "";
     return true;
 }
-updateIds(document.getElementById("textbox"));
+updateIds(document.getElementById("textbox").value);
+
+</script>
+<form id="upload-run-form" enctype="multipart/form-data" method="POST">
+    <div id="upload-run-button"></div>
+</form>
+<script type="text/javascript">
+    // Optional - specify a protocolId so that the Exp.Data object is assigned the related LSID namespace.
+    var url = LABKEY.ActionURL.buildURL("assay", "assayFileUpload", LABKEY.ActionURL.getContainer());
+    Ext.onReady(function() {
+        var form = new Ext.form.BasicForm(
+                Ext.get("upload-run-form"), {
+                    fileUpload: true,
+                    frame: false,
+                    url: url,
+                    listeners: {
+                        actioncomplete : function (form, action) {
+
+                            var data = new LABKEY.Exp.Data(action.result);
+
+                            var filepath = action.result.absolutePath;
+
+                            data.getContent({
+                                scope : this,
+                                deleteFile: true,
+                                //format : 'jsonTSV',
+                                success : function(content, format){
+
+                                    // update the fields (needs to happen first because it sets the fields variable)
+                                    updateIds(content.trim());
+
+                                    // put data back into tsv format (as right now it's comma seperated)
+                                    var textData = document.forms['sampleSetUploadForm'].elements['data'].value;
+                                    if (textData == "" && fields != null)
+                                    {
+                                        for (var i = 0; i < fields.length; i++)
+                                            textData += fields[i].join("\t") + "\n";
+
+                                        document.forms['sampleSetUploadForm'].elements['tsvData'].value = textData;
+                                        document.forms['sampleSetUploadForm'].elements['filepath'].value = filepath;
+                                    }
+                                },
+                                failure : function(){
+
+                                }
+                            });
+                        },
+                        actionfailed: function (form, action) {
+                            alert('Upload failed!');
+                        }
+                    }
+                });
+
+        var uploadField = new Ext.form.FileUploadField({
+            id: "upload-run-field",
+            renderTo: "upload-run-button",
+            buttonText: "Upload Sample Set TSV File...",
+            buttonOnly: true,
+            buttonCfg: { cls: "labkey-button" },
+            listeners: {
+                "fileselected": function (fb, v) {
+                    form.submit();
+                }
+            }
+        });
+    });
 </script>

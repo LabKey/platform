@@ -2746,79 +2746,93 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermissionClass(UpdatePermission.class)
-    public class ShowUploadMaterialsAction extends SimpleViewAction<UploadMaterialSetForm>
+    public class ShowUploadMaterialsAction extends FormViewAction<UploadMaterialSetForm>
     {
         ExpSampleSet _ss;
+        ExpSampleSet _newss;
 
         @Override
-        public void validate(UploadMaterialSetForm form, BindException errors)
+        public void validateCommand(UploadMaterialSetForm form, Errors errors)
         {
-            if (StringUtils.isNotEmpty(form.getName()))
-            {
-                String materialSourceLsid = ExperimentService.get().getSampleSetLsid(form.getName(), getContainer()).toString();
-                _ss = ExperimentService.get().getSampleSet(materialSourceLsid);
-            }
+            if (StringUtils.isEmpty(form.getName()) || form.getName() == null)
+                errors.reject(ERROR_MSG, "You must supply a name for the sample set");
+
+            if (form.isImportMoreSamples() && form.getInsertUpdateChoice() == null)
+                errors.reject(ERROR_MSG, "Please select how to deal with duplicates.");
+
+            // 11138: IAE in org.labkey.api.reader.AbstractTabLoader.<init>()
+            if (StringUtils.isEmpty(form.getData()) && StringUtils.isEmpty(form.getTsvData()))
+                errors.reject(ERROR_MSG, "Please paste data into the text field or upload a tsv.");
         }
 
-        public ModelAndView getView(UploadMaterialSetForm form, BindException errors) throws ServletException
+        @Override
+        public ModelAndView getView(UploadMaterialSetForm form, boolean reshow, BindException errors) throws Exception
         {
-            if (isPost())
-            {
-                if (StringUtils.isEmpty(form.getName()) || form.getName() == null)
-                {
-                    errors.reject(ERROR_MSG, "You must supply a name for the sample set");
-                }
-                else
-                {
-                    if (!form.isImportMoreSamples() && null != _ss)
-                    {
-                        errors.addError(new FormattedError("A sample set with that name already exists.  If you would like to import samples that set, go here:  " +
-                                "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>"));
-                    }
-                    if (form.isImportMoreSamples() && form.getInsertUpdateChoice() == null)
-                    {
-                        errors.reject(ERROR_MSG, "Please select how to deal with duplicates.");
-                    }
-                }
-
-                // 11138: IAE in org.labkey.api.reader.AbstractTabLoader.<init>()
-                if (StringUtils.isEmpty(form.getData()))
-                {
-                    errors.reject(ERROR_MSG, "Please paste data into the text field.");
-                }
-
-                if (errors.getErrorCount() == 0)
-                {
-                    try
-                    {
-                        UploadSamplesHelper helper = new UploadSamplesHelper(form);
-                        Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
-                        MaterialSource newSource = pair.first;
-
-                        ExpSampleSet activeSampleSet = ExperimentService.get().lookupActiveSampleSet(getContainer());
-						ExpSampleSet newSampleSet = ExperimentService.get().getSampleSet(newSource.getRowId());
-
-                        if (activeSampleSet == null)
-                        {
-                            ExperimentService.get().setActiveSampleSet(getContainer(), newSampleSet);
-                        }
-                        throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleSetURL(newSampleSet));
-                    }
-                    catch (ExperimentException e)
-                    {
-                        errors.reject(ERROR_MSG, e.getMessage());
-                    }
-                    catch (ValidationException e)
-                    {
-                        errors.reject(ERROR_MSG, e.getMessage());
-                    }
-                    catch (IOException e)
-                    {
-                        errors.reject(ERROR_MSG, e.getMessage());
-                    }
-                }
-            }
             return new JspView<>("/org/labkey/experiment/uploadMaterials.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(UploadMaterialSetForm form, BindException errors) throws Exception
+        {
+            String materialSourceLsid = ExperimentService.get().getSampleSetLsid(form.getName(), getContainer()).toString();
+            _ss = ExperimentService.get().getSampleSet(materialSourceLsid);
+
+            // TODO: how to get this FormattedError into the valdiateCommand?
+            if (!form.isImportMoreSamples() && null != _ss)
+            {
+                errors.addError(new FormattedError("A sample set with that name already exists.  If you would like to import samples that set, go here:  " +
+                        "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>"));
+            }
+
+            if (!errors.hasErrors())
+            {
+                try
+                {
+                    UploadSamplesHelper helper = new UploadSamplesHelper(form);
+                    Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
+                    MaterialSource newSource = pair.first;
+
+                    ExpSampleSet activeSampleSet = ExperimentService.get().lookupActiveSampleSet(getContainer());
+                    ExpSampleSet newSampleSet = ExperimentService.get().getSampleSet(newSource.getRowId());
+
+                    if (activeSampleSet == null)
+                    {
+                        ExperimentService.get().setActiveSampleSet(getContainer(), newSampleSet);
+                    }
+                    _newss = newSampleSet;
+                }
+                catch (ExperimentException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                }
+                catch (ValidationException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                }
+                catch (IOException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                }
+
+            }
+
+            // NOTE: should we try to delete the file if there was an error? (I think so)
+            if (form.getFilepath() != null)
+            {
+                File f = new File(form.getFilepath());
+                f.delete();
+            }
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public URLHelper getSuccessURL(UploadMaterialSetForm uploadMaterialSetForm)
+        {
+            if (_newss != null)
+                return ExperimentUrlsImpl.get().getShowSampleSetURL(_newss);
+            // NOTE: raise an error here (because if you did get here you should already have hit an error)?
+            return null;
         }
 
         public NavTree appendNavTrail(NavTree root)

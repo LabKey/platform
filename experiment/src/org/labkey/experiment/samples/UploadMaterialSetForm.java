@@ -36,11 +36,13 @@ public class UploadMaterialSetForm extends ViewForm
     private boolean createNewSampleSet = true;
     private boolean createNewColumnsOnExistingSampleSet = false;
     private String data;
+    private String tsvData;
     private int idColumn1 = -1;
     private int idColumn2 = -1;
     private int idColumn3 = -1;
     private int parentColumn = -1;
     private InsertUpdateChoice insertUpdateChoice;
+    private String filepath;
 
     private DataLoader _loader;
 
@@ -57,6 +59,26 @@ public class UploadMaterialSetForm extends ViewForm
 
         /** Update an existing row.  If the row doesn't exist, throw an error. */
         updateOnly,
+    }
+
+    public String getTsvData()
+    {
+        return tsvData;
+    }
+
+    public void setTsvData(String tsvData)
+    {
+        this.tsvData = tsvData;
+    }
+
+    public String getFilepath()
+    {
+        return filepath;
+    }
+
+    public void setFilepath(String filepath)
+    {
+        this.filepath = filepath;
     }
 
     public void setName(String name)
@@ -126,7 +148,11 @@ public class UploadMaterialSetForm extends ViewForm
             TabLoader tabLoader = null;
             try
             {
-                tabLoader = new TabLoader(data, true);
+                // NOTE: consider raising runtime exception if both are null (and removing from try block?)
+                if (data != null)
+                    tabLoader = new TabLoader(data, true);
+                else if (tsvData != null)
+                    tabLoader = new TabLoader(tsvData, true);
                 tabLoader.setThrowOnErrors(true);
                 tabLoader.setScanAheadLineCount(200);
             }
