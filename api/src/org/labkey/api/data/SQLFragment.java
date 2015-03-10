@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.JdbcUtil;
@@ -35,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: Matthew
@@ -74,12 +74,12 @@ public class SQLFragment implements Appendable, CharSequence
         private String token(String name)
         {
             if (token == null)
-                token = "/*${cte \u0002" + name + "\u0003}*/";
+                token = "/*${cte " + name + "}*/";
             return token;
         }
 
         final String name;
-        final Set<String> tokens = new CaseInsensitiveHashSet();
+        final Set<String> tokens = new TreeSet<>();
         SQLFragment sqlf;
         String token;
     }
