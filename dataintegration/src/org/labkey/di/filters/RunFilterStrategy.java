@@ -24,17 +24,19 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.etl.CopyConfig;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.pipeline.TransformConfiguration;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.steps.StepMeta;
+import org.labkey.etl.xml.DeletedRowsSourceObjectType;
 import org.labkey.etl.xml.FilterType;
 
 import java.util.Arrays;
@@ -42,16 +44,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.di.DataIntegrationQuerySchema.Columns;
+
 /**
  * User: matthew
  * Date: 5/13/13
  * Time: 1:12 PM
  */
-public class RunFilterStrategy implements FilterStrategy
+public class RunFilterStrategy extends FilterStrategyImpl
 {
-    final TransformJobContext _context;
-    final CopyConfig _config;
-
     SchemaKey _runTableSchema;
     String _runTableName;
     TableInfo _runsTable;
@@ -61,14 +62,13 @@ public class RunFilterStrategy implements FilterStrategy
     TableInfo _sourceTable;
     String _fkDefaultColumnName = null;
     ColumnInfo _sourceFkCol;
+    ColumnInfo _deletedFkCol;
 
 
-    public RunFilterStrategy(TransformJobContext context, StepMeta stepMeta, SchemaKey runTableSchema, String runTableName, String pkRunColumnName, String fkRunColumnName)
+
+    public RunFilterStrategy(TransformJobContext context, StepMeta stepMeta, SchemaKey runTableSchema, String runTableName, String pkRunColumnName, String fkRunColumnName, DeletedRowsSourceObjectType deletedRowsSource)
     {
-        if (!(stepMeta instanceof CopyConfig))
-            throw new IllegalArgumentException(this.getClass().getName() + " is not compatible with " + stepMeta.getClass().getName());
-        _context = context;
-        _config = (CopyConfig)stepMeta;
+        super(stepMeta, context, deletedRowsSource);
         _runTableSchema = runTableSchema;
         _runTableName = runTableName;
         _pkColumnName = pkRunColumnName;
@@ -78,14 +78,14 @@ public class RunFilterStrategy implements FilterStrategy
 
     public RunFilterStrategy(TransformJobContext context, StepMeta stepMeta, Factory f)
     {
-        this(context, stepMeta, f._runTableSchema, f._runTableName, f._pkColumnName, f._fkColumnName);
+        this(context, stepMeta, f._runTableSchema, f._runTableName, f._pkColumnName, f._fkColumnName, f._deletedRowsSource);
     }
 
 
-    private void init()
+    @Override
+    protected void init()
     {
-        if (null != _runPkCol)
-            return;
+        super.init();
 
         SchemaKey runSchemaKey = null!=_runTableSchema ? _runTableSchema : _config.getSourceSchema();
         QuerySchema runSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), runSchemaKey);
@@ -110,27 +110,50 @@ public class RunFilterStrategy implements FilterStrategy
             if (null == _sourceTable)
                 throw new IllegalArgumentException("Table not found: " + _config.getSourceQuery());
 
-            String runColumnName = _fkDefaultColumnName; // TODO StringUtils.defaultString(_config...)
+            String runColumnName = StringUtils.defaultString(_config.getSourceRunColumnName(), _fkDefaultColumnName);
+            runColumnName = StringUtils.defaultString(runColumnName, Columns.TransformRunId.getColumnName());
             _sourceFkCol = _sourceTable.getColumn(runColumnName);
             if (null == _sourceFkCol)
                 throw new IllegalArgumentException("Column not found: " + _config.getSourceQuery() + "." + runColumnName);
         }
+        initDeletedRowsSource();
+        _isInit = true;
     }
 
+    @Override
+    protected void initDeletedRowsSource()
+    {
+        if (null != _deletedRowsSource)
+        {
+            super.initDeletedRowsSource();
+
+            String runColumnName = StringUtils.defaultString(_deletedRowsSource.getRunColumnName(), _sourceFkCol.getColumnName());
+            runColumnName =  StringUtils.defaultString(runColumnName, _fkDefaultColumnName);
+            runColumnName =  StringUtils.defaultString(runColumnName, Columns.TransformRunId.getColumnName());
+            _deletedFkCol = _deletedRowsTinfo.getColumn(runColumnName);
+            if (null == _deletedFkCol)
+                throw new ConfigurationException("Column not found: " + _deletedRowsTinfo.getName() + "." + runColumnName);
+        }
+    }
 
     @Override
     public boolean hasWork()
     {
         init();
 
-        return null != findNextRunId();
+        return null != findNextRunId(false) || hasDeleteWork();
+    }
+
+    private boolean hasDeleteWork()
+    {
+        return (null != _deletedRowsSource && null != findNextRunId(true));
     }
 
 
-    private Integer findNextRunId()
+    private Integer findNextRunId(boolean deleting)
     {
         SimpleFilter f = new SimpleFilter();
-        Integer lastRunId = getLastSuccessfulRunIdJSON();
+        Integer lastRunId = getLastSuccessfulRunIdJSON(deleting);
         if (null != lastRunId)
             f.addCondition(_runPkCol.getFieldKey(), lastRunId, CompareType.GT);
 
@@ -147,58 +170,50 @@ public class RunFilterStrategy implements FilterStrategy
 
 
     @Override
-    public SimpleFilter getFilter(VariableMap variables)
+    public SimpleFilter getFilter(VariableMap variables, boolean deleting)
     {
         init();
 
         Integer nextRunId;
-        Object v = variables.get(TransformProperty.IncrementalRunId.getPropertyDescriptor().getName());
+        Object v = variables.get(getRunPropertyDescriptor(deleting).getName());
+        // The incremental run id is saved at global scope. We shouldn't increment it for each step the ETL
         Boolean ranStep1 = (Boolean)variables.get(TransformProperty.RanStep1);
-        if (v instanceof Integer && ranStep1)
+        if (v instanceof Integer && ranStep1 && !deleting)
         {
             nextRunId = (Integer)v;
         }
         else
         {
-            nextRunId = findNextRunId();
-            variables.put(TransformProperty.IncrementalRunId.getPropertyDescriptor(), nextRunId, VariableMap.Scope.global);
-            variables.put(TransformProperty.RanStep1, true, VariableMap.Scope.global);
+            nextRunId = findNextRunId(deleting);
+            variables.put(getRunPropertyDescriptor(deleting), nextRunId, VariableMap.Scope.global);
+            if (!deleting)
+                variables.put(TransformProperty.RanStep1, true, VariableMap.Scope.global);
         }
 
         if (null != nextRunId)
         {
-            FieldKey sourceField = _config.isUseSource() ? _sourceFkCol.getFieldKey() : FieldKey.fromString("filterRunId");
+            FieldKey sourceField;
+            if (deleting)
+                sourceField = _deletedFkCol.getFieldKey();
+            else sourceField = _config.isUseSource() ? _sourceFkCol.getFieldKey() : FieldKey.fromString("filterRunId");
             return new SimpleFilter(sourceField, nextRunId, CompareType.EQUAL);
         }
         else
             return new SimpleFilter(new SimpleFilter.FalseClause());
     }
 
-
-    Integer getLastSuccessfulRunIdExp()
+    private PropertyDescriptor getRunPropertyDescriptor(boolean deleting)
     {
-        // get the experiment run for the last successfully run transform for this configuration
-        Integer expRunId = TransformManager.get().getLastSuccessfulTransformExpRun(_context.getTransformId(), _context.getTransformVersion());
-        if (null != expRunId)
-        {
-            VariableMap map = TransformManager.get().getVariableMapForTransformJob(expRunId);
-            if (null != map)
-            {
-                Object o = map.get(TransformProperty.IncrementalRunId.getPropertyDescriptor().getName());
-                if (!(o instanceof Number))
-                    return null;
-                return ((Number)o).intValue();
-            }
-        }
-        return null;
+        if (deleting)
+            return TransformProperty.DeletedIncrementalRunId.getPropertyDescriptor();
+        else return TransformProperty.IncrementalRunId.getPropertyDescriptor();
     }
 
-
-    Integer getLastSuccessfulRunIdJSON()
+    Integer getLastSuccessfulRunIdJSON(boolean deleting)
     {
         TransformConfiguration cfg = TransformManager.get().getTransformConfiguration(_context.getContainer(), _context.getJobDescriptor());
         JSONObject state = cfg.getJsonState();
-        String propertyName = TransformProperty.IncrementalRunId.getPropertyDescriptor().getName();
+        String propertyName = getRunPropertyDescriptor(deleting).getName();
         Object o = state.has(propertyName) ? state.get(propertyName) : null;
         if (null == o || (o instanceof String && StringUtils.isEmpty((String)o)))
             return null;
@@ -212,6 +227,7 @@ public class RunFilterStrategy implements FilterStrategy
         private final String _runTableName;
         private final String _pkColumnName;
         private final String _fkColumnName;
+        private final DeletedRowsSourceObjectType _deletedRowsSource;
 
         public Factory(FilterType ft)
         {
@@ -219,6 +235,7 @@ public class RunFilterStrategy implements FilterStrategy
             _runTableName = ft.getRunTable();
             _pkColumnName = ft.getPkColumnName();
             _fkColumnName = ft.getFkColumnName();
+            _deletedRowsSource = ft.getDeletedRowsSource();
         }
 
         @Override

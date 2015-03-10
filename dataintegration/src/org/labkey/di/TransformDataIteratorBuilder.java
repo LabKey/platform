@@ -29,6 +29,7 @@ import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.di.pipeline.TransformUtils;
 
 import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformModified;
 import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformRunId;
@@ -103,7 +104,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
         for (int i=1 ; i<=in.getColumnCount() ; i++)
         {
             ColumnInfo c = in.getColumnInfo(i);
-            if (diColumns.contains(c.getName()))
+            if (diColumns.contains(c.getName()) || TransformUtils.isRowversionColumn(c))
                 continue;
             out.addColumn(i);
         }

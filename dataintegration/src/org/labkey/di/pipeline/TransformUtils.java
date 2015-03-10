@@ -15,8 +15,10 @@
  */
 package org.labkey.di.pipeline;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
@@ -184,5 +186,11 @@ public class TransformUtils
         if (null == etl)
             throw new NotFoundException(transformId);
         return etl;
+    }
+
+
+    public static boolean isRowversionColumn(ColumnInfo c)
+    {
+        return c.getJdbcType().equals(JdbcType.BINARY) && "timestamp".equals(c.getSqlTypeName());
     }
 }

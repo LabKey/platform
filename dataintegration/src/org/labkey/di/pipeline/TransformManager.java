@@ -239,8 +239,7 @@ public class TransformManager implements DataIntegrationService.Interface
             // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
             XmlBeansUtil.validateXmlDocument(document, "ETL '" + resource.getPath() + "'");
 
-            TransformDescriptor ret = new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXML.getLoadReferencedFiles());
-            return ret;
+            return new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXML.getLoadReferencedFiles());
         }
     }
 
@@ -274,7 +273,7 @@ public class TransformManager implements DataIntegrationService.Interface
         else if (className.equals(RunFilterStrategy.class.getName()))
             return new RunFilterStrategy.Factory(filterTypeXML);
         else if (className.equals(SelectAllFilterStrategy.class.getName()))
-            return new SelectAllFilterStrategy.Factory();
+            return new SelectAllFilterStrategy.Factory(filterTypeXML.getDeletedRowsSource());
         throw new IllegalArgumentException("Class is not a recognized filter strategy: " + className);
     }
 
@@ -673,6 +672,15 @@ public class TransformManager implements DataIntegrationService.Interface
                 "SELECT * FROM " + DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x") +
                         " WHERE container=? and jobid=?", c.getId(), jobId).getObject(TransformRun.class);
         return run;
+    }
+
+    public boolean transformHasRunInProgress(Container c, String transformId)
+    {
+        return new SqlSelector(DataIntegrationQuerySchema.getSchema(),
+                "SELECT 1 WHERE EXISTS (SELECT * FROM " + DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x") +
+                        " WHERE status IN ('" + TransformRun.TransformRunStatus.PENDING.getDisplayName() + "','"
+                + TransformRun.TransformRunStatus.RUNNING.getDisplayName() + "') and container=? and transformid=?)"
+                , c.getId(), transformId).getObject(Boolean.class);
     }
 
     public TransformRun insertTransformRun(User user, TransformRun run)

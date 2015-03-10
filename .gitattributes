@@ -967,6 +967,7 @@ dataintegration/src/org/labkey/di/VariableMapImpl.java -text
 dataintegration/src/org/labkey/di/data/TransformDataType.java -text
 dataintegration/src/org/labkey/di/data/TransformProperty.java -text
 dataintegration/src/org/labkey/di/filters/FilterStrategy.java -text
+dataintegration/src/org/labkey/di/filters/FilterStrategyImpl.java -text
 dataintegration/src/org/labkey/di/filters/ModifiedSinceFilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/RunFilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/SelectAllFilterStrategy.java -text

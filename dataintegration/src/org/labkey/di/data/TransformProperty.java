@@ -27,7 +27,14 @@ public abstract class TransformProperty
     static public final SystemProperty RecordsModified = new SystemProperty(PROPERTY_BASE + "RecordsModified", PropertyType.INTEGER);
     static public final SystemProperty IncrementalStartTimestamp = new SystemProperty(PROPERTY_BASE + "IncrementalStartTimestamp", PropertyType.DATE_TIME);
     static public final SystemProperty IncrementalEndTimestamp = new SystemProperty(PROPERTY_BASE + "IncrementalEndTimestamp", PropertyType.DATE_TIME);
+    static public final SystemProperty IncrementalStartRowversion = new SystemProperty(PROPERTY_BASE + "IncrementalStartRowversion", PropertyType.BIGINT);
+    static public final SystemProperty IncrementalEndRowversion = new SystemProperty(PROPERTY_BASE + "IncrementalEndRowversion", PropertyType.BIGINT);
     static public final SystemProperty IncrementalRunId = new SystemProperty(PROPERTY_BASE + "IncrementalRunId", PropertyType.INTEGER);
+    static public final SystemProperty DeletedIncrementalStartTimestamp = new SystemProperty(PROPERTY_BASE + "DeletedIncrementalStartTimestamp", PropertyType.DATE_TIME);
+    static public final SystemProperty DeletedIncrementalEndTimestamp = new SystemProperty(PROPERTY_BASE + "DeletedIncrementalEndTimestamp", PropertyType.DATE_TIME);
+    static public final SystemProperty DeletedIncrementalStartRowversion = new SystemProperty(PROPERTY_BASE + "DeletedIncrementalStartRowversion", PropertyType.BIGINT);
+    static public final SystemProperty DeletedIncrementalEndRowversion = new SystemProperty(PROPERTY_BASE + "DeletedIncrementalEndRowversion", PropertyType.BIGINT);
+    static public final SystemProperty DeletedIncrementalRunId = new SystemProperty(PROPERTY_BASE + "DeletedIncrementalRunId", PropertyType.INTEGER);
     static public final String Parameters = "Parameters";
     static public final String GlobalParameters = "GlobalParameters";
     static public final String RanStep1 = "RanStep1";

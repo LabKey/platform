@@ -26,6 +26,7 @@
         <attribute name="schemaName" type="string" use="required"/>
         <attribute name="queryName" type="string" use="required"/>
         <attribute name="timestampColumnName" type="string" use="optional"/>
+        <attribute name="runColumnName" type="string" use="optional"/>
         <attribute name="sourceOption" type="etl:SourceOptionType" use="optional"/>
         <attribute name="remoteSource" type="string" use="optional"/>
         <attribute name="useTransaction" type="boolean" use="optional" default="true">
@@ -189,8 +190,19 @@
         <attribute name="expression" type="string" use="required"/>
     </complexType>
 
+    <complexType name="DeletedRowsSourceObjectType">
+        <complexContent>
+            <extension base="etl:SourceObjectType">
+                <attribute name="deletedSourceKeyColumnName" type="string" use="optional"/>
+                <attribute name="targetKeyColumnName" type="string" use="optional"/>
+            </extension>
+        </complexContent>
+    </complexType>
 
     <complexType name="FilterType">
+        <all>
+            <element name="deletedRowsSource" type="etl:DeletedRowsSourceObjectType" minOccurs="0"/>
+        </all>
         <!-- <all>
             <element name="properties" type="etl:PropertiesType" minOccurs="0"/>
         </all> -->

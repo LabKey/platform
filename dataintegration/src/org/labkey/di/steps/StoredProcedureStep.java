@@ -85,12 +85,19 @@ public class StoredProcedureStep extends TransformTask
         RESULTSET
     }
 
-    private static enum SPECIAL_PARMS
+    private static enum SPECIAL_PARAMS
     {
         transformRunId,
         filterRunId,
         filterStartTimestamp,
         filterEndTimestamp,
+        filterStartRowversion,
+        filterEndRowversion,
+        deletedFilterRunId,
+        deletedFilterStartTimestamp,
+        deletedFilterEndTimestamp,
+        deletedFilterStartRowversion,
+        deletedFilterEndRowversion,
         containerId,
         rowsInserted,
         rowsDeleted,
@@ -106,12 +113,23 @@ public class StoredProcedureStep extends TransformTask
         public static CaseInsensitiveHashSet getSpecialParameterNames()
         {
             CaseInsensitiveHashSet ret = new CaseInsensitiveHashSet();
-            for (SPECIAL_PARMS parm : values())
+            for (SPECIAL_PARAMS parm : values())
             {
                 ret.add(parm.name());
             }
             return ret;
         }
+        private static final Map<String, String> TIMESTAMP_PARAMS = new CaseInsensitiveHashMap<String>() {{
+            put(filterStartTimestamp.name(), TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor().getName());
+            put(filterEndTimestamp.name(), TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName());
+            put(filterStartRowversion.name(), TransformProperty.IncrementalStartRowversion.getPropertyDescriptor().getName());
+            put(filterEndRowversion.name(), TransformProperty.IncrementalEndRowversion.getPropertyDescriptor().getName());
+            put(deletedFilterStartTimestamp.name(), TransformProperty.DeletedIncrementalStartTimestamp.getPropertyDescriptor().getName());
+            put(deletedFilterEndTimestamp.name(), TransformProperty.DeletedIncrementalEndTimestamp.getPropertyDescriptor().getName());
+            put(deletedFilterStartRowversion.name(), TransformProperty.DeletedIncrementalStartRowversion.getPropertyDescriptor().getName());
+            put(deletedFilterEndRowversion.name(), TransformProperty.DeletedIncrementalEndRowversion.getPropertyDescriptor().getName());
+            }};
+        public static Map<String, String> getTimestampParams() {return TIMESTAMP_PARAMS;}
     }
 
     public StoredProcedureStep(TransformTaskFactory f, PipelineJob job, StoredProcedureStepMeta meta, TransformJobContext context)
@@ -291,9 +309,9 @@ public class StoredProcedureStep extends TransformTask
     {
         metadataParameters = procDialect.getParametersFromDbMetadata(procScope, procSchema, procName);
 
-        if (metadataParameters.containsKey(SPECIAL_PARMS.return_status.name()))
+        if (metadataParameters.containsKey(SPECIAL_PARAMS.return_status.name()))
             procReturns = RETURN_TYPE.INTEGER;
-        else if (metadataParameters.containsKey(SPECIAL_PARMS.resultSet.name()))
+        else if (metadataParameters.containsKey(SPECIAL_PARAMS.resultSet.name()))
             procReturns = RETURN_TYPE.RESULTSET;
 
         return true;
@@ -314,11 +332,11 @@ public class StoredProcedureStep extends TransformTask
             MetadataParameterInfo mdParamInfo = parameter.getValue();
             Object inputValue = null;
 
-            if (paramName.equalsIgnoreCase(SPECIAL_PARMS.transformRunId.name()))
+            if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.transformRunId.name()))
             {
                 inputValue = getTransformJob().getTransformRunId();
             }
-            else if (paramName.equalsIgnoreCase(SPECIAL_PARMS.containerId.name()))
+            else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.containerId.name()))
             {
                 inputValue = _context.getContainer().getEntityId().toString();
             }
@@ -339,13 +357,13 @@ public class StoredProcedureStep extends TransformTask
             }
             else if (!xmlParamInfos.containsKey(paramName) && !localSavedParamVals.containsKey(dialectParamName))
             {
-                if (SPECIAL_PARMS.getSpecialParameterNames().contains(paramName)) // Initialize for first run with this parameter
+                if (SPECIAL_PARAMS.getSpecialParameterNames().contains(paramName)) // Initialize for first run with this parameter
                 {
-                    if (paramName.equalsIgnoreCase(SPECIAL_PARMS.filterStartTimestamp.name()) || paramName.equalsIgnoreCase(SPECIAL_PARMS.filterEndTimestamp.name()))
+                    if (SPECIAL_PARAMS.getTimestampParams().containsKey(paramName))
                         inputValue = null;
-                    else if (paramName.equalsIgnoreCase(SPECIAL_PARMS.returnMsg.name()))
+                    else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.returnMsg.name()))
                         inputValue = "";
-                    else if (paramName.equalsIgnoreCase(SPECIAL_PARMS.debug.name()))
+                    else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.debug.name()))
                         inputValue = 0;
                     else
                         inputValue = -1;
@@ -358,16 +376,20 @@ public class StoredProcedureStep extends TransformTask
             // Now process special filter metadataParameters. Note these aren't persisted in the parameter map, but the other "Incremental" entries the ETL engine uses
             if (_meta.isUseFilterStrategy())
             {
-                if (paramName.equalsIgnoreCase(SPECIAL_PARMS.filterRunId.name()))
+                if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.filterRunId.name()))
                 {
                     inputValue = getVariableMap().get(TransformProperty.IncrementalRunId.getPropertyDescriptor().getName());
                     if (inputValue == null)
                         inputValue = -1;
                 }
-                else if (paramName.equalsIgnoreCase(SPECIAL_PARMS.filterStartTimestamp.name()))
-                    inputValue = getVariableMap().get(TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor().getName());
-                else if (paramName.equalsIgnoreCase(SPECIAL_PARMS.filterEndTimestamp.name()))
-                    inputValue = getVariableMap().get(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName());
+                else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.deletedFilterRunId.name()))
+                {
+                    inputValue = getVariableMap().get(TransformProperty.DeletedIncrementalRunId.getPropertyDescriptor().getName());
+                    if (inputValue == null)
+                        inputValue = -1;
+                }
+                else if (SPECIAL_PARAMS.getTimestampParams().containsKey(paramName))
+                    inputValue = getVariableMap().get(SPECIAL_PARAMS.getTimestampParams().get(paramName));
             }
 
             if (mdParamInfo.getParamTraits().get(ParamTraits.datatype) == Types.TIMESTAMP)
@@ -431,9 +453,8 @@ public class StoredProcedureStep extends TransformTask
 
             final String paramName = procDialect.translateParameterName(e.getKey(), false);
             if (!metadataParameters.containsKey(paramName)
-                    && !e.getKey().equals(TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor().getName())
-                    && !e.getKey().equals(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName())
-                || _meta.isGlobalParam(paramName))
+                    && !SPECIAL_PARAMS.getTimestampParams().containsKey(paramName)
+                && !_meta.isGlobalParam(paramName))
                 it.remove();
         }
 
@@ -464,23 +485,25 @@ public class StoredProcedureStep extends TransformTask
             if (paramInfo.getParamTraits().get(ParamTraits.direction) == DatabaseMetaData.procedureColumnInOut)
             {
                 Object value = paramInfo.getParamValue();
-                if (paramName.equalsIgnoreCase(SPECIAL_PARMS.rowsInserted.name()) && (Integer)value > -1)
+                if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.rowsInserted.name()) && (Integer)value > -1)
                 {
                     _recordsInserted = (Integer)value;
                     getJob().info("Inserted " + getNumRowsString(_recordsInserted));
                 }
-                else if (paramName.equalsIgnoreCase(SPECIAL_PARMS.rowsDeleted.name()) && (Integer)value > -1)
+                else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.rowsDeleted.name()) && (Integer)value > -1)
                 {
                     _recordsDeleted = (Integer)value;
                     getJob().info("Deleted " + getNumRowsString(_recordsDeleted));
                 }
-                else if (paramName.equalsIgnoreCase(SPECIAL_PARMS.rowsModified.name()) && (Integer)value > -1)
+                else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.rowsModified.name()) && (Integer)value > -1)
                 {
                     _recordsModified = (Integer)value;
                     getJob().info("Modified " + getNumRowsString(_recordsModified));
                 }
-                else if (paramName.equalsIgnoreCase(SPECIAL_PARMS.returnMsg.name()) && StringUtils.isNotEmpty((String) value))
+                else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.returnMsg.name()) && StringUtils.isNotEmpty((String) value))
                 {
+                    if (null == returnVal || returnVal > 0)
+                        getJob().error("Return Msg: " + value);
                     getJob().info("Return Msg: " + value);
                 }
 

@@ -144,6 +144,8 @@ public class SimpleQueryTransformStep extends TransformTask
             }
             long finish = System.currentTimeMillis();
             log.info("Copied " + getNumRowsString(_recordsInserted) + " in " + DateUtil.formatDuration(finish - start));
+            if (_recordsDeleted > 0)
+                log.info("Deleted " + getNumRowsString(_recordsDeleted));
         }
         catch (CancelledException x)
         {

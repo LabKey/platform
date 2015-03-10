@@ -24,7 +24,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.etl.CopyConfig;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.util.ConfigurationException;
@@ -33,13 +33,17 @@ import org.labkey.di.data.TransformProperty;
 import org.labkey.di.pipeline.TransformConfiguration;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
+import org.labkey.di.pipeline.TransformUtils;
 import org.labkey.di.steps.StepMeta;
+import org.labkey.etl.xml.DeletedRowsSourceObjectType;
 import org.labkey.etl.xml.FilterType;
 
-import java.sql.Timestamp;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,31 +54,62 @@ import static org.labkey.di.DataIntegrationQuerySchema.Columns;
  * Date: 4/22/13
  * Time: 12:26 PM
  */
-public class ModifiedSinceFilterStrategy implements FilterStrategy
+public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
 {
-    final TransformJobContext _context;
-    final CopyConfig _config;
-
     String _defaultTimestampColumnName = null;
     TableInfo _table;
     ColumnInfo _tsCol;
+    ColumnInfo _deletedQueryTsCol;
+    boolean _useRowversion = false;
 
-
-    public ModifiedSinceFilterStrategy(TransformJobContext context, StepMeta stepMeta, String defaultTimestampColumnName)
+    private enum Timestamp
     {
-        if (!(stepMeta instanceof CopyConfig))
-            throw new IllegalArgumentException(this.getClass().getName() + " is not compatible with " + stepMeta.getClass().getName());
-        _context = context;
-        _config = (CopyConfig)stepMeta;
+        START()
+            {
+                @Override
+                public PropertyDescriptor getPropertyDescriptor(boolean useRowversion, boolean deleting)
+                {
+                    if (useRowversion && !deleting)
+                        return TransformProperty.IncrementalStartRowversion.getPropertyDescriptor();
+                    if (!useRowversion && !deleting)
+                        return TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor();
+                    if (useRowversion && deleting)
+                        return TransformProperty.DeletedIncrementalStartRowversion.getPropertyDescriptor();
+                    if (!useRowversion && deleting)
+                        return TransformProperty.DeletedIncrementalStartTimestamp.getPropertyDescriptor();
+                    throw new IllegalStateException("Unreachable parameter combination");
+                }
+            },
+        END()
+            {
+                @Override
+                public PropertyDescriptor getPropertyDescriptor(boolean useRowversion, boolean deleting)
+                {
+                    if (useRowversion && !deleting)
+                        return TransformProperty.IncrementalEndRowversion.getPropertyDescriptor();
+                    if (!useRowversion && !deleting)
+                        return TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor();
+                    if (useRowversion && deleting)
+                        return TransformProperty.DeletedIncrementalEndRowversion.getPropertyDescriptor();
+                    if (!useRowversion && deleting)
+                        return TransformProperty.DeletedIncrementalEndTimestamp.getPropertyDescriptor();
+                    throw new IllegalStateException("Unreachable parameter combination");
+                }
+            };
+
+        public abstract PropertyDescriptor getPropertyDescriptor(boolean useRowversion, boolean deleting);
+    }
+
+    public ModifiedSinceFilterStrategy(TransformJobContext context, StepMeta stepMeta, String defaultTimestampColumnName, DeletedRowsSourceObjectType deletedRowsSource)
+    {
+        super(stepMeta, context, deletedRowsSource);
         _defaultTimestampColumnName = defaultTimestampColumnName;
     }
 
-
-    private void init()
+    @Override
+    protected void init()
     {
-        if (null != _tsCol)
-            return;
-
+        super.init();
         QuerySchema schema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _config.getSourceSchema());
         if (null == schema)
             throw new IllegalArgumentException("Schema not found: " + _config.getSourceSchema());
@@ -88,99 +123,120 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         _tsCol = _table.getColumn(timestampColumnName);
         if (null == _tsCol)
             throw new ConfigurationException("Column not found: " + _config.getSourceQuery() + "." + timestampColumnName);
+        if (TransformUtils.isRowversionColumn(_tsCol) || _tsCol.getJdbcType().isInteger())
+            _useRowversion = true;
+
+        initDeletedRowsSource();
+
+        _isInit = true;
     }
 
+    @Override
+    protected void initDeletedRowsSource()
+    {
+        if (null != _deletedRowsSource)
+        {
+            super.initDeletedRowsSource();
+
+            String timestampColumnName = StringUtils.defaultString(_deletedRowsSource.getTimestampColumnName(), _tsCol.getColumnName());
+            _deletedQueryTsCol = _deletedRowsTinfo.getColumn(timestampColumnName);
+            if (null == _deletedQueryTsCol)
+                throw new ConfigurationException("Column not found: " + _deletedRowsTinfo.getName() + "." + timestampColumnName);
+        }
+    }
 
     @Override
     public boolean hasWork()
     {
+        Object incrementalEndTimestamp = initFilterAndGetTimestamps(new SimpleFilter(), false).get(Timestamp.END);
+
+        if (null != _context.getPipelineJob() && null == incrementalEndTimestamp)
+            _context.getPipelineJob().getLogger().info("No new rows found in table: " + _table.getName());
+
+        return (null != incrementalEndTimestamp) || hasDeleteWork();
+    }
+
+    private boolean hasDeleteWork()
+    {
+        return null != _deletedRowsSource && null != initFilterAndGetTimestamps(new SimpleFilter(), true).get(Timestamp.END);
+    }
+
+    @Override
+    public SimpleFilter getFilter(VariableMap variables, boolean deleting)
+    {
         init();
 
         SimpleFilter f = new SimpleFilter();
-        Date incrementalStartTimestamp = getLastSuccessfulIncrementalEndTimestampJson();
+
+        Map<Timestamp, Object> timestamps = initFilterAndGetTimestamps(f, deleting);
+        Object incrementalStartVal = timestamps.get(Timestamp.START);
+        Object incrementalEndVal = timestamps.get(Timestamp.END);
+
+        if (null == incrementalEndVal)
+            incrementalEndVal = incrementalStartVal;
+        if (null == incrementalEndVal)     // ERROR, no non-null values?
+            f.addCondition(new SimpleFilter.FalseClause());
+        else
+            f.addCondition(_tsCol.getFieldKey(), incrementalEndVal, CompareType.LTE);
+
+        variables.put(Timestamp.START.getPropertyDescriptor(_useRowversion, deleting), incrementalStartVal);
+        variables.put(Timestamp.END.getPropertyDescriptor(_useRowversion, deleting), incrementalEndVal);
+
+        return f;
+    }
+
+    private Map<Timestamp, Object> initFilterAndGetTimestamps(SimpleFilter f, boolean deleting)
+    {
+        init();
+        TableInfo table;
+        ColumnInfo tsCol;
+        if (deleting)
+        {
+            table = _deletedRowsTinfo;
+            tsCol = _deletedQueryTsCol;
+        }
+        else
+        {
+            table = _table;
+            tsCol = _tsCol;
+        }
+        if (null == table || null == tsCol) // Should never happen, but just to be safe
+            throw new IllegalStateException("NULL value for table or timestamp column name initializing filter.");
+
+        Object incrementalStartTimestamp = getLastSuccessfulIncrementalEndTimestampJson(deleting);
         if (null != incrementalStartTimestamp)
-            f.addCondition(_tsCol.getFieldKey(), incrementalStartTimestamp, CompareType.GT);
+            f.addCondition(tsCol.getFieldKey(), incrementalStartTimestamp, CompareType.GT);
 
-        Aggregate max = new Aggregate(_tsCol, Aggregate.Type.MAX);
+        Aggregate max = new Aggregate(tsCol, Aggregate.Type.MAX);
 
-        TableSelector ts = new TableSelector(_table, Collections.singleton(_tsCol), f, null);
+        TableSelector ts = new TableSelector(table, Collections.singleton(tsCol), f, null);
         Map<String, List<Aggregate.Result>> results = ts.getAggregates(Arrays.asList(max));
-        List<Aggregate.Result> list = results.get(_tsCol.getName());
+        List<Aggregate.Result> list = results.get(tsCol.getName());
 
         // Diagnostic for 20659, from exception 17683. The aggregates resultset doesn't include the tsCol name.
         if (list == null)
         {
-            StringBuilder sb = new StringBuilder("Timestamp column '" +_tsCol.getName() + "' not found in aggregate results for table '" + _table.getName() + "'\n");
-            sb.append("Available columns:\n");
+            StringBuilder sb = new StringBuilder("Timestamp column '" + tsCol.getName() + "' not found in aggregate results for table '" + _table.getName() + "'\n");
+            sb.append("Legal types are date, time, timestamp (rowversion), and integer.\nText fields will pass this check but immediately fail on casting to a date.\nAvailable columns:\n");
             for (String column : results.keySet())
-                sb.append(column + "\n");
+                sb.append(column).append("\n");
             throw new IllegalArgumentException(sb.toString());
         }
-
         Aggregate.Result maxResult = list.get(0);
 
-        Date incrementalEndDate;
-        try
-        {
-            incrementalEndDate = ((Date)maxResult.getValue());
-        }
-        catch (ClassCastException e)
-        {
-            throw new IllegalArgumentException("Timestamp column '"+_tsCol.getColumnName()+"' contains value not castable to a date: " + maxResult.getValue().toString());
-        }
-
-        if (null != _context.getPipelineJob() && null == incrementalEndDate)
-            _context.getPipelineJob().getLogger().info("No new rows found in table: " + _table.getName());
-
-        return (null != incrementalEndDate);
-    }
-
-
-    @Override
-    public SimpleFilter getFilter(VariableMap variables)
-    {
-        init();
-
-        SimpleFilter f = new SimpleFilter();
-        Date incrementalStartTimestamp = getLastSuccessfulIncrementalEndTimestampJson();
-        if (null != incrementalStartTimestamp)
-            f.addCondition(_tsCol.getFieldKey(), incrementalStartTimestamp, CompareType.GT);
-
-        Aggregate max = new Aggregate(_tsCol, Aggregate.Type.MAX);
-
-        TableSelector ts = new TableSelector(_table, Collections.singleton(_tsCol), f, null);
-        Map<String, List<Aggregate.Result>> results = ts.getAggregates(Arrays.asList(max));
-        List<Aggregate.Result> list = results.get(_tsCol.getName());
-        Aggregate.Result maxResult = list.get(0);
-        Date incrementalEndDate = ((Date)maxResult.getValue());
-        if (null == incrementalEndDate)
-            incrementalEndDate = incrementalStartTimestamp;
-        if (null == incrementalEndDate)     // ERROR, no non-null values?
-            f.addCondition(new SimpleFilter.FalseClause());
+        Map<Timestamp, Object> timestamps = new HashMap<>();
+        timestamps.put(Timestamp.START, incrementalStartTimestamp);
+        Object incrementalEndTimestamp = maxResult.getValue();
+        if (incrementalEndTimestamp == null || incrementalEndTimestamp instanceof Date || incrementalEndTimestamp instanceof Integer || incrementalEndTimestamp instanceof Long)
+            timestamps.put(Timestamp.END, incrementalEndTimestamp);
+        else if (isUseRowversion() && incrementalEndTimestamp instanceof byte[])
+            timestamps.put(Timestamp.END, ByteBuffer.wrap((byte[]) incrementalEndTimestamp).getLong()); // a SQL Server timestamp column
         else
-            f.addCondition(_tsCol.getFieldKey(), incrementalEndDate, CompareType.LTE);
-
-        variables.put(TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor(), incrementalStartTimestamp);
-        variables.put(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor(), incrementalEndDate);
-        return f;
+            throw new IllegalArgumentException("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a date, timestamp or integer: " + incrementalEndTimestamp.toString());
+        return timestamps;
     }
 
-
-    Date getLastSuccessfulIncrementalEndTimestampExp()
-    {
-        // get the experiment run for the last successfully run transform for this configuration
-        Integer expRunId = TransformManager.get().getLastSuccessfulTransformExpRun(_context.getTransformId(), _context.getTransformVersion());
-        if (null != expRunId)
-        {
-            VariableMap map = TransformManager.get().getVariableMapForTransformStep(expRunId, _config.getId());
-            if (null != map)
-                return (Date) map.get(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName());
-        }
-        return null;
-    }
-
-
-    Date getLastSuccessfulIncrementalEndTimestampJson()
+    Object getLastSuccessfulIncrementalEndTimestampJson(boolean deleted)
     {
         TransformConfiguration cfg = TransformManager.get().getTransformConfiguration(_context.getContainer(), _context.getJobDescriptor());
         JSONObject state = cfg.getJsonState();
@@ -188,16 +244,22 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
             return null;
         JSONObject steps = _getObject(state, "steps");
         JSONObject step = _getObject(steps, _config.getId());
-        Object o = _get(step, TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName());
+        Object o = _get(step, Timestamp.END.getPropertyDescriptor(_useRowversion, deleted).getName());
+
         if (null == o || (o instanceof String && StringUtils.isEmpty((String)o)))
             return null;
+        if (o instanceof Integer || o instanceof Long || o instanceof BigInteger)
+            return o;
         try
         {
             if (o instanceof String)
                 return Timestamp.valueOf((String)o);
         }
-        catch (Exception x){}
-        return (Date) JdbcType.TIMESTAMP.convert(o);
+        catch (Exception x)
+        {
+        // oh well}
+        }
+        return JdbcType.TIMESTAMP.convert(o);
     }
 
 
@@ -211,6 +273,10 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         return null!=json && json.has(property) ? json.get(property) : null;
     }
 
+    public boolean isUseRowversion()
+    {
+        return _useRowversion;
+    }
 
     public static class Factory implements FilterStrategy.Factory
     {
@@ -229,7 +295,9 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         @Override
         public FilterStrategy getFilterStrategy(TransformJobContext context, StepMeta stepMeta)
         {
-            return new ModifiedSinceFilterStrategy(context, stepMeta, null == _filterType ? null : _filterType.getTimestampColumnName());
+            if (null == _filterType)
+                return new ModifiedSinceFilterStrategy(context, stepMeta, null, null);
+            return new ModifiedSinceFilterStrategy(context, stepMeta, _filterType.getTimestampColumnName(), _filterType.getDeletedRowsSource());
         }
 
         @Override

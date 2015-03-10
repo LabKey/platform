@@ -19,17 +19,33 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.di.VariableMap;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.steps.StepMeta;
+import org.labkey.etl.xml.DeletedRowsSourceObjectType;
 
 /**
  * User: matthewb
  * Date: 6/20/13
  * Time: 2:16 PM
  */
-public class SelectAllFilterStrategy implements FilterStrategy
+public class SelectAllFilterStrategy extends FilterStrategyImpl
 {
+
+    public SelectAllFilterStrategy(StepMeta stepMeta, TransformJobContext context, DeletedRowsSourceObjectType deletedRowsSource)
+    {
+        super(stepMeta, context, deletedRowsSource);
+    }
+
+    @Override
+    protected void init()
+    {
+        super.init();
+        initDeletedRowsSource();
+        _isInit = true;
+    }
+
     @Override
     public boolean hasWork()
     {
+        init();
         return true;
     }
 
@@ -41,10 +57,22 @@ public class SelectAllFilterStrategy implements FilterStrategy
 
     public static class Factory implements FilterStrategy.Factory
     {
+        private final DeletedRowsSourceObjectType _deletedRowsSource;
+
+        public Factory(DeletedRowsSourceObjectType deletedKeysSource)
+        {
+            _deletedRowsSource = deletedKeysSource;
+        }
+
+        public Factory()
+        {
+            this(null);
+        }
+
         @Override
         public FilterStrategy getFilterStrategy(TransformJobContext context, StepMeta stepMeta)
         {
-            return new SelectAllFilterStrategy();
+            return new SelectAllFilterStrategy(stepMeta, context, _deletedRowsSource);
         }
 
         @Override

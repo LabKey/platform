@@ -19,14 +19,16 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataIteratorResultsImpl;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.TSVColumnWriter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -39,6 +41,8 @@ import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -60,8 +64,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -155,19 +162,26 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             addTransactionOptions(targetTableInfo, c, context, txTarget, extraContext, options);
 
             log.info("Target option: " + meta.getTargetOptions());
+            int rowCount;
             switch (meta.getTargetOptions())
             {
-                case merge:
-                    return qus.mergeRows(u, c, source, context.getErrors(), options, extraContext);
                 case truncate:
                     int rows = qus.truncateRows(u, c, options, extraContext);
                     log.info("Deleted " + getNumRowsString(rows) + " from " + meta.getFullTargetString());
                     return qus.importRows(u, c, source, context.getErrors(), options, extraContext);
+                case merge:
+                    rowCount = qus.mergeRows(u, c, source, context.getErrors(), options, extraContext);
+                    break;
                 case append:
-                    return qus.importRows(u, c, source, context.getErrors(), options, extraContext);
+                    rowCount = qus.importRows(u, c, source, context.getErrors(), options, extraContext);
+                    break;
                 default:
                     throw new IllegalArgumentException("Invalid target option specified: " + meta.getTargetOptions());
             }
+
+            _recordsDeleted = deleteRows(qus, context, c, u, options, extraContext, log);
+
+            return rowCount;
         }
         catch (BatchValidationException |QueryUpdateServiceException ex)
         {
@@ -176,6 +190,34 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         catch (SQLException sqlx)
         {
             throw new RuntimeSQLException(sqlx);
+        }
+    }
+    private int deleteRows(QueryUpdateService qus, DataIteratorContext dataIteratorContext, Container c, User u, Map<Enum, Object> options, Map<String, Object> extraContext, Logger log) throws SQLException, QueryUpdateServiceException, BatchValidationException
+    {
+        if (null == _filterStrategy || _filterStrategy.getDeletedRowsSource() == null)
+            return -1;
+
+        List<Map<String, Object>> deleteKeys = new ArrayList<>();
+        try (Results results = new TableSelector(_filterStrategy.getDeletedRowsTinfo(), Collections.singleton(_filterStrategy.getDeletedRowsKeyCol()), _filterStrategy.getFilter(getVariableMap(), true), null).getResults(false))
+        {
+            while (results.next())
+            {
+                Map<String, Object> key = new HashMap<>();
+                key.put(_filterStrategy.getTargetDeletionKeyCol(), results.getObject(_filterStrategy.getDeletedRowsKeyCol()));
+                deleteKeys.add(key);
+            }
+        }
+        if (deleteKeys.isEmpty())
+            return 0; // Nothing to delete
+
+        try
+        {
+            return qus.deleteRows(u, c, deleteKeys, options, extraContext).size();
+        }
+        catch (InvalidKeyException e) // TODO: Do we care?
+        {
+            dataIteratorContext.getErrors().addRowError(new ValidationException("InvalidKey: " + e.getMessage()));
+            return -1;
         }
     }
 
@@ -452,10 +494,34 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                     log.error("Target schema not found: " + meta.getTargetSchema());
                     return false;
                 }
-                if (null == targetSchema.getTable(meta.getTargetQuery()))
+                TableInfo targetTable = targetSchema.getTable(meta.getTargetQuery());
+                if (null == targetTable)
                 {
                     log.error("Target query not found: " + meta.getTargetQuery());
                     return false;
+                }
+                if (null != getFilterStrategy().getDeletedRowsSource())
+                {
+                    if (null == getFilterStrategy().getDeletedRowsSource().getTargetKeyColumnName())
+                    {
+                        List<String> targetPkCols = targetTable.getPkColumnNames();
+                        if (targetPkCols.size() != 1)
+                        {
+                            log.error("To delete from a target query, target must either have exactly one primary key column, or the match column should be specified in the xml.");
+                            return false;
+                        }
+                        getFilterStrategy().setTargetDeletionKeyCol(targetPkCols.get(0));
+                    }
+                    else
+                    {
+                        ColumnInfo targetDeletionKeyCol = targetTable.getColumn(FieldKey.fromParts(getFilterStrategy().getDeletedRowsSource().getTargetKeyColumnName()));
+                        if (null == targetDeletionKeyCol)
+                        {
+                            log.error("Match key for deleted rows not found in target query: " + getFilterStrategy().getDeletedRowsSource().getTargetKeyColumnName());
+                            return false;
+                        }
+                        getFilterStrategy().setTargetDeletionKeyCol(targetDeletionKeyCol.getColumnName());
+                    }
                 }
                 if (meta.getTransactionSize() > 0 && targetSchema.getDbSchema().getScope().equals(sourceDbScope) && sourceDbScope.getSqlDialect().isPostgreSQL())
                 {
