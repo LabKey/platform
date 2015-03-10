@@ -61,12 +61,25 @@ Ext4.onReady( function() {
         });
     }
 
-    var store = Ext4.create('Ext.data.Store', {
+    var store_moveToContainer = Ext4.create('Ext.data.Store', {
         model: 'Issues.model.Containers',
         autoLoad: true,
         proxy: {
             type: 'ajax',
             url: LABKEY.ActionURL.buildURL('issues', 'getContainers', LABKEY.container.path),
+            reader: {
+                type: 'json',
+                root: 'containers'
+            }
+        }
+    });
+
+    var store_inheritFrom = Ext4.create('Ext.data.Store', {
+        model: 'Issues.model.Containers',
+        autoLoad: true,
+        proxy: {
+            type: 'ajax',
+            url: LABKEY.ActionURL.buildURL('issues', 'getInheritFromContainers', LABKEY.container.path),
             reader: {
                 type: 'json',
                 root: 'containers'
@@ -95,7 +108,7 @@ Ext4.onReady( function() {
         width: 400,
         multiSelect: true,
         delimiter: ';',
-        store: store,
+        store: store_moveToContainer,
         queryMode: 'local',
         allowBlank: false,
         valueField: 'containerId',
@@ -113,7 +126,7 @@ Ext4.onReady( function() {
         margin: '0 0 0 5',
         width: 400,
         multiSelect: false,
-        store: store,
+        store: store_inheritFrom,
         queryMode: 'local',
         allowBlank: false,
         valueField: 'containerId',

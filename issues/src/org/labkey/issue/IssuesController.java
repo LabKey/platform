@@ -1532,18 +1532,37 @@ public class IssuesController extends SpringActionController
 
             for (Container container : allContainers)
             {
-                // remove containers that start with underscroll
+                // remove containers that start with underscore
                 if (container.getName().startsWith("_")) continue;
 
-                Map<String, Object> map = new HashMap<>();
-                map.put("containerId", container.getId());
-                map.put("containerPath", container.getPath());
-                responseContainers.add(map);
+                if(includeContainer(container))
+                {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("containerId", container.getId());
+                    map.put("containerPath", container.getPath());
+                    responseContainers.add(map);
+                }
             }
 
             response.put("containers", responseContainers);
 
             return response;
+        }
+        protected boolean includeContainer(Container c)
+        {
+           return true;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetInheritFromContainersAction extends IssuesController.GetContainersAction
+    {
+        @Override
+        protected boolean includeContainer(Container c)
+        {
+            //remove containers that already have inherited settings.
+            //Note: this effects populating folders in 'Set move to folder'-->Specific Folder as well.
+            return IssueManager.getInheritFromContainer(c) == null;
         }
     }
 
@@ -2029,7 +2048,7 @@ public class IssuesController extends SpringActionController
                     }
                 }
                 else
-                    errors.reject(INHERIT_FROM_CONTAINER, "The 'inherit from container' option was selected with a blank.");
+                    errors.reject(INHERIT_FROM_CONTAINER, "The Inherit Admin Setting's 'Choose Folder' option was selected with a blank.");
             }
             else
             {

@@ -78,7 +78,6 @@
     var curInheritContainer = "<%= h(bean.inheritFromContainer == null ? "" : bean.inheritFromContainer.getId())%>";
     function submitFormUserConfirm()
     {
-
         var inheritingContainerExists = "<%=h(bean.inheritingContainersExists)%>";
 
         var customFieldValType = document.querySelector("input[name=type]").value;
@@ -224,7 +223,7 @@
 <table>
     <tr>
         <td valign="top" colspan="2">
-            <table width="110%">
+            <table width="100%">
                 <tr><td align="center" colspan="2"><div class="labkey-form-label"><b>Configuration</b></div></td></tr>
                 <tr>
                     <td valign=top>
