@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
 
 import java.util.Map;
@@ -175,10 +176,18 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
     public void deletePropertySet(User user, Container container, String category)
     {
-        PropertyMap propertyMap = getWritableProperties(user, container, category, false);
-        if (propertyMap != null)
+        try
         {
-            propertyMap.delete();
+            PropertyMap propertyMap = getWritableProperties(user, container, category, false);
+            if (propertyMap != null)
+            {
+                propertyMap.delete();
+            }
+        }
+        catch (Encryption.DecryptionException e)
+        {
+            // Delete without the advantages of synchronization
+            PropertyManager.deleteSetDirectly(user, container.getId(), category, this);
         }
     }
 

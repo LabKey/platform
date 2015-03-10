@@ -490,32 +490,7 @@ public class PropertyManager
             // threads manipulating at the same time
             try (DbScope.Transaction transaction = SCHEMA.getSchema().getScope().ensureTransaction(DbScope.FINAL_COMMIT_UNLOCK_TRANSACTION_KIND, PROPERTY_MAP_LOCK_MANAGER.getLock(this)))
             {
-                String setSelectName = SCHEMA.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
-
-                SQLFragment deleteProps = new SQLFragment();
-                deleteProps.append("DELETE FROM ").append(SCHEMA.getTableInfoProperties().getSelectName());
-                deleteProps.append(" WHERE ").append(setSelectName).append(" IN ");
-                deleteProps.append("(SELECT ").append(setSelectName).append(" FROM ").append(SCHEMA.getTableInfoPropertySets(), "ps");
-                deleteProps.append(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
-                deleteProps.add(_user);
-                deleteProps.add(_objectId);
-                deleteProps.add(_category);
-
-                _store.appendWhereFilter(deleteProps);
-
-                deleteProps.append(")");
-
-                SqlExecutor sqlx = new SqlExecutor(SCHEMA.getSchema());
-                sqlx.execute(deleteProps);
-
-                SQLFragment deleteSets = new SQLFragment("DELETE FROM " + SCHEMA.getTableInfoPropertySets() + " WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
-                deleteSets.add(_user);
-                deleteSets.add(_objectId);
-                deleteSets.add(_category);
-
-                _store.appendWhereFilter(deleteSets);
-
-                new SqlExecutor(SCHEMA.getSchema()).execute(deleteSets);
+                deleteSetDirectly(_user, _objectId, _category, _store);
 
                 _store.clearCache(this);
 
@@ -553,6 +528,40 @@ public class PropertyManager
         }
     }
 
+    /**
+     * In general, callers should always go through PropertyMap.delete(). This is exposed here for cases
+     * where we can't create a PropertyMap because we fail to decrypt the values previously store, and need
+     * a direct way to delete the properties. See issue 18938
+     */
+    public static void deleteSetDirectly(User user, String objectId, String category, AbstractPropertyStore store)
+    {
+        String setSelectName = SCHEMA.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
+
+        SQLFragment deleteProps = new SQLFragment();
+        deleteProps.append("DELETE FROM ").append(SCHEMA.getTableInfoProperties().getSelectName());
+        deleteProps.append(" WHERE ").append(setSelectName).append(" IN ");
+        deleteProps.append("(SELECT ").append(setSelectName).append(" FROM ").append(SCHEMA.getTableInfoPropertySets(), "ps");
+        deleteProps.append(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
+        deleteProps.add(user);
+        deleteProps.add(objectId);
+        deleteProps.add(category);
+
+        store.appendWhereFilter(deleteProps);
+
+        deleteProps.append(")");
+
+        SqlExecutor sqlx = new SqlExecutor(SCHEMA.getSchema());
+        sqlx.execute(deleteProps);
+
+        SQLFragment deleteSets = new SQLFragment("DELETE FROM " + SCHEMA.getTableInfoPropertySets() + " WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
+        deleteSets.add(user);
+        deleteSets.add(objectId);
+        deleteSets.add(category);
+
+        store.appendWhereFilter(deleteSets);
+
+        new SqlExecutor(SCHEMA.getSchema()).execute(deleteSets);
+    }
 
     public static class PropertyEntry
     {
