@@ -18,6 +18,8 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
@@ -39,17 +41,25 @@ public abstract interface AuthenticationProvider
     public void deactivate() throws Exception;
     public boolean isPermanent();
 
-    public static interface RequestAuthenticationProvider extends AuthenticationProvider
+    interface RequestAuthenticationProvider extends AuthenticationProvider
     {
-        public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException;
+        AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws InvalidEmailException;
     }
 
-    public static interface LoginFormAuthenticationProvider extends AuthenticationProvider
+    interface LoginFormAuthenticationProvider extends AuthenticationProvider
     {
         // id and password will not be blank (not null, not empty, not whitespace only)
-        public AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException;
+        AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
     }
 
+    interface SecondaryAuthenticationProvider extends AuthenticationProvider
+    {
+        /**
+         *  Initiate secondary authentication process for the specified user. candidate has been authenticated via one of the primary providers,
+         *  but isn't officially authenticated until user successfully validates with all enabled SecondaryAuthenticationProviders as well.
+         */
+        ActionURL getRedirectURL(User candidate, Container c, URLHelper returnURL);
+    }
 
     public static class AuthenticationResponse
     {

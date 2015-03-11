@@ -29,12 +29,15 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
+import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
+import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.DateUtil;
@@ -55,6 +58,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -337,7 +341,7 @@ public class AuthenticationManager
 
 
     public static @NotNull
-    AuthenticationResult authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws ValidEmail.InvalidEmailException
+    AuthenticationResult authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
         AuthenticationResult result = null;
         try
@@ -356,7 +360,7 @@ public class AuthenticationManager
 
 
     private static @NotNull
-    AuthenticationResult _authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws ValidEmail.InvalidEmailException
+    AuthenticationResult _authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
         AuthenticationResponse firstFailure = null;
 
@@ -371,7 +375,7 @@ public class AuthenticationManager
                     if (areNotBlank(id, password))
                         authResponse = ((LoginFormAuthenticationProvider)authProvider).authenticate(id, password, returnURL);
                 }
-                else
+                else if (authProvider instanceof RequestAuthenticationProvider)
                 {
                     if (areNotNull(request, response))
                         authResponse = ((RequestAuthenticationProvider)authProvider).authenticate(request, response, returnURL);
@@ -462,7 +466,7 @@ public class AuthenticationManager
                     email = new ValidEmail(id);
                     emailAddress = email.getEmailAddress();  // If this user doesn't exist we can still report the normalized email address
                 }
-                catch (ValidEmail.InvalidEmailException e)
+                catch (InvalidEmailException e)
                 {
                 }
 
@@ -585,7 +589,7 @@ public class AuthenticationManager
     // rely on cookies, browser redirects, etc.  Current usages include basic auth and test cases.
 
     // Returns null if credentials are incorrect, user doesn't exist, or user is inactive
-    public static User authenticate(HttpServletRequest request, String id, String password) throws ValidEmail.InvalidEmailException
+    public static User authenticate(HttpServletRequest request, String id, String password) throws InvalidEmailException
     {
         AuthenticationResult result = authenticate(request, null, id, password, null, true);
 
@@ -637,13 +641,70 @@ public class AuthenticationManager
     }
 
 
+    public static List<AuthenticationProvider> getAllPrimaryProviders()
+    {
+        List<AuthenticationProvider> list = new LinkedList<>();
+
+        for (AuthenticationProvider provider : _allProviders)
+            if (!(provider instanceof SecondaryAuthenticationProvider))
+                list.add(provider);
+
+        return list;
+    }
+
+
+    public static List<SecondaryAuthenticationProvider> getAllSecondaryProviders()
+    {
+        List<SecondaryAuthenticationProvider> list = new LinkedList<>();
+
+        for (AuthenticationProvider provider : _allProviders)
+            if (provider instanceof SecondaryAuthenticationProvider)
+                list.add((SecondaryAuthenticationProvider)provider);
+
+        return list;
+    }
+
+
+    public static List<SecondaryAuthenticationProvider> getActiveSecondaryProviders()
+    {
+        List<SecondaryAuthenticationProvider> list = new LinkedList<>();
+
+        for (AuthenticationProvider provider : getActiveProviders())
+            if (provider instanceof SecondaryAuthenticationProvider)
+                list.add((SecondaryAuthenticationProvider)provider);
+
+        return list;
+    }
+
+
     public static HttpView getConfigurationView(URLFactory enable, URLFactory disable)
     {
         StringBuilder sb = new StringBuilder();
         sb.append("<table>\n");
-        sb.append("<tr><td colspan=\"4\">These are the installed authentication providers:<br><br></td></tr>\n");
+        sb.append("<tr><td colspan=\"4\">These are the installed primary authentication providers:<br><br></td></tr>\n");
 
-        for (AuthenticationProvider authProvider : _allProviders)
+        appendProviders(getAllPrimaryProviders(), enable, disable, sb);
+
+        List<SecondaryAuthenticationProvider> secondary = getAllSecondaryProviders();
+
+        if (!secondary.isEmpty())
+        {
+            sb.append("<tr><td colspan=\"4\">&nbsp;</td></tr>");
+            sb.append("<tr><td colspan=\"4\">These are the installed secondary authentication providers:<br><br></td></tr>\n");
+            appendProviders(secondary, enable, disable, sb);
+        }
+
+        sb.append("<tr><td colspan=\"4\">&nbsp;</td></tr>");
+        sb.append("<tr><td colspan=\"4\">");
+        sb.append(PageFlowUtil.button("Done").href(PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()));
+        sb.append("</td></tr></table>\n");
+
+        return new HtmlView(sb.toString());
+    }
+
+    private static void appendProviders(List<? extends AuthenticationProvider> providers, URLFactory enable, URLFactory disable, StringBuilder sb)
+    {
+        for (AuthenticationProvider authProvider : providers)
         {
             sb.append("<tr><td>").append(PageFlowUtil.filter(authProvider.getName())).append("</td>");
 
@@ -682,17 +743,37 @@ public class AuthenticationManager
 
             sb.append("<td>");
             sb.append(authProvider.getDescription());
-            sb.append("</td>");            
+            sb.append("</td>");
 
             sb.append("</tr>\n");
         }
+    }
 
-        sb.append("<tr><td colspan=\"4\">&nbsp;</td></tr>");
-        sb.append("<tr><td colspan=\"4\">");
-        sb.append(PageFlowUtil.button("Done").href(PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()));
-        sb.append("</td></tr></table>\n");
 
-        return new HtmlView(sb.toString());
+    public static void setSecondaryAuthenticationSuccess(HttpServletRequest request, Class<? extends SecondaryAuthenticationProvider> clazz)
+    {
+        HttpSession session = request.getSession(true);
+        session.setAttribute(clazz.getName(), true);
+    }
+
+
+    public static boolean getSecondaryAuthenticationSuccess(HttpServletRequest request, Class<? extends SecondaryAuthenticationProvider> clazz)
+    {
+        HttpSession session = request.getSession(true);
+
+        return Boolean.TRUE.equals(session.getAttribute(clazz.getName()));
+    }
+
+
+    public static void handleSecondaryAuthentication(User candidate, Container c, HttpServletRequest request, URLHelper afterLogin)
+    {
+        for (SecondaryAuthenticationProvider provider : getActiveSecondaryProviders())
+        {
+            if (!getSecondaryAuthenticationSuccess(request, provider.getClass()))
+            {
+                throw new RedirectException(provider.getRedirectURL(candidate, c, afterLogin));
+            }
+        }
     }
 
 
@@ -756,7 +837,7 @@ public class AuthenticationManager
                 throw new ServletException(file.getOriginalFilename() + " does not appear to be an image file");
 
             AttachmentFile aFile = new SpringAttachmentFile(file, prefix + getProviderName());
-            AttachmentService.get().addAttachments(ContainerManager.RootContainer.get(), Arrays.asList(aFile), getUser());
+            AttachmentService.get().addAttachments(ContainerManager.RootContainer.get(), Collections.singletonList(aFile), getUser());
 
             return true;
         }
