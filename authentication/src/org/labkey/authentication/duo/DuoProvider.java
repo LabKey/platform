@@ -2,26 +2,28 @@ package org.labkey.authentication.duo;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.security.AuthenticationProvider;
-import org.labkey.api.security.ValidEmail;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
+import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * User: tgaluhn
  * Date: 3/6/2015
  */
-public class DuoProvider implements AuthenticationProvider.RequestAuthenticationProvider
+public class DuoProvider implements SecondaryAuthenticationProvider
 {
     private static final Logger LOG = Logger.getLogger(DuoProvider.class);
 
     @Override
-    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException
+    public ActionURL getRedirectURL(User candidate, Container c, URLHelper returnURL)
     {
-        throw new UnsupportedOperationException();
+        // TODO: Initiate duo process here
+
+        return DuoController.getValidateURL(c, returnURL);
     }
 
     @Nullable
@@ -34,7 +36,7 @@ public class DuoProvider implements AuthenticationProvider.RequestAuthentication
     @Override
     public String getName()
     {
-        return ("Duo 2 Factor Authentication");
+        return "Duo 2 Factor Authentication";
     }
 
     @Override
@@ -52,13 +54,11 @@ public class DuoProvider implements AuthenticationProvider.RequestAuthentication
     @Override
     public void activate() throws Exception
     {
-        throw new UnsupportedOperationException();
     }
 
     @Override
     public void deactivate() throws Exception
     {
-        throw new UnsupportedOperationException();
     }
 
     @Override

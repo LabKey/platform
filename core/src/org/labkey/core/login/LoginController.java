@@ -57,6 +57,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -283,7 +284,7 @@ public class LoginController extends SpringActionController
                     throw new IllegalStateException("Unknown authentication status: " + result.getStatus());
             }
         }
-        catch (ValidEmail.InvalidEmailException e)
+        catch (InvalidEmailException e)
         {
             String defaultDomain = ValidEmail.getDefaultDomain();
             StringBuilder sb = new StringBuilder();
@@ -410,7 +411,12 @@ public class LoginController extends SpringActionController
 
         public URLHelper getSuccessURL(LoginForm form)
         {
-            return getAfterLoginURL(form, _user, form.getSkipProfile());
+            URLHelper afterLogin = getAfterLoginURL(form, _user, form.getSkipProfile());
+
+            // TODO: Placeholder for now... this belongs in the official authentication flow, not here
+            AuthenticationManager.handleSecondaryAuthentication(getUser(), getContainer(), getViewContext().getRequest(), afterLogin);
+
+            return afterLogin;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -877,7 +883,7 @@ public class LoginController extends SpringActionController
             {
                 email = new ValidEmail(rawEmail);
             }
-            catch (ValidEmail.InvalidEmailException e)
+            catch (InvalidEmailException e)
             {
                 errors.reject("setPassword", "Invalid email address: " + (null == rawEmail ? "" : rawEmail));
                 _unrecoverableError = true;
@@ -1210,7 +1216,7 @@ public class LoginController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Unable to create user '" + PageFlowUtil.filter(e.getEmail()) + "': " + e.getMessage());
             }
-            catch (ValidEmail.InvalidEmailException e)
+            catch (InvalidEmailException e)
             {
                 errors.rejectValue("email", ERROR_MSG, "The string '" + PageFlowUtil.filter(form.getEmail()) + "' is not a valid email address.  Please enter an email address in this form: user@domain.tld");
             }
@@ -1420,7 +1426,7 @@ public class LoginController extends SpringActionController
                         errors.reject("reset", "The password for this account may not be reset because this account has been deactivated. Please contact your administrator to re-activate this account.");
                 }
             }
-            catch (ValidEmail.InvalidEmailException e)
+            catch (InvalidEmailException e)
             {
                 errors.reject("reset", "Reset Password failed: " + rawEmail + " is not a valid email address.");
             }

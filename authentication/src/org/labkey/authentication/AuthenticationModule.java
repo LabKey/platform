@@ -27,6 +27,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.authentication.duo.DuoController;
 import org.labkey.authentication.duo.DuoProvider;
+import org.labkey.authentication.duo.TestDuoProvider;
 import org.labkey.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.authentication.ldap.LdapController;
 import org.labkey.authentication.oauth.GoogleOAuthProvider;
@@ -84,6 +85,7 @@ public class AuthenticationModule extends DefaultModule
         {
             addController("duo", DuoController.class);
             AuthenticationManager.registerProvider(new DuoProvider(), Priority.Low);
+            AuthenticationManager.registerProvider(new TestDuoProvider(), Priority.Low);
         }
     }
 
