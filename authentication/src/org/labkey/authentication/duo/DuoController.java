@@ -1,6 +1,7 @@
 package org.labkey.authentication.duo;
 
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
@@ -11,12 +12,15 @@ import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationPro
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -69,6 +73,7 @@ public class DuoController extends SpringActionController
 
         public boolean handlePost(Config config, BindException errors) throws Exception
         {
+            DuoManager.saveProperties(config);
             return true;
         }
 
@@ -80,8 +85,62 @@ public class DuoController extends SpringActionController
 
     public static class Config extends ReturnUrlForm
     {
+        public boolean reshow = false;
+
+        public final static String PROVIDER_LABEL = "Provider" ;
+        public final static String INTEGRATION_KEY_LABEL = "Integration Key" ;
+        public final static String SECRET_KEY_LABEL = "Secret Key" ;
+        public final static String API_HOSTNAME_LABEL = "API Hostname" ;
+
+        private String integrationKey = DuoManager.getIntegrationKey();
+        private String secretKey = DuoManager.getSecretKey();
+        private String apiHostname = DuoManager.getAPIHostname();
+
+        public String getSecretKey()
+        {
+            return secretKey;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setSecretKey(String secretKey)
+        {
+            this.secretKey = secretKey;
+        }
+
+        public String getIntegrationKey()
+        {
+            return integrationKey;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setIntegrationKey(String integrationKey)
+        {
+            this.integrationKey = integrationKey;
+        }
+
+        public String getApiHostname()
+        {
+            return apiHostname;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setApiHostname(String apiHostname)
+        {
+            this.apiHostname = apiHostname;
+        }
+        @SuppressWarnings("UnusedDeclaration")
+        public boolean isReshow()
+        {
+            return reshow;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setReshow(boolean reshow) {
+            this.reshow = reshow;
+        }
 
     }
+
 
     public static class DuoForm extends ReturnUrlForm
     {
@@ -188,4 +247,52 @@ public class DuoController extends SpringActionController
             return TestDuoProvider.class;
         }
     }
+
+    @RequiresSiteAdmin
+    public class TestDuoAction extends FormViewAction<TestDuoForm>
+    {
+        public void validateCommand(TestDuoForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(TestDuoForm form, boolean reshow, BindException errors) throws Exception
+        {
+
+            HttpView view = new JspView<>("/org/labkey/authentication/duo/testDuo.jsp", form, errors);
+            return view;
+        }
+
+        public boolean handlePost(TestDuoForm form, BindException errors) throws Exception
+        {
+            return false;
+        }
+
+        public ActionURL getSuccessURL(TestDuoForm testLdapAction)
+        {
+            return null;   // Always reshow form
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    public static class TestDuoForm extends ReturnUrlForm implements HasViewContext
+    {
+
+        @Override
+        public void setViewContext(ViewContext context)
+        {
+
+        }
+
+        @Override
+        public ViewContext getViewContext()
+        {
+            return null;
+        }
+
+    }
 }
+
