@@ -102,15 +102,49 @@ public class AnnouncementManager
     private static final CommSchema _comm = CommSchema.getInstance();
     private static final CoreSchema _core = CoreSchema.getInstance();
 
-    public static final int EMAIL_PREFERENCE_DEFAULT = -1;
-    public static final int EMAIL_PREFERENCE_NONE = 0;
-    public static final int EMAIL_PREFERENCE_ALL = 1;
-    public static final int EMAIL_PREFERENCE_MINE = 2;    //Only threads I've posted to or where I'm on the member list
-    public static final int EMAIL_PREFERENCE_MASK = 255;
+    public static enum EmailOption
+    {
+        NONE(0),
+        ALL(1),
+        MINE(2), // Only threads I've posted to or where I'm on the member list
+        NOT_SET(-1);
 
-    public static final int EMAIL_NOTIFICATION_TYPE_DIGEST = 256; // If this bit is set, send daily digest instead of individual email for each post
+        public static final int PREFERENCE_MASK = 255;
+        public static final int NOTIFICATION_TYPE_DIGEST = 256; // If this bit is set, send daily digest instead of individual email for each post
 
-    public static final int EMAIL_DEFAULT_OPTION = EMAIL_PREFERENCE_MINE;
+        private int value;
+
+        private static Map<Integer, EmailOption> map = new HashMap<Integer, EmailOption>();
+
+        static {
+            for (EmailOption option : EmailOption.values()) {
+                map.put(option.value, option);
+            }
+        }
+
+        private EmailOption(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return this.value;
+        }
+
+        public static EmailOption valueOf(int intValue) throws IllegalArgumentException {
+            if (map.containsKey(intValue)) {
+                return map.get(intValue);
+            } else {
+                throw new IllegalArgumentException("Invalid email setting option: " + intValue);
+            }
+        }
+
+        public static Boolean isValid(int intValue) {
+            return map.containsKey(intValue);
+        }
+
+    }
+
+    public static EmailOption EMAIL_DEFAULT_OPTION = EmailOption.MINE;
 
     private AnnouncementManager()
     {
@@ -579,7 +613,7 @@ public class AnnouncementManager
 
         //user has not yet defined email preference; return project default
         if (emailPref == null)
-            return EMAIL_PREFERENCE_DEFAULT;
+            return EmailOption.NOT_SET.getValue();
         else
             return emailPref.getEmailOptionId();
     }
@@ -607,7 +641,7 @@ public class AnnouncementManager
 
         if (props.isEmpty())
         {
-            return EMAIL_DEFAULT_OPTION;
+            return EMAIL_DEFAULT_OPTION.getValue();
         }
         else
         {
@@ -620,20 +654,12 @@ public class AnnouncementManager
         }
     }
 
-    private static final Set<Integer> VALID_OPTIONS = PageFlowUtil.set(
-        EMAIL_PREFERENCE_NONE,
-        EMAIL_PREFERENCE_ALL,
-        EMAIL_PREFERENCE_MINE,
-        EMAIL_PREFERENCE_ALL + EMAIL_NOTIFICATION_TYPE_DIGEST,
-        EMAIL_PREFERENCE_MINE + EMAIL_NOTIFICATION_TYPE_DIGEST
-    );
-
     private static int validate(int option)
     {
-        if (VALID_OPTIONS.contains(option))
+        if (EmailOption.isValid(option))
             return option;
         else
-            return EMAIL_PREFERENCE_NONE;
+            return EmailOption.NONE.getValue();
     }
 
     private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";

@@ -22,17 +22,17 @@
 <b><%=h(message)%></b>
 <labkey:form action="<%=h(buildURL(AnnouncementsController.EmailPreferencesAction.class))%>" method="post">
     <br>Send email notifications for these <%=h(conversationName)%>s<br>
-    <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_NONE%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EMAIL_PREFERENCE_NONE)%>>
+    <input type="radio" value="<%=AnnouncementManager.EmailOption.NONE.getValue()%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EmailOption.NONE.getValue())%>>
     <b>None</b> - Don't send me any email for this message board<br>
-    <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_MINE%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EMAIL_PREFERENCE_MINE)%>>
+    <input type="radio" value="<%=AnnouncementManager.EmailOption.MINE.getValue()%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EmailOption.MINE.getValue())%>>
     <b>Mine</b> - Send me email for posts to my <%=h(conversationName)%>s (I've posted to the <%=h(conversationName)%><% if (hasMemberList) { %> or I'm on its member list<% } %>)<br>
-    <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_ALL%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EMAIL_PREFERENCE_ALL)%>>
+    <input type="radio" value="<%=AnnouncementManager.EmailOption.ALL.getValue()%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EmailOption.ALL.getValue())%>>
     <b>All</b> - Send me email for all posts<br>
 
     <br>Notification type<br>
     <input type="radio" value="0" name="notificationType"<%=checked(notificationType == 0)%>>
     <b>Individual</b> - send a separate email after each post<br>
-    <input type="radio" value="<%=AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST%>" name="notificationType"<%=checked(notificationType == AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST)%>>
+    <input type="radio" value="<%=AnnouncementManager.EmailOption.NOTIFICATION_TYPE_DIGEST%>" name="notificationType"<%=checked(notificationType == AnnouncementManager.EmailOption.NOTIFICATION_TYPE_DIGEST)%>>
     <b>Daily Digest</b> - send one email each day that summarizes all posts<br>
 
     <br><input type=hidden name="srcUrl" value="<%=h(srcURL)%>"/>

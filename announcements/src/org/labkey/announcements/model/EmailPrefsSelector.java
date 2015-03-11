@@ -89,7 +89,7 @@ public abstract class EmailPrefsSelector
     // Anything but NONE... override this to filter out other prefs
     protected boolean includeEmailPref(UserPreference ep)
     {
-        return AnnouncementManager.EMAIL_PREFERENCE_NONE != ep.getEmailOptionId();
+        return AnnouncementManager.EmailOption.NONE.getValue() != ep.getEmailOptionId();
     }
 
 
@@ -115,9 +115,9 @@ public abstract class EmailPrefsSelector
             return false;
 
         DiscussionService.Settings settings = AnnouncementsController.getSettings(_c);
-        int emailPreference = up.getEmailOptionId() & AnnouncementManager.EMAIL_PREFERENCE_MASK;
+        int emailPreference = up.getEmailOptionId() & AnnouncementManager.EmailOption.PREFERENCE_MASK;
 
-        if (AnnouncementManager.EMAIL_PREFERENCE_MINE == emailPreference)
+        if (AnnouncementManager.EmailOption.MINE.getValue() == emailPreference)
         {
             // Skip if preference is MINE and this is a new message  TODO: notify message creator?
             if (null == ann)
@@ -135,7 +135,7 @@ public abstract class EmailPrefsSelector
         else
         {
             // Shouldn't be here if preference is NONE
-            assert AnnouncementManager.EMAIL_PREFERENCE_NONE != emailPreference;
+            assert AnnouncementManager.EmailOption.NONE.getValue() != emailPreference;
         }
 
         Permissions perm = AnnouncementsController.getPermissions(_c, user, settings);

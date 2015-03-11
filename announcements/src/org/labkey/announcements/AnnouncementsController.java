@@ -1154,7 +1154,7 @@ public class AnnouncementsController extends SpringActionController
             // that a bunch of users are about to be emailed.
             int defaultEmailOption = AnnouncementManager.getDefaultEmailOption(c);
 
-            if (AnnouncementManager.EMAIL_PREFERENCE_ALL == (defaultEmailOption & AnnouncementManager.EMAIL_PREFERENCE_MASK))
+            if (AnnouncementManager.EmailOption.ALL.getValue() == (defaultEmailOption & AnnouncementManager.EmailOption.PREFERENCE_MASK))
             {
                 bean.emailUsers = new IndividualEmailPrefsSelector(c).getNotificationUsers(latestPost).size() + new DailyDigestEmailPrefsSelector(c).getNotificationUsers(latestPost).size();
             }
@@ -1558,13 +1558,13 @@ public class AnnouncementsController extends SpringActionController
     private static int getEmailOptionIncludingInherited(Container c, User user, String srcIdentifier)
     {
         int emailOption = AnnouncementManager.getUserEmailOption(c, user, srcIdentifier);
-        if (emailOption == AnnouncementManager.EMAIL_PREFERENCE_DEFAULT)
+        if (emailOption == AnnouncementManager.EmailOption.NOT_SET.getValue())
         {
             if (!srcIdentifier.equals(c.getId()))
             {
                 emailOption = AnnouncementManager.getUserEmailOption(c, user, c.getId());
             }
-            if (emailOption == AnnouncementManager.EMAIL_PREFERENCE_DEFAULT)
+            if (emailOption == AnnouncementManager.EmailOption.NOT_SET.getValue())
             {
                 emailOption = AnnouncementManager.getDefaultEmailOption(c);
             }
@@ -1990,7 +1990,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class EmailOptionsForm extends ViewForm
     {
-        private int _emailPreference = AnnouncementManager.EMAIL_PREFERENCE_NONE;
+        private int _emailPreference = AnnouncementManager.EmailOption.NONE.getValue();
         private int _notificationType = 0;
         private String _srcIdentifier;
         private String _srcUrl = null;
@@ -1999,15 +1999,15 @@ public class AnnouncementsController extends SpringActionController
         // This method splits them apart
         public void setEmailOption(int emailOption)
         {
-            _emailPreference = emailOption & AnnouncementManager.EMAIL_PREFERENCE_MASK;
-            _notificationType = emailOption & AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST;
+            _emailPreference = emailOption & AnnouncementManager.EmailOption.PREFERENCE_MASK;
+            _notificationType = emailOption & AnnouncementManager.EmailOption.NOTIFICATION_TYPE_DIGEST;
         }
 
         public int getEmailOption()
         {
             // Form allows "no email" + "daily digest" -- change this to "no email" + "individual" since they are equivalent
             // and we don't want to deal with the former option in the database, with foreign keys, on the admin pages, etc. 
-            if (_emailPreference == AnnouncementManager.EMAIL_PREFERENCE_NONE)
+            if (_emailPreference == AnnouncementManager.EmailOption.NONE.getValue())
                 _notificationType = 0;
 
             return _emailPreference | _notificationType;
@@ -2590,8 +2590,8 @@ public class AnnouncementsController extends SpringActionController
 
                         // Or if they're subscribed because they've posted to this thread already
                         // Remember the emailOption is a bitmask, so don't use simple equality checks
-                        boolean forumSubscription = (emailOption & AnnouncementManager.EMAIL_PREFERENCE_ALL) != 0 ||
-                            ((emailOption & AnnouncementManager.EMAIL_PREFERENCE_MINE) != 0 && ann.getAuthors().contains(getViewContext().getUser()));
+                        boolean forumSubscription = (emailOption & AnnouncementManager.EmailOption.ALL.getValue()) != 0 ||
+                            ((emailOption & AnnouncementManager.EmailOption.MINE.getValue()) != 0 && ann.getAuthors().contains(getViewContext().getUser()));
                         
                         if (forumSubscription)
                         {

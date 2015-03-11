@@ -35,6 +35,6 @@ public class DailyDigestEmailPrefsSelector extends EmailPrefsSelector
     @Override
     protected boolean includeEmailPref(UserPreference up)
     {
-        return super.includeEmailPref(up) && ((up.getEmailOptionId() & AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST) != 0);
+        return super.includeEmailPref(up) && ((up.getEmailOptionId() & AnnouncementManager.EmailOption.NOTIFICATION_TYPE_DIGEST) != 0);
     }
 }
