@@ -116,29 +116,34 @@ public class AnnouncementManager
 
         private static Map<Integer, EmailOption> map = new HashMap<Integer, EmailOption>();
 
-        static {
-            for (EmailOption option : EmailOption.values()) {
+        static
+        {
+            for (EmailOption option : EmailOption.values())
+            {
                 map.put(option.value, option);
             }
         }
 
-        private EmailOption(int value) {
+        private EmailOption(int value)
+        {
             this.value = value;
         }
 
-        public int getValue() {
+        public int getValue()
+        {
             return this.value;
         }
 
-        public static EmailOption valueOf(int intValue) throws IllegalArgumentException {
-            if (map.containsKey(intValue)) {
+        public static EmailOption valueOf(int intValue) throws IllegalArgumentException
+        {
+            if (map.containsKey(intValue))
                 return map.get(intValue);
-            } else {
+            else
                 throw new IllegalArgumentException("Invalid email setting option: " + intValue);
-            }
         }
 
-        public static Boolean isValid(int intValue) {
+        public static Boolean isValid(int intValue)
+        {
             return map.containsKey(intValue);
         }
 
