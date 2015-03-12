@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ResultSetUtil;
 import org.springframework.beans.factory.InitializingBean;
 
@@ -255,9 +256,15 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                     {
                         throw new ConvertHelper.ContainerConversionException(e.getMessage());
                     }
-                    catch (ConversionException | IllegalAccessException | InvocationTargetException e)
+                    catch (IllegalAccessException | InvocationTargetException e)
                     {
                         throw new IllegalStateException("Failed to copy property '" + prop + "' on class " + _class.getName(), e);
+                    }
+                    catch (ConversionException e)
+                    {
+                        // This addresses #22762. I don't like this hack at all, but we can't blow up if java upgrade code touches a bean before all the corresponding database columns are finalized.
+                        if (!ModuleLoader.getInstance().isUpgradeInProgress() || !"No value specified".equals(e.getMessage()))
+                            throw new IllegalStateException("Failed to copy property '" + prop + "' on class " + _class.getName(), e);
                     }
                 }
 

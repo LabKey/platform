@@ -1645,9 +1645,9 @@ public class ModuleLoader implements Filter
                     }
                 }
             }
-        }
 
-        return _schemaNameToSchemaDetails.get(schemaName);
+            return _schemaNameToSchemaDetails.get(schemaName);
+        }
     }
 
     public void clearAllSchemaDetails()

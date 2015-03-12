@@ -903,7 +903,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
         if (Ext.isNumber(fieldKeyOrIndex))
             index = fieldKeyOrIndex;
         else
-            index = list.store.findExact("fieldKey", fieldKeyOrIndex);
+            index = list.store.find("fieldKey", fieldKeyOrIndex, 0, false, false);
         return index;
     },
 
@@ -926,8 +926,8 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
                 this.getList().select(i);
 
             // uncheck the field tree
-            var fieldKey = record.data.fieldKey;
-            var treeNode = this.designer.fieldsTree.getRootNode().findChild("fieldKey", fieldKey, true);
+            var upperFieldKey = record.data.fieldKey.toUpperCase();
+            var treeNode = this.designer.fieldsTree.getRootNode().findChildBy(function (node) { return node.attributes.fieldKey.toUpperCase() == upperFieldKey; }, null, true);
             if (treeNode)
                 treeNode.getUI().toggleCheck(false);
         }

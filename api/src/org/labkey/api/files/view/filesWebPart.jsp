@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -70,6 +71,16 @@
 <script type="text/javascript">
     Ext4.onReady(function() {
         var buttonActions = [<% String sep = ""; for(FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {%><%=text(sep)%>'<%=text(action.name())%>'<% sep = ","; }%>];
+        var startDirectory;
+
+        <%
+            if (bean.getDirectory() != null)
+            {
+        %>
+        startDirectory = <%=PageFlowUtil.jsString(bean.getDirectory().toString())%>;
+        <%
+            }
+        %>
 
         var fb = Ext4.create('File.panel.Browser', {
             renderTo: <%=q(bean.getContentId())%>,
@@ -79,6 +90,7 @@
                 rootOffset: <%=q(bean.getRootOffset())%>,
                 rootName: 'fileset'
             }),
+            startDirectory: startDirectory,
             height: <%= height %>,
             showFolderTree: <%=bean.isShowFolderTree()%>,
             expandFolderTree: <%=!bean.isFolderTreeCollapsed()%>,

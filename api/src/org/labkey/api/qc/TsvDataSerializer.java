@@ -17,14 +17,20 @@
 package org.labkey.api.qc;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.reader.TabLoader;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -86,9 +92,17 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
 
     public List<Map<String, Object>> importRunData(ExpProtocol protocol, File runData) throws Exception
     {
-        TabLoader loader = new TabLoader(runData, true);
-        loader.setInferTypes(false);
-        loader.setHasColumnHeaders(true);
-        return loader.load();
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        Domain dataDomain = provider.getResultsDomain(protocol);
+
+        try (DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(runData, dataDomain, new DataLoaderSettings()))
+        {
+            loader.setInferTypes(false);
+            return loader.load();
+        }
+        catch (IOException ioe)
+        {
+            throw new ExperimentException("There was a problem loading the data file. " + (ioe.getMessage() == null ? "" : ioe.getMessage()), ioe);
+        }
     }
 }

@@ -23,7 +23,7 @@ import org.labkey.api.util.UniqueID;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -113,17 +113,19 @@ public class PopupMenu extends DisplayElement
         // Issue 11392: DataRegion name escaping in button menus.  Menu id is double-escaped.  Once here, once when rendering.
         String jsStringFilteredMenuId = PageFlowUtil.qh(_safeID);
 
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("lk-menu-id", _safeID);
+
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
-            String link = PageFlowUtil.textLink(_navTree.getText(), "javascript:void(0)", "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", "");
+            String link = PageFlowUtil.textLink(_navTree.getText(), "javascript:void(0)", "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", "", attributes);
             out.append(link);
         }
         else if (_buttonStyle == ButtonStyle.MENUBUTTON)
         {
-            Map<String, String> attributes = null;
             if (requiresSelection)
-                attributes = Collections.singletonMap("labkey-requires-selection", PageFlowUtil.filter(dataRegionName));
+                attributes.put("labkey-requires-selection", PageFlowUtil.filter(dataRegionName));
             out.append(PageFlowUtil.generateDropDownButton(_navTree.getText(), "javascript:void(0)",
                     "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", attributes));
         }

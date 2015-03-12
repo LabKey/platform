@@ -130,6 +130,34 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         Domain dataDomain = provider.getResultsDomain(protocol);
 
+        try (DataLoader loader = createLoaderForImport(dataFile, dataDomain, settings))
+        {
+            Map<DataType, List<Map<String, Object>>> datas = new HashMap<>();
+            List<Map<String, Object>> dataRows = loader.load();
+
+            // loader did not parse any rows
+            if (dataRows.isEmpty() && !settings.isAllowEmptyData() && dataDomain.getProperties().size() > 0)
+                throw new ExperimentException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
+            if (!dataRows.isEmpty())
+                adjustFirstRowOrder(dataRows, loader);
+
+            datas.put(getDataType(), dataRows);
+            return datas;
+        }
+        catch (IOException ioe)
+        {
+            throw new ExperimentException("There was a problem loading the data file. " + (ioe.getMessage() == null ? "" : ioe.getMessage()), ioe);
+        }
+    }
+
+    /**
+     * Creates a DataLoader that can handle missing value indicators if the columns on the domain
+     * are configured to support it.
+     *
+     * @throws ExperimentException
+     */
+    public static DataLoader createLoaderForImport(File dataFile, Domain dataDomain, DataLoaderSettings settings) throws ExperimentException
+    {
         List<? extends DomainProperty> columns = dataDomain.getProperties();
         Map<String, DomainProperty> aliases = dataDomain.createImportMap(false);
         Set<String> mvEnabledColumns = Sets.newCaseInsensitiveHashSet();
@@ -146,12 +174,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 mvIndicatorColumns.add(col.getName() + MvColumn.MV_INDICATOR_SUFFIX);
             }
         }
-        DataLoader loader = null;
         try
         {
-            loader = DataLoader.get().createLoader(dataFile, null, true, null, TabLoader.TSV_FILE_TYPE);
-
+            DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, null, TabLoader.TSV_FILE_TYPE);
             loader.setThrowOnErrors(settings.isThrowOnErrors());
+
             for (ColumnDescriptor column : loader.getColumns())
             {
                 if (mvEnabledColumns.contains(column.name))
@@ -174,31 +201,18 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         column.load = false;
                     }
                 }
+
                 if (settings.isBestEffortConversion())
                     column.errorValues = DataLoader.ERROR_VALUE_USE_ORIGINAL;
                 else
                     column.errorValues = ERROR_VALUE;
             }
-            Map<DataType, List<Map<String, Object>>> datas = new HashMap<>();
-            List<Map<String, Object>> dataRows = loader.load();
+            return loader;
 
-            // loader did not parse any rows
-            if (dataRows.isEmpty() && !settings.isAllowEmptyData() && columns.size() > 0)
-                throw new ExperimentException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
-            if (!dataRows.isEmpty())
-                adjustFirstRowOrder(dataRows, loader);
-
-            datas.put(getDataType(), dataRows);
-            return datas;
         }
         catch (IOException ioe)
         {
             throw new ExperimentException("There was a problem loading the data file. " + (ioe.getMessage() == null ? "" : ioe.getMessage()), ioe);
-        }
-        finally
-        {
-            if (loader != null)
-                loader.close();
         }
     }
 
