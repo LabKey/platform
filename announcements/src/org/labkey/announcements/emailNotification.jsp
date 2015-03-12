@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
 <%
     StringBuilder sb = new StringBuilder();
@@ -28,10 +29,11 @@
         sb.append("Attachments: ");
         for (Attachment attachment : announcementModel.getAttachments())
         {
-           sb.append(separator);
-           separator = ", ";
-           sb.append(attachment.getName());
+            sb.append(separator);
+            separator = ", ";
+            sb.append("<a href=\"").append(h(attachment.getDownloadUrl(AnnouncementsController.DownloadAction.class))).append("\">").append(h(attachment.getName())).append("</a>");
         }
+
     }
 %>
 <html>
@@ -57,7 +59,7 @@
     <tr><td colspan="3">&nbsp;</td></tr>
     <tr><td colspan="3"><a href="<%=h(threadURL.getURIString())%>">View this <%=h(settings.getConversationName().toLowerCase())%></a></td></tr>
     <tr><td colspan="3">&nbsp;</td></tr>
-    <tr><td colspan="3"><%=h(sb)%></td></tr>
+    <tr><td colspan="3"><%=sb%></td></tr>
 </table>
 
 <br>
