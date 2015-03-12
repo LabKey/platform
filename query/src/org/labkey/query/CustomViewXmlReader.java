@@ -253,7 +253,7 @@ public class CustomViewXmlReader
             reader._query = viewElement.getQuery();
             reader._hidden = viewElement.isSetHidden() && viewElement.getHidden();
             reader._canInherit = viewElement.isSetCanInherit() && viewElement.getCanInherit();
-            reader._customIconUrl = viewElement.isSetCustomIconUrl() ? viewElement.getCustomIconUrl() : "/reports/icon_query_view.png";
+            reader._customIconUrl = viewElement.isSetCustomIconUrl() ? viewElement.getCustomIconUrl() : "/reports/grid.gif";
             reader._label = viewElement.getLabel();
             if (viewElement.isSetShowInDataViews())
                 reader._showInDataViews = viewElement.getShowInDataViews();

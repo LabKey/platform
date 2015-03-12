@@ -32,6 +32,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -305,6 +306,15 @@ public class StudyUpgradeCode implements UpgradeCode
         TableInfo specimenOld = db.getTable("specimen");
         TableInfo vialOld = db.getTable("vial");
         TableInfo specimeneventOld = db.getTable("specimenevent");
+
+        // 15.1 changes the constraints that were to study.site, one from Vial, one from SpecimentEvent
+        // We need to drop them here. They'll get added in migrateSpecimenTypeAndLocationTables
+        TableInfo locationNew = StudySchema.getInstance().getTableInfoSite(study.getContainer());
+        String vialConstraintName = "FK_CurrentLocation_" + vialNew.getMetaDataName() + "_" + locationNew.getMetaDataName();
+        vialNew.getSqlDialect().dropIfExists(vialNew.getSchema(), vialNew.getMetaDataName(), "CONSTRAINT", vialConstraintName);
+        String eventConstraintName = "FK_LabId_" + specimeneventNew.getMetaDataName() + "_" + locationNew.getMetaDataName();
+        vialNew.getSqlDialect().dropIfExists(specimeneventNew.getSchema(), specimeneventNew.getMetaDataName(), "CONSTRAINT", eventConstraintName);
+
         _copy(study, specimenOld, specimenNew, true);
         _copy(study, vialOld, vialNew, false);
         _copy(study, specimeneventOld, specimeneventNew, true);
@@ -516,7 +526,7 @@ public class StudyUpgradeCode implements UpgradeCode
                 {
                     Study study = StudyManager.getInstance().getStudy(c);
                     if (null != study)
-                        migrateSpecimenTypeAndLocationTables(study, true);
+                        migrateSpecimenTypeAndLocationTables(study, true, context);
                 }
             }
 
@@ -526,10 +536,14 @@ public class StudyUpgradeCode implements UpgradeCode
                 {
                     Study study = StudyManager.getInstance().getStudy(c);
                     if (null != study)
-                        migrateSpecimenTypeAndLocationTables(study, false);
+                        migrateSpecimenTypeAndLocationTables(study, false, context);
                 }
             }
         }
+
+        // Drop any constraints on Site table left by orphaned Vial and SpecimenEvent tables
+        dropConstraintsFromOrphanedSpecimenTables();
+
         // Now drop the tables
         SqlDialect dialect = StudySchema.getInstance().getSchema().getScope().getSqlDialect();
         dialect.dropIfExists(StudySchema.getInstance().getSchema(), "Site", "TABLE", null);
@@ -538,7 +552,7 @@ public class StudyUpgradeCode implements UpgradeCode
         dialect.dropIfExists(StudySchema.getInstance().getSchema(), "SpecimenAdditive", "TABLE", null);
     }
 
-    public void migrateSpecimenTypeAndLocationTables(Study study, boolean createTablesOnly)
+    public void migrateSpecimenTypeAndLocationTables(Study study, boolean createTablesOnly, final ModuleContext context)
     {
         TableInfo location = StudySchema.getInstance().getTableInfoSite(study.getContainer());
         TableInfo primaryType = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(study.getContainer());
@@ -556,7 +570,7 @@ public class StudyUpgradeCode implements UpgradeCode
         }
         catch (SQLException e)
         {
-
+            _log.info("Getting bare study schema failed: " + study.getEntityId());
         }
         TableInfo locationOld = db.getTable("site");
         TableInfo primaryTypeOld = db.getTable("specimenprimarytype");
@@ -567,21 +581,65 @@ public class StudyUpgradeCode implements UpgradeCode
         _copy(study, derivativeOld, derivative, true);
         _copy(study, additiveOld, additive, true);
 
-        // Vial and Specimen each have an FK to Site. We need to drop that and add one to the provisioned Location/Site table
-        migrateForeignKeyConstraint(StudySchema.getInstance().getTableInfoVial(study.getContainer()), locationOld, location, "CurrentLocation");
-        migrateForeignKeyConstraint(StudySchema.getInstance().getTableInfoSpecimenEvent(study.getContainer()), locationOld, location, "LabId");
+        // It's possible a study's specimen tables don't exist, in which case we don't have to migrate the constraints;
+        // We'll force them to get created as well, if they don't exist
+        StudySchema.getInstance().getTableInfoSpecimen(study.getContainer(), context.getUpgradeUser());
+
+        boolean vialExists = null != StudySchema.getInstance().getTableInfoVialIfExists(study.getContainer());
+        boolean specimenEventExists = null != StudySchema.getInstance().getTableInfoSpecimenEventIfExists(study.getContainer());
+
+        // Vial and SpecimenEvent each have an FK to Site. We need to drop that and add one to the provisioned Location/Site table
+        if (vialExists)
+            migrateForeignKeyConstraint(StudySchema.getInstance().getTableInfoVial(study.getContainer()), locationOld, location, "CurrentLocation");
+        else
+            StudySchema.getInstance().getTableInfoVial(study.getContainer(), context.getUpgradeUser());
+
+        if (specimenEventExists)
+            migrateForeignKeyConstraint(StudySchema.getInstance().getTableInfoSpecimenEvent(study.getContainer()), locationOld, location, "LabId");
+        else
+            StudySchema.getInstance().getTableInfoSpecimenEvent(study.getContainer(), context.getUpgradeUser());
     }
 
     private void migrateForeignKeyConstraint(TableInfo tableInfoWithFK, TableInfo oldDestTableInfo, TableInfo newDestTableInfo, String fieldName)
     {
         String constraintName = "FK_" + fieldName + "_" + tableInfoWithFK.getMetaDataName() + "_" + oldDestTableInfo.getMetaDataName();
-        tableInfoWithFK.getSqlDialect().dropIfExists(DbSchema.get("specimentables"), tableInfoWithFK.getMetaDataName(), "CONSTRAINT", constraintName);
+        tableInfoWithFK.getSqlDialect().dropIfExists(tableInfoWithFK.getSchema(), tableInfoWithFK.getMetaDataName(), "CONSTRAINT", constraintName);
 
         SQLFragment sql = new SQLFragment("ALTER TABLE ");
         sql.append(tableInfoWithFK.getSelectName()).append(" ADD CONSTRAINT FK_")
            .append(fieldName).append("_").append(tableInfoWithFK.getMetaDataName()).append("_").append(newDestTableInfo.getMetaDataName())
            .append(" FOREIGN KEY (").append(fieldName).append(") REFERENCES ").append(newDestTableInfo.getSelectName()).append(" (RowId)");
-        new SqlExecutor(tableInfoWithFK.getSchema()).execute(sql);
+
+        try
+        {
+            new SqlExecutor(tableInfoWithFK.getSchema()).execute(sql);
+        }
+        catch (Exception e)
+        {
+            _log.error("Exception message: " + e.getMessage() + "\n executing sql: " + sql.toString());
+        }
+    }
+
+    private void dropConstraintsFromOrphanedSpecimenTables()
+    {
+        SQLFragment sql = new SQLFragment("SELECT constraint_name As ConstraintName, table_name AS ForeignTableName FROM information_schema.table_constraints\n");
+        sql.append("WHERE constraint_type = 'FOREIGN KEY' AND table_schema = 'specimentables' AND constraint_name LIKE '%_site'");
+
+        final DbSchema schema = DbSchema.get("specimentables", DbSchemaType.Provisioned);
+        new SqlSelector(schema.getScope(), sql).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+        {
+            @Override
+            public void exec(Map<String, Object> object) throws SQLException
+            {
+                TableInfo tableInfo = schema.getTable((String)object.get("ForeignTableName"));
+                String constraintName = (String)object.get("ConstraintName");
+                if (null != tableInfo && null != constraintName)
+                {
+                    tableInfo.getSqlDialect().dropIfExists(tableInfo.getSchema(), tableInfo.getMetaDataName(), "CONSTRAINT", constraintName);
+                    _log.info("Table '" + tableInfo.getMetaDataName() + "' has constraint '" + constraintName + "' and appears to be orphaned.");
+                }
+            }
+        });
     }
 
     // invoked by study-13.23-13.24.sql

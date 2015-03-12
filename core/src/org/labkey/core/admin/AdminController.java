@@ -1283,7 +1283,10 @@ public class AdminController extends SpringActionController
                 }
                 catch (URISyntaxException e)
                 {
-                    errors.reject(ERROR_MSG, "Invalid Base Server URL, " + e.getMessage() + ".  Please enter a valid URL, for example: http://www.labkey.org, https://www.labkey.org, or http://www.labkey.org:8080");
+                    errors.reject(ERROR_MSG, "Invalid Base Server URL, \"" + e.getMessage() + "\"." +
+                            "Please enter a valid base URL containing the protocol, hostname, and port if required. " +
+                            "The webapp context path should not be included. " +
+                            "For example: \"https://www.example.com\" or \"http://www.labkey.org:8080\" and not \"http://www.example.com/labkey/\"");
                     return false;
                 }
             }

@@ -209,6 +209,13 @@ Ext4.define('File.panel.Browser', {
     STATE_LOCK: false,
 
     /**
+     * The directory that should be expanded to when the browser is initialized. This will only be used
+     * if a previous path has not been saved. This should be a path relative to the current base URL.
+     * @cfg {String} [startDirectory]
+     */
+    startDirectory: undefined,
+
+    /**
      * An additional set of toolbar configurable items that can be supplied at runtime.
      * @cfg {Array} tbarItems
      */
@@ -1174,14 +1181,22 @@ Ext4.define('File.panel.Browser', {
                 load: {
                     fn : function(s) {
                         this.loadRootNode();
-                        if (this.hasStatePrefix()) {
+                        if (!Ext4.isEmpty(this.startDirectory)) {
+                            this.getFileStore().LOCKED = true;
+                            this.STATE_LOCK = true;
+                            this.ensureVisible(this.fileSystem.getBaseURL() + this.startDirectory);
+
+                            if (this.hasStatePrefix()) {
+                                Ext4.state.Manager.clear(this.statePrefix + ".currentDirectory");
+                            }
+                        }
+                        else if (this.hasStatePrefix()) {
                             // Retrieve the last visited folder from the container cookie
-                            this.startFolder = Ext4.state.Manager.get(this.statePrefix + ".currentDirectory");
-                            if (this.startFolder)
-                            {
+                            var startFolder = Ext4.state.Manager.get(this.statePrefix + ".currentDirectory");
+                            if (startFolder) {
                                 this.getFileStore().LOCKED = true;
                                 this.STATE_LOCK = true;
-                                this.ensureVisible(this.startFolder);
+                                this.ensureVisible(startFolder);
                             }
                         }
                         else {

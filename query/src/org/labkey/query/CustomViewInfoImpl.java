@@ -209,7 +209,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
 
     public String getCustomIconUrl()
     {
-        return isShared() ? "/reports/icon_query_view.png" : "/reports/icon_private_view.png";
+        return isShared() ? "/reports/grid.gif" : "/reports/icon_private_view.png";
     }
 
     public boolean hasFilterOrSort()

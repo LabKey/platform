@@ -249,9 +249,11 @@
         <ns:datatype>Varchar</ns:datatype>
         <ns:scale>50</ns:scale>
       </ns:column>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="EntityId">
-        <ns:description>A unique string identifier for each location.</ns:description>
+      <ns:column columnName="Container">
+        <ns:isKeyField>true</ns:isKeyField>
+      </ns:column>
+       <ns:column columnName="EntityId">
+         <ns:description>A unique string identifier for each location.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>

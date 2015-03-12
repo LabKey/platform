@@ -774,41 +774,38 @@ public class StudyServiceImpl implements StudyService.Service
         User user = schemaDefault.getUser();
         String publicName = null;
 
+        if (null == containers)                     // TODO: I'm reasonably sure this can't happen; for 15.2, verify all paths and @NotNull parameter
+            containers = Collections.emptySet();
         Map<Container, BaseStudyTable> tables = new HashMap<>();
         Map<TableInfo, SQLFragment> filterFragmentMap = new HashMap<>();
         try
         {
-            if (null == containers || containers.isEmpty())
+            for (Container c : containers)
+            {
+                Study s = StudyManager.getInstance().getStudy(c);
+                if (null != s)
+                {
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
+                    BaseStudyTable t = tableClass.getConstructor(StudyQuerySchema.class).newInstance(schema);
+                    t.setPublic(false);
+                    tables.put(c, t);
+                    if (filterFragments.containsKey(c))
+                        filterFragmentMap.put(t, filterFragments.get(c));
+                    publicName = t.getPublicName();
+                }
+            }
+            if (tables.isEmpty())
             {
                 BaseStudyTable t = tableClass.getConstructor(StudyQuerySchema.class).newInstance(schemaDefault);
                 t.setPublic(false);
                 return t;
-            }
-            else
-            {
-                for (Container c : containers)
-                {
-                    Study s = StudyManager.getInstance().getStudy(c);
-                    StudyQuerySchema schema = schemaDefault;
-                    if (null != s)
-                        schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
-                    BaseStudyTable t = tableClass.getConstructor(StudyQuerySchema.class).newInstance(schema);
-                    if (!tables.containsKey(c))
-                    {
-                        t.setPublic(false);
-                        tables.put(c, t);
-                        if (filterFragments.containsKey(c))
-                            filterFragmentMap.put(t, filterFragments.get(c));
-                        publicName = t.getPublicName();
-                    }
-                }
             }
         }
         catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
         {
             throw new IllegalStateException("Unable to construct class instance.");
         }
-        return createUnionTable(schemaDefault, tables.values(), containers, publicName, kind, filterFragmentMap,
+        return createUnionTable(schemaDefault, tables.values(), tables.keySet(), publicName, kind, filterFragmentMap,
                                 dontAliasColumns, useParticipantIdName);
     }
 
@@ -948,31 +945,28 @@ public class StudyServiceImpl implements StudyService.Service
         User user = schemaDefault.getUser();
         String publicName = null;
 
+        if (null == containers)                     // TODO: I'm reasonably sure this can't happen; for 15.2, verify all paths and @NotNull parameter
+            containers = Collections.emptySet();
         Map<Container, BaseStudyTable> tables = new HashMap<>();
         try
         {
-            if (null == containers || containers.isEmpty())
+            for (Container c : containers)
+            {
+                Study s = StudyManager.getInstance().getStudy(c);
+                if (null != s)
+                {
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
+                    BaseStudyTable t = (BaseStudyTable) tableClass.getConstructor(StudyQuerySchema.class).newInstance(schema);
+                    t.setPublic(false);
+                    tables.put(c, t);
+                    publicName = t.getPublicName();
+                }
+            }
+            if (tables.isEmpty())
             {
                 BaseStudyTable t = (BaseStudyTable)tableClass.getConstructor(StudyQuerySchema.class).newInstance(schemaDefault);
                 t.setPublic(false);
                 return t;
-            }
-            else
-            {
-                for (Container c : containers)
-                {
-                    Study s = StudyManager.getInstance().getStudy(c);
-                    StudyQuerySchema schema = schemaDefault;
-                    if (null != s)
-                        schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
-                    BaseStudyTable t = (BaseStudyTable)tableClass.getConstructor(StudyQuerySchema.class).newInstance(schema);
-                    if (!tables.containsKey(c))
-                    {
-                        t.setPublic(false);
-                        tables.put(c, t);
-                        publicName = t.getPublicName();
-                    }
-                }
             }
         }
         catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
@@ -980,7 +974,7 @@ public class StudyServiceImpl implements StudyService.Service
             throw new IllegalStateException("Unable to construct class instance.");
         }
 
-        return createTypeUnionTable(schemaDefault, tables.values(), containers, publicName, Collections.EMPTY_MAP, dontAliasColumns);
+        return createTypeUnionTable(schemaDefault, tables.values(), tables.keySet(), publicName, Collections.<TableInfo, SQLFragment>emptyMap(), dontAliasColumns);
     }
 
     private TableInfo createTypeUnionTable(StudyQuerySchema schemaDefault, Collection<BaseStudyTable> terms, Set<Container> containers, String tableName,

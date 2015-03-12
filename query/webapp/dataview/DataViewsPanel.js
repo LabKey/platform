@@ -755,13 +755,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     onViewLoad : function() {
         this.getCenter().getEl().unmask();
-        this.hiddenFilter();
+        this.hiddenFilter(10);
     },
+
 
     /**
      * Aggregates the filters applied by search and by custom mode.
+     * @param {int} [delay=200] time to delay the filtering in ms
      */
-    hiddenFilter : function() {
+    hiddenFilter : function(delay) {
 
         var searchFields = ['name', 'categorylabel', 'type', 'modified', 'authorDisplayName', 'status'];
 
@@ -804,7 +806,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         };
 
         this.gridPanel.clearFilter();
-        Ext4.defer(this.gridPanel.filterBy, 200, this, [filter, this]);
+        Ext4.defer(this.gridPanel.filterBy, delay || 200, this, [filter, this]);
     },
 
     isCustomizable : function() {

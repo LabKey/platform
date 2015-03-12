@@ -1627,7 +1627,7 @@ public class StudyManager
                 TreatmentManager.getInstance().deleteTreatmentVisitMapForCohort(container, location.getRowId());
 
 //                _locationHelper.delete(location);
-                Table.delete(getTableInfoLocations(container), location.getRowId());
+                Table.delete(getTableInfoLocations(container), new SimpleFilter(FieldKey.fromString("RowId"), location.getRowId()));
 
                 transaction.commit();
             }

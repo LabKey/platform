@@ -2233,7 +2233,7 @@ public class QueryController extends SpringActionController
                 errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
                 return false;
             }
-            catch (DataIntegrityViolationException | Table.OptimisticConflictException e)
+            catch (DataIntegrityViolationException | Table.OptimisticConflictException | InvalidKeyException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
                 return false;
