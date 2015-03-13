@@ -1,0 +1,5 @@
+KeyCol	IntCol	StringCol	DateCol	BoolCol
+SampleSetBVT1	100	a	1/1/2000	TRUE
+SampleSetBVT2	200	b	2/2/2000	FALSE
+SampleSetBVT3	300	c	3/3/2000	TRUE
+SampleSetBVT4	400	d	4/4/2000	FALSE
