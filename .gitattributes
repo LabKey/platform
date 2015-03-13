@@ -7699,6 +7699,10 @@ internal/webapp/dataregion/filter/Faceted.js -text
 internal/webapp/dataregion/filter/Model.js -text
 internal/webapp/dataregion/filter/Value.js -text
 internal/webapp/dataregion/panel/Facet.js -text
+internal/webapp/designer/Designer.js -text
+internal/webapp/designer/FieldMetaStore.js -text
+internal/webapp/designer/FieldTreeLoader.js -text
+internal/webapp/designer/Tabs.js -text
 internal/webapp/designer/designer2.js -text
 internal/webapp/designer/wand.gif -text
 internal/webapp/dropzone-3.8.4/README.txt -text

@@ -1269,7 +1269,7 @@ if (!LABKEY.DataRegions)
                 region.showLoadingMessage("Opening custom view designer...");
             }, 500);
 
-            LABKEY.initializeViewDesigner(function() {
+            LABKEY.initializeViewDesigner2(function() {
                 // scope is region
                 var header = Ext.get(_getHeaderSelector(this)[0]);
 

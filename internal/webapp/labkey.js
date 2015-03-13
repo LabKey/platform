@@ -247,7 +247,7 @@ if (typeof LABKEY == "undefined")
                 LABKEY.Security.currentUser = LABKEY.user;
         };
 
-        //private
+        //private (Depricated)
         //Pull in the required JS files and invoke the callback when they're loaded
         var initializeViewDesigner = function(cb, scope)
         {
@@ -265,6 +265,26 @@ if (typeof LABKEY == "undefined")
 
             requiresCss("groupTabPanel/GroupTab.css");
             requiresCss("groupTabPanel/UngroupedTab.css");
+        };
+
+        //private
+        //Pull in the required JS files and invoke the callback when they're loaded
+        var initializeViewDesigner2 = function(cb, scope)
+        {
+            var scripts = [
+                //'query/queryDesigner.js',
+                'ComponentDataView.js',
+                'Ext.ux.dd.GridDragDropRowOrder.js',
+
+                'designer/FieldMetaStore.js',
+                'designer/FieldTreeLoader.js',
+                'designer/Tabs.js',
+                'designer/Designer.js'
+            ];
+
+            requiresExt3ClientAPI(true, function() {
+                requiresScript(scripts, true, cb, scope);
+            });
         };
 
         var isDirty = function()
@@ -786,6 +806,7 @@ if (typeof LABKEY == "undefined")
             id: id,
             init: init,
             initializeViewDesigner: initializeViewDesigner,
+            initializeViewDesigner2: initializeViewDesigner2,
             isDirty: isDirty,
             loadScripts: loadScripts,
             loadedScripts: loadedScripts,
