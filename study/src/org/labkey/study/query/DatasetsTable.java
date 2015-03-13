@@ -52,6 +52,10 @@ public class DatasetsTable extends FilteredTable<StudyQuerySchema>
         {
             String name = baseColumn.getName();
 
+            // can show later if we want, but it's internal for now
+            if (name.equalsIgnoreCase("datasharing"))
+                continue;
+
             ColumnInfo colInfo = addWrapColumn(baseColumn);
             if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))
                 colInfo.setHidden(true);

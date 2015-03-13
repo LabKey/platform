@@ -45,6 +45,10 @@ public class GWTDataset implements IsSerializable
     private StringProperty _description = new StringProperty();
     private StringProperty _sourceAssayName = new StringProperty();
     private StringProperty _sourceAssayURL = new StringProperty();
+    private StringProperty _dataSharing = new StringProperty();
+
+    // read-only (not changed in the editor)
+    private boolean _definitionIsShared = false;
 
     private Map<String, String> _cohortMap;
 
@@ -223,5 +227,30 @@ public class GWTDataset implements IsSerializable
     public void setSourceAssayURL(String assayURL)
     {
         _sourceAssayURL.set(assayURL);
+    }
+
+    public String getDataSharing()
+    {
+        return _dataSharing.getString();
+    }
+
+    public void setDataSharing(String sharing)
+    {
+        _dataSharing.set(sharing);
+    }
+
+    public StringProperty getDataSharingProperty()
+    {
+        return _dataSharing;
+    }
+
+    public boolean isDefinitionShared()
+    {
+        return _definitionIsShared;
+    }
+
+    public void setDefinitionShared(boolean b)
+    {
+        _definitionIsShared = b;
     }
 }

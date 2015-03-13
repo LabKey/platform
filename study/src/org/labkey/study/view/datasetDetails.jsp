@@ -156,7 +156,7 @@ if (!pipelineSet)
         <td class=labkey-form-label>Demographic
             Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each " +
                     StudyService.get().getSubjectNounSingular(c).toLowerCase() +
-        " in the study.")%></td>
+                    " in the study.")%></td>
         <td><%=text(dataset.isDemographicData() ? "true" : "false")%></td>
 
         <td rowspan="2" class=labkey-form-label>Description</td>
@@ -165,6 +165,10 @@ if (!pipelineSet)
     <tr>
         <td class=labkey-form-label>Show In Overview</td>
         <td><%=text(dataset.isShowByDefault() ? "true" : "false")%></td>
+    </tr>
+    <tr>
+        <td class=labkey-form-label>Share Data</td>
+        <td><%=text(dataset.getDataSharingEnum()== DatasetDefinition.DataSharing.NONE ? "No" : "Share by Participants")%></td>
     </tr>
 </table>
 <% WebPartView.endTitleFrame(out); %>

@@ -60,6 +60,7 @@ import org.labkey.api.gwt.client.util.ServiceUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -780,16 +781,16 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             panel.add(new Label("Additional Key Column"));
             panel.add(new HelpPopup("Additional Key",
                     "If dataset has more than one row per participant/visit, " +
-                            "an additional key field must be provided. There " +
-                            "can be at most one row in the dataset for each " +
-                            "combination of participant, visit and key. " +
-                            "<ul><li>None: No additional key</li>" +
-                            "<li>Data Field: A user-managed key field</li>" +
-                            "<li>Managed Field: A numeric or string field defined below will be managed" +
-                            "by the server to make each new entry unique. Numbers will be " +
-                            "assigned auto-incrementing integer values, strings will be assigned " +
-                            "globally unique identifiers (GUIDs).</li>" +
-                            "</ul>"));
+                    "an additional key field must be provided. There " +
+                    "can be at most one row in the dataset for each " +
+                    "combination of participant, visit and key. " +
+                    "<ul><li>None: No additional key</li>" +
+                    "<li>Data Field: A user-managed key field</li>" +
+                    "<li>Managed Field: A numeric or string field defined below will be managed" +
+                    "by the server to make each new entry unique. Numbers will be " +
+                    "assigned auto-incrementing integer values, strings will be assigned " +
+                    "globally unique identifiers (GUIDs).</li>" +
+                    "</ul>"));
 
             cellFormatter.setStyleName(row, 0, labelStyleName);
             _table.setWidget(row, 0, panel);
@@ -964,6 +965,28 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             cellFormatter.setStyleName(row, 0, labelStyleName);
             _table.setWidget(row++, 1, showByDefault);
 
+
+            // Only for project level datasets with shared definitions
+            if (_dataset.isDefinitionShared())
+            {
+                panel = new HorizontalPanel();
+                panel.add(new Label("Share data"));
+                panel.add(new HelpPopup("Shared data across studies", "When 'No' is selected (default) each study folder 'owns' its own data rows.  If study has shared visits, then 'Share by Participants' means that data rows are shared across the project, and studies will only see data rows for participants that are part of that study."));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+
+                Map<String,String> options = new LinkedHashMap<String,String>();
+                options.put("No", "NONE");
+                options.put("Share by Participants", "PTID");
+                BoundListBox sharedListBox = new BoundListBox(options,_dataset.getDataSharing(), new WidgetUpdatable()
+                {
+                    public void update(Widget widget)
+                    {
+                        _dataset.setDataSharing(((BoundListBox) widget).getSelectedValue());
+                    }
+                });
+                _table.setWidget(row++, 1, sharedListBox);
+            }
         }
 
         private void setCheckboxId(Element e, String id)

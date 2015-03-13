@@ -574,22 +574,61 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
 
+    @Override
+    protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
+    {
+        return super.getContainerFilterClause(filter, fieldKey);
+    }
+
+    @NotNull
+    @Override
+    public ContainerFilter getDefaultContainerFilter()
+    {
+        return super.getDefaultContainerFilter();
+    }
 
 
     @NotNull
     private SQLFragment _getFromSQL(String alias, boolean includeParticipantVisit)
     {
-        if (!includeParticipantVisit && !_dsd.isAssayData())
+        DatasetDefinition.DataSharing sharing = ((DatasetDefinition)getDataset()).getDataSharingEnum();
+        if (!includeParticipantVisit && !_dsd.isAssayData() && sharing == DatasetDefinition.DataSharing.NONE)
             return super.getFromSQL(alias);
 
-        TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+        String innerAlias = "__" +  alias;
+        SQLFragment sqlf;
 
-        SQLFragment from = new SQLFragment();
-        from.append("(SELECT DS.*, PV.VisitRowId");
-        if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
-            from.append(", PV.Day");
-        from.append("\nFROM ").append(super.getFromSQL("DS")).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
-                " ON DS.ParticipantId=PV.ParticipantId AND DS.SequenceNum=PV.SequenceNum AND PV.Container = DS.Container) AS ").append(alias);
+        if (!includeParticipantVisit)
+        {
+            sqlf = new SQLFragment("(SELECT * FROM ");
+            sqlf.append(super.getFromSQL(innerAlias));
+        }
+        else
+        {
+            TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+            sqlf = new SQLFragment();
+            sqlf.append("(SELECT " + innerAlias + ".*, PV.VisitRowId");
+            if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
+                sqlf.append(", PV.Day");
+            SQLFragment from = getRealTable().getFromSQL(innerAlias);
+            sqlf.append("\nFROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
+                    " ON " + innerAlias + ".ParticipantId=PV.ParticipantId AND " + innerAlias + ".SequenceNum=PV.SequenceNum AND PV.Container =  " + innerAlias + ".Container");
+        }
+
+        // Datasets mostly ignore container filters because they usually belong to a single container.
+        // In the dataspace case, they are unfiltered (no container filter).
+        // We actually need to handle the container filter in the "dataset with shared data" case
+        if (((DatasetDefinition)getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
+        {
+            TableInfo tiParticipant = _userSchema.getDbSchema().getTable("Participant");
+            ColumnInfo ciContainer = tiParticipant.getColumn("Container");
+            ContainerFilter cf = getContainerFilter();
+            SimpleFilter.FilterClause f = super.getContainerFilterClause(cf,ciContainer.getFieldKey());
+            SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(),ciContainer), getSchema().getSqlDialect());
+            sqlf.append(" WHERE " + innerAlias + ".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
+        }
+
+        sqlf.append(") AS ").append(alias);
 
         if (_dsd.isAssayData())
         {
@@ -599,13 +638,12 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             // Check if assay design has been deleted
             if (assayResultTable != null)
             {
-                from.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
-                from.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().get(0)).append(" = ");
-                from.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
+                sqlf.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
+                sqlf.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().get(0)).append(" = ");
+                sqlf.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
             }
         }
-
-        return from;
+        return sqlf;
     }
 
 

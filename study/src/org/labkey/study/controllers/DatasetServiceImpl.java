@@ -86,6 +86,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             PropertyUtils.copyProperties(ds, dd);
             ds.setDatasetId(dd.getDatasetId()); // upper/lowercase problem
             ds.setKeyPropertyManaged(dd.getKeyManagementType() != Dataset.KeyManagementType.None);
+            if (study.getContainer().isProject() && study.isDataspaceStudy())
+                ds.setDefinitionShared(true);
 
             List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
             Map<String, String> cohortMap = new HashMap<>();
@@ -216,6 +218,10 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 ds.setKeyPropertyName(null);
                 ds.setKeyPropertyManaged(false);
             }
+
+            /* IGNORE illegal shareDataset values */
+            if (!study.getShareVisitDefinitions())
+                ds.setDataSharing("NONE");
 
             DatasetDefinition updated = def.createMutable();
             // Clear the category ID so that it gets regenerated based on the new string - see issue 19649

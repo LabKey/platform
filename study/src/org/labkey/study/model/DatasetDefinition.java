@@ -158,6 +158,16 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
     private String _tag;
     private String _type = Dataset.TYPE_STANDARD;
+    private DataSharing _datasharing = DataSharing.NONE;
+
+
+    public enum DataSharing
+    {
+        NONE,
+        ALL,
+        PTID
+    }
+
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
     {
@@ -445,6 +455,25 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     {
         verifyMutability();
         _datasetId = datasetId;
+    }
+
+
+    public String getDataSharing()
+    {
+        return _datasharing.name();
+    }
+
+    public void setDataSharing(@NotNull String datasharing)
+    {
+        assert null != datasharing;
+        _datasharing = DataSharing.valueOf(datasharing);
+        if (!getStudy().getShareVisitDefinitions() && _datasharing != DataSharing.NONE)
+            throw new IllegalStateException();
+    }
+
+    public DataSharing getDataSharingEnum()
+    {
+        return _datasharing;
     }
 
 
@@ -1167,7 +1196,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             setTitle(def.getLabel());
             _autoLoadMetaData = false;
             _container = def.getContainer();
-            _multiContainer = multiContainer;
+            _multiContainer = multiContainer;     /* true: don't preapply the container filter, let wrapper tableinfo handle it */
             Study study = StudyManager.getInstance().getStudy(_container);
 
             _storage = def.getStorageTableInfo();
@@ -1371,33 +1400,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
 
         @Override
-        public ButtonBarConfig getButtonBarConfig()
-        {
-            // Check first to see if this table has explicit button configuration.  This currently will
-            // never be the case, since dataset tableinfo's don't have a place to declare button config,
-            // but future changes to enable hard dataset tables may enable this.
-            ButtonBarConfig config = super.getButtonBarConfig();
-            if (config != null)
-                return config;
-
-//            // If no button config was found for this dataset, fall back to the button config on StudyData.  This
-//            // lets users configure buttons that should appear on all datasets.
-//            StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), _user, true);
-//            try
-//            {
-//                TableInfo studyData = schema.getTable(StudyQuerySchema.STUDY_DATA_TABLE_NAME);
-//                return studyData.getButtonBarConfig();
-//                return studyData.getButtonBarConfig();
-//            }
-//            catch (UnauthorizedException e)
-//            {
-//                return null;
-//            }
-            return null;
-        }
-
-
-        @Override
         public String getSelectName()
         {
             return null;
@@ -1424,12 +1426,16 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 return from;
             }
 
-            if (isShared() && !_multiContainer)
+            boolean addContainerFilter = (isShared() && !_multiContainer) || getDataSharingEnum() != DataSharing.NONE;
+            if (addContainerFilter)
             {
                 SQLFragment ret = new SQLFragment("(SELECT * FROM ");
                 ret.append(_storage.getFromSQL("_"));
                 ret.append(" WHERE container=?) ");
-                ret.add(getContainer());
+                if (getDataSharingEnum() == DataSharing.NONE)
+                    ret.add(getContainer());
+                else
+                    ret.add(getDefinitionContainer());
                 ret.append(alias);
                 return ret;
             }
@@ -2622,7 +2628,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         b.setUseImportAliases(!forUpdate);
         b.setKeyList(lsids);
 
-        StandardETL etl = StandardETL.forInsert(table, b, getContainer(), user, context);
+        Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();
+        StandardETL etl = StandardETL.forInsert(table, b, target, user, context);
         return ((UpdateableTableInfo)table).persistRows(etl, context);
     }
 

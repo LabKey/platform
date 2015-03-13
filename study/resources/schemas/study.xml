@@ -398,6 +398,9 @@
       <ns:column columnName="Tag">
         <ns:description>An additional field to provide flexible categorization of data</ns:description>
       </ns:column>
+      <ns:column columnName="DataSharing">
+        <ns:description>Controls sharing of dataset rows across folders: NONE,ALL,PTID</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequest" tableDbType="TABLE">
