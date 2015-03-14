@@ -23,11 +23,14 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.study.PlateTemplate;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * User: Karl Lum
@@ -43,6 +46,28 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
     }
 
     public double[][] loadFile(PlateTemplate template, File dataFile) throws ExperimentException
+    {
+        try
+        {
+            DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
+            DataLoader loader = factory.createLoader(dataFile, false);
+
+            Map<String, double[][]> gridMap = PlateUtils.parseAllGrids(dataFile, loader.load(), template.getRows(), template.getColumns());
+            if (!gridMap.isEmpty())
+            {
+                // TODO: refactor PlateReader interface to handle assays that have data file formats with more than
+                // a single data matrix
+                return gridMap.values().iterator().next();
+            }
+            return null;
+        }
+        catch (IOException ioe)
+        {
+            throw new ExperimentException(ioe);
+        }
+    }
+
+    public double[][] prevLoadFile(PlateTemplate template, File dataFile) throws ExperimentException
     {
         String fileName = dataFile.getName().toLowerCase();
         if (!fileName.endsWith(".xls") && !fileName.endsWith(".xlsx"))

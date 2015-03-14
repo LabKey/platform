@@ -1560,6 +1560,7 @@ api/src/org/labkey/api/study/assay/pipeline/AssayUploadPipelineJob.java -text
 api/src/org/labkey/api/study/assay/plate/AbstractPlateReader.java -text
 api/src/org/labkey/api/study/assay/plate/ExcelPlateReader.java -text
 api/src/org/labkey/api/study/assay/plate/PlateReader.java -text
+api/src/org/labkey/api/study/assay/plate/PlateUtils.java -text
 api/src/org/labkey/api/study/assay/plate/TextPlateReader.java -text
 api/src/org/labkey/api/study/assay/thawListSelector.jsp -text
 api/src/org/labkey/api/study/permissions/DesignAssayPermission.java -text
