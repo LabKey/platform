@@ -1,5 +1,13 @@
 package org.labkey.authentication.duo;
 
+import com.duosecurity.duoweb.DuoWeb;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpRequestHandler;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
@@ -14,6 +22,7 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -25,6 +34,8 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.io.IOException;
 
 /**
  * User: tgaluhn
@@ -87,13 +98,9 @@ public class DuoController extends SpringActionController
     {
         public boolean reshow = false;
 
-        public final static String PROVIDER_LABEL = "Provider" ;
-        public final static String INTEGRATION_KEY_LABEL = "Integration Key" ;
-        public final static String SECRET_KEY_LABEL = "Secret Key" ;
-        public final static String API_HOSTNAME_LABEL = "API Hostname" ;
-
         private String integrationKey = DuoManager.getIntegrationKey();
         private String secretKey = DuoManager.getSecretKey();
+        private String applicationKey = DuoManager.getApplicationKey();//Application key and Application Secret key (as sometimes used in Duo docs) are synonymous.
         private String apiHostname = DuoManager.getAPIHostname();
 
         public String getSecretKey()
@@ -121,6 +128,17 @@ public class DuoController extends SpringActionController
         public String getApiHostname()
         {
             return apiHostname;
+        }
+
+        public String getApplicationKey()
+        {
+            return applicationKey;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setApplicationKey(String applicationKey)
+        {
+            this.applicationKey = applicationKey;
         }
 
         @SuppressWarnings("UnusedDeclaration")
@@ -257,7 +275,6 @@ public class DuoController extends SpringActionController
 
         public ModelAndView getView(TestDuoForm form, boolean reshow, BindException errors) throws Exception
         {
-
             HttpView view = new JspView<>("/org/labkey/authentication/duo/testDuo.jsp", form, errors);
             return view;
         }
@@ -267,7 +284,39 @@ public class DuoController extends SpringActionController
             return false;
         }
 
-        public ActionURL getSuccessURL(TestDuoForm testLdapAction)
+        public ActionURL getSuccessURL(TestDuoForm testDuoAction)
+        {
+            return null;   // Always reshow form
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    @RequiresNoPermission
+    public class TestDuoResultAction extends FormViewAction<TestDuoForm>
+    {
+        public void validateCommand(TestDuoForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(TestDuoForm form, boolean reshow, BindException errors) throws Exception
+        {
+            String sig_response = form.getSig_response();
+            String authenticatedUserName = DuoWeb.verifyResponse(DuoManager.getIntegrationKey(), DuoManager.getSecretKey(), DuoManager.getApplicationKey() , sig_response);
+            form.setUserName(authenticatedUserName);
+            HttpView view = new JspView<>("/org/labkey/authentication/duo/testResultDuo.jsp", form, errors);
+            return view;
+        }
+
+        public boolean handlePost(TestDuoForm form, BindException errors) throws Exception
+        {
+            return false;
+        }
+
+        public ActionURL getSuccessURL(TestDuoForm testDuoAction)
         {
             return null;   // Always reshow form
         }
@@ -280,6 +329,31 @@ public class DuoController extends SpringActionController
 
     public static class TestDuoForm extends ReturnUrlForm implements HasViewContext
     {
+
+        String sig_response; // Response from Duo
+        String userName;
+
+        public String getUserName()
+        {
+            return userName;
+        }
+
+        public void setUserName(String userName)
+        {
+            this.userName = userName;
+        }
+
+
+        public String getSig_response()
+        {
+            return sig_response;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setSig_response(String sig_response)
+        {
+            this.sig_response = sig_response;
+        }
 
         @Override
         public void setViewContext(ViewContext context)

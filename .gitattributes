@@ -256,6 +256,8 @@ authentication/src/org/labkey/authentication/duo/DuoProvider.java -text
 authentication/src/org/labkey/authentication/duo/TestDuoProvider.java -text
 authentication/src/org/labkey/authentication/duo/configure.jsp -text
 authentication/src/org/labkey/authentication/duo/duoEntry.jsp -text
+authentication/src/org/labkey/authentication/duo/testDuo.jsp -text
+authentication/src/org/labkey/authentication/duo/testResultDuo.jsp -text
 authentication/src/org/labkey/authentication/ldap/LdapAuthenticationManager.java -text
 authentication/src/org/labkey/authentication/ldap/LdapAuthenticationProvider.java -text
 authentication/src/org/labkey/authentication/ldap/LdapController.java -text

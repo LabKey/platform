@@ -5,7 +5,6 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String message = ((DuoForm) HttpView.currentView().getModelBean()).getMessage();
-
 %>
 <p><%=h(message)%></p>
 <p>Is that really you?</p>

@@ -30,16 +30,26 @@
 <labkey:form action="configure.post" method="post">
     <table>
         <%=formatMissedErrorsInTable("form", 2)%>
+        <%--'Integration key', 'Secret key', 'API hostname' was obtained by creating a "New Integration" (Integration type: Web SDK)--%>
+        <%--by going to Duo's Admin Dashboard (need Duo account). 'Application key' was created via executing these commands from terminal (on Mac OSX):--%>
+        <%--python--%>
+        <%--import os, hashlib--%>
+        <%--print hashlib.sha1(os.urandom(32)).hexdigest()--%>
+
         <tr>
-            <td class="labkey-form-label">Integration Key<%= PageFlowUtil.helpPopup("Integration Key", "Find definition")%></td>
+            <td class="labkey-form-label">Integration Key<%= PageFlowUtil.helpPopup("Integration Key", "Your Labkey Admin with a Duo administrative account should have generated this key.")%></td>
             <td><input type="text" name="integrationKey" size="50" value="<%=h(bean.getIntegrationKey())%>"></td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Secret Key<%= PageFlowUtil.helpPopup("Secret Key", "Find definition")%></td>
+            <td class="labkey-form-label">Secret Key<%= PageFlowUtil.helpPopup("Secret Key", "Your Labkey Admin with a Duo administrative account should have generated this key.")%></td>
             <td><input type="text" name="secretKey" size="50" value="<%=h(bean.getSecretKey())%>"></td>
         </tr>
         <tr>
-            <td class="labkey-form-label">API Hostname<%=PageFlowUtil.helpPopup("API Hostname", "Find definition")%></td>
+            <td class="labkey-form-label">Application Key<%= PageFlowUtil.helpPopup("Application Key", "Your Labkey Admin should have generated this Application Key (a random alpha-numeric string)." )%></td>
+            <td><input type="text" name="applicationKey" size="50" value="<%=h(bean.getApplicationKey())%>"></td> <%--TODO: Do we want Admin to allow to generate a new application key?--%>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">API Hostname<%=PageFlowUtil.helpPopup("API Hostname", "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.")%></td>
             <td><input type="text" name="apiHostname"  size="50" value="<%=h(bean.getApiHostname())%>"></td>
         </tr>
         <tr><td colspan="2">&nbsp;</td></tr>

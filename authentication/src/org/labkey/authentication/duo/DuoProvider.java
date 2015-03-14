@@ -36,13 +36,13 @@ public class DuoProvider implements SecondaryAuthenticationProvider
     @Override
     public String getName()
     {
-        return "Duo 2 Factor Authentication";
+        return ("Duo 2 Factor");
     }
 
     @Override
     public String getDescription()
     {
-        return "Adds a second factor authentication requirement";
+        return "Require two-factor authentication via Duo";
     }
 
     @Override
