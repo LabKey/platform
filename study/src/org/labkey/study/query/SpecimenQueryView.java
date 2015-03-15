@@ -611,11 +611,11 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 + "join ");
         sql.append(tableInfoVial.getFromSQL("v")).append(" on rs.SpecimenGlobalUniqueId=v.GlobalUniqueId "
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
-                + "where r.DestinationSiteId=? AND status.SpecimensLocked=?)");
-        sql.add(locationId);
-        sql.add(Boolean.TRUE);
+                + "where r.DestinationSiteId=").append(locationId).append(" AND status.SpecimensLocked=").append(tableInfoVial.getSqlDialect().getBooleanTRUE()).append(")");
 
-        filter.addWhereClause(sql.toString(), null, FieldKey.fromParts("SpecimenHash"));
+        assert(0 == sql.getParams().size());
+
+        filter.addWhereClause(sql.getSQL(), null, FieldKey.fromParts("SpecimenHash"));
 
         return filter;
     }
@@ -642,17 +642,17 @@ public class SpecimenQueryView extends BaseStudyQueryView
     protected static SimpleFilter addPreviouslyRequestedEnrollmentClause(SimpleFilter filter, Container container, User user, int locationId, boolean completedRequestsOnly)
     {
         SQLFragment sql = getBaseRequestedEnrollmentSql(container, user, completedRequestsOnly);
+        assert 0 == sql.getParams().size();
         if (locationId == -1)
         {
             sql.append("IS NULL)");
         }
         else
         {
-            sql.append("= ?)");
-            sql.add(locationId);
+            sql.append("= " + locationId + ")");
         }
 
-        filter.addWhereClause(sql.toString(), null, FieldKey.fromParts("GlobalUniqueId"));
+        filter.addWhereClause(sql.getSQL(), null, FieldKey.fromParts("GlobalUniqueId"));
 
         return filter;
     }

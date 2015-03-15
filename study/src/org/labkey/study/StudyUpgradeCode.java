@@ -616,7 +616,7 @@ public class StudyUpgradeCode implements UpgradeCode
         }
         catch (Exception e)
         {
-            _log.error("Exception message: " + e.getMessage() + "\n executing sql: " + sql.toString());
+            _log.error("Exception message: " + e.getMessage() + "\n executing sql: " + sql.toDebugString());
         }
     }
 

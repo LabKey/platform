@@ -435,6 +435,12 @@ public class PostgreSql90Dialect extends SqlDialect
     }
 
     @Override
+    public SQLFragment getSubstringFunction(SQLFragment s, SQLFragment start, SQLFragment length)
+    {
+        return new SQLFragment("substr(").append(s).append(", ").append(start).append(", ").append(length).append(")");
+    }
+
+    @Override
     public String getXorOperator()
     {
         return "#";
@@ -634,19 +640,24 @@ public class PostgreSql90Dialect extends SqlDialect
         return "TRUNCATE TABLE " + tableName + " RESTART IDENTITY";
     }
 
-    @Override
     public String getDateDiff(int part, String value1, String value2)
+    {
+        return getDateDiff(part, new SQLFragment(value1), new SQLFragment(value2)).getSQL();
+    }
+
+    @Override
+    public SQLFragment getDateDiff(int part, SQLFragment value1, SQLFragment value2)
     {
         double divideBy;
         switch (part)
         {
             case Calendar.MONTH:
             {
-                return "((EXTRACT(YEAR FROM " + value1 + ") - EXTRACT(YEAR FROM " + value2 + ")) * 12 + EXTRACT(MONTH FROM " + value1 + ") - EXTRACT(MONTH FROM " + value2 + "))::INT";
+                return new SQLFragment("((EXTRACT(YEAR FROM ").append(value1).append(") - EXTRACT(YEAR FROM ").append(value2).append(")) * 12 + EXTRACT(MONTH FROM ").append(value1).append(") - EXTRACT(MONTH FROM ").append(value2).append("))::INT");
             }
             case Calendar.YEAR:
             {
-                return "(EXTRACT(YEAR FROM " + value1 + ") - EXTRACT(YEAR FROM " + value2 + "))::INT";
+                return new SQLFragment("(EXTRACT(YEAR FROM ").append(value1).append(") - EXTRACT(YEAR FROM ").append(value2).append("))::INT");
             }
             case Calendar.DATE:
             {
@@ -678,7 +689,7 @@ public class PostgreSql90Dialect extends SqlDialect
                 throw new IllegalArgumentException("Unsupported time unit: " + part);
             }
         }
-        return "(EXTRACT(EPOCH FROM (" + value1 + " - " + value2 + ")) / " + divideBy + ")::INT";
+        return new SQLFragment("(EXTRACT(EPOCH FROM (").append(value1).append(" - ").append(value2).append( ")) / " + divideBy + ")::INT");
     }
 
     @Override

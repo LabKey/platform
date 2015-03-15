@@ -619,8 +619,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
                 joinSql.append(" LEFT OUTER JOIN ").append(_ptidCommentTable.getFromSQL(ptidTableAlias));
                 joinSql.append(" ON ");
-                joinSql.append(parentAlias).append(".Ptid = ").append(
-                        _ptidCommentTable.getColumn(StudyService.get().getSubjectColumnName(_container)).getValueSql(ptidTableAlias) + "\n");
+                joinSql.append(parentAlias).append(".Ptid = ")
+                        .append(_ptidCommentTable.getColumn(StudyService.get().getSubjectColumnName(_container)).getValueSql(ptidTableAlias))
+                        .append("\n");
             }
 
             if (_ptidVisitCommentTable != null)

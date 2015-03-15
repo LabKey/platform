@@ -2834,8 +2834,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     private int getMaxKeyValue()
     {
         TableInfo tInfo = getStorageTableInfo();
-        Integer newKey = new SqlSelector(tInfo.getSchema(),
-                "SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM " + tInfo.getFromSQL("_")).getObject(Integer.class);
+        SQLFragment sqlf = new SQLFragment("SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM ").append(tInfo.getFromSQL("_"));
+        Integer newKey = new SqlSelector(tInfo.getSchema(),sqlf).getObject(Integer.class);
         return newKey.intValue();
     }
 

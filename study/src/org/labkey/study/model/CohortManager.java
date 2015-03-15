@@ -373,12 +373,12 @@ public class CohortManager
         // assignment for every known participant/visit combination based on the results of this query.
         DatasetDefinition.DatasetSchemaTableInfo cohortDatasetTinfo = dsd.getTableInfo(user, false);
         ColumnInfo subjectCol = cohortDatasetTinfo.getParticipantColumn();
-        SQLFragment pvCohortSql = new SQLFragment("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, " + cohortLabelCol.getValueSql("D") + "\n" +
-                "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV") + "\n" +
-                "  LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoVisit().getFromSQL("V") + " ON PV.VisitRowId = V.RowId\n" +
+        SQLFragment pvCohortSql = new SQLFragment("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, ").append(cohortLabelCol.getValueSql("D")).append("\n" +
+                "FROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV")).append("\n" +
+                "  LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoVisit().getFromSQL("V")).append(" ON PV.VisitRowId = V.RowId\n" +
                 "  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON " +
                     (!dsd.isDemographicData() ? "\tPV.SequenceNum = D.SequenceNum AND\n" : "") +
-                    "\tPV.ParticipantId = " + subjectCol.getValueSql("D") + "\n" +
+                    "\tPV.ParticipantId = ").append(subjectCol.getValueSql("D")).append("\n" +
                 "WHERE PV.Container = ? " + (study.getTimepointType() != TimepointType.VISIT  ? " AND PV.VisitDate IS NOT NULL" : "") + "\n" +
                 "ORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
         pvCohortSql.add(study.getContainer());

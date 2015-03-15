@@ -659,28 +659,28 @@ public class TransformManager implements DataIntegrationService.Interface
     public TransformRun getTransformRun(Container c, int runId)
     {
         TransformRun run;
-        run = new SqlSelector(DataIntegrationQuerySchema.getSchema(),
-                "SELECT * FROM " + DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x") +
-                " WHERE container=? and transformrunid=?", c.getId(), runId).getObject(TransformRun.class);
+        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x"))
+                .append(" WHERE container=? and transformrunid=?").add(c.getId()).add(runId);
+        run = new SqlSelector(DataIntegrationQuerySchema.getSchema(), sql).getObject(TransformRun.class);
         return run;
     }
 
     public TransformRun getTransformRunForJob(Container c, int jobId)
     {
         TransformRun run;
-        run = new SqlSelector(DataIntegrationQuerySchema.getSchema(),
-                "SELECT * FROM " + DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x") +
-                        " WHERE container=? and jobid=?", c.getId(), jobId).getObject(TransformRun.class);
+        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x"))
+                .append(" WHERE container=? and jobid=?").add(c.getId()).add(jobId);
+        run = new SqlSelector(DataIntegrationQuerySchema.getSchema(), sql).getObject(TransformRun.class);
         return run;
     }
 
     public boolean transformHasRunInProgress(Container c, String transformId)
     {
-        return new SqlSelector(DataIntegrationQuerySchema.getSchema(),
-                "SELECT 1 WHERE EXISTS (SELECT * FROM " + DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x") +
-                        " WHERE status IN ('" + TransformRun.TransformRunStatus.PENDING.getDisplayName() + "','"
-                + TransformRun.TransformRunStatus.RUNNING.getDisplayName() + "') and container=? and transformid=?)"
-                , c.getId(), transformId).getObject(Boolean.class);
+        SQLFragment sql = new SQLFragment("SELECT 1 WHERE EXISTS (SELECT * FROM ").append(DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x"))
+                .append(" WHERE status IN ('" + TransformRun.TransformRunStatus.PENDING.getDisplayName() + "','" +
+                    TransformRun.TransformRunStatus.RUNNING.getDisplayName() + "') and container=? and transformid=?)")
+                .add(c.getId()).add(transformId);
+        return new SqlSelector(DataIntegrationQuerySchema.getSchema(),sql).getObject(Boolean.class);
     }
 
     public TransformRun insertTransformRun(User user, TransformRun run)

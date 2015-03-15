@@ -184,7 +184,7 @@ public class RelativeDateVisitManager extends VisitManager
                 .append("=").append(tableParticipantVisit.getColumn("Container").getValueSql(tableParticipantVisitSelectName)).append(")");
         SQLFragment sqlUpdateDays = new SQLFragment("UPDATE ");
         sqlUpdateDays.append(tableParticipantVisitSelectName).append(" SET Day = CASE WHEN SequenceNum=? THEN 0 ELSE ")
-                .append(schema.getSqlDialect().getDateDiff(Calendar.DATE, "VisitDate", sqlStartDate.toString()))
+                .append(schema.getSqlDialect().getDateDiff(Calendar.DATE, new SQLFragment("VisitDate"), sqlStartDate))
                 .append(" END WHERE Container=? AND NOT VisitDate IS NULL");
         sqlUpdateDays.add(VisitImpl.DEMOGRAPHICS_VISIT);
         sqlUpdateDays.add(container);

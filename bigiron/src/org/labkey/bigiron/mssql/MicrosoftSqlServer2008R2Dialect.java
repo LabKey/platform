@@ -297,7 +297,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
     {
-        String trimmed = sql.toString().trim();
+        String trimmed = sql.getRawSQL().trim();
 
         if (StringUtils.startsWithIgnoreCase(trimmed, "INSERT") || StringUtils.startsWithIgnoreCase(trimmed, "UPDATE"))
         {
@@ -492,6 +492,12 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     public String getSubstringFunction(String s, String start, String length)
     {
         return "substring(" + s + ", " + start + ", " + length + ")";
+    }
+
+    @Override
+    public SQLFragment getSubstringFunction(SQLFragment s, SQLFragment start, SQLFragment length)
+    {
+        return new SQLFragment("substring(").append(s).append(", ").append(start).append(", ").append(length).append(")");
     }
 
     @Override
@@ -694,6 +700,14 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         String partName = getDatePartName(part);
         return "DATEDIFF(" + partName + ", " + value2 + ", " + value1 + ")";
     }
+
+    @Override
+    public SQLFragment getDateDiff(int part, SQLFragment value1, SQLFragment value2)
+    {
+        String partName = getDatePartName(part);
+        return new SQLFragment("DATEDIFF(" + partName + ", ").append(value2).append(", ").append(value1).append(")");
+    }
+
 
     @Override
     public String getDateTimeToDateCast(String expression)
@@ -1264,7 +1278,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
             // I don't want to inline all the parameters... but SQL Server / jTDS blow up with some (not all)
             // prepared statements with parameters.
-            return new SqlSelector(scope, sql.toString()).getCollection(String.class);
+            return new SqlSelector(scope, sql.toDebugString()).getCollection(String.class);
         }
         finally
         {

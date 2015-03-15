@@ -1223,7 +1223,7 @@ public class ListManager implements SearchService.DocumentProvider
         if (dialect.isSqlServer())
         {
             SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(getListTableName(table)).append(" ON\n");
-            ModuleUpgrader.getLogger().info(check.toString());
+            ModuleUpgrader.getLogger().info(check.toDebugString());
             new SqlExecutor(table.getSchema()).execute(check);
         }
     }
@@ -1252,7 +1252,7 @@ public class ListManager implements SearchService.DocumentProvider
                 keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(listDef.getKeyName().toLowerCase())).append(")+1 FROM ").append(getListTableName(table));
                 keyupdate.append("), 1), false);");
                 ModuleUpgrader.getLogger().info("Post Key Update");
-                ModuleUpgrader.getLogger().info(keyupdate.toString());
+                ModuleUpgrader.getLogger().info(keyupdate.toDebugString());
                 new SqlExecutor(table.getSchema()).execute(keyupdate);
             }
             else
@@ -1263,7 +1263,7 @@ public class ListManager implements SearchService.DocumentProvider
         else if (dialect.isSqlServer())
         {
             SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(getListTableName(table)).append(" OFF");
-            ModuleUpgrader.getLogger().info(check.toString());
+            ModuleUpgrader.getLogger().info(check.toDebugString());
             new SqlExecutor(table.getSchema()).execute(check);
         }
     }
@@ -1346,7 +1346,7 @@ public class ListManager implements SearchService.DocumentProvider
         insertInto.append(insertSelect);
         insertInto.append("\n FROM (").append(fromSQL).append(") x");
 
-        ModuleUpgrader.getLogger().info(insertInto.toString());
+        ModuleUpgrader.getLogger().info(insertInto.toDebugString());
         new SqlExecutor(toTable.getSchema()).execute(insertInto);
     }
 
