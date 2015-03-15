@@ -63,6 +63,8 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
 
     public int execute(CharSequence sql, Object... params)
     {
+        if (sql instanceof SQLFragment)
+            throw new IllegalArgumentException();
         return execute(new SQLFragment(sql, params));
     }
 
@@ -98,7 +100,7 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
         {
             Table.logException(sql, conn, e, getLogLevel());
             // StatementWrapper will have decorated the exception already, but not with the parameter substituted version
-            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, sql.toString(), true);
+            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, sql.toDebugString(), true);
             throw getExceptionFramework().translate(getScope(), "SqlExecutor.execute()", e);
         }
         finally

@@ -557,6 +557,8 @@ public abstract class SqlDialect
 
     public abstract String getSubstringFunction(String s, String start, String length);
 
+    public abstract SQLFragment getSubstringFunction(SQLFragment s, SQLFragment start, SQLFragment length);
+
     public String getXorOperator()
     {
         return "^";
@@ -639,6 +641,9 @@ public abstract class SqlDialect
 
     /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
     public abstract String getDateDiff(int part, String value1, String value2);
+
+    /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
+    public abstract SQLFragment getDateDiff(int part, SQLFragment value1, SQLFragment value2);
 
     /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
     public abstract String getDatePart(int part, String value);

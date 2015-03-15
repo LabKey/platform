@@ -434,7 +434,7 @@ public class SimpleFilter implements Filter
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            SQLFragment labKeySql = new SQLFragment();
+            StringBuilder labKeySql = new StringBuilder();
             String separator = "";
             for (FilterClause clause : _clauses)
             {
@@ -544,7 +544,7 @@ public class SimpleFilter implements Filter
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            SQLFragment sqlFragment = new SQLFragment();
+            StringBuilder sqlFragment = new StringBuilder();
             sqlFragment.append(" NOT (");
             sqlFragment.append(_clause.getLabKeySQLWhereClause(columnMap));
             sqlFragment.append(")");
@@ -1505,7 +1505,7 @@ public class SimpleFilter implements Filter
     {
         protected void test(String expectedSQL, String description, FilterClause clause, SqlDialect dialect)
         {
-            assertEquals("Generated SQL did not match", expectedSQL, clause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), dialect).toString());
+            assertEquals("Generated SQL did not match", expectedSQL, clause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), dialect).toDebugString());
             StringBuilder sb = new StringBuilder();
             clause.appendFilterText(sb, new ColumnNameFormatter());
             assertEquals("Description did not match", description, sb.toString());

@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -134,6 +135,13 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
+    /* same as getSQL() but without CTE handling */
+    public String getRawSQL()
+    {
+        return null != sb ? sb.toString() : null != sql ? sql : "";
+    }
+
+
     public String getSQL()
     {
         if (null == commonTableExpressionsMap || commonTableExpressionsMap.isEmpty())
@@ -180,15 +188,20 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    // It is a little confusiong that getString() does not return the same charsequence that this object purports to
+    // It is a little confusing that getString() does not return the same charsequence that this object purports to
     // represent.  However, this is a good "display value" for this object.
     // see getSqlCharSequence()
     @NotNull
     public String toString()
     {
-        return JdbcUtil.format(this);
+        return "SQLFragment@" + System.identityHashCode(this) + JdbcUtil.format(this);
     }
 
+
+    public String toDebugString()
+    {
+        return JdbcUtil.format(this);
+    }
 
     public List<Object> getParams()
     {
@@ -265,9 +278,10 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-    public void add(Object p)
+    public SQLFragment add(Object p)
     {
         getModfiableParams().add(p);
+        return this;
     }
 
 
@@ -542,7 +556,7 @@ public class SQLFragment implements Appendable, CharSequence
         {
             SQLFragment a = new SQLFragment("SELECT a FROM b WHERE x=?", 5);
             assertEquals("SELECT a FROM b WHERE x=?", a.getSQL());
-            assertEquals("SELECT a FROM b WHERE x=5", a.toString());
+            assertEquals("SELECT a FROM b WHERE x=5", a.toDebugString());
 
             SQLFragment b = new SQLFragment("SELECT * FROM CTE WHERE y=?","xxyzzy");
             b.addCommonTableExpression(new Object(), "CTE", a);
@@ -551,7 +565,7 @@ public class SQLFragment implements Appendable, CharSequence
                     "SELECT * FROM CTE WHERE y=?", b.getSQL());
             assertEquals("WITH\n" +
                     "\tCTE AS (SELECT a FROM b WHERE x=5)\n" +
-                    "SELECT * FROM CTE WHERE y='xxyzzy'", b.toString());
+                    "SELECT * FROM CTE WHERE y='xxyzzy'", b.toDebugString());
             List<Object> params = b.getParams();
             assertEquals(2,params.size());
             assertEquals(5, params.get(0));
@@ -564,7 +578,7 @@ public class SQLFragment implements Appendable, CharSequence
                     "SELECT * FROM CTE WHERE y=?", c.getSQL());
             assertEquals("WITH\n" +
                     "\tCTE AS (SELECT a FROM b WHERE x=5)\n" +
-                    "SELECT * FROM CTE WHERE y='xxyzzy'", c.toString());
+                    "SELECT * FROM CTE WHERE y='xxyzzy'", c.toDebugString());
             params = c.getParams();
             assertEquals(2,params.size());
             assertEquals(5, params.get(0));

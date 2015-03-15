@@ -144,7 +144,7 @@ public class MultiValuedLookupColumn extends LookupColumn
 
                 for (SQLFragment fragment : joins.values())
                 {
-                    String join = StringUtils.replace(fragment.toString(), "\n\t", "\n\t\t\t\t");
+                    String join = StringUtils.replace(fragment.getSQL(), "\n\t", "\n\t\t\t\t");
                     join = join.replace("LEFT OUTER", "INNER");
                     select.append(join);
                 }

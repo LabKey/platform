@@ -436,7 +436,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             Table.logException(_sql, conn, e, getLogLevel());
 
             if (null != _sql)
-                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.toString(), false);
+                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.toDebugString(), false);
 
             throw getExceptionFramework().translate(getScope(), "ExecutingSelector", e);
         }

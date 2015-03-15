@@ -304,7 +304,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public String toString()
     {
-        return _selectName.toString();
+        return _selectName.getSQL();
     }
 
 

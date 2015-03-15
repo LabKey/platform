@@ -105,7 +105,7 @@ class QueryTracker
 
     public String getSqlAndParameters()
     {
-        return getSQLFragment().toString();
+        return getSQLFragment().toDebugString();
     }
 
     public void setParameters(@Nullable List<Object> parameters)

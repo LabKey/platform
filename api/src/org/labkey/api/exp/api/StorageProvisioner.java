@@ -951,8 +951,8 @@ public class StorageProvisioner
     public static ProvisioningReport getProvisioningReport(@Nullable String domainuri)
     {
         final ProvisioningReport report = new ProvisioningReport();
-        SQLFragment sql = new SQLFragment("SELECT domainid, name, storageschemaname, storagetablename FROM " +
-                OntologyManager.getTinfoDomainDescriptor().getFromSQL("dd"));
+        SQLFragment sql = new SQLFragment("SELECT domainid, name, storageschemaname, storagetablename FROM ")
+                .append(OntologyManager.getTinfoDomainDescriptor().getFromSQL("dd"));
         if (null != domainuri)
         {
             sql.append(" WHERE domainuri=?");

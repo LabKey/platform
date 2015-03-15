@@ -608,7 +608,7 @@ public class StatementUtils
             int updateCount = 0;
             for (int i = 0; i < cols.size(); i++)
             {
-                FieldKey fk = new FieldKey(null, cols.get(i).toString());
+                FieldKey fk = new FieldKey(null, cols.get(i).getSQL());
                 if (keys.containsKey(fk) || null != dontUpdate && dontUpdate.contains(fk.getName()))
                     continue;
                 sqlfUpdate.append(comma);
@@ -782,7 +782,7 @@ public class StatementUtils
             for (SQLFragment f : Arrays.asList(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds))
                 if (null != f && !f.isEmpty())
                     script.append(f);
-            _log.debug(script.toString());
+            _log.debug(script.toDebugString());
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
         }
         else
@@ -855,10 +855,10 @@ public class StatementUtils
                 fn.append(";\n");
             }
             fn.append("END;\n$$ LANGUAGE plpgsql;\n");
-            _log.info(fn.toString());
+            _log.info(fn.toDebugString());
             new SqlExecutor(table.getSchema()).execute(fn);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
-            ret.setDebugSql(fn.getSQL() + "--\n" + call.toString());
+            ret.setDebugSql(fn.getSQL() + "--\n" + call.toDebugString());
             ret.onClose(new Runnable() { @Override public void run()
             {
                 try

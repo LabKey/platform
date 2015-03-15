@@ -273,6 +273,12 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
+    public SQLFragment getSubstringFunction(SQLFragment s, SQLFragment start, SQLFragment length)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
     public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
@@ -334,6 +340,12 @@ public abstract class SimpleSqlDialect extends SqlDialect
 
     @Override
     public String getDateDiff(int part, String value1, String value2)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    public SQLFragment getDateDiff(int part, SQLFragment value1, SQLFragment value2)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
