@@ -3782,8 +3782,10 @@ public class StudyManager
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(oldURI, c);
         if (null != dd)
         {
-            dd.setDomainURI(newURI);
-            dd.setName(def.getName());      // Name may have changed too; it's part of URI
+            dd = dd.edit()
+                    .setDomainURI(newURI)
+                    .setName(def.getName()) // Name may have changed too; it's part of URI
+                    .build();
             OntologyManager.updateDomainDescriptor(dd);
         }
     }

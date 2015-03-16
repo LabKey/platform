@@ -110,11 +110,9 @@ public class DomainImpl implements Domain
     public DomainImpl(Container container, String uri, String name)
     {
         _new = true;
-        _dd = new DomainDescriptor();
-        _dd.setContainer(container);
-        _dd.setProject(container.getProject());
-        _dd.setDomainURI(uri);
-        _dd.setName(name);
+        _dd = new DomainDescriptor.Builder(uri, container)
+                .setName(name)
+                .build();
         _properties = new ArrayList<>();
     }
 
@@ -227,7 +225,7 @@ public class DomainImpl implements Domain
 
     public void setDescription(String description)
     {
-        edit().setDescription(description);
+        _dd = _dd.edit().setDescription(description).build();
     }
 
     @NotNull
@@ -322,7 +320,8 @@ public class DomainImpl implements Domain
             if (isNew())
             {
                 // consider: optimistic concurrency check here?
-                _dd = Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
+                Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
+                _dd = OntologyManager.getDomainDescriptor(_dd.getDomainURI(), _dd.getContainer());
                 // CONSIDER put back if we want automatic provisioning for serveral DomainKinds
                 // StorageProvisioner.create(this);
                 addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
@@ -334,7 +333,6 @@ public class DomainImpl implements Domain
                     throw new Table.OptimisticConflictException("Domain has been updated by another user or process.", Table.SQLSTATE_TRANSACTION_STATE, 0);
 
                 // call OntololgyManager.updateDomainDescriptor() to invalidate proper caches
-                DomainDescriptor dbgOld=_dd;
                 _dd = OntologyManager.updateDomainDescriptor(_dd);
 
                 // we expect _ddOld should be null if we only have property changes
@@ -600,20 +598,6 @@ public class DomainImpl implements Domain
             }
         }
         return result;
-    }
-
-    private DomainDescriptor edit()
-    {
-        if (_new)
-        {
-            return _dd;
-        }
-        if (_ddOld == null)
-        {
-            _ddOld = _dd;
-            _dd = _ddOld.clone();
-        }
-        return _dd;
     }
 
     @Override

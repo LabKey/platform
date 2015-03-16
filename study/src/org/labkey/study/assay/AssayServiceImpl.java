@@ -355,7 +355,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                             domain.setDomainURI(LsidUtils.resolveLsidFromTemplate(domain.getDomainURI(), context));
                             domain.setName(assay.getName() + " " + domain.getName());
                             DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(domain.getDomainURI(), domain.getName(), getContainer());
-                            dd.setDescription(domain.getDescription());
+                            dd = dd.edit().setDescription(domain.getDescription()).build();
                             OntologyManager.updateDomainDescriptor(dd);
                             domainURIs.add(domain.getDomainURI());
                         }

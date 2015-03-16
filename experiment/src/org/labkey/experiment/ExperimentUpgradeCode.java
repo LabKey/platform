@@ -135,7 +135,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         Container containerProject = dd.getContainer().getProject();
         if (containerProject == null)
             containerProject = ContainerManager.getRoot();
-        dd.setProject(containerProject);
+        dd = dd.edit().setProject(containerProject).build();
         Collection<Integer> propIds = getPropertyIds(dd);
         SimpleFilter filter = new SimpleFilter();
         SimpleFilter.InClause inClause = new SimpleFilter.InClause(FieldKey.fromParts("propertyId"), propIds);
@@ -174,7 +174,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         // know which is the correct domain.
         if (propIds.size() == 0)
         {
-            conflictingDomain.setDomainURI(conflictingDomain.getDomainURI() + "_BAD");
+            conflictingDomain = conflictingDomain.edit().setDomainURI(conflictingDomain.getDomainURI() + "_BAD").build();
             try
             {
                 OntologyManager.updateDomainDescriptor(conflictingDomain);
