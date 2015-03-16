@@ -1765,7 +1765,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         // statement or end of the script. These will cause major problem if they are missed during script consolidation
 
         // Dumb little parser that, within stored procedure definitions, matches up each BEGIN with COMMIT/END.
-        String[] tokens = sql.replace(";", "").split("\\s+");
+        String[] tokens = sql.replace(";", "").split("\\s+|,");
         int idx = 0;
 
         while (-1 != (idx = skipToCreateProcedure(tokens, idx)))
@@ -1812,7 +1812,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         return Collections.emptyList();
     }
 
-    private final static CaseInsensitiveHashSet CREATE = new CaseInsensitiveHashSet("CREATE");
+    private final static CaseInsensitiveHashSet CREATE = new CaseInsensitiveHashSet("CREATE", "ALTER");
 
     private int skipToCreateProcedure(String[] tokens, int idx)
     {
