@@ -15,109 +15,121 @@
  */
 package org.labkey.api.exp;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.MapConstructorObjectFactory;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UnexpectedException;
 
 import java.util.Map;
 
-
-/**
- * User: phussey
- * Date: Apr 18, 2006
- * Time: 11:38:27 AM
- */
-public class DomainDescriptor implements Cloneable 
+public final class DomainDescriptor
 {
-    private Object _ts;     // for optimistic concurrency
-    private int domainId;
-    private String name;
-    private String domainURI;
-    private String description;
-    private Container container;
-    private Container project;
-    private int titlePropertyId;
+    static
+    {
+        ObjectFactory.Registry.register(DomainDescriptor.class, new MapConstructorObjectFactory<>(DomainDescriptor.class));
+    }
+
+    private final Object _ts;     // for optimistic concurrency
+    private final int domainId;
+    private final String name;
+    private final String domainURI;
+    private final String description;
+    private final Container container;
+    private final Container project;
+    private final int titlePropertyId;
 
     // for StorageProvisioner (currently assuming labkey scope)
-    private String storageTableName;
-    private String storageSchemaName;
+    private final String storageTableName;
+    private final String storageSchemaName;
 
-    public DomainDescriptor()
+    private DomainDescriptor(
+            String domainURI, Container c, Container p, String name,
+            int domainId, String description, String storageTableName, String storageSchemaName,
+            int titlePropertyId, Object ts)
     {
         MemTracker.getInstance().put(this);
-    }
+        this._ts = ts;
 
-    public DomainDescriptor(String domainURI, Container c)
-    {
-        this();
-        setDomainURI(domainURI);
-        setContainer(c);
-    }
+        this.description = description;
 
-    public Object get_Ts()
-    {
-        return _ts;
-    }
-
-    public void set_Ts(Object ts)
-    {
-        _ts = ts;
-    }
-
-    public int getDomainId()
-    {
-        return domainId;
-    }
-
-    public void setDomainId(int domainId)
-    {
-        this.domainId = domainId;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public void setName(String name)
-    {
-        this.name = name;
-    }
-
-    public String getDomainURI()
-    {
-        return domainURI;
-    }
-
-    public void setDomainURI(String domainURI)
-    {
         this.domainURI = domainURI;
-        if (null == name && null != domainURI)
+        this.domainId = domainId;
+
+        String _name = null;
+        if (null != name)
         {
-            int pos;
-            pos = domainURI.lastIndexOf("#");
+            _name = name;
+        }
+        else if (null != domainURI)
+        {
+            int pos = domainURI.lastIndexOf("#");
+
             if (pos < 0)
                 pos = domainURI.lastIndexOf(":");
 
             if (pos >= 0)
-                name = PageFlowUtil.decode(domainURI.substring(pos + 1));
+                _name = PageFlowUtil.decode(domainURI.substring(pos + 1));
+        }
+        this.name = _name;
+
+        this.container = c;
+
+        if (null != p)
+        {
+            this.project = p;
+        }
+        else if (null != this.container)
+        {
+            // root container would return a null for project
+            this.project = container.getProject() != null ? container.getProject() : container;
+        }
+        else
+        {
+            this.project = null /* container is null */;
         }
 
+        this.storageTableName = storageTableName;
+        this.storageSchemaName = storageSchemaName;
+
+        this.titlePropertyId = titlePropertyId;
     }
 
-    public String getDescription()
+    /**
+     * This is intended only for use by the MapConstructorObjectFactory. Use DomainDescriptor.Builder
+     * to construct new Domain Descriptors.
+     */
+    public DomainDescriptor(Map<String, Object> map)
     {
-        return description;
+        _ts = map.get("_ts");
+
+        domainURI = (String) map.get("DomainURI");
+
+        if (map.containsKey("DomainId"))
+            domainId = (Integer) map.get("DomainId");
+        else
+            domainId = 0;
+
+        name = (String) map.get("Name");
+        container = ContainerManager.getForId((String) map.get("Container"));
+        project = ContainerManager.getForId((String) map.get("Project"));
+        description = (String) map.get("Description");
+        storageSchemaName = (String) map.get("StorageSchemaName");
+        storageTableName = (String) map.get("StorageTableName");
+
+        // This property is not stored in the database
+        if (map.containsKey("titlePropertyId"))
+            titlePropertyId = (Integer) map.get("titlePropertyId");
+        else
+            titlePropertyId = 0;
     }
 
-    public void setDescription(String description)
+    public DomainDescriptor.Builder edit()
     {
-        this.description = description;
+        return new Builder(this);
     }
 
     public Container getContainer()
@@ -125,37 +137,35 @@ public class DomainDescriptor implements Cloneable
         return container;
     }
 
-    public void setContainer(Container container)
+    public String getDescription()
     {
- //       if (container.equals(ContainerManager.getRoot()))
- //            container=ContainerManager.getSharedContainer();
+        return description;
+    }
 
-        this.container = container;
-        if (null==project)
-            this.project = container.getProject();
-        if (null==project)
-             project=container;
-     }
+    public int getDomainId()
+    {
+        return domainId;
+    }
 
-    public Container getProject() {
+    public String getName()
+    {
+        return name;
+    }
+
+    public String getDomainURI()
+    {
+        return domainURI;
+    }
+
+    public Container getProject()
+    {
         return project;
     }
-
-    public void setProject(Container project) {
-        this.project = project;
-    }
-
 
     public int getTitlePropertyId()
     {
         return titlePropertyId;
     }
-
-    public void setTitlePropertyId(int titlePropertyId)
-    {
-        this.titlePropertyId = titlePropertyId;
-    }
-
 
     @Nullable   // null if not provisioned
     public String getStorageTableName()
@@ -163,24 +173,15 @@ public class DomainDescriptor implements Cloneable
         return storageTableName;
     }
 
-
-    public void setStorageTableName(String storageTableName)
-    {
-        this.storageTableName = storageTableName;
-    }
-
-
     public String getStorageSchemaName()
     {
         return storageSchemaName;
     }
 
-
-    public void setStorageSchemaName(String storageSchemaName)
+    public Object get_Ts()
     {
-        this.storageSchemaName = storageSchemaName;
+        return _ts;
     }
-
 
     @Override
     public String toString()
@@ -217,5 +218,117 @@ public class DomainDescriptor implements Cloneable
 
         // two domain descriptors are equal if they have the same row ID:
         return ((DomainDescriptor) obj).getDomainId() == getDomainId();
+    }
+
+    public static class Builder
+    {
+        private Object _ts;
+        private int domainId;
+        private String name;
+        private String domainURI;
+        private String description;
+        private Container container;
+        private Container project;
+        private int titlePropertyId;
+        private String storageTableName;
+        private String storageSchemaName;
+
+        public Builder()
+        {
+
+        }
+
+        public Builder(String domainURI, Container container)
+        {
+            this.domainURI = domainURI;
+            this.container = container;
+        }
+
+        public Builder(DomainDescriptor dd)
+        {
+            setTs(dd.get_Ts());
+
+            setContainer(dd.getContainer());
+            setProject(dd.getProject());
+
+            setDomainURI(dd.getDomainURI());
+            setDomainId(dd.getDomainId());
+
+            setName(dd.getName());
+            setDescription(dd.getDescription());
+            setTitlePropertyId(dd.getTitlePropertyId());
+
+            setStorageTableName(dd.getStorageTableName());
+            setStorageSchemaName(dd.getStorageSchemaName());
+        }
+
+        public DomainDescriptor build()
+        {
+            return new DomainDescriptor(
+                    domainURI, container, project, name,
+                    domainId, description, storageTableName, storageSchemaName,
+                    titlePropertyId, _ts
+            );
+        }
+
+        public Builder setDomainId(int domainId)
+        {
+            this.domainId = domainId;
+            return this;
+        }
+
+        public Builder setName(String name)
+        {
+            this.name = name;
+            return this;
+        }
+
+        public Builder setDomainURI(String domainURI)
+        {
+            this.domainURI = domainURI;
+            return this;
+        }
+
+        public Builder setDescription(String description)
+        {
+            this.description = description;
+            return this;
+        }
+
+        public Builder setContainer(Container container)
+        {
+            this.container = container;
+            return this;
+        }
+
+        public Builder setProject(Container project)
+        {
+            this.project = project;
+            return this;
+        }
+
+        public Builder setTitlePropertyId(int titlePropertyId)
+        {
+            this.titlePropertyId = titlePropertyId;
+            return this;
+        }
+
+        public Builder setStorageTableName(String storageTableName)
+        {
+            this.storageTableName = storageTableName;
+            return this;
+        }
+
+        public Builder setStorageSchemaName(String storageSchemaName)
+        {
+            this.storageSchemaName = storageSchemaName;
+            return this;
+        }
+
+        public Builder setTs(Object ts)
+        {
+            this._ts = ts;
+            return this;
+        }
     }
 }

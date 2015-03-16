@@ -1025,7 +1025,6 @@ public class OntologyManager
                 " INNER JOIN " + getTinfoObject() + " O ON (O.ObjectId = OP.ObjectId) " +
                 " WHERE PD.Container = ? " +
                 " AND O.Container <> PD.Container ";
-//                " GROUP BY O.ObjectURI, O.Container, PD.PropertyId ";
 
         final Map<String, ObjectProperty> mObjsUsingMyProps = new HashMap<>();
         final StringBuilder sqlIn= new StringBuilder();
@@ -1060,7 +1059,7 @@ public class OntologyManager
             }
         });
 
-        //For each property that is referenced outside its container, get the
+        // For each property that is referenced outside its container, get the
         // domains that it belongs to and the other properties in those domains
         // so we can make copies of those domains and properties
         // Restrict it to properties and domains also in the same container
@@ -1103,9 +1102,11 @@ public class OntologyManager
                             domainDescByURICache.remove(getURICacheKey(dd));
                             domainDescByIDCache.remove(getIDCacheKey(dd));
                             domainPropertiesCache.clear();
-                            dd.setContainer(project);
-                            dd.setProject(project);
-                            dd.setDomainId(0);
+                            dd = dd.edit()
+                                    .setContainer(project)
+                                    .setProject(project)
+                                    .setDomainId(0)
+                                    .build();
                             dd = ensureDomainDescriptor(dd);
                             ensurePropertyDomain(pd, dd);
                         }
@@ -1252,12 +1253,10 @@ public class OntologyManager
                             // location
                             if (!dd.getContainer().equals(c) || !dd.getProject().equals(fNewProject))
                             {
-                                dd.setContainer(c);
-                                dd.setProject(fNewProject);
-                                dd.setDomainId(0);
+                                dd = dd.edit().setContainer(c).setProject(fNewProject).setDomainId(0).build();
                             }
 
-                            ensureDomainDescriptor(dd);
+                            dd = ensureDomainDescriptor(dd);
                             ensurePropertyDomain(pd, dd);
                         }
                     }
@@ -1529,25 +1528,22 @@ public class OntologyManager
 
     public static DomainDescriptor ensureDomainDescriptor(String domainURI, String name, Container container)
     {
-        DomainDescriptor ddIn = new DomainDescriptor(domainURI, container);
-        ddIn.setName(name);
-        return ensureDomainDescriptor(ddIn);
+        DomainDescriptor dd = new DomainDescriptor.Builder(domainURI, container).setName(name).build();
+        return ensureDomainDescriptor(dd);
     }
 
     @NotNull
     private static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn)
-     {
+    {
         DomainDescriptor dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
+        String ddInContainerId = ddIn.getContainer().getId();
+
         if (null == dd)
         {
             try
             {
-                dd = Table.insert(null, getTinfoDomainDescriptor(), ddIn);
-                // TODO: NOTE Table.insert() does not currently reselect rowversion, so don't add this dd to cache
-//                domainDescByURICache.put(getURICacheKey(dd), dd);
-//                return dd;
-                dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
-                return dd;
+                Table.insert(null, getTinfoDomainDescriptor(), ddIn);
+                return getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
             }
             catch (RuntimeSQLException x)
             {
@@ -1560,14 +1556,12 @@ public class OntologyManager
 
         List<String> colDiffs = compareDomainDescriptors(ddIn, dd);
 
-        if (colDiffs.size()==0)
+        if (colDiffs.size() == 0)
         {
             // if the descriptor differs by container only and the requested descriptor is in the project fldr
-            if (!ddIn.getContainer().getId().equals(dd.getContainer().getId()) &&
-                    ddIn.getContainer().getId().equals(ddIn.getProject().getId()))
+            if (!ddInContainerId.equals(dd.getContainer().getId()) && ddInContainerId.equals(ddIn.getProject().getId()))
             {
-                ddIn.setDomainId(dd.getDomainId());
-                dd = updateDomainDescriptor(ddIn);
+                dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
             }
             return dd;
         }
@@ -1575,8 +1569,7 @@ public class OntologyManager
         // you are allowed to update if you are coming from the project root, or if  you are in the container
         // in which the descriptor was created
         boolean fUpdateIfExists = false;
-        if (ddIn.getContainer().getId().equals(dd.getContainer().getId())
-                || ddIn.getContainer().getId().equals(ddIn.getProject().getId()))
+        if (ddInContainerId.equals(dd.getContainer().getId()) || ddInContainerId.equals(ddIn.getProject().getId()))
             fUpdateIfExists = true;
 
         boolean fMajorDifference = false;
@@ -1589,9 +1582,7 @@ public class OntologyManager
 
         if (fUpdateIfExists)
         {
-            //todo:  pass list of cols to update
-            ddIn.setDomainId(dd.getDomainId());
-            dd = updateDomainDescriptor(ddIn);
+            dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
             if (fMajorDifference)
                 _log.debug(errmsg);
         }
@@ -1609,13 +1600,11 @@ public class OntologyManager
     private static List<String>  compareDomainDescriptors(DomainDescriptor ddIn, DomainDescriptor dd)
     {
         List<String> colDiffs = new ArrayList<>();
-        String val;
 
         if (ddIn.getDomainId() !=0 && !(dd.getDomainId() == ddIn.getDomainId()))
             colDiffs.add("DomainId");
 
-        val=ddIn.getName();
-        if (null!= val && !dd.getName().equals(val))
+        if (ddIn.getName() != null && !dd.getName().equals(ddIn.getName()))
             colDiffs.add("Name");
 
         return colDiffs;
@@ -1913,8 +1902,8 @@ public class OntologyManager
             return pd;
 
         Container proj=c.getProject();
-        if (null==proj)
-                proj=c;
+        if (null == proj)
+            proj=c;
 
         //TODO: Currently no way to edit these descriptors. But once there is, need to invalidate the cache.
         String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
@@ -1927,11 +1916,11 @@ public class OntologyManager
 
             // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
             // and one of the two is in the shared project, use the project-level descriiptor.
-            if (pdArray.length>1)
+            if (pdArray.length > 1)
             {
                 _log.debug("Multiple PropertyDescriptors found for "+ propertyURI);
                 if (pd.getProject().equals(_sharedContainer))
-                    pd=pdArray[1];
+                    pd = pdArray[1];
             }
 
             key = getCacheKey(pd);
@@ -1951,15 +1940,10 @@ public class OntologyManager
         }
     }
 
-    public static DomainDescriptor getDomainDescriptor(int id, boolean force)
-    {
-        return domainDescByIDCache.get(String.valueOf(id));
-    }
-
 
     public static DomainDescriptor getDomainDescriptor(int id)
     {
-        return getDomainDescriptor(id, false);
+        return domainDescByIDCache.get(String.valueOf(id));
     }
 
     public static DomainDescriptor getDomainDescriptor(String domainURI, Container c)
@@ -1989,7 +1973,7 @@ public class OntologyManager
 
             // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
             // and one of the two is in the shared project, use the project-level descriptor.
-            if (ddArray.length>1)
+            if (ddArray.length > 1)
             {
                 _log.debug("Multiple DomainDescriptors found for " + domainURI);
                 if (dd.getProject().equals(_sharedContainer))
@@ -2016,7 +2000,7 @@ public class OntologyManager
             {
                 ret.put(dd.getDomainURI(), dd);
             }
-            if (!project.equals(ContainerManager.getSharedContainer()))
+            if (!project.equals(_sharedContainer))
             {
                 DomainDescriptor[] projectDDs = new SqlSelector(getExpSchema(), sql, ContainerManager.getSharedContainer()).getArray(DomainDescriptor.class);
                 for (DomainDescriptor dd : projectDDs)
@@ -2948,9 +2932,7 @@ public class OntologyManager
                 String propP1Fa3 = fa + "PD3";
                 PropertyDescriptor pd1Fa3 = ensurePropertyDescriptor(propP1Fa3, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 3" + fa, fldr1a);
                 String domP1Fa = fa + "DD1";
-                DomainDescriptor dd1 = new DomainDescriptor(domP1Fa, fldr1a);
-                dd1.setName("DomDesc 1" + fa);
-                ensureDomainDescriptor(dd1);
+                DomainDescriptor dd1 = ensureDomainDescriptor(domP1Fa, "DomDesc 1" + fa, fldr1a);
                 ensurePropertyDomain(pd1Fa, dd1);
                 ensurePropertyDomain(pd1Fa3, dd1);
 
@@ -2959,9 +2941,7 @@ public class OntologyManager
                 String propP1Fa2 = fa + "PD2";
                 PropertyDescriptor pd1Fa2 = ensurePropertyDescriptor(propP1Fa2, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 2" + fa, fldr1a);
                 String domP1Fa2 = fa +  "DD2";
-                DomainDescriptor dd2 = new DomainDescriptor(domP1Fa2, fldr1a);
-                dd2.setName("DomDesc 2" + fa);
-                ensureDomainDescriptor(dd2);
+                DomainDescriptor dd2 = ensureDomainDescriptor(domP1Fa2, "DomDesc 2" + fa, fldr1a);
                 ensurePropertyDomain(pd1Fa2, dd2);
             }
             catch (ValidationException ve)
@@ -3733,12 +3713,10 @@ public class OntologyManager
         }
     }
 
-    static private void _indexConcepts(final SearchService.IndexTask task)
+    private static void _indexConcepts(final SearchService.IndexTask task)
     {
-        final Container shared = ContainerManager.getSharedContainer();
-
         new SqlSelector(getExpSchema(), "SELECT * FROM exp.PropertyDescriptor WHERE Container=? AND rangeuri='xsd:nil'",
-                shared.getId()).forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
+                _sharedContainer.getId()).forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
             @Override
             public void exec(Map<String, Object> m) throws SQLException
             {
@@ -3752,12 +3730,12 @@ public class OntologyManager
                         StringUtils.trimToEmpty(label) + " " +
                         StringUtils.trimToEmpty(desc);
 
-                ActionURL url = new ActionURL("experiment-types", "findConcepts", shared);
+                ActionURL url = new ActionURL("experiment-types", "findConcepts", _sharedContainer);
                 url.addParameter("concept",propertyURI);
                 WebdavResource r = new SimpleDocumentResource(
                     new Path(propertyURI),
                     "concept:" + propertyURI,
-                    shared.getId(),
+                    _sharedContainer.getId(),
                     "text/plain", body.getBytes(),
                     url,
                     m

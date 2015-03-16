@@ -111,7 +111,7 @@ public class StorageProvisioner
         try (Transaction transaction = scope.ensureTransaction())
         {
             // reselect in a transaction
-            DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId(), true);
+            DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId());
             if (null == dd)
             {
                 Logger.getLogger(StorageProvisioner.class).warn("Can't find domain desciptor: " + domain.getTypeId() + " " + domain.getTypeURI());
@@ -163,9 +163,12 @@ public class StorageProvisioner
 
             execute(scope, scope.getConnection(), change);
 
-            dd.setStorageTableName(tableName);
-            dd.setStorageSchemaName(kind.getStorageSchemaName());
-            OntologyManager.updateDomainDescriptor(dd);
+            DomainDescriptor editDD = dd.edit()
+                    .setStorageTableName(tableName)
+                    .setStorageSchemaName(kind.getStorageSchemaName())
+                    .build();
+
+            OntologyManager.updateDomainDescriptor(editDD);
 
             kind.invalidate(domain);
 
