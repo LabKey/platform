@@ -60,7 +60,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.query.olap.metadata.CachedCube;
 import org.labkey.query.olap.metadata.Olap4JCachedCubeFactory;
 import org.labkey.query.olap.metadata.RolapCachedCubeFactory;
 import org.labkey.query.olap.rolap.RolapCubeDef;
@@ -111,7 +110,7 @@ public class ServerManager
     private static final Map<String, ServerReferenceCount> SERVERS = new HashMap<>();
     private static final Object SERVERS_LOCK = new Object();
 
-    private static final ModuleResourceCache<OlapSchemaDescriptor> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube defintions (module)", new OlapSchemaCacheHandler());
+    private static final ModuleResourceCache<OlapSchemaDescriptor> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube definitions (module)", new OlapSchemaCacheHandler());
     private static final BlockingStringKeyCache<OlapSchemaDescriptor> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Olap cube definitions (db) ", new OlapCacheLoader());
 
     private static final BlockingStringKeyCache<Cube> CUBES = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "cube cache", null);

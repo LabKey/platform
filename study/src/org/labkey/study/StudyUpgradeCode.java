@@ -61,7 +61,6 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.CommandLineSplitter;
@@ -76,7 +75,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -197,6 +195,7 @@ public class StudyUpgradeCode implements UpgradeCode
     private static final String DATE_FORMAT_STRING = "DateFormatString";
     private static final String NUMBER_FORMAT_STRING = "NumberFormatString";
 
+    // Invoked from study-13.30-14.10.sql
     @SuppressWarnings({"UnusedDeclaration"})
     @DeferredUpgrade
     public void moveDefaultFormatProperties(final ModuleContext context)
@@ -248,6 +247,8 @@ public class StudyUpgradeCode implements UpgradeCode
     }
 
 
+    // Invoked from study-13.30-14.10.sql
+    @SuppressWarnings("unused")
     public void migrateSpecimenTables(final ModuleContext context)
     {
         if (context.isNewInstall())
@@ -284,7 +285,7 @@ public class StudyUpgradeCode implements UpgradeCode
     }
 
 
-    public void migrateSpecimenTables(Study study, boolean createTablesOnly)
+    private void migrateSpecimenTables(Study study, boolean createTablesOnly)
     {
         TableInfo specimenNew = StudySchema.getInstance().getTableInfoSpecimen(study.getContainer(), null);
         TableInfo vialNew = StudySchema.getInstance().getTableInfoVial(study.getContainer(), null);
@@ -370,8 +371,12 @@ public class StudyUpgradeCode implements UpgradeCode
     }
 
 
-    /* upgrade provisioned dataset domains to always include data and container */
+    /*
+        upgrade provisioned dataset domains to always include data and container
 
+        Invoked from study-13.30-14.10.sql
+    */
+    @SuppressWarnings("unused")
     public void migrateProvisionedDatasetTables141(final ModuleContext context) throws ChangePropertyDescriptorException
     {
         if (context.isNewInstall())
@@ -398,7 +403,7 @@ public class StudyUpgradeCode implements UpgradeCode
         DbScope.getLabkeyScope().invalidateSchema(StudySchema.getInstance().getDatasetSchema());
     }
 
-    void uncacheDef(DatasetDefinition def)
+    private void uncacheDef(DatasetDefinition def)
     {
         TableInfo t = def.getStorageTableInfo();
         t.getSchema().getScope().invalidateTable(StudySchema.getInstance().getDatasetSchema(), t.getName());
@@ -433,7 +438,7 @@ public class StudyUpgradeCode implements UpgradeCode
     }
 
 
-    void renameColumnWithTheNameOfWhichIDoNotApprove(DatasetDefinition def, ColumnInfo columnInfo) throws ChangePropertyDescriptorException
+    private void renameColumnWithTheNameOfWhichIDoNotApprove(DatasetDefinition def, ColumnInfo columnInfo) throws ChangePropertyDescriptorException
     {
         try
         {
@@ -451,6 +456,8 @@ public class StudyUpgradeCode implements UpgradeCode
 
 
     // Splits DrawTimeStamp into DrawDate and DrawTime in SpecimenEvent and Specimen tables
+
+    // Invoked from study-13.30-14.10.sql
     @SuppressWarnings({"UnusedDeclaration"})
     @DeferredUpgrade
     public void migrateSpecimenDrawTimeStamp(final ModuleContext context)
@@ -512,7 +519,7 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
-    // study-14.31-14.33
+    // Invoked by study-14.30-15.10.sql
     @SuppressWarnings({"UnusedDeclaration"})
     @DeferredUpgrade
     public void migrateSpecimenTypeAndLocationTables(final ModuleContext context)
@@ -552,7 +559,7 @@ public class StudyUpgradeCode implements UpgradeCode
         dialect.dropIfExists(StudySchema.getInstance().getSchema(), "SpecimenAdditive", "TABLE", null);
     }
 
-    public void migrateSpecimenTypeAndLocationTables(Study study, boolean createTablesOnly, final ModuleContext context)
+    private void migrateSpecimenTypeAndLocationTables(Study study, boolean createTablesOnly, final ModuleContext context)
     {
         TableInfo location = StudySchema.getInstance().getTableInfoSite(study.getContainer());
         TableInfo primaryType = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(study.getContainer());
@@ -642,7 +649,7 @@ public class StudyUpgradeCode implements UpgradeCode
         });
     }
 
-    // invoked by study-13.23-13.24.sql
+    // Invoked by study-14.30-15.10.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void upgradeStudySnapshotsType(final ModuleContext context)
     {
@@ -717,5 +724,4 @@ public class StudyUpgradeCode implements UpgradeCode
             transaction.commit();
         }
     }
-
 }

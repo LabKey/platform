@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014 LabKey Corporation
+ * Copyright (c) 2007-2015 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import java.util.*;
  */
 public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
 {
-    private List<String> _names;
+    private final List<String> _names;
     private final Map<Integer, String> _lsids = new HashMap<>();
     private final ExpSampleSet _sampleSet;
     private final Container _container;

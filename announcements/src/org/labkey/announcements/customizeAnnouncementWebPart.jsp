@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -30,6 +30,6 @@
 
 <labkey:form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
     <input type="radio" name="style" value="full" <%=text("full".equals(selected)?"checked":"")%>>&nbsp;full<br>
-    <input type="radio" name="style"value="simple" <%=text("simple".equals(selected)?"checked":"")%>>&nbsp;simple<br>
+    <input type="radio" name="style" value="simple" <%=text("simple".equals(selected)?"checked":"")%>>&nbsp;simple<br>
     <input type="submit">
 </labkey:form>
