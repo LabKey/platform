@@ -62,6 +62,7 @@ import java.util.Set;
 public class DbSchema
 {
     private static final Logger _log = Logger.getLogger(DbSchema.class);
+
     public static final String TEMP_SCHEMA_NAME = "temp";
 
     private final String _name;
@@ -189,7 +190,7 @@ public class DbSchema
 
 
     // Special subclass to handle the peculiarities of the "labkey" schema that gets created in all module-required
-    // extenernal data sources. Key changes:
+    // external data sources. Key changes:
     // 1. Override getDisplayName() to eliminate the standard datasource prefix, so labkey-*-*.sql scripts are found
     // 2. Override getSchemaResource() to resolve labkey.xml
     public static class LabKeyDbSchema extends DbSchema

@@ -30,23 +30,10 @@ import java.util.Objects;
 
 public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<String, T[]>
 {
-    private void addBitMaskFilter(ColumnInfo column, int mask, int value)
-    {
-        SQLFragment ret = new SQLFragment("(((");
-        ret.append(column.getAlias());
-        ret.append(") &");
-        ret.append(mask);
-        ret.append(") = ");
-        ret.append(value);
-        ret.append(")");
-        _filter.addWhereClause(ret.getSQL(), ret.getParams().toArray(), column.getFieldKey());
-        addConditionToString(column.getName() + "&" + mask, value);
-    }
-
-    private TableInfo _table;
-    private SimpleFilter _filter;
-    private Class<T> _clazz;
-    private StringBuilder _toString;
+    private final TableInfo _table;
+    private final SimpleFilter _filter;
+    private final Class<T> _clazz;
+    private final StringBuilder _toString;
     
     protected CacheKey(TableInfo table, Class<T> clazz, @Nullable Container container)
     {
@@ -100,6 +87,20 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
             _toString.append("=");
             _toString.append(PageFlowUtil.encode(Objects.toString(value, "")));
         }
+    }
+
+
+    private void addBitMaskFilter(ColumnInfo column, int mask, int value)
+    {
+        SQLFragment ret = new SQLFragment("(((");
+        ret.append(column.getAlias());
+        ret.append(") &");
+        ret.append(mask);
+        ret.append(") = ");
+        ret.append(value);
+        ret.append(")");
+        _filter.addWhereClause(ret.getSQL(), ret.getParams().toArray(), column.getFieldKey());
+        addConditionToString(column.getName() + "&" + mask, value);
     }
 
 
