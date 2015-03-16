@@ -340,4 +340,14 @@ public interface Module extends Comparable<Module>
     public OlapSchemaInfo getOlapSchemaInfo();
 
     public DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, String> metaDataTableNames);
+
+    /**
+     * Lets a Module map a schema name used in code to a different schema name in the database. For example, Argos uses this to provide
+     * an administrator-configurable schema name; code always references "caisis" but administrators can point Argos to a different
+     * database schema.
+     *
+     * @param requestedSchemaName The name passed into DbSchema.get()
+     * @return The actual schema name in the database
+     */
+    public String getDatabaseSchemaName(String requestedSchemaName);
 }

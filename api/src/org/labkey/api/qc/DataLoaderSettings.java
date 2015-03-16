@@ -25,6 +25,7 @@ public class DataLoaderSettings
     private boolean _bestEffortConversion;      // if conversion fails, the original field value is returned
     private boolean _allowEmptyData;
     private boolean _throwOnErrors;
+    private boolean _allowUnexpectedColumns;    // don't load columns not in target domain
 
     public boolean isBestEffortConversion()
     {
@@ -54,5 +55,15 @@ public class DataLoaderSettings
     public void setThrowOnErrors(boolean throwOnErrors)
     {
         _throwOnErrors = throwOnErrors;
+    }
+
+    public boolean isAllowUnexpectedColumns()
+    {
+        return _allowUnexpectedColumns;
+    }
+
+    public void setAllowUnexpectedColumns(boolean allowUnexpectedColumns)
+    {
+        _allowUnexpectedColumns = allowUnexpectedColumns;
     }
 }

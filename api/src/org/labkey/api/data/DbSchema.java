@@ -172,6 +172,11 @@ public class DbSchema
 
     public static @NotNull DbSchema createFromMetaData(DbScope scope, String requestedSchemaName, DbSchemaType type) throws SQLException
     {
+        Module module = type.getModule(requestedSchemaName);
+
+        if (null != module)
+            requestedSchemaName = module.getDatabaseSchemaName(requestedSchemaName);
+
         Map<String, String> schemaNameMap = SchemaNameCache.get().getSchemaNameMap(scope);
         String metaDataName = schemaNameMap.get(requestedSchemaName);
 
@@ -179,7 +184,7 @@ public class DbSchema
         if (null == metaDataName)
             return new DbSchema(requestedSchemaName, type, scope, new HashMap<String, String>());
 
-        return type.createDbSchema(scope, metaDataName);
+        return type.createDbSchema(scope, metaDataName, module);
     }
 
 

@@ -24,9 +24,7 @@ import org.labkey.api.query.UserSchema;
 
 import java.util.Collection;
 
-/**
- * Created by labkeyuser on 2/22/15.
- */
+
 public class UnionTable extends AbstractTableInfo
 {
     final UserSchema _studyQuerySchema;     // really a StudyQuerySchema
@@ -51,6 +49,7 @@ public class UnionTable extends AbstractTableInfo
             addColumn(col);
         }
         _sqlInner = sqlf;
+        setDefaultVisibleColumns(_componentTable.getDefaultVisibleColumns());
     }
 
     @Override

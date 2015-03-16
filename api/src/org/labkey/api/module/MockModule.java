@@ -439,4 +439,10 @@ public class MockModule implements Module
     {
         return null;
     }
+
+    @Override
+    public String getDatabaseSchemaName(String requestedSchemaName)
+    {
+        return null;
+    }
 }

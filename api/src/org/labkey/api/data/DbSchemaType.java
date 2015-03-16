@@ -15,8 +15,10 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.exp.api.ProvisionedDbSchema;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 
 import java.sql.SQLException;
@@ -36,7 +38,7 @@ public enum DbSchemaType
     Module("module", CacheManager.YEAR, true)
     {
         @Override
-        DbSchema createDbSchema(DbScope scope, String metaDataName) throws SQLException
+        DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException
         {
             Map<String, String> metaDataTableNames = DbSchema.loadTableNames(scope, metaDataName);
 
@@ -44,20 +46,31 @@ public enum DbSchemaType
             if ("labkey".equals(metaDataName))
                 return new DbSchema.LabKeyDbSchema(scope, metaDataTableNames);
 
-            org.labkey.api.module.Module module = ModuleLoader.getInstance().getModuleForSchemaName(metaDataName);
+            return module.createModuleDbSchema(scope, metaDataName, metaDataTableNames);
+        }
+
+        @Nullable
+        @Override
+        public org.labkey.api.module.Module getModule(String requestedSchemaName)
+        {
+            // TODO: Eliminate this special case... register "labkey" with core module and handle it there
+            if ("labkey".equals(requestedSchemaName))
+                return ModuleLoader.getInstance().getCoreModule();
+
+            org.labkey.api.module.Module module = ModuleLoader.getInstance().getModuleForSchemaName(requestedSchemaName);
 
             // For now, throw if no module claims this schema. We could relax this to an assert (and fall back to core)
             // to provide backward compatibility for external modules that don't register their schemas.
             if (null == module)
-                throw new IllegalStateException("Schema \"" + metaDataName + "\" is not claimed by any module. ");
+                throw new IllegalStateException("Schema \"" + requestedSchemaName + "\" is not claimed by any module.");
 
-            return module.createModuleDbSchema(scope, metaDataName, metaDataTableNames);
+            return module;
         }
     },
     Provisioned("provisioned", CacheManager.YEAR, false)
     {
         @Override
-        DbSchema createDbSchema(DbScope scope, String metaDataName)
+        DbSchema createDbSchema(DbScope scope, String metaDataName, Module module)
         {
             return new ProvisionedDbSchema(metaDataName, scope);
         }
@@ -65,7 +78,7 @@ public enum DbSchemaType
     Bare("bare", CacheManager.HOUR, false)
     {
         @Override
-        DbSchema createDbSchema(DbScope scope, String metaDataName) throws SQLException
+        DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException
         {
             Map<String, String> metaDataTableNames = DbSchema.loadTableNames(scope, metaDataName);
             return new DbSchema(metaDataName, Bare, scope, metaDataTableNames);
@@ -80,7 +93,7 @@ public enum DbSchemaType
         }
 
         @Override
-        DbSchema createDbSchema(DbScope scope, String metaDataName)
+        DbSchema createDbSchema(DbScope scope, String metaDataName, Module module)
         {
             throw new IllegalStateException("Should not be creating a schema of type " + All);
         }
@@ -95,7 +108,7 @@ public enum DbSchemaType
         }
 
         @Override
-        DbSchema createDbSchema(DbScope scope, String metaDataName)
+        DbSchema createDbSchema(DbScope scope, String metaDataName, Module module)
         {
             throw new IllegalStateException("Should not be creating a schema of type " + Unknown);
         }
@@ -148,5 +161,10 @@ public enum DbSchemaType
         return XML_META_DATA_TYPES;
     }
 
-    abstract DbSchema createDbSchema(DbScope scope, String metaDataName) throws SQLException;
+    abstract DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException;
+
+    public @Nullable org.labkey.api.module.Module getModule(String requestedSchemaName)
+    {
+        return null;
+    }
 }

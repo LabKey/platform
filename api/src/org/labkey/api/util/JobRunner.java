@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.DbScope;
 
 import javax.servlet.ServletContextEvent;
 import java.util.HashMap;
@@ -184,41 +185,22 @@ public class JobRunner implements Executor
 
         protected void afterExecute(Runnable r, Throwable t)
         {
-            Job job;
-            synchronized (_jobs)
+            try
             {
-                job = _jobs.remove((Future) r);
-            }
-            if (null != job)
-            {
-                job._finishTime = System.currentTimeMillis();
-                _logDebug("afterExecute: " + job.toString());
-                if (null == t)
+                Job job;
+                synchronized (_jobs)
                 {
-                    try
-                    {
-                        job._task.get();
-                    }
-                    catch (ExecutionException x)
-                    {
-                        t = x.getCause();
-                    }
-                    catch (Throwable x)
-                    {
-                        t = x;
-                    }
+                    job = _jobs.remove((Future) r);
                 }
-                job.done(t);
-            }
-            else
-            {
-                if (r instanceof Future)
+                if (null != job)
                 {
+                    job._finishTime = System.currentTimeMillis();
+                    _logDebug("afterExecute: " + job.toString());
                     if (null == t)
                     {
                         try
                         {
-                            ((Future)r).get();
+                            job._task.get();
                         }
                         catch (ExecutionException x)
                         {
@@ -229,19 +211,45 @@ public class JobRunner implements Executor
                             t = x;
                         }
                     }
+                    job.done(t);
+                }
+                else
+                {
+                    if (r instanceof Future)
+                    {
+                        if (null == t)
+                        {
+                            try
+                            {
+                                ((Future)r).get();
+                            }
+                            catch (ExecutionException x)
+                            {
+                                t = x.getCause();
+                            }
+                            catch (Throwable x)
+                            {
+                                t = x;
+                            }
+                        }
+                    }
+                }
+
+                if (t != null)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, t);
+                }
+
+                super.afterExecute(r, t);
+
+                synchronized (_jobs)
+                {
+                    _jobs.notifyAll();
                 }
             }
-
-            if (t != null)
+            finally
             {
-                ExceptionUtil.logExceptionToMothership(null, t);
-            }
-
-            super.afterExecute(r, t);
-
-            synchronized (_jobs)
-            {
-                _jobs.notifyAll();
+                DbScope.closeAllConnections();
             }
         }
     }

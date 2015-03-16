@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -156,24 +157,29 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      *
      * @throws ExperimentException
      */
-    public static DataLoader createLoaderForImport(File dataFile, Domain dataDomain, DataLoaderSettings settings) throws ExperimentException
+    public static DataLoader createLoaderForImport(File dataFile, @Nullable Domain dataDomain, DataLoaderSettings settings) throws ExperimentException
     {
-        List<? extends DomainProperty> columns = dataDomain.getProperties();
-        Map<String, DomainProperty> aliases = dataDomain.createImportMap(false);
+        Map<String, DomainProperty> aliases = new HashMap<>();
         Set<String> mvEnabledColumns = Sets.newCaseInsensitiveHashSet();
         Set<String> mvIndicatorColumns = Sets.newCaseInsensitiveHashSet();
 
-        for (DomainProperty col : columns)
+        if (dataDomain != null)
         {
-            if (col.isMvEnabled())
+            List<? extends DomainProperty> columns = dataDomain.getProperties();
+            aliases = dataDomain.createImportMap(false);
+            for (DomainProperty col : columns)
             {
-                // Check for all of the possible names for the column in the incoming data when deciding if we should
-                // check it for missing values
-                Set<String> columnAliases = ImportAliasable.Helper.createImportMap(Collections.singletonList(col), false).keySet();
-                mvEnabledColumns.addAll(columnAliases);
-                mvIndicatorColumns.add(col.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                if (col.isMvEnabled())
+                {
+                    // Check for all of the possible names for the column in the incoming data when deciding if we should
+                    // check it for missing values
+                    Set<String> columnAliases = ImportAliasable.Helper.createImportMap(Collections.singletonList(col), false).keySet();
+                    mvEnabledColumns.addAll(columnAliases);
+                    mvIndicatorColumns.add(col.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                }
             }
         }
+
         try
         {
             DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, null, TabLoader.TSV_FILE_TYPE);
@@ -181,24 +187,27 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             for (ColumnDescriptor column : loader.getColumns())
             {
-                if (mvEnabledColumns.contains(column.name))
+                if (dataDomain != null)
                 {
-                    column.setMvEnabled(dataDomain.getContainer());
-                }
-                else if (mvIndicatorColumns.contains(column.name))
-                {
-                    column.setMvIndicator(dataDomain.getContainer());
-                    column.clazz = String.class;
-                }
-                DomainProperty prop = aliases.get(column.name);
-                if (prop != null)
-                    column.clazz = prop.getPropertyDescriptor().getPropertyType().getJavaType();
-                else
-                {
-                    // It's not an expected column. Is it an MV indicator column?
-                    if (!mvIndicatorColumns.contains(column.name))
+                    if (mvEnabledColumns.contains(column.name))
                     {
-                        column.load = false;
+                        column.setMvEnabled(dataDomain.getContainer());
+                    }
+                    else if (mvIndicatorColumns.contains(column.name))
+                    {
+                        column.setMvIndicator(dataDomain.getContainer());
+                        column.clazz = String.class;
+                    }
+                    DomainProperty prop = aliases.get(column.name);
+                    if (prop != null)
+                        column.clazz = prop.getPropertyDescriptor().getPropertyType().getJavaType();
+                    else
+                    {
+                        // It's not an expected column. Is it an MV indicator column?
+                        if (!settings.isAllowUnexpectedColumns() && !mvIndicatorColumns.contains(column.name))
+                        {
+                            column.load = false;
+                        }
                     }
                 }
 

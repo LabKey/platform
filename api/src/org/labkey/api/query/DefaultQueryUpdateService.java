@@ -553,7 +553,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                             row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
                             break;
                         default:
-                            if (/* TODO Issue 22502: col.getPropertyType() == PropertyType.FILE_LINK && */ (value instanceof MultipartFile || value instanceof AttachmentFile))
+                            if (isFileLinkColumn(col) && (value instanceof MultipartFile || value instanceof AttachmentFile))
                             {
                                 value = saveFile(c, col.getName(), value, null);
                             }
@@ -567,6 +567,16 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 }
             }
         }
+    }
+
+    /**
+     * Check if this column is a PropertyType.FILE_LINK type (and not a PropertyType.ATTACHMENT type).
+     *
+     * NOTE: REMOVE THIS AFTER FIXING Issue 22505
+     */
+    protected boolean isFileLinkColumn(@NotNull ColumnInfo dbColumnInfo)
+    {
+        return "file".equals(dbColumnInfo.getInputType());
     }
 
 

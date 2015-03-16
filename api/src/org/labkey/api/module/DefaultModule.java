@@ -1328,6 +1328,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
+    public String getDatabaseSchemaName(String requestedSchemaName)
+    {
+        return requestedSchemaName;
+    }
+
+    @Override
     public DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, String> metaDataTableNames)
     {
         return new DbSchema(metaDataName, DbSchemaType.Module, scope, metaDataTableNames);
