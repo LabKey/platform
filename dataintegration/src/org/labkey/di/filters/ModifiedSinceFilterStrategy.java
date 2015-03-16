@@ -40,6 +40,7 @@ import org.labkey.etl.xml.FilterType;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -62,7 +63,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
     ColumnInfo _deletedQueryTsCol;
     boolean _useRowversion = false;
 
-    private enum Timestamp
+    private enum FilterTimestamp
     {
         START()
             {
@@ -148,7 +149,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
     @Override
     public boolean hasWork()
     {
-        Object incrementalEndTimestamp = initFilterAndGetTimestamps(new SimpleFilter(), false).get(Timestamp.END);
+        Object incrementalEndTimestamp = initFilterAndGetTimestamps(new SimpleFilter(), false).get(FilterTimestamp.END);
 
         if (null != _context.getPipelineJob() && null == incrementalEndTimestamp)
             _context.getPipelineJob().getLogger().info("No new rows found in table: " + _table.getName());
@@ -158,7 +159,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
 
     private boolean hasDeleteWork()
     {
-        return null != _deletedRowsSource && null != initFilterAndGetTimestamps(new SimpleFilter(), true).get(Timestamp.END);
+        return null != _deletedRowsSource && null != initFilterAndGetTimestamps(new SimpleFilter(), true).get(FilterTimestamp.END);
     }
 
     @Override
@@ -168,9 +169,9 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
 
         SimpleFilter f = new SimpleFilter();
 
-        Map<Timestamp, Object> timestamps = initFilterAndGetTimestamps(f, deleting);
-        Object incrementalStartVal = timestamps.get(Timestamp.START);
-        Object incrementalEndVal = timestamps.get(Timestamp.END);
+        Map<FilterTimestamp, Object> timestamps = initFilterAndGetTimestamps(f, deleting);
+        Object incrementalStartVal = timestamps.get(FilterTimestamp.START);
+        Object incrementalEndVal = timestamps.get(FilterTimestamp.END);
 
         if (null == incrementalEndVal)
             incrementalEndVal = incrementalStartVal;
@@ -179,13 +180,13 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         else
             f.addCondition(_tsCol.getFieldKey(), incrementalEndVal, CompareType.LTE);
 
-        variables.put(Timestamp.START.getPropertyDescriptor(_useRowversion, deleting), incrementalStartVal);
-        variables.put(Timestamp.END.getPropertyDescriptor(_useRowversion, deleting), incrementalEndVal);
+        variables.put(FilterTimestamp.START.getPropertyDescriptor(_useRowversion, deleting), incrementalStartVal);
+        variables.put(FilterTimestamp.END.getPropertyDescriptor(_useRowversion, deleting), incrementalEndVal);
 
         return f;
     }
 
-    private Map<Timestamp, Object> initFilterAndGetTimestamps(SimpleFilter f, boolean deleting)
+    private Map<FilterTimestamp, Object> initFilterAndGetTimestamps(SimpleFilter f, boolean deleting)
     {
         init();
         TableInfo table;
@@ -224,13 +225,13 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         }
         Aggregate.Result maxResult = list.get(0);
 
-        Map<Timestamp, Object> timestamps = new HashMap<>();
-        timestamps.put(Timestamp.START, incrementalStartTimestamp);
+        Map<FilterTimestamp, Object> timestamps = new HashMap<>();
+        timestamps.put(FilterTimestamp.START, incrementalStartTimestamp);
         Object incrementalEndTimestamp = maxResult.getValue();
         if (incrementalEndTimestamp == null || incrementalEndTimestamp instanceof Date || incrementalEndTimestamp instanceof Integer || incrementalEndTimestamp instanceof Long)
-            timestamps.put(Timestamp.END, incrementalEndTimestamp);
+            timestamps.put(FilterTimestamp.END, incrementalEndTimestamp);
         else if (isUseRowversion() && incrementalEndTimestamp instanceof byte[])
-            timestamps.put(Timestamp.END, ByteBuffer.wrap((byte[]) incrementalEndTimestamp).getLong()); // a SQL Server timestamp column
+            timestamps.put(FilterTimestamp.END, ByteBuffer.wrap((byte[]) incrementalEndTimestamp).getLong()); // a SQL Server timestamp column
         else
             throw new IllegalArgumentException("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a date, timestamp or integer: " + incrementalEndTimestamp.toString());
         return timestamps;
@@ -244,7 +245,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             return null;
         JSONObject steps = _getObject(state, "steps");
         JSONObject step = _getObject(steps, _config.getId());
-        Object o = _get(step, Timestamp.END.getPropertyDescriptor(_useRowversion, deleted).getName());
+        Object o = _get(step, FilterTimestamp.END.getPropertyDescriptor(_useRowversion, deleted).getName());
 
         if (null == o || (o instanceof String && StringUtils.isEmpty((String)o)))
             return null;
@@ -253,11 +254,11 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         try
         {
             if (o instanceof String)
-                return Timestamp.valueOf((String)o);
+                return Timestamp.valueOf((String) o);
         }
         catch (Exception x)
         {
-        // oh well}
+            _context.getPipelineJob().getLogger().warn("Exception converting timestamp: " + o + "\n" + x.toString());
         }
         return JdbcType.TIMESTAMP.convert(o);
     }
