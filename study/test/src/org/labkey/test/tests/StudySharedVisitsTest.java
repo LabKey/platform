@@ -46,28 +46,33 @@ public class StudySharedVisitsTest extends BaseWebDriverTest
 
 
     @BeforeClass
-    public static void doSetup()
+    public static void setupProject()
     {
         StudySharedVisitsTest initTest = (StudySharedVisitsTest)getCurrentTest();
 
-        initTest._containerHelper.createProject(initTest.getProjectName(), "Study");
+        initTest.doSetup();
+    }
+
+    private void doSetup()
+    {
+        _containerHelper.createProject(getProjectName(), "Study");
 
         // Create a study with shared visits
-        initTest.clickButton("Create Study");
-        initTest.click(Locator.radioButtonByNameAndValue("shareVisits", "true"));
+        clickButton("Create Study");
+        click(Locator.radioButtonByNameAndValue("shareVisits", "true"));
         // TODO: do we want to test shared datasets as well?
-        initTest.clickButton("Create Study");
+        clickButton("Create Study");
 
         // TODO: Remove dependency on Dataspace module
-        initTest._containerHelper.setFolderType("Dataspace");
-        initTest.setPipelineRoot(TestFileUtils.getLabKeyRoot() + StudyBaseTest.getStudySampleDataPath());
+        _containerHelper.setFolderType("Dataspace");
+        setPipelineRoot(TestFileUtils.getLabKeyRoot() + StudyBaseTest.getStudySampleDataPath());
 
-        initTest._containerHelper.createSubfolder(initTest.getProjectName(), STUDY_ONE, "Study");
-        initTest.importFolderFromPipeline(STUDY_ONE_FOLDER, 1, false);
+        _containerHelper.createSubfolder(getProjectName(), STUDY_ONE, "Study");
+        importFolderFromPipeline(STUDY_ONE_FOLDER, 1, false);
 
-        // CONSIDER: Import a different study -- however, dataset ids must align
-//        initTest._containerHelper.createSubfolder(initTest.getProjectName(), STUDY_TWO, "Study");
-//        initTest.importFolderFromPipeline(STUDY_ONE_FOLDER, 1, false);
+        // TODO: CONSIDER: Import a different study -- however, dataset ids must align
+        //initTest._containerHelper.createSubfolder(initTest.getProjectName(), STUDY_TWO, "Study");
+        //initTest.importFolderFromPipeline(STUDY_ONE_FOLDER, 1, false);\
     }
 
     @Override
