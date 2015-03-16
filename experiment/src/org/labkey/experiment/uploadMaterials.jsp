@@ -242,7 +242,6 @@
 
 </table>
 <input type="hidden" name="tsvData" value=""/>
-<input type="hidden" name="filepath" value=""/>
 <input type="hidden" name="rowId" value=""/>
 <div style="display:none" id="uploading">Please wait while data is uploaded.</div>
 </labkey:form>
@@ -483,51 +482,64 @@ updateIds(document.getElementById("textbox").value);
 <form id="upload-run-form" enctype="multipart/form-data" method="POST">
     <div id="upload-run-button"></div>
 </form>
+<form id="delete-run-form" enctype="multipart/form-data" method="POST">
+    <input type="hidden" name="singleObjectRowId" value=""/>
+    <input type="hidden" name="forceDelete" value="true"/>
+</form>
 <script type="text/javascript">
     // Optional - specify a protocolId so that the Exp.Data object is assigned the related LSID namespace.
     var url = LABKEY.ActionURL.buildURL("assay", "assayFileUpload", LABKEY.ActionURL.getContainer());
+
+    var deleteExpData = function(rowId) {
+        var url = LABKEY.ActionURL.buildURL("experiment", "deleteSelectedData", LABKEY.ActionURL.getContainer());
+        // NOTE: should be a cleaner way to slame this value in the form object.
+        document.forms['delete-run-form'].elements['singleObjectRowId'].value = rowId;
+        // TODO: is there a good way to ignore the response (e.g. don't care and don't fetch)
+        var form = new Ext.form.BasicForm( Ext.get("delete-run-form"), {url: url});
+        form.submit();
+    };
+
     Ext.onReady(function() {
-        var form = new Ext.form.BasicForm(
-                Ext.get("upload-run-form"), {
-                    fileUpload: true,
-                    frame: false,
-                    url: url,
-                    listeners: {
-                        actioncomplete : function (form, action) {
-                            var data = new LABKEY.Exp.Data(action.result);
-                            var filepath = action.result.absolutePath;
+        var form = new Ext.form.BasicForm( Ext.get("upload-run-form"), {
+            fileUpload: true,
+            frame: false,
+            url: url,
+            listeners: {
+                actioncomplete : function (form, action) {
+                    var data = new LABKEY.Exp.Data(action.result);
 
-                            data.getContent({
-                                scope : this,
-                                deleteFile: true,
-                                //format : 'jsonTSV',
-                                success : function(content, format){
+                    data.getContent({
+                        scope : this,
+                        deleteFile: true,
+                        //format : 'jsonTSV',
+                        success : function(content, format){
 
-                                    // update the fields (needs to happen first because it sets the fields variable)
-                                    updateIds(content.trim());
+                            // update the fields (needs to happen first because it sets the fields variable)
+                            updateIds(content.trim());
 
-                                    // put data back into tsv format (as right now it's comma seperated)
-                                    var textData = document.forms['sampleSetUploadForm'].elements['data'].value;
-                                    if (textData == "" && fields != null)
-                                    {
-                                        for (var i = 0; i < fields.length; i++)
-                                            textData += fields[i].join("\t") + "\n";
+                            // put data back into tsv format (as right now it's comma seperated)
+                            var textData = document.forms['sampleSetUploadForm'].elements['data'].value;
+                            if (textData == "" && fields != null)
+                            {
+                                for (var i = 0; i < fields.length; i++)
+                                    textData += fields[i].join("\t") + "\n";
 
-                                        document.forms['sampleSetUploadForm'].elements['tsvData'].value = textData;
-                                        document.forms['sampleSetUploadForm'].elements['filepath'].value = filepath;
-                                        document.forms['sampleSetUploadForm'].elements['rowId'].value = data.rowId;
-                                    }
-                                },
-                                failure : function(){
-
-                                }
-                            });
+                                document.forms['sampleSetUploadForm'].elements['tsvData'].value = textData;
+                                document.forms['sampleSetUploadForm'].elements['rowId'].value = data.rowId;
+                            }
                         },
-                        actionfailed: function (form, action) {
-                            alert('Upload failed!');
+                        failure : function(){
+
                         }
-                    }
-                });
+                    });
+
+                    deleteExpData(data.rowId);
+                },
+                actionfailed: function (form, action) {
+                    alert('Upload failed!');
+                }
+            }
+        });
 
         var uploadField = new Ext.form.FileUploadField({
             id: "upload-run-field",
