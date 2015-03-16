@@ -3,6 +3,7 @@ package org.labkey.authentication.duo;
 
 import com.duosecurity.duoweb.DuoWeb;
 import com.duosecurity.duoweb.DuoWebException;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
@@ -20,7 +21,27 @@ import java.util.Map;
 public class DuoManager
 {
     private static final String DUO_AUTHENTICATION_CATEGORY_KEY = "DuoAuthentication";
-    private enum Key {IntegrationKey, SecretKey, ApplicationKey, APIHostname}
+
+    public enum Key {
+        IntegrationKey, // an id grouping for users
+        SecretKey, // duo's public key
+        ApplicationKey // a LabKey private key
+                {
+                    @Override
+                    public String getDefault()
+                    {
+                        return StringUtils.defaultIfBlank(super.getDefault(), generateApplicationKey());
+                    }
+                },
+        APIHostname, // duo server
+        Bypass;
+
+        public String getDefault(){ return getXmlVal();}
+        private String getXmlVal()
+        {
+            return ModuleLoader.getServletContext().getInitParameter("org.labkey.authentication.duo." + this.toString());
+        }
+    }
 
     public static void saveProperties(DuoController.Config config)
     {
@@ -37,42 +58,39 @@ public class DuoManager
         return PropertyManager.getEncryptedStore().getProperties(DUO_AUTHENTICATION_CATEGORY_KEY);
     }
 
-    private static String getProperty(Key key, String defaultValue)
+    private static String getProperty(Key key)
     {
         Map<String, String> props = getProperties();
 
         String value = props.get(key.toString());
-
-        if (StringUtils.isNotEmpty(value))
-            return value;
-        else
-            return defaultValue;
+        if (StringUtils.isBlank(value))
+            value = key.getDefault();
+        return value;
     }
 
     public static String getIntegrationKey()
     {
-        return getProperty(Key.IntegrationKey, "");
+        return getProperty(Key.IntegrationKey);
     }
 
     public static String getSecretKey()
     {
-        return getProperty(Key.SecretKey, "");
+        return getProperty(Key.SecretKey);
     }
 
     public static String getApplicationKey()
     {
-        return getProperty(Key.ApplicationKey, "");
+        return getProperty(Key.ApplicationKey);
     }
 
     public static String getAPIHostname()
     {
-        return getProperty(Key.APIHostname, "");
+        return getProperty(Key.APIHostname);
     }
 
     private static String generateApplicationKey()
     {
-        //TODO: allow for generating a private 40+ character key, kept secret from Duo
-        return null;
+        return RandomStringUtils.randomAlphanumeric(64);
     }
 
     public static boolean isConfigured()
@@ -82,48 +100,41 @@ public class DuoManager
 
     public static String generateSignedRequest(User u)
     {
-        String signedRequest = null;
-        if (isConfigured())
-        {
-            signedRequest = DuoWeb.signRequest(getIntegrationKey(), getSecretKey(), getApplicationKey(), u.getEmail());
-        }
-        return signedRequest;
+        return DuoWeb.signRequest(getIntegrationKey(), getSecretKey(), getApplicationKey(), Integer.toString(u.getUserId()));
     }
 
-    public static String verifySignedResponse(String signedResponse)
+    public static String verifySignedResponse(String signedResponse, boolean test)
     {
         String verifiedUsername = null;
-        if (isConfigured())
+        try
         {
-            try
-            {
-                verifiedUsername = DuoWeb.verifyResponse(getIntegrationKey(), getSecretKey(), getApplicationKey(), signedResponse);
-                // TODO: figure out what to do with exceptions- for test mode, probably rethrow as RunTimeException.
-                // For normal usage, log them and give nice error to user that authentication is not available at this time,
-                // try again later and/or contact sys admin
-            }
-            catch (DuoWebException e)
-            {
-                e.printStackTrace();
-            }
-            catch (NoSuchAlgorithmException e)
-            {
-                e.printStackTrace();
-            }
-            catch (InvalidKeyException e)
-            {
-                e.printStackTrace();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
+            verifiedUsername = DuoWeb.verifyResponse(getIntegrationKey(), getSecretKey(), getApplicationKey(), signedResponse);
+            // TODO: figure out what to do with exceptions- for test mode, probably rethrow as RunTimeException.
+            // For normal usage, log them and give nice error to user that authentication is not available at this time,
+            // try again later and/or contact sys admin
         }
+        catch (DuoWebException e)
+        {
+            e.printStackTrace();
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            e.printStackTrace();
+        }
+        catch (InvalidKeyException e)
+        {
+            e.printStackTrace();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
         return verifiedUsername;
     }
 
     public static boolean bypassDuoAuthentication()
     {
-        return Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.authentication.duo.bypassDuo"));
+        return Boolean.parseBoolean(Key.Bypass.getDefault());
     }
 }

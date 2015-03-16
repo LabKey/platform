@@ -4,11 +4,12 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    String message = ((DuoForm) HttpView.currentView().getModelBean()).getMessage();
+    String message = "REPLACE ME!!!!";
+    String sig_request = ((DuoForm) HttpView.currentView().getModelBean()).getSig_request();
 %>
 <p><%=h(message)%></p>
 <p>Is that really you?</p>
-
+<p><%=h(sig_request)%></p>
 <labkey:form method="POST">
     <table>
         <tr>

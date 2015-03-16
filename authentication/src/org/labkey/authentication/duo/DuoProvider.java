@@ -21,9 +21,15 @@ public class DuoProvider implements SecondaryAuthenticationProvider
     @Override
     public ActionURL getRedirectURL(User candidate, Container c, URLHelper returnURL)
     {
-        // TODO: Initiate duo process here
+        ActionURL validateURL = DuoController.getValidateURL(c, returnURL);
+        validateURL.addParameter("sig_request", DuoManager.generateSignedRequest(candidate));
+        return validateURL;
+    }
 
-        return DuoController.getValidateURL(c, returnURL);
+    @Override
+    public boolean bypass()
+    {
+        return !DuoManager.isConfigured() || DuoManager.bypassDuoAuthentication();
     }
 
     @Nullable

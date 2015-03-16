@@ -1,13 +1,6 @@
 package org.labkey.authentication.duo;
 
 import com.duosecurity.duoweb.DuoWeb;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpRequestHandler;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
@@ -22,7 +15,6 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -34,8 +26,6 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-
-import java.io.IOException;
 
 /**
  * User: tgaluhn
@@ -162,27 +152,38 @@ public class DuoController extends SpringActionController
 
     public static class DuoForm extends ReturnUrlForm
     {
-        private boolean _valid = false;
-        private String _message;
+        private String sig_request;
+        private String sig_response;
+        private boolean test = false;
 
-        public boolean isValid()
+        public String getSig_request()
         {
-            return _valid;
+            return sig_request;
         }
 
-        public void setValid(boolean valid)
+        public void setSig_request(String sig_request)
         {
-            _valid = valid;
+            this.sig_request = sig_request;
         }
 
-        public String getMessage()
+        public String getSig_response()
         {
-            return _message;
+            return sig_response;
         }
 
-        public void setMessage(String message)
+        public void setSig_response(String sig_response)
         {
-            _message = message;
+            this.sig_response = sig_response;
+        }
+
+        public boolean isTest()
+        {
+            return test;
+        }
+
+        public void setTest(boolean test)
+        {
+            this.test = test;
         }
     }
 
@@ -207,7 +208,6 @@ public class DuoController extends SpringActionController
         public ModelAndView getView(DuoForm form, boolean reshow, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            form.setMessage("I'm " + this.getClass().getSimpleName());
             return new JspView<>("/org/labkey/authentication/duo/duoEntry.jsp", form, errors);
         }
 
@@ -220,10 +220,11 @@ public class DuoController extends SpringActionController
         @Override
         public boolean handlePost(DuoForm form, BindException errors) throws Exception
         {
-            // TODO: Obviously, we need real Duo validation here
-            boolean success = form.isValid();
+            String returnedUser = DuoManager.verifySignedResponse(form.getSig_response(), form.isTest());
 
-            if (success)
+            boolean success = null != getUser() && returnedUser.equals(Integer.toString(getUser().getUserId()));
+
+            if (success && !form.isTest())
             {
                 AuthenticationManager.setSecondaryAuthenticationSuccess(getViewContext().getRequest(), getProviderClass());
 
