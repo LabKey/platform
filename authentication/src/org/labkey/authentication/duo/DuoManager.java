@@ -39,23 +39,26 @@ public class DuoManager
 
     public enum Key {
         IntegrationKey, // an id grouping for users
-        SecretKey, // duo's public key
-        ApplicationKey // a LabKey private key
+        SecretKey, // effectively duo's public key
+        ApplicationKey // effectively a LabKey private key;
                 {
                     @Override
                     public String getDefault()
                     {
-                        return StringUtils.defaultIfBlank(super.getDefault(), generateApplicationKey());
+                        return generateApplicationKey();
                     }
                 },
         APIHostname, // duo server
-        Bypass;
+        Bypass
+                {
+                    @Override
+                    public String getDefault()
+                    {
+                        return ModuleLoader.getServletContext().getInitParameter("org.labkey.authentication.duo." + Bypass.toString());
+                    }
+                };
 
-        public String getDefault(){ return getXmlVal();}
-        private String getXmlVal()
-        {
-            return ModuleLoader.getServletContext().getInitParameter("org.labkey.authentication.duo." + this.toString());
-        }
+        public String getDefault(){return "";}
     }
 
     public static void saveProperties(DuoController.Config config)
