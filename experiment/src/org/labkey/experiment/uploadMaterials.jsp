@@ -243,6 +243,7 @@
 </table>
 <input type="hidden" name="tsvData" value=""/>
 <input type="hidden" name="filepath" value=""/>
+<input type="hidden" name="rowId" value=""/>
 <div style="display:none" id="uploading">Please wait while data is uploaded.</div>
 </labkey:form>
 <script type="text/javascript">
@@ -493,9 +494,7 @@ updateIds(document.getElementById("textbox").value);
                     url: url,
                     listeners: {
                         actioncomplete : function (form, action) {
-
                             var data = new LABKEY.Exp.Data(action.result);
-
                             var filepath = action.result.absolutePath;
 
                             data.getContent({
@@ -516,6 +515,7 @@ updateIds(document.getElementById("textbox").value);
 
                                         document.forms['sampleSetUploadForm'].elements['tsvData'].value = textData;
                                         document.forms['sampleSetUploadForm'].elements['filepath'].value = filepath;
+                                        document.forms['sampleSetUploadForm'].elements['rowId'].value = data.rowId;
                                     }
                                 },
                                 failure : function(){

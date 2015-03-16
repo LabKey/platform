@@ -43,6 +43,7 @@ public class UploadMaterialSetForm extends ViewForm
     private int parentColumn = -1;
     private InsertUpdateChoice insertUpdateChoice;
     private String filepath;
+    private Integer rowId;
 
     private DataLoader _loader;
 
@@ -79,6 +80,16 @@ public class UploadMaterialSetForm extends ViewForm
     public void setFilepath(String filepath)
     {
         this.filepath = filepath;
+    }
+
+    public Integer getRowId()
+    {
+        return rowId;
+    }
+
+    public void setRowId(Integer rowId)
+    {
+        this.rowId = rowId;
     }
 
     public void setName(String name)

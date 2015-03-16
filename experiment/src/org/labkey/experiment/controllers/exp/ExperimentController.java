@@ -2819,6 +2819,7 @@ public class ExperimentController extends SpringActionController
             // NOTE: should we try to delete the file if there was an error? (I think so)
             if (form.getFilepath() != null)
             {
+                ExperimentService.get().getExpData(form.getRowId()).delete(getUser());
                 File f = new File(form.getFilepath());
                 f.delete();
             }
