@@ -41,6 +41,7 @@ import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.WrapperDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
@@ -294,7 +295,13 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         ValidatorContext validatorCache = new ValidatorContext(_list.getContainer(), user);
-        ListItem item = new ListItemImpl(_list);
+
+        ListItm itm = new ListItm();
+        itm.setEntityId((String) oldRow.get(ID));
+        itm.setListId(_list.getListId());
+        itm.setKey(oldRow.get(_list.getKeyName()));
+
+        ListItem item = new ListItemImpl(_list, itm);
 
         if (item.getProperties() != null)
         {
@@ -320,16 +327,25 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             ColumnInfo column = qt.getColumn(FieldKey.fromParts(r.getKey()));
             rowCopy.put(r.getKey(), r.getValue());
 
-            // Attachments
-            if (r.getValue() instanceof AttachmentFile)
+            // 22747: Attachment columns
+            if (null != column)
             {
-                if (null != column)
+                DomainProperty dp = _list.getDomain().getPropertyByURI(column.getPropertyURI());
+                if (null != dp)
                 {
-                    modifiedAttachmentColumns.add(column);
+                    PropertyDescriptor pd = dp.getPropertyDescriptor();
+                    if (pd.getPropertyType().equals(PropertyType.ATTACHMENT))
+                    {
+                        modifiedAttachmentColumns.add(column);
 
-                    AttachmentFile file = (AttachmentFile) r.getValue();
-                    if (null != file.getFilename())
-                        attachmentFiles.add(file);
+                        // setup any new attachments
+                        if (r.getValue() instanceof AttachmentFile)
+                        {
+                            AttachmentFile file = (AttachmentFile) r.getValue();
+                            if (null != file.getFilename())
+                                attachmentFiles.add(file);
+                        }
+                    }
                 }
             }
         }
@@ -734,5 +750,16 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     private VirtualFile getAttachmentDirectory()
     {
         return _att;
+    }
+
+    @Override
+    protected boolean isFileLinkColumn(@NotNull ColumnInfo dbColumnInfo)
+    {
+        PropertyDescriptor pd = null;
+        DomainProperty dp = _list.getDomain().getPropertyByURI(dbColumnInfo.getPropertyURI());
+        if (dp != null)
+            pd = dp.getPropertyDescriptor();
+
+        return pd != null && pd.getPropertyType() == PropertyType.FILE_LINK;
     }
 }

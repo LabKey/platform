@@ -1657,7 +1657,7 @@ public class StudyController extends BaseStudyController
         {
 
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), StudyQuerySchema.SCHEMA_NAME);
-            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, "Location");
+            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, StudyQuerySchema.LOCATION_TABLE_NAME);
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
             return queryView;
         }

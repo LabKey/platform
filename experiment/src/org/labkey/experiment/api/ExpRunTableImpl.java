@@ -39,9 +39,9 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -919,7 +919,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         PropertyColumn propColumn = (PropertyColumn)col;
                         PropertyDescriptor propertyDescriptor = propColumn.getPropertyDescriptor();
                         Object oldValue = run.getProperty(propertyDescriptor);
-                        if (value instanceof MultipartFile || value instanceof SpringAttachmentFile)
+                        if (propertyDescriptor.getPropertyType() == PropertyType.FILE_LINK && (value instanceof MultipartFile || value instanceof SpringAttachmentFile))
                         {
                             value = saveFile(container, col.getName(), value, AssayFileWriter.DIR_NAME);
                         }
