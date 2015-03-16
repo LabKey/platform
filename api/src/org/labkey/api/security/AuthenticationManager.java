@@ -771,6 +771,12 @@ public class AuthenticationManager
         {
             if (!getSecondaryAuthenticationSuccess(request, provider.getClass()))
             {
+                if (provider.bypass())
+                {
+                    _log.info("Per configuration, bypassing secondary authentication for provider: " + provider.getClass());
+                    setSecondaryAuthenticationSuccess(request, provider.getClass());
+                    continue;
+                }
                 throw new RedirectException(provider.getRedirectURL(candidate, c, afterLogin));
             }
         }

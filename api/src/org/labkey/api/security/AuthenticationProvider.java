@@ -59,6 +59,14 @@ public abstract interface AuthenticationProvider
          *  but isn't officially authenticated until user successfully validates with all enabled SecondaryAuthenticationProviders as well.
          */
         ActionURL getRedirectURL(User candidate, Container c, URLHelper returnURL);
+
+        /**
+         * Bypass authentication from this provider. Might be configured via labkey.xml parameter to
+         * temporarily not require secondary authentication if this has been misconfigured or a 3rd
+         * party service provider is unavailable.
+         *
+         */
+        boolean bypass();
     }
 
     public static class AuthenticationResponse
