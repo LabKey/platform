@@ -1,5 +1,3 @@
-<p>Welcome to LabKey Server.</p>
-
 <p>To learn more about using the platform, please visit one of the community resources freely available on
 <a href="http://www.labkey.org">labkey.org</a>:</p>
 <ul>
@@ -11,7 +9,7 @@
 
 <p>
 If you need further assistance, <a href="http://www.labkey.com">LabKey Software</a> provides professional support,
-customization and development. Contact: <a href="mailto:info@labkey.com">info@labkey.com</a>
+customization and development. Please <a href="https://www.labkey.com/company/contact-us">contact us</a>.
 </p>
 
 <p>Thanks for installing LabKey Server. </p>
