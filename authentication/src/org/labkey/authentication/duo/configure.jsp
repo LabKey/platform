@@ -45,10 +45,6 @@
             <td><input type="text" name="secretKey" size="50" value="<%=h(bean.getSecretKey())%>"></td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Application Key<%= PageFlowUtil.helpPopup("Application Key", "Your Labkey Admin should have generated this Application Key (a random alpha-numeric string)." )%></td>
-            <td><input type="text" name="applicationKey" size="50" value="<%=h(bean.getApplicationKey())%>"></td> <%--TODO: Do we want Admin to allow to generate a new application key?--%>
-        </tr>
-        <tr>
             <td class="labkey-form-label">API Hostname<%=PageFlowUtil.helpPopup("API Hostname", "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.")%></td>
             <td><input type="text" name="apiHostname"  size="50" value="<%=h(bean.getApiHostname())%>"></td>
         </tr>

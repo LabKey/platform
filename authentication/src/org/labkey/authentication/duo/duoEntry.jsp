@@ -18,25 +18,62 @@
 <%@ page import="org.labkey.authentication.duo.DuoController" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.authentication.duo.DuoController.DuoForm" %>
+<%@ page import="org.labkey.authentication.duo.DuoManager" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%
-    String message = "REPLACE ME!!!!";
-    String sig_request = ((DuoForm) HttpView.currentView().getModelBean()).getSig_request();
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromPath("authentication/duo"));// These are equivalent as Client Dependencies without a suffix are assumed to be .lib.xml
+        return resources;
+    }
 %>
-<p><%=h(message)%></p>
-<p>Is that really you?</p>
-<p><%=h(sig_request)%></p>
-<labkey:form method="POST">
-    <table>
-        <tr>
-            <td valign="top"><input type="radio" name="valid" value="1"></td>
-            <td>Yes!</td>
-        </tr>
-        <tr>
-            <td valign="top"><input type="radio" name="valid" value="0" checked></td>
-            <td>No</td>
-        </tr>
-    </table>
-    <input type="submit" value="Validate">
-</labkey:form>
+<%
+    String sig_request = ((DuoForm) HttpView.currentView().getModelBean()).getSig_request();
+    JspView<DuoForm> me = (JspView<DuoForm>)HttpView.currentView();
+    DuoForm form = me.getModelBean();
+    String message;
+    if(form.isTest())
+    {
+        message = "Use this page to test Duo Two-Factor authentication setting. Duo Two-factor authentication, " +
+                "as the name implicates, has two parts to the sign-in process: (i) Successful sign-in to the Labkey " +
+                "server, and (ii) Secondary login via Duo. For testing purpose, we will skip signing onto the " +
+                "Labkey server, and only perform the Secondary Login via Duo.";
+    }
+    else
+    {
+        message = "Your Primary Authentication was a success! Please perform Secondary Authentication below:";
+    }
+%>
+<p><h4><%=h(message)%></h4></p>
+
+<iframe id="duo_iframe" width="620" height="330" frameborder="0"></iframe>
+
+<%
+    if(StringUtils.isNotBlank(sig_request))
+    {
+%>
+    <script>
+
+        postActionURL = "";
+
+        if(<%=form.isTest()%>)
+        {
+            postActionURL=LABKEY.ActionURL.buildURL("duo", "testDuoResult.view");
+        }
+
+        Duo.init({
+            'host': "<%=text(DuoManager.getAPIHostname())%>",
+            'sig_request': "<%=text(sig_request)%>" ,
+            'post_action': postActionURL
+        });
+    </script>
+<%
+    }
+%>
+
