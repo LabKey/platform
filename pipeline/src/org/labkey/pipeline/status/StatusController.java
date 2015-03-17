@@ -1145,6 +1145,12 @@ public class StatusController extends SpringActionController
 
             return url;
         }
+
+        @Override
+        public ActionURL urlShowFile(Container container, int rowId, String filename)
+        {
+            return StatusController.urlShowFile(container, rowId, filename);
+        }
     }
 
     @RequiresSiteAdmin

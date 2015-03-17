@@ -35,7 +35,6 @@ import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.ParameterDescriptionImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
@@ -54,19 +53,21 @@ import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.writer.ContainerUser;
@@ -107,7 +108,6 @@ import org.quartz.impl.matchers.GroupMatcher;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -348,7 +348,12 @@ public class TransformManager implements DataIntegrationService.Interface
         try
         {
             ContainerUser context = descriptor.getJobContext(container, user, params);
-
+            // Don't double queue jobs
+            if (transformIsPending(context, descriptor.getId()))
+            {
+                LOG.info("Not queuing job because ETL is already pending: " + descriptor.getId());
+                return null;
+            }
             // see if we have work to do before directly scheduling the pipeline job
             boolean hasWork = descriptor.checkForWork(context, false, true);
             if (!hasWork)
@@ -561,11 +566,27 @@ public class TransformManager implements DataIntegrationService.Interface
         return true;
     }
 
+    private SQLFragment transformConfigurationSQLFragment()
+    {
+        return new SQLFragment("with runs AS")
+                .append(" (SELECT *, ROW_NUMBER() OVER (PARTITION BY transformid, container ORDER BY starttime DESC) as rn")
+                .append(" FROM dataintegration.transformrun),")
+                .append("successRuns AS")
+                .append(" (SELECT *, ROW_NUMBER() OVER (PARTITION BY transformid, container ORDER BY starttime DESC) as rn")
+                .append(" FROM dataintegration.transformrun WHERE endtime is not NULL)")
+                .append(" select c.*, runs.jobid as lastJobId, ")
+                .append("CASE WHEN runs.status != 'PENDING' OR s.Status = 'WAITING' THEN runs.status ELSE 'RUNNING' END as lastStatus, ")
+                .append("successRuns.jobid as lastCompletionJobId, successRuns.endtime as lastCompletion from dataintegration.transformconfiguration c")
+                .append(" LEFT JOIN runs ON c.container = runs.container AND c.transformid = runs.transformid AND runs.rn = 1")
+                .append(" LEFT JOIN pipeline.StatusFiles s ON runs.jobid = s.rowId")
+                .append(" LEFT JOIN successRuns ON c.container = successRuns.container AND c.transformid = successRuns.transformid AND successRuns.rn = 1")
+                .append(" WHERE c.container=?");
+    }
 
     public List<TransformConfiguration> getTransformConfigurations(Container c)
     {
         DbScope scope = DbSchema.get("dataintegration").getScope();
-        SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE container=?", c.getId());
+        SQLFragment sql = transformConfigurationSQLFragment().add(c.getId());
         return new SqlSelector(scope, sql).getArrayList(TransformConfiguration.class);
     }
 
@@ -573,7 +594,7 @@ public class TransformManager implements DataIntegrationService.Interface
     public TransformConfiguration getTransformConfiguration(Container c, ScheduledPipelineJobDescriptor etl)
     {
         DbScope scope = DbSchema.get("dataintegration").getScope();
-        SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE container=? and transformid=?", c.getId(), etl.getId());
+        SQLFragment sql = transformConfigurationSQLFragment().append(" and c.transformid=?").add(c.getId()).add(etl.getId());
         TransformConfiguration ret = new SqlSelector(scope, sql).getObject(TransformConfiguration.class);
         if (null != ret)
             return ret;
@@ -602,33 +623,14 @@ public class TransformManager implements DataIntegrationService.Interface
         }
     }
 
-
-
-    /* Should only be called once at startup */
-    public void startAllConfigurations()
+    public String getJobDetailsLink(Container c, Integer jobId, String text, boolean styled)
     {
-        DbSchema schema = DataIntegrationQuerySchema.getSchema();
-        SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
+        if (null == jobId)
+            return null;
+        ActionURL detailsURL = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(c, jobId);
 
-        new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<TransformConfiguration>(){
-            @Override
-            public void exec(TransformConfiguration config) throws SQLException
-            {
-                // CONSIDER explicit runAs user
-                int runAsUserId = config.getModifiedBy();
-                User runAsUser = UserManager.getUser(runAsUserId);
-
-                ScheduledPipelineJobDescriptor descriptor = DESCRIPTOR_CACHE.getResource(config.getTransformId());
-                if (null == descriptor)
-                    return;
-                Container c = ContainerManager.getForId(config.getContainerId());
-                if (null == c)
-                    return;
-                schedule(descriptor, c, runAsUser, config.isVerboseLogging());
-                }
-        }, TransformConfiguration.class);
+        return styled ? PageFlowUtil.textLink(text, detailsURL ) : PageFlowUtil.unstyledTextLink(text, detailsURL);
     }
-
 
     public void shutdownPre()
     {
@@ -674,13 +676,14 @@ public class TransformManager implements DataIntegrationService.Interface
         return run;
     }
 
-    public boolean transformHasRunInProgress(Container c, String transformId)
+    public boolean transformIsPending(ContainerUser context, String transformId)
     {
-        SQLFragment sql = new SQLFragment("SELECT 1 WHERE EXISTS (SELECT * FROM ").append(DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x"))
-                .append(" WHERE status IN ('" + TransformRun.TransformRunStatus.PENDING.getDisplayName() + "','" +
-                    TransformRun.TransformRunStatus.RUNNING.getDisplayName() + "') and container=? and transformid=?)")
-                .add(c.getId()).add(transformId);
-        return new SqlSelector(DataIntegrationQuerySchema.getSchema(),sql).getObject(Boolean.class);
+        SQLFragment sql = new SQLFragment("SELECT 1 WHERE EXISTS (SELECT 1 FROM ").append(DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("r"))
+                .append(" JOIN ").append(PipelineService.get().getJobsTable(context.getUser(), context.getContainer()).getFromSQL("j"))
+                .append(" ON r.jobid = j.rowid ").append(" WHERE r.container=? and r.transformid=?")
+                .append(" AND j.status = '").append(PipelineJob.TaskStatus.waiting.toString()).append("')")
+                .add(context.getContainer().getId()).add(transformId);
+        return Boolean.TRUE.equals(new SqlSelector(DataIntegrationQuerySchema.getSchema(), sql).getObject(Boolean.class));
     }
 
     public TransformRun insertTransformRun(User user, TransformRun run)
@@ -820,6 +823,12 @@ public class TransformManager implements DataIntegrationService.Interface
                 public ScheduledPipelineJobDescriptor getDescriptorFromCache()
                 {
                     return this;
+                }
+
+                @Override
+                public boolean isPending(ContainerUser context)
+                {
+                    return false;
                 }
             }
 

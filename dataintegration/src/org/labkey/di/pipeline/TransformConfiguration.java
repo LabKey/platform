@@ -20,6 +20,8 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Date;
 import java.util.Map;
@@ -29,7 +31,7 @@ import java.util.Map;
  * Date: 2013-03-13
  * Time: 4:52 PM
  *
- * Persistance object that goes with the dataintegration.transformconfigration table
+ * Persistence object that goes with the dataintegration.transformconfiguration table
  *
  */
 public class TransformConfiguration extends Entity
@@ -39,6 +41,10 @@ public class TransformConfiguration extends Entity
     boolean enabled = false;
     boolean verboseLogging = false;
     Date lastChecked = null;
+    String lastStatus = null;
+    Date lastCompletion = null;
+    Integer lastJobId = null;
+    Integer lastCompletionJobId = null;
 
     JSONObject jsonState;
 
@@ -107,6 +113,65 @@ public class TransformConfiguration extends Entity
         this.lastChecked = lastChecked;
     }
 
+    public String getLastStatus()
+    {
+        return lastStatus;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLastStatus(String lastStatus)
+    {
+        this.lastStatus = lastStatus;
+    }
+
+    public Date getLastCompletion()
+    {
+        return lastCompletion;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLastCompletion(Date lastCompletion)
+    {
+        this.lastCompletion = lastCompletion;
+    }
+
+    public Integer getLastJobId()
+    {
+        return lastJobId;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLastJobId(Integer lastJobId)
+    {
+        this.lastJobId = lastJobId;
+    }
+
+    public Integer getLastCompletionJobId()
+    {
+        return lastCompletionJobId;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLastCompletionJobId(Integer lastCompletionJobId)
+    {
+        this.lastCompletionJobId = lastCompletionJobId;
+    }
+
+    public String getLastStatusUrl()
+    {
+        if (null == getLastJobId())
+            return PageFlowUtil.filter(lastStatus);
+
+        return TransformManager.get().getJobDetailsLink(lookupContainer(), getLastJobId(), getLastStatus(), false);
+    }
+
+    public String getLastCompletionUrl()
+    {
+        if (null == getLastCompletion())
+            return null;
+        String formattedCompletion = DateUtil.formatDateTime(lookupContainer(), getLastCompletion());
+        return TransformManager.get().getJobDetailsLink(lookupContainer(), getLastCompletionJobId(), formattedCompletion, false);
+    }
 
     public String getTransformState()
     {
@@ -144,6 +209,10 @@ public class TransformConfiguration extends Entity
         map.put("verboseLogging", isVerboseLogging());
         map.put("lastChecked", getLastChecked());
         map.put("state", getJsonState());
+        map.put("lastJobId", getLastJobId());
+        map.put("lastStatus", getLastStatus());
+        map.put("lastCompletionJobId", getLastCompletionJobId());
+        map.put("lastCompletion", getLastCompletion());
         return map;
     }
 }

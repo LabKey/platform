@@ -49,6 +49,11 @@ public class TransformQuartzJobRunner implements Job
         ScheduledPipelineJobContext infoTemplate = ScheduledPipelineJobContext.getFromQuartzJobDetail(context);
         ScheduledPipelineJobContext info = infoTemplate.clone();
 
+        if (d.isPending(info))
+        {
+            LOG.info("Not queuing job because ETL is already pending: " + d.getId());
+            return;
+        }
         boolean hasWork = d.checkForWork(info, true, info.isVerbose());
         if (!hasWork)
             return;

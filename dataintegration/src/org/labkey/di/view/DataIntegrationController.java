@@ -16,6 +16,7 @@
 package org.labkey.di.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -52,6 +53,7 @@ import java.util.Set;
  */
 public class DataIntegrationController extends SpringActionController
 {
+    private static final Logger LOG = Logger.getLogger(DataIntegrationController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(DataIntegrationController.class);
 
     public DataIntegrationController()
@@ -301,27 +303,35 @@ public class DataIntegrationController extends SpringActionController
             ScheduledPipelineJobDescriptor etl = getDescriptor(form);
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
-
-            // pull variables off the URL
-            Map<ParameterDescription,Object> params = new LinkedHashMap<>();
-            for (ParameterDescription pd : (Set<ParameterDescription>)etl.getDeclaredVariables().keySet())
+            String status;
+            JSONObject ret = new JSONObject();
+            if (etl.isPending(getViewContext()))
             {
-                String q = getViewContext().getRequest().getParameter(pd.getName());
-                if (null != q)
-                    params.put(pd,q);
+                status = "Not queuing job because ETL is already pending.";
+                LOG.info(status);
+            }
+            else
+            {
+                // pull variables off the URL
+                Map<ParameterDescription,Object> params = new LinkedHashMap<>();
+                for (ParameterDescription pd : (Set<ParameterDescription>)etl.getDeclaredVariables().keySet())
+                {
+                    String q = getViewContext().getRequest().getParameter(pd.getName());
+                    if (null != q)
+                        params.put(pd,q);
+                }
+
+                Integer jobId = TransformManager.get().runNowPipeline(etl, getContainer(), getUser(), params);
+                ActionURL pipelineURL = jobId == null ? null : PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(getContainer(), jobId);
+                status = null == pipelineURL ? "No work" : "Queued";
+                if (null != pipelineURL)
+                    ret.put("pipelineURL",pipelineURL.toString());
+                if (null != jobId)
+                    ret.put("jobId", jobId.toString());
             }
 
-            Integer jobId = TransformManager.get().runNowPipeline(etl, getContainer(), getUser(), params);
-            ActionURL pipelineURL = jobId==null ? null : PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(getContainer(), jobId);
-            String status = null==pipelineURL ? "No work" : "Queued";
-
-            JSONObject ret = new JSONObject();
             ret.put("success",true);
             ret.put("status", status);
-            if (null != pipelineURL)
-                ret.put("pipelineURL",pipelineURL.toString());
-            if (null != jobId)
-                ret.put("jobId", jobId.toString());
             return new ApiSimpleResponse(ret);
         }
     }
@@ -338,25 +348,35 @@ public class DataIntegrationController extends SpringActionController
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
 
-            TransformConfiguration config = null;
-            List<TransformConfiguration> configs = TransformManager.get().getTransformConfigurations(context.getContainer());
-            for (TransformConfiguration c : configs)
+            String status;
+            if (etl.isPending(context))
             {
-                if (c.getTransformId().equalsIgnoreCase(form.getTransformId()))
+                status = "Not resetting ETL state because job is pending.";
+                LOG.info(status);
+            }
+            else
+            {
+                TransformConfiguration config = null;
+                List<TransformConfiguration> configs = TransformManager.get().getTransformConfigurations(context.getContainer());
+                for (TransformConfiguration c : configs)
                 {
-                    config = c;
-                    break;
+                    if (c.getTransformId().equalsIgnoreCase(form.getTransformId()))
+                    {
+                        config = c;
+                        break;
+                    }
                 }
-            }
 
-            if (config != null)
-            {
-                config.setTransformState(null);
-                TransformManager.get().saveTransformConfiguration(context.getUser(), config);
+                if (config != null)
+                {
+                    config.setTransformState(null);
+                    TransformManager.get().saveTransformConfiguration(context.getUser(), config);
+                }
+                status = "ETL state reset";
             }
-
             JSONObject ret = new JSONObject();
             ret.put("success",true);
+            ret.put("status", status);
             return new ApiSimpleResponse(ret);
         }
     }

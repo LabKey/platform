@@ -65,7 +65,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
 
     private enum FilterTimestamp
     {
-        START()
+        START
             {
                 @Override
                 public PropertyDescriptor getPropertyDescriptor(boolean useRowversion, boolean deleting)
@@ -81,7 +81,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
                     throw new IllegalStateException("Unreachable parameter combination");
                 }
             },
-        END()
+        END
             {
                 @Override
                 public PropertyDescriptor getPropertyDescriptor(boolean useRowversion, boolean deleting)

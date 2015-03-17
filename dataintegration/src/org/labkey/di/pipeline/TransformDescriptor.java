@@ -63,6 +63,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.di.DataIntegrationQuerySchema;
 import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformDataType;
@@ -492,6 +493,12 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     public ScheduledPipelineJobDescriptor getDescriptorFromCache()
     {
         return TransformManager.get().getDescriptor(getId());
+    }
+
+    @Override
+    public boolean isPending(ContainerUser context)
+    {
+        return TransformManager.get().transformIsPending(context, getId());
     }
 
     public static class TestCase extends Assert

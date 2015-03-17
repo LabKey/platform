@@ -173,7 +173,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     @Override
     public void moduleStartupComplete(ServletContext servletContext)
     {
-        TransformManager.get().startAllConfigurations();
+
     }
 
 

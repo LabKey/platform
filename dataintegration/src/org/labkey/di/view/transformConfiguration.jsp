@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.di.pipeline.TransformConfiguration" %>
 <%@ page import="org.labkey.di.pipeline.TransformManager" %>
+<%@ page import="org.labkey.di.pipeline.TransformRun" %>
 <%@ page import="org.labkey.di.view.DataIntegrationController" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
@@ -43,7 +44,7 @@ Map<String,TransformConfiguration> configurationsMap = new HashMap<>(configurati
 for (TransformConfiguration c : configurationsList)
     configurationsMap.put(c.getTransformId(), c);
 
-// It's possible to have configurations for transforms whose modules are in active, so make sure we get those
+// It's possible to have configurations for transforms whose modules are inactive, so make sure we get those
 Collection<ScheduledPipelineJobDescriptor> descriptorsList = TransformManager.get().getDescriptors(getContainer());
 TreeMap<String,ScheduledPipelineJobDescriptor> descriptorsMap = new TreeMap<>();
 for (ScheduledPipelineJobDescriptor d : descriptorsList)
@@ -57,7 +58,7 @@ for (TransformConfiguration c : configurationsList)
             descriptorsMap.put(d.getId(), d);
     }
 }
-
+final String PENDING = TransformRun.TransformRunStatus.PENDING.getDisplayName();
 boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
 %>
 <style type="text/css">
@@ -190,6 +191,8 @@ function onResetStateClicked(el, id)
         <td class="labkey-column-header">Schedule</td>
         <td class="labkey-column-header">Enabled</td>
         <td class="labkey-column-header">Verbose Logging</td>
+        <td class="labkey-column-header">Last Status</td>
+        <td class="labkey-column-header">Last Successful Run</td>
         <td class="labkey-column-header"></td>
         <td class="labkey-column-header"></td>
     </tr><%
@@ -209,14 +212,17 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
 
     if (isAdmin)
     {
+        boolean enableControls = !PENDING.equalsIgnoreCase(configuration.getLastStatus());
         %><tr transformId="<%=h(descriptor.getId())%>" class="<%=getShadeRowClass(1 == row % 2)%>">
         <td><%=h(descriptor.getName())%></td>
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox onchange="onEnabledChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isEnabled())%>></td>
         <td><input type=checkbox onchange="onVerboseLoggingChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isVerboseLogging())%>></td>
-        <td class="etl-action-col"><%= button("run now").href("#").onClick("onRunNowClicked(this," + q(descriptor.getId()) + "); return false;") %></td>
-        <td class="etl-action-col"><%= button("reset state").href("#").onClick("onResetStateClicked(this," + q(descriptor.getId()) + "); return false;").enabled(!configuration.getTransformState().contentEquals("{}")) %></td>
+        <td><%=text(configuration.getLastStatusUrl())%></td>
+        <td><%=text(configuration.getLastCompletionUrl())%></td>
+        <td class="etl-action-col"><%= button("run now").href("#").onClick("onRunNowClicked(this," + q(descriptor.getId()) + "); return false;").enabled(enableControls) %></td>
+        <td class="etl-action-col"><%= button("reset state").href("#").onClick("onResetStateClicked(this," + q(descriptor.getId()) + "); return false;").enabled(enableControls && !configuration.getTransformState().contentEquals("{}")) %></td>
         </tr><%
     }
     else

@@ -21,15 +21,19 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.di.pipeline.TransformManager;
+import org.labkey.di.view.DataIntegrationController;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -54,7 +58,11 @@ public class TransformHistoryTable extends TransformBaseTable
         // history table should link to filtered run table for transform details
         String colName = getNameMap().get("TransformId");
         ColumnInfo transformId = getColumn(colName);
-        transformId.setURL(DetailsURL.fromString("dataintegration/viewTransformDetails.view?transformRunId=${TransformRunId}&transformId=${" + colName + "}"));
+        Map<String, String> params = new HashMap<>();
+        params.put("transformRunId", "TransformRunId");
+        params.put("transformId", colName);
+        DetailsURL detailsUrl = new DetailsURL(new ActionURL(DataIntegrationController.viewTransformDetailsAction.class, null), params);
+        transformId.setURL(detailsUrl);
 
         // Add links to job and experiment run details
         ColumnInfo job = getColumn(getNameMap().get("JobId"));
@@ -114,13 +122,13 @@ public class TransformHistoryTable extends TransformBaseTable
 
             if (null != jobId && null != dataRegionName)
             {
-                ActionURL detailsAction = new ActionURL("pipeline-status", "details", ctx.getContainer());
-                detailsAction.addParameter("rowId", jobId);
-                String href = detailsAction.toString();
-                out.write(PageFlowUtil.textLink("Job Details", href));
+                String jobDetailsLink = TransformManager.get().getJobDetailsLink(ctx.getContainer(), jobId, "Job Details", true);
+                if (null != jobDetailsLink)
+                    out.write(jobDetailsLink);
             }
         }
     }
+
     public static class ExpColumn extends DataColumn
     {
         FieldKey _expFieldKey;
@@ -145,8 +153,7 @@ public class TransformHistoryTable extends TransformBaseTable
             Integer runId = ctx.get(_expFieldKey, Integer.class);
             if (null != runId && null != dataRegionName)
             {
-                ActionURL detailsAction = new ActionURL("experiment", "showRunText", ctx.getContainer());
-                detailsAction.addParameter("rowId", runId);
+                ActionURL detailsAction = PageFlowUtil.urlProvider(ExperimentUrls.class).getRunTextURL(ctx.getContainer(), runId);
                 String href = detailsAction.toString();
                 out.write(PageFlowUtil.textLink("Run Details", href));
             }
