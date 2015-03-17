@@ -27,6 +27,6 @@ public class DeprecatedActionException extends RuntimeException
 {
     public DeprecatedActionException(Class<? extends Controller> clazz)
     {
-        super("This action (" + clazz.getName() + ") has been removed from LabKey Server. If you are still using this action, please contact LabKey Software at info@labkey.com and include this entire message.");
+        super("This action (" + clazz.getName() + ") has been removed from LabKey Server. If you are still using this action, please contact LabKey Software at https://www.labkey.com/company/contact-us and include this entire message.");
     }
 }
