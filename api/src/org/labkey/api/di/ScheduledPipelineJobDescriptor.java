@@ -50,6 +50,7 @@ public interface ScheduledPipelineJobDescriptor<C extends ContainerUser>
     // these methods actually implement the Job
     boolean checkForWork(C context, boolean background, boolean verbose);
     PipelineJob getPipelineJob(C context) throws PipelineJobException;
+    boolean isPending(ContainerUser context);
 
     ScheduledPipelineJobDescriptor getDescriptorFromCache();
 }

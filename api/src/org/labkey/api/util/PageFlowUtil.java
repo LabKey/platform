@@ -1413,6 +1413,19 @@ public class PageFlowUtil
         return textLink(text, url == null ? null : url.getLocalURIString(), null, id);
     }
 
+    public static String unstyledTextLink(String text, HString href, String onClickScript, String id)
+    {
+        return "<a href=\"" + filter(href) + "\"" +
+                (id != null ? " id=\"" + id + "\"" : "") +
+                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
+                ">" + filter(text) + "</a>";
+    }
+    public static String unstyledTextLink(String text, URLHelper url)
+    {
+        return unstyledTextLink(text, url.toHString(), null, null);
+    }
+
+
     public static String helpPopup(String title, String helpText)
     {
         return helpPopup(title, helpText, false);
