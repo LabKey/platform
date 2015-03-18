@@ -2049,7 +2049,7 @@ public class SecurityManager
 
         TermsOfUse termsOfUse = getTermsOfUse(project);
         boolean required = true;
-        if (termsOfUse.getType() == TermsOfUseType.SITE_WIDE)
+        if (termsOfUse != null && termsOfUse.getType() == TermsOfUseType.SITE_WIDE)
         {
             if (isTermsOfUseApproved(ctx, null))  // see if we've approved the site-wide terms
             {
@@ -2060,7 +2060,7 @@ public class SecurityManager
         }
         else
         {
-            required = termsOfUse.getType() == TermsOfUseType.PROJECT_LEVEL;
+            required = (termsOfUse != null) && (termsOfUse.getType() == TermsOfUseType.PROJECT_LEVEL);
             //stash result so that this is faster next time.
             if (!required)
                 setTermsOfUseApproved(ctx, project, true);
