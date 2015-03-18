@@ -795,6 +795,21 @@ public class AdminController extends SpringActionController
             }
 
             views.addView(new CreditsView("/core/META-INF/core/source.txt", getCreditsFile(core, "source.txt"), null, "Java Source Code", null, null, null));
+
+            for (Module module : modules)
+            {
+                if (!module.equals(core))
+                {
+                    String wikiSource = getCreditsFile(module, "source.txt");
+
+                    if (null != wikiSource)
+                    {
+                        HttpView moduleJars = new CreditsView("source.txt", wikiSource, null, "Java Source Code", null, "the " + module.getName() + " Module", null);
+                        views.addView(moduleJars);
+                    }
+                }
+            }
+
             views.addView(new CreditsView("/core/META-INF/core/executables.txt", getCreditsFile(core, "executables.txt"), getBinFilenames(), "Executable", "/external/bin directory", null, "([\\w\\.]+\\.(exe|dll|manifest|jar))"));
 
             for (Module module : modules)

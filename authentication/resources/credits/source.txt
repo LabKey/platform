@@ -1,0 +1,5 @@
+{table}
+Library|Version|Source|License|LabKey Dev|Purpose
+OneLogin SAML Toolkit for Java|3195ae5852|{link:java-saml|https://github.com/onelogin/java-saml}|Open Source|tgaluhn|SAML Service Provider functionality
+Duo Web Java/JS Toolkit|1d8741bc8e|{link:duoweb|https://github.com/duosecurity/duo_java}|{link:License|https://github.com/duosecurity/duo_java/blob/master/LICENSE}|tgaluhn|Duo Two Factor Authentication
+{table}
