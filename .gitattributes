@@ -1,15 +1,4 @@
 * text=auto !eol
-api/src/com/duosecurity/duoweb/Base64.java -text
-api/src/com/duosecurity/duoweb/DuoWeb.java -text
-api/src/com/duosecurity/duoweb/DuoWebException.java -text
-api/src/com/duosecurity/duoweb/LICENSE -text
-api/src/com/duosecurity/duoweb/Util.java -text
-api/src/com/onelogin/AccountSettings.java -text
-api/src/com/onelogin/AppSettings.java -text
-api/src/com/onelogin/LICENSE -text
-api/src/com/onelogin/saml/AuthRequest.java -text
-api/src/com/onelogin/saml/Certificate.java -text
-api/src/com/onelogin/saml/Response.java -text
 api/src/org/json/CDL.java -text
 api/src/org/json/Cookie.java -text
 api/src/org/json/CookieList.java -text
