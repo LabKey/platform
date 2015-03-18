@@ -1982,17 +1982,17 @@ public class SecurityManager
     }
 
 
-    public static boolean isTermsOfUseRequired(Project project)
+    public static boolean isTermsOfUseRequired(@Nullable Project project)
     {
         //TODO: Should do this more efficiently, but no efficient public wiki api for this yet
-        return null != getTermsOfUseHtml(project);
+        TermsOfUse terms =  getTermsOfUse(project);
+        return terms == null || terms.getType() != TermsOfUseType.NONE;
     }
 
 
-    public static String getTermsOfUseHtml(Project project)
+    @Nullable
+    public static TermsOfUse getTermsOfUse(@Nullable Project project)
     {
-        if (null == project)
-            return null;
 
         if (!ModuleLoader.getInstance().isStartupComplete())
             return null;
@@ -2002,7 +2002,27 @@ public class SecurityManager
         if (null == service)
             return null;
 
-        return service.getHtml(project.getContainer(), TERMS_OF_USE_WIKI_NAME);
+        TermsOfUse termsOfUse = new TermsOfUse(TermsOfUseType.NONE, null);
+        String termsString = null;
+        if (null != project) // find project-level terms of use, if any
+        {
+            termsString = service.getHtml(project.getContainer(), TERMS_OF_USE_WIKI_NAME);
+            if (null != termsString)
+            {
+                termsOfUse.setType(TermsOfUseType.PROJECT_LEVEL);
+                termsOfUse.setHtml(termsString);
+            }
+        }
+        if (termsOfUse.getType() == TermsOfUseType.NONE)  // get site-wide terms of use, if any
+        {
+            termsString = service.getHtml(ContainerManager.getRoot(), TERMS_OF_USE_WIKI_NAME);
+            if (null != termsString)
+            {
+                termsOfUse.setType(TermsOfUseType.SITE_WIDE);
+                termsOfUse.setHtml(termsString);
+            }
+        }
+        return termsOfUse;
     }
 
 
@@ -2016,19 +2036,36 @@ public class SecurityManager
             return false;
 
         Container proj = c.getProject();
-        if (null == proj)
-            return false;
 
-        Project project = new Project(proj);
+        Project project = null;
+        if (null != proj)
+        {
+            project = new Project(proj);
+        }
 
+        // not required if we must first authenticate, or have already approved at the project level
         if ("Basic".equals(ctx.getRequest().getAttribute(AUTHENTICATION_METHOD)) || isTermsOfUseApproved(ctx, project))
             return false;
 
-        boolean required = isTermsOfUseRequired(project);
+        TermsOfUse termsOfUse = getTermsOfUse(project);
+        boolean required = true;
+        if (termsOfUse.getType() == TermsOfUseType.SITE_WIDE)
+        {
+            if (isTermsOfUseApproved(ctx, null))  // see if we've approved the site-wide terms
+            {
+                // if we don't require project-level and have approved site-wide level, not required to ask again,
+                // but we don't cache for the project in case we set a project-level
+                required = false;
+            }
+        }
+        else
+        {
+            required = termsOfUse.getType() == TermsOfUseType.PROJECT_LEVEL;
+            //stash result so that this is faster next time.
+            if (!required)
+                setTermsOfUseApproved(ctx, project, true);
+        }
 
-        //stash result so that this is faster next time.
-        if (!required)
-            setTermsOfUseApproved(ctx, project, true);
 
         return required;
     }
@@ -2036,11 +2073,36 @@ public class SecurityManager
 
     private static final String TERMS_APPROVED_KEY = "TERMS_APPROVED_KEY";
 
-    public static boolean isTermsOfUseApproved(ViewContext ctx, Project project)
-    {
-        if (null == project)
-            return true;
+    public static enum TermsOfUseType { NONE, PROJECT_LEVEL, SITE_WIDE };
 
+    public static class TermsOfUse
+    {
+        private TermsOfUseType type = TermsOfUseType.NONE;
+        private String html = null;
+
+        public TermsOfUse(@NotNull TermsOfUseType type,@Nullable String html)
+        {
+            this.type = type;
+            this.html = html;
+        }
+
+        public TermsOfUse() {}
+
+        public void setHtml(String html)
+        {
+            this.html = html;
+        }
+
+        public String getHtml() { return this.html; }
+
+        public void setType(TermsOfUseType type)  { this.type = type; }
+
+        public TermsOfUseType getType() { return this.type; }
+
+    }
+
+    public static boolean isTermsOfUseApproved(ViewContext ctx, @Nullable Project project)
+    {
         HttpSession session = ctx.getRequest().getSession(false);
         if (null == session)
             return false;
@@ -2053,11 +2115,8 @@ public class SecurityManager
     }
 
 
-    public static void setTermsOfUseApproved(ViewContext ctx, Project project, boolean approved)
+    public static void setTermsOfUseApproved(ViewContext ctx, @Nullable Project project, boolean approved)
     {
-        if (null == project)
-            return;
-
         HttpSession session = ctx.getRequest().getSession(false);
         if (null == session && !approved)
             return;
