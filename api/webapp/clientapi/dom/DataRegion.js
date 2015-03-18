@@ -1269,7 +1269,7 @@ if (!LABKEY.DataRegions)
                 region.showLoadingMessage("Opening custom view designer...");
             }, 500);
 
-            LABKEY.initializeViewDesigner2(function() {
+            LABKEY.initializeViewDesigner(function() {
                 // scope is region
                 var header = Ext.get(_getHeaderSelector(this)[0]);
 
@@ -1319,10 +1319,10 @@ if (!LABKEY.DataRegions)
 
                         var minWidth = Math.max(Math.min(1000, header.getWidth(true)), 700); // >= 700 && <= 1000
 
-                        this.customizeView = new LABKEY.DataRegion.ViewDesigner({
-                            renderTo: Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: 'none'}}),
+                        this.customizeView = Ext4.create('LABKEY.ext4.designer.ViewDesigner', {
+                            renderTo: Ext4.getBody().createChild({tag: "div", customizeView: true, style: {display: 'none'}}),
                             width: minWidth,
-                            activeGroup: activeTab,
+                            activeTab: activeTab,
                             dataRegion: this,
                             containerPath : this.containerPath,
                             schemaName: this.schemaName,
@@ -1350,11 +1350,7 @@ if (!LABKEY.DataRegions)
         }
         else {
             if (activeTab) {
-                region.customizeView.setActiveGroup(activeTab);
-                var group = this.customizeView.activeGroup;
-                if (!group.activeItem) {
-                    group.setActiveTab(group.getMainItem());
-                }
+                region.customizeView.setActiveDesignerTab(activeTab);
             }
             if (region.currentPanelId != CUSTOM_VIEW_PANELID) {
                 _showExt3ButtonPanel(region, Ext, CUSTOM_VIEW_PANELID, animate);

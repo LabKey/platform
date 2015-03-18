@@ -249,7 +249,7 @@ if (typeof LABKEY == "undefined")
 
         //private (Depricated)
         //Pull in the required JS files and invoke the callback when they're loaded
-        var initializeViewDesigner = function(cb, scope)
+        var initializeExt3ViewDesigner = function(cb, scope)
         {
             var scripts = [
                 'query/queryDesigner.js',
@@ -267,22 +267,23 @@ if (typeof LABKEY == "undefined")
             requiresCss("groupTabPanel/UngroupedTab.css");
         };
 
-        //private
+        //private // TODO: move this out of labkey.js (maybe into DataRegion?)
         //Pull in the required JS files and invoke the callback when they're loaded
-        var initializeViewDesigner2 = function(cb, scope)
+        var initializeViewDesigner = function(cb, scope)
         {
             var scripts = [
                 //'query/queryDesigner.js',
-                'ComponentDataView.js',
-                'Ext.ux.dd.GridDragDropRowOrder.js',
+                //'ComponentDataView.js',
+                //'Ext.ux.dd.GridDragDropRowOrder.js',
 
                 'designer/FieldMetaStore.js',
-                'designer/FieldTreeLoader.js',
+                //'designer/FieldTreeLoader.js',
+                'designer/Utils.js',
                 'designer/Tabs.js',
                 'designer/Designer.js'
             ];
 
-            requiresExt3ClientAPI(true, function() {
+            requiresExt4ClientAPI(true, function() {
                 requiresScript(scripts, true, cb, scope);
             });
         };
@@ -805,8 +806,8 @@ if (typeof LABKEY == "undefined")
             getSubmit: getSubmit,
             id: id,
             init: init,
+            initializeExt3ViewDesigner: initializeExt3ViewDesigner,
             initializeViewDesigner: initializeViewDesigner,
-            initializeViewDesigner2: initializeViewDesigner2,
             isDirty: isDirty,
             loadScripts: loadScripts,
             loadedScripts: loadedScripts,

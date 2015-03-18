@@ -4,75 +4,16 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.ext.SplitGroupTabPanel = Ext.extend(Ext.ux.GroupTabPanel, {
+Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
 
-    constructor : function (config) {
-        this.cls = 'vertical-tabs extContainer customizeViewPanel';
-        this.splitItem = this.lookupComponent(config.splitItem);
-        delete config.splitItem;
-        LABKEY.ext.SplitGroupTabPanel.superclass.constructor.call(this, config);
+    extend: 'Ext.panel.Panel',
 
-        this.layout.layoutOnCardChange = true;
-    },
-
-    afterRender : function () {
-        var splitItem = this.splitItem;
-        splitItem.render(this.bwrap, 0);
-        // Add 6px for the resizer on the right
-        splitItem.getEl().applyStyles({float: "left", "padding-right": "6px"});
-        this.splitResizer = new Ext.Resizable(splitItem.getEl(), {
-            handles: 'e',
-            pinned: true, // always show the splitter
-            constrainTo: this.bwrap,
-            minWidth: 220,
-            maxWidth: 700,
-            resizeElement : function () {
-                var box = this.proxy.getBox();
-                splitItem.setWidth(box.width);
-                if (splitItem.layout) {
-                    splitItem.doLayout();
-                }
-                return box;
-            }
-        });
-        this.splitResizer.on('resize', this.adjustCenterSize, this);
-
-        LABKEY.ext.SplitGroupTabPanel.superclass.afterRender.apply(this, arguments);
-    },
-
-    onResize : function (adjWidth, adjHeight, rawWidth, rawHeight) {
-        LABKEY.ext.SplitGroupTabPanel.superclass.onResize.apply(this, arguments);
-
-        this.splitItem.setWidth(Math.floor((this.el.getWidth() - this.header.getWidth())/2));
-        this.body.setWidth(this.el.getWidth() - this.splitItem.getWidth() - this.header.getWidth());
-        this.splitItem.setHeight(this.body.getHeight());
-    },
-
-    adjustCenterSize : function (resizer, w, h, e) {
-        this.body.setWidth(this.el.getWidth() - this.splitItem.getWidth() - this.header.getWidth());
-
-        // update the item sizes based on the centerItem
-        this.doLayout();
-    },
-
-    beforeDestroy : function () {
-        LABKEY.ext.SplitGroupTabPanel.superclass.beforeDestroy.call(this);
-        if (this.splitItem) {
-            this.splitItem.destroy();
-        }
-        if (this.splitResizer) {
-            this.splitResizer.destroy();
-        }
-    }
-});
-Ext.reg('splitgrouptab', LABKEY.ext.SplitGroupTabPanel);
-
-LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
+    cls: 'customize-view-designer',
 
     constructor : function (config)
     {
         // For tooltips on the fieldsTree TreePanel
-        Ext.QuickTips.init();
+        Ext4.tip.QuickTipManager.init();
 
         this.dataRegion = config.dataRegion;
 
@@ -110,27 +51,25 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         }
 
         // Create the FieldKey metadata store
-        this.fieldMetaStore = new LABKEY.ext.FieldMetaStore({
+        this.fieldMetaStore = Ext4.create('LABKEY.ext4.designer.FieldMetaStore', {
             containerPath: this.containerPath,
             schemaName: this.schemaName,
             queryName: this.queryName,
             data: this.query
         });
-        this.fieldMetaStore.loadData(this.query);
-
 
         {
             // Add any additional field metadata for view's selected columns, sorts, filters.
             // The view may be filtered or sorted upon columns not present in the query's selected column metadata.
             // The FieldMetaStore uses a reader that expects the field metadata to be under a 'columns' property instead of 'fields'
-            this.fieldMetaStore.loadData({columns: this.customView.fields}, true);
+            this.fieldMetaStore.loadRawData({columns: this.customView.fields}, true);
 
             // Add user filters
             this.userFilter = config.userFilter || [];
             for (var i = 0; i < this.userFilter.length; i++)
             {
                 // copy the filter so the original userFilter isn't modified by the designer
-                var userFilter = Ext.apply({urlParameter: true}, this.userFilter[i]);
+                var userFilter = Ext4.apply({urlParameter: true}, this.userFilter[i]);
                 this.customView.filter.unshift(userFilter);
             }
 
@@ -140,7 +79,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             for (var i = 0; i < this.userSort.length; i++)
             {
                 // copy the sort so the original userSort isn't modified by the designer
-                var userSort = Ext.apply({urlParameter: true}, this.userSort[i]);
+                var userSort = Ext4.apply({urlParameter: true}, this.userSort[i]);
                 newSortArray.push(userSort);
             }
 
@@ -200,7 +139,21 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         this.showHiddenFields = config.showHiddenFields || false;
         this.allowableContainerFilters = config.allowableContainerFilters || [];
 
-        this.columnsTab = new LABKEY.DataRegion.ColumnsTab({
+        // Issue 11188: Don't use friendly id for tabs (eg., "ColumnsTab") -- breaks showing two customize views on the same page.
+        // Provide mapping from friendly tab names to tab index.
+        this.tabInfoArr = [
+            {name: 'ColumnsTab', text: 'Columns', index: 0, active: false},
+            {name: 'FilterTab', text: 'Filter', index: 1, active: false},
+            {name: 'SortTab', text: 'Sort', index: 2, active: false}
+        ];
+
+        config.activeTab = this.translateTabName(config.activeTab);
+
+        Ext4.each(this.tabInfoArr, function(tab){
+            tab.active = tab.index == config.activeTab;
+        });
+
+        this.columnsTab = Ext4.create('LABKEY.ext4.designer.ColumnsTab', {
             name: "ColumnsTab",
             designer: this,
             schemaName: this.schemaName,
@@ -210,39 +163,40 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             customView: this.customView
         });
 
-        this.filterTab = new LABKEY.DataRegion.FilterTab({
+        this.filterTab = Ext4.create('LABKEY.ext4.designer.FilterTab', {
             name: "FilterTab",
             designer: this,
             fieldMetaStore: this.fieldMetaStore,
             customView: this.customView
         });
 
-        this.sortTab = new LABKEY.DataRegion.SortTab({
+        this.sortTab = Ext4.create('LABKEY.ext4.designer.SortTab', {
             name: "SortTab",
             designer: this,
             fieldMetaStore: this.fieldMetaStore,
             customView: this.customView
         });
 
-        this.fieldsTree = new Ext.tree.TreePanel({
+        this.fieldsTree = Ext4.create('Ext.tree.TreePanel', {
             autoScroll: true,
             border: false,
             cls: "labkey-fieldmeta-tree",
-            root: new Ext.tree.AsyncTreeNode({
-                id: "<ROOT>",
-                expanded: true,
-                expandable: false,
-                draggable: false
-            }),
-            rootVisible: false,
-            loader: new LABKEY.ext.FieldTreeLoader({
-                store: this.fieldMetaStore,
-                designer: this,
-                containerPath: this.containerPath,
-                schemaName: this.schemaName,
-                queryName: this.queryName,
-                createNodeConfigFn: {fn: this.createNodeAttrs, scope: this}
-            }),
+            // TODO reenable after conversion to Ext4
+            //root: new Ext.tree.AsyncTreeNode({
+            //    id: "<ROOT>",
+            //    expanded: true,
+            //    expandable: false,
+            //    draggable: false
+            //}),
+            //rootVisible: false,
+            //loader: new LABKEY.ext.FieldTreeLoader({
+            //    store: this.fieldMetaStore,
+            //    designer: this,
+            //    containerPath: this.containerPath,
+            //    schemaName: this.schemaName,
+            //    queryName: this.queryName,
+            //    createNodeConfigFn: {fn: this.createNodeAttrs, scope: this}
+            //}),
             fbar: [{
                 xtype: "checkbox",
                 boxLabel: "Show Hidden Fields",
@@ -261,16 +215,6 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 
         // enabled for saved (non-session) editable views or customized default view (not new) views.
         var revertEnabled = canEdit && (this.customView.session || (!this.customView.name && !this.customView.doesNotExist));
-
-        // Issue 11188: Don't use friendly id for grouptabs (eg., "ColumnsTab") -- breaks showing two customize views on the same page.
-        // Provide mapping from friendly tab names to tab index.
-        this.groupNames = {
-            ColumnsTab: 0,
-            FilterTab: 1,
-            SortTab: 2
-        };
-
-        config.activeGroup = this.translateGroupName(config.activeGroup);
 
         var footerBar = [{
             text: "Delete",
@@ -320,42 +264,20 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             };
         }
 
-        config = Ext.applyIf(config, {
-            tabWidth: 80,
-            activeGroup: 0,
-            activeTab: 0,
-            frame: false,
-            shadow: true,
+        config = Ext4.applyIf(config, {
             height: 280,
-            splitItem: {
-                title: "Available Fields",
-                xtype: 'panel',
-                layout: 'fit',
-                autoScroll: false,
-                border: true,
-                items: [this.fieldsTree]
-            },
-            defaults: {
-                xtype: 'grouptab',
-                layoutOnTabChange: true
-            },
-            items: [{
-                items: [this.columnsTab]
-            }, {
-                items: [this.filterTab]
-            }, {
-                items: [this.sortTab]
-            }],
-            buttonAlign: "left",
-            bbar: {
-                xtype: 'container',
-                // would like to use 'labkey-status-info' class instead of inline style, but it centers and stuff
-                //cls: "labkey-status-info",
-                style: {'background-color': "#FFDF8C", padding: "2px"},
-                html: "<span class='labkey-tool labkey-tool-close' style='float:right;vertical-align:top;'></span><span>message</span>",
-                hidden: true
-            },
-            fbar: footerBar
+            tabWidth: 80,
+            activeTab: 0,
+            border: false,
+            bodyStyle: 'background-color: transparent;'
+        });
+
+        config = Ext4.apply(config, {
+            layout: 'border',
+            items: [
+                this.getTabsDataView(true, config.tabWidth),
+                this.getTabsMainPanel(config.activeTab, footerBar)
+            ]
         });
 
         this.addEvents({
@@ -363,20 +285,156 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             viewsave: true
         });
 
-        LABKEY.DataRegion.ViewDesigner.superclass.constructor.call(this, config);
+        this.callParent([config]);
 
         this.fieldsTree.on('checkchange', this.onCheckChange, this);
-        this.on('tabchange', this.onTabChange, this);
-        this.on('groupchange', this.onGroupChange, this);
+        this.getInnerTabPanel().on('tabchange', this.onTabChange, this);
 
         // Show 'does not exist' message only for non-default views.
         if (this.customView.doesNotExist && this.viewName) {
-            this.showMessage("Custom View '" + Ext.util.Format.htmlEncode(this.viewName) + "' not found.");
+            this.showMessage("Custom View '" + this.viewName + "' not found.");
         }
     },
 
+    getTabsMainPanel : function(activeTab, footerBar) {
+        if (!this.tabsMainPanel) {
+            this.tabsMainPanel = Ext4.create('Ext.panel.Panel', {
+                region: 'center',
+                layout: 'border',
+                border: false,
+                items: [
+                    this.getAvailableFieldsPanel(),
+                    this.getInnerTabPanel(activeTab)
+                ],
+                buttonAlign: "left",
+                dockedItems: [{
+                    xtype: 'toolbar',
+                    dock: 'bottom',
+                    height: 20,
+                    hidden: true,
+                    layout: 'fit',
+                    border: false,
+                    items: [{
+                        xtype: 'container',
+                        // would like to use 'labkey-status-info' class instead of inline style, but it centers and stuff
+                        cls: 'labkey-customview-message'
+                    }]
+                }],
+                fbar: footerBar
+            })
+        }
+
+        return this.tabsMainPanel;
+    },
+
+    getTabsStore : function() {
+        if (!this.tabsDataViewStore) {
+            this.tabsDataViewStore = Ext4.create('Ext.data.Store', {
+                fields: ['name', 'text', 'index', 'active'],
+                data: this.tabInfoArr
+            });
+        }
+
+        return this.tabsDataViewStore;
+    },
+
+    getTabsDataView : function(create, tabWidth) {
+        if (!this.tabsDataView && create) {
+            this.tabsDataView = Ext4.create('Ext.view.View', {
+                region: 'west',
+                width: tabWidth,
+                store: this.getTabsStore(),
+                tpl: new Ext4.XTemplate(
+                    '<ul><tpl for=".">',
+                    '<li class="labkey-customview-tab {active:this.getAdditionalCls}">{text}</li>',
+                    '</tpl></ul>',
+                    {
+                        getAdditionalCls : function(active) {
+                            return active ? "labkey-customview-activetab" : "";
+                        }
+                    }
+                ),
+                itemSelector: 'li.labkey-customview-tab',
+                listeners: {
+                    scope: this,
+                    itemclick: this.onTabsItemClick
+                }
+            });
+        }
+
+        return this.tabsDataView;
+    },
+
+    updateTabText : function(store, name, text) {
+        var record = store.findRecord('name', name);
+        if (record) {
+            record.set('text', text);
+        }
+    },
+
+    onTabsItemClick : function(view, record, item, index, e) {
+        if (!record.get('active'))
+        {
+            var currentlRec = view.getStore().findRecord('active', true);
+            if (currentlRec) {
+                currentlRec.set('active', false);
+            }
+
+            record.set('active', true);
+            this.setActiveDesignerTab(record.get('index'));
+        }
+    },
+
+    setActiveDesignerTab : function(tab) {
+        this.getInnerTabPanel().setActiveTab(this.translateTabName(tab));
+    },
+
+    getAvailableFieldsPanel : function() {
+        if (!this.availableFieldsPanel) {
+            this.availableFieldsPanel = Ext4.create('Ext.panel.Panel', {
+                region: 'west',
+                title: "Available Fields",
+                flex: 1,
+                border: false,
+                split: true,
+                minWidth: 220,
+                maxWidth: 700,
+                layout: 'fit',
+                items: [this.fieldsTree]
+            });
+        }
+
+        return this.availableFieldsPanel;
+    },
+
+    getInnerTabPanel : function(activeTab) {
+        if (!this.tabsTabPanel) {
+            this.tabsTabPanel = Ext4.create('Ext.tab.Panel', {
+                region: 'center',
+                flex: 1,
+                border: false,
+                activeTab: activeTab,
+                tabBar: {hidden: true},
+                defaults: {
+                    border: false
+                    //layoutOnTabChange: true
+                },
+                items: [{
+                    items: [this.columnsTab]
+                }, {
+                    items: [this.filterTab]
+                }, {
+                    items: [this.sortTab]
+                }]
+            });
+        }
+
+        return this.tabsTabPanel;
+    },
+
     onRender : function (ct, position) {
-        LABKEY.DataRegion.ViewDesigner.superclass.onRender.call(this, ct, position);
+        this.callParent([ct, position]);
+
         if (!this.canEdit())
         {
             var msg = "This view is not editable, but you may save a new view with a different name.";
@@ -389,7 +447,8 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     },
 
     beforeDestroy : function () {
-        LABKEY.DataRegion.ViewDesigner.superclass.beforeDestroy.call(this);
+        this.callParent();
+
         if (this.columnsTab)
             this.columnsTab.destroy();
         if (this.filterTab)
@@ -402,22 +461,22 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             delete this.dataRegion;
     },
 
-    // group may be true, group index, group name, or the group tab instance.
-    translateGroupName : function (group) {
-        // translate group tab name into index.
-        if (group === null || group === undefined || Ext.isBoolean(group))
+    // tab may be true, tab index, tab name, or the tab instance.
+    translateTabName : function (tab) {
+        if (tab === null || tab === undefined || Ext.isBoolean(tab)) {
             return 0;
-        if (Ext.isNumber(group))
-            return group;
-        if (Ext.isString(group))
-            return this.groupNames[group];
-        return group;
-    },
-
-    // Issue 11188: Translate friendly group tab name into item index.
-    setActiveGroup : function (group) {
-        group = this.translateGroupName(group);
-        return LABKEY.DataRegion.ViewDesigner.superclass.setActiveGroup.call(this, group);
+        }
+        else if (Ext4.isNumber(tab)) {
+            return tab;
+        }
+        else if (Ext4.isString(tab)) {
+            for (var i = 0; i < this.tabInfoArr.length; i++) {
+                if (this.tabInfoArr[i].name == tab) {
+                    return this.tabInfoArr[i].index;
+                }
+            }
+        }
+        return tab;
     },
 
     canEdit : function () {
@@ -431,15 +490,23 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         return this.editableErrors;
     },
 
+    getMessageToolBar : function() {
+        var dockedItems = this.getTabsMainPanel().getDockedItems('toolbar[dock="bottom"][ui="default"]');
+        if (dockedItems.length == 1) {
+            return dockedItems[0];
+        }
+        return undefined;
+    },
+
     showMessage : function (msg) {
         // XXX: support multiple messages and [X] close box
-        // UNDONE: bottom bar isn't rendering in the GroupTabPanel
-        var tb = this.getBottomToolbar();
+        var tb = this.getMessageToolBar();
         if (tb && tb.getEl())
         {
-            var el = tb.getEl().last();
-            el.update(msg);
-            tb.setVisible(true);
+            var el = tb.down('container');
+            el.update("<span class='labkey-tool labkey-tool-close' style='float:right;vertical-align:top;'></span><span>"
+                + Ext4.util.Format.htmlEncode(msg) + "</span>");
+            tb.show();
             tb.getEl().slideIn();
             tb.getEl().on('click', function () { this.hideMessage(); }, this, {single: true});
         }
@@ -449,32 +516,22 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     },
 
     hideMessage : function () {
-        var tb = this.getBottomToolbar();
-        tb.getEl().last().update('');
-        tb.setVisible(false);
-        tb.getEl().slideOut();
+        var tb = this.getMessageToolBar();
+        if (tb)
+        {
+            tb.down('container').update('');
+            tb.hide();
+        }
     },
 
     getDesignerTabs : function () {
         return [this.columnsTab, this.filterTab, this.sortTab];
     },
 
-    getActiveGroup : function () {
-        var group = (typeof this.activeGroup == 'object') ? this.activeGroup : this.items.get(this.activeGroup);
-        return group;
-    },
-
     getActiveDesignerTab : function () {
-        if (this.activeGroup !== undefined)
-        {
-            var group = this.getActiveGroup();
-            if (group)
-            {
-                var tab = group.activeTab || group.items.get(0);
-                if (tab instanceof LABKEY.DataRegion.Tab) {
-                    return tab;
-                }
-            }
+        var tab = this.getInnerTabPanel().getActiveTab().down('panel');
+        if (tab instanceof LABKEY.ext4.designer.BaseTab) {
+            return tab;
         }
 
         return undefined;
@@ -501,7 +558,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         for (var i = 0; i < tabs.length; i++)
         {
             var tab = tabs[i];
-            if (tab instanceof LABKEY.DataRegion.Tab) {
+            if (tab instanceof LABKEY.ext4.designer.BaseTab) {
                 tab.setShowHiddenFields(showHidden);
             }
         }
@@ -529,7 +586,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             checked: this.hasField(fieldMeta.fieldKey),
             disabled: !fieldMeta.selectable,
             hidden: fieldMeta.hidden && !this.showHiddenFields,
-            qtip: LABKEY.ext.FieldMetaRecord.getToolTipHtml(fieldMetaRecord),
+            qtip: fieldMetaRecord.getToolTipHtml(),
             iconCls: "x-hide-display",
             uiProvider: LABKEY.ext.FieldTreeNodeUI
         };
@@ -567,14 +624,10 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         }
     },
 
-    onGroupChange : function () {
-        this.onTabChange();
-    },
-
     onTabChange : function () {
 
         var tab = this.getActiveDesignerTab();
-        if (tab instanceof LABKEY.DataRegion.Tab)
+        if (tab instanceof LABKEY.ext4.designer.BaseTab)
         {
             // get the checked fields from the new tab's store
             var storeRecords = tab.getList().getStore().getRange();
@@ -584,14 +637,15 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             }
 
             // suspend check events so checked items aren't re-added to the tab's store
-            this.fieldsTree.suspendEvents();
-            this.fieldsTree.root.cascade(function () {
-                var fieldKey = this.attributes.fieldKey;
-                if (fieldKey) {
-                    this.getUI().toggleCheck(fieldKey.toUpperCase() in checkedFieldKeys);
-                }
-            });
-            this.fieldsTree.resumeEvents();
+            // TODO reenable after conversion to Ext4
+            //this.fieldsTree.suspendEvents();
+            //this.fieldsTree.root.cascade(function () {
+            //    var fieldKey = this.attributes.fieldKey;
+            //    if (fieldKey) {
+            //        this.getUI().toggleCheck(fieldKey.toUpperCase() in checkedFieldKeys);
+            //    }
+            //});
+            //this.fieldsTree.resumeEvents();
         }
     },
 
@@ -616,7 +670,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     // If designer isn't attached to a DataRegion, delete the view and reload the page.  Only call when no grid is present.
     _deleteCustomView : function (complete)
     {
-        Ext.Ajax.request({
+        Ext4.Ajax.request({
             url: LABKEY.ActionURL.buildURL("query", "deleteView", this.containerPath),
             jsonData: {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName, complete: complete},
             method: "POST",
@@ -638,7 +692,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     },
 
     onSaveClick : function (btn, e) {
-        var config = Ext.applyIf({
+        var config = Ext4.applyIf({
             canEditSharedViews: this.query.canEditSharedViews,
             allowableContainerFilters: this.allowableContainerFilters,
             targetContainers: this.query.targetContainers,
@@ -660,7 +714,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         for (var i = 0; i < tabs.length; i++)
         {
             var tab = tabs[i];
-            if (tab instanceof LABKEY.DataRegion.Tab) {
+            if (tab instanceof LABKEY.ext4.designer.BaseTab) {
                 tab.revert();
             }
         }
@@ -671,11 +725,11 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         for (var i = 0; i < tabs.length; i++)
         {
             var tab = tabs[i];
-            if (tab instanceof LABKEY.DataRegion.Tab)
+            if (tab instanceof LABKEY.ext4.designer.BaseTab)
             {
                 if (tab.validate() === false)
                 {
-                    this.setActiveTab(tab);
+                    this.setActiveDesignerTab(tab);
                     return false;
                 }
             }
@@ -697,11 +751,11 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             for (var i = 0; i < tabs.length; i++)
             {
                 var tab = tabs[i];
-                if (tab instanceof LABKEY.DataRegion.Tab) {
+                if (tab instanceof LABKEY.ext4.designer.BaseTab) {
                     tab.save(edited, urlParameters);
                 }
             }
-            Ext.apply(edited, properties);
+            Ext4.apply(edited, properties);
 
             this.doSave(edited, urlParameters, callback);
         }
@@ -721,7 +775,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 this.fireEvent("viewsave", this, savedViewsInfo, urlParameters);
             },
             failure: function (errorInfo) {
-                Ext.Msg.alert("Error saving view", errorInfo.exception);
+                Ext4.Msg.alert("Error saving view", errorInfo.exception);
             },
             scope: this
         });
@@ -743,7 +797,8 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 // Adds a 'fieldKey' attribute to the available fields tree used by the test framework
 LABKEY.ext.FieldTreeNodeUI = Ext.extend(Ext.tree.TreeNodeUI, {
     renderElements : function () {
-        LABKEY.ext.FieldTreeNodeUI.superclass.renderElements.apply(this, arguments);
+        this.callParent();
+
         var node = this.node;
         var fieldKey = node.attributes.fieldKey;
         this.elNode.setAttribute("fieldKey", fieldKey);

@@ -4,7 +4,9 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
+Ext4.define('LABKEY.ext4.designer.BaseTab', {
+
+    extend: 'Ext.panel.Panel',
 
     constructor : function (config) {
         this.designer = config.designer;
@@ -19,22 +21,23 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
             scope: this
         }];
 
-        LABKEY.DataRegion.Tab.superclass.constructor.call(this, config);
+        this.callParent([config]);
     },
 
     initComponent : function () {
-        LABKEY.DataRegion.Tab.superclass.initComponent.apply(this, arguments);
+        this.callParent();
+
         this.getList().on('selectionchange', this.onListSelectionChange, this);
         this.getList().on('render', function (list) {
             this.addEvents("beforetooltipshow");
-            this.tooltip = new Ext.ToolTip({
-                renderTo: Ext.getBody(),
+            this.tooltip = Ext4.create('Ext.tip.ToolTip',{
+                renderTo: Ext4.getBody(),
                 target: this.getEl(),
                 delegate: ".item-caption",
                 trackMouse: true,
                 listeners: {
                     beforeshow: function (qt) {
-                        var el = Ext.fly(qt.triggerElement).up(this.itemSelector);
+                        var el = Ext4.fly(qt.triggerElement).up(this.itemSelector);
                         if (!el)
                             return false;
                         var record = this.getRecord(el.dom);
@@ -45,24 +48,24 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
             });
         }, this.getList(), {single: true});
         this.getList().on('beforetooltipshow', this.onListBeforeToolTipShow, this);
-        this.getList().on('beforeclick', this.onListBeforeClick, this);
+        this.getList().on('beforeitemclick', this.onListBeforeClick, this);
     },
 
-    setShowHiddenFields : Ext.emptyFn,
+    setShowHiddenFields : Ext4.emptyFn,
 
     isDirty : function () {
         return false;
     },
 
-    revert : Ext.emptyFn,
+    revert : Ext4.emptyFn,
 
-    validate : Ext.emptyFn,
+    validate : Ext4.emptyFn,
 
     save : function (edited, urlParameters) {
         var store = this.getList().getStore();
 
         // HACK: I'm most likely abusing the JsonWriter APIs which could break in future versions of Ext.
-        var writer = new Ext.data.JsonWriter({
+        var writer = Ext4.create('Ext.data.writer.Json', {
             encode: false,
             writeAllFields: true,
             listful: true,
@@ -72,35 +75,36 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
 
         var saveRecords = [], urlRecords = [];
         store.each(function (r) {
-            if (r.data.urlParameter)
+            if (r.data.urlParameter) {
                 urlRecords.push(r);
-            else
+            }
+            else {
                 saveRecords.push(r);
+            }
         });
 
         var o = {};
         writer.apply(o, null, "create", saveRecords);
-        Ext.applyIf(edited, o.jsonData);
+        Ext4.applyIf(edited, o.jsonData);
 
         o = {};
         writer.apply(o, null, "create", urlRecords);
-        Ext.applyIf(urlParameters, o.jsonData);
+        Ext4.applyIf(urlParameters, o.jsonData);
     },
 
-    hasField : Ext.emptyFn,
+    hasField : Ext4.emptyFn,
 
     /** Get the listview for the tab. */
-    getList : Ext.emptyFn,
+    getList : Ext4.emptyFn,
 
-    onListBeforeClick : function (list, index, item, e)
-    {
+    onListBeforeClick : function (list, record, item, index, e) {
         var node = list.getNode(index);
         if (node)
         {
-            var target = Ext.fly(e.getTarget());
-            if (target.hasClass("labkey-tool"))
+            var target = e.getTarget();
+            if (target.className.indexOf("labkey-tool") > -1)
             {
-                var classes = ("" + target.dom.className).split(" ");
+                var classes = ("" + target.className).split(" ");
                 for (var j = 0; j < classes.length; j++)
                 {
                     var cls = classes[j].trim();
@@ -136,11 +140,17 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
         {
             var fieldKey = record.data.fieldKey;
             var fieldMetaRecord = this.getFieldMetaRecord(fieldKey);
-            var html = LABKEY.ext.FieldMetaRecord.getToolTipHtml(fieldMetaRecord, fieldKey);
-            qt.body.update(html);
+            var html;
+            if (fieldMetaRecord) {
+                html = fieldMetaRecord.getToolTipHtml();
+            }
+            else {
+                html = "<table><tr><td><strong>Field not found:</strong></td></tr><tr><td>" + Ext4.util.Format.htmlEncode(fieldKey) + "</td></tr></table>";
+            }
+            qt.update(html);
         }
         else {
-            qt.body.update("<strong>No field found</strong>");
+            qt.update("<strong>No field found</strong>");
         }
     },
 
@@ -159,7 +169,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
         var selected = list.getSelectedIndexes();
         if (selected && selected.length > 0)
         {
-            var index = Ext.max(selected);
+            var index = Ext4.Array.max(selected);
             list.store.insert(index+1, record);
         }
         else {
@@ -171,7 +181,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
     getRecordIndex : function (fieldKeyOrIndex) {
         var list = this.getList();
         var index = -1;
-        if (Ext.isNumber(fieldKeyOrIndex)) {
+        if (Ext4.isNumber(fieldKeyOrIndex)) {
             index = fieldKeyOrIndex;
         }
         else {
@@ -201,31 +211,42 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
             }
 
             // uncheck the field tree
-            var upperFieldKey = record.data.fieldKey.toUpperCase();
-            var treeNode = this.designer.fieldsTree.getRootNode().findChildBy(function (node) {
-                return node.attributes.fieldKey.toUpperCase() == upperFieldKey;
-            }, null, true);
-            if (treeNode) {
-                treeNode.getUI().toggleCheck(false);
-            }
+            // TODO reenable after conversion to Ext4
+            //var upperFieldKey = record.data.fieldKey.toUpperCase();
+            //var treeNode = this.designer.fieldsTree.getRootNode().findChildBy(function (node) {
+            //    return node.attributes.fieldKey.toUpperCase() == upperFieldKey;
+            //}, null, true);
+            //if (treeNode) {
+            //    treeNode.getUI().toggleCheck(false);
+            //}
         }
     }
 
 });
 
-LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
+Ext4.define('LABKEY.ext4.designer.ColumnsTab', {
+
+    extend: 'LABKEY.ext4.designer.BaseTab',
 
     constructor : function (config) {
 
         this.customView = config.customView;
         var fieldMetaStore = this.fieldMetaStore = config.fieldMetaStore;
 
-        this.columnStore = new Ext.data.JsonStore({
+        this.columnStore = Ext4.create('Ext.data.Store', {
             fields: ['name', 'fieldKey', 'title', 'aggregate'],
-            root: 'columns',
-            idProperty: function (json) { return json.fieldKey.toUpperCase() },
             data: this.customView,
-            remoteSort: true
+            remoteSort: true,
+            proxy: {
+                type: 'memory',
+                reader: {
+                    type: 'json',
+                    root: 'columns',
+                    idProperty: function (json) {
+                        return json.fieldKey.toUpperCase()
+                    }
+                }
+            }
         });
 
         this.aggregateStore = this.createAggregateStore();
@@ -246,18 +267,20 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     continue;
                 }
 
-                this.aggregateStore.add(new this.aggregateStore.recordType(agg));
+                // TODO: this won't work, no recordType
+                //this.aggregateStore.add(new this.aggregateStore.recordType(agg));
             }
         }
 
         var aggregateStore = this.aggregateStore;
-        config = Ext.applyIf({
-            title: "Columns",
+
+        config = Ext4.applyIf({
+            //title: "Columns",
             cls: "test-columns-tab",
             layout: "fit",
             items: [{
-                title: "Selected Fields",
                 xtype: "panel",
+                title: "Selected Fields",
                 border: false,
                 width: 200,
                 style: {"border-left-width": "1px"},
@@ -266,19 +289,20 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     align: "stretch"
                 },
                 items: [{
-                    ref: "../columnsList",
                     xtype: "dataview",
+                    itemId: "columnsList",
                     cls: "labkey-customview-list",
-                    plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
+                    // TODO plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
                     flex: 1,
                     store: this.columnStore,
                     emptyText: "No fields selected",
                     deferEmptyText: false,
                     multiSelect: true,
+                    height: 240,
                     autoScroll: true,
-                    overClass: "x-view-over",
+                    overItemCls: "x4-view-over",
                     itemSelector: ".labkey-customview-item",
-                    tpl: new Ext.XTemplate(
+                    tpl: new Ext4.XTemplate(
                             '<tpl for=".">',
                             '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-columns-item" fieldKey="{fieldKey:htmlEncode}">',
                             '  <tr>',
@@ -293,7 +317,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                             {
                                 getFieldCaption : function (values) {
                                     if (values.title) {
-                                        return Ext.util.Format.htmlEncode(values.title);
+                                        return Ext4.util.Format.htmlEncode(values.title);
                                     }
 
                                     var fieldKey = values.fieldKey;
@@ -304,9 +328,9 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                         if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
                                             return fieldMeta.data.caption;
                                         }
-                                        return Ext.util.Format.htmlEncode(fieldMeta.data.name);
+                                        return Ext4.util.Format.htmlEncode(fieldMeta.data.name);
                                     }
-                                    return Ext.util.Format.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
+                                    return Ext4.util.Format.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
                                 },
 
                                 getAggegateCaption : function (values) {
@@ -318,10 +342,10 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                             labels.push(rec.get('type'));
                                         }
                                     }, this);
-                                    labels = Ext.unique(labels);
+                                    labels = Ext4.Array.unique(labels);
 
                                     if (labels.length) {
-                                        return Ext.util.Format.htmlEncode(labels.join(','));
+                                        return Ext4.util.Format.htmlEncode(labels.join(','));
                                     }
 
                                     return "";
@@ -332,16 +356,25 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
             }]
         }, config);
 
-        LABKEY.DataRegion.ColumnsTab.superclass.constructor.call(this, config);
+        this.callParent([config]);
     },
 
-    getList : function () { return this.columnsList; },
+    getList : function () {
+        return this.down('#columnsList');
+    },
 
     createAggregateStore: function(){
-        return new Ext.data.ArrayStore({
-            fields: ['fieldKey', 'type', 'label'],
-            remoteSort: true,
-            idProperty: function (json) { return json.fieldKey.toUpperCase() }
+        var model = Ext4.define('Aggregate', {
+            extend: 'Ext.data.Model',
+            fields: [{name: 'fieldKey'}, {name: 'type'}, {name: 'label'} ],
+            idProperty: {name: 'id', convert: function(v, rec){
+                return rec.get('fieldKey').toUpperCase();
+            }}
+        });
+
+        return Ext4.create('Ext.data.Store', {
+            model: model,
+            remoteSort: true
         });
     },
 
@@ -355,135 +388,104 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
             var fieldMetaStore = this.fieldMetaStore;
             var aggregateStoreCopy = this.createAggregateStore(); //NOTE: we deliberately create a separate store to use with this window.
             var aggregateStore = this.aggregateStore;
-            var columnsList = this.columnsList;
-            var itemDeleter = new Ext.grid.RowSelectionModel({
-                width: 30,
+            var columnsList = this.getList();
 
-                sortable: false,
-                dataIndex: 0, // this is needed, otherwise there will be an error
-
-                menuDisabled: true,
-                fixed: true,
-                id: 'deleter',
-
-                initEvents: function(){
-                    Ext.grid.RowSelectionModel.prototype.initEvents.call(this);
-                    this.grid.on('cellclick', function(grid, rowIndex, columnIndex, e){
-                        if (columnIndex==grid.getColumnModel().getIndexById('deleter'))
-                        {
-                            var record = grid.getStore().getAt(rowIndex);
-                            grid.getStore().remove(record);
-                        }
-                    });
-                },
-
-                renderer: function(v, p, record, rowIndex){
-                    return '<div class="labkey-tool labkey-tool-close" style="width: 15px; height: 16px;"></div>';
-                }
+            var aggregateOptionStore = Ext4.create('Ext.data.Store', {
+                fields: [{name: 'name'}, {name: 'value'}]
             });
 
-            var aggregateOptionStore = new Ext.data.ArrayStore({
-                fields: ['name', 'value'],
-                data: []
-            });
-
-            var win = new Ext.Window({
+            var win = Ext4.create('Ext.window.Window', {
                 title: "Edit column properties",
                 resizable: false,
                 constrain: true,
                 constrainHeader: true,
-                minimizable: false,
-                maximizable: false,
                 modal: true,
-                stateful: false,
-                shim: true,
-                buttonAlign: "center",
-                width: 350,
-                autoHeight: true,
-                minHeight: 100,
-                footer: true,
+                border: false,
                 closable: true,
                 closeAction: 'hide',
                 items: {
                     xtype: 'form',
                     border: false,
-                    labelAlign: 'top',
-                    bodyStyle: 'padding: 5px;',
-                    defaults: { width: 330 },
+                    padding: 5,
+                    defaults: { padding: 5 },
                     items: [{
-                        xtype: "textfield",
-                        fieldLabel: "Title",
-                        name: "title",
-                        ref: "../titleField",
-                        allowBlank: true
+                        xtype: "label",
+                        text: "Title:"
                     },{
-                        xtype: 'editorgrid',
-                        fieldLabel: 'Aggregates',
-                        editable: true,
-                        autoHeight: true,
+                        xtype: "textfield",
+                        itemId: "titleField",
+                        name: "title",
+                        allowBlank: true,
+                        width: 330
+                    },{
+                        xtype: "label",
+                        text: "Aggregates:"
+                    },{
+                        xtype: 'grid',
+                        width: 340,
                         store: aggregateStoreCopy,
-                        viewConfig: {
-                            scrollOffset: 1,
-                            rowOverCls: 'x-view-selected'
+                        //viewConfig: {
+                        //    scrollOffset: 1,
+                        //    rowOverCls: 'x4-item-selected'
+                        //},
+                        //autoExpandColumn: 'label',
+                        selType: 'rowmodel',
+                        plugins: [
+                            Ext4.create('Ext.grid.plugin.CellEditing', {
+                                clicksToEdit: 1
+                            })
+                        ],
+                        columns: [{ text: 'Type', dataIndex: 'type', width: 75, menuDisabled: true,
+                            editor: {
+                                xtype: "combo",
+                                name: "aggregate",
+                                displayField: 'name',
+                                valueField: 'value',
+                                store: aggregateOptionStore,
+                                mode: 'local',
+                                editable: false
+                            }
                         },
-                        autoExpandColumn: 'label',
-                        selModel: itemDeleter,
-                        colModel: new Ext.grid.ColumnModel({
-                            columns: [{
-                                header: 'Type',
-                                dataIndex: 'type',
-                                width: 60,
-                                editor: {
-                                    xtype: "combo",
-                                    fieldLabel: "Aggregate",
-                                    name: "aggregate",
-                                    ref: "aggregateField",
-                                    //width: 'auto',
-                                    displayField: 'name',
-                                    valueField: 'value',
-                                    store: aggregateOptionStore,
-                                    mode: 'local',
-                                    triggerAction: 'all',
-                                    typeAhead: false,
-                                    disableKeyFilter: true
+                        { text: 'Label', dataIndex: 'label', flex: 1, menuDisabled: true, editor: 'textfield' },
+                        {
+                            xtype: 'actioncolumn',
+                            width: 30,
+                            menuDisabled: true,
+                            sortable: false,
+                            items: [{
+                                icon: LABKEY.contextPath + '/_images/delete.png',
+                                tooltip: 'Remove',
+                                handler: function(grid, rowIndex, colIndex) {
+                                    var record = grid.getStore().getAt(rowIndex);
+                                    grid.getStore().remove(record);
                                 }
-                            },{
-                                header: 'Label',
-                                dataIndex: 'label',
-                                id: 'label',
-                                //width: 200,
-                                editor: {
-                                    fieldLabel: "Label",
-                                    name: "label",
-                                    ref: "aggregateLabelField"
-                                }
-                            }, itemDeleter
-                            ]
-                        }),
+                            }]
+                        }],
                         buttons: [{
                             text: 'Add Aggregate',
+                            margin: 10,
                             handler: function(btn){
-                                var store = btn.findParentByType('grid').store;
-                                store.add(new store.recordType({fieldKey: win.columnRecord.get('fieldKey')}))
+                                var store = btn.up('grid').getStore();
+                                store.add({fieldKey: win.columnRecord.get('fieldKey')});
                             }
                         }]
                     }]
                 },
+                buttonAlign: "center",
                 buttons: [{
                     text: "OK",
                     handler: function () {
-                        var title = win.titleField.getValue();
+                        var title = win.down('#titleField').getValue();
                         title = title ? title.trim() : "";
-                        win.columnRecord.set("title", !Ext.isEmpty(title) ? title : undefined);
+                        win.columnRecord.set("title", !Ext4.isEmpty(title) ? title : undefined);
 
                         var error;
                         var fieldKey = win.columnRecord.get('fieldKey');
-                        var aggregateStoreCopy = win.findByType('grid')[0].store;
+                        var aggregateStoreCopy = win.down('grid').getStore();
 
                         //validate the records
                         aggregateStoreCopy.each(function (rec) {
-                            if (!rec.get('type') && !rec.get('label'))
-                            {
+                            if (!rec.get('type') && !rec.get('label')) {
                                 aggregateStoreCopy.remove(rec);
                             }
                             else if (!rec.get('type'))
@@ -507,11 +509,11 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
                         //then add to store
                         aggregateStoreCopy.each(function(rec){
-                            aggregateStore.add(new aggregateStore.recordType({
+                            aggregateStore.add({
                                 fieldKey: rec.get('fieldKey'),
                                 type: rec.get('type'),
                                 label: rec.get('label')
-                            }));
+                            });
                         }, this);
 
                         columnsList.refresh();
@@ -520,40 +522,41 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 },{
                     text: "Cancel",
                     handler: function () { win.hide(); }
-                }]
+                }],
+
+                initEditForm : function (columnRecord, metadataRecord)
+                {
+                    this.columnRecord = columnRecord;
+                    this.metadataRecord = metadataRecord;
+
+                    this.setTitle("Edit column properties for '" + Ext4.util.Format.htmlEncode(this.columnRecord.get("fieldKey")) + "'");
+                    this.down('#titleField').setValue(this.columnRecord.get("title"));
+
+                    //NOTE: we make a copy of the data so we can avoid commiting updates until the user clicks OK
+                    aggregateStoreCopy.removeAll();
+                    aggregateStore.each(function(rec){
+                        if (rec.get('fieldKey') == this.columnRecord.get('fieldKey'))
+                        {
+                            aggregateStoreCopy.add({
+                                fieldKey: rec.get('fieldKey'),
+                                label: rec.get('label'),
+                                type: rec.get('type')
+                            });
+                        }
+                    }, this);
+
+                    aggregateOptionStore.removeAll();
+                    aggregateOptionStore.add({value: "", name: "[None]"});
+                    Ext4.each(LABKEY.Query.getAggregatesForType(metadataRecord.get('jsonType')), function(key){
+                        aggregateOptionStore.add({value: key.toUpperCase(), name: key.toUpperCase()});
+                    }, this);
+
+                    //columnsList
+                    this.columnRecord.store.fireEvent('datachanged', this.columnRecord.store)
+
+                }
             });
-            win.initEditForm = function (columnRecord, metadataRecord)
-            {
-                this.columnRecord = columnRecord;
-                this.metadataRecord = metadataRecord;
 
-                this.setTitle("Edit column properties for '" + Ext.util.Format.htmlEncode(this.columnRecord.get("fieldKey")) + "'");
-                this.titleField.setValue(this.columnRecord.get("title"));
-
-                //NOTE: we make a copy of the data so we can avoid commiting updates until the user clicks OK
-                aggregateStoreCopy.removeAll();
-                aggregateStore.each(function(rec){
-                    if (rec.get('fieldKey') == this.columnRecord.get('fieldKey'))
-                    {
-                        aggregateStoreCopy.add(new aggregateStoreCopy.recordType({
-                            fieldKey: rec.get('fieldKey'),
-                            label: rec.get('label'),
-                            type: rec.get('type')
-                        }));
-                    }
-                }, this);
-
-
-                aggregateOptionStore.removeAll();
-                aggregateOptionStore.add(new aggregateOptionStore.recordType({value: "", name: "[None]"}));
-                Ext.each(LABKEY.Query.getAggregatesForType(metadataRecord.get('jsonType')), function(key){
-                    aggregateOptionStore.add(new aggregateOptionStore.recordType({value: key.toUpperCase(), name: key.toUpperCase()}));
-                }, this);
-
-                //columnsList
-                this.columnRecord.store.fireEvent('datachanged', this.columnRecord.store)
-
-            };
             win.render(document.body);
             this._editPropsWin = win;
         }
@@ -604,7 +607,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     save : function (edited, urlParameters) {
-        LABKEY.DataRegion.ColumnsTab.superclass.save.call(this, edited, urlParameters);
+        this.callParent([edited, urlParameters]);
 
         // move the aggregates out of the 'columns' list and into a separate 'aggregates' list
         edited.aggregates = [];
@@ -619,7 +622,9 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
 });
 
-LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
+Ext4.define('LABKEY.ext4.designer.FilterTab', {
+
+    extend: 'LABKEY.ext4.designer.BaseTab',
 
     constructor : function (config) {
 
@@ -661,12 +666,20 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 }
             }
         }
-        this.filterStore = new Ext.data.JsonStore({
+        this.filterStore = Ext4.create('Ext.data.Store', {
             fields: ['fieldKey', 'items', 'urlParameter'],
-            root: 'filter',
-            idProperty: function (json) { return json.fieldKey.toUpperCase() },
             data: { filter: filters },
-            remoteSort: true
+            remoteSort: true,
+            proxy: {
+                type: 'memory',
+                reader: {
+                    type: 'json',
+                    root: 'filter',
+                    idProperty: function (json) {
+                        return json.fieldKey.toUpperCase()
+                    }
+                }
+            }
         });
 
         this.filterStore.on({
@@ -677,13 +690,13 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         });
 
         var thisTab = this;
-        config = Ext.applyIf({
-            title: "Filter",
+        config = Ext4.applyIf({
+            //title: "Filter",
             cls: "test-filter-tab",
             layout: "fit",
             items: [{
-                ref: "filterPanel",
                 title: "Selected Filters",
+                itemId: "filterPanel",
                 xtype: "panel",
                 border: false,
                 style: {"border-left-width": "1px"},
@@ -692,19 +705,20 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     align: "stretch"
                 },
                 items: [{
-                    ref: "../filterList",
-                    xtype: "compdataview",
+                    xtype: "dataview", // TODO compdataview
+                    itemId: "filterList",
                     cls: "labkey-customview-list",
                     flex: 1,
-                    plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
+                    // TODO plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
                     store: this.filterStore,
                     emptyText: "No filters added",
                     deferEmptyText: false,
                     multiSelect: true,
+                    height: 240,
                     autoScroll: true,
-                    overClass: "x-view-over",
+                    overItemCls: "x4-view-over",
                     itemSelector: '.labkey-customview-item',
-                    tpl: new Ext.XTemplate(
+                    tpl: new Ext4.XTemplate(
                             '<tpl for=".">',
                             '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-filter-item" fieldKey="{fieldKey:htmlEncode}">',
                             '  <tr>',
@@ -741,9 +755,9 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                         if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
                                             return fieldMeta.data.caption;
                                         }
-                                        return Ext.util.Format.htmlEncode(fieldMeta.data.name);
+                                        return Ext4.util.Format.htmlEncode(fieldMeta.data.name);
                                     }
-                                    return Ext.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error'>(not found)</span>";
+                                    return Ext4.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error'>(not found)</span>";
                                 }
                             }
                     ),
@@ -762,7 +776,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                     // the initial size of the items in the SortTab/FilterTab will be zero.
                                     // As a bruteforce workaround, refresh the entire list forcing a redraw.
                                     setTimeout(function () {
-                                        thisTab.filterList.refresh();
+                                        thisTab.getList().refresh();
                                     }, 200);
                                 }
                             },
@@ -796,7 +810,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     items: [{
                         xtype: "label",
                         text: "Folder Filter:"
-                    }," ",{
+                    }," ", {
                         // HACK: Need to wrap the combo in an panel so the combo doesn't overlap items after it.
                         xtype: "panel",
                         width: 200,
@@ -818,27 +832,27 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                 scope: this
                             }
                         }]
-                    }," ",{
-                        xtype: "paperclip-button",
-                        cls: "labkey-folder-filter-paperclip",
-                        pressed: !this.designer.userContainerFilter,
-                        tooltipType: "title",
-                        disabled: !this.customView.containerFilter,
-                        itemType: "container filter"
+                    //}," ",{ // TODO
+                    //    xtype: "paperclip-button",
+                    //    cls: "labkey-folder-filter-paperclip",
+                    //    pressed: !this.designer.userContainerFilter,
+                    //    tooltipType: "title",
+                    //    disabled: !this.customView.containerFilter,
+                    //    itemType: "container filter"
                     }]
                 }
             }]
         }, config);
 
-        LABKEY.DataRegion.FilterTab.superclass.constructor.call(this, config);
+        this.callParent([config]);
 
-        var bbar = this.filterPanel.getBottomToolbar();
+        var bbar = this.down("#filterPanel").down("toolbar");
         this.containerFilterCombo = bbar.items.get(2).items.get(0);
         this.containerFilterPaperclip = bbar.items.get(4);
     },
 
     initComponent : function () {
-        LABKEY.DataRegion.FilterTab.superclass.initComponent.apply(this, arguments);
+        this.callParent();
         this.updateTitle();
     },
 
@@ -854,11 +868,11 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
     onListBeforeClick : function (list, index, item, e)
     {
-        if (LABKEY.DataRegion.FilterTab.superclass.onListBeforeClick.call(this, list, index, item, e) === false) {
+        if (this.callParent([list, index, item, e]) === false) {
             return false;
         }
 
-        var target = Ext.fly(e.getTarget());
+        var target = Ext4.fly(e.getTarget());
         if (target.is("a.labkey-text-link[add='true']")) {
             this.addClause(index);
         }
@@ -885,7 +899,8 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         // XXX: only counts the grouped filters
         var count = this.filterStore.getCount();
         var title = "Filter" + (count > 0 ? " (" + count + ")" : "");
-        this.setTitle(title);
+        var tabStore = this.designer.getTabsStore();
+        this.designer.updateTabText(tabStore, "FilterTab", title);
     },
 
     onStoreLoad : function (store, filterRecords, options) {
@@ -900,10 +915,10 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         this.updateTitle();
     },
 
-    /** Get the record, clause, clause index, and &lt;tr> for a dom node. */
+    // Get the record, clause, clause index, and <tr> for a dom node
     getClauseFromNode : function (recordIndex, node)
     {
-        var tr = Ext.fly(node).parent("tr[clauseIndex]");
+        var tr = Ext4.fly(node).parent("tr[clauseIndex]");
         if (!tr) {
             return;
         }
@@ -947,11 +962,11 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         {
             // remove the dom node and adjust all other clauseIndices by one
             var table = o.row.parent("table.labkey-customview-item");
-            Ext.each(table.query("tr[clauseIndex]"), function (row, i, all)
+            Ext4.each(table.query("tr[clauseIndex]"), function (row, i, all)
             {
                 var clauseIndex = +row.getAttribute("clauseIndex");
                 if (clauseIndex == o.clauseIndex) {
-                    Ext.fly(row).remove();
+                    Ext4.fly(row).remove();
                 }
                 else if (clauseIndex > o.clauseIndex) {
                     row.setAttribute("clauseIndex", clauseIndex - 1);
@@ -959,11 +974,11 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
             }, this);
 
             // adjust clauseIndex down for all components for the filter
-            var cs = this.filterList.getComponents(index);
-            Ext.each(cs, function (c, i, all)
+            var cs = this.getList().getComponents(index);
+            Ext4.each(cs, function (c, i, all)
             {
                 if (c.clauseIndex == o.clauseIndex) {
-                    Ext.destroy(c);
+                    Ext4.destroy(c);
                 }
                 else if (c.clauseIndex > o.clauseIndex) {
                     c.clauseIndex--;
@@ -979,11 +994,11 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
         var filterType = combo.getFilterType();
         // HACK: need to find the text field associated with this filter item
-        var cs = this.filterList.getComponents(combo);
+        var cs = this.getList().getComponents(combo);
         for (var i = 0; i < cs.length; i++)
         {
             var c = cs[i];
-            if (c.clauseIndex == clauseIndex && c instanceof LABKEY.ext.FilterTextValue)
+            if (c.clauseIndex == clauseIndex && c instanceof LABKEY.ext4.designer.FilterTextValue) // TODO check this
             {
                 c.setVisible(filterType != null && filterType.isDataValueRequired());
                 break;
@@ -1010,7 +1025,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     getList : function () {
-        return this.filterList;
+        return this.down('#filterList');
     },
 
     hasField : function (fieldKey) {
@@ -1137,23 +1152,31 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
         edited[this.filterStore.root] = saveData;
         urlParameters[this.filterStore.root] = urlData;
     }
-
 });
 
+Ext4.define('LABKEY.ext4.designer.SortTab', {
 
-LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
+    extend: 'LABKEY.ext4.designer.BaseTab',
 
     constructor : function (config) {
         this.designer = config.designer;
         this.customView = config.customView;
         var fieldMetaStore = this.fieldMetaStore = config.fieldMetaStore;
 
-        this.sortStore = new Ext.data.JsonStore({
+        this.sortStore = Ext4.create('Ext.data.Store', {
             fields: ['fieldKey', 'dir', {name: 'urlParameter', type: 'boolean', defaultValue: false}],
-            root: 'sort',
-            idProperty: function (json) { return json.fieldKey.toUpperCase() },
             data: this.customView,
-            remoteSort: true
+            remoteSort: true,
+            proxy: {
+                type: 'memory',
+                reader: {
+                    type: 'json',
+                    root: 'sort',
+                    idProperty: function (json) {
+                        return json.fieldKey.toUpperCase()
+                    }
+                }
+            }
         });
 
         this.sortStore.on({
@@ -1164,8 +1187,8 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
         });
 
         var thisTab = this;
-        config = Ext.applyIf({
-            title: "Sort",
+        config = Ext4.applyIf({
+            //title: "Sort",
             cls: "test-sort-tab",
             layout: "fit",
             items: [{
@@ -1179,19 +1202,20 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 },
                 items: [{
                     title: "Selected Sort",
-                    ref: "../sortList",
+                    itemId: "sortList",
                     cls: "labkey-customview-list",
-                    xtype: "compdataview",
+                    xtype: "dataview", // TODO compdataview
                     flex: 1,
                     store: this.sortStore,
-                    plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
+                    // TODO plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
                     emptyText: "No sorts added",
                     deferEmptyText: false,
                     multiSelect: true,
+                    height: 240,
                     autoScroll: true,
-                    overClass: "x-view-over",
+                    overItemCls: "x4-view-over",
                     itemSelector: '.labkey-customview-item',
-                    tpl: new Ext.XTemplate(
+                    tpl: new Ext4.XTemplate(
                             '<tpl for=".">',
                             '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-sort-item" fieldKey="{fieldKey:htmlEncode}">',
                             '  <tr>',
@@ -1215,9 +1239,9 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                         if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
                                             return fieldMeta.data.caption;
                                         }
-                                        return Ext.util.Format.htmlEncode(fieldMeta.data.name);
+                                        return Ext4.util.Format.htmlEncode(fieldMeta.data.name);
                                     }
-                                    return Ext.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error'>(not found)</span>";
+                                    return Ext4.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error'>(not found)</span>";
                                 }
                             }
                     ),
@@ -1241,7 +1265,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                                     // the initial size of the items in the SortTab/FilterTab will be zero.
                                     // As a bruteforce workaround, refresh the entire list forcing a redraw.
                                     setTimeout(function () {
-                                        thisTab.sortList.refresh();
+                                        thisTab.getList().refresh();
                                     }, 200);
                                 }
                             }
@@ -1257,11 +1281,11 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
             }]
         }, config);
 
-        LABKEY.DataRegion.SortTab.superclass.constructor.call(this, config);
+        this.callParent([config]);
     },
 
     initComponent : function () {
-        LABKEY.DataRegion.SortTab.superclass.initComponent.apply(this, arguments);
+        this.callParent();
         this.updateTitle();
     },
 
@@ -1269,7 +1293,8 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
     {
         var count = this.sortStore.getCount();
         var title = "Sort" + (count > 0 ? " (" + count + ")" : "");
-        this.setTitle(title);
+        var tabStore = this.designer.getTabsStore();
+        this.designer.updateTabText(tabStore, "SortTab", title);
     },
 
     onStoreLoad : function (store, filterRecords, options) {
@@ -1296,7 +1321,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     getList : function () {
-        return this.sortList;
+        return this.down('#sortList');
     },
 
     hasField : function (fieldKey) {
@@ -1442,205 +1467,3 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
 //
 //});
 
-LABKEY.ext.FilterOpCombo = Ext.extend(Ext.form.ComboBox, {
-
-    constructor : function (config) {
-        this.fieldMetaStore = config.fieldMetaStore;
-        this.mode = 'local';
-        this.triggerAction = 'all';
-        this.forceSelection = true;
-        this.valueField = 'value';
-        this.displayField = 'text';
-        this.allowBlank = false;
-        LABKEY.ext.FilterOpCombo.superclass.constructor.call(this, config);
-        this.addEvents('optionsupdated');
-    },
-
-    initComponent : function () {
-        LABKEY.ext.FilterOpCombo.superclass.initComponent.apply(this, arguments);
-        this.setOptions();
-    },
-
-    onMouseDown : function (e) {
-        // XXX: work around annoying focus bug for Fields in DataView.
-        this.focus();
-        LABKEY.ext.FilterOpCombo.superclass.onMouseDown.call(this, e);
-    },
-
-    /** Called once during initialization. */
-    setRecord : function (filterRecord, clauseIndex) {
-        this.record = filterRecord;
-        this.clauseIndex = clauseIndex;
-        var jsonType = undefined;
-        var mvEnabled = false;
-        if (this.record)
-        {
-            var fieldKey = this.record.data.fieldKey;
-            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
-            if (fieldMetaRecord)
-            {
-                jsonType = fieldMetaRecord.data.jsonType;
-                mvEnabled = fieldMetaRecord.data.mvEnabled;
-            }
-        }
-        var value = this.getRecordValue();
-        this.setOptions(jsonType, mvEnabled, value);
-
-        this.setValue(value);
-        this.on('blur', function (f) {
-            var v = f.getValue();
-            this.setRecordValue(v);
-        }, this);
-    },
-
-    getRecordValue : function () {
-        return this.record.get("items")[this.clauseIndex].op;
-    },
-
-    setRecordValue : function (value) {
-        this.record.get("items")[this.clauseIndex].op = value;
-    },
-
-    setOptions : function (type, mvEnabled, value) {
-        var found = false;
-        var options = [];
-        if (type)
-            Ext.each(LABKEY.Filter.getFilterTypesForType(type, mvEnabled), function (filterType) {
-                if (value && value == filterType.getURLSuffix())
-                    found = true;
-                options.push([filterType.getURLSuffix(), filterType.getDisplayText()]);
-            });
-
-        if (!found) {
-            for (var key in LABKEY.Filter.Types) {
-                var filterType = LABKEY.Filter.Types[key];
-                if (filterType.getURLSuffix() == value) {
-                    options.unshift([filterType.getURLSuffix(), filterType.getDisplayText()]);
-                    break;
-                }
-            }
-        }
-
-        var store = new Ext.data.SimpleStore({fields: ['value', 'text'], data: options });
-
-        // Ext.form.ComboBox private method
-        this.bindStore(store);
-        this.fireEvent('optionsupdated', this);
-    },
-
-    getFilterType : function () {
-        return LABKEY.Filter.getFilterTypeForURLSuffix(this.getValue());
-    }
-});
-Ext.reg("labkey-filterOpCombo", LABKEY.ext.FilterOpCombo);
-
-LABKEY.ext.FilterTextValue = Ext.extend(Ext.form.TextField, {
-    onMouseDown : function (e) {
-        // XXX: work around annoying focus bug for Fields in DataView.
-        this.focus();
-        LABKEY.ext.FilterTextValue.superclass.onMouseDown.call(this, e);
-    },
-
-    setRecord : function (filterRecord, clauseIndex) {
-        this.record = filterRecord;
-        this.clauseIndex = clauseIndex;
-
-        // UGH: get the op value to set visibility on init
-        var op = this.record.get("items")[this.clauseIndex].op;
-        var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(op);
-        this.setVisible(filterType != null && filterType.isDataValueRequired());
-
-        var value = this.getRecordValue();
-        this.setValue(value);
-        this.on('blur', function (f) {
-            var v = f.getValue();
-            this.setRecordValue(v);
-        }, this);
-    },
-
-    getRecordValue : function () {
-        return this.record.get("items")[this.clauseIndex].value;
-    },
-
-    setRecordValue : function (value) {
-        this.record.get("items")[this.clauseIndex].value = value;
-    }
-
-});
-Ext.reg("labkey-filterValue", LABKEY.ext.FilterTextValue);
-
-LABKEY.DataRegion.PaperclipButton = Ext.extend(Ext.Button, {
-
-    iconCls: 'labkey-paperclip',
-    iconAlign: 'top',
-    enableToggle: true,
-
-    initComponent : function () {
-        this.addEvents('blur');
-        LABKEY.DataRegion.PaperclipButton.superclass.initComponent.apply(this, arguments);
-    },
-
-    afterRender : function () {
-        LABKEY.DataRegion.PaperclipButton.superclass.afterRender.call(this);
-        this.updateToolTip();
-    },
-
-    // Called by ComponentDataView.renderItem when indexedProperty is false
-    // When the record.urlParameter is true, the button is not pressed.
-    setValue : function (value) {
-        this.toggle(!value, true);
-        this.updateToolTip();
-    },
-
-    // Called by ComponentDataView.renderItem when indexedProperty is false
-    // We need to invert the value so the record.urlParameter is true when the button is not pressed.
-    getValue : function () {
-        return !this.pressed;
-    },
-
-    // 'blur' event needed by ComponentDataView to set the value after changing
-    toggleHandler : function (btn, state) {
-        this.fireEvent('blur', this);
-        this.updateToolTip();
-    },
-
-    // Called by ComponentDataView.renderItem when indexedProperty is true
-    setRecord : function (filterRecord, clauseIndex) {
-        if (clauseIndex !== undefined)
-        {
-            this.record = filterRecord;
-            this.clauseIndex = clauseIndex;
-
-            var value = this.getRecordValue();
-            this.setValue(value);
-            this.on('toggle', function (f, pressed) {
-                this.setRecordValue(!pressed);
-            }, this);
-        }
-    },
-
-    getRecordValue : function () {
-        return this.record.get("items")[this.clauseIndex].urlParameter;
-    },
-
-    setRecordValue : function (value) {
-        this.record.get("items")[this.clauseIndex].urlParameter = value;
-    },
-
-    getToolTipText : function ()
-    {
-        if (this.pressed) {
-            return "This " + this.itemType + " will be saved with the view";
-        }
-        else {
-            return "This " + this.itemType + " will NOT be saved as part of the view";
-        }
-    },
-
-    updateToolTip : function () {
-        var el = this.btnEl;
-        var msg = this.getToolTipText();
-        el.set({title: msg});
-    }
-});
-Ext.reg('paperclip-button', LABKEY.DataRegion.PaperclipButton);

@@ -1984,7 +1984,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         this.showLoadingMessage("Opening custom view designer...");
                     }.defer(500, this);
 
-                    LABKEY.initializeViewDesigner(function ()
+                    LABKEY.initializeExt3ViewDesigner(function ()
                     {
                         var additionalFields = {};
                         var userFilter = this.getUserFilter(); // TODO: When it comes time to refactor, use getUserFilterArray() here instead
@@ -2220,7 +2220,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     }, self.view);
 
                     // 22678: Need to load customzie view
-                    LABKEY.initializeViewDesigner(function()
+                    LABKEY.initializeExt3ViewDesigner(function()
                     {
                         LABKEY.DataRegion.saveCustomizeViewPrompt(config);
                     }, this);

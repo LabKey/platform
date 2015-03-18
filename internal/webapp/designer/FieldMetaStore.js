@@ -4,10 +4,66 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
+Ext4.define('LABKEY.ext4.designer.FieldMetaRecord', {
+
+    extend: 'Ext.data.Model',
+
+    fields: [
+        {name: 'name'},
+        {name: 'fieldKey', mapping: 'fieldKeyPath' },
+        {name: 'description'},
+        {name: 'friendlyType'},
+        {name: 'type'},
+        {name: 'jsonType'},
+        {name: 'autoIncrement'},
+        {name: 'hidden'},
+        {name: 'keyField'},
+        {name: 'mvEnabled'},
+        {name: 'nullable'},
+        {name: 'readOnly'},
+        {name: 'userEditable'},
+        {name: 'versionField'},
+        {name: 'selectable'},
+        {name: 'showInInsertView'},
+        {name: 'showInUpdateView'},
+        {name: 'showInDetailsView'},
+        {name: 'importAliases'},
+        {name: 'tsvFormat'},
+        {name: 'format'},
+        {name: 'excelFormat'},
+        {name: 'inputType'},
+        {name: 'caption'},
+        {name: 'lookup'},
+        {name: 'crosstabColumnDimension'},
+        {name: 'crosstabColumnMember'}
+    ],
+
+    getToolTipHtml : function () {
+        var body = "<table>";
+        var field = this.data;
+        if (field.description) {
+            body += "<tr><td valign='top'><strong>Description:</strong></td><td>" + Ext4.util.Format.htmlEncode(field.description) + "</td></tr>";
+        }
+        body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + Ext4.util.Format.htmlEncode(LABKEY.FieldKey.fromString(field.fieldKey).toDisplayString()) + "</td></tr>";
+        if (field.friendlyType) {
+            body += "<tr><td valign='top'><strong>Data&nbsp;type:</strong></td><td>" + field.friendlyType + "</td></tr>";
+        }
+        if (field.hidden) {
+            body += "<tr><td valign='top'><strong>Hidden:</strong></td><td>" + field.hidden + "</td></tr>";
+        }
+        body += "</table>";
+        return body;
+    }
+});
+
 /**
- * An Ext.data.Store for LABKEY.ext.FieldMetaRecord json objects.
+ * An Ext.data.Store for LABKEY.ext4.designer.FieldMetaRecord json objects.
  */
-LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
+Ext4.define('LABKEY.ext4.designer.FieldMetaStore', {
+
+    extend: 'Ext.data.Store',
+
+    model: 'LABKEY.ext4.designer.FieldMetaRecord',
 
     constructor : function (config) {
 
@@ -21,14 +77,21 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
         }
 
         this.isLoading = false;
-        this.remoteSort = true;
-        this.reader = new Ext.data.JsonReader({
-            idProperty: function (json) { return json.fieldKeyPath.toUpperCase(); },
-            root: 'columns',
-            fields: LABKEY.ext.FieldMetaRecord
-        });
 
-        LABKEY.ext.FieldMetaStore.superclass.constructor.call(this, config);
+        config.remoteSort = true;
+        config.proxy = {
+            type: 'memory',
+            reader: {
+                type: 'json',
+                root: 'columns',
+                idProperty: function (json) {
+                    return json.fieldKey.toUpperCase()
+                }
+            }
+        };
+
+        this.callParent([config]);
+
         this.on('beforeload', this.onBeforeLoad, this);
         this.on('load', this.onLoad, this);
         this.on('loadexception', this.onLoadException, this);
@@ -49,7 +112,7 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
 
         if(response && response.getResponseHeader && response.getResponseHeader("Content-Type").indexOf("application/json") >= 0)
         {
-            var errorJson = Ext.util.JSON.decode(response.responseText);
+            var errorJson = Ext4.JSON.decode(response.responseText);
             if (errorJson && errorJson.exception) {
                 loadError.message = errorJson.exception;
             }
@@ -96,7 +159,7 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
         }
         else
         {
-            var o = Ext.applyIf({
+            var o = Ext4.applyIf({
                 params: { fk: fieldKey },
                 callback: options.callback.createSequence(function () { this.lookupLoaded[upperFieldKey] = true; }, this),
                 add: true
@@ -117,57 +180,3 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
         return collection.getRange();
     }
 });
-
-/** An Ext.data.Record constructor for LABKEY.Query.FieldMetaData json objects. */
-LABKEY.ext.FieldMetaRecord = Ext.data.Record.create([
-    'name',
-    {name: 'fieldKey', mapping: 'fieldKeyPath' },
-    'description',
-    'friendlyType',
-    'type',
-    'jsonType',
-    'autoIncrement',
-    'hidden',
-    'keyField',
-    'mvEnabled',
-    'nullable',
-    'readOnly',
-    'userEditable',
-    'versionField',
-    'selectable',
-    'showInInsertView',
-    'showInUpdateView',
-    'showInDetailsView',
-    'importAliases',
-    'tsvFormat',
-    'format',
-    'excelFormat',
-    'inputType',
-    'caption',
-    'lookup',
-    'crosstabColumnDimension',
-    'crosstabColumnMember'
-]);
-
-LABKEY.ext.FieldMetaRecord.getToolTipHtml = function (fieldMetaRecord, fieldKey) {
-    var body = "<table>";
-    if (fieldMetaRecord)
-    {
-        var field = fieldMetaRecord.data;
-        if (field.description) {
-            body += "<tr><td valign='top'><strong>Description:</strong></td><td>" + Ext.util.Format.htmlEncode(field.description) + "</td></tr>";
-        }
-        body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + Ext.util.Format.htmlEncode(LABKEY.FieldKey.fromString(field.fieldKey).toDisplayString()) + "</td></tr>";
-        if (field.friendlyType) {
-            body += "<tr><td valign='top'><strong>Data&nbsp;type:</strong></td><td>" + field.friendlyType + "</td></tr>";
-        }
-        if (field.hidden) {
-            body += "<tr><td valign='top'><strong>Hidden:</strong></td><td>" + field.hidden + "</td></tr>";
-        }
-    }
-    else {
-        body += "<tr><td><strong>Field not found:</strong></td></tr><tr><td>" + Ext.util.Format.htmlEncode(fieldKey) + "</td></tr>";
-    }
-    body += "</table>";
-    return body;
-};
