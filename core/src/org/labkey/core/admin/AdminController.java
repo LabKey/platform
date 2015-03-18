@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin;
 
+import org.apache.commons.compress.utils.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -886,14 +887,7 @@ public class AdminController extends SpringActionController
         // New way... in /resources/credits
         InputStream is = module.getResourceStream("credits/" + filename);
 
-        // Old way... in /src/META-INF/<module>  TODO: Remove this once we verify
-        if (null == is)
-        {
-            is = module.getResourceStream("/META-INF/" + module.getName().toLowerCase() + "/" + filename);
-            assert null == is;
-        }
-
-        return null == is ? null : PageFlowUtil.getStreamContentsAsString(is);
+        return null == is ? null : PageFlowUtil.getStreamContentsAsString(is, Charsets.UTF_8);
     }
 
 
