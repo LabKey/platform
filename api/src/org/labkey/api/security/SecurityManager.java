@@ -1986,7 +1986,7 @@ public class SecurityManager
     {
         //TODO: Should do this more efficiently, but no efficient public wiki api for this yet
         TermsOfUse terms =  getTermsOfUse(project);
-        return terms == null || terms.getType() != TermsOfUseType.NONE;
+        return (terms != null) && (terms.getType() != TermsOfUseType.NONE);
     }
 
 
