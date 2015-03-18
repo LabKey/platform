@@ -368,8 +368,11 @@ public class LoginController extends SpringActionController
             {
                 // Terms of use are approved only if we've posted from the login page.  In SSO case, we will attempt
                 // to access the page and will get a TermsOfUseException if terms of use approval is required.
-                if (null != termsProject)
+                if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.PROJECT_LEVEL)
                     SecurityManager.setTermsOfUseApproved(getViewContext(), termsProject, true);
+                else if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.SITE_WIDE)
+                    SecurityManager.setTermsOfUseApproved(getViewContext(), null, true);
+
 
                 // Login page is container qualified, but we need to store the cookie at /labkey/login/ or /cpas/login/ or /login/
                 String path = StringUtils.defaultIfEmpty(getViewContext().getContextPath(), "/");
@@ -470,7 +473,10 @@ public class LoginController extends SpringActionController
 
                     if (form.isApprovedTermsOfUse())
                     {
-                        SecurityManager.setTermsOfUseApproved(getViewContext(), termsProject, true);
+                        if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.PROJECT_LEVEL)
+                            SecurityManager.setTermsOfUseApproved(getViewContext(), termsProject, true);
+                        else if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.SITE_WIDE)
+                            SecurityManager.setTermsOfUseApproved(getViewContext(), null, true);
                         response.put("approvedTermsOfUse", true);
                     }
                 }
@@ -617,16 +623,23 @@ public class LoginController extends SpringActionController
         {
             Project project = getTermsOfUseProject(form);
 
-            if (null != project)
+            if (!form.isApprovedTermsOfUse())
             {
-                if (!form.isApprovedTermsOfUse())
+                if (null != project)
                 {
-                    errors.reject(ERROR_MSG, "To use the " + project.getName() +  " project, you must check the box to approve the terms of use.");
-                    return false;
+                    errors.reject(ERROR_MSG, "To use the " + project.getName() + " project, you must check the box to approve the terms of use.");
                 }
-
-                SecurityManager.setTermsOfUseApproved(getViewContext(), project, true);
+                else
+                {
+                    errors.reject(ERROR_MSG, "To use this site, you must check the box to approve the terms of use.");
+                }
+                return false;
             }
+
+            if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.PROJECT_LEVEL)
+                SecurityManager.setTermsOfUseApproved(getViewContext(), project, true);
+            else
+                SecurityManager.setTermsOfUseApproved(getViewContext(), null, true);
 
             return true;
         }
@@ -674,7 +687,14 @@ public class LoginController extends SpringActionController
 
                 // Display the terms of use if this is the terms-of-use page or user hasn't already approved them. #4684
                 if (agreeOnly || !SecurityManager.isTermsOfUseApproved(getViewContext(), project))
-                    termsOfUseHTML = SecurityManager.getTermsOfUseHtml(project);
+                {
+                    SecurityManager.TermsOfUse terms = SecurityManager.getTermsOfUse(project);
+                    if (terms != null)
+                    {
+                        this.form.setTermsOfUseType(terms.getType());
+                        termsOfUseHTML = terms.getHtml();
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -709,6 +729,10 @@ public class LoginController extends SpringActionController
 
         URLHelper returnURL = form.getReturnURLHelper(null);
 
+        if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.SITE_WIDE)
+        {
+            return null;
+        }
         if (null != returnURL)
         {
             try
@@ -740,7 +764,7 @@ public class LoginController extends SpringActionController
     private boolean isTermsOfUseApproved(LoginForm form) throws ServletException, URISyntaxException
     {
         Project termsProject = getTermsOfUseProject(form);
-        return termsProject == null  || form.isApprovedTermsOfUse() || !SecurityManager.isTermsOfUseRequired(termsProject) || SecurityManager.isTermsOfUseApproved(getViewContext(), termsProject);
+        return form.isApprovedTermsOfUse() || !SecurityManager.isTermsOfUseRequired(termsProject) || SecurityManager.isTermsOfUseApproved(getViewContext(), termsProject);
     }
 
 
@@ -767,11 +791,16 @@ public class LoginController extends SpringActionController
         private String email;
         private String password;
         private boolean approvedTermsOfUse;
+        private SecurityManager.TermsOfUseType termsOfUseType;
 
         public void setEmail(String email)
         {
             this.email = email;
         }
+
+        public void setTermsOfUseType(SecurityManager.TermsOfUseType type) { this.termsOfUseType = type; }
+
+        public SecurityManager.TermsOfUseType getTermsOfUseType() { return this.termsOfUseType; }
 
         public String getEmail()
         {

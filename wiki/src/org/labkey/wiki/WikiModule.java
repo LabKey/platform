@@ -86,6 +86,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         addController("wiki", WikiController.class, "attachments");
 
         ServiceRegistry.get().registerService(WikiService.class, WikiManager.get());
+
     }
 
     @NotNull
@@ -125,6 +126,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         ServiceRegistry.get().getService(FolderSerializationRegistry.class).addFactories(new WikiWriterFactory(), new WikiImporterFactory());
 
         WikiSchema.register(this);
+        WikiController.registerAdminConsoleLinks();
     }
 
     private void bootstrap(ModuleContext moduleContext)

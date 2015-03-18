@@ -45,15 +45,8 @@ import org.labkey.api.data.Table;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -63,6 +56,7 @@ import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerTreeSelected;
 import org.labkey.api.util.DiffMatchPatch;
@@ -135,6 +129,10 @@ public class WikiController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+    public static void registerAdminConsoleLinks()
+    {
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "site-wide terms of use", getWikiURL(ContainerManager.getRoot(), PageAction.class, new HString(SecurityManager.TERMS_OF_USE_WIKI_NAME)));
+    }
 
     protected BaseWikiPermissions getPermissions()
     {

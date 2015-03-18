@@ -75,6 +75,7 @@
                 <input type="checkbox" name="approvedTermsOfUse" id="approvedTermsOfUse" class="auth-item" <%=checked(bean.termsOfUseChecked)%>>
                 <label for="approvedTermsOfUse">I agree to these terms</label>
             </div>
+            <input type="hidden" name="termsOfUseType" id="termsOfUseType" value="<%= h(bean.form.getTermsOfUseType())%>">
             <% } %>
 
             <div class="auth-item">
@@ -83,6 +84,7 @@
                 or <a href="mailto:<%= h(props.getSupportEmail()) %>?subject=Account request<%=h(StringUtils.isBlank(props.getShortName()) ? "" : " for " + props.getShortName())%>">Request an account</a>
                 <% } %>
             </div>
+
         </div>
 
         <%=generateReturnUrlFormField(returnURL)%>
