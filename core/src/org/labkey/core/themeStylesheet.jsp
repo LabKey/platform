@@ -313,7 +313,8 @@ td.labkey-blank-cell, th.labkey-blank-cell
     background: #<%= second %>;
 }
 
-.labkey-customview-item.x-view-over
+.labkey-customview-item.x-view-over,
+.labkey-customview-item.x4-view-over
 {
     border-top: 1px solid #<%= link %>;
     border-bottom: 1px solid #<%= link %>;

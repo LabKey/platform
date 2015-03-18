@@ -1326,15 +1326,15 @@ img.labkey-grid-filter-icon
     border-bottom: 1px solid transparent;
 }
 
-.labkey-customview-item.x-view-selected {
+.labkey-customview-item.x-view-selected,
+.labkey-customview-item.x4-item-selected {
     background: #eeeeee;
-}
-.labkey-customview-item.x-view-selected {
     border-top: 1px solid #89A1B4;
     border-bottom: 1px solid #89A1B4;
 }
 
-.labkey-customview-item.x-view-over {
+.labkey-customview-item.x-view-over,
+.labkey-customview-item.x4-view-over {
     border-top: 1px solid #126495;
     border-bottom: 1px solid #126495;
 }
@@ -1356,7 +1356,8 @@ img.labkey-grid-filter-icon
     height: 100%;
 }
 
-.labkey-customview-item.x-view-over .labkey-grab {
+.labkey-customview-item.x-view-over .labkey-grab,
+.labkey-customview-item.x4-view-over .labkey-grab {
     opacity: 1;
     filter:alpha(opacity=100);
 }
@@ -1368,7 +1369,8 @@ img.labkey-grid-filter-icon
     filter:alpha(opacity=0);
 }
 
-.labkey-customview-item.x-view-over .labkey-tool-gear {
+.labkey-customview-item.x-view-over .labkey-tool-gear,
+.labkey-customview-item.x4-view-over .labkey-tool-gear {
     opacity: 1;
     filter:alpha(opacity=100);
 }
@@ -1381,7 +1383,8 @@ img.labkey-grid-filter-icon
     filter:alpha(opacity=0);
 }
 
-.labkey-customview-item.x-view-over .labkey-tool-close {
+.labkey-customview-item.x-view-over .labkey-tool-close,
+.labkey-customview-item.x4-view-over .labkey-tool-close {
     opacity: 1;
     filter:alpha(opacity=100);
 }
@@ -1393,6 +1396,27 @@ img.labkey-grid-filter-icon
 .labkey-customview-sort-item .labkey-tool-unpin,
 .labkey-customview-sort-item .labkey-tool-close {
     margin-top: 3px;
+}
+
+.labkey-customview-tab {
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 6px  !important;
+    color: #555;
+}
+
+.labkey-customview-activetab {
+    background-color: #FFFFFF;
+    border-radius: 5px 0 0 5px;
+    border-color: #ccc;
+    border-style: solid;
+    border-width: 1px 0 1px 1px;
+}
+
+.labkey-customview-message {
+    background-color: #FFDF8C;
+    padding: 2px !important;
 }
 
 /** Ext.ux.dd.GridDragDropRowOrder.js */
