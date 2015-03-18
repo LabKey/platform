@@ -131,7 +131,7 @@ public class WikiController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "site-wide terms of use", getWikiURL(ContainerManager.getRoot(), PageAction.class, new HString(SecurityManager.TERMS_OF_USE_WIKI_NAME)));
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "site-wide terms of use", getEditWikiURL(ContainerManager.getRoot(), EditWikiAction.class, new HString(SecurityManager.TERMS_OF_USE_WIKI_NAME), true));
     }
 
     protected BaseWikiPermissions getPermissions()
@@ -282,6 +282,16 @@ public class WikiController extends SpringActionController
     public static ActionURL getPageURL(Container c, @Nullable HString name)
     {
         return getWikiURL(c, PageAction.class, name);
+    }
+
+
+    public static ActionURL getEditWikiURL(Container c, Class<? extends Controller> actionClass, @Nullable HString name, Boolean create)
+    {
+        ActionURL url = getWikiURL(c, actionClass, name);
+        if (create)
+            url.addParameter("create", 1);
+
+        return url;
     }
 
 
@@ -1935,7 +1945,13 @@ public class WikiController extends SpringActionController
         private String _cancel;
         private String _format;
         private String _defName;
+        private boolean _create;
         private int _webPartId;
+
+        public boolean getCreate() { return _create; }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setCreate(boolean create) { _create = create; }
 
         public HString getName()
         {
@@ -2019,13 +2035,11 @@ public class WikiController extends SpringActionController
             if (null != form.getName() && form.getName().length() > 0)
             {
                 wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
-                if (null == wiki)
+                if (null == wiki && !form.getCreate())
+                {
                     throw new NotFoundException("There is no wiki in the current folder named '" + form.getName() + "'!");
+                }
 
-                //get the current version
-                curVersion = wiki.getLatestVersion();
-                if (null == curVersion)
-                    throw new NotFoundException("Could not locate the current version of the wiki named '" + form.getName() + "'!");
             }
 
             //check permissions
@@ -2038,9 +2052,16 @@ public class WikiController extends SpringActionController
                 //if no wiki, this is an insert, so user must have insert perms
                 if (!perms.allowInsert())
                     throw new UnauthorizedException("You do not have permissions to create new wiki pages in this folder!");
+
+                if (form.getCreate())
+                    form.setDefName(form.getName().getSource());
             }
             else
             {
+                //get the current version
+                curVersion = wiki.getLatestVersion();
+                if (null == curVersion)
+                    throw new NotFoundException("Could not locate the current version of the wiki named '" + form.getName() + "'!");
                 //updating wiki--use BaseWikiPermissions
                 if (!perms.allowUpdate(wiki))
                     throw new UnauthorizedException("You do not have permissions to edit this wiki page!");
