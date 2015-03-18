@@ -178,7 +178,10 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         if (null == incrementalEndVal)     // ERROR, no non-null values?
             f.addCondition(new SimpleFilter.FalseClause());
         else
-            f.addCondition(_tsCol.getFieldKey(), incrementalEndVal, CompareType.LTE);
+        {
+            ColumnInfo tsCol = deleting ? _deletedQueryTsCol : _tsCol;
+            f.addCondition(tsCol.getFieldKey(), incrementalEndVal, CompareType.LTE);
+        }
 
         variables.put(FilterTimestamp.START.getPropertyDescriptor(_useRowversion, deleting), incrementalStartVal);
         variables.put(FilterTimestamp.END.getPropertyDescriptor(_useRowversion, deleting), incrementalEndVal);
@@ -258,7 +261,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         }
         catch (Exception x)
         {
-            _context.getPipelineJob().getLogger().warn("Exception converting timestamp: " + o + "\n" + x.toString());
+            _context.getPipelineJob().getLogger().warn("Exception converting timestamp: " + o + "\n", x);
         }
         return JdbcType.TIMESTAMP.convert(o);
     }
