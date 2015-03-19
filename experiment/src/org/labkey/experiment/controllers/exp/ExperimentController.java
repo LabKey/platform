@@ -109,6 +109,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
@@ -142,6 +144,7 @@ import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HBox;
@@ -1454,6 +1457,7 @@ public class ExperimentController extends SpringActionController
     {
         protected ModelAndView getDataView(DataForm form, BindException errors) throws IOException
         {
+
             String dataURL = _data.getDataFileUrl();
             if (dataURL == null)
             {
@@ -1497,84 +1501,7 @@ public class ExperimentController extends SpringActionController
                 boolean ignoreTypes = "jsonTSVIgnoreTypes".equalsIgnoreCase(form.getFormat());
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended || ignoreTypes)
                 {
-                    JSONArray sheetsArray;
-                    if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
-                    {
-                        try
-                        {
-                            sheetsArray = ExcelFactory.convertExcelToJSON(realContent, extended);
-                        }
-                        catch (InvalidFormatException e)
-                        {
-                            throw new NotFoundException("Could not open " + realContent.getName(), e);
-                        }
-                    }
-                    else if (lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".txt") || lowerCaseFileName.endsWith(".csv"))
-                    {
-                        TabLoader tabLoader = new TabLoader(realContent);
-                        tabLoader.setScanAheadLineCount(5000);
-                        if (lowerCaseFileName.endsWith(".csv"))
-                        {
-                            tabLoader.parseAsCSV();
-                        }
-                        tabLoader.setHasColumnHeaders(true);
-                        ColumnDescriptor[] cols = tabLoader.getColumns();
-
-                        if (ignoreTypes)
-                            for (ColumnDescriptor col : cols)
-                                col.clazz = String.class;
-
-                        JSONArray rowsArray = new JSONArray();
-                        JSONArray headerArray = new JSONArray();
-                        for (ColumnDescriptor col : cols)
-                        {
-                            if (extended)
-                            {
-                                JSONObject valueObject = new JSONObject();
-                                valueObject.put("value", col.name);
-                                headerArray.put(valueObject);
-                            }
-                            else
-                            {
-                                headerArray.put(col.name);
-                            }
-                        }
-                        rowsArray.put(headerArray);
-                        for (Map<String, Object> rowMap : tabLoader)
-                        {
-                            JSONArray rowArray = new JSONArray();
-                            for (ColumnDescriptor col : cols)
-                            {
-                                Object value = rowMap.get(col.name);
-                                if (extended)
-                                {
-                                    JSONObject valueObject = new JSONObject();
-                                    valueObject.put("value", value);
-                                    rowArray.put(valueObject);
-                                }
-                                else
-                                {
-                                    rowArray.put(value);
-                                }
-                            }
-                            rowsArray.put(rowArray);
-                        }
-
-                        JSONObject sheetJSON = new JSONObject();
-                        sheetJSON.put("name", "flat");
-                        sheetJSON.put("data", rowsArray);
-                        sheetsArray = new JSONArray();
-                        sheetsArray.put(sheetJSON);
-                    }
-                    else
-                    {
-                        throw new FileNotFoundException("Unable to convert file " + realContent + " to tsv");
-                    }
-                    ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
-                    JSONObject workbookJSON = new JSONObject();
-                    workbookJSON.put("fileName", realContent.getName());
-                    workbookJSON.put("sheets", sheetsArray);
-                    writer.writeResponse(new ApiSimpleResponse(workbookJSON));
+                    streamToJSON(realContent, form.getFormat(), -1);
                     return null;
                 }
 
@@ -1597,6 +1524,165 @@ public class ExperimentController extends SpringActionController
             return null;
         }
     }
+
+
+    public static class ParseForm
+    {
+        String format = "jsonTSV";
+        int maxRows = -1;
+
+        public String getFormat()
+        {
+            return format;
+        }
+
+        public void setFormat(String format)
+        {
+            this.format = format;
+        }
+
+        public int getMaxRows()
+        {
+            return maxRows;
+        }
+
+        public void setMaxRows(int maxRow)
+        {
+            this.maxRows = maxRow;
+        }
+    }
+
+
+    @CSRF @RequiresNoPermission
+    public class ParseFileAction extends FormHandlerAction<ParseForm>
+    {
+        @Override
+        public void validateCommand(ParseForm target, Errors errors)
+        {
+
+        }
+
+        @Override
+        public boolean handlePost(ParseForm form, BindException errors) throws Exception
+        {
+            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
+                throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
+
+            MultipartFile formFile = getFileMap().get("file");
+            if (formFile == null)
+            {
+                return true;
+            }
+
+            File tempFile = null;
+            try
+            {
+                tempFile = File.createTempFile("parse", formFile.getOriginalFilename());
+                FileUtil.copyData(formFile.getInputStream(),tempFile);
+                streamToJSON(tempFile, form.getFormat(), form.getMaxRows());
+            }
+            finally
+            {
+                if (null != tempFile)
+                    tempFile.delete();
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ParseForm parseForm)
+        {
+            return null;
+        }
+    }
+
+
+    private void streamToJSON(File realContent, String format, int maxRow) throws IOException
+    {
+        String lowerCaseFileName = realContent.getName().toLowerCase();
+        boolean extended = "jsonTSVExtended".equalsIgnoreCase(format);
+        boolean ignoreTypes = "jsonTSVIgnoreTypes".equalsIgnoreCase(format);
+
+        JSONArray sheetsArray;
+        if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
+        {
+            try
+            {
+                sheetsArray = ExcelFactory.convertExcelToJSON(realContent, extended, maxRow);
+            }
+            catch (InvalidFormatException e)
+            {
+                throw new NotFoundException("Could not open " + realContent.getName(), e);
+            }
+        }
+        else
+        {
+            DataLoaderFactory dlf = DataLoader.get().findFactory(realContent, null);
+            if (null == dlf)
+            {
+                throw new FileNotFoundException("Unable to parser file " + realContent);
+            }
+            DataLoader tabLoader = dlf.createLoader(realContent, true);
+            tabLoader.setScanAheadLineCount(5000);
+            ColumnDescriptor[] cols = tabLoader.getColumns();
+
+            if (ignoreTypes)
+                for (ColumnDescriptor col : cols)
+                    col.clazz = String.class;
+
+            JSONArray rowsArray = new JSONArray();
+            JSONArray headerArray = new JSONArray();
+            for (ColumnDescriptor col : cols)
+            {
+                if (extended)
+                {
+                    JSONObject valueObject = new JSONObject();
+                    valueObject.put("value", col.name);
+                    headerArray.put(valueObject);
+                }
+                else
+                {
+                    headerArray.put(col.name);
+                }
+            }
+            rowsArray.put(headerArray);
+            for (Map<String, Object> rowMap : tabLoader)
+            {
+                // headers count as a row to be consistent
+                if (maxRow > -1 && maxRow <= rowsArray.length()+1)
+                    break;
+
+                JSONArray rowArray = new JSONArray();
+                for (ColumnDescriptor col : cols)
+                {
+                    Object value = rowMap.get(col.name);
+                    if (extended)
+                    {
+                        JSONObject valueObject = new JSONObject();
+                        valueObject.put("value", value);
+                        rowArray.put(valueObject);
+                    }
+                    else
+                    {
+                        rowArray.put(value);
+                    }
+                }
+                rowsArray.put(rowArray);
+            }
+
+            JSONObject sheetJSON = new JSONObject();
+            sheetJSON.put("name", "flat");
+            sheetJSON.put("data", rowsArray);
+            sheetsArray = new JSONArray();
+            sheetsArray.put(sheetJSON);
+        }
+        ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
+        JSONObject workbookJSON = new JSONObject();
+        workbookJSON.put("fileName", realContent.getName());
+        workbookJSON.put("sheets", sheetsArray);
+        writer.writeResponse(new ApiSimpleResponse(workbookJSON));
+    }
+
 
     public static class ConvertArraysToExcelForm
     {
@@ -2920,7 +3006,7 @@ public class ExperimentController extends SpringActionController
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
-                throw new IllegalStateException("Expected MultipartHttpServletRequest when posting files.");
+                throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
 
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
             {
