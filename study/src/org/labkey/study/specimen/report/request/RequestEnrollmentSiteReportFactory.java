@@ -99,9 +99,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
                 sql.append("= " + location.getRowId() + ")");
             }
 
-            assert 0 == sql.getParams().size();
-
-            filter.addWhereClause(sql.getSQL(), null, FieldKey.fromParts("GlobalUniqueId"));
+            filter.addWhereClause(sql, FieldKey.fromParts("GlobalUniqueId"));
             addBaseFilters(filter);
             reports.add(new RequestEnrollmentLocationReport(location == null ? "[Unassigned enrollment location]" : location.getLabel(),
                     filter, this, visits, location != null ? location.getRowId() : -1, isCompletedRequestsOnly()));
