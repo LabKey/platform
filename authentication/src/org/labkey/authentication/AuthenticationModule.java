@@ -80,12 +80,8 @@ public class AuthenticationModule extends DefaultModule
         if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_SAML_SERVICE_PROVIDER))
             AuthenticationManager.registerProvider(new SamlProvider(), Priority.Low);
 
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_DUO_TWO_FACTOR_AUTHENTICATION, "Require 2 factor authentication", "Require entry of second key sent by Duo directly to user.", true);
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DUO_TWO_FACTOR_AUTHENTICATION))
-        {
-            addController("duo", DuoController.class);
-            AuthenticationManager.registerProvider(new DuoProvider(), Priority.Low);
-        }
+        addController("duo", DuoController.class);
+        AuthenticationManager.registerProvider(new DuoProvider(), Priority.Low);
 
         if (AppProps.getInstance().isDevMode())
         {

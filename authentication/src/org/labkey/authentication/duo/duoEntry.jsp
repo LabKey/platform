@@ -39,14 +39,11 @@
     String message;
     if(form.isTest())
     {
-        message = "Use this page to test Duo Two-Factor authentication setting. Duo Two-factor authentication, " +
-                "as the name implicates, has two parts to the sign-in process: (i) Successful sign-in to the Labkey " +
-                "server, and (ii) Secondary login via Duo. For testing purpose, we will skip signing onto the " +
-                "Labkey server, and only perform the Secondary Login via Duo.";
+        message = "Use this page to test Duo Two-Factor authentication setting. This requires Duo Integration account. See your network administrator if you are unfamiliar with Duo.";
     }
     else
     {
-        message = "Your Primary Authentication was a success! Please perform Secondary Authentication below:";
+        message = "Please complete the Two-Factor Authentication below:";
     }
 %>
 <p><h4><%=h(message)%></h4></p>

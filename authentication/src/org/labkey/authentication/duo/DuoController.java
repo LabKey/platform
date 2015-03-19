@@ -15,6 +15,7 @@
  */
 package org.labkey.authentication.duo;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
@@ -28,6 +29,9 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserUrls;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -220,6 +224,9 @@ public class DuoController extends SpringActionController
     @RequiresNoPermission
     public class ValidateAction extends FormViewAction<DuoForm>
     {
+
+        public static final String DUO_2_FACTOR_AUTHENTICATION = "Duo 2-Factor Authentication";
+
         @Override
         public void validateCommand(DuoForm form, Errors errors)
         {
@@ -229,8 +236,37 @@ public class DuoController extends SpringActionController
         @Override
         public ModelAndView getView(DuoForm form, boolean reshow, BindException errors) throws Exception
         {
+            if (!getUser().isGuest())
+                return HttpView.redirect(getAfterLoginURL(form.getReturnURLHelper(), form.getUrlhash(), getUser()));
+
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new JspView<>("/org/labkey/authentication/duo/duoEntry.jsp", form, errors);
+        }
+
+        private URLHelper getAfterLoginURL(@Nullable URLHelper returnURL, @Nullable String urlHash, @Nullable User user)
+        {
+            Container current = getContainer();
+            Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
+
+            // Default redirect if returnURL is not specified. Try not to redirect to a folder where the user doesn't have permissions
+            if (null == returnURL)
+            {
+                returnURL = null == current || current.isRoot() || (null != user && !c.hasPermission(user, ReadPermission.class)) ? new URLHelper(true) :
+                        null != user ? c.getStartURL(user) : AppProps.getInstance().getHomePageActionURL();
+            }
+
+            // If this is user's first log in or some required field isn't filled in then go to update page first
+            if (null != user)
+            {
+                returnURL = PageFlowUtil.urlProvider(UserUrls.class).getCheckUserUpdateURL(c, returnURL, user.getUserId(), !user.isFirstLogin());
+            }
+
+            if (null != urlHash)
+            {
+                returnURL.setFragment(urlHash.replace("#", ""));
+            }
+
+            return returnURL;
         }
 
         @Override
@@ -243,10 +279,19 @@ public class DuoController extends SpringActionController
 
             boolean success = (duoUser != null && duoUser.equals(primaryAuthUser));
 
-            // TODO: More detailed error checking and messages
+            // TODO: More detailed error checking and messages - see line 293, is that sufficient?
 
-            if (success && !form.isTest())
-                AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), DuoProvider.class, null);
+            if (success)
+            {
+                AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), DuoProvider.class, duoUser);
+                UserManager.addAuditEvent(duoUser, ContainerManager.getRoot(), duoUser, DUO_2_FACTOR_AUTHENTICATION + " successful for user: " + duoUser.getEmail());
+            }
+            else
+            {
+                String message = DUO_2_FACTOR_AUTHENTICATION + " failed for user: " + primaryAuthUser.getEmail();
+                UserManager.addAuditEvent(primaryAuthUser, ContainerManager.getRoot(), primaryAuthUser, message);
+                errors.reject(DUO_2_FACTOR_AUTHENTICATION, message);
+            }
 
             return success;
         }
