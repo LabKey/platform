@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2015 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.authentication.duo;
 
 import org.labkey.api.action.FormViewAction;
@@ -5,9 +20,14 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.*;
-import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -15,6 +35,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.authentication.test.TestSecondaryProvider;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -191,12 +212,9 @@ public class DuoController extends SpringActionController
         }
     }
 
-    public static ActionURL getValidateURL(Container c, URLHelper returnURL)
+    public static ActionURL getValidateURL(Container c)
     {
-        ActionURL url = new ActionURL(ValidateAction.class, c);
-        url.addReturnURL(returnURL);
-
-        return url;
+        return new ActionURL(ValidateAction.class, c);
     }
 
     @RequiresNoPermission
@@ -215,26 +233,20 @@ public class DuoController extends SpringActionController
             return new JspView<>("/org/labkey/authentication/duo/duoEntry.jsp", form, errors);
         }
 
-        // TODO: Delete once we eliminate TestValidateAction
-        protected Class<? extends SecondaryAuthenticationProvider> getProviderClass()
-        {
-            return DuoProvider.class;
-        }
-
         @Override
         public boolean handlePost(DuoForm form, BindException errors) throws Exception
         {
             String returnedUser = DuoManager.verifySignedResponse(form.getSig_response(), form.isTest());
 
-            boolean success = null != getUser() && returnedUser.equals(Integer.toString(getUser().getUserId()));
+            User duoUser = UserManager.getUser(Integer.parseInt(returnedUser));
+            User primaryAuthUser = AuthenticationManager.getPrimaryAuthenticationUser(getViewContext().getSession());
+
+            boolean success = (duoUser != null && duoUser.equals(primaryAuthUser));
+
+            // TODO: More detailed error checking and messages
 
             if (success && !form.isTest())
-            {
-                AuthenticationManager.setSecondaryAuthenticationSuccess(getViewContext().getRequest(), getProviderClass());
-
-                // This will throw redirect if there are more secondary providers. Perhaps setSecondaryAuthenticationSuccess() should throw instead.
-                AuthenticationManager.handleSecondaryAuthentication(getUser(), getContainer(), getViewContext().getRequest(), form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL()));
-            }
+                AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), DuoProvider.class, null);
 
             return success;
         }
@@ -242,7 +254,7 @@ public class DuoController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(DuoForm form)
         {
-            return form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
+            return AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer()).getRedirectURL();
         }
 
         @Override
@@ -253,21 +265,68 @@ public class DuoController extends SpringActionController
     }
 
 
-    public static ActionURL getTestValidateURL(Container c, URLHelper returnURL)
+    public static ActionURL getTestSecondaryURL(Container c)
     {
-        ActionURL url = new ActionURL(TestValidateAction.class, c);
-        url.addReturnURL(returnURL);
+        return new ActionURL(TestSecondaryAction.class, c);
+    }
 
-        return url;
+    public static class TestSecondaryForm
+    {
+        private boolean _valid;
+
+        public boolean isValid()
+        {
+            return _valid;
+        }
+
+        @SuppressWarnings("unused")
+        public void setValid(boolean valid)
+        {
+            _valid = valid;
+        }
     }
 
     @RequiresNoPermission
-    public class TestValidateAction extends ValidateAction
+    public class TestSecondaryAction extends FormViewAction<TestSecondaryForm>
     {
         @Override
-        protected Class<? extends SecondaryAuthenticationProvider> getProviderClass()
+        public void validateCommand(TestSecondaryForm form, Errors errors)
         {
-            return TestDuoProvider.class;
+        }
+
+        @Override
+        public ModelAndView getView(TestSecondaryForm form, boolean reshow, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            return new JspView<>("/org/labkey/authentication/test/testSecondary.jsp", null, errors);
+        }
+
+        @Override
+        public boolean handlePost(TestSecondaryForm form, BindException errors) throws Exception
+        {
+            if (form.isValid())
+            {
+                User user = AuthenticationManager.getPrimaryAuthenticationUser(getViewContext().getSession());
+
+                if (null != user)
+                    AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), TestSecondaryProvider.class, user);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(TestSecondaryForm form)
+        {
+            return AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer()).getRedirectURL();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
@@ -336,6 +395,5 @@ public class DuoController extends SpringActionController
             return null;
         }
     }
-
 }
 

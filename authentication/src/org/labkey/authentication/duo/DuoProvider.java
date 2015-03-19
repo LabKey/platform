@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,9 +33,9 @@ public class DuoProvider implements SecondaryAuthenticationProvider
     private static final Logger LOG = Logger.getLogger(DuoProvider.class);
 
     @Override
-    public ActionURL getRedirectURL(User candidate, Container c, URLHelper returnURL)
+    public ActionURL getRedirectURL(User candidate, Container c)
     {
-        ActionURL validateURL = DuoController.getValidateURL(c, returnURL);
+        ActionURL validateURL = DuoController.getValidateURL(c);
         validateURL.addParameter("sig_request", DuoManager.generateSignedRequest(candidate));
         return validateURL;
     }

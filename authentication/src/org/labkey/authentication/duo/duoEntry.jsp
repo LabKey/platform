@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.authentication.duo.DuoController" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.authentication.duo.DuoController.DuoForm" %>
 <%@ page import="org.labkey.authentication.duo.DuoManager" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!

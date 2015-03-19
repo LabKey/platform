@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014 LabKey Corporation
+ * Copyright (c) 2007-2015 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,8 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
+import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
+import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
@@ -70,6 +71,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -195,10 +197,13 @@ public class LoginController extends SpringActionController
         }
 
 
-        public ActionURL getLoginURL(Container c, URLHelper returnURL)
+        public ActionURL getLoginURL(Container c, @Nullable URLHelper returnURL)
         {
             ActionURL url = new ActionURL(LoginAction.class, c);
-            url.addReturnURL(returnURL);
+
+            if (null != returnURL)
+                url.addReturnURL(returnURL);
+
             return url;
         }
 
@@ -236,26 +241,23 @@ public class LoginController extends SpringActionController
         return new LoginUrlsImpl();
     }
 
-    @Nullable
-    private static User authenticate(LoginForm form, BindException errors, ViewContext viewContext, boolean logFailures)
+    private static boolean authenticate(LoginForm form, BindException errors, ViewContext viewContext, boolean logFailures)
     {
-        User user = null;
-
         HttpServletRequest request = viewContext.getRequest();
         HttpServletResponse response = viewContext.getResponse();
 
         try
         {
-            // Attempt authentication with all registered providers
-            AuthenticationResult result = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
+            // Attempt authentication with all active primary providers
+            PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
             LookAndFeelProperties laf;
 
             switch (result.getStatus())
             {
                 case Success:
-                    user = result.getUser();
-                    SecurityManager.setAuthenticatedUser(request, user);
-                    break;
+                    User user = result.getUser();
+                    AuthenticationManager.setPrimaryAuthenticationUser(request, user);
+                    return true;   // Only success case... everything else returns false
                 case InactiveUser:
                     laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
                     errors.addError(new FormattedError("Your account has been deactivated. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> if you need to reactivate this account."));
@@ -299,7 +301,7 @@ public class LoginController extends SpringActionController
             errors.reject(ERROR_MSG, sb.toString());
         }
 
-        return user;
+        return false;
     }
 
 
@@ -321,31 +323,42 @@ public class LoginController extends SpringActionController
     // @CSRF don't need CSRF for actions that require a password
     public class LoginAction extends FormViewAction<LoginForm>
     {
-        private User _user = null;
-
         public void validateCommand(LoginForm form, Errors errors)
         {
         }
 
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors) throws Exception
         {
+            // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
+            // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
+            if (!getUser().isGuest())
+                return HttpView.redirect(getAfterLoginURL(form.getReturnURLHelper(), form.getUrlhash(), getUser(), form.getSkipProfile()));   // TODO: This may be wrong...
+
             HttpServletRequest request = getViewContext().getRequest();
-            HttpServletResponse response = getViewContext().getResponse();
 
             // If we're reshowing, the user must have entered incorrect credentials.
             // Set the response code accordingly
             if (reshow)
             {
+                HttpServletResponse response = getViewContext().getResponse();
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             }
-
-            // If user is already logged in, then redirect immediately.  This is necessary because of Excel's link
-            // behavior (see #9246).  Next, check to see if any authentication credentials already exist (passed as URL
-            // param, in a cookie, etc.)
-            if (!reshow && (isLoggedIn() || authenticate(form, errors, getViewContext(), false) != null))
-                return HttpView.redirect(getSuccessURL(form));
             else
-                return showLogin(form, errors, request, getPageConfig());
+            {
+                URLHelper returnURL = form.getReturnURLHelper();
+                LoginReturnProperties properties = (null == returnURL ? AuthenticationManager.getLoginReturnProperties(request) : new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile()));
+
+                // Reset authentication state. If, for example, user hits back button in the midst of two-factor auth
+                // workflow then start over.
+                SessionHelper.invalidateSession(request);
+
+                if (null != properties)
+                {
+                    AuthenticationManager.setLoginReturnProperties(request, properties);
+                }
+            }
+
+            return showLogin(form, errors, request, getPageConfig());
         }
 
         public boolean handlePost(LoginForm form, BindException errors) throws Exception
@@ -361,8 +374,7 @@ public class LoginController extends SpringActionController
                 }
             }
 
-            _user = authenticate(form, errors, getViewContext(), true);
-            boolean success = (null != _user);
+            boolean success = authenticate(form, errors, getViewContext(), true);
 
             if (success)
             {
@@ -372,7 +384,6 @@ public class LoginController extends SpringActionController
                     SecurityManager.setTermsOfUseApproved(getViewContext(), termsProject, true);
                 else if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.SITE_WIDE)
                     SecurityManager.setTermsOfUseApproved(getViewContext(), null, true);
-
 
                 // Login page is container qualified, but we need to store the cookie at /labkey/login/ or /cpas/login/ or /login/
                 String path = StringUtils.defaultIfEmpty(getViewContext().getContextPath(), "/");
@@ -403,23 +414,9 @@ public class LoginController extends SpringActionController
             return success;
         }
 
-        private boolean isLoggedIn()
-        {
-            if (getUser().isGuest())
-                return false;
-
-            _user = getUser();
-            return true;
-        }
-
         public URLHelper getSuccessURL(LoginForm form)
         {
-            URLHelper afterLogin = getAfterLoginURL(form, _user, form.getSkipProfile());
-
-            // TODO: Placeholder for now... this belongs in the official authentication flow, not here
-            AuthenticationManager.handleSecondaryAuthentication(getUser(), getContainer(), getViewContext().getRequest(), afterLogin);
-
-            return afterLogin;
+            return AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer()).getRedirectURL();
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -459,16 +456,18 @@ public class LoginController extends SpringActionController
             }
 
             ApiSimpleResponse response = null;
-            User user = authenticate(form, errors, getViewContext(), true);
+            boolean success = authenticate(form, errors, getViewContext(), true);
 
-            if (!errors.hasErrors())
+            // TODO: Handle errors? Handle setPassword? SSO? Update profile?
+
+            if (success)
             {
-                boolean success = (null != user);
+                User user = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer()).getUser();
 
-                if (success)
+                if (null != user)
                 {
                     response = new ApiSimpleResponse();
-                    response.put("success", success);
+                    response.put("success", true);
                     response.put("user", User.getUserProps(user, getContainer()));
 
                     if (form.isApprovedTermsOfUse())
@@ -487,7 +486,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    protected HttpView showLogin(LoginForm form, BindException errors, HttpServletRequest request, PageConfig page) throws Exception
+    private HttpView showLogin(LoginForm form, BindException errors, HttpServletRequest request, PageConfig page) throws Exception
     {
         String email = form.getEmail();
         boolean remember = false;
@@ -543,19 +542,17 @@ public class LoginController extends SpringActionController
     }
 
 
-    private URLHelper getAfterLoginURL(ReturnUrlForm form, @Nullable User user, boolean skipProfile)
+    private URLHelper getAfterLoginURL(@Nullable URLHelper returnURL, @Nullable String urlHash, @Nullable User user, boolean skipProfile)
     {
         Container current = getContainer();
-        Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : getContainer());
+        Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
 
-        // Default redirect if returnURL is not specified.  Try not to redirect to a folder where the user doesn't have permissions, #12947
-        URLHelper defaultURL =
-                null == current || current.isRoot() || (null != user && !c.hasPermission(user, ReadPermission.class)) ? getWelcomeURL() :
-                null != user ? c.getStartURL(user) :
-                AppProps.getInstance().getHomePageActionURL();
-
-        // After successful login (and possibly profile update) we'll end up here
-        URLHelper returnURL = form.getReturnURLHelper(defaultURL);
+        // Default redirect if returnURL is not specified. Try not to redirect to a folder where the user doesn't have permissions, #12947
+        if (null == returnURL)
+        {
+            returnURL = null == current || current.isRoot() || (null != user && !c.hasPermission(user, ReadPermission.class)) ? getWelcomeURL() :
+                    null != user ? c.getStartURL(user) : AppProps.getInstance().getHomePageActionURL();
+        }
 
         // If this is user's first log in or some required field isn't filled in then go to update page first
         if (!skipProfile && null != user)
@@ -563,9 +560,9 @@ public class LoginController extends SpringActionController
             returnURL = PageFlowUtil.urlProvider(UserUrls.class).getCheckUserUpdateURL(c, returnURL, user.getUserId(), !user.isFirstLogin());
         }
 
-        if (null != form.getUrlhash())
+        if (null != urlHash)
         {
-            returnURL.setFragment(form.getUrlhash().replace("#", ""));
+            returnURL.setFragment(urlHash.replace("#", ""));
         }
 
         return returnURL;
@@ -1004,7 +1001,7 @@ public class LoginController extends SpringActionController
             // where a user is already logged in (normal change password, admins initializing another user's password, etc.)
             if (getUser().isGuest())
             {
-                AuthenticationResult result = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
+                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
 
                 if (result.getStatus() == AuthenticationManager.AuthenticationStatus.Success)
                 {
@@ -1021,7 +1018,7 @@ public class LoginController extends SpringActionController
 
         public URLHelper getSuccessURL(SetPasswordForm form)
         {
-            return getAfterLoginURL(form, getUser(), _skipProfile);
+            return getAfterLoginURL(form.getReturnURLHelper(), form.getUrlhash(), getUser(), _skipProfile);
         }
 
         public NavTree appendNavTrail(NavTree root)
