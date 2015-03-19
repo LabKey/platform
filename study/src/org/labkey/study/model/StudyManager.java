@@ -710,9 +710,7 @@ public class StudyManager
                 throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
             // make sure we reload domain and tableinfo
-            datasetDefinition._domain = null;
-
-            Domain domain = datasetDefinition.getDomain();
+            Domain domain = datasetDefinition.refreshDomain();
 
             // Check if the extra key field has changed
             boolean isProvisioned = domain != null && domain.getStorageTableName() != null;
@@ -766,7 +764,7 @@ public class StudyManager
             }
             Object[] pk = new Object[]{datasetDefinition.getContainer().getId(), datasetDefinition.getDatasetId()};
             ensureViewCategory(user, datasetDefinition);
-            updateDomainDescriptorIfNeeded(datasetDefinition.getContainer(), user, datasetDefinition);
+            ensureDatasetDefinitionDomain(user, datasetDefinition);
             _datasetHelper.update(user, datasetDefinition, pk);
 
             if (!old.getName().equals(datasetDefinition.getName()))
@@ -3767,10 +3765,10 @@ public class StudyManager
     // old:  urn:lsid:labkey.com:StudyDataset.Folder-6:DEM
     // new:  urn:lsid:labkey.com:StudyDataset.Folder-6:DEM-cbffdfa1-f19b-1030-90dd-bf4ca488b2d0
     // Also, the URI will change if the dataset name changes
-    private void updateDomainDescriptorIfNeeded(Container c, User user, DatasetDefinition def)
+    private void ensureDatasetDefinitionDomain(User user, DatasetDefinition def)
     {
         String oldURI = def.getTypeURI();
-        String newURI = getDomainURI(c, user, def);
+        String newURI = getDomainURI(def.getContainer(), user, def);
 
         if (StringUtils.equals(oldURI, newURI))
             return;
@@ -3779,7 +3777,7 @@ public class StudyManager
         def.setTypeURI(newURI, true /*upgrade*/);
 
         // fixup the domain
-        DomainDescriptor dd = OntologyManager.getDomainDescriptor(oldURI, c);
+        DomainDescriptor dd = OntologyManager.getDomainDescriptor(oldURI, def.getContainer());
         if (null != dd)
         {
             dd = dd.edit()
@@ -3787,6 +3785,9 @@ public class StudyManager
                     .setName(def.getName()) // Name may have changed too; it's part of URI
                     .build();
             OntologyManager.updateDomainDescriptor(dd);
+
+            // since the descriptor has changed, ensure the domain is up to date
+            def.refreshDomain();
         }
     }
 

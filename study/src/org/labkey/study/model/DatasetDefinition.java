@@ -313,7 +313,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     //TODO this should probably be driven off the DomainKind to avoid code duplication
     public static boolean isDefaultFieldName(String fieldName, Study study)
     {
-        String subjectCol = StudyService.get().getSubjectColumnName(study.getContainer());
+        String subjectCol = study.getSubjectColumnName();
         if (subjectCol.equalsIgnoreCase(fieldName))
             return true;
 
@@ -374,31 +374,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             return _fileName;
         }
     }
-
-    /* consider
-        public String getFileName()
-    {
-        if (null != _fileName)
-            return _fileName;
-
-        String filename = "dataset" + new DecimalFormat("000").format(getDatasetId());
-        String name = getName();
-        if (!StringUtils.isEmpty(name))
-        {
-            name = StringUtils.capitalize(name.substring(0, 1)) + name.substring(1);
-            try
-            {
-                name = URLEncoder.encode(name, "UTF-8").replace('+', '_');
-            }
-            catch (UnsupportedEncodingException x)
-            {
-                / * * /
-            }
-            filename += "_" + name;
-        }
-        return filename + ".tsv";
-    }
-     */
 
     public void setFileName(String fileName)
     {
@@ -1597,6 +1572,14 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             default:
                 return null;
         }
+    }
+
+
+    public Domain refreshDomain()
+    {
+        this._domain = null;
+        this._domain = getDomain();
+        return this._domain;
     }
     
 
