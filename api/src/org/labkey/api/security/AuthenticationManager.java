@@ -24,7 +24,11 @@ import org.junit.Test;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.attachments.*;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentCache;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -47,7 +51,11 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.RedirectException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
@@ -61,7 +69,13 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -290,20 +304,20 @@ public class AuthenticationManager
 
     public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused, UserCreationError}
 
-    public static class AuthenticationResult
+    public static class PrimaryAuthenticationResult
     {
         private final User _user;
         private final AuthenticationStatus _status;
 
         // Success case
-        private AuthenticationResult(@NotNull User user)
+        private PrimaryAuthenticationResult(@NotNull User user)
         {
             _user = user;
             _status = AuthenticationStatus.Success;
         }
 
         // Failure case
-        private AuthenticationResult(@NotNull AuthenticationStatus status)
+        private PrimaryAuthenticationResult(@NotNull AuthenticationStatus status)
         {
             _user = null;
             _status = status;
@@ -341,15 +355,15 @@ public class AuthenticationManager
 
 
     public static @NotNull
-    AuthenticationResult authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
+    PrimaryAuthenticationResult authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
-        AuthenticationResult result = null;
+        PrimaryAuthenticationResult result = null;
         try
         {
             result = _beforeAuthenticate(request, id, password);
             if (null != result)
                 return result;
-            result = _authenticate(request, response,id,password,returnURL,logFailures);
+            result = _authenticate(request, response, id, password, returnURL, logFailures);
             return result;
         }
         finally
@@ -360,7 +374,7 @@ public class AuthenticationManager
 
 
     private static @NotNull
-    AuthenticationResult _authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
+    PrimaryAuthenticationResult _authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
         AuthenticationResponse firstFailure = null;
 
@@ -406,18 +420,18 @@ public class AuthenticationManager
                         ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, email.getEmailAddress(), true);
                         ExceptionUtil.logExceptionToMothership(request, e);
 
-                        return new AuthenticationResult(AuthenticationStatus.UserCreationError);
+                        return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationError);
                     }
 
                     if (!user.isActive())
                     {
                         addAuditEvent(user, request, "Inactive user " + user.getEmail() + " attempted to login");
-                        return new AuthenticationResult(AuthenticationStatus.InactiveUser);
+                        return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
                     }
 
                     _userProviders.put(user.getUserId(), authProvider);
                     addAuditEvent(user, request, email + " logged in successfully via " + authProvider.getName() + " authentication.");
-                    return new AuthenticationResult(user);
+                    return new PrimaryAuthenticationResult(user);
                 }
                 else
                 {
@@ -501,7 +515,7 @@ public class AuthenticationManager
                 throw new RedirectException(redirectURL);
         }
 
-        return new AuthenticationResult(AuthenticationStatus.BadCredentials);
+        return new PrimaryAuthenticationResult(AuthenticationStatus.BadCredentials);
     }
 
 
@@ -541,7 +555,7 @@ public class AuthenticationManager
     }
 
 
-    private static AuthenticationResult _beforeAuthenticate(HttpServletRequest request, String id, String pwd)
+    private static PrimaryAuthenticationResult _beforeAuthenticate(HttpServletRequest request, String id, String pwd)
     {
         if (null == id || null == pwd)
             return null;
@@ -560,14 +574,14 @@ public class AuthenticationManager
             delay = Math.max(delay, rl.add(0, false));
 
         if (delay > 15*1000)
-            return new AuthenticationResult(AuthenticationStatus.LoginPaused);
+            return new PrimaryAuthenticationResult(AuthenticationStatus.LoginPaused);
         if (delay > 0)
             try {Thread.sleep(delay);}catch(InterruptedException x){/* */}
         return null;
     }
 
 
-    private static void _afterAuthenticate(HttpServletRequest request, String id, String pwd, AuthenticationResult result)
+    private static void _afterAuthenticate(HttpServletRequest request, String id, String pwd, PrimaryAuthenticationResult result)
     {
         if (null == result || null == id || null ==pwd)
             return;
@@ -591,7 +605,7 @@ public class AuthenticationManager
     // Returns null if credentials are incorrect, user doesn't exist, or user is inactive
     public static User authenticate(HttpServletRequest request, String id, String password) throws InvalidEmailException
     {
-        AuthenticationResult result = authenticate(request, null, id, password, null, true);
+        PrimaryAuthenticationResult result = authenticate(request, null, id, password, null, true);
 
         return result.getUser();
     }
@@ -750,36 +764,152 @@ public class AuthenticationManager
     }
 
 
-    public static void setSecondaryAuthenticationSuccess(HttpServletRequest request, Class<? extends SecondaryAuthenticationProvider> clazz)
+    // This is like LoginForm... but doesn't contain any credentials
+    public static class LoginReturnProperties
     {
-        HttpSession session = request.getSession(true);
-        session.setAttribute(clazz.getName(), true);
+        private final URLHelper _returnUrl;
+        private final String _urlhash;
+        private final boolean _skipProfile;
+
+        public LoginReturnProperties(URLHelper returnUrl, String urlhash, boolean skipProfile)
+        {
+            _returnUrl = returnUrl;
+            _urlhash = urlhash;
+            _skipProfile = skipProfile;
+        }
+
+        public URLHelper getReturnUrl()
+        {
+            return _returnUrl;
+        }
+
+        public String getUrlhash()
+        {
+            return _urlhash;
+        }
+
+        public boolean isSkipProfile()
+        {
+            return _skipProfile;
+        }
     }
 
 
-    public static boolean getSecondaryAuthenticationSuccess(HttpServletRequest request, Class<? extends SecondaryAuthenticationProvider> clazz)
+    public static void setLoginReturnProperties(HttpServletRequest request, LoginReturnProperties properties)
     {
         HttpSession session = request.getSession(true);
-
-        return Boolean.TRUE.equals(session.getAttribute(clazz.getName()));
+        session.setAttribute(LoginReturnProperties.class.getName(), properties);
     }
 
 
-    public static void handleSecondaryAuthentication(User candidate, Container c, HttpServletRequest request, URLHelper afterLogin)
+    public static LoginReturnProperties getLoginReturnProperties(HttpServletRequest request)
     {
+        HttpSession session = request.getSession(true);
+        return (LoginReturnProperties)session.getAttribute(LoginReturnProperties.class.getName());
+    }
+
+
+    public static void setPrimaryAuthenticationUser(HttpServletRequest request, User user)
+    {
+        HttpSession session = request.getSession(true);
+        session.setAttribute(getSessionKey(AuthenticationProvider.class), user);
+    }
+
+
+    public static @Nullable User getPrimaryAuthenticationUser(HttpSession session)
+    {
+        return (User)session.getAttribute(getSessionKey(AuthenticationProvider.class));
+    }
+
+
+    public static void setSecondaryAuthenticationUser(HttpSession session, Class<? extends SecondaryAuthenticationProvider> clazz, User user)
+    {
+        session.setAttribute(getSessionKey(clazz), user);
+    }
+
+
+    public static @Nullable User getSecondaryAuthenticationUser(HttpSession session, Class<? extends SecondaryAuthenticationProvider> clazz)
+    {
+        return (User)session.getAttribute(getSessionKey(clazz));
+    }
+
+
+    private static String getSessionKey(Class<? extends AuthenticationProvider> clazz)
+    {
+        return clazz.getName() + "$User";
+    }
+
+
+    public static class AuthenticationResult
+    {
+        private final User _user;
+        private final URLHelper _redirectURL;
+
+        public AuthenticationResult(@Nullable User user, URLHelper redirectURL)
+        {
+            _user = user;
+            _redirectURL = redirectURL;
+        }
+
+        public AuthenticationResult(URLHelper redirectURL)
+        {
+            this(null, redirectURL);
+        }
+
+        public User getUser()
+        {
+            return _user;
+        }
+
+        public URLHelper getRedirectURL()
+        {
+            return _redirectURL;
+        }
+    }
+
+
+    public static AuthenticationResult handleAuthentication(HttpServletRequest request, Container c)
+    {
+        HttpSession session = request.getSession(true);
+
+        User primaryAuthUser = AuthenticationManager.getPrimaryAuthenticationUser(session);
+
+        if (null == primaryAuthUser)
+            return new AuthenticationResult(PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, null));
+
         for (SecondaryAuthenticationProvider provider : getActiveSecondaryProviders())
         {
-            if (!getSecondaryAuthenticationSuccess(request, provider.getClass()))
+            User secondaryAuthUser = getSecondaryAuthenticationUser(session, provider.getClass());
+
+            if (null == secondaryAuthUser)
             {
                 if (provider.bypass())
                 {
                     _log.info("Per configuration, bypassing secondary authentication for provider: " + provider.getClass());
-                    setSecondaryAuthenticationSuccess(request, provider.getClass());
+                    setSecondaryAuthenticationUser(session, provider.getClass(), primaryAuthUser);
                     continue;
                 }
-                throw new RedirectException(provider.getRedirectURL(candidate, c, afterLogin));
+
+                return new AuthenticationResult(provider.getRedirectURL(primaryAuthUser, c));
+            }
+
+            // Validate that secondary auth user matches primary auth user
+            if (!secondaryAuthUser.equals(primaryAuthUser))
+            {
+                throw new IllegalStateException("Wrong user");
             }
         }
+
+        LoginReturnProperties properties = AuthenticationManager.getLoginReturnProperties(request);
+
+        SecurityManager.setAuthenticatedUser(request, primaryAuthUser);
+
+        // TODO: Use LoginController.getAfterLoginURL() instead
+        URLHelper url = AppProps.getInstance().getHomePageActionURL();
+        if (null != properties && null != properties.getReturnUrl())
+            url = properties.getReturnUrl();
+
+        return new AuthenticationResult(primaryAuthUser, url);
     }
 
 
@@ -1048,7 +1178,7 @@ public class AuthenticationManager
             for (i=0 ; i<20 ; i++)
             {
                 remoteAddr[0] = "127.0.0.1" + (i%256);
-                AuthenticationResult r = AuthenticationManager.authenticate(req, res, "testA@localhost.test", "passwordA"+i, null, false);
+                PrimaryAuthenticationResult r = AuthenticationManager.authenticate(req, res, "testA@localhost.test", "passwordA"+i, null, false);
                 if (r.getStatus() == AuthenticationStatus.LoginPaused)
                     break;
             }
@@ -1062,7 +1192,7 @@ public class AuthenticationManager
             for (i=0 ; i<20 ; i++)
             {
                 remoteAddr[0] = "127.0.1.1" + (i%256);
-                AuthenticationResult r = AuthenticationManager.authenticate(req, res, "testB" + i + "@localhost.test", "passwordB", null, false);
+                PrimaryAuthenticationResult r = AuthenticationManager.authenticate(req, res, "testB" + i + "@localhost.test", "passwordB", null, false);
                 if (r.getStatus() == AuthenticationStatus.LoginPaused)
                     break;
             }
@@ -1076,7 +1206,7 @@ public class AuthenticationManager
             for (i=0 ; i<20 ; i++)
             {
                 remoteAddr[0] = "127.0.2.1";
-                AuthenticationResult r = AuthenticationManager.authenticate(req, res, "testC@localhost.test", "passwordC", null, false);
+                PrimaryAuthenticationResult r = AuthenticationManager.authenticate(req, res, "testC@localhost.test", "passwordC", null, false);
                 if (r.getStatus() == AuthenticationStatus.LoginPaused)
                     break;
             }

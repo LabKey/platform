@@ -40,7 +40,7 @@ public interface LoginUrls extends UrlProvider
     public ActionURL getInitialUserURL();
     public ActionURL getLoginURL();
     public ActionURL getLoginURL(URLHelper returnURL);
-    public ActionURL getLoginURL(Container c, URLHelper returnURL);
+    public ActionURL getLoginURL(Container c, @Nullable URLHelper returnURL);
     public ActionURL getLogoutURL(Container c);
     public ActionURL getLogoutURL(Container c, URLHelper returnURL);
     public ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL);

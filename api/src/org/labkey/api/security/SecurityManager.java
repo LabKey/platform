@@ -484,7 +484,7 @@ public class SecurityManager
 
     public static void setAuthenticatedUser(HttpServletRequest request, User user)
     {
-        SessionHelper.invalidateSession(request);      // Clear out terms-of-use and other session info that guest / previous user may have
+        SessionHelper.invalidateSession(request);      // Clear out terms-of-use, preliminary auth state, and other session info that guest / previous user may have
         if (!user.isGuest() && request instanceof AuthenticatedRequest)
             ((AuthenticatedRequest)request).convertToLoggedInSession();
 

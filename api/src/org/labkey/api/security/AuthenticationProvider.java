@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014 LabKey Corporation
+ * Copyright (c) 2007-2015 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public abstract interface AuthenticationProvider
          *  Initiate secondary authentication process for the specified user. candidate has been authenticated via one of the primary providers,
          *  but isn't officially authenticated until user successfully validates with all enabled SecondaryAuthenticationProviders as well.
          */
-        ActionURL getRedirectURL(User candidate, Container c, URLHelper returnURL);
+        ActionURL getRedirectURL(User candidate, Container c);
 
         /**
          * Bypass authentication from this provider. Might be configured via labkey.xml parameter to
