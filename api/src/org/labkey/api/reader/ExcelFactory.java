@@ -365,17 +365,27 @@ public class ExcelFactory
     /** Supports .xls (BIFF8 only), and .xlsx */
     public static JSONArray convertExcelToJSON(InputStream in, boolean extended) throws IOException, InvalidFormatException
     {
-        return convertExcelToJSON(WorkbookFactory.create(in), extended);
+        return convertExcelToJSON(WorkbookFactory.create(in), extended, -1);
     }
 
     /** Supports both new and old style .xls (BIFF5 and BIFF8), and .xlsx because we can reopen the stream if needed */
     public static JSONArray convertExcelToJSON(File excelFile, boolean extended) throws IOException, InvalidFormatException
     {
-        return convertExcelToJSON(ExcelFactory.create(excelFile), extended);
+        return convertExcelToJSON(ExcelFactory.create(excelFile), extended, -1);
+    }
+
+    public static JSONArray convertExcelToJSON(File excelFile, boolean extended, int maxRows) throws IOException, InvalidFormatException
+    {
+        return convertExcelToJSON(ExcelFactory.create(excelFile), extended, maxRows);
     }
 
     /** Supports .xls (BIFF8 only) and .xlsx */
     public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended) throws IOException
+    {
+        return convertExcelToJSON(workbook, extended, -1);
+    }
+
+    public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended, int maxRows) throws IOException
     {
         JSONArray result = new JSONArray();
 
@@ -387,6 +397,9 @@ public class ExcelFactory
             Sheet sheet = workbook.getSheetAt(sheetIndex);
             for (int rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++)
             {
+                if (maxRows > -1 && maxRows <= rowIndex)
+                    break;
+
                 Row row = sheet.getRow(rowIndex);
                 JSONArray rowArray = new JSONArray();
                 if (row != null)
