@@ -1147,6 +1147,13 @@ public class SimpleFilter implements Filter
         return this;
     }
 
+    public SimpleFilter addWhereClause(SQLFragment fragment, FieldKey... fieldKeys)
+    {
+        assert null == fragment.commonTableExpressionsMap || fragment.commonTableExpressionsMap.isEmpty() : "SQLClause does not support CTE";
+        _clauses.add(new SQLClause(fragment.getSQL(), fragment.getParamsArray(), fieldKeys));
+        return this;
+    }
+
     public SimpleFilter addInClause(FieldKey fieldKey, Collection paramVals)
     {
         _clauses.add(new InClause(fieldKey, paramVals));

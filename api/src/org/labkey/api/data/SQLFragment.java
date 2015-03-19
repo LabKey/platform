@@ -194,7 +194,7 @@ public class SQLFragment implements Appendable, CharSequence
     @NotNull
     public String toString()
     {
-        return "SQLFragment@" + System.identityHashCode(this) + JdbcUtil.format(this);
+        return "SQLFragment@" + System.identityHashCode(this) + "\n" + JdbcUtil.format(this);
     }
 
 
@@ -270,6 +270,14 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    public SQLFragment append(Container c)
+    {
+        append("?");
+        if (!c.getName().contains("*/"))
+            append("/* " + c.getName() + " */");
+        add(c.getId());
+        return this;
+    }
 
     public SQLFragment append(Object o)
     {
