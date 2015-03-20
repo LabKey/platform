@@ -1554,16 +1554,10 @@ public class ExperimentController extends SpringActionController
 
 
     @CSRF @RequiresNoPermission
-    public class ParseFileAction extends FormHandlerAction<ParseForm>
+    public class ParseFileAction extends ApiAction<ParseForm>
     {
         @Override
-        public void validateCommand(ParseForm target, Errors errors)
-        {
-
-        }
-
-        @Override
-        public boolean handlePost(ParseForm form, BindException errors) throws Exception
+        public Object execute(ParseForm form, BindException errors) throws Exception
         {
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
                 throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
@@ -1587,12 +1581,6 @@ public class ExperimentController extends SpringActionController
                     tempFile.delete();
             }
             return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(ParseForm parseForm)
-        {
-            return null;
         }
     }
 

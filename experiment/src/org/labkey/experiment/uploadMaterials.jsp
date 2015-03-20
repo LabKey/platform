@@ -109,17 +109,17 @@
     }
 %>
 
-<labkey:form onsubmit="return validateKey();" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="post" id="sampleSetUploadForm">
 <labkey:errors />
-    <p>If you have an existing sample set definition in the XAR file format (a .xar or .xar.xml file), you can
-        <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getContainer()) %>">upload the XAR file directly</a>
-        or place the file in this folder's pipeline directory and import using the
-        <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getActionURL()) %>">Data Pipeline</a>.
-    </p>
+<p>If you have an existing sample set definition in the XAR file format (a .xar or .xar.xml file), you can
+    <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getContainer()) %>">upload the XAR file directly</a>
+    or place the file in this folder's pipeline directory and import using the
+    <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getActionURL()) %>">Data Pipeline</a>.
+</p>
 
-    <table>
+<table>
+    <labkey:form onsubmit="return validateKey();" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="post" id="sampleSetUploadForm">
     <tr>
-        <td class="labkey-form-label">Name</td>
+        <td class="labkey-form-label" width="100">Name</td>
         <td>
             <% if (form.isImportMoreSamples() || form.getNameReadOnly()) {  %>
                 <input type="hidden" name="importMoreSamples" value="<%=h(form.isImportMoreSamples())%>"/>
@@ -149,6 +149,13 @@
         </tr>
     <% } %>
     <tr>
+        <td class="labkey-form-label">Upload Type</td>
+        <td>
+            <input type="radio" name="uploadType" value="paste" checked="checked" onchange="disableFileUpload()">Cut/Paste
+            <input type="radio" name="uploadType" value="file" onchange="enableFileUpload()">File
+        </td>
+    </tr>
+    <tr id="sampleSetData">
         <td class="labkey-form-label">Sample Set Data</td>
         <td>
             Sample set uploads must formatted as tab separated values (TSV).<br>
@@ -239,12 +246,19 @@
             <%= button("Submit").submit(true) %>
             <%= button("Clear").onClick("javascript:clearValues()") %></td>
     </tr>
-
+    <input type="hidden" name="tsvData" value=""/>
+    </labkey:form>
+    <tr>
+        <td/>
+        <td>
+            <form id="upload-run-form" enctype="multipart/form-data" method="POST">
+                <div id="upload-run-button"></div>
+                <input id="upload-run-csrf" type="hidden" name="X-LABKEY-CSRF"/>
+            </form>
+        </td>
+    </tr>
 </table>
-<input type="hidden" name="tsvData" value=""/>
-<input type="hidden" name="rowId" value=""/>
 <div style="display:none" id="uploading">Please wait while data is uploaded.</div>
-</labkey:form>
 <script type="text/javascript">
 var fields = [];
 var header = [];
@@ -309,6 +323,29 @@ function updateIds(txt)
         header = fields[0];
     }
 
+    getNameColIndex();
+    updateIdSelects();
+}
+
+function updateIdsWithData(data)
+{
+    header = [];
+    fields = [];
+    if (data.length >= 2) // why?
+    {
+        for (var i = 0; i < data.length; i++)
+        {
+            fields[i] = data[i];
+        }
+        header = fields[0];
+    }
+
+    getNameColIndex();
+    updateIdSelects();
+}
+
+function getNameColIndex()
+{
     nameColIndex = -1;
     for (var i = 0; i < header.length; i++)
     {
@@ -318,7 +355,10 @@ function updateIds(txt)
             break;
         }
     }
+}
 
+function updateIdSelects()
+{
     updateIdSelect(document.getElementById("idCol1"), header, false);
     updateIdSelect(document.getElementById("idCol2"), header, true);
     updateIdSelect(document.getElementById("idCol3"), header, true);
@@ -335,11 +375,11 @@ function clearValues()
 function validateKey()
 {
     var name = document.getElementById("name").value;
-    if (!(name != null && name.trim().length > 0))
-    {
-        alert("Name is required");
-        return false;
-    }
+//    if (!(name != null && name.trim().length > 0))
+//    {
+//        alert("Name is required");
+//        return false;
+//    }
 
     <% if (form.isImportMoreSamples()) { %>
         var insertOnlyChoice = document.getElementById("insertOnlyChoice");
@@ -477,81 +517,63 @@ function validateKey()
     return true;
 }
 updateIds(document.getElementById("textbox").value);
-
 </script>
-<form id="upload-run-form" enctype="multipart/form-data" method="POST">
-    <div id="upload-run-button"></div>
-</form>
-<form id="delete-run-form" enctype="multipart/form-data" method="POST">
-    <input type="hidden" name="singleObjectRowId" value=""/>
-    <input type="hidden" name="forceDelete" value="true"/>
-</form>
 <script type="text/javascript">
-    // Optional - specify a protocolId so that the Exp.Data object is assigned the related LSID namespace.
-    var url = LABKEY.ActionURL.buildURL("assay", "assayFileUpload", LABKEY.ActionURL.getContainer());
-
-    var deleteExpData = function(rowId) {
-        var url = LABKEY.ActionURL.buildURL("experiment", "deleteSelectedData", LABKEY.ActionURL.getContainer());
-        // NOTE: should be a cleaner way to slame this value in the form object.
-        document.forms['delete-run-form'].elements['singleObjectRowId'].value = rowId;
-        // TODO: is there a good way to ignore the response (e.g. don't care and don't fetch)
-        var form = new Ext.form.BasicForm( Ext.get("delete-run-form"), {url: url});
-        form.submit();
-    };
+    var url = LABKEY.ActionURL.buildURL("experiment", "parseFile", LABKEY.ActionURL.getContainer());
+    document.getElementById("upload-run-csrf").value = LABKEY.CSRF;
 
     Ext.onReady(function() {
-        var form = new Ext.form.BasicForm( Ext.get("upload-run-form"), {
-            fileUpload: true,
-            frame: false,
-            url: url,
-            listeners: {
-                actioncomplete : function (form, action) {
-                    var data = new LABKEY.Exp.Data(action.result);
-
-                    data.getContent({
-                        scope : this,
-                        deleteFile: true,
-                        //format : 'jsonTSV',
-                        success : function(content, format){
-
-                            // update the fields (needs to happen first because it sets the fields variable)
-                            updateIds(content.trim());
-
-                            // put data back into tsv format (as right now it's comma seperated)
-                            var textData = document.forms['sampleSetUploadForm'].elements['data'].value;
-                            if (textData == "" && fields != null)
-                            {
-                                for (var i = 0; i < fields.length; i++)
-                                    textData += fields[i].join("\t") + "\n";
-
-                                document.forms['sampleSetUploadForm'].elements['tsvData'].value = textData;
-                                document.forms['sampleSetUploadForm'].elements['rowId'].value = data.rowId;
-                            }
-                        },
-                        failure : function(){
-
-                        }
-                    });
-
-                    deleteExpData(data.rowId);
-                },
-                actionfailed: function (form, action) {
-                    alert('Upload failed!');
-                }
-            }
-        });
-
-        var uploadField = new Ext.form.FileUploadField({
+        new Ext.form.FileUploadField({
             id: "upload-run-field",
+            name: "file",
             renderTo: "upload-run-button",
             buttonText: "Upload Sample Set TSV File...",
             buttonOnly: true,
-            buttonCfg: { cls: "labkey-button" },
+            disabled: true,
+            buttonCfg: {cls: "labkey-button"},
             listeners: {
-                "fileselected": function (fb, v) {
-                    form.submit();
+                "fileselected": function (fb, v)
+                {
+                    var form = document.forms['upload-run-form'];
+                    var request = new XMLHttpRequest();
+                    request.open("POST", url);
+                    request.onload = function (oEvent)
+                    {
+                        var response = Ext.decode(request.responseText);
+                        console.log(response);
+
+                        if (response && response['sheets'])
+                        {
+                            var data = Ext.decode(request.responseText)['sheets'][0]['data'];
+                            updateIdsWithData(data);
+
+                            // issue 22851
+                            alert("Successfully parsed " + (data.length - 1).toString() + " rows from the data file.");
+
+                            // convert data back into the tsv format (which is expected by this action)
+                            var textData = "";
+                            for (var i = 0; i < fields.length; i++)
+                                textData += fields[i].join("\t") + "\n";
+
+                            document.forms['sampleSetUploadForm'].elements['tsvData'].value = textData;
+                        }
+                        // else error
+                    };
+                    request.send(new FormData(form));
                 }
             }
         });
     });
+
+    function disableFileUpload()
+    {
+        document.getElementById('sampleSetData').style.display = 'table-row';
+        Ext.getCmp("upload-run-field").disable();
+    }
+
+    function enableFileUpload()
+    {
+        document.getElementById('sampleSetData').style.display = 'none';
+        Ext.getCmp("upload-run-field").enable();
+    }
 </script>
