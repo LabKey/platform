@@ -215,6 +215,8 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
 
     private BoundProperty getBoundProperty(String key)
     {
+        if (null == key)
+            return null;
         BoundProperty bound = _properties.get(key);
         if (null == bound && Character.isUpperCase(key.charAt(0)))
             bound = _properties.get(convertToPropertyName(key));
