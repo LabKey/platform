@@ -61,8 +61,6 @@
                 _display(_tours[_queue[_next]], 0);
                 _next++;
             }
-            else
-                resetRegistration();
         };
 
         var _autoShowFromDb = function (id, step)
@@ -96,10 +94,6 @@
                 {
                     // 22390: Hopscotch doesn't actually end the tours until after this call
                     setTimeout(_autoRun, 1);
-                });
-                hopscotch.listen("close", function ()
-                {
-                    resetRegistration();
                 });
                 if (LABKEY.Utils.isString(step))
                     step = parseInt(step);
@@ -267,7 +261,11 @@
                     _continue.id = config.id;
                     _continue.step = step;
                 }
-                _tours[config.id] = config;
+
+                if (!_tours.hasOwnProperty(config.id))
+                {
+                    _tours[config.id] = config;
+                }
             }
         };
 
