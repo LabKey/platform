@@ -682,6 +682,7 @@ public class LoginController extends SpringActionController
             {
                 Project project = getTermsOfUseProject(form);
 
+
                 // Display the terms of use if this is the terms-of-use page or user hasn't already approved them. #4684
                 if (agreeOnly || !SecurityManager.isTermsOfUseApproved(getViewContext(), project))
                 {
@@ -726,7 +727,7 @@ public class LoginController extends SpringActionController
 
         URLHelper returnURL = form.getReturnURLHelper(null);
 
-        if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.SITE_WIDE)
+        if ((null != form.getTermsOfUseType()) && (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.SITE_WIDE))
         {
             return null;
         }
