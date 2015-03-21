@@ -2190,6 +2190,7 @@ study/src/org/labkey/study/importer/StudyImportFinalTask.java -text
 study/src/org/labkey/study/importer/StudyImportInitialTask.java -text
 study/src/org/labkey/study/importer/StudyImportJob.java -text
 study/src/org/labkey/study/importer/StudyImportProvider.java -text
+study/src/org/labkey/study/importer/StudyImporter.java -text
 study/src/org/labkey/study/importer/StudyImporterFactory.java -text
 study/src/org/labkey/study/importer/StudyJobSupport.java -text
 study/src/org/labkey/study/importer/StudyPropertiesImporter.java -text

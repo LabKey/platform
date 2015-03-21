@@ -136,117 +136,110 @@ public class ReportViewProvider implements DataViewProvider
 
         List<DataViewInfo> views = new ArrayList<>();
 
-        try
+        for (Report r : ReportUtil.getReports(c, user, reportKey, true))
         {
-            for (Report r : ReportUtil.getReports(c, user, reportKey, true))
+            if (!filter.accept(r, c, user))
+                continue;
+
+            if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
             {
-                if (!filter.accept(r, c, user))
-                    continue;
+                ReportDescriptor descriptor = r.getDescriptor();
 
-                if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
+                User createdBy = UserManager.getUser(descriptor.getCreatedBy());
+                User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
+                Object authorId = ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, "author");
+
+                User author = authorId != null ? UserManager.getUser(((Double)authorId).intValue()) : null;
+                boolean inherited = descriptor.isInherited(c);
+
+                DefaultViewInfo info = new DefaultViewInfo(TYPE, descriptor.getEntityId(), descriptor.getReportName(), descriptor.lookupContainer());
+
+                String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
+                String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
+
+                info.setSchemaName(schema);
+                info.setQueryName(query);
+
+                if (descriptor.getCategory() != null)
+                    info.setCategory(descriptor.getCategory());
+                else
+                    info.setCategory(ReportUtil.getDefaultCategory(c, schema, query));
+
+                info.setCreatedBy(createdBy);
+                info.setReportId(descriptor.getReportId().toString());
+                info.setCreated(descriptor.getCreated());
+                info.setModifiedBy(modifiedBy);
+                info.setAuthor(author);
+                info.setModified(descriptor.getModified());
+                info.setContentModified(descriptor.getContentModified());
+
+                /**
+                 * shared reports are only available if there is a query/schema available in the container that matches
+                 * the view's descriptor. Normally, the check happens automatically when you get reports using a non-blank key, but when
+                 * you request all reports for a container you have to do an explicit check to make sure there is a valid query
+                 * available in the container.
+                 */
+                if (!inherited || !StringUtils.isBlank(reportKey))
                 {
-                    ReportDescriptor descriptor = r.getDescriptor();
+                    ActionURL runUrl = r.getRunReportURL(context);
+                    ActionURL detailsUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlReportDetails(c, r);
 
-                    User createdBy = UserManager.getUser(descriptor.getCreatedBy());
-                    User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
-                    Object authorId = ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, "author");
-
-                    User author = authorId != null ? UserManager.getUser(((Double)authorId).intValue()) : null;
-                    boolean inherited = descriptor.isInherited(c);
-
-                    DefaultViewInfo info = new DefaultViewInfo(TYPE, descriptor.getEntityId(), descriptor.getReportName(), descriptor.lookupContainer());
-
-                    String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
-                    String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
-
-                    info.setSchemaName(schema);
-                    info.setQueryName(query);
-
-                    if (descriptor.getCategory() != null)
-                        info.setCategory(descriptor.getCategory());
-                    else
-                        info.setCategory(ReportUtil.getDefaultCategory(c, schema, query));
-
-                    info.setCreatedBy(createdBy);
-                    info.setReportId(descriptor.getReportId().toString());
-                    info.setCreated(descriptor.getCreated());
-                    info.setModifiedBy(modifiedBy);
-                    info.setAuthor(author);
-                    info.setModified(descriptor.getModified());
-                    info.setContentModified(descriptor.getContentModified());
-
-                    /**
-                     * shared reports are only available if there is a query/schema available in the container that matches
-                     * the view's descriptor. Normally, the check happens automatically when you get reports using a non-blank key, but when
-                     * you request all reports for a container you have to do an explicit check to make sure there is a valid query
-                     * available in the container.
-                     */
-                    if (!inherited || !StringUtils.isBlank(reportKey))
-                    {
-                        ActionURL runUrl = r.getRunReportURL(context);
-                        ActionURL detailsUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlReportDetails(c, r);
-
-                        info.setRunUrl(runUrl);
-                        info.setDetailsUrl(detailsUrl);
-                    }
-                    else
-                    {
-                        ActionURL runUrl = r.getRunReportURL(context);
-
-                        if (ReportUtil.queryExists(user, c, schema, query))
-                            info.setRunUrl(runUrl);
-                        else
-                            continue;
-                    }
-
-                    info.setRunTarget(r.getRunReportTarget());
-
-                    info.setType(r.getTypeDescription());
-                    info.setDescription(descriptor.getReportDescription());
-                    info.setReadOnly(!r.canEdit(user, c));
-
-                    String access = descriptor.getAccess();
-                    info.setShared(ReportDescriptor.REPORT_ACCESS_PUBLIC.equals(access));
-
-                    // studies support dataset level report permissions
-                    if (studyFolder)
-                    {
-                        ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getManageReportPermissions(c).
-                                                        addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
-
-                        URLHelper returnUrl = context.getActionURL().getReturnURL();
-                        if (returnUrl != null)
-                            url.addReturnURL(returnUrl);
-
-                        info.setAccess(access, url);
-                    }
-                    else
-                        info.setAccess(access);
-
-                    info.setVisible(!descriptor.isHidden());
-
-                    // if a report doesn't have the 'showInDashboard' property set then default to true so that
-                    // reports that used to be shown are still shown.
-                    String showInDashboard = descriptor.getProperty(ReportDescriptor.Prop.showInDashboard);
-                    info.setShowInDashboard(showInDashboard == null || Boolean.valueOf(showInDashboard));
-
-                    // This is the small icon
-                    info.setIconUrl(ReportUtil.getIconUrl(c, r));
-                    // This is the thumbnail
-                    info.setAllowCustomThumbnail(true);
-                    info.setThumbnailUrl(ReportUtil.getThumbnailUrl(c, r));
-
-                    info.setTags(ReportPropsManager.get().getProperties(descriptor.getEntityId(), c));
-
-                    views.add(info);
+                    info.setRunUrl(runUrl);
+                    info.setDetailsUrl(detailsUrl);
                 }
+                else
+                {
+                    ActionURL runUrl = r.getRunReportURL(context);
+
+                    if (ReportUtil.queryExists(user, c, schema, query))
+                        info.setRunUrl(runUrl);
+                    else
+                        continue;
+                }
+
+                info.setRunTarget(r.getRunReportTarget());
+
+                info.setType(r.getTypeDescription());
+                info.setDescription(descriptor.getReportDescription());
+                info.setReadOnly(!r.canEdit(user, c));
+
+                String access = descriptor.getAccess();
+                info.setShared(ReportDescriptor.REPORT_ACCESS_PUBLIC.equals(access));
+
+                // studies support dataset level report permissions
+                if (studyFolder)
+                {
+                    ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getManageReportPermissions(c).
+                                                    addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
+
+                    URLHelper returnUrl = context.getActionURL().getReturnURL();
+                    if (returnUrl != null)
+                        url.addReturnURL(returnUrl);
+
+                    info.setAccess(access, url);
+                }
+                else
+                    info.setAccess(access);
+
+                info.setVisible(!descriptor.isHidden());
+
+                // if a report doesn't have the 'showInDashboard' property set then default to true so that
+                // reports that used to be shown are still shown.
+                String showInDashboard = descriptor.getProperty(ReportDescriptor.Prop.showInDashboard);
+                info.setShowInDashboard(showInDashboard == null || Boolean.valueOf(showInDashboard));
+
+                // This is the small icon
+                info.setIconUrl(ReportUtil.getIconUrl(c, r));
+                // This is the thumbnail
+                info.setAllowCustomThumbnail(true);
+                info.setThumbnailUrl(ReportUtil.getThumbnailUrl(c, r));
+
+                info.setTags(ReportPropsManager.get().getProperties(descriptor.getEntityId(), c));
+
+                views.add(info);
             }
-            return views;
         }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        return views;
     }
 
     @Override

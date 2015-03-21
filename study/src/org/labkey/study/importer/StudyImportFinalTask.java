@@ -96,7 +96,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             }
 
             // the registered study importers only need to be called in the Import Study case (not for Import Folder)
-            if (job != null && job instanceof StudyImportJob)
+            if (job != null && (job instanceof StudyImporter))
             {
                 Collection<FolderImporter> externalStudyImporters = StudySerializationRegistryImpl.get().getRegisteredStudyImporters();
                 for (FolderImporter importer : externalStudyImporters)

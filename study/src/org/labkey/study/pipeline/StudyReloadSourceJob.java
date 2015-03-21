@@ -27,6 +27,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.importer.StudyImportContext;
+import org.labkey.study.importer.StudyImporter;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
@@ -38,7 +39,7 @@ import java.sql.SQLException;
 /**
  * Created by klum on 2/9/2015.
  */
-public class StudyReloadSourceJob extends StudyBatch implements Serializable, StudyReloadSourceJobSupport
+public class StudyReloadSourceJob extends StudyBatch implements Serializable, StudyReloadSourceJobSupport, StudyImporter
 {
     private final StudyImportContext _ctx;
     private final VirtualFile _root;

@@ -43,7 +43,7 @@ import java.io.File;
  * Date: May 14, 2009
  * Time: 9:39:39 AM
  */
-public class StudyImportJob extends PipelineJob implements StudyJobSupport
+public class StudyImportJob extends PipelineJob implements StudyJobSupport, StudyImporter
 {
     private static final transient Logger LOG = Logger.getLogger(StudyImportJob.class);
 
