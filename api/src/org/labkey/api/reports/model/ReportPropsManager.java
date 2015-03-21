@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -35,6 +36,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.reportProps.PropDefDocument;
 import org.labkey.data.xml.reportProps.PropValueDocument;
 import org.labkey.data.xml.reportProps.PropertyDocument;
@@ -183,9 +185,20 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
     private Domain getDomain(Container container)
     {
         String uri = getDomainURI(container);
-        DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(uri, PROPERTIES_DOMAIN, container);
-
-        return PropertyService.get().getDomain(dd.getDomainId());
+        try
+        {
+            DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(uri, PROPERTIES_DOMAIN, container);
+            return PropertyService.get().getDomain(dd.getDomainId());
+        }
+        catch (RuntimeSQLException e)
+        {
+            if (ContainerManager.getForRowId(container.getRowId()) == null)
+            {
+                // Hack to avoid treating this as a real error if the container has been deleted already. See issue 22788
+                throw new NotFoundException("Container " + container.getPath() + " has been deleted");
+            }
+            throw e;
+        }
     }
 
     private String getDomainURI(@NotNull Container container)
@@ -221,7 +234,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
         }
     }
 
-    public List<Pair<DomainProperty, Object>> getProperties(String entityId, Container container) throws Exception
+    public List<Pair<DomainProperty, Object>> getProperties(String entityId, Container container)
     {
         List<Pair<DomainProperty, Object>> properties = new ArrayList<>();
 
