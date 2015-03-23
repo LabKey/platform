@@ -3661,7 +3661,7 @@ public class SpecimenImporter
 
         info("Remapping lookup indexes in temp table...");
         if (DEBUG)
-            info(remapExternalIdsSql.toString());
+            info(remapExternalIdsSql.toDebugString());
         executeSQL(schema, remapExternalIdsSql);
         info("Update complete.");
     }
@@ -3677,7 +3677,7 @@ public class SpecimenImporter
             visitValueSql.append(StudyManager.sequenceNumFromDateSQL("DrawTimestamp"));
             visitValueSql.append(");");
             if (DEBUG)
-                info(visitValueSql.toString());
+                info(visitValueSql.toDebugString());
             executeSQL(schema, visitValueSql);
             info("Update complete.");
         }
@@ -3864,7 +3864,7 @@ public class SpecimenImporter
 
         info("Updating specimen hash values in temp table...");
         if (DEBUG)
-            info(updateHashSql.toString());
+            info(updateHashSql.toDebugString());
         executeSQL(schema, updateHashSql);
         info("Update complete.");
         info("Temp table populated.");
