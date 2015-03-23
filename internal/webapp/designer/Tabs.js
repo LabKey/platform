@@ -64,32 +64,23 @@ Ext4.define('LABKEY.ext4.designer.BaseTab', {
     save : function (edited, urlParameters) {
         var store = this.getList().getStore();
 
-        // HACK: I'm most likely abusing the JsonWriter APIs which could break in future versions of Ext.
         var writer = Ext4.create('Ext.data.writer.Json', {
             encode: false,
-            writeAllFields: true,
-            listful: true,
-            meta: store.reader.meta,
-            recordType: store.recordType
+            writeAllFields: true
         });
 
-        var saveRecords = [], urlRecords = [];
+        var root = store.getProxy().getReader().root;
+        edited[root] = [];
+        urlParameters[root] = [];
+
         store.each(function (r) {
             if (r.data.urlParameter) {
-                urlRecords.push(r);
+                urlParameters[root].push(writer.getRecordData(r, {action: 'create'}));
             }
             else {
-                saveRecords.push(r);
+                edited[root].push(writer.getRecordData(r, {action: 'create'}));
             }
         });
-
-        var o = {};
-        writer.apply(o, null, "create", saveRecords);
-        Ext4.applyIf(edited, o.jsonData);
-
-        o = {};
-        writer.apply(o, null, "create", urlRecords);
-        Ext4.applyIf(urlParameters, o.jsonData);
     },
 
     hasField : Ext4.emptyFn,
@@ -220,6 +211,40 @@ Ext4.define('LABKEY.ext4.designer.BaseTab', {
             //    treeNode.getUI().toggleCheck(false);
             //}
         }
+    },
+
+    addDataViewDragDop : function(view, groupName) {
+        new Ext4.view.DragZone({
+            view: view,
+            ddGroup: groupName,
+            dragText: 'Reorder selected'
+        });
+
+        new Ext4.view.DropZone({
+            view: view,
+            ddGroup: groupName,
+            handleNodeDrop : function(data, record, position) {
+                var store = data.view.getStore();
+                if (data.copy)
+                {
+                    var records = data.records;
+                    data.records = [];
+                    for (var i = 0; i < records.length; i++) {
+                        data.records.push(records[i].copy(records[i].getId()));
+                    }
+                }
+                else {
+                    data.view.store.remove(data.records, data.view === view);
+                }
+
+                var index = store.indexOf(record);
+                if (position !== 'before') {
+                    index++;
+                }
+                store.insert(index, data.records);
+                view.getSelectionModel().select(data.records);
+            }
+        });
     }
 
 });
@@ -267,15 +292,13 @@ Ext4.define('LABKEY.ext4.designer.ColumnsTab', {
                     continue;
                 }
 
-                // TODO: this won't work, no recordType
-                //this.aggregateStore.add(new this.aggregateStore.recordType(agg));
+                this.aggregateStore.add(agg);
             }
         }
 
         var aggregateStore = this.aggregateStore;
 
         config = Ext4.applyIf({
-            //title: "Columns",
             cls: "test-columns-tab",
             layout: "fit",
             items: [{
@@ -292,66 +315,71 @@ Ext4.define('LABKEY.ext4.designer.ColumnsTab', {
                     xtype: "dataview",
                     itemId: "columnsList",
                     cls: "labkey-customview-list",
-                    // TODO plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
                     flex: 1,
                     store: this.columnStore,
                     emptyText: "No fields selected",
                     deferEmptyText: false,
-                    multiSelect: true,
+                    multiSelect: false,
                     height: 240,
                     autoScroll: true,
                     overItemCls: "x4-view-over",
                     itemSelector: ".labkey-customview-item",
                     tpl: new Ext4.XTemplate(
-                            '<tpl for=".">',
-                            '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-columns-item" fieldKey="{fieldKey:htmlEncode}">',
-                            '  <tr>',
-                            '    <td class="labkey-grab"></td>',
-                            '    <td><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
-                            '    <td><div class="item-aggregate">{[this.getAggegateCaption(values)]}</div></td>',
-                            '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-gear" title="Edit"></div></td>',
-                            '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
-                            '  </tr>',
-                            '</table>',
-                            '</tpl>',
-                            {
-                                getFieldCaption : function (values) {
-                                    if (values.title) {
-                                        return Ext4.util.Format.htmlEncode(values.title);
-                                    }
-
-                                    var fieldKey = values.fieldKey;
-                                    var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
-                                    if (fieldMeta)
-                                    {
-                                        // caption is already htmlEncoded
-                                        if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
-                                            return fieldMeta.data.caption;
-                                        }
-                                        return Ext4.util.Format.htmlEncode(fieldMeta.data.name);
-                                    }
-                                    return Ext4.util.Format.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
-                                },
-
-                                getAggegateCaption : function (values) {
-                                    var fieldKey = values.fieldKey;
-                                    var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
-                                    var labels = [];
-                                    aggregateStore.each(function(rec){
-                                        if (rec.get('fieldKey') == fieldKey) {
-                                            labels.push(rec.get('type'));
-                                        }
-                                    }, this);
-                                    labels = Ext4.Array.unique(labels);
-
-                                    if (labels.length) {
-                                        return Ext4.util.Format.htmlEncode(labels.join(','));
-                                    }
-
-                                    return "";
+                        '<tpl for=".">',
+                        '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-columns-item" fieldKey="{fieldKey:htmlEncode}">',
+                        '  <tr>',
+                        '    <td class="labkey-grab"></td>',
+                        '    <td><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
+                        '    <td><div class="item-aggregate">{[this.getAggegateCaption(values)]}</div></td>',
+                        '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-gear" title="Edit"></div></td>',
+                        '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
+                        '  </tr>',
+                        '</table>',
+                        '</tpl>',
+                        {
+                            getFieldCaption : function (values) {
+                                if (values.title) {
+                                    return Ext4.util.Format.htmlEncode(values.title);
                                 }
+
+                                var fieldKey = values.fieldKey;
+                                var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
+                                if (fieldMeta)
+                                {
+                                    // caption is already htmlEncoded
+                                    if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
+                                        return fieldMeta.data.caption;
+                                    }
+                                    return Ext4.util.Format.htmlEncode(fieldMeta.data.name);
+                                }
+                                return Ext4.util.Format.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
+                            },
+
+                            getAggegateCaption : function (values) {
+                                var fieldKey = values.fieldKey;
+                                var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
+                                var labels = [];
+                                aggregateStore.each(function(rec){
+                                    if (rec.get('fieldKey') == fieldKey) {
+                                        labels.push(rec.get('type'));
+                                    }
+                                }, this);
+                                labels = Ext4.Array.unique(labels);
+
+                                if (labels.length) {
+                                    return Ext4.util.Format.htmlEncode(labels.join(','));
+                                }
+
+                                return "";
                             }
-                    )
+                        }
+                    ),
+                    listeners: {
+                        scope: this,
+                        render: function(view) {
+                            this.addDataViewDragDop(view, 'columnsTabView');
+                        }
+                    }
                 }]
             }]
         }, config);
@@ -390,9 +418,11 @@ Ext4.define('LABKEY.ext4.designer.ColumnsTab', {
             var aggregateStore = this.aggregateStore;
             var columnsList = this.getList();
 
-            var aggregateOptionStore = Ext4.create('Ext.data.Store', {
-                fields: [{name: 'name'}, {name: 'value'}]
-            });
+            var aggregateOptions = [];
+            aggregateOptions.push({value: "", name: "[None]"});
+            Ext4.each(LABKEY.Query.getAggregatesForType(metadataRecord.get('jsonType')), function(key){
+                aggregateOptions.push({value: key.toUpperCase(), name: key.toUpperCase()});
+            }, this);
 
             var win = Ext4.create('Ext.window.Window', {
                 title: "Edit column properties",
@@ -424,11 +454,6 @@ Ext4.define('LABKEY.ext4.designer.ColumnsTab', {
                         xtype: 'grid',
                         width: 340,
                         store: aggregateStoreCopy,
-                        //viewConfig: {
-                        //    scrollOffset: 1,
-                        //    rowOverCls: 'x4-item-selected'
-                        //},
-                        //autoExpandColumn: 'label',
                         selType: 'rowmodel',
                         plugins: [
                             Ext4.create('Ext.grid.plugin.CellEditing', {
@@ -441,7 +466,10 @@ Ext4.define('LABKEY.ext4.designer.ColumnsTab', {
                                 name: "aggregate",
                                 displayField: 'name',
                                 valueField: 'value',
-                                store: aggregateOptionStore,
+                                store: Ext4.create('Ext.data.Store', {
+                                    fields: [{name: 'name'}, {name: 'value'}],
+                                    data: aggregateOptions
+                                }),
                                 mode: 'local',
                                 editable: false
                             }
@@ -501,11 +529,7 @@ Ext4.define('LABKEY.ext4.designer.ColumnsTab', {
                         }
 
                         //remove existing records matching this field
-                        aggregateStore.each(function(rec) {
-                            if (rec.get('fieldKey') == fieldKey) {
-                                aggregateStore.remove(rec);
-                            }
-                        }, this);
+                        aggregateStore.removeAll();
 
                         //then add to store
                         aggregateStoreCopy.each(function(rec){
@@ -543,12 +567,6 @@ Ext4.define('LABKEY.ext4.designer.ColumnsTab', {
                                 type: rec.get('type')
                             });
                         }
-                    }, this);
-
-                    aggregateOptionStore.removeAll();
-                    aggregateOptionStore.add({value: "", name: "[None]"});
-                    Ext4.each(LABKEY.Query.getAggregatesForType(metadataRecord.get('jsonType')), function(key){
-                        aggregateOptionStore.add({value: key.toUpperCase(), name: key.toUpperCase()});
                     }, this);
 
                     //columnsList
@@ -709,7 +727,6 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
                     itemId: "filterList",
                     cls: "labkey-customview-list",
                     flex: 1,
-                    // TODO plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
                     store: this.filterStore,
                     emptyText: "No filters added",
                     deferEmptyText: false,
@@ -719,48 +736,54 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
                     overItemCls: "x4-view-over",
                     itemSelector: '.labkey-customview-item',
                     tpl: new Ext4.XTemplate(
-                            '<tpl for=".">',
-                            '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-filter-item" fieldKey="{fieldKey:htmlEncode}">',
-                            '  <tr>',
-                            '    <td rowspan="{[values.items.length+2]}" class="labkey-grab" width="8px">&nbsp;</td>',
-                            '    <td colspan="3"><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
-                            '  </tr>',
-                            '  <tpl for="items">',
-                            '  <tr clauseIndex="{[xindex-1]}">',
-                            '    <td>',
-                            '      <div class="item-op"></div>',
-                            '      <div class="item-value"></div>',
-                            '    </td>',
-                            '    <td width="21px" valign="top"><div class="item-paperclip"></div></td>',
-                            '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-close" title="Remove filter clause"></div></td>',
-                            '  </tr>',
-                            '  </tpl>',
-                            '  <tr>',
-                            '    <td colspan="3">',
-                            '      <span style="float:right;">',
-                            // NOTE: The click event for the 'Add' text link is handled in onListBeforeClick.
-                            LABKEY.Utils.textLink({text: "Add", onClick: "return false;", add: true}),
-                            '      </span>',
-                            '    </td>',
-                            '  </tr>',
-                            '</table>',
-                            '</tpl>',
-                            {
-                                getFieldCaption : function (values) {
-                                    var fieldKey = values.fieldKey;
-                                    var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
-                                    if (fieldMeta)
-                                    {
-                                        // caption is already htmlEncoded
-                                        if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
-                                            return fieldMeta.data.caption;
-                                        }
-                                        return Ext4.util.Format.htmlEncode(fieldMeta.data.name);
+                        '<tpl for=".">',
+                        '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-filter-item" fieldKey="{fieldKey:htmlEncode}">',
+                        '  <tr>',
+                        '    <td rowspan="{[values.items.length+2]}" class="labkey-grab" width="8px">&nbsp;</td>',
+                        '    <td colspan="3"><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
+                        '  </tr>',
+                        '  <tpl for="items">',
+                        '  <tr clauseIndex="{[xindex-1]}">',
+                        '    <td>',
+                        '      <div class="item-op"></div>',
+                        '      <div class="item-value"></div>',
+                        '    </td>',
+                        '    <td width="21px" valign="top"><div class="item-paperclip"></div></td>',
+                        '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-close" title="Remove filter clause"></div></td>',
+                        '  </tr>',
+                        '  </tpl>',
+                        '  <tr>',
+                        '    <td colspan="3">',
+                        '      <span style="float:right;">',
+                        // NOTE: The click event for the 'Add' text link is handled in onListBeforeClick.
+                        LABKEY.Utils.textLink({text: "Add", onClick: "return false;", add: true}),
+                        '      </span>',
+                        '    </td>',
+                        '  </tr>',
+                        '</table>',
+                        '</tpl>',
+                        {
+                            getFieldCaption : function (values) {
+                                var fieldKey = values.fieldKey;
+                                var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
+                                if (fieldMeta)
+                                {
+                                    // caption is already htmlEncoded
+                                    if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
+                                        return fieldMeta.data.caption;
                                     }
-                                    return Ext4.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error'>(not found)</span>";
+                                    return Ext4.util.Format.htmlEncode(fieldMeta.data.name);
                                 }
+                                return Ext4.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error'>(not found)</span>";
                             }
+                        }
                     ),
+                    listeners: {
+                        scope: this,
+                        render: function(view) {
+                            this.addDataViewDragDop(view, 'columnsTabView');
+                        }
+                    },
                     items: [{
                         xtype: 'labkey-filterOpCombo',
                         cls: 'test-item-op',
@@ -1149,8 +1172,10 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
             }
         }
 
-        edited[this.filterStore.root] = saveData;
-        urlParameters[this.filterStore.root] = urlData;
+        var root = this.filterStore.getProxy().getReader().root;
+
+        edited[root] = saveData;
+        urlParameters[root] = urlData;
     }
 });
 
@@ -1207,7 +1232,6 @@ Ext4.define('LABKEY.ext4.designer.SortTab', {
                     xtype: "dataview", // TODO compdataview
                     flex: 1,
                     store: this.sortStore,
-                    // TODO plugins: [ new Ext.ux.dd.GridDragDropRowOrder() ],
                     emptyText: "No sorts added",
                     deferEmptyText: false,
                     multiSelect: true,
@@ -1216,35 +1240,41 @@ Ext4.define('LABKEY.ext4.designer.SortTab', {
                     overItemCls: "x4-view-over",
                     itemSelector: '.labkey-customview-item',
                     tpl: new Ext4.XTemplate(
-                            '<tpl for=".">',
-                            '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-sort-item" fieldKey="{fieldKey:htmlEncode}">',
-                            '  <tr>',
-                            '    <td rowspan="2" class="labkey-grab"></td>',
-                            '    <td colspan="3"><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
-                            '  </tr>',
-                            '  <tr>',
-                            '    <td><div class="item-dir"></div></td>',
-                            '    <td width="21px" valign="top"><div class="item-paperclip"></div></td>',
-                            '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove sort"></span></td>',
-                            '  </tr>',
-                            '</table>',
-                            '</tpl>',
-                            {
-                                getFieldCaption : function (values) {
-                                    var fieldKey = values.fieldKey;
-                                    var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
-                                    if (fieldMeta)
-                                    {
-                                        // caption is already htmlEncoded
-                                        if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
-                                            return fieldMeta.data.caption;
-                                        }
-                                        return Ext4.util.Format.htmlEncode(fieldMeta.data.name);
+                        '<tpl for=".">',
+                        '<table width="100%" cellpadding=0 cellspacing=0 class="labkey-customview-item labkey-customview-sort-item" fieldKey="{fieldKey:htmlEncode}">',
+                        '  <tr>',
+                        '    <td rowspan="2" class="labkey-grab"></td>',
+                        '    <td colspan="3"><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
+                        '  </tr>',
+                        '  <tr>',
+                        '    <td><div class="item-dir"></div></td>',
+                        '    <td width="21px" valign="top"><div class="item-paperclip"></div></td>',
+                        '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove sort"></span></td>',
+                        '  </tr>',
+                        '</table>',
+                        '</tpl>',
+                        {
+                            getFieldCaption : function (values) {
+                                var fieldKey = values.fieldKey;
+                                var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
+                                if (fieldMeta)
+                                {
+                                    // caption is already htmlEncoded
+                                    if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
+                                        return fieldMeta.data.caption;
                                     }
-                                    return Ext4.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error'>(not found)</span>";
+                                    return Ext4.util.Format.htmlEncode(fieldMeta.data.name);
                                 }
+                                return Ext4.util.Format.htmlEncode(values.fieldKey) + " <span class='labkey-error'>(not found)</span>";
                             }
+                        }
                     ),
+                    listeners: {
+                        scope: this,
+                        render: function(view) {
+                            this.addDataViewDragDop(view, 'columnsTabView');
+                        }
+                    },
                     items: [{
                         xtype: 'combo',
                         cls: 'test-item-op',
