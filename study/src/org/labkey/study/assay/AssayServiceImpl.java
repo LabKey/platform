@@ -54,6 +54,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.assay.DetectionMethodAssayProvider;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
 import org.labkey.api.study.permissions.DesignAssayPermission;
@@ -218,6 +219,14 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 result.setMetadataInputFormatHelp(sbHelp.toString());
             }
             result.setSelectedMetadataInputFormat(((PlateBasedAssayProvider)provider).getMetadataInputFormat(protocol).name());
+        }
+        if (provider instanceof DetectionMethodAssayProvider)
+        {
+            DetectionMethodAssayProvider dmProvider = (DetectionMethodAssayProvider)provider;
+            String method = dmProvider.getSelectedDetectionMethod(getContainer(), protocol);
+            if (method != null)
+                result.setSelectedDetectionMethod(method);
+            result.setAvailableDetectionMethods(dmProvider.getAvailableDetectionMethods());
         }
 
         List<File> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE);
@@ -418,7 +427,20 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                             transformScripts.add(new File(script));
                         }
                     }
+
+                    if (provider instanceof DetectionMethodAssayProvider && assay.getSelectedDetectionMethod() != null)
+                    {
+                        DetectionMethodAssayProvider dmProvider = (DetectionMethodAssayProvider)provider;
+                        String detectionMethod = assay.getSelectedDetectionMethod();
+                        if (detectionMethod != null)
+                            dmProvider.setSelectedDetectionMethod(getContainer(), protocol, detectionMethod);
+                        else
+                            throw new AssayException("The selected detection method could not be found.");
+                    }
+
                     provider.setValidationAndAnalysisScripts(protocol, transformScripts);
+//
+//                    provider.setDetectionMethods(protocol, assay.getAvailableDetectionMethods());
 
                     provider.setSaveScriptFiles(protocol, assay.isSaveScriptFiles());
                     provider.setEditableResults(protocol, assay.isEditableResults());
