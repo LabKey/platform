@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractForeignKey;
@@ -33,6 +34,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -596,36 +598,45 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             return super.getFromSQL(alias);
 
         String innerAlias = "__" +  alias;
-        SQLFragment sqlf;
+        SqlDialect d = getSchema().getSqlDialect();
+        SQLFragment sqlf = new SQLFragment();
+        sqlf.appendComment("<DatasetTableImpl>", d);
 
         if (!includeParticipantVisit)
         {
-            sqlf = new SQLFragment("(SELECT * FROM ");
+            sqlf.append("(SELECT * FROM ");
             sqlf.append(super.getFromSQL(innerAlias));
         }
         else
         {
             TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-            sqlf = new SQLFragment();
             sqlf.append("(SELECT " + innerAlias + ".*, PV.VisitRowId");
             if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
                 sqlf.append(", PV.Day");
             SQLFragment from = getRealTable().getFromSQL(innerAlias);
-            sqlf.append("\nFROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
-                    " ON " + innerAlias + ".ParticipantId=PV.ParticipantId AND " + innerAlias + ".SequenceNum=PV.SequenceNum AND PV.Container =  " + innerAlias + ".Container");
+            sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
+                    "    ON " + innerAlias + ".ParticipantId=PV.ParticipantId AND " + innerAlias + ".SequenceNum=PV.SequenceNum AND PV.Container =  " + innerAlias + ".Container");
         }
 
         // Datasets mostly ignore container filters because they usually belong to a single container.
         // In the dataspace case, they are unfiltered (no container filter).
         // We actually need to handle the container filter in the "dataset with shared data" case
-        if (((DatasetDefinition)getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
+        if (!getContainer().isProject() && _dsd.isShared())
         {
             TableInfo tiParticipant = _userSchema.getDbSchema().getTable("Participant");
             ColumnInfo ciContainer = tiParticipant.getColumn("Container");
             ContainerFilter cf = getContainerFilter();
-            SimpleFilter.FilterClause f = super.getContainerFilterClause(cf,ciContainer.getFieldKey());
-            SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(),ciContainer), getSchema().getSqlDialect());
-            sqlf.append(" WHERE " + innerAlias + ".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
+            SimpleFilter.FilterClause f = super.getContainerFilterClause(cf, ciContainer.getFieldKey());
+            SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
+            if (((DatasetDefinition) getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
+                sqlf.append(" WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
+            else
+            {
+                // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
+                if (!StringUtils.startsWithIgnoreCase(sqlCF.getSQL(),"container"))
+                    throw new IllegalStateException("problem generating dataset SQL");
+                sqlf.append(" WHERE ").append(innerAlias).append(".").append(sqlCF);
+            }
         }
 
         sqlf.append(") AS ").append(alias);
@@ -643,6 +654,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 sqlf.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
             }
         }
+        sqlf.appendComment("</DatasetTableImpl>", d);
         return sqlf;
     }
 

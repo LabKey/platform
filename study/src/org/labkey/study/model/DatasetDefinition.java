@@ -1384,9 +1384,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         @NotNull
         public SQLFragment getFromSQL(String alias)
         {
+            SqlDialect d = getSqlDialect();
             if (null == _storage)
             {
-                SqlDialect d = getSqlDialect();
                 SQLFragment from = new SQLFragment();
                 from.appendComment("<DatasetDefinition: " + getName() + ">", d); // UNDONE stash name
                 String comma = " ";
@@ -1404,14 +1404,18 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             boolean addContainerFilter = (isShared() && !_multiContainer) || getDataSharingEnum() != DataSharing.NONE;
             if (addContainerFilter)
             {
-                SQLFragment ret = new SQLFragment("(SELECT * FROM ");
+                SQLFragment ret = new SQLFragment();
+                ret.appendComment("<DatasetDefinition: " + getName() + (getDataSharingEnum() != DataSharing.NONE ? " sharing=" + getDataSharingEnum().name() : "") + ">", d);
+                ret.append("(SELECT * FROM ");
                 ret.append(_storage.getFromSQL("_"));
-                ret.append(" WHERE container=?) ");
+                ret.append(" WHERE container="); //?) ");
                 if (getDataSharingEnum() == DataSharing.NONE)
-                    ret.add(getContainer());
+                    ret.append(getContainer());
                 else
-                    ret.add(getDefinitionContainer());
+                    ret.append(getDefinitionContainer());
+                ret.append(")");
                 ret.append(alias);
+                ret.appendComment("</DatasetDefinition>", d);
                 return ret;
             }
             else
@@ -1913,6 +1917,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             ColumnInfo keyColumn = null == keyColumnName ? null : table.getColumn(keyColumnName);
             ColumnInfo lsidColumn = table.getColumn("lsid");
             ColumnInfo seqnumColumn = table.getColumn("sequenceNum");
+            ColumnInfo containerColumn = table.getColumn("container");
 
             if (null == input && null != builder)
                 input = builder.getDataIterator(context);
@@ -1936,7 +1941,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 {
                     inputColumn.setPropertyURI(match.getPropertyURI());
 
-                    if (match == lsidColumn || match==seqnumColumn)
+                    if (match == lsidColumn || match==seqnumColumn || match==containerColumn)
                         continue;
 
                     if (match == keyColumn && isManagedKey && !allowImportManagedKey)
@@ -2100,7 +2105,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             int indexLSID = it.addLSID();
 
 
+            //
             // QCSTATE
+            //
 
             if (needsQC)
             {
@@ -2620,7 +2627,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     /** @return the LSID prefix to be used for this dataset's rows */
     public String getURNPrefix()
     {
-        return "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + getContainer().getRowId() + ":" + getDatasetId() + ".";
+        Container c = getContainer();
+        if (isShared() && getDataSharingEnum() == DataSharing.PTID)
+            c = getDefinitionContainer();
+        return "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + c.getRowId() + ":" + getDatasetId() + ".";
     }
 
 

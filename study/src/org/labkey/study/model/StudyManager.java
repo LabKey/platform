@@ -715,6 +715,16 @@ public class StudyManager
             // Check if the extra key field has changed
             boolean isProvisioned = domain != null && domain.getStorageTableName() != null;
             boolean isKeyChanged = old.isDemographicData() != datasetDefinition.isDemographicData() || !StringUtils.equals(old.getKeyPropertyName(), datasetDefinition.getKeyPropertyName());
+            boolean isSharedChanged = old.getDataSharingEnum() != datasetDefinition.getDataSharingEnum();
+            if (isProvisioned && isSharedChanged)
+            {
+                // let's not change the shared setting if there are existing rows
+                if (new TableSelector(datasetDefinition.getStorageTableInfo()).exists())
+                {
+                    errors.add("Can't change data sharing setting if there are existing data rows.");
+                    return false;
+                }
+            }
             if (isProvisioned && isKeyChanged)
             {
                 TableInfo storageTableInfo = datasetDefinition.getStorageTableInfo();
@@ -759,6 +769,7 @@ public class StudyManager
                         errors.add("Can not change dataset type to demographic");
                     else
                         errors.add("Changing the dataset key would result in a duplicate keys");
+                    transaction.close();
                     return false;
                 }
             }
@@ -4479,7 +4490,7 @@ public class StudyManager
         Study sharedStudy = getStudy(p);
         if (null == sharedStudy)
             return null;
-        if (!sharedStudy.isDataspaceStudy())
+        if (!sharedStudy.getShareDatasetDefinitions())
             return null;
         return sharedStudy;
     }

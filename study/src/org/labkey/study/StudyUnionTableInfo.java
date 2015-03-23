@@ -165,8 +165,15 @@ public class StudyUnionTableInfo extends VirtualTable
             sqlf.append(" FROM " + ti.getSelectName() + " D");
             if (def.isShared() && !_crossContainer)
             {
-                sqlf.append(" WHERE container=?");
-                sqlf.add(def.getContainer());
+                if (def.getDataSharingEnum() == DatasetDefinition.DataSharing.NONE)
+                {
+                    sqlf.append(" WHERE container=").append(def.getContainer());
+                }
+                else
+                {
+                    sqlf.append(" WHERE container=").append(def.getContainer().getProject()).append(" AND ");
+                    sqlf.append(" participantid IN (select participantid from study.participant where container=").append(def.getContainer()).append(")");
+                }
             }
             unionAll = ") UNION ALL\n(";
         }

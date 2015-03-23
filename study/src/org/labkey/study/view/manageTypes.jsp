@@ -38,6 +38,7 @@
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -155,7 +156,7 @@
         boolean isShared = def.isShared();
     %><tr>
         <td align=right><a href="<%=h(details)%>"><%=def.getDatasetId()%></a></td>
-        <td><a href="<%=h(details)%>"><%= h(def.getName()) %><%=text(isShared?" (shared)":"")%></a></td>
+        <td><a href="<%=h(details)%>"><%= h(def.getName()) %><%=text(!isShared?"":((DatasetDefinition)def).getDataSharingEnum()== DatasetDefinition.DataSharing.PTID?" (shared data)":" (shared)")%></a></td>
         <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%=h(details)%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
         <td><%=h(viewCategory != null ? viewCategory.getLabel() : null) %>&nbsp;</td>
         <td><%=h(def.getType())%>&nbsp;</td>

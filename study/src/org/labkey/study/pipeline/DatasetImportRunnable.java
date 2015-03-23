@@ -204,18 +204,6 @@ public class DatasetImportRunnable implements Runnable
                         _job.info(msg);
                         assert cpuCommit.stop();
                     }
-
-                    for (String err : errors)
-                        _job.error(_tsvName + " -- " + err);
-
-                    if (_deleteAfterImport)
-                    {
-                        boolean success = _root.delete(_tsvName);
-                        if (success)
-                            _job.info("Deleted file " + _tsvName);
-                        else
-                            _job.error("Could not delete file " + _tsvName);
-                    }
                     assert cpuImport.stop();
                 }
             }
@@ -226,6 +214,18 @@ public class DatasetImportRunnable implements Runnable
         }
         finally
         {
+            for (String err : errors)
+                _job.error(_tsvName + " -- " + err);
+
+            if (_deleteAfterImport)
+            {
+                boolean success = _root.delete(_tsvName);
+                if (success)
+                    _job.info("Deleted file " + _tsvName);
+                else
+                    _job.error("Could not delete file " + _tsvName);
+            }
+
             if (loader != null)
                 loader.close();
 

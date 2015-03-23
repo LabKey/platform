@@ -230,7 +230,7 @@ public abstract class VisitManager
 
                 visitRowId = rows.getInt(2);
                 if (rows.wasNull())
-                    continue;
+                    visitRowId = -1;
 
                 if (null == key || key.datasetId != datasetId || key.visitRowId != visitRowId)
                 {
@@ -576,6 +576,8 @@ public abstract class VisitManager
         String union = "";
         for (DatasetDefinition d : defs)
         {
+            if (d.getDataSharingEnum()== DatasetDefinition.DataSharing.PTID)
+                continue;
             TableInfo sti = null;
             try
             {

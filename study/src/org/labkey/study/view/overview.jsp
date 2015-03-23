@@ -249,16 +249,22 @@
         %></td>
         <td style="font-weight:bold;" align="center" nowrap="true"><%
             VisitStatistics all = new VisitStatistics();
+            VisitStatistics stats;
 
             for (VisitImpl visit : visits)
             {
                 key.visitRowId = visit.getRowId();
-                VisitStatistics stats = bean.visitMapSummary.get(key);
+                stats = bean.visitMapSummary.get(key);
 
                 if (null != stats)
                     for (VisitStatistic stat : VisitStatistic.values())
                         all.add(stat, stats.get(stat));
             }
+            key.visitRowId = -1; // demographic?
+            stats = bean.visitMapSummary.get(key);
+            if (null != stats)
+                for (VisitStatistic stat : VisitStatistic.values())
+                    all.add(stat, stats.get(stat));
 
             String innerHtml = "";
 
@@ -295,7 +301,7 @@
                     continue;
 
                 key.visitRowId = visit.getRowId();
-                VisitStatistics stats = bean.visitMapSummary.get(key);
+                stats = bean.visitMapSummary.get(key);
                 Boolean b = requiredMap.get(key);
                 boolean isRequired = b == Boolean.TRUE;
                 boolean isOptional = b == Boolean.FALSE;
