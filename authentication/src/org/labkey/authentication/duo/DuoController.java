@@ -32,6 +32,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -79,7 +80,7 @@ public class DuoController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("configDuo");
+            setHelpTopic("Configure Duo 2-Factor");
             PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure Duo 2 Factor Authentication");
             return root;
         }
@@ -240,6 +241,8 @@ public class DuoController extends SpringActionController
                 return HttpView.redirect(getAfterLoginURL(form.getReturnURLHelper(), form.getUrlhash(), getUser()));
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setIncludeLoginLink(false);
+            getPageConfig().setHelpTopic(new HelpTopic("Duo 2-Factor"));
             return new JspView<>("/org/labkey/authentication/duo/duoEntry.jsp", form, errors);
         }
 
@@ -343,6 +346,7 @@ public class DuoController extends SpringActionController
         public ModelAndView getView(TestSecondaryForm form, boolean reshow, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setIncludeLoginLink(false);
             return new JspView<>("/org/labkey/authentication/test/testSecondary.jsp", null, errors);
         }
 
