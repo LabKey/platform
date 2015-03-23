@@ -488,6 +488,40 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             table.setWidget(row++, 1, picker);
         }
 
+        if (assay.getAvailableDetectionMethods() != null)
+        {
+            table.setHTML(row, 0, "Detection Methods");
+            final ListBox templateList = new ListBox();
+            int selectedIndex = -1;
+            for (int i = 0; i < assay.getAvailableDetectionMethods().size(); i++)
+            {
+                String current = assay.getAvailableDetectionMethods().get(i);
+                templateList.addItem(current);
+                if (current.equals(assay.getSelectedDetectionMethod()))
+                    selectedIndex = i;
+            }
+            if (selectedIndex >= 0)
+                templateList.setSelectedIndex(selectedIndex);
+            if (templateList.getItemCount() > 0)
+                assay.setSelectedDetectionMethod(templateList.getValue(templateList.getSelectedIndex()));
+            templateList.addChangeHandler(new ChangeHandler()
+            {
+                public void onChange(ChangeEvent event)
+                {
+                    assay.setSelectedDetectionMethod(templateList.getValue(templateList.getSelectedIndex()));
+                    setDirty(true);
+                }
+            });
+
+            DOM.setElementAttribute(templateList.getElement(), "id", "detectionMethod");
+            HorizontalPanel picker = new HorizontalPanel();
+            picker.add(templateList);
+            picker.setVerticalAlignment(ALIGN_BOTTOM);
+
+            table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
+            table.setWidget(row++, 1, picker);
+        }
+
         if (!assay.getAvailableMetadataInputFormats().isEmpty())
         {
             // file based metadata

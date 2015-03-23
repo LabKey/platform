@@ -54,6 +54,10 @@ public class GWTProtocol implements IsSerializable
     private List<String> _moduleTransformScripts = new ArrayList<String>();
     /** Scripts defined in the assay definition */
     private List<String> _protocolTransformScripts = new ArrayList<String>();
+
+    private List<String> _availableDetectionMethods;
+    private String _selectedDetectionMethod;
+
     private boolean _allowTransformationScript;
     private GWTContainer _autoCopyTargetContainer;
     private boolean _saveScriptFiles;
@@ -178,6 +182,26 @@ public class GWTProtocol implements IsSerializable
         {
             _protocolTransformScripts.add(script.trim());
         }
+    }
+
+    public List<String> getAvailableDetectionMethods()
+    {
+        return _availableDetectionMethods;
+    }
+
+    public void setAvailableDetectionMethods(List<String> availableDetectionMethods)
+    {
+        _availableDetectionMethods = availableDetectionMethods;
+    }
+
+    public String getSelectedDetectionMethod()
+    {
+        return _selectedDetectionMethod;
+    }
+
+    public void setSelectedDetectionMethod(String detectionMethod)
+    {
+        _selectedDetectionMethod = detectionMethod;
     }
 
     public GWTContainer getAutoCopyTargetContainer()
