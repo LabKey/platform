@@ -270,12 +270,17 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-    public SQLFragment append(Container c)
+    public SQLFragment append(@NotNull Container c)
     {
-        append("?");
-        if (!c.getName().contains("*/"))
-            append("/* " + c.getName() + " */");
-        add(c.getId());
+        String id = c.getId();
+        String name = c.getName();
+
+        if (StringUtils.containsAny(id,"*/'\"?"))
+            throw new IllegalStateException();
+
+        append("'").append(id).append("'");
+        if (!StringUtils.containsAny(name,"*/'\"?"))
+            append("/* ").append(c.getName()).append(" */");
         return this;
     }
 

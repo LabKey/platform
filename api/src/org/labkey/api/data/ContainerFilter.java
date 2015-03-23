@@ -168,7 +168,7 @@ public abstract class ContainerFilter
             if (null == first)
                 return new SQLFragment("1 = 0");
             if (!first.hasWorkbookChildren())
-                return new SQLFragment(containerColumnSQL).append("=").append("'").append(first.getId()).append("'");
+                return new SQLFragment(containerColumnSQL).append("=").append(first);
         }
 
         // Revert to in-lining values if there are lots of values, so as not to blow the total JDBC parameter limit

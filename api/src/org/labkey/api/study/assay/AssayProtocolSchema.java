@@ -56,6 +56,7 @@ import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -555,10 +556,18 @@ public abstract class AssayProtocolSchema extends AssaySchema
         result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerPath, qd.getName(), getProvider().getDeclaringModule()));
 
         // Also look using label, if different
-        if (!qd.getName().equals(qd.getTitle()))
+        // TODO qd.getTitle() calls getTable() which can cause QueryParseException, can we avoid the getTable() call?
+        try
         {
-            Path providerLabelPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getTitle()));
-            result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerLabelPath, qd.getTitle()));
+            if (!qd.getName().equals(qd.getTitle()))
+            {
+                Path providerLabelPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getTitle()));
+                result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerLabelPath, qd.getTitle()));
+            }
+        }
+        catch (QueryParseException qpe)
+        {
+            // move along, nothing to see here...
         }
 
         // Look in the legacy location in file-based modules (assay.<PROTOCOL_NAME> Batches, etc)
