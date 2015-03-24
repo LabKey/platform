@@ -23,7 +23,7 @@ import java.util.Set;
  */
 public class AuthenticationProviderConfigAuditTypeProvider extends AbstractAuditTypeProvider
 {
-    private static final String EVENT_TYPE = "AuthenticatoinProviderConfiguration";
+    private static final String EVENT_TYPE = "AuthenticationProviderConfiguration";
     private static final String COLUMN_NAME_CHANGES = "Changes";
 
     static final List<FieldKey> DEFAULT_VISIBLE_COLUMNS = new ArrayList<>();
