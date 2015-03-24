@@ -1243,6 +1243,7 @@ api/src/org/labkey/api/security/AuthenticatedRequest.java -text
 api/src/org/labkey/api/security/AuthenticatedResponse.java -text
 api/src/org/labkey/api/security/AuthenticationManager.java -text
 api/src/org/labkey/api/security/AuthenticationProvider.java -text
+api/src/org/labkey/api/security/AuthenticationProviderConfigAuditTypeProvider.java -text
 api/src/org/labkey/api/security/BCrypt.java -text
 api/src/org/labkey/api/security/CSRF.java -text
 api/src/org/labkey/api/security/ContextualRoles.java -text

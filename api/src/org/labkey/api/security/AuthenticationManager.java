@@ -185,7 +185,7 @@ public class AuthenticationManager
     }
 
 
-    public static void enableProvider(String name)
+    public static void enableProvider(String name, User user)
     {
         AuthenticationProvider provider = getProvider(name);
         try
@@ -199,18 +199,27 @@ public class AuthenticationManager
         _activeProviders.add(provider);
 
         saveActiveProviders();
+        addProviderAuditEvent(user, name, "enabled");
     }
 
 
-    public static void disableProvider(String name) throws Exception
+    public static void disableProvider(String name, User user) throws Exception
     {
         AuthenticationProvider provider = getProvider(name);
         provider.deactivate();
         _activeProviders.remove(provider);
 
         saveActiveProviders();
+        addProviderAuditEvent(user, name, "disabled");
     }
 
+    private static void addProviderAuditEvent(User user, String name,  String action)
+    {
+        AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent event = new AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent(
+                ContainerManager.getRoot().getId(), new StringBuilder(name).append(" provider was ").append(action).toString());
+        event.setChanges(action);
+        AuditLogService.get().addEvent(user, event);
+    }
 
     private static AuthenticationProvider getProvider(String name)
     {
