@@ -1403,13 +1403,13 @@ img.labkey-grid-filter-icon
     font-size: 11px;
     font-weight: bold;
     padding: 6px  !important;
-    color: #555;
+    color: #555555;
 }
 
 .labkey-customview-activetab {
     background-color: #FFFFFF;
     border-radius: 5px 0 0 5px;
-    border-color: #ccc;
+    border-color: #B4B4B4;
     border-style: solid;
     border-width: 1px 0 1px 1px;
 }
@@ -1417,6 +1417,15 @@ img.labkey-grid-filter-icon
 .labkey-customview-message {
     background-color: #FFDF8C;
     padding: 2px !important;
+}
+
+.labkey-customview-save .x4-form-item-label,
+.labkey-customview-save .x4-form-cb-label {
+    margin-top: 5px;
+}
+
+.labkey-customview-centerpanel .x4-toolbar-footer .x4-btn {
+    margin: 5px;
 }
 
 /** Ext.ux.dd.GridDragDropRowOrder.js */
