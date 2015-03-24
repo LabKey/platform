@@ -59,7 +59,9 @@ public class StudySharedVisitsTest extends BaseWebDriverTest
 
         // Create a study with shared visits
         clickButton("Create Study");
+        click(Locator.radioButtonByNameAndValue("shareDatasets", "true"));
         click(Locator.radioButtonByNameAndValue("shareVisits", "true"));
+
         // TODO: do we want to test shared datasets as well?
         clickButton("Create Study");
 
