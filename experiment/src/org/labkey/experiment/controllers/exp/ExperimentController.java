@@ -1580,11 +1580,12 @@ public class ExperimentController extends SpringActionController
                 if (null != tempFile)
                     tempFile.delete();
             }
-            return true;
+            return null;
         }
     }
 
 
+    // SampleSetTest
     private void streamToJSON(File realContent, String format, int maxRow) throws IOException
     {
         String lowerCaseFileName = realContent.getName().toLowerCase();
