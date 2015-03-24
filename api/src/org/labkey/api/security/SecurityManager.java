@@ -2047,24 +2047,24 @@ public class SecurityManager
             return false;
 
         TermsOfUse termsOfUse = getTermsOfUse(project);
-        boolean required = true;
-        if (termsOfUse != null && termsOfUse.getType() == TermsOfUseType.SITE_WIDE)
+        boolean required;
+        if (termsOfUse != null)
         {
-            if (isTermsOfUseApproved(ctx, null))  // see if we've approved the site-wide terms
-            {
-                // if we don't require project-level and have approved site-wide level, not required to ask again,
-                // but we don't cache for the project in case we set a project-level
-                required = false;
+            switch (termsOfUse.getType()) {
+                case SITE_WIDE:
+                    // if we don't require project-level and have approved site-wide level, not required to ask again,
+                    // but we don't cache for the project in case we set project-level terms later
+                    required = !isTermsOfUseApproved(ctx, null);
+                    break;
+                case PROJECT_LEVEL: // we already checked if the project-level terms were approved, so we know that they are required ehre
+                    required = true;
+                    break;
+                default:
+                    required = false;
             }
         }
         else
-        {
-            required = (termsOfUse != null) && (termsOfUse.getType() == TermsOfUseType.PROJECT_LEVEL);
-            //stash result so that this is faster next time.
-            if (!required)
-                setTermsOfUseApproved(ctx, project, true);
-        }
-
+            required = false; // termsOfUse will be null only during startup
 
         return required;
     }
@@ -2135,9 +2135,14 @@ public class SecurityManager
                 session.setAttribute(TERMS_APPROVED_KEY, termsApproved);
             }
             if (approved)
+            {
                 termsApproved.add(project);
+            }
             else
+            {
                 termsApproved.remove(project);
+            }
+
         }
     }
 
