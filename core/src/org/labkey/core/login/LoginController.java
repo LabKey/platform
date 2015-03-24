@@ -366,11 +366,18 @@ public class LoginController extends SpringActionController
         {
             Project termsProject = getTermsOfUseProject(form);
 
-            if (null != termsProject)
+            if (!isTermsOfUseApproved(form))
             {
-                if (!isTermsOfUseApproved(form))
+                if (!form.isApprovedTermsOfUse())
                 {
-                    errors.reject(ERROR_MSG, "To use the " + termsProject.getName() + " project, you must log in and approve the terms of use.");
+                    if (null != termsProject)
+                    {
+                        errors.reject(ERROR_MSG, "To use the " + termsProject.getName() + " project, you must check the box to approve the terms of use.");
+                    }
+                    else
+                    {
+                        errors.reject(ERROR_MSG, "To use this site, you must check the box to approve the terms of use.");
+                    }
                     return false;
                 }
             }
@@ -437,21 +444,18 @@ public class LoginController extends SpringActionController
             // TODO: check during upgrade?
             Project termsProject = getTermsOfUseProject(form);
 
-            if (null != termsProject)
+            if (!isTermsOfUseApproved(form))
             {
-                if (!isTermsOfUseApproved(form))
+                if (!form.isApprovedTermsOfUse())
                 {
-                    if (!form.isApprovedTermsOfUse())
+                    // Determine if the user is already logged in
+                    if (!getUser().isGuest())
                     {
-                        // Determine if the user is already logged in
-                        if (!getUser().isGuest())
-                        {
-                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must approve the terms of use.");
-                        }
-                        else
-                        {
-                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must log in and approve the terms of use.");
-                        }
+                        errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must approve the terms of use.");
+                    }
+                    else
+                    {
+                        errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must log in and approve the terms of use.");
                     }
                 }
             }
@@ -687,7 +691,7 @@ public class LoginController extends SpringActionController
                 if (agreeOnly || !SecurityManager.isTermsOfUseApproved(getViewContext(), project))
                 {
                     SecurityManager.TermsOfUse terms = SecurityManager.getTermsOfUse(project);
-                    if (terms != null)
+                    if (terms != null && terms.getType() != SecurityManager.TermsOfUseType.NONE)
                     {
                         this.form.setTermsOfUseType(terms.getType());
                         termsOfUseHTML = terms.getHtml();
