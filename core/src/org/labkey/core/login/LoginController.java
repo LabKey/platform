@@ -345,15 +345,16 @@ public class LoginController extends SpringActionController
             }
             else
             {
-                URLHelper returnURL = form.getReturnURLHelper();
-                LoginReturnProperties properties = (null == returnURL ? AuthenticationManager.getLoginReturnProperties(request) : new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile()));
-
                 // Reset authentication state. If, for example, user hits back button in the midst of two-factor auth
                 // workflow then start over.
-                SessionHelper.invalidateSession(request);
+                SessionHelper.clearSession(request, PageFlowUtil.set(AuthenticationManager.getLoginReturnPropertiesSessionKey()));   // Preserve login return properties, if they exist
 
-                if (null != properties)
+                URLHelper returnURL = form.getReturnURLHelper();
+
+                // Replace LoginReturnProperties if we have a returnURL
+                if (null != returnURL)
                 {
+                    LoginReturnProperties properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
                     AuthenticationManager.setLoginReturnProperties(request, properties);
                 }
             }
