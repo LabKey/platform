@@ -8,7 +8,7 @@ Ext4.define('LABKEY.ext4.designer.FilterOpCombo', {
 
     extend: 'Ext.form.field.ComboBox',
 
-    alias: 'labkey-filterOpCombo',
+    alias: 'widget.labkey-filterOpCombo',
 
     constructor : function (config) {
         this.fieldMetaStore = config.fieldMetaStore;
@@ -108,7 +108,7 @@ Ext4.define('LABKEY.ext4.designer.FilterTextValue', {
 
     extend: 'Ext.form.field.Text',
 
-    alias: 'labkey-filterValue',
+    alias: 'widget.labkey-filterValue',
 
     onMouseDown : function (e) {
         // XXX: work around annoying focus bug for Fields in DataView.
@@ -147,7 +147,7 @@ Ext4.define('LABKEY.ext4.designer.PaperclipButton', {
 
     extend: 'Ext.button.Button',
 
-    alias: 'paperclip-button',
+    alias: 'widget.paperclip-button',
 
     iconCls: 'labkey-paperclip',
     iconAlign: 'top',

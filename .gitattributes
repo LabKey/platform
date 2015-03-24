@@ -7703,6 +7703,7 @@ internal/webapp/dropzone-3.8.4/css/basic.css -text
 internal/webapp/dropzone-3.8.4/dropzone.js -text
 internal/webapp/extWidgets/DetailsPanel.js -text
 internal/webapp/extWidgets/ExcelUploadPanel.js -text
+internal/webapp/extWidgets/Ext4ComponentDataView.js -text
 internal/webapp/extWidgets/Ext4DefaultFilterPanel.js -text
 internal/webapp/extWidgets/Ext4DetailsPanel.css -text
 internal/webapp/extWidgets/Ext4FormPanel.js -text

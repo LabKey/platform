@@ -272,10 +272,7 @@ if (typeof LABKEY == "undefined")
         var initializeViewDesigner = function(cb, scope)
         {
             var scripts = [
-                //'query/queryDesigner.js',
-                //'ComponentDataView.js',
-                //'Ext.ux.dd.GridDragDropRowOrder.js',
-
+                'extWidgets/Ext4ComponentDataView.js',
                 'designer/FieldMetaStore.js',
                 //'designer/FieldTreeLoader.js',
                 'designer/Utils.js',

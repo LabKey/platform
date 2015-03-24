@@ -1274,7 +1274,7 @@ if (!LABKEY.DataRegions)
                 var header = Ext.get(_getHeaderSelector(this)[0]);
 
                 var additionalFields = {},
-                        userFilter = {},
+                        userFilter = [],
                         userSort = this.getUserSort(),
                         userColumns = this.getParameter(this.name + ".columns"), fields = [];
 

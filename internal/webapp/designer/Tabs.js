@@ -14,7 +14,6 @@ Ext4.define('LABKEY.ext4.designer.BaseTab', {
 
         var mainPanel = config.items[0];
         mainPanel.tools = [{
-            id: "close",
             handler: function (event, toolEl, panel, config) {
                 this.designer.close();
             },
@@ -88,7 +87,7 @@ Ext4.define('LABKEY.ext4.designer.BaseTab', {
     /** Get the listview for the tab. */
     getList : Ext4.emptyFn,
 
-    onListBeforeClick : function (list, record, item, index, e) {
+    onListBeforeClick : function (list, record, item, index, e, eOpts) {
         var node = list.getNode(index);
         if (node)
         {
@@ -709,7 +708,6 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
 
         var thisTab = this;
         config = Ext4.applyIf({
-            //title: "Filter",
             cls: "test-filter-tab",
             layout: "fit",
             items: [{
@@ -723,7 +721,7 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
                     align: "stretch"
                 },
                 items: [{
-                    xtype: "dataview", // TODO compdataview
+                    xtype: "compdataview",
                     itemId: "filterList",
                     cls: "labkey-customview-list",
                     flex: 1,
@@ -781,7 +779,7 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
                     listeners: {
                         scope: this,
                         render: function(view) {
-                            this.addDataViewDragDop(view, 'columnsTabView');
+                            this.addDataViewDragDop(view, 'filtersTabView');
                         }
                     },
                     items: [{
@@ -790,27 +788,16 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
                         renderTarget: 'div.item-op',
                         indexedProperty: true,
                         fieldMetaStore: this.fieldMetaStore,
-                        listeners: {
-                            select: this.updateValueTextFieldVisibility,
-                            afterrender: function () {
-                                if (this.getWidth() == 0)
-                                {
-                                    // If the activeGroup tab is specified in the customize view config,
-                                    // the initial size of the items in the SortTab/FilterTab will be zero.
-                                    // As a bruteforce workaround, refresh the entire list forcing a redraw.
-                                    setTimeout(function () {
-                                        thisTab.getList().refresh();
-                                    }, 200);
-                                }
-                            },
-                            scope: this
-                        },
                         mode: 'local',
                         triggerAction: 'all',
                         forceSelection: true,
                         allowBlank: false,
-                        selectOnFocus: true,
-                        emptyText: "Select filter operator"
+                        editable: false,
+                        emptyText: "Select filter operator",
+                        listeners: {
+                            select: this.updateValueTextFieldVisibility,
+                            scope: this
+                        }
                     },{
                         xtype: 'labkey-filterValue',
                         cls: 'test-item-value',
@@ -855,13 +842,13 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
                                 scope: this
                             }
                         }]
-                    //}," ",{ // TODO
-                    //    xtype: "paperclip-button",
-                    //    cls: "labkey-folder-filter-paperclip",
-                    //    pressed: !this.designer.userContainerFilter,
-                    //    tooltipType: "title",
-                    //    disabled: !this.customView.containerFilter,
-                    //    itemType: "container filter"
+                    }," ",{
+                        xtype: "paperclip-button",
+                        cls: "labkey-folder-filter-paperclip",
+                        pressed: !this.designer.userContainerFilter,
+                        tooltipType: "title",
+                        disabled: !this.customView.containerFilter,
+                        itemType: "container filter"
                     }]
                 }
             }]
@@ -889,9 +876,9 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
         }
     },
 
-    onListBeforeClick : function (list, index, item, e)
+    onListBeforeClick : function (list, record, item, index, e, eOpts)
     {
-        if (this.callParent([list, index, item, e]) === false) {
+        if (this.callParent([list, record, item, index, e, eOpts]) === false) {
             return false;
         }
 
@@ -1021,7 +1008,7 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
         for (var i = 0; i < cs.length; i++)
         {
             var c = cs[i];
-            if (c.clauseIndex == clauseIndex && c instanceof LABKEY.ext4.designer.FilterTextValue) // TODO check this
+            if (c.clauseIndex == clauseIndex && c instanceof LABKEY.ext4.designer.FilterTextValue)
             {
                 c.setVisible(filterType != null && filterType.isDataValueRequired());
                 break;
@@ -1213,11 +1200,10 @@ Ext4.define('LABKEY.ext4.designer.SortTab', {
 
         var thisTab = this;
         config = Ext4.applyIf({
-            //title: "Sort",
             cls: "test-sort-tab",
             layout: "fit",
             items: [{
-                title: "Selected Sort",
+                title: "Selected Sorts",
                 xtype: "panel",
                 border: false,
                 style: {"border-left-width": "1px"},
@@ -1226,10 +1212,9 @@ Ext4.define('LABKEY.ext4.designer.SortTab', {
                     align: "stretch"
                 },
                 items: [{
-                    title: "Selected Sort",
+                    xtype: "compdataview",
                     itemId: "sortList",
                     cls: "labkey-customview-list",
-                    xtype: "dataview", // TODO compdataview
                     flex: 1,
                     store: this.sortStore,
                     emptyText: "No sorts added",
@@ -1272,7 +1257,7 @@ Ext4.define('LABKEY.ext4.designer.SortTab', {
                     listeners: {
                         scope: this,
                         render: function(view) {
-                            this.addDataViewDragDop(view, 'columnsTabView');
+                            this.addDataViewDragDop(view, 'sortsTabView');
                         }
                     },
                     items: [{
@@ -1285,21 +1270,7 @@ Ext4.define('LABKEY.ext4.designer.SortTab', {
                         triggerAction: 'all',
                         forceSelection: true,
                         allowBlank: false,
-                        listeners: {
-                            'afterrender': function () {
-                                // XXX: work around annoying focus bug for Fields in DataView.
-                                this.mon(this.el, 'mousedown', function () { this.focus(); }, this);
-                                if (this.getWidth() == 0)
-                                {
-                                    // If the activeGroup tab is specified in the customize view config,
-                                    // the initial size of the items in the SortTab/FilterTab will be zero.
-                                    // As a bruteforce workaround, refresh the entire list forcing a redraw.
-                                    setTimeout(function () {
-                                        thisTab.getList().refresh();
-                                    }, 200);
-                                }
-                            }
-                        }
+                        editable: false
                     },{
                         xtype: 'paperclip-button',
                         renderTarget: 'div.item-paperclip',
@@ -1368,132 +1339,3 @@ Ext4.define('LABKEY.ext4.designer.SortTab', {
     }
 
 });
-
-//LABKEY.DataRegion.PropertiesTab = Ext.extend(Ext.Panel, {
-//
-//    constructor : function (config) {
-//
-//        this.designer = config.designer;
-//        this.customView = config.customView;
-//        this.readOnly = config.readOnly;
-//
-//        var disableSharedAndInherit = this.customView.hidden || this.customView.session || !this.designer.query.canEditSharedViews;
-//
-//        config = Ext.applyIf({
-//            title: "Properties",
-//            layout: "form",
-//            defaults: {
-//                tooltipType: "title"
-//            },
-//            items: [{
-//                ref: "nameField",
-//                fieldLabel: "Name",
-//                xtype: "textfield",
-//                tooltip: "Name of the custom view (leave blank to save as the default grid view)",
-//                value: this.customView.name,
-//                disabled: this.readOnly || this.customView.hidden
-//            },{
-//                ref: "sharedField",
-//                fieldLabel: "Shared",
-//                xtype: "checkbox",
-//                tooltip: "Make this grid view available to all users",
-//                checked: this.customView.shared,
-//                disabled: this.readOnly || disableSharedAndInherit
-//            },{
-//                ref: "inheritField",
-//                fieldLabel: "Inherit",
-//                xtype: "checkbox",
-//                tooltip: "Make this grid view available in child folders",
-//                checked: this.customView.inherit,
-//                disabled: this.readOnly || disableSharedAndInherit
-//            },{
-//                ref: "sessionField",
-//                fieldLabel: "Temporary",
-//                xtype: "checkbox",
-//                tooltip: "Save this view temporarily.  Any changes will only persist for the duration of your session.",
-//                checked: this.customView.session,
-//                disabled: this.readOnly || this.customView.hidden,
-//                handler: function (checkbox, checked) {
-//                    if (this.readOnly)
-//                        return;
-//                    if (checked) {
-//                        this.sharedField.setValue(false);
-//                        this.sharedField.setDisabled(true);
-//                        this.inheritField.setValue(false);
-//                        this.inheritField.setDisabled(true);
-//                    }
-//                    else {
-//                        if (disableSharedAndInherit)
-//                        {
-//                            this.sharedField.reset();
-//                            this.sharedField.setDisabled(false);
-//                            this.inheritField.reset();
-//                            this.inheritField.setDisabled(false);
-//                        }
-//                    }
-//                },
-//                scope: this
-//            }]
-//        }, config);
-//
-//        LABKEY.DataRegion.PropertiesTab.superclass.constructor.call(this, config);
-//    },
-//
-//    isDirty : function () {
-//        for (var i = 0; i < this.grouptab.items.length; i++)
-//        {
-//            var field = this.grouptab.items.get(i);
-//            if (field instanceof Ext.form.Field)
-//                if (field.isDirty())
-//                    return true;
-//        }
-//        return false;
-//    },
-//
-//    validate : function () {
-//        // UNDONE: if view name is different, we should check that the target view is editable
-//        if (!this.customView.editable)
-//        {
-//            if (!this.nameField.isDirty())
-//            {
-//                Ext.MsgBox.alert("You must save this view with an alternate name.");
-//                return false;
-//            }
-//        }
-//        if (!this.designer.query.canEditSharedViews)
-//        {
-//            // UNDONE: check shared/inherit
-//            // Ext.Msg.alert(...)
-//        }
-//
-//        return true;
-//    },
-//
-//    save : function (edited, urlParameters) {
-//        var o = {};
-//
-//        if (this.customView.hidden)
-//        {
-//            o = {
-//                name: this.customView.name,
-//                shared: this.customView.shared,
-//                hidden: this.customView.hidden,
-//                session: this.customView.session
-//            };
-//        }
-//        else
-//        {
-//            o.name = this.nameField.getValue();
-//            o.session = this.sessionField.getValue();
-//            if (!o.session && this.customView.canSaveForAllUsers)
-//            {
-//                o.shared = this.sharedField.getValue();
-//                o.inherit = this.inheritField.getValue();
-//            }
-//        }
-//
-//        Ext.applyIf(edited, o);
-//    }
-//
-//});
-
