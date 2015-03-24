@@ -1223,6 +1223,10 @@ if (!LABKEY.DataRegions)
         _setParameters(this, paramValPairs, [OFFSET_PREFIX, SHOW_ROWS_PREFIX, VIEWNAME_PREFIX, ".reportId", ALL_FILTERS_SKIP_PREFIX, SORT_PREFIX, ".columns", CONTAINER_FILTER_NAME]);
     };
 
+    Proto.revertCustomView = function() {
+        _revertCustomView(this);
+    };
+
     Proto.deleteCustomView = function() {
         var title = "Delete " +
                 (this.view && this.view.shared ? "shared " : "your ") +
@@ -1742,7 +1746,7 @@ if (!LABKEY.DataRegions)
             }
             else if (parts['customizeview']) {
                 _buttonBind(region, '.unsavedview-revert', function() { _revertCustomView(this); });
-                _buttonBind(region, '.unsavedview-edit', function() { this.showCustomView(undefined, true, true); });
+                _buttonBind(region, '.unsavedview-edit', function() { this.showCustomizeView(undefined, true, true); });
                 _buttonBind(region, '.unsavedview-save', function() { _saveSessionCustomView(this); });
             }
         }
@@ -1809,7 +1813,7 @@ if (!LABKEY.DataRegions)
     };
 
     var _saveSessionShowPrompt = function(region, queryDetails) {
-        var config = Ext.applyIf({
+        var config = Ext4.applyIf({
             allowableContainerFilters: region.allowableContainerFilters,
             targetContainers: queryDetails.targetContainers,
             canEditSharedViews: queryDetails.canEditSharedViews,
@@ -1817,7 +1821,7 @@ if (!LABKEY.DataRegions)
             success: function (win, o) {
                 var timerId = setTimeout(function() {
                     timerId = 0;
-                    Ext.Msg.progress("Saving...", "Saving custom view...");
+                    Ext4.Msg.progress("Saving...", "Saving custom view...");
                 }, 500);
 
                 var jsonData = {
@@ -1841,14 +1845,14 @@ if (!LABKEY.DataRegions)
                         if (timerId > 0)
                             clearTimeout(timerId);
                         win.close();
-                        Ext.Msg.hide();
+                        Ext4.Msg.hide();
                     },
                     success: function() {
                         region.showSuccessMessage.call(region);
                         region.changeView({type: 'view', viewName: o.name});
                     },
                     failure: function(json) {
-                        Ext.Msg.alert('Error saving view', json.exception);
+                        Ext4.Msg.alert('Error saving view', json.exception);
                     },
                     scope: region
                 });

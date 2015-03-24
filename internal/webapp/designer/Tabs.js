@@ -319,7 +319,7 @@ Ext4.define('LABKEY.ext4.designer.ColumnsTab', {
                     emptyText: "No fields selected",
                     deferEmptyText: false,
                     multiSelect: false,
-                    height: 240,
+                    height: 230,
                     autoScroll: true,
                     overItemCls: "x4-view-over",
                     itemSelector: ".labkey-customview-item",
@@ -706,7 +706,8 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
             scope: this
         });
 
-        var thisTab = this;
+        var hideContainerFilterToolbar = !this.designer.allowableContainerFilters || this.designer.allowableContainerFilters.length == 0;
+
         config = Ext4.applyIf({
             cls: "test-filter-tab",
             layout: "fit",
@@ -729,7 +730,7 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
                     emptyText: "No filters added",
                     deferEmptyText: false,
                     multiSelect: true,
-                    height: 240,
+                    height: hideContainerFilterToolbar ? 230 : 200,
                     autoScroll: true,
                     overItemCls: "x4-view-over",
                     itemSelector: '.labkey-customview-item',
@@ -814,12 +815,15 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
                         itemType: "filter"
                     }]
                 }],
-                bbar: {
+                dockedItems: [{
                     xtype: "toolbar",
-                    hidden: !this.designer.allowableContainerFilters || this.designer.allowableContainerFilters.length == 0,
+                    dock: 'bottom',
+                    hidden: hideContainerFilterToolbar,
+                    height: 30,
                     items: [{
                         xtype: "label",
-                        text: "Folder Filter:"
+                        text: "Folder Filter:",
+                        style: "font-size: 11px; padding-left: 5px;"
                     }," ", {
                         // HACK: Need to wrap the combo in an panel so the combo doesn't overlap items after it.
                         xtype: "panel",
@@ -830,19 +834,19 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
                         items: [{
                             xtype: "combo",
                             cls: "labkey-folder-filter-combo",
-                            //enabled: this.customView.containerFilter != null,
                             value: this.customView.containerFilter,
-                            store: [["&nbsp;", "Default"]].concat(this.designer.allowableContainerFilters),
+                            store: [[null, "Default"]].concat(this.designer.allowableContainerFilters),
                             mode: 'local',
                             triggerAction: 'all',
                             allowBlank: true,
+                            editable: false,
                             emptyText: "Default",
                             listeners: {
                                 change: this.onFolderFilterChange,
                                 scope: this
                             }
                         }]
-                    }," ",{
+                    },"->",{
                         xtype: "paperclip-button",
                         cls: "labkey-folder-filter-paperclip",
                         pressed: !this.designer.userContainerFilter,
@@ -850,7 +854,7 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
                         disabled: !this.customView.containerFilter,
                         itemType: "container filter"
                     }]
-                }
+                }]
             }]
         }, config);
 
@@ -1198,7 +1202,6 @@ Ext4.define('LABKEY.ext4.designer.SortTab', {
             scope: this
         });
 
-        var thisTab = this;
         config = Ext4.applyIf({
             cls: "test-sort-tab",
             layout: "fit",
@@ -1220,7 +1223,7 @@ Ext4.define('LABKEY.ext4.designer.SortTab', {
                     emptyText: "No sorts added",
                     deferEmptyText: false,
                     multiSelect: true,
-                    height: 240,
+                    height: 230,
                     autoScroll: true,
                     overItemCls: "x4-view-over",
                     itemSelector: '.labkey-customview-item',

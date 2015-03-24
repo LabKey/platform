@@ -300,6 +300,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         if (!this.tabsMainPanel) {
             this.tabsMainPanel = Ext4.create('Ext.panel.Panel', {
                 region: 'center',
+                cls: 'labkey-customview-centerpanel',
                 layout: 'border',
                 border: false,
                 items: [
@@ -342,6 +343,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         if (!this.tabsDataView && create) {
             this.tabsDataView = Ext4.create('Ext.view.View', {
                 region: 'west',
+                cls: 'labkey-customview-westpanel',
                 width: tabWidth,
                 store: this.getTabsStore(),
                 tpl: new Ext4.XTemplate(
@@ -415,10 +417,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
                 border: false,
                 activeTab: activeTab,
                 tabBar: {hidden: true},
-                defaults: {
-                    border: false
-                    //layoutOnTabChange: true
-                },
+                defaults: { border: false },
                 items: [{
                     items: [this.columnsTab]
                 }, {
@@ -463,7 +462,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
 
     // tab may be true, tab index, tab name, or the tab instance.
     translateTabName : function (tab) {
-        if (tab === null || tab === undefined || Ext.isBoolean(tab)) {
+        if (tab === null || tab === undefined || Ext4.isBoolean(tab)) {
             return 0;
         }
         else if (Ext4.isNumber(tab)) {
@@ -806,8 +805,8 @@ LABKEY.ext.FieldTreeNodeUI = Ext.extend(Ext.tree.TreeNodeUI, {
 });
 
 // private
-LABKEY.DataRegion.saveCustomizeViewPrompt = function(config)
-{
+LABKEY.DataRegion.saveCustomizeViewPrompt = function(config) {
+
     var success = config.success;
     var scope = config.scope;
 
@@ -841,7 +840,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config)
         containerData[0] = LABKEY.ActionURL.getContainer();
     }
 
-    var containerStore = new Ext.data.ArrayStore({
+    var containerStore = Ext4.create('Ext.data.ArrayStore', {
         fields: ['path'],
         data: containerData
     });
@@ -854,9 +853,10 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config)
 
     var warnedAboutMoving = false;
 
-    var win = new Ext.Window({
-        title: "Save Custom View" + (viewName ? ": " + Ext.util.Format.htmlEncode(viewName) : ""),
-        cls: "extContainer",
+    var win = Ext4.create('Ext.window.Window', {
+        title: "Save Custom View" + (viewName ? ": " + Ext4.util.Format.htmlEncode(viewName) : ""),
+        cls: "labkey-customview-save",
+        border: false,
         bodyStyle: "padding: 6px",
         modal: true,
         width: 490,
@@ -864,8 +864,8 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config)
         layout: "form",
         defaults: { tooltipType: "title" },
         items: [{
-            ref: "defaultNameField",
             xtype: "radio",
+            itemId: "defaultNameField",
             fieldLabel: "View Name",
             boxLabel: "Default view for this page",
             inputValue: "default",
@@ -873,22 +873,26 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config)
             checked: canEdit && !viewName,
             disabled: hidden || !canEdit
         },{
-            xtype: "compositefield",
-            ref: "nameCompositeField",
+            xtype: "fieldcontainer",
+            itemId: "nameFieldContainer",
+            layout: 'hbox',
             // Let the saveCustomView_name field display the error message otherwise it will render as "saveCustomView_name: error message"
             combineErrors: false,
             items: [{
                 xtype: "radio",
-                fieldLabel: "",
+                width: 175,
+                fieldLabel: " ",
+                labelSeparator: "",
                 boxLabel: "Named",
                 inputValue: "named",
                 name: "saveCustomView_namedView",
                 checked: !canEdit || viewName,
                 handler: function (radio, value) {
-                    // nameCompositeField.items will be populated after initComponent
-                    if (win.nameCompositeField.items.get)
+                    // nameFieldContainer.items will be populated after initComponent
+                    var nameFieldContainer = win.down('#nameFieldContainer');
+                    if (nameFieldContainer.items.get)
                     {
-                        var nameField = win.nameCompositeField.items.get(1);
+                        var nameField = nameFieldContainer.items.get(1);
                         if (value) {
                             nameField.enable();
                         }
@@ -899,8 +903,9 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config)
                 },
                 scope: this
             },{
-                fieldLabel: "",
                 xtype: "textfield",
+                itemId: "nameTextField",
+                fieldLabel: "",
                 name: "saveCustomView_name",
                 tooltip: "Name of the custom view",
                 tooltipType: "title",
@@ -922,23 +927,24 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config)
             }]
         },{
             xtype: "box",
-            style: "padding-left: 122px; padding-bottom: 8px",
-            html: "<em>The " + (!config.canEdit ? "current" : "shadowed") + " view is not editable.<br>Please enter an alternate view name.</em>",
+            style: "padding-left: 122px; padding-bottom: 8px; font-style: italic;",
+            html: "The " + (!config.canEdit ? "current" : "shadowed") + " view is not editable.<br>Please enter an alternate view name.",
             hidden: canEdit
         },{
-            xtype: "spacer",
-            height: "8"
+            // spacer
+            xtype: "box",
+            height: 8
         },{
-            ref: "sharedField",
             xtype: "checkbox",
+            itemId: "sharedField",
             name: "saveCustomView_shared",
             fieldLabel: "Shared",
             boxLabel: "Make this grid view available to all users",
             checked: shared,
             disabled: disableSharedAndInherit || !canEditSharedViews
         },{
-            ref: "inheritField",
             xtype: "checkbox",
+            itemId: "inheritField",
             name: "saveCustomView_inherit",
             fieldLabel: "Inherit",
             boxLabel: "Make this grid view available in child folders",
@@ -947,12 +953,13 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config)
             hidden: !containerFilterable,
             listeners: {
                 check: function (checkbox, checked) {
-                    Ext.ComponentMgr.get("saveCustomView_targetContainer").setDisabled(!checked);
+                    console.log(Ext4.ComponentMgr.get("saveCustomView_targetContainer"));
+                    Ext4.ComponentMgr.get("saveCustomView_targetContainer").setDisabled(!checked);
                 }
             }
         },{
-            ref: "targetContainer",
             xtype: "combo",
+            itemId: "targetContainer",
             name: "saveCustomView_targetContainer",
             id: "saveCustomView_targetContainer",
             fieldLabel: "Save in Folder",
@@ -971,7 +978,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config)
                     if (!warnedAboutMoving && combobox.getValue() != config.containerPath)
                     {
                         warnedAboutMoving = true;
-                        Ext.Msg.alert("Moving a Saved View", "If you save, this view will be moved from '" + config.containerPath + "' to " + combobox.getValue());
+                        Ext4.Msg.alert("Moving a Saved View", "If you save, this view will be moved from '" + config.containerPath + "' to " + combobox.getValue());
                     }
                 }
             }
@@ -979,16 +986,15 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config)
         buttons: [{
             text: "Save",
             handler: function () {
-                if (!win.nameCompositeField.isValid())
+                var nameField = win.down('#nameFieldContainer').items.get(1);
+                if (!nameField.isValid())
                 {
-                    Ext.Msg.alert("Invalid view name", "The view name must be less than 50 characters long and not 'default'.");
+                    Ext4.Msg.alert("Invalid view name", "The view name must be less than 50 characters long and not 'default'.");
                     return;
                 }
-
-                var nameField = win.nameCompositeField.items.get(1);
                 if (!canEdit && viewName == nameField.getValue())
                 {
-                    Ext.Msg.alert("Error saving", "This view is not editable.  You must save this view with an alternate name.");
+                    Ext4.Msg.alert("Error saving", "This view is not editable.  You must save this view with an alternate name.");
                     return;
                 }
 
@@ -1005,20 +1011,20 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config)
                 else
                 {
                     o.name = "";
-                    if (!win.defaultNameField.getValue()) {
+                    if (!win.down('#defaultNameField').getValue()) {
                         o.name = nameField.getValue();
                     }
                     o.session = false;
                     if (!o.session && canEditSharedViews)
                     {
-                        o.shared = win.sharedField.getValue();
+                        o.shared = win.down('#sharedField').getValue();
                         // Issue 13594: disallow setting inherit bit if query view has no available container filters
-                        o.inherit = containerFilterable && win.inheritField.getValue();
+                        o.inherit = containerFilterable && win.down('#inheritField').getValue();
                     }
                 }
 
                 if (o.inherit) {
-                    o.containerPath = win.targetContainer.getValue();
+                    o.containerPath = win.down('#targetContainer').getValue();
                 }
 
                 // Callback is responsible for closing the save dialog window on success.
