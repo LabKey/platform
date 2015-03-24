@@ -101,7 +101,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     @Override
     public void stopImpersonating(HttpServletRequest request)
     {
-        SessionHelper.invalidateSession(request);
+        SessionHelper.clearSession(request);
         restoreSessionAttributes(request.getSession(true));
 
         User impersonatedUser = UserManager.getUser(_impersonatedUserId);

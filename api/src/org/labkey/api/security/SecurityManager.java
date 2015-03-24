@@ -484,7 +484,7 @@ public class SecurityManager
 
     public static void setAuthenticatedUser(HttpServletRequest request, User user)
     {
-        SessionHelper.invalidateSession(request);      // Clear out terms-of-use, preliminary auth state, and other session info that guest / previous user may have
+        SessionHelper.clearSession(request, PageFlowUtil.set(TERMS_APPROVED_KEY));      // Clear out preliminary auth state (guest / previous user session was cleared on login page)
         if (!user.isGuest() && request instanceof AuthenticatedRequest)
             ((AuthenticatedRequest)request).convertToLoggedInSession();
 
@@ -497,7 +497,7 @@ public class SecurityManager
     public static void logoutUser(HttpServletRequest request, User user)
     {
         AuthenticationManager.logout(user, request);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
-        SessionHelper.invalidateSession(request);
+        SessionHelper.clearSession(request);
     }
 
 
@@ -1993,7 +1993,6 @@ public class SecurityManager
     @Nullable
     public static TermsOfUse getTermsOfUse(@Nullable Project project)
     {
-
         if (!ModuleLoader.getInstance().isStartupComplete())
             return null;
 
@@ -2106,11 +2105,16 @@ public class SecurityManager
         HttpSession session = ctx.getRequest().getSession(false);
         if (null == session)
             return false;
+        @Nullable Set<Project> termsApproved = getApprovedTerms(session);
+        return null != termsApproved && termsApproved.contains(project);
+    }
 
+
+    public static @Nullable Set<Project> getApprovedTerms(@NotNull HttpSession session)
+    {
         synchronized (SessionHelper.getSessionLock(session))
         {
-            Set<Project> termsApproved = (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
-            return null != termsApproved && termsApproved.contains(project);
+            return (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
         }
     }
 

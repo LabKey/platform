@@ -798,14 +798,13 @@ public class AuthenticationManager
     public static void setLoginReturnProperties(HttpServletRequest request, LoginReturnProperties properties)
     {
         HttpSession session = request.getSession(true);
-        session.setAttribute(LoginReturnProperties.class.getName(), properties);
+        session.setAttribute(getLoginReturnPropertiesSessionKey(), properties);
     }
 
 
-    public static LoginReturnProperties getLoginReturnProperties(HttpServletRequest request)
+    public static String getLoginReturnPropertiesSessionKey()
     {
-        HttpSession session = request.getSession(true);
-        return (LoginReturnProperties)session.getAttribute(LoginReturnProperties.class.getName());
+        return LoginReturnProperties.class.getName();
     }
 
 
@@ -900,7 +899,7 @@ public class AuthenticationManager
             }
         }
 
-        LoginReturnProperties properties = AuthenticationManager.getLoginReturnProperties(request);
+        LoginReturnProperties properties = (LoginReturnProperties)session.getAttribute(getLoginReturnPropertiesSessionKey());
 
         SecurityManager.setAuthenticatedUser(request, primaryAuthUser);
 

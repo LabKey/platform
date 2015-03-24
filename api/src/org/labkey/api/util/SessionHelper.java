@@ -22,6 +22,9 @@ import org.labkey.api.security.AuthenticatedRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -93,17 +96,39 @@ public class SessionHelper
     }
 
 
-    public static void invalidateSession(@NotNull HttpServletRequest request)
+    public static void clearSession(@NotNull HttpServletRequest request)
+    {
+        clearSession(request, Collections.<String>emptySet());
+    }
+
+
+    public static void clearSession(@NotNull HttpServletRequest request, Set<String> attributesToPreserve)
     {
         if (request instanceof AuthenticatedRequest)
         {
-            ((AuthenticatedRequest)request).invalidateSession();
+            ((AuthenticatedRequest)request).clearSession(attributesToPreserve);
         }
         else
         {
             HttpSession s = request.getSession(false);
+
             if (null != s)
-                s.invalidate();
+            {
+                synchronized (getSessionLock(s))
+                {
+                    // Clear all the attributes instead of using s.invalidate(). This is an attempt to fix #22245, which I
+                    // suspect is caused by race conditions. It also allows us to preserve certain attributes.
+                    Enumeration enumeration = s.getAttributeNames();
+
+                    while (enumeration.hasMoreElements())
+                    {
+                        String name = (String) enumeration.nextElement();
+
+                        if (!attributesToPreserve.contains(name))
+                            s.removeAttribute(name);
+                    }
+                }
+            }
         }
     }
 }

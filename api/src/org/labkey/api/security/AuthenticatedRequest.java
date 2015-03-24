@@ -44,6 +44,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
@@ -58,7 +59,6 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
 
     private final User _user;
     boolean _loggedIn = false;
-    private boolean _forceRealSession = false;
     private HttpSession _session = null;
 
 
@@ -144,9 +144,9 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     }
 
 
-    public void invalidateSession()
+    public void clearSession(Set<String> attributesToPreserve)
     {
-        SessionHelper.invalidateSession((HttpServletRequest)getRequest());
+        SessionHelper.clearSession((HttpServletRequest) getRequest(), attributesToPreserve);
         _session = null;
     }
 
