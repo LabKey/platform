@@ -27,12 +27,12 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.authentication.duo.DuoController;
 import org.labkey.authentication.duo.DuoProvider;
-import org.labkey.authentication.test.TestSecondaryProvider;
 import org.labkey.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.authentication.ldap.LdapController;
 import org.labkey.authentication.oauth.GoogleOAuthProvider;
 import org.labkey.authentication.oauth.OAuthController;
 import org.labkey.authentication.saml.SamlProvider;
+import org.labkey.authentication.test.TestSecondaryProvider;
 
 import java.util.Collection;
 import java.util.Collections;

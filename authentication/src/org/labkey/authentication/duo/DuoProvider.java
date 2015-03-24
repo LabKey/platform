@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 public class DuoProvider implements SecondaryAuthenticationProvider
 {
     private static final Logger LOG = Logger.getLogger(DuoProvider.class);
+    static final String NAME = "Duo 2 Factor";
 
     @Override
     public ActionURL getRedirectURL(User candidate, Container c)
@@ -56,7 +57,7 @@ public class DuoProvider implements SecondaryAuthenticationProvider
     @Override
     public String getName()
     {
-        return ("Duo 2 Factor");
+        return (NAME);
     }
 
     @Override

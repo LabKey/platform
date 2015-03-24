@@ -20,9 +20,11 @@ import com.duosecurity.duoweb.DuoWeb;
 import com.duosecurity.duoweb.DuoWebException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
+import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -35,6 +37,7 @@ import java.util.Map;
  */
 public class DuoManager
 {
+    private static final Logger LOG = Logger.getLogger(DuoManager.class);
     private static final String DUO_AUTHENTICATION_CATEGORY_KEY = "DuoAuthentication";
 
     public enum Key {
@@ -121,31 +124,23 @@ public class DuoManager
         return DuoWeb.signRequest(getIntegrationKey(), getSecretKey(), getApplicationKey(), Integer.toString(u.getUserId()));
     }
 
-    public static String verifySignedResponse(String signedResponse, boolean test)
+    public static String verifySignedResponse(String signedResponse, boolean test, BindException errors)
     {
         String verifiedUsername = null;
         try
         {
             verifiedUsername = DuoWeb.verifyResponse(getIntegrationKey(), getSecretKey(), getApplicationKey(), signedResponse);
-            // TODO: figure out what to do with exceptions- for test mode, probably rethrow as RunTimeException.
-            // For normal usage, log them and give nice error to user that authentication is not available at this time,
-            // try again later and/or contact sys admin
         }
         catch (DuoWebException e)
         {
-            e.printStackTrace();
+            LOG.warn("Bad signed response from Duo.", e);
+            errors.reject("Failed Duo authentication.");
         }
-        catch (NoSuchAlgorithmException e)
+        catch (NoSuchAlgorithmException | InvalidKeyException | IOException e)
         {
-            e.printStackTrace();
-        }
-        catch (InvalidKeyException e)
-        {
-            e.printStackTrace();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
+            // This is likely an environment or provider problem
+            LOG.warn("Non-Duo error verifying Duo response", e);
+            errors.reject("Server error");
         }
 
         return verifiedUsername;

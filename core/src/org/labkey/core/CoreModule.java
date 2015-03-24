@@ -76,6 +76,7 @@ import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
+import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
@@ -595,6 +596,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuditLogService.get().registerAuditType(new FileSystemAuditProvider());
         AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
         AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
+        AuditLogService.registerAuditType(new AuthenticationProviderConfigAuditTypeProvider());
 
         TempTableTracker.init();
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());

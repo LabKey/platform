@@ -1759,7 +1759,7 @@ public class LoginController extends SpringActionController
 
         public boolean doAction(ProviderConfigurationForm form, BindException errors) throws Exception
         {
-            AuthenticationManager.enableProvider(form.getName());
+            AuthenticationManager.enableProvider(form.getName(), getUser());
             return true;
         }
 
@@ -1779,7 +1779,7 @@ public class LoginController extends SpringActionController
 
         public boolean doAction(ProviderConfigurationForm form, BindException errors) throws Exception
         {
-            AuthenticationManager.disableProvider(form.getName());
+            AuthenticationManager.disableProvider(form.getName(), getUser());
             return true;
         }
 

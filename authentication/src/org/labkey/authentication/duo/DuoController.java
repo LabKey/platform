@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AdminConsoleAction;
@@ -40,10 +41,14 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
 import org.labkey.authentication.test.TestSecondaryProvider;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: tgaluhn
@@ -92,7 +97,30 @@ public class DuoController extends SpringActionController
 
         public boolean handlePost(Config config, BindException errors) throws Exception
         {
-            DuoManager.saveProperties(config);
+            List<String> dirtyProps = new ArrayList<>();
+            if (!config.getApiHostname().equalsIgnoreCase(DuoManager.getAPIHostname()))
+                dirtyProps.add(DuoManager.Key.APIHostname.toString());
+            if (!config.getIntegrationKey().equalsIgnoreCase(DuoManager.getIntegrationKey()))
+                dirtyProps.add(DuoManager.Key.IntegrationKey.toString());
+            if (!config.getSecretKey().equalsIgnoreCase(DuoManager.getSecretKey()))
+                dirtyProps.add(DuoManager.Key.SecretKey.toString());
+
+            if (!dirtyProps.isEmpty())
+            {
+                DuoManager.saveProperties(config);
+                StringBuilder sb = new StringBuilder();
+                for (String prop : dirtyProps)
+                {
+                    if (sb.length() > 0)
+                        sb.append(", ");
+                    sb.append(prop);
+                }
+                AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent event = new AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent(
+                        ContainerManager.getRoot().getId(), DuoProvider.NAME + " provider configuration was changed.");
+                event.setChanges(sb.toString());
+                AuditLogService.get().addEvent(getUser(), event);
+            }
+
             return true;
         }
 
@@ -275,7 +303,7 @@ public class DuoController extends SpringActionController
         @Override
         public boolean handlePost(DuoForm form, BindException errors) throws Exception
         {
-            String returnedUser = DuoManager.verifySignedResponse(form.getSig_response(), form.isTest());
+            String returnedUser = DuoManager.verifySignedResponse(form.getSig_response(), form.isTest(), errors);
 
             User duoUser = UserManager.getUser(Integer.parseInt(returnedUser));
             User primaryAuthUser = AuthenticationManager.getPrimaryAuthenticationUser(getViewContext().getSession());
@@ -390,8 +418,7 @@ public class DuoController extends SpringActionController
         {
             form.setTest(true);
             form.setSig_request(DuoManager.generateSignedRequest(getUser()));
-            HttpView view = new JspView<>("/org/labkey/authentication/duo/duoEntry.jsp", form, errors);
-            return view;
+            return new JspView<>("/org/labkey/authentication/duo/duoEntry.jsp", form, errors);
         }
 
         public boolean handlePost(DuoForm form, BindException errors) throws Exception
@@ -421,12 +448,11 @@ public class DuoController extends SpringActionController
         public ModelAndView getView(DuoForm form, boolean reshow, BindException errors) throws Exception
         {
             String sig_response = form.getSig_response();
-            int userId = Integer.valueOf(DuoManager.verifySignedResponse(sig_response, true).trim());
+            int userId = Integer.valueOf(DuoManager.verifySignedResponse(sig_response, true, errors).trim());
             if(getUser().getUserId() == userId)
                 form.setStatus(true);
 
-            HttpView view = new JspView<>("/org/labkey/authentication/duo/testResultDuo.jsp", form, errors);
-            return view;
+            return new JspView<>("/org/labkey/authentication/duo/testResultDuo.jsp", form, errors);
         }
 
         public boolean handlePost(DuoForm form, BindException errors) throws Exception
