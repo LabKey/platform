@@ -1986,30 +1986,29 @@ public class SecurityManager
     {
         //TODO: Should do this more efficiently, but no efficient public wiki api for this yet
         TermsOfUse terms =  getTermsOfUse(project);
-        return (terms != null) && (terms.getType() != TermsOfUseType.NONE);
+        return terms.getType() != TermsOfUseType.NONE;
     }
 
 
-    @Nullable
+    @NotNull
     public static TermsOfUse getTermsOfUse(@Nullable Project project)
     {
         if (!ModuleLoader.getInstance().isStartupComplete())
-            return null;
+            return NO_TERMS;
 
         WikiService service = ServiceRegistry.get().getService(WikiService.class);
         //No wiki service. Must be in weird state. Don't do terms here...
         if (null == service)
-            return null;
+            return NO_TERMS;
 
-        TermsOfUse termsOfUse = new TermsOfUse(TermsOfUseType.NONE, null);
+        TermsOfUse termsOfUse = NO_TERMS;
         String termsString = null;
         if (null != project) // find project-level terms of use, if any
         {
             termsString = service.getHtml(project.getContainer(), TERMS_OF_USE_WIKI_NAME);
             if (null != termsString)
             {
-                termsOfUse.setType(TermsOfUseType.PROJECT_LEVEL);
-                termsOfUse.setHtml(termsString);
+                termsOfUse = new TermsOfUse(TermsOfUseType.PROJECT_LEVEL, termsString);
             }
         }
         if (termsOfUse.getType() == TermsOfUseType.NONE)  // get site-wide terms of use, if any
@@ -2017,8 +2016,7 @@ public class SecurityManager
             termsString = service.getHtml(ContainerManager.getRoot(), TERMS_OF_USE_WIKI_NAME);
             if (null != termsString)
             {
-                termsOfUse.setType(TermsOfUseType.SITE_WIDE);
-                termsOfUse.setHtml(termsString);
+                termsOfUse = new TermsOfUse(TermsOfUseType.SITE_WIDE, termsString);
             }
         }
         return termsOfUse;
@@ -2042,29 +2040,24 @@ public class SecurityManager
             project = new Project(proj);
         }
 
-        // not required if we must first authenticate, or have already approved at the project level
+        // not required for Basic authentication or if we have already approved at the project level
         if ("Basic".equals(ctx.getRequest().getAttribute(AUTHENTICATION_METHOD)) || isTermsOfUseApproved(ctx, project))
             return false;
 
         TermsOfUse termsOfUse = getTermsOfUse(project);
         boolean required;
-        if (termsOfUse != null)
-        {
-            switch (termsOfUse.getType()) {
-                case SITE_WIDE:
-                    // if we don't require project-level and have approved site-wide level, not required to ask again,
-                    // but we don't cache for the project in case we set project-level terms later
-                    required = !isTermsOfUseApproved(ctx, null);
-                    break;
-                case PROJECT_LEVEL: // we already checked if the project-level terms were approved, so we know that they are required ehre
-                    required = true;
-                    break;
-                default:
-                    required = false;
-            }
+        switch (termsOfUse.getType()) {
+            case SITE_WIDE:
+                // if we don't require project-level and have approved site-wide level, not required to ask again,
+                // but we don't cache for the project in case we set project-level terms later
+                required = !isTermsOfUseApproved(ctx, null);
+                break;
+            case PROJECT_LEVEL: // we already checked if the project-level terms were approved, so we know that they are required here
+                required = true;
+                break;
+            default:
+                required = false;
         }
-        else
-            required = false; // termsOfUse will be null only during startup
 
         return required;
     }
@@ -2079,26 +2072,19 @@ public class SecurityManager
         private TermsOfUseType type = TermsOfUseType.NONE;
         private String html = null;
 
-        public TermsOfUse(@NotNull TermsOfUseType type,@Nullable String html)
+        public TermsOfUse(@NotNull TermsOfUseType type, @Nullable String html)
         {
             this.type = type;
             this.html = html;
         }
 
-        public TermsOfUse() {}
-
-        public void setHtml(String html)
-        {
-            this.html = html;
-        }
-
         public String getHtml() { return this.html; }
-
-        public void setType(TermsOfUseType type)  { this.type = type; }
 
         public TermsOfUseType getType() { return this.type; }
 
     }
+
+    private static TermsOfUse NO_TERMS = new TermsOfUse(TermsOfUseType.NONE, null);
 
     public static boolean isTermsOfUseApproved(ViewContext ctx, @Nullable Project project)
     {
