@@ -691,7 +691,7 @@ public class LoginController extends SpringActionController
                 if (agreeOnly || !SecurityManager.isTermsOfUseApproved(getViewContext(), project))
                 {
                     SecurityManager.TermsOfUse terms = SecurityManager.getTermsOfUse(project);
-                    if (terms != null && terms.getType() != SecurityManager.TermsOfUseType.NONE)
+                    if (terms.getType() != SecurityManager.TermsOfUseType.NONE)
                     {
                         this.form.setTermsOfUseType(terms.getType());
                         termsOfUseHTML = terms.getHtml();
