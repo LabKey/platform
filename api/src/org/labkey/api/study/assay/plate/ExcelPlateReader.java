@@ -52,14 +52,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
             DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
             DataLoader loader = factory.createLoader(dataFile, false);
 
-            Map<String, double[][]> gridMap = PlateUtils.parseAllGrids(dataFile, loader.load(), template.getRows(), template.getColumns());
-            if (!gridMap.isEmpty())
-            {
-                // TODO: refactor PlateReader interface to handle assays that have data file formats with more than
-                // a single data matrix
-                return gridMap.values().iterator().next();
-            }
-            return null;
+            return PlateUtils.parseGrid(dataFile, loader.load(), template.getRows(), template.getColumns());
         }
         catch (IOException ioe)
         {
@@ -67,102 +60,20 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
         }
     }
 
-    public double[][] prevLoadFile(PlateTemplate template, File dataFile) throws ExperimentException
+    @Override
+    public Map<String, double[][]> loadMultiGridFile(PlateTemplate template, File dataFile) throws ExperimentException
     {
-        String fileName = dataFile.getName().toLowerCase();
-        if (!fileName.endsWith(".xls") && !fileName.endsWith(".xlsx"))
-            throw new ExperimentException("Unable to load data file: Invalid Format");
-
-        Workbook workbook = null;
         try
         {
-            workbook = ExcelFactory.create(dataFile);
+            DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
+            DataLoader loader = factory.createLoader(dataFile, false);
+
+            return PlateUtils.parseAllGrids(dataFile, loader.load(), template.getRows(), template.getColumns());
         }
-        catch (IOException e)
+        catch (IOException ioe)
         {
-            throw new ExperimentException(dataFile.getName() + " does not appear to be a valid data file: " + e.getMessage(), e);
+            throw new ExperimentException(ioe);
         }
-        catch (InvalidFormatException e)
-        {
-            throw new ExperimentException(dataFile.getName() + " does not appear to be a valid data file: " + e.getMessage(), e);
-        }
-        double[][] cellValues = new double[template.getRows()][template.getColumns()];
-
-        Sheet plateSheet = workbook.getSheetAt(0);
-
-        int startRow = -1;
-        int startCol = -1;
-
-        for (Row row : plateSheet)
-        {
-            startCol = getStartColumn(row);
-            if (startCol != -1)
-            {
-                startRow = getStartRow(plateSheet, row.getRowNum());
-                break;
-            }
-        }
-
-        if (startRow == -1 || startCol == -1)
-        {
-            throw new ExperimentException(dataFile.getName() + " does not appear to be a valid data file: unable to locate cell values");
-        }
-
-        if ((template.getRows() + startRow > (plateSheet.getLastRowNum() + 1)) || (template.getColumns() + startCol > (plateSheet.getRow(startRow).getLastCellNum())))
-        {
-            throw new ExperimentException(dataFile.getName() + " does not appear to be a valid data file: expected " +
-                    (template.getRows() + startRow) + " rows and " + (template.getColumns() + startCol) + " columns, but found "+
-                    plateSheet.getLastRowNum() + 1 + " rows and " + plateSheet.getRow(startRow).getLastCellNum() + " columns.");
-        }
-
-        for (int row = 0; row < template.getRows(); row++)
-        {
-            for (int col = 0; col < template.getColumns(); col++)
-            {
-                Row plateRow = plateSheet.getRow(row + startRow);
-                Cell cell = plateRow.getCell(col + startCol);
-                if (cell.getCellType() != Cell.CELL_TYPE_NUMERIC)
-                    throw new ExperimentException(dataFile.getName() + " does not appear to be a valid data file, there are non-numeric values on the plate");
-
-                cellValues[row][col] = cell.getNumericCellValue();
-            }
-        }
-        return cellValues;
-    }
-
-    protected int getStartColumn(Row row)
-    {
-        for (Cell cell : row)
-        {
-            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC && cell.getNumericCellValue() == 1)
-            {
-                for (int i=1; i < 12; i++)
-                {
-                    Cell c = row.getCell(cell.getColumnIndex() + i);
-                    if (c != null)
-                    {
-                        if (c.getCellType() != Cell.CELL_TYPE_NUMERIC || c.getNumericCellValue() != (i + 1))
-                            return -1;
-                    }
-                    else
-                        return -1;
-                }
-                return cell.getColumnIndex();
-            }
-        }
-        return -1;
-    }
-
-    protected int getStartRow(Sheet sheet, int row)
-    {
-        while (row <= sheet.getLastRowNum())
-        {
-            if (isValidStartRow(sheet, row))
-                return row;
-
-            row++;
-        }
-        return -1;
     }
 
     protected boolean isValidStartRow(Sheet sheet, int row)

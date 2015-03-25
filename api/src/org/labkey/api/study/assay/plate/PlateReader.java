@@ -20,6 +20,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.study.PlateTemplate;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * User: klum
@@ -45,6 +46,17 @@ public interface PlateReader
      * @throws ExperimentException
      */
     public double[][] loadFile(PlateTemplate template, File dataFile) throws ExperimentException;
+
+    /**
+     * Parse the specified datafile and populate a map of array of well values. This is designed to process files
+     * that have multiple grids of data embedded and the caller is interested in all of the data. The parser will
+     * attempt to annotate the grids with metadata that it may discover during parsing.
+     * @param template
+     * @param dataFile
+     * @return
+     * @throws ExperimentException
+     */
+    public Map<String, double[][]> loadMultiGridFile(PlateTemplate template, File dataFile) throws ExperimentException;
 
     /**
      * Determines whether the specified well value should be used in any analytical calculations

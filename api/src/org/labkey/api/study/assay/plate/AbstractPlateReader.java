@@ -16,7 +16,13 @@
 package org.labkey.api.study.assay.plate;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.util.NumberUtilsLabKey;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by klum on 12/14/14.
@@ -42,5 +48,11 @@ public abstract class AbstractPlateReader implements PlateReader
                 return "TNTC";
         }
         return strValue;
+    }
+
+    @Override
+    public Map<String, double[][]> loadMultiGridFile(PlateTemplate template, File dataFile) throws ExperimentException
+    {
+        throw new UnsupportedOperationException("loading multiple grids for this reader implementation is not supported");
     }
 }
