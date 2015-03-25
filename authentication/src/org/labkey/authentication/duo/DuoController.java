@@ -74,6 +74,32 @@ public class DuoController extends SpringActionController
         return url;
     }
 
+    private URLHelper getAfterLoginURL(@Nullable URLHelper returnURL, @Nullable String urlHash, @Nullable User user)
+    {
+        Container current = getContainer();
+        Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
+
+        // Default redirect if returnURL is not specified. Try not to redirect to a folder where the user doesn't have permissions
+        if (null == returnURL)
+        {
+            returnURL = null == current || current.isRoot() || (null != user && !c.hasPermission(user, ReadPermission.class)) ? new URLHelper(true) :
+                    null != user ? c.getStartURL(user) : AppProps.getInstance().getHomePageActionURL();
+        }
+
+        // If this is user's first log in or some required field isn't filled in then go to update page first
+        if (null != user)
+        {
+            returnURL = PageFlowUtil.urlProvider(UserUrls.class).getCheckUserUpdateURL(c, returnURL, user.getUserId(), !user.isFirstLogin());
+        }
+
+        if (null != urlHash)
+        {
+            returnURL.setFragment(urlHash.replace("#", ""));
+        }
+
+        return returnURL;
+    }
+
     @AdminConsoleAction
     @CSRF
     public class ConfigureAction extends FormViewAction<Config>
@@ -274,32 +300,6 @@ public class DuoController extends SpringActionController
             return new JspView<>("/org/labkey/authentication/duo/duoEntry.jsp", form, errors);
         }
 
-        private URLHelper getAfterLoginURL(@Nullable URLHelper returnURL, @Nullable String urlHash, @Nullable User user)
-        {
-            Container current = getContainer();
-            Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
-
-            // Default redirect if returnURL is not specified. Try not to redirect to a folder where the user doesn't have permissions
-            if (null == returnURL)
-            {
-                returnURL = null == current || current.isRoot() || (null != user && !c.hasPermission(user, ReadPermission.class)) ? new URLHelper(true) :
-                        null != user ? c.getStartURL(user) : AppProps.getInstance().getHomePageActionURL();
-            }
-
-            // If this is user's first log in or some required field isn't filled in then go to update page first
-            if (null != user)
-            {
-                returnURL = PageFlowUtil.urlProvider(UserUrls.class).getCheckUserUpdateURL(c, returnURL, user.getUserId(), !user.isFirstLogin());
-            }
-
-            if (null != urlHash)
-            {
-                returnURL.setFragment(urlHash.replace("#", ""));
-            }
-
-            return returnURL;
-        }
-
         @Override
         public boolean handlePost(DuoForm form, BindException errors) throws Exception
         {
@@ -346,7 +346,7 @@ public class DuoController extends SpringActionController
         return new ActionURL(TestSecondaryAction.class, c);
     }
 
-    public static class TestSecondaryForm
+    public static class TestSecondaryForm extends ReturnUrlForm
     {
         private boolean _valid;
 
@@ -373,6 +373,9 @@ public class DuoController extends SpringActionController
         @Override
         public ModelAndView getView(TestSecondaryForm form, boolean reshow, BindException errors) throws Exception
         {
+            if (!getUser().isGuest())
+                return HttpView.redirect(getAfterLoginURL(form.getReturnURLHelper(), form.getUrlhash(), getUser()));
+
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);
             return new JspView<>("/org/labkey/authentication/test/testSecondary.jsp", null, errors);

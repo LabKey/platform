@@ -15,9 +15,17 @@
  * limitations under the License.
  */
 %>
+
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<p>Is that really you?</p>
+<%
+    String message1 = "Secondary Authentication";
+    String user = getUser().getEmail();
+    String message2 = "Is " + user + " really you?";
+
+%>
+<p><%=h(message1)%></p>
+<p><%=h(message2)%></p>
 
 <labkey:form method="POST">
     <table>
@@ -30,5 +38,5 @@
             <td>No</td>
         </tr>
     </table>
-    <input type="submit" value="Validate">
+    <input type="submit" name="TestSecondary" value="TestSecondary">
 </labkey:form>

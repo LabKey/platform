@@ -47,7 +47,7 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider
     @Override
     public String getName()
     {
-        return "Test Secondary Authentication Provider";
+        return "Test Secondary Authentication";
     }
 
     @Override
