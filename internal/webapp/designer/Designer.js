@@ -197,14 +197,20 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
             //    queryName: this.queryName,
             //    createNodeConfigFn: {fn: this.createNodeAttrs, scope: this}
             //}),
-            fbar: [{
-                xtype: "checkbox",
-                boxLabel: "Show Hidden Fields",
-                checked: this.showHiddenFields,
-                handler: function (checkbox, checked) {
-                    this.setShowHiddenFields(checked);
-                },
-                scope: this
+            dockedItems: [{
+                xtype: 'toolbar',
+                dock: 'bottom',
+                ui: 'footer',
+                cls: 'labkey-customview-treepanel-footer',
+                items: ['->',{
+                    xtype: "checkbox",
+                    boxLabel: "Show Hidden Fields",
+                    checked: this.showHiddenFields,
+                    handler: function (checkbox, checked) {
+                        this.setShowHiddenFields(checked);
+                    },
+                    scope: this
+                }]
             }]
         });
 
@@ -216,7 +222,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         // enabled for saved (non-session) editable views or customized default view (not new) views.
         var revertEnabled = canEdit && (this.customView.session || (!this.customView.name && !this.customView.doesNotExist));
 
-        var footerBar = [{
+        var footerBarItems = [{
             text: "Delete",
             tooltip: "Delete " + (this.customView.shared ? "shared" : "your") + " saved view",
             tooltipType: "title",
@@ -228,7 +234,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         // Only add Revert if we're being rendered attached to a grid
         if (config.dataRegion)
         {
-            footerBar[footerBar.length] = {
+            footerBarItems.push({
                 text: "Revert",
                 tooltip: "Revert " + (this.customView.shared ? "shared" : "your") + " edited view",
                 tooltipType: "title",
@@ -236,32 +242,32 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
                 disabled: !revertEnabled,
                 handler: this.onRevertClick,
                 scope: this
-            };
+            });
         }
 
-        footerBar[footerBar.length] = "->";
+        footerBarItems.push("->");
 
         // Only add View Grid if we're being rendered attached to a grid
         if (config.dataRegion)
         {
-            footerBar[footerBar.length] = {
+            footerBarItems.push({
                 text: "View Grid",
                 tooltip: "Apply changes to the view and reshow grid",
                 tooltipType: "title",
                 handler: this.onApplyClick,
                 scope: this
-            };
+            });
         }
 
         if (!this.query.isTemporary)
         {
-            footerBar[footerBar.length] = {
+            footerBarItems.push({
                 text: "Save",
                 tooltip: "Save changes",
                 tooltipType: "title",
                 handler: this.onSaveClick,
                 scope: this
-            };
+            });
         }
 
         config = Ext4.applyIf(config, {
@@ -276,7 +282,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
             layout: 'border',
             items: [
                 this.getTabsDataView(true, config.tabWidth),
-                this.getTabsMainPanel(config.activeTab, footerBar)
+                this.getTabsMainPanel(config.activeTab, footerBarItems)
             ]
         });
 
@@ -296,7 +302,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         }
     },
 
-    getTabsMainPanel : function(activeTab, footerBar) {
+    getTabsMainPanel : function(activeTab, footerBarItems) {
         if (!this.tabsMainPanel) {
             this.tabsMainPanel = Ext4.create('Ext.panel.Panel', {
                 region: 'center',
@@ -305,23 +311,9 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
                 border: false,
                 items: [
                     this.getAvailableFieldsPanel(),
-                    this.getInnerTabPanel(activeTab)
-                ],
-                buttonAlign: "left",
-                dockedItems: [{
-                    xtype: 'toolbar',
-                    dock: 'bottom',
-                    height: 20,
-                    hidden: true,
-                    layout: 'fit',
-                    border: false,
-                    items: [{
-                        xtype: 'container',
-                        // would like to use 'labkey-status-info' class instead of inline style, but it centers and stuff
-                        cls: 'labkey-customview-message'
-                    }]
-                }],
-                fbar: footerBar
+                    this.getInnerTabPanel(activeTab),
+                    this.getBottomToolbarPanel(footerBarItems)
+                ]
             })
         }
 
@@ -431,6 +423,42 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         return this.tabsTabPanel;
     },
 
+    getBottomToolbarPanel : function(footerBarItems) {
+        if (!this.bottomToolbarPanel) {
+            this.bottomToolbarPanel = Ext4.create('Ext.panel.Panel', {
+                region: 'south',
+                layout: 'fit',
+                border: false,
+                items: [{
+                    xtype: 'box',
+                    height: 20,
+                    hidden: true,
+                    // would like to use 'labkey-status-info' class instead of inline style, but it centers and stuff
+                    cls: 'labkey-customview-message',
+                    data: {msg: 'test'},
+                    tpl: new Ext4.XTemplate(
+                        '{msg}'
+                    )
+                },{
+                    // this is needed because when the message box below is hidden, we need something in the panel
+                    xtype: 'box',
+                    height: 0
+                }],
+                buttonAlign: "left",
+                dockedItems: [{
+                    xtype: 'toolbar',
+                    dock: 'bottom',
+                    ui: 'footer',
+                    cls: 'labkey-customview-button-footer',
+                    items: footerBarItems
+                }]
+
+            });
+        }
+
+        return this.bottomToolbarPanel;
+    },
+
     onRender : function (ct, position) {
         this.callParent([ct, position]);
 
@@ -484,30 +512,30 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
 
     getEditableErrors : function () {
         if (!this.editableErrors) {
-            this.editableErrors = LABKEY.DataRegion._getCustomViewEditableErrors(this.customView);
+            this.editableErrors = this.dataRegion.getCustomViewEditableErrors(this.customView);
         }
         return this.editableErrors;
     },
 
-    getMessageToolBar : function() {
-        var dockedItems = this.getTabsMainPanel().getDockedItems('toolbar[dock="bottom"][ui="default"]');
-        if (dockedItems.length == 1) {
-            return dockedItems[0];
+    getMessageBox : function() {
+        var messageContainer = this.getBottomToolbarPanel().down('box');
+        if (messageContainer) {
+            return messageContainer;
         }
+
         return undefined;
     },
 
     showMessage : function (msg) {
         // XXX: support multiple messages and [X] close box
-        var tb = this.getMessageToolBar();
-        if (tb && tb.getEl())
+        var m = this.getMessageBox();
+        if (m && m.getEl())
         {
-            var el = tb.down('container');
-            el.update("<span class='labkey-tool labkey-tool-close' style='float:right;vertical-align:top;'></span><span>"
+            m.update("<span class='labkey-tool labkey-tool-close' style='float:right;vertical-align:top;'></span><span>"
                 + Ext4.util.Format.htmlEncode(msg) + "</span>");
-            tb.show();
-            tb.getEl().slideIn();
-            tb.getEl().on('click', function () { this.hideMessage(); }, this, {single: true});
+            m.show();
+            m.getEl().slideIn();
+            m.getEl().on('click', function () { this.hideMessage(); }, this, {single: true});
         }
         else {
             this.on('afterrender', function () { this.showMessage(msg); }, this, {single: true});
@@ -515,11 +543,11 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
     },
 
     hideMessage : function () {
-        var tb = this.getMessageToolBar();
-        if (tb)
+        var m = this.getMessageBox();
+        if (m)
         {
-            tb.down('container').update('');
-            tb.hide();
+            m.update('');
+            m.hide();
         }
     },
 
@@ -705,7 +733,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
             scope: this
         }, this.customView);
 
-        LABKEY.DataRegion.saveCustomizeViewPrompt(config);
+        LABKEY.DataRegion2.saveCustomizeViewPrompt(config);
     },
 
     revert : function () {
@@ -805,7 +833,7 @@ LABKEY.ext.FieldTreeNodeUI = Ext.extend(Ext.tree.TreeNodeUI, {
 });
 
 // private
-LABKEY.DataRegion.saveCustomizeViewPrompt = function(config) {
+LABKEY.DataRegion2.saveCustomizeViewPrompt = function(config) {
 
     var success = config.success;
     var scope = config.scope;

@@ -1376,6 +1376,16 @@ if (!LABKEY.DataRegions)
     // Misc
     //
 
+    // formerly, LABKEY.DataRegion._getCustomViewEditableErrors
+    Proto.getCustomViewEditableErrors = function (view)
+    {
+        var errors = [];
+        if (view && !view.editable) {
+            errors.push("The view is read-only and cannot be edited.");
+        }
+        return errors;
+    };
+
     Proto._initPanes = function() {
         var callbacks = _paneCache[this.name];
         if (callbacks) {
@@ -1817,7 +1827,7 @@ if (!LABKEY.DataRegions)
             allowableContainerFilters: region.allowableContainerFilters,
             targetContainers: queryDetails.targetContainers,
             canEditSharedViews: queryDetails.canEditSharedViews,
-            canEdit: LABKEY.DataRegion._getCustomViewEditableErrors(config).length == 0,
+            canEdit: this.getCustomViewEditableErrors(config).length == 0,
             success: function (win, o) {
                 var timerId = setTimeout(function() {
                     timerId = 0;
@@ -1860,7 +1870,7 @@ if (!LABKEY.DataRegions)
             scope: region
         }, region.view);
 
-        LABKEY.DataRegion.saveCustomizeViewPrompt(config);
+        LABKEY.DataRegion2.saveCustomizeViewPrompt(config);
     };
 
     var _setParameter = function(region, param, value, skipPrefixes /* optional */) {
