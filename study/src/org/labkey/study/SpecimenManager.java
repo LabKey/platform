@@ -1738,7 +1738,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             }
             else
             {
-                SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getValueSql("_distinct").getSQL() + " FROM ");
+                SQLFragment sql = new SQLFragment("SELECT DISTINCT ").append(col.getValueSql("_distinct").getSQL()).append(" FROM ");
                 sql.append(tinfo.getFromSQL("_distinct"));
                 if (orderBy != null)
                     sql.append(" ORDER BY ").append(orderBy);

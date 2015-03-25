@@ -397,10 +397,10 @@ public class CohortManager
 
         DatasetDefinition.DatasetSchemaTableInfo cohortDatasetTinfo = dsd.getTableInfo(user, false);
         ColumnInfo subjectCol = cohortDatasetTinfo.getParticipantColumn();
-        SQLFragment pCohortSql = new SQLFragment("SELECT P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, " + cohortLabelCol.getValueSql("D") + "\n" +
-                "FROM " + StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P") + "\n" +
+        SQLFragment pCohortSql = new SQLFragment("SELECT P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, ").append(cohortLabelCol.getValueSql("D")).append("\n" +
+                "FROM ").append(StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P")).append("\n" +
                 "  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON " +
-                    "\tP.ParticipantId = " + subjectCol.getValueSql("D") + "\n" +
+                    "\tP.ParticipantId = ").append(subjectCol.getValueSql("D")).append("\n" +
                 "WHERE P.Container = ? " + "\n" +
                 "ORDER BY P.ParticipantId" + (!dsd.isDemographicData() ? ", D.SequenceNumMin" : ""));
         pCohortSql.add(study.getContainer());
