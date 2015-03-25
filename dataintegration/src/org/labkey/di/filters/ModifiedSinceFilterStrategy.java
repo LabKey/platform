@@ -61,8 +61,8 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
     TableInfo _table;
     ColumnInfo _tsCol;
     ColumnInfo _deletedQueryTsCol;
-    boolean _useRowversion = false;
-
+    boolean _useRowversionForSelect = false;
+    boolean _useRowversionForDelete = false;
     private enum FilterTimestamp
     {
         START
@@ -125,7 +125,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         if (null == _tsCol)
             throw new ConfigurationException("Column not found: " + _config.getSourceQuery() + "." + timestampColumnName);
         if (TransformUtils.isRowversionColumn(_tsCol) || _tsCol.getJdbcType().isInteger())
-            _useRowversion = true;
+            _useRowversionForSelect = true;
 
         initDeletedRowsSource();
 
@@ -143,6 +143,8 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             _deletedQueryTsCol = _deletedRowsTinfo.getColumn(timestampColumnName);
             if (null == _deletedQueryTsCol)
                 throw new ConfigurationException("Column not found: " + _deletedRowsTinfo.getName() + "." + timestampColumnName);
+            if (TransformUtils.isRowversionColumn(_deletedQueryTsCol) || _deletedQueryTsCol.getJdbcType().isInteger())
+                _useRowversionForDelete = true;
         }
     }
 
@@ -183,8 +185,8 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             f.addCondition(tsCol.getFieldKey(), incrementalEndVal, CompareType.LTE);
         }
 
-        variables.put(FilterTimestamp.START.getPropertyDescriptor(_useRowversion, deleting), incrementalStartVal);
-        variables.put(FilterTimestamp.END.getPropertyDescriptor(_useRowversion, deleting), incrementalEndVal);
+        variables.put(FilterTimestamp.START.getPropertyDescriptor(isUseRowversion(deleting), deleting), incrementalStartVal);
+        variables.put(FilterTimestamp.END.getPropertyDescriptor(isUseRowversion(deleting), deleting), incrementalEndVal);
 
         return f;
     }
@@ -233,7 +235,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         Object incrementalEndTimestamp = maxResult.getValue();
         if (incrementalEndTimestamp == null || incrementalEndTimestamp instanceof Date || incrementalEndTimestamp instanceof Integer || incrementalEndTimestamp instanceof Long)
             timestamps.put(FilterTimestamp.END, incrementalEndTimestamp);
-        else if (isUseRowversion() && incrementalEndTimestamp instanceof byte[])
+        else if (isUseRowversion(deleting) && incrementalEndTimestamp instanceof byte[])
             timestamps.put(FilterTimestamp.END, ByteBuffer.wrap((byte[]) incrementalEndTimestamp).getLong()); // a SQL Server timestamp column
         else
             throw new IllegalArgumentException("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a date, timestamp or integer: " + incrementalEndTimestamp.toString());
@@ -248,7 +250,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             return null;
         JSONObject steps = _getObject(state, "steps");
         JSONObject step = _getObject(steps, _config.getId());
-        Object o = _get(step, FilterTimestamp.END.getPropertyDescriptor(_useRowversion, deleted).getName());
+        Object o = _get(step, FilterTimestamp.END.getPropertyDescriptor(isUseRowversion(deleted), deleted).getName());
 
         if (null == o || (o instanceof String && StringUtils.isEmpty((String)o)))
             return null;
@@ -277,9 +279,9 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         return null!=json && json.has(property) ? json.get(property) : null;
     }
 
-    public boolean isUseRowversion()
+    public boolean isUseRowversion(boolean deleting)
     {
-        return _useRowversion;
+        return deleting ? _useRowversionForDelete : _useRowversionForSelect;
     }
 
     public static class Factory implements FilterStrategy.Factory
