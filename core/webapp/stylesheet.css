@@ -1424,8 +1424,9 @@ img.labkey-grid-filter-icon
     margin-top: 5px;
 }
 
-.labkey-customview-centerpanel .x4-toolbar-footer .x4-btn {
-    margin: 5px;
+.labkey-customview-button-footer {
+    padding: 5px !important;
+    border-top: solid #B4B4B4 1px !important;
 }
 
 /** Ext.ux.dd.GridDragDropRowOrder.js */
