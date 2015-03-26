@@ -520,7 +520,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
 
     getEditableErrors : function () {
         if (!this.editableErrors) {
-            this.editableErrors = this.dataRegion.getCustomViewEditableErrors(this.customView);
+            this.editableErrors = LABKEY.DataRegion2.getCustomViewEditableErrors(this.customView);
         }
         return this.editableErrors;
     },
@@ -540,7 +540,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         if (m && m.getEl())
         {
             m.update("<span class='labkey-tool labkey-tool-close' style='float:right;vertical-align:top;'></span><span>"
-                + Ext4.util.Format.htmlEncode(msg) + "</span>");
+                + Ext4.htmlEncode(msg) + "</span>");
             m.show();
             m.getEl().slideIn();
             m.getEl().on('click', function () { this.hideMessage(); }, this, {single: true});
@@ -890,7 +890,7 @@ LABKEY.DataRegion2.saveCustomizeViewPrompt = function(config) {
     var warnedAboutMoving = false;
 
     var win = Ext4.create('Ext.window.Window', {
-        title: "Save Custom View" + (viewName ? ": " + Ext4.util.Format.htmlEncode(viewName) : ""),
+        title: "Save Custom View" + (viewName ? ": " + Ext4.htmlEncode(viewName) : ""),
         cls: "labkey-customview-save",
         border: false,
         autoShow: true,

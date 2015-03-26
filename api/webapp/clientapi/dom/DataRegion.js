@@ -1490,15 +1490,6 @@ if (!LABKEY.DataRegions)
     // Misc
     //
 
-    // formerly, LABKEY.DataRegion._getCustomViewEditableErrors
-    Proto.getCustomViewEditableErrors = function(view) {
-        var errors = [];
-        if (view && !view.editable) {
-            errors.push("The view is read-only and cannot be edited.");
-        }
-        return errors;
-    };
-
     Proto._initPanes = function() {
         var callbacks = _paneCache[this.name];
         if (callbacks) {
@@ -2398,6 +2389,14 @@ if (!LABKEY.DataRegions)
                 'designer/Designer.js'
             ], true, cb, scope);
         });
+    };
+
+    LABKEY.DataRegion2.getCustomViewEditableErrors = function(customView) {
+        var errors = [];
+        if (customView && !customView.editable) {
+            errors.push("The view is read-only and cannot be edited.");
+        }
+        return errors;
     };
 
     LABKEY.DataRegion2.registerPane = function(regionName, callback, scope) {
