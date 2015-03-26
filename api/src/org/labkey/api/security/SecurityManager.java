@@ -66,6 +66,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
@@ -2334,7 +2335,7 @@ public class SecurityManager
                 String password = createTempPassword();
                 SecurityManager.setPassword(email, password);
 
-                User user2 = AuthenticationManager.authenticate(null, rawEmail, password);
+                User user2 = AuthenticationManager.authenticate(AppProps.getInstance().createMockRequest(), rawEmail, password);
                 assertNotNull("login", user2);
                 assertEquals("login", user, user2);
             }
