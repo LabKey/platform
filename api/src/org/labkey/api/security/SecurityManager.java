@@ -2002,25 +2002,23 @@ public class SecurityManager
         if (null == service)
             return NO_TERMS;
 
-        TermsOfUse termsOfUse = NO_TERMS;
-        String termsString = null;
+        String termsString;
         if (null != project) // find project-level terms of use, if any
         {
             termsString = service.getHtml(project.getContainer(), TERMS_OF_USE_WIKI_NAME);
             if (null != termsString)
             {
-                termsOfUse = new TermsOfUse(TermsOfUseType.PROJECT_LEVEL, termsString);
+                return new TermsOfUse(TermsOfUseType.PROJECT_LEVEL, termsString);
             }
         }
-        if (termsOfUse.getType() == TermsOfUseType.NONE)  // get site-wide terms of use, if any
+
+        // now check if we have site-wide terms of use
+        termsString = service.getHtml(ContainerManager.getRoot(), TERMS_OF_USE_WIKI_NAME);
+        if (null != termsString)
         {
-            termsString = service.getHtml(ContainerManager.getRoot(), TERMS_OF_USE_WIKI_NAME);
-            if (null != termsString)
-            {
-                termsOfUse = new TermsOfUse(TermsOfUseType.SITE_WIDE, termsString);
-            }
+            return new TermsOfUse(TermsOfUseType.SITE_WIDE, termsString);
         }
-        return termsOfUse;
+        return NO_TERMS;
     }
 
 
@@ -2070,8 +2068,8 @@ public class SecurityManager
 
     public static class TermsOfUse
     {
-        private TermsOfUseType type = TermsOfUseType.NONE;
-        private String html = null;
+        private final TermsOfUseType type;
+        private final String html;
 
         public TermsOfUse(@NotNull TermsOfUseType type, @Nullable String html)
         {
