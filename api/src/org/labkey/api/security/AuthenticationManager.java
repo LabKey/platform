@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
@@ -52,8 +51,6 @@ import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.RedirectException;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -231,7 +228,7 @@ public class AuthenticationManager
     }
 
 
-    private static final String AUTHENTICATION_SET = "Authentication";
+    private static final String AUTHENTICATION_PROVIDERS_SET = "Authentication";
     private static final String PROVIDERS_KEY = "Authentication";
     private static final String PROP_SEPARATOR = ":";
 
@@ -247,7 +244,7 @@ public class AuthenticationManager
             sep = PROP_SEPARATOR;
         }
 
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_SET, true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_PROVIDERS_SET, true);
         props.put(PROVIDERS_KEY, sb.toString());
         props.save();
         loadProperties();
@@ -270,9 +267,27 @@ public class AuthenticationManager
     }
 
 
+    private static final String AUTHENTICATION_SETTINGS_SET = "AuthenticationSettings";
+    private static final String ALLOW_BROWSER_CACHING = "AllowBrowserCaching";
+
+    public static void setBrowserCaching(boolean allow)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_SETTINGS_SET, true);
+        props.put(ALLOW_BROWSER_CACHING, allow ? "TRUE" : "FALSE");
+        props.save();
+    }
+
+
+    public static boolean isBrowserCachingAllowed()
+    {
+        String value = PropertyManager.getProperties(AUTHENTICATION_SETTINGS_SET).get(ALLOW_BROWSER_CACHING);
+        return !"FALSE".equalsIgnoreCase(value);  // Default to TRUE
+    }
+
+
     private static void loadProperties()
     {
-        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_SET);
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_PROVIDERS_SET);
         String activeProviderProp = props.get(PROVIDERS_KEY);
         List<String> activeNames = Arrays.asList(null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
         List<AuthenticationProvider> activeProviders = new ArrayList<>(_allProviders.size());
@@ -607,16 +622,19 @@ public class AuthenticationManager
     }
 
 
-    // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP).  This is for the case
+    // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP). This is for the case
     // where you have an id & password in hand and want to ignore SSO and other delegated authentication mechanisms that
-    // rely on cookies, browser redirects, etc.  Current usages include basic auth and test cases.
+    // rely on cookies, browser redirects, etc. Current usages include basic auth and test cases. Note that this will
+    // always fail if any secondary authentication is enabled (e.g., Duo).
 
-    // Returns null if credentials are incorrect, user doesn't exist, or user is inactive
+    // Returns null if credentials are incorrect, user doesn't exist, user is inactive, or secondary auth is enabled.
     public static User authenticate(HttpServletRequest request, String id, String password) throws InvalidEmailException
     {
-        PrimaryAuthenticationResult result = authenticate(request, null, id, password, null, true);
+        PrimaryAuthenticationResult primaryResult = authenticate(request, null, id, password, null, true);
 
-        return result.getUser();
+        // If primary authentication is successful then look for secondary authentication. handleAuthentication() will
+        // always return a failure result (i.e., null user) if secondary authentication is enabled. #22944
+        return primaryResult.getStatus() == AuthenticationStatus.Success ? handleAuthentication(request, ContainerManager.getRoot()).getUser() : null;
     }
 
 
@@ -644,7 +662,8 @@ public class AuthenticationManager
     }
 
 
-    public static interface URLFactory
+    // TODO: Remove... use LoginUrls instead
+    public interface URLFactory
     {
         ActionURL getActionURL(AuthenticationProvider provider);
     }
@@ -658,7 +677,7 @@ public class AuthenticationManager
     }
 
 
-    private static boolean isActive(AuthenticationProvider authProvider)
+    public static boolean isActive(AuthenticationProvider authProvider)
     {
         return getActiveProviders().contains(authProvider);
     }
@@ -697,79 +716,6 @@ public class AuthenticationManager
                 list.add((SecondaryAuthenticationProvider)provider);
 
         return list;
-    }
-
-
-    public static HttpView getConfigurationView(URLFactory enable, URLFactory disable)
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<table>\n");
-        sb.append("<tr><td colspan=\"4\">These are the installed primary authentication providers:<br><br></td></tr>\n");
-
-        appendProviders(getAllPrimaryProviders(), enable, disable, sb);
-
-        List<SecondaryAuthenticationProvider> secondary = getAllSecondaryProviders();
-
-        if (!secondary.isEmpty())
-        {
-            sb.append("<tr><td colspan=\"4\">&nbsp;</td></tr>");
-            sb.append("<tr><td colspan=\"4\">These are the installed secondary authentication providers:<br><br></td></tr>\n");
-            appendProviders(secondary, enable, disable, sb);
-        }
-
-        sb.append("<tr><td colspan=\"4\">&nbsp;</td></tr>");
-        sb.append("<tr><td colspan=\"4\">");
-        sb.append(PageFlowUtil.button("Done").href(PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()));
-        sb.append("</td></tr></table>\n");
-
-        return new HtmlView(sb.toString());
-    }
-
-    private static void appendProviders(List<? extends AuthenticationProvider> providers, URLFactory enable, URLFactory disable, StringBuilder sb)
-    {
-        for (AuthenticationProvider authProvider : providers)
-        {
-            sb.append("<tr><td>").append(PageFlowUtil.filter(authProvider.getName())).append("</td>");
-
-            if (authProvider.isPermanent())
-            {
-                sb.append("<td>&nbsp;</td>");
-            }
-            else
-            {
-                if (isActive(authProvider))
-                {
-                    sb.append("<td>");
-                    sb.append(PageFlowUtil.textLink("disable", disable.getActionURL(authProvider).getEncodedLocalURIString()));
-                    sb.append("</td>");
-                }
-                else
-                {
-                    sb.append("<td>");
-                    sb.append(PageFlowUtil.textLink("enable", enable.getActionURL(authProvider).getEncodedLocalURIString()));
-                    sb.append("</td>");
-                }
-            }
-
-            ActionURL url = authProvider.getConfigurationLink();
-
-            if (null == url)
-            {
-                sb.append("<td>&nbsp;</td>");
-            }
-            else
-            {
-                sb.append("<td>");
-                sb.append(PageFlowUtil.textLink("configure", url.getEncodedLocalURIString()));
-                sb.append("</td>");
-            }
-
-            sb.append("<td>");
-            sb.append(authProvider.getDescription());
-            sb.append("</td>");
-
-            sb.append("</tr>\n");
-        }
     }
 
 
@@ -850,7 +796,7 @@ public class AuthenticationManager
 
     public static class AuthenticationResult
     {
-        private final User _user;
+        private final @Nullable User _user;
         private final URLHelper _redirectURL;
 
         public AuthenticationResult(@Nullable User user, URLHelper redirectURL)
@@ -864,7 +810,8 @@ public class AuthenticationManager
             this(null, redirectURL);
         }
 
-        public User getUser()
+        // Returns null if authentication has failed or is not complete (e.g., still need to complete second factor auth)
+        public @Nullable User getUser()
         {
             return _user;
         }

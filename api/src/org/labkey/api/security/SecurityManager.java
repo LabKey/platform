@@ -354,7 +354,7 @@ public class SecurityManager
 
 
     // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
-    public static User authenticateBasic(HttpServletRequest request, String basic)
+    public static @Nullable User authenticateBasic(HttpServletRequest request, String basic)
     {
         try
         {
