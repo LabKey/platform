@@ -130,10 +130,8 @@ public class AsyncDataIterator implements DataIterator
                 while (!Thread.interrupted() && _it.next())
                 {
                     Object[] row = new Object[_columnCount+1];
-//                    ArrayList row = new ArrayList(_columnCount+1);
                     for (int i=0 ; i<=_columnCount ; i++)
                         row[i] = _it.get(i);
-//                        row.add(_it.get(i));
                     _queue.put(row);
                 }
             }

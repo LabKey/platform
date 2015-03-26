@@ -651,8 +651,16 @@ public class TabLoader extends DataLoader
             reader = getReader();
             for (int i = 0; i < lineNum(); i++)
                 reader.readLine();
+
             // make sure _columns is initialized
-            getColumns();
+            ColumnDescriptor[] cols = getColumns();
+
+            // all input starts as String,  we don't need to use a String converter
+            for (ColumnDescriptor col : cols)
+            {
+                if (col.clazz == String.class)
+                    col.converter = noopConverter;
+            }
         }
 
         public void close() throws IOException

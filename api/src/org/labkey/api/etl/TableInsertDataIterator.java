@@ -86,7 +86,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     protected TableInsertDataIterator(DataIterator data, TableInfo table, Container c, DataIteratorContext context,
           @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
-        super(data, null, context);
+        super(data, (Parameter.ParameterMap)null, context);
         this._table = table;
         this._c = c;
         this._insertOption = context.getInsertOption();
@@ -173,10 +173,15 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
                 stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, constants, _selectIds, false, _context.supportsAutoIncrementKey());
             }
 
-            if (_useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex)
-                _stmts = new Parameter.ParameterMap[] {stmt, stmt.copy()};
+            if (_context.getInsertOption().batch && null == _rowIdIndex && null == _objectIdIndex)
+            {
+                _stmts = new Parameter.ParameterMap[]{stmt, stmt.copy()};
+                _useAsynchronousExecute = true;
+            }
             else
-                _stmts = new Parameter.ParameterMap[] {stmt};
+            {
+                _stmts = new Parameter.ParameterMap[]{stmt};
+            }
 
             super.init();
             if (_selectIds)

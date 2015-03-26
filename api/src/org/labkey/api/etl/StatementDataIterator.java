@@ -81,6 +81,7 @@ class StatementDataIterator extends AbstractDataIterator
         _keyValues = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,null));
     }
 
+
     // configure columns returned by statement, e.g. rowid
     // index > 0 to override an existing column
     // index == -1 to append
@@ -116,7 +117,7 @@ class StatementDataIterator extends AbstractDataIterator
 
         for (int set=0 ; set<_stmts.length ; set++)
         {
-            Parameter.ParameterMap stmt = _stmts[0];
+            Parameter.ParameterMap stmt = _stmts[set];
             // map from source to target
             ArrayList<Triple> bindings = new ArrayList<>(stmt.size());
             // by name

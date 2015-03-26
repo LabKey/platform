@@ -17,6 +17,7 @@ package org.labkey.api.reader;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.Converter;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -471,6 +472,16 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
     public abstract void close();
 
+
+    public static Converter noopConverter = new Converter()
+    {
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            return value;
+        }
+    };
+
     protected abstract class DataLoaderIterator implements CloseableIterator<Map<String, Object>>
     {
         protected final ColumnDescriptor[] _activeColumns;
@@ -480,6 +491,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         private Map<String, Object> _values = null;
         private int _lineNum = 0;
         private boolean _closed = false;
+
 
         protected DataLoaderIterator(int lineNum) throws IOException
         {
