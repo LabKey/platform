@@ -651,6 +651,17 @@ li.labkey-tab-inactive a
     box-shadow: #<%= webpart %> 0 1px 0px 0 inset;
 }
 
+.themed-panel2 .x4-panel-header {
+    background: #<%= grid %>;
+    padding: 5px;
+}
+
+.themed-panel2 .x4-panel-header-text-container-default {
+    font-size: <%= fontSize %>;
+    font-family: tahoma,arial,verdana,sans-serif;
+    color: #000000;
+}
+
 div.x4-splitter-vertical, div.x4-splitter-active, div.x4-resizable-overlay {
     background-color: #<%= webpart %> !important;
 }

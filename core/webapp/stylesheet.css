@@ -1409,7 +1409,7 @@ img.labkey-grid-filter-icon
 .labkey-customview-activetab {
     background-color: #FFFFFF;
     border-radius: 5px 0 0 5px;
-    border-color: #B4B4B4;
+    border-color: #CCCCCC;
     border-style: solid;
     border-width: 1px 0 1px 1px;
 }
@@ -1426,7 +1426,21 @@ img.labkey-grid-filter-icon
 
 .labkey-customview-button-footer {
     padding: 5px !important;
-    border-top: solid #B4B4B4 1px !important;
+    border-top: solid #CCCCCC 1px !important;
+}
+
+.labkey-customview-westpanel .tab-joint {
+    position: absolute;
+    top: 1px;
+    left: 78px;
+    width: 3px;
+    height: 25px;
+    background: #FFFFFF;
+    z-index: 8999;
+}
+
+.labkey-customview-centerpanel {
+    border: solid #CCCCCC 1px;
 }
 
 /** Ext.ux.dd.GridDragDropRowOrder.js */
