@@ -36,6 +36,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 
 public class Issue extends Entity implements Serializable, Cloneable
@@ -65,7 +67,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     protected Collection<Integer> duplicates;
 
     protected String related;
-    protected ArrayList<Integer> relatedIssues;
+    protected Set<Integer> relatedIssues;
 
     protected Integer closedBy;
     protected Date closed;
@@ -388,18 +390,15 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
     @NotNull
-    public ArrayList<Integer> getRelatedIssues()
+    public Set<Integer> getRelatedIssues()
     {
-        return relatedIssues != null ? relatedIssues : new ArrayList<Integer>();
+        return relatedIssues != null ? Collections.unmodifiableSet(relatedIssues) : Collections.<Integer>emptySet();
     }
 
-    public void setRelatedIssues(ArrayList<Integer> rels)
+    public void setRelatedIssues(@NotNull Collection<Integer> rels)
     {
-        if (rels != null)
-        {
-            Collections.sort(rels);
-            relatedIssues = rels;
-        }
+        // Use a TreeSet so that the IDs are ordered ascending
+        relatedIssues = new TreeSet<>(rels);
     }
 
 

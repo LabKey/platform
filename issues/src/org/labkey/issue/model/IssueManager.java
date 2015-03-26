@@ -15,7 +15,6 @@
  */
 package org.labkey.issue.model;
 
-import com.allen_sauer.gwt.dnd.client.util.StringUtil;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -199,11 +198,9 @@ public class IssueManager
                 new SimpleFilter(FieldKey.fromParts("IssueId"), issueId),
                 new Sort("IssueId")).getCollection(Integer.class);
 
-        ArrayList<Integer> related = new ArrayList<>();
-        related.addAll(rels);
-        issue.setRelatedIssues(related);
+        issue.setRelatedIssues(rels);
         // the related string is only used when rendering the update form
-        issue.setRelated(StringUtils.join(related, ", "));
+        issue.setRelated(StringUtils.join(rels, ", "));
         return issue;
     }
 
@@ -217,8 +214,8 @@ public class IssueManager
     public static List<Issue.Comment> getCommentsForRelatedIssues(Issue issue, User user)
     {
         // Get related issues for optional display
-        List<Integer> relatedIssues = issue.getRelatedIssues();
-        List<Issue.Comment> commentLinkedList = new LinkedList();
+        Set<Integer> relatedIssues = issue.getRelatedIssues();
+        List<Issue.Comment> commentLinkedList = new LinkedList<>();
 
         // Add related issue comments
         for (Integer relatedIssueInt : relatedIssues)
@@ -255,8 +252,7 @@ public class IssueManager
      */
     public static boolean hasRelatedIssues(Issue issue, User user)
     {
-        List<Integer> relatedIssues = issue.getRelatedIssues();
-        for (Integer relatedIssueInt : relatedIssues)
+        for (Integer relatedIssueInt : issue.getRelatedIssues())
         {
             Issue relatedIssue = IssueManager.getIssue(null, relatedIssueInt);
             if (relatedIssue != null && relatedIssue.getComments().size() > 0)
@@ -314,8 +310,6 @@ public class IssueManager
     protected static void saveRelatedIssues(User user, Issue issue) throws SQLException
     {
         Collection<Integer> rels = issue.getRelatedIssues();
-        // This shouldn't ever be null but I am a paranoid android
-        if (null == rels) return;
 
         int issueId = issue.getIssueId();
 

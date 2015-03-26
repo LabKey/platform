@@ -40,27 +40,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.AttachmentParentEntity;
-import org.labkey.api.data.BeanViewForm;
-import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.query.FieldKey;
@@ -149,6 +129,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class IssuesController extends SpringActionController
 {
@@ -576,13 +557,10 @@ public class IssuesController extends SpringActionController
 
                 Collection<Integer> rels = _issue.getRelatedIssues();
                 // handle comment changes to related issues
-                if (rels != null)
+                for (int curIssueId : rels)
                 {
-                    for (int curIssueId : rels)
-                    {
-                        Issue relatedIssue = relatedIssueCommentHandler(_issue.getIssueId(), curIssueId, user, false);
-                        IssueManager.saveIssue(user, getContainer(), relatedIssue);
-                    }
+                    Issue relatedIssue = relatedIssueCommentHandler(_issue.getIssueId(), curIssueId, user, false);
+                    IssueManager.saveIssue(user, getContainer(), relatedIssue);
                 }
 
                 transaction.commit();
@@ -659,12 +637,11 @@ public class IssuesController extends SpringActionController
     protected boolean relatedIssueHandler(Issue issue, User user, BindException errors)
     {
         String textInput = issue.getRelated();
-        ArrayList<Integer> rels = new ArrayList<>();
+        Set<Integer> newRelatedIssues = new TreeSet<>();
         if (textInput != null)
         {
-            String[] textValues = issue.getRelated().split("\\s*,\\s*");
+            String[] textValues = issue.getRelated().split("[\\s,;]+");
             int relatedId;
-            Issue related;
             // for each issue id we need to validate
             for (String relatedText : textValues)
             {
@@ -680,27 +657,36 @@ public class IssuesController extends SpringActionController
                     return false;
                 }
 
-                related = IssueManager.getIssue(null, relatedId);
+                Issue related = IssueManager.getIssue(null, relatedId);
                 if (related == null)
                 {
                     errors.rejectValue("Related", ERROR_MSG, "Related issue '" + relatedId + "' not found");
                     return false;
                 }
-                if (!related.lookupContainer().hasPermission(user, ReadPermission.class))
-                {
-                    errors.rejectValue("Related", ERROR_MSG, "User does not have Read Permission for related issue'" + relatedId + "'");
-                    return false;
-                }
-                if (rels.contains(relatedId))
-                {
-                    errors.rejectValue("Related", ERROR_MSG, "Related issues cannot contain duplicates");
-                    return false;
-                }
-                rels.add(relatedId);
+                newRelatedIssues.add(relatedId);
             }
         }
-        // this sets the collection of interger ids for all related issues
-        issue.setRelatedIssues(rels);
+
+        // Fetch from IssueManager to make sure the related issues are populated
+        Issue originalIssue = IssueManager.getIssue(null, issue.getIssueId());
+        Set<Integer> originalRelatedIssues = originalIssue == null ? Collections.<Integer>emptySet() : originalIssue.getRelatedIssues();
+
+        // Only check permissions if
+        if (!originalRelatedIssues.equals(newRelatedIssues))
+        {
+            for (Integer relatedId : newRelatedIssues)
+            {
+                Issue related = IssueManager.getIssue(null, relatedId);
+                if (!related.lookupContainer().hasPermission(user, ReadPermission.class))
+                {
+                    errors.rejectValue("Related", ERROR_MSG, "User does not have Read Permission for related issue '" + relatedId + "'");
+                    return false;
+                }
+            }
+        }
+
+        // this sets the collection of integer ids for all related issues
+        issue.setRelatedIssues(newRelatedIssues);
         return true;
     }
     
@@ -708,17 +694,14 @@ public class IssuesController extends SpringActionController
     {
         StringBuilder sb = new StringBuilder();
         Issue relatedIssue = IssueManager.getIssue(null, relatedIssueId);
-        ArrayList<Integer> prevRelated = relatedIssue.getRelatedIssues();
-        ArrayList<Integer> newRelated = new ArrayList<>();
+        Set<Integer> prevRelated = relatedIssue.getRelatedIssues();
+        Set<Integer> newRelated = new TreeSet<>();
         newRelated.addAll(prevRelated);
 
         if (drop)
             newRelated.remove(new Integer(issueId));
         else
             newRelated.add(issueId);
-
-        // make sure sorted order
-        Collections.sort(newRelated);
 
         sb.append("<div class=\"wiki\"><table class=issues-Changes>");
         sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
@@ -776,8 +759,8 @@ public class IssuesController extends SpringActionController
                 }
             }
 
-            // get previous related issue ids before updateing
-            ArrayList<Integer> prevRelatedIds = issue.getRelatedIssues();
+            // get previous related issue ids before updating
+            Set<Integer> prevRelatedIds = issue.getRelatedIssues();
 
             boolean ret = relatedIssueHandler(issue, user, errors);
             if (!ret) return false;
@@ -811,7 +794,7 @@ public class IssuesController extends SpringActionController
                     IssueManager.saveIssue(user, c, duplicateOf);
                 }
 
-                ArrayList<Integer> newRelatedIds = issue.getRelatedIssues();
+                Set<Integer> newRelatedIds = issue.getRelatedIssues();
 
                 // this list represents all the ids which will need related handling for a creating a relatedIssue entry
                 Collection<Integer> newIssues = new ArrayList<>();

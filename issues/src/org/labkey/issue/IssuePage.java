@@ -470,10 +470,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         }
     }
 
-    public String renderRelatedIssues(ArrayList<Integer> rels)
+    public String renderRelatedIssues(Set<Integer> rels)
     {
-        Collection<Integer> col = new ArrayList<>();
-        col.addAll(rels);
         return renderDuplicates(rels);
     }
 
