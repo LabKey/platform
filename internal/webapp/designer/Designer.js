@@ -25,14 +25,13 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
 
         // Find the custom view in the LABKEY.Query.getQueryDetails() response.
         this.customView = null;
-        for (var i = 0; i < this.query.views.length; i++)
-        {
-            if (this.query.views[i].name == this.viewName)
-            {
-                this.customView = this.query.views[i];
-                break;
+
+        Ext4.each(this.query.views, function(view) {
+            if (view.name == this.viewName) {
+                this.customView = this.view;
+                return false;
             }
-        }
+        }, this);
 
         if (!this.customView) {
             this.customView = {
@@ -58,82 +57,82 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
             data: this.query
         });
 
+        // Add any additional field metadata for view's selected columns, sorts, filters.
+        // The view may be filtered or sorted upon columns not present in the query's selected column metadata.
+        // The FieldMetaStore uses a reader that expects the field metadata to be under a 'columns' property instead of 'fields'
+        this.fieldMetaStore.loadRawData({
+            columns: this.customView.fields
+        }, true);
+
+        // Add user filters
+        this.userFilter = config.userFilter || [];
+        Ext4.each(this.userFilter, function(filter) {
+            // copy the filter so the original userFilter isn't modified by the designer
+            var userFilter = Ext4.apply({urlParameter: true}, filter);
+            this.customView.filter.unshift(userFilter);
+        }, this);
+
+        // Add user sort
+        var newSortArray = [];
+        this.userSort = config.userSort || [];
+        for (var i = 0; i < this.userSort.length; i++)
         {
-            // Add any additional field metadata for view's selected columns, sorts, filters.
-            // The view may be filtered or sorted upon columns not present in the query's selected column metadata.
-            // The FieldMetaStore uses a reader that expects the field metadata to be under a 'columns' property instead of 'fields'
-            this.fieldMetaStore.loadRawData({columns: this.customView.fields}, true);
+            // copy the sort so the original userSort isn't modified by the designer
+            var userSort = Ext4.apply({urlParameter: true}, this.userSort[i]);
+            newSortArray.push(userSort);
+        }
 
-            // Add user filters
-            this.userFilter = config.userFilter || [];
-            for (var i = 0; i < this.userFilter.length; i++)
+        // Merge userSort and existing customView sort.
+        for (var i = 0; i < this.customView.sort.length; i++)
+        {
+            var sort = this.customView.sort[i];
+            var found = false;
+            for (var j = 0; j < newSortArray.length; j++)
             {
-                // copy the filter so the original userFilter isn't modified by the designer
-                var userFilter = Ext4.apply({urlParameter: true}, this.userFilter[i]);
-                this.customView.filter.unshift(userFilter);
-            }
-
-            // Add user sort
-            var newSortArray = [];
-            this.userSort = config.userSort || [];
-            for (var i = 0; i < this.userSort.length; i++)
-            {
-                // copy the sort so the original userSort isn't modified by the designer
-                var userSort = Ext4.apply({urlParameter: true}, this.userSort[i]);
-                newSortArray.push(userSort);
-            }
-
-            // Merge userSort and existing customView sort.
-            for (var i = 0; i < this.customView.sort.length; i++)
-            {
-                var sort = this.customView.sort[i];
-                var found = false;
-                for (var j = 0; j < newSortArray.length; j++)
+                if (sort.fieldKey == newSortArray[j].fieldKey)
                 {
-                    if (sort.fieldKey == newSortArray[j].fieldKey)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    newSortArray.push(sort);
+                    found = true;
+                    break;
                 }
             }
-            this.customView.sort = newSortArray;
+            if (!found) {
+                newSortArray.push(sort);
+            }
+        }
+        this.customView.sort = newSortArray;
 
-            this.userColumns = config.userColumns;
-            if (this.userColumns)
+        this.userColumns = config.userColumns;
+        if (this.userColumns)
+        {
+            this.customView.columns = [];
+            if (this.userColumns == '*')
             {
-                this.customView.columns = [];
-                if (this.userColumns == '*')
+                // Pull in all columns from the target query - issue 17425
+                for (var i = 0; i < this.query.columns.length; i++)
                 {
-                    // Pull in all columns from the target query - issue 17425
-                    for (var i = 0; i < this.query.columns.length; i++)
-                    {
-                        this.customView.columns.push({
-                            fieldKey: this.query.columns[i].name,
-                            key: this.query.columns[i].name
-                        });
-                    }
-                }
-                else
-                {
-                    var columnNames = this.userColumns.split(",");
-                    for (var i = 0; i < columnNames.length; i++)
-                    {
-                        this.customView.columns.push({
-                            fieldKey: columnNames[i],
-                            key: columnNames[i]
-                        });
-                    }
+                    this.customView.columns.push({
+                        fieldKey: this.query.columns[i].name,
+                        key: this.query.columns[i].name
+                    });
                 }
             }
+            else
+            {
+                var columnNames = this.userColumns.split(",");
+                for (var i = 0; i < columnNames.length; i++)
+                {
+                    this.customView.columns.push({
+                        fieldKey: columnNames[i],
+                        key: columnNames[i]
+                    });
+                }
+            }
+        }
 
-            // Add user containerFilter
-            this.userContainerFilter = config.userContainerFilter;
-            if (this.userContainerFilter && this.customView.containerFilter != this.userContainerFilter)
-                this.customView.containerFilter = this.userContainerFilter;
+        // Add user containerFilter
+        this.userContainerFilter = config.userContainerFilter;
+        if (this.userContainerFilter && this.customView.containerFilter != this.userContainerFilter) {
+            this.customView.containerFilter = this.userContainerFilter;
         }
 
         this.showHiddenFields = config.showHiddenFields || false;
@@ -149,7 +148,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
 
         config.activeTab = this.translateTabName(config.activeTab);
 
-        Ext4.each(this.tabInfoArr, function(tab){
+        Ext4.each(this.tabInfoArr, function(tab) {
             tab.active = tab.index == config.activeTab;
         });
 
@@ -830,29 +829,29 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
 
 });
 
-// Adds a 'fieldKey' attribute to the available fields tree used by the test framework
-LABKEY.ext.FieldTreeNodeUI = Ext.extend(Ext.tree.TreeNodeUI, {
-    renderElements : function () {
-        this.callParent();
-
-        var node = this.node;
-        var fieldKey = node.attributes.fieldKey;
-        this.elNode.setAttribute("fieldKey", fieldKey);
-    }
-});
+//// Adds a 'fieldKey' attribute to the available fields tree used by the test framework
+//LABKEY.ext.FieldTreeNodeUI = Ext.extend(Ext.tree.TreeNodeUI, {
+//    renderElements : function () {
+//        this.callParent();
+//
+//        var node = this.node;
+//        var fieldKey = node.attributes.fieldKey;
+//        this.elNode.setAttribute("fieldKey", fieldKey);
+//    }
+//});
 
 // private
 LABKEY.DataRegion2.saveCustomizeViewPrompt = function(config) {
 
-    var success = config.success;
-    var scope = config.scope;
+    var success = config.success,
+        scope = config.scope,
+        viewName = config.name,
+        hidden = config.hidden,
+        session = config.session,
+        inherit = config.inherit,
+        shared = config.shared,
+        containerPath = config.containerPath;
 
-    var viewName = config.name;
-    var hidden = config.hidden;
-    var session = config.session;
-    var inherit = config.inherit;
-    var shared = config.shared;
-    var containerPath = config.containerPath;
     // User can save this view if it is editable and the shadowed view is editable if present.
     var shadowedViewEditable = config.session && (!config.shadowed || config.shadowed.editable);
     var canEdit = config.canEdit && (!config.session || shadowedViewEditable);
@@ -894,6 +893,7 @@ LABKEY.DataRegion2.saveCustomizeViewPrompt = function(config) {
         title: "Save Custom View" + (viewName ? ": " + Ext4.util.Format.htmlEncode(viewName) : ""),
         cls: "labkey-customview-save",
         border: false,
+        autoShow: true,
         bodyStyle: "padding: 6px",
         modal: true,
         width: 490,
@@ -1001,7 +1001,7 @@ LABKEY.DataRegion2.saveCustomizeViewPrompt = function(config) {
             id: "saveCustomView_targetContainer",
             fieldLabel: "Save in Folder",
             store: containerStore,
-            value: config.containerPath,
+            value: containerPath,
             displayField: 'path',
             valueField: 'path',
             width: 300,
@@ -1012,10 +1012,10 @@ LABKEY.DataRegion2.saveCustomizeViewPrompt = function(config) {
             disabled: disableSharedAndInherit || !containerFilterable || !inherit,
             listeners: {
                 select: function (combobox) {
-                    if (!warnedAboutMoving && combobox.getValue() != config.containerPath)
+                    if (!warnedAboutMoving && combobox.getValue() != containerPath)
                     {
                         warnedAboutMoving = true;
-                        Ext4.Msg.alert("Moving a Saved View", "If you save, this view will be moved from '" + config.containerPath + "' to " + combobox.getValue());
+                        Ext4.Msg.alert("Moving a Saved View", "If you save, this view will be moved from '" + containerPath + "' to " + combobox.getValue());
                     }
                 }
             }
@@ -1075,5 +1075,4 @@ LABKEY.DataRegion2.saveCustomizeViewPrompt = function(config) {
             }
         }]
     });
-    win.show();
 };

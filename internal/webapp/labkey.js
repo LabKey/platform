@@ -267,24 +267,6 @@ if (typeof LABKEY == "undefined")
             requiresCss("groupTabPanel/UngroupedTab.css");
         };
 
-        //private // TODO: move this out of labkey.js (maybe into DataRegion?)
-        //Pull in the required JS files and invoke the callback when they're loaded
-        var initializeViewDesigner = function(cb, scope)
-        {
-            var scripts = [
-                'extWidgets/Ext4ComponentDataView.js',
-                'designer/FieldMetaStore.js',
-                //'designer/FieldTreeLoader.js',
-                'designer/Utils.js',
-                'designer/Tabs.js',
-                'designer/Designer.js'
-            ];
-
-            requiresExt4ClientAPI(true, function() {
-                requiresScript(scripts, true, cb, scope);
-            });
-        };
-
         var isDirty = function()
         {
             return configs.dirty;
@@ -804,7 +786,6 @@ if (typeof LABKEY == "undefined")
             id: id,
             init: init,
             initializeExt3ViewDesigner: initializeExt3ViewDesigner,
-            initializeViewDesigner: initializeViewDesigner,
             isDirty: isDirty,
             loadScripts: loadScripts,
             loadedScripts: loadedScripts,

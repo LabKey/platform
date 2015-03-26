@@ -148,7 +148,7 @@ if (!LABKEY.DataRegions)
          * Non-configurable Options
          */
         this.selectionModified = false;
-        this.panelButtonContents = {};
+        this.panelConfigurations = {}; // formerly, panelButtonContents
 
         if (!LABKEY.DataRegions) {
             LABKEY.DataRegions = {};
@@ -1248,128 +1248,242 @@ if (!LABKEY.DataRegions)
         }, this);
     };
 
-    Proto.hideCustomizeView = function(animate) {
-        if (this.customizeView && this.customizeView.getEl() && this.customizeView.getEl().dom && this.customizeView.isVisible()) {
-            _showExt3ButtonPanel(this, Ext, CUSTOM_VIEW_PANELID, animate);
+    Proto.getQueryDetails = function(success, failure, scope) {
+
+        var additionalFields = {},
+            userFilter = [],
+            userSort = this.getUserSort(),
+            userColumns = this.getParameter(this.name + '.columns'),
+            fields = [],
+            viewName = (this.view && this.view.name) || this.viewName || '';
+
+        $.each(this.getUserFilterArray(), function(i, filter) {
+            userFilter.push({
+                fieldKey: filter.getColumnName(),
+                op: filter.getFilterType().getURLSuffix(),
+                value: filter.getValue()
+            });
+        });
+
+        $.each(userSort, function(i, sort) {
+            additionalFields[sort.fieldKey] = true;
+        });
+
+        $.each(additionalFields, function(fieldKey) {
+            fields.push(fieldKey);
+        });
+
+        LABKEY.Query.getQueryDetails({
+            containerPath: this.containerPath,
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            viewName: viewName,
+            fields: fields,
+            initializeMissingView: true,
+            success: function(queryDetails) {
+                success.call(scope || this, queryDetails, viewName, userColumns, userFilter, userSort);
+            },
+            failure: failure,
+            scope: scope
+        });
+    };
+
+    /**
+     * Hides the customize view interface if it is visible.
+     */
+    Proto.hideCustomizeView = function() {
+        if (this.activePanelId === CUSTOM_VIEW_PANELID) {
+            this.hidePanel();
         }
     };
 
     /**
      * Show the customize view interface.
      * @param activeTab {[String]} Optional. One of "ColumnsTab", "FilterTab", or "SortTab".  If no value is specified (or undefined), the ColumnsTab will be shown.
-     * @param hideMessage {[boolean]} Optional. True to hide the DataRegion message bar when showing.
-     * @param animate {boolean} Optional. True to slide in the ribbon panel.
+     * @param {Boolean} [hideMessage=false] True to hide the DataRegion message bar when showing.
      */
-    Proto.showCustomizeView = function(activeTab, hideMessage, animate) {
+    Proto.showCustomizeView = function(activeTab, hideMessage) {
         var region = this;
         if (hideMessage) {
             region.hideMessage();
         }
 
-        if (!region.customizeView) {
+        var panelConfig = this.getPanelConfiguration(CUSTOM_VIEW_PANELID);
 
+        if (!panelConfig) {
+
+            // whistle while we wait
             var timerId = setTimeout(function() {
                 timerId = 0;
                 region.showLoadingMessage("Opening custom view designer...");
             }, 500);
 
-            LABKEY.initializeViewDesigner(function() {
-                // scope is region
-                var header = Ext.get(_getHeaderSelector(this)[0]);
+            LABKEY.DataRegion2.loadViewDesigner(function() {
 
-                var additionalFields = {},
-                        userFilter = [],
-                        userSort = this.getUserSort(),
-                        userColumns = this.getParameter(this.name + ".columns"), fields = [];
+                var success = function(queryDetails, viewName, userColumns, userFilter, userSort) {
+                    timerId > 0 ? clearTimeout(timerId) : this.hideLoadingMessage();
 
-                $.each(this.getUserFilterArray(), function(i, filter) {
-                    userFilter.push({
-                        fieldKey: filter.getColumnName(),
-                        op: filter.getFilterType().getURLSuffix(),
-                        value: filter.getValue()
-                    });
-                    additionalFields[filter.getColumnName()] = true;
-                });
-                $.each(userSort, function(i, sort) {
-                    additionalFields[sort.fieldKey] = true;
-                });
-                $.each(additionalFields, function(fieldKey) {
-                    fields.push(fieldKey);
-                });
-
-                var viewName = (this.view && this.view.name) || this.viewName || '';
-                LABKEY.Query.getQueryDetails({
-                    containerPath : this.containerPath,
-                    schemaName: this.schemaName,
-                    queryName: this.queryName,
-                    viewName: viewName,
-                    fields: fields,
-                    initializeMissingView: true,
-                    success: function (json) {
-                        timerId > 0 ? clearTimeout(timerId) : this.hideLoadingMessage();
-
-                        // If there was an error parsing the query, we won't be able to render the customize view panel.
-                        if (json.exception) {
-                            var viewSourceUrl = LABKEY.ActionURL.buildURL('query', 'viewQuerySource.view', this.containerPath, {
-                                schemaName: this.schemaName,
-                                "query.queryName": this.queryName
-                            });
-                            var msg = LABKEY.Utils.encodeHtml(json.exception) +
-                                    " &nbsp;<a target=_blank class='labkey-button' href='" + viewSourceUrl + "'>View Source</a>";
-
-                            this.showErrorMessage(msg);
-                            return;
-                        }
-
-                        var minWidth = Math.max(Math.min(1000, header.getWidth(true)), 700); // >= 700 && <= 1000
-
-                        this.customizeView = Ext4.create('LABKEY.ext4.designer.ViewDesigner', {
-                            renderTo: Ext4.getBody().createChild({tag: "div", customizeView: true, style: {display: 'none'}}),
-                            width: minWidth,
-                            activeTab: activeTab,
-                            dataRegion: this,
-                            containerPath : this.containerPath,
+                    // If there was an error parsing the query, we won't be able to render the customize view panel.
+                    if (queryDetails.exception) {
+                        var viewSourceUrl = LABKEY.ActionURL.buildURL('query', 'viewQuerySource.view', this.containerPath, {
                             schemaName: this.schemaName,
-                            queryName: this.queryName,
-                            viewName: viewName,
-                            query: json,
-                            userFilter: userFilter,
-                            userSort: userSort,
-                            userColumns: userColumns,
-                            userContainerFilter: this.getUserContainerFilter(),
-                            allowableContainerFilters: this.allowableContainerFilters
+                            'query.queryName': this.queryName
                         });
+                        var msg = LABKEY.Utils.encodeHtml(queryDetails.exception) +
+                                " &nbsp;<a target=_blank class='labkey-button' href='" + viewSourceUrl + "'>View Source</a>";
 
-                        this.customizeView.on('viewsave', function(designer, savedViewsInfo, urlParameters) {
-                            _onViewSave.apply(this, [this, designer, savedViewsInfo, urlParameters]);
-                        }, this);
+                        this.showErrorMessage(msg);
+                        return;
+                    }
 
-                        this.panelButtonContents[CUSTOM_VIEW_PANELID] = this.customizeView;
-                        _showExt3ButtonPanel(this, Ext, CUSTOM_VIEW_PANELID, animate);
-                    },
-                    scope: this
-                });
+                    var minWidth = Math.max(700, Math.min(1000, _getHeaderSelector(this).width())); // >= 700 && <= 1000
 
+                    this.customizeView = Ext4.create('LABKEY.ext4.designer.ViewDesigner', {
+                        renderTo: Ext4.getBody().createChild({tag: 'div', customizeView: true, style: {display: 'none'}}),
+                        width: minWidth,
+                        activeTab: activeTab,
+                        dataRegion: this,
+                        containerPath : this.containerPath,
+                        schemaName: this.schemaName,
+                        queryName: this.queryName,
+                        viewName: viewName,
+                        query: queryDetails,
+                        userFilter: userFilter,
+                        userSort: userSort,
+                        userColumns: userColumns,
+                        userContainerFilter: this.getUserContainerFilter(),
+                        allowableContainerFilters: this.allowableContainerFilters
+                    });
+
+                    this.customizeView.on('viewsave', function(designer, savedViewsInfo, urlParameters) {
+                        _onViewSave.apply(this, [this, designer, savedViewsInfo, urlParameters]);
+                    }, this);
+
+                    var first = true;
+
+                    // Called when customize view needs to be shown
+                    var showFn = function(id, panel, element, callback, scope) {
+                        element.removeClass('extContainer');
+                        if (first) {
+                            panel.getEl().appendTo(Ext4.get(element[0]));
+                            first = false;
+                        }
+                        panel.doLayout();
+                        panel.setVisible(true);
+                        Ext4.get(element[0]).slideIn('t', {
+                            callback: function() {
+                                callback.call(scope);
+                            },
+                            duration: 400,
+                            scope: this
+                        });
+                    };
+
+                    // Called when customize view needs to be hidden
+                    var hideFn = function(id, panel, element, callback, scope) {
+                        Ext4.get(element[0]).slideOut('t', {
+                            callback: function() {
+                                panel.setVisible(false);
+                                callback.call(scope);
+                            },
+                            concurrent: true,
+                            duration: 400,
+                            scope: this
+                        });
+                    };
+
+                    this.publishPanel(CUSTOM_VIEW_PANELID, this.customizeView, showFn, hideFn, this);
+                    this.showPanel(CUSTOM_VIEW_PANELID);
+                };
+                var failure = function() {
+                    timerId > 0 ? clearTimeout(timerId) : this.hideLoadingMessage();
+                };
+
+                this.getQueryDetails(success, failure, this);
             }, region);
         }
         else {
             if (activeTab) {
-                region.customizeView.setActiveDesignerTab(activeTab);
+                panelConfig.panel.setActiveDesignerTab(activeTab);
             }
-            if (region.currentPanelId != CUSTOM_VIEW_PANELID) {
-                _showExt3ButtonPanel(region, Ext, CUSTOM_VIEW_PANELID, animate);
-            }
+            this.showPanel(CUSTOM_VIEW_PANELID);
         }
-
     };
 
+    /**
+     * Shows/Hides customize view depending on if it is currently shown
+     */
     Proto.toggleShowCustomizeView = function() {
-        if (this.customizeView && this.customizeView.getEl() && this.customizeView.getEl().dom && this.customizeView.isVisible()) {
-            this.hideCustomizeView(true);
+        if (this.activePanelId === CUSTOM_VIEW_PANELID) {
+            this.hideCustomizeView();
         }
         else {
-            this.showCustomizeView(undefined, null, true);
+            this.showCustomizeView(undefined);
         }
+    };
+
+    Proto.publishPanel = function(panelId, panel, showFn, hideFn, scope) {
+        this.panelConfigurations[panelId] = {
+            panel: panel,
+            show: showFn,
+            hide: hideFn,
+            scope: scope
+        };
+        return this;
+    };
+
+    Proto.getPanelConfiguration = function(panelId) {
+        return this.panelConfigurations[panelId];
+    };
+
+    /**
+     * Hides any panel that is currently visible. Returns a callback once the panel is hidden.
+     */
+    Proto.hidePanel = function(callback, scope) {
+        if (this.activePanelId) {
+            var config = this.getPanelConfiguration(this.activePanelId);
+            if (config) {
+
+                // find the ribbon container
+                var ribbon = _getHeaderSelector(this).find('.labkey-ribbon');
+
+                config.hide.call(config.scope || this, this.activePanelId, config.panel, ribbon, function() {
+                    this.activePanelId = undefined;
+                    ribbon.hide();
+                    if ($.isFunction(callback)) {
+                        callback.call(scope || this);
+                    }
+                }, this);
+            }
+        }
+        else {
+            if ($.isFunction(callback)) {
+                callback.call(scope || this);
+            }
+        }
+    };
+
+    Proto.showPanel = function(panelId, callback, scope) {
+
+        var config = this.getPanelConfiguration(panelId);
+
+        if (!config) {
+            console.error('Unable to find panel for id (' + panelId + '). Use publishPanel() to register a panel to be shown.');
+            return;
+        }
+
+        // find the ribbon container
+        var ribbon = _getHeaderSelector(this).find('.labkey-ribbon');
+
+        this.hidePanel(function() {
+            this.activePanelId = panelId;
+            ribbon.show();
+            config.show.call(config.scope || this, this.activePanelId, config.panel, ribbon, function() {
+                if ($.isFunction(callback)) {
+                    callback.call(scope || this);
+                }
+           }, this);
+        }, this);
     };
 
     //
@@ -1377,8 +1491,7 @@ if (!LABKEY.DataRegions)
     //
 
     // formerly, LABKEY.DataRegion._getCustomViewEditableErrors
-    Proto.getCustomViewEditableErrors = function (view)
-    {
+    Proto.getCustomViewEditableErrors = function(view) {
         var errors = [];
         if (view && !view.editable) {
             errors.push("The view is read-only and cannot be edited.");
@@ -1466,18 +1579,28 @@ if (!LABKEY.DataRegions)
      * Hide the ribbon panel. If visible the ribbon panel will be hidden.
      */
     Proto.hideButtonPanel = function() {
-        _hideExt3ButtonPanel(this, true);
+        this.hidePanel();
     };
 
     /**
-     * Show a ribbon panel. tabPanelConfig is an Ext config object for a TabPanel, the only required
-     * value is the items array.
+     * Show a ribbon panel. tabPanelConfig is an ExtJS 3.4 config object for a TabPanel.
+     * The only required value is the items array.
      */
     Proto.showButtonPanel = function(panelButton, tabPanelConfig) {
-        var me = this;
-        LABKEY.requiresExt3ClientAPI(true, function() {
-            _showExt3ButtonPanel(me, Ext, panelButton.getAttribute('panelId'), true, tabPanelConfig, panelButton);
-        });
+
+        var panelId = panelButton.getAttribute('panelId');
+        if (panelId) {
+            if (panelId === this.activePanelId) {
+                this.hidePanel();
+            }
+            else {
+                var config = this.getPanelConfiguration(panelId);
+                if (!config) {
+                    this.publishPanel(panelId, tabPanelConfig, _showExt3Panel, _hideExt3Panel, this);
+                }
+                this.showPanel(panelId);
+            }
+        }
     };
 
     Proto.on = function(evt, callback, scope) {
@@ -1756,7 +1879,7 @@ if (!LABKEY.DataRegions)
             }
             else if (parts['customizeview']) {
                 _buttonBind(region, '.unsavedview-revert', function() { _revertCustomView(this); });
-                _buttonBind(region, '.unsavedview-edit', function() { this.showCustomizeView(undefined, true, true); });
+                _buttonBind(region, '.unsavedview-edit', function() { this.showCustomizeView(undefined, true); });
                 _buttonBind(region, '.unsavedview-save', function() { _saveSessionCustomView(this); });
             }
         }
@@ -1769,7 +1892,7 @@ if (!LABKEY.DataRegions)
 
     var _onViewSave = function(region, designer, savedViewsInfo, urlParameters) {
         if (savedViewsInfo && savedViewsInfo.views.length > 0) {
-            region.hideCustomizeView.call(region, false);
+            region.hideCustomizeView.call(region);
             region.changeView.call(region, {
                 type: 'view',
                 viewName: savedViewsInfo.views[0].name
@@ -1892,7 +2015,6 @@ if (!LABKEY.DataRegions)
             $.each(newParamValPairs, function(i, newPair) {
                 if (!$.isArray(newPair)) {
                     throw new Error("DataRegion: _setParameters newParamValPairs improperly initialized. It is an array of arrays. You most likely passed in an array of strings.");
-                    return false;
                 }
                 param = newPair[0];
                 value = newPair[1];
@@ -1913,215 +2035,6 @@ if (!LABKEY.DataRegions)
         }
         else {
             region.setSearchString.call(region, region.name, _buildQueryString(region, params));
-        }
-    };
-
-    var _hideExt3ButtonPanel = function(region, animate) {
-        var header = Ext.get(_getHeaderSelector(region)[0]);
-        var panelDiv = header.child(".labkey-ribbon");
-        var _duration = 0.4, y, h;
-
-        if (region.currentPanelId) {
-            var panelToHide =  region.panelButtonContents[region.currentPanelId];
-
-            if (region.headerLock.call(region)) {
-                y = region.colHeaderRow.getY();
-                h = region.headerSpacer.getHeight();
-            }
-
-            var callback = function() {
-                panelToHide.setVisible(false);
-                $(region).trigger('afterpanelhide');
-                region.currentPanelId = null;
-                // Close the panelDiv since we're not adding a new panel.
-                panelDiv.setDisplayed(true);
-                // Remove highlight from the button that triggered the menu. The button in question *should* be the
-                // only button below the dataregion that has the labkey-menu-button-active class on it.
-                if (panelToHide.button) {
-                    var btnEl = Ext.get(panelToHide.button);
-                    if (btnEl) {
-                        // Remove the highlight from the button that opened up the panel, since the panel is being closed
-                        btnEl.removeClass('labkey-menu-button-active');
-                    }
-                }
-            };
-
-            if (animate) {
-                panelToHide.getEl().slideOut('t', {
-                    callback: callback,
-                    concurrent: true,
-                    duration: _duration,
-                    scope: region
-                });
-            }
-            else {
-                callback.call(region);
-            }
-
-            if (region.headerLock.call(region)) {
-                region.headerSpacer.setHeight(h - panelToHide.getHeight());
-                region.colHeaderRow.shift({y: (y - panelToHide.getHeight()), duration: _duration, concurrent: true, scope: region});
-            }
-        }
-    };
-
-    /**
-     * @private
-     * This method is used to show/hide an Ext.ux.GroupTab panel in the 'ribbon' bar. It requires that ExtJS be
-     * handed in as an argument. This has basically been left untouched from the Ext implementation and is dying for a
-     * re-write (like why does the "show" function do all the hiding?)
-     */
-    var _showExt3ButtonPanel = function(region, Ext, panelId, animate, tabPanelConfig, button) {
-        var header = Ext.get(_getHeaderSelector(region)[0]);
-        var panelDiv = header.child(".labkey-ribbon");
-        if (panelDiv) {
-            var panelToHide = null;
-            // If we find a spot to put the panel, check its current contents
-            if (region.currentPanelId) {
-                // We're currently showing a ribbon panel, so remember that we need to hide it
-                panelToHide = region.panelButtonContents[region.currentPanelId];
-                if (panelToHide && panelToHide.button) {
-                    var btnEl = Ext.get(panelToHide.button);
-                    if (btnEl) {
-                        // Remove the highlight from the button that opened up the panel, since the panel is being closed
-                        btnEl.removeClass('labkey-menu-button-active');
-                    }
-                    panelToHide.button = undefined;
-                }
-            }
-
-            var _duration = 0.4, y, h;
-
-            // Create a callback function to render the requested ribbon panel
-            var callback = function () {
-                if (panelToHide) {
-                    panelToHide.setVisible(false);
-                }
-                if (region.currentPanelId != panelId) {
-                    panelDiv.setDisplayed(true);
-                    if (!region.panelButtonContents[panelId]) {
-                        var minWidth = 700;
-                        var tabContentWidth = 0;
-
-                        // New up the TabPanel if we haven't already
-                        // Only create one per button, even if that button is rendered both above and below the grid
-                        tabPanelConfig.cls = 'vertical-tabs';
-                        tabPanelConfig.tabWidth = 80;
-                        tabPanelConfig.renderTo = panelDiv;
-                        tabPanelConfig.activeGroup = 0;
-
-                        var newItems = [];
-                        $.each(tabPanelConfig.items, function(i, item) {
-                            item.autoScroll = true;
-
-                            //FF and IE won't auto-resize the tab panel to fit the content
-                            //so we need to calculate the min size and set it explicitly
-                            if (Ext.isGecko || Ext.isIE) {
-                                if (!item.events) {
-                                    item = Ext.create(item, 'grouptab');
-                                }
-                                item.removeClass("x-hide-display");
-                                if (item.items.getCount() > 0 && item.items.items[0].contentEl) {
-                                    tabContentWidth = Ext.get(item.items.items[0].contentEl).getWidth();
-                                    item.addClass("x-hide-display");
-                                    minWidth = Math.min(minWidth, tabContentWidth);
-                                }
-                            }
-
-                            newItems.push(item);
-                        });
-                        tabPanelConfig.items = newItems;
-                        if ((Ext.isGecko || Ext.isIE) && minWidth > 0 && header.getWidth() < minWidth) {
-                            tabPanelConfig.width = minWidth;
-                        }
-                        region.panelButtonContents[panelId] = new Ext.ux.GroupTabPanel(tabPanelConfig);
-                    }
-                    else {
-                        // Otherwise, be sure that it's parented correctly - it might have been shown
-                        // in a different button bar position
-                        region.panelButtonContents[panelId].getEl().appendTo(Ext.get(panelDiv));
-                    }
-
-                    var buttonElement = Ext.get(button);
-                    if (buttonElement) {
-                        // Highlight the button that opened up the panel, if it's directly on the button bar
-                        buttonElement.addClass('labkey-menu-button-active');
-                    }
-
-                    region.panelButtonContents[panelId].button = button;
-
-                    region.currentPanelId = panelId;
-
-                    // Slide it into place
-                    var panelToShow = region.panelButtonContents[panelId];
-                    panelToShow.setVisible(true);
-
-                    if (region.headerLock.call(region)) {
-                        y = region.colHeaderRow.getY();
-                        h = region.headerSpacer.getHeight();
-                    }
-
-                    if (animate) {
-                        panelToShow.getEl().slideIn('t', {
-                            callback: function() {
-                                $(this).trigger('afterpanelshow');
-                            },
-                            concurrent: true,
-                            duration: _duration,
-                            scope: region
-                        });
-                    }
-                    else {
-                        panelToShow.getEl().setVisible(true);
-                        $(region).trigger('afterpanelshow');
-                    }
-
-                    if (region.headerLock.call(region)) {
-                        region.headerSpacer.setHeight(h + panelToShow.getHeight());
-                        region.colHeaderRow.shift({y: (y + panelToShow.getHeight()), duration: _duration, concurrent: true, scope: region});
-                    }
-
-                    panelToShow.setWidth(panelToShow.getResizeEl().getWidth());
-                }
-                else {
-                    region.currentPanelId = null;
-                    panelDiv.setDisplayed(false);
-                }
-            };
-
-            if (region.currentPanelId) {
-                // We're already showing a ribbon panel, so hide it before showing the new one
-                if (region.headerLock.call(region)) {
-                    y = region.colHeaderRow.getY();
-                    h = region.headerSpacer.getHeight();
-                }
-
-                if (animate) {
-                    panelToHide.getEl().slideOut('t', {
-                        callback: function() {
-                            $(this).trigger('afterpanelhide');
-                            callback.call(this);
-                        },
-                        concurrent: true,
-                        duration: _duration,
-                        scope: region
-                    });
-                }
-                else {
-                    panelToHide.getEl().setVisible(false);
-                    $(region).trigger('afterpanelhide');
-                    callback.call(region);
-                }
-
-                if (region.headerLock.call(region)) {
-                    region.headerSpacer.setHeight(h - panelToHide.getHeight());
-                    region.colHeaderRow.shift({y: (y - panelToHide.getHeight()), duration: _duration, concurrent: true, scope: region});
-                }
-            }
-            else {
-                // We're not showing another ribbon panel, so show the new one right away
-                callback.call(region);
-            }
         }
     };
 
@@ -2164,6 +2077,89 @@ if (!LABKEY.DataRegions)
 
         _getAllRowSelectors(region).each(function() { this.checked = (checked == true)});
         return ids;
+    };
+
+    var _showExt3Panel = function(id, tabPanelConfig, element, callback, scope) {
+        LABKEY.requiresExt3ClientAPI(true, function() {
+            // can assume Ext 3 exists as 'Ext'
+            element.addClass('extContainer');
+            var panelDiv = Ext.get(element[0]);
+
+            // determine if the tab panel needs to be constructed
+            if (!$.isFunction(tabPanelConfig.getEl)) {
+
+                var minWidth = 700,
+                    tabContentWidth = 0,
+                    newItems = [];
+
+                // New up the TabPanel if we haven't already
+                // Only create one per button, even if that button is rendered both above and below the grid
+                tabPanelConfig.cls = 'vertical-tabs';
+                tabPanelConfig.tabWidth = 80;
+                tabPanelConfig.renderTo = panelDiv;
+                tabPanelConfig.activeGroup = 0;
+
+                // create the newItems
+                $.each(tabPanelConfig.items, function(i, item) {
+                    item.autoScroll = true;
+
+                    //FF and IE won't auto-resize the tab panel to fit the content
+                    //so we need to calculate the min size and set it explicitly
+                    if (Ext.isGecko || Ext.isIE) {
+                        if (!item.events) {
+                            item = Ext.create(item, 'grouptab');
+                        }
+                        item.removeClass('x-hide-display');
+                        if (item.items.getCount() > 0 && item.items.items[0].contentEl) {
+                            tabContentWidth = Ext.get(item.items.items[0].contentEl).getWidth();
+                            item.addClass('x-hide-display');
+                            minWidth = Math.min(minWidth, tabContentWidth);
+                        }
+                    }
+
+                    newItems.push(item);
+                });
+
+                tabPanelConfig.items = newItems;
+                if ((Ext.isGecko || Ext.isIE) && minWidth > 0 && header.getWidth() < minWidth) {
+                    tabPanelConfig.width = minWidth;
+                }
+
+                // re-publish the panel as the panel rather than the panel configuration
+                tabPanelConfig = new Ext.ux.GroupTabPanel(tabPanelConfig);
+                this.publishPanel(id, tabPanelConfig, _showExt3Panel, _hideExt3Panel, this);
+            }
+
+            tabPanelConfig.getEl().setVisible(true);
+            tabPanelConfig.show();
+            tabPanelConfig.getEl().slideIn('t', {
+                callback: function() {
+                    callback.call(scope);
+                },
+                duration: 0.4,
+                scope: this
+            });
+
+            callback.call(scope);
+        }, this);
+    };
+
+    var _hideExt3Panel = function(id, panel, element, callback, scope) {
+        var region = this;
+
+        var doHide = function() {
+            panel.hide();
+            panel.getEl().setVisible(false);
+            $(region).trigger('afterpanelhide');
+            callback.call(scope);
+        };
+
+        panel.getEl().slideOut('t', {
+            callback: doHide,
+            concurrent: true,
+            duration: 0.4,
+            scope: region
+        });
     };
 
     var _load = function(region, callback, scope) {
@@ -2388,6 +2384,19 @@ if (!LABKEY.DataRegions)
             else {
                 el.addClass('labkey-disabled-button').removeClass('labkey-button');
             }
+        });
+    };
+
+    LABKEY.DataRegion2.loadViewDesigner = function(cb, scope) {
+        LABKEY.requiresExt4Sandbox(true, function() {
+            LABKEY.requiresScript([
+                'extWidgets/Ext4ComponentDataView.js',
+                'designer/FieldMetaStore.js',
+                //'designer/FieldTreeLoader.js',
+                'designer/Utils.js',
+                'designer/Tabs.js',
+                'designer/Designer.js'
+            ], true, cb, scope);
         });
     };
 
