@@ -2746,25 +2746,25 @@ LABKEY.QueryWebPart2.standardButtons = {
     pageSize: 'page size'
 };
 
-//LABKEY.AggregateTypes = {
-//    /**
-//     * Displays the sum of the values in the specified column
-//     */
-//    SUM: 'sum',
-//    /**
-//     * Displays the average of the values in the specified column
-//     */
-//    AVG: 'avg',
-//    /**
-//     * Displays the count of the values in the specified column
-//     */
-//    COUNT: 'count',
-//    /**
-//     * Displays the maximum value from the specified column
-//     */
-//    MIN: 'min',
-//    /**
-//     * Displays the minimum values from the specified column
-//     */
-//    MAX: 'max'
-//};
+LABKEY.AggregateTypes = {
+    /**
+     * Displays the sum of the values in the specified column
+     */
+    SUM: 'sum',
+    /**
+     * Displays the average of the values in the specified column
+     */
+    AVG: 'avg',
+    /**
+     * Displays the count of the values in the specified column
+     */
+    COUNT: 'count',
+    /**
+     * Displays the maximum value from the specified column
+     */
+    MIN: 'min',
+    /**
+     * Displays the minimum values from the specified column
+     */
+    MAX: 'max'
+};

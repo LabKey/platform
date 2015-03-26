@@ -302,6 +302,7 @@ Ext4.define('LABKEY.ext4.designer.ColumnsTab', {
             layout: "fit",
             items: [{
                 xtype: "panel",
+                cls: 'themed-panel2',
                 title: "Selected Fields",
                 border: false,
                 width: 200,
@@ -319,7 +320,7 @@ Ext4.define('LABKEY.ext4.designer.ColumnsTab', {
                     emptyText: "No fields selected",
                     deferEmptyText: false,
                     multiSelect: false,
-                    height: 230,
+                    height: 250,
                     autoScroll: true,
                     overItemCls: "x4-view-over",
                     itemSelector: ".labkey-customview-item",
@@ -712,9 +713,10 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
             cls: "test-filter-tab",
             layout: "fit",
             items: [{
+                xtype: "panel",
+                cls: 'themed-panel2',
                 title: "Selected Filters",
                 itemId: "filterPanel",
-                xtype: "panel",
                 border: false,
                 style: {"border-left-width": "1px"},
                 layout: {
@@ -730,7 +732,7 @@ Ext4.define('LABKEY.ext4.designer.FilterTab', {
                     emptyText: "No filters added",
                     deferEmptyText: false,
                     multiSelect: true,
-                    height: hideContainerFilterToolbar ? 230 : 200,
+                    height: hideContainerFilterToolbar ? 250 : 220,
                     autoScroll: true,
                     overItemCls: "x4-view-over",
                     itemSelector: '.labkey-customview-item',
@@ -1206,8 +1208,9 @@ Ext4.define('LABKEY.ext4.designer.SortTab', {
             cls: "test-sort-tab",
             layout: "fit",
             items: [{
-                title: "Selected Sorts",
                 xtype: "panel",
+                cls: 'themed-panel2',
+                title: "Selected Sorts",
                 border: false,
                 style: {"border-left-width": "1px"},
                 layout: {
@@ -1223,7 +1226,7 @@ Ext4.define('LABKEY.ext4.designer.SortTab', {
                     emptyText: "No sorts added",
                     deferEmptyText: false,
                     multiSelect: true,
-                    height: 230,
+                    height: 250,
                     autoScroll: true,
                     overItemCls: "x4-view-over",
                     itemSelector: '.labkey-customview-item',

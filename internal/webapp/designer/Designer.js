@@ -271,7 +271,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         }
 
         config = Ext4.applyIf(config, {
-            height: 280,
+            height: 310,
             tabWidth: 80,
             activeTab: 0,
             border: false,
@@ -341,10 +341,18 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
                 tpl: new Ext4.XTemplate(
                     '<ul><tpl for=".">',
                     '<li class="labkey-customview-tab {active:this.getAdditionalCls}">{text}</li>',
+                    '<div class="tab-joint" style="{[this.getTabJointDisplay(values)]}"></div>',
                     '</tpl></ul>',
                     {
                         getAdditionalCls : function(active) {
                             return active ? "labkey-customview-activetab" : "";
+                        },
+                        getTabJointDisplay : function(values) {
+                            var style = "top: " + (values.index * 25 + 1) + "px;";
+                            if (!values.active) {
+                                style += " display: none;";
+                            }
+                            return style;
                         }
                     }
                 ),
@@ -369,12 +377,16 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
     onTabsItemClick : function(view, record, item, index, e) {
         if (!record.get('active'))
         {
+            // suspend events so that we can just use the view.refresh to update at the end
+            view.getStore().suspendEvents(false);
             var currentlRec = view.getStore().findRecord('active', true);
             if (currentlRec) {
                 currentlRec.set('active', false);
             }
-
             record.set('active', true);
+            view.getStore().resumeEvents();
+            view.refresh();
+
             this.setActiveDesignerTab(record.get('index'));
         }
     },
@@ -387,6 +399,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         if (!this.availableFieldsPanel) {
             this.availableFieldsPanel = Ext4.create('Ext.panel.Panel', {
                 region: 'west',
+                cls: 'themed-panel2',
                 title: "Available Fields",
                 flex: 1,
                 border: false,
@@ -434,11 +447,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
                     height: 20,
                     hidden: true,
                     // would like to use 'labkey-status-info' class instead of inline style, but it centers and stuff
-                    cls: 'labkey-customview-message',
-                    data: {msg: 'test'},
-                    tpl: new Ext4.XTemplate(
-                        '{msg}'
-                    )
+                    cls: 'labkey-customview-message'
                 },{
                     // this is needed because when the message box below is hidden, we need something in the panel
                     xtype: 'box',
