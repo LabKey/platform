@@ -705,6 +705,12 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             return;
         }
 
+        if (AuditLogService.get().getAuditViewFactory(provider.getEventName()) == null)
+        {
+            _log.info("Audit provider '" + provider.getEventName() + "' postdates the audit migration, so it has no old events to convert. Skipping.");
+            return;
+        }
+
         _log.info("Migrating audit type " + provider.getEventName());
 
         Domain domain = provider.getDomain();
