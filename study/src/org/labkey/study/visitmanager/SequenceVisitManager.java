@@ -412,25 +412,27 @@ public class SequenceVisitManager extends VisitManager
 
         SQLFragment seqnum2visit = new SQLFragment();
         seqnum2visit.append(
-                "  SELECT SequenceNum, V.RowId\n" +
-                "  FROM (SELECT DISTINCT SequenceNum FROM study.ParticipantVisit WHERE Container = ?) seqnumPV, study.Visit V\n" +
-                "  WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container = ?\n");
+                "WITH seqnum2visit AS (" +
+                "  SELECT SequenceNum, COALESCE(V.RowId,-1) AS RowId\n" +
+                "  FROM (SELECT DISTINCT SequenceNum FROM study.ParticipantVisit WHERE Container = ?");
+        if (!updateAll)
+            seqnum2visit.append(" AND VisitRowId=-1");
+        seqnum2visit.append(") seqnumPV, study.Visit V\n" +
+                "  WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container = ?)\n");
         seqnum2visit.add(getStudy().getContainer());
         seqnum2visit.add(visitStudy.getContainer());
 
         // NOTE (seqnum2visit.RowId != VisitRowId OR VisitRowId IS NULL) is because postgres doesn't seem to optimize
         // updating a column to the existing value
         SQLFragment sqlUpdateVisitRowId = new SQLFragment();
+        sqlUpdateVisitRowId.append(seqnum2visit);
         if (schema.getSqlDialect().isPostgreSQL())
         {
             sqlUpdateVisitRowId.append(
                 "UPDATE study.ParticipantVisit PV\n" +
                 "        SET VisitRowId = RowId\n" +
-                "        FROM (\n");
-            sqlUpdateVisitRowId.append(seqnum2visit);
-            sqlUpdateVisitRowId.append(
-                ") seqnum2visit\n" +
-                "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND (VisitRowId IS NULL OR seqnum2visit.RowId IS NULL OR seqnum2visit.RowId <> VisitRowId) AND PV.Container = ?");
+                "        FROM seqnum2visit\n" +
+                "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND PV.Container = ? AND seqnum2visit.RowId <> VisitRowId");
             sqlUpdateVisitRowId.add(getStudy().getContainer());
         }
         else
@@ -438,15 +440,12 @@ public class SequenceVisitManager extends VisitManager
             sqlUpdateVisitRowId.append(
                 "UPDATE PV\n" +
                 "        SET VisitRowId = RowId\n" +
-                "        FROM study.ParticipantVisit PV, (\n");
-            sqlUpdateVisitRowId.append(seqnum2visit);
-            sqlUpdateVisitRowId.append(
-                ") seqnum2visit\n" +
-                "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND (VisitRowId IS NULL OR seqnum2visit.RowId IS NULL OR seqnum2visit.RowId <> VisitRowId) AND PV.Container = ?");
+                "        FROM study.ParticipantVisit PV, seqnum2visit\n"+
+                "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND PV.Container = ? AND seqnum2visit.RowId <> VisitRowId");
             sqlUpdateVisitRowId.add(getStudy().getContainer());
         }
         if (!updateAll)
-            sqlUpdateVisitRowId.append(" AND VisitRowId IS NULL");
+            sqlUpdateVisitRowId.append(" AND VisitRowId=-1");
 
         new SqlExecutor(schema).execute(sqlUpdateVisitRowId);
     }

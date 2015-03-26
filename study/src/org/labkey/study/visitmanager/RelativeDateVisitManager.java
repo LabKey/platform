@@ -218,13 +218,13 @@ public class RelativeDateVisitManager extends VisitManager
         TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
 
         String sqlUpdateVisitRowId = "UPDATE " + tableParticipantVisit + "\n" +
-                "SET VisitRowId = \n" +
+                "SET VisitRowId = COALESCE(\n" +
                 " (\n" +
                 " SELECT v.RowId\n" +
                 " FROM " + tableVisit + " v\n" +
                 " WHERE ParticipantVisit.Day BETWEEN v.SequenceNumMin AND v.SequenceNumMax AND\n" +
                 "   v.Container = ?\n" +
-                " )\n";
+                " ),-1)\n";
         sqlUpdateVisitRowId += "WHERE Container = ?";
 
         Study study = getStudy();
@@ -242,7 +242,7 @@ public class RelativeDateVisitManager extends VisitManager
 
         SQLFragment sql = new SQLFragment("SELECT DISTINCT Day " +
             "FROM " + tableParticipantVisit + "\n" +
-            "WHERE Container = ? AND VisitRowId IS NULL");
+            "WHERE Container = ? AND VisitRowId = -1");
         sql.add(getStudy().getContainer());
 
         final MutableInt days = new MutableInt(0);

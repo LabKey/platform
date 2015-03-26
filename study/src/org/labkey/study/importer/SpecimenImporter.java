@@ -3263,8 +3263,12 @@ public class SpecimenImporter
             dix.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
             DataLoader tsv = loadTsv(file);
             tsvColumns = tsv.getColumns();
-
-            DataIteratorBuilder specimenWrapped = new SpecimenImportBuilder(target, tsv, file.getTableType().getColumns(), computedColumns);
+            // CONSIDER turn off data conversion
+            //for (ColumnDescriptor cd : tsvColumns) cd.clazz = String.class;
+            // CONSIDER sue AsyncDataIterator
+            //DataIteratorBuilder asyncIn = new AsyncDataIterator.Builder(tsv);
+            DataIteratorBuilder asyncIn = tsv;
+            DataIteratorBuilder specimenWrapped = new SpecimenImportBuilder(target, asyncIn, file.getTableType().getColumns(), computedColumns);
             DataIteratorBuilder standardEtl = StandardETL.forInsert(target, specimenWrapped, _container, getUser(), dix);
             DataIteratorBuilder persist = ((UpdateableTableInfo)target).persistRows(standardEtl, dix);
             Pump pump = new Pump(persist,dix);
