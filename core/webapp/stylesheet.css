@@ -1316,6 +1316,11 @@ img.labkey-grid-filter-icon
     background-position: -15px -90px;
 }
 
+.labkey-customview-westpanel ul {
+    padding: 0;
+    list-style: none;
+}
+
 .labkey-customview-filter-item .item-caption,
 .labkey-customview-sort-item .item-caption {
     font-weight: bold;
