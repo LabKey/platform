@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
+<%@ page import="org.apache.http.auth.AUTH" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -40,6 +41,9 @@
     String formURL = agreeOnly ? buildURL(LoginController.AgreeToTermsAction.class) : buildURL(LoginController.LoginAction.class);
     String email = bean.form.getEmail();
     boolean focusEmail = StringUtils.isBlank(email);
+    boolean isBrowserCachingAllowed = AuthenticationManager.isBrowserCachingAllowed();
+    String autoCompleteOnOff = (isBrowserCachingAllowed) ? "on" : "off";
+
 %>
 <style type="text/css">
     .labkey-error {
@@ -54,7 +58,7 @@
     <div class="auth-header">Sign In</div>
     <% } %>
     <labkey:errors />
-    <form name="login" method="POST" action="<%=h(formURL)%>" accept-charset="UTF-8"><labkey:csrf/>
+    <form name="login" method="POST" action="<%=h(formURL)%>" accept-charset="UTF-8" autocomplete="<%=text(autoCompleteOnOff)%>"><labkey:csrf/>
         <div class="auth-form-body">
             <% if (!agreeOnly) { %>
             <label for="email">Email</label>
