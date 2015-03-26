@@ -634,7 +634,13 @@ public class AuthenticationManager
 
         // If primary authentication is successful then look for secondary authentication. handleAuthentication() will
         // always return a failure result (i.e., null user) if secondary authentication is enabled. #22944
-        return primaryResult.getStatus() == AuthenticationStatus.Success ? handleAuthentication(request, ContainerManager.getRoot()).getUser() : null;
+        if (primaryResult.getStatus() == AuthenticationStatus.Success)
+        {
+            AuthenticationManager.setPrimaryAuthenticationUser(request, primaryResult.getUser());
+            return handleAuthentication(request, ContainerManager.getRoot()).getUser();
+        }
+
+        return null;
     }
 
 
