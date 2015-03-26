@@ -190,7 +190,7 @@ public class LoginController extends SpringActionController
                 returnURL = AppProps.getInstance().getHomePageActionURL();
 
             if (returnURL instanceof ActionURL)
-                url.setExtraPath(((ActionURL)returnURL).getExtraPath());
+                url.setExtraPath(((ActionURL) returnURL).getExtraPath());
 
             url.addReturnURL(returnURL);
             return url;
@@ -1700,6 +1700,7 @@ public class LoginController extends SpringActionController
     }
 
 
+    // TODO: No need for a factory... just add this to LoginUrls!
     private static abstract class ConfigURLFactory implements AuthenticationManager.URLFactory
     {
         public ActionURL getActionURL(AuthenticationProvider provider)
@@ -1713,13 +1714,8 @@ public class LoginController extends SpringActionController
     }
 
 
-    private static class EnableURLFactory extends ConfigURLFactory
+    public static class EnableURLFactory extends ConfigURLFactory
     {
-        private EnableURLFactory()
-        {
-            super();
-        }
-
         protected Class<? extends Controller> getActionClass()
         {
             return EnableAction.class;
@@ -1727,7 +1723,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    private static class DisableURLFactory extends ConfigURLFactory
+    public static class DisableURLFactory extends ConfigURLFactory
     {
         protected Class<? extends Controller> getActionClass()
         {
@@ -1742,7 +1738,7 @@ public class LoginController extends SpringActionController
     {
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
-            return AuthenticationManager.getConfigurationView(new EnableURLFactory(), new DisableURLFactory());
+            return new JspView<>("/org/labkey/core/login/configuration.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1768,6 +1764,43 @@ public class LoginController extends SpringActionController
         }
 
         public void validateCommand(ProviderConfigurationForm target, Errors errors)
+        {
+        }
+    }
+
+
+    public static class SettingsForm
+    {
+        private boolean _allowBrowserCaching;
+
+        public boolean getAllowBrowserCaching()
+        {
+            return _allowBrowserCaching;
+        }
+
+        @SuppressWarnings("unused")
+        public void setAllowBrowserCaching(boolean allowBrowserCaching)
+        {
+            _allowBrowserCaching = allowBrowserCaching;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class SaveSettingsAction extends RedirectAction<SettingsForm>
+    {
+        public ActionURL getSuccessURL(SettingsForm form)
+        {
+            return getUrls().getConfigureURL();
+        }
+
+        public boolean doAction(SettingsForm form, BindException errors) throws Exception
+        {
+            AuthenticationManager.setBrowserCaching(form.getAllowBrowserCaching());
+            return true;
+        }
+
+        public void validateCommand(SettingsForm form, Errors errors)
         {
         }
     }

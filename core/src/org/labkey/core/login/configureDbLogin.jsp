@@ -25,7 +25,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<LoginController.Config> me = (JspView<Config>)HttpView.currentView();
+    JspView<Config> me = (JspView<Config>)HttpView.currentView();
     Config bean = me.getModelBean();
 %>
 <labkey:form action="<%=h(buildURL(LoginController.ConfigureDbLoginAction.class))%>" method="post">
