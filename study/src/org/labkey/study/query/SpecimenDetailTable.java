@@ -391,6 +391,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         SqlDialect dialect = schema.getSqlDialect();
         SQLFragment sqlf = new SQLFragment();
+        sqlf.appendComment("<getSpecimenAndVialFromSQL>",dialect);
         sqlf.append("(SELECT vial.rowid, vial.globaluniqueid, vial.volume, vial.specimenhash, \n" +
                 " vial.requestable, vial.currentlocation, vial.atrepository, vial.lockedinrequest, vial.available, vial.processinglocation, \n" +
                 " vial.specimenid, vial.primaryvolume, vial.primaryvolumeunits, vial.firstprocessedbyinitials, vial.availabilityreason,\n" +
@@ -406,19 +407,24 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         for (DomainProperty property : optionalSpecimenProperties)
             sqlf.append("    specimen.").append(property.getPropertyDescriptor().getLegalSelectName(dialect)).append(",\n");
 
-        sqlf.append(getContainerSql(schema)).append("\n   FROM ").add(container);
+        sqlf.append(getContainerValueSql(container,schema.getSqlDialect())).append("\n   FROM ");
         sqlf.append(vialTI.getFromSQL("vial"));
         sqlf.append("\n  JOIN ");
         sqlf.append(specimenTI.getFromSQL("specimen"));
         sqlf.append(" ON vial.specimenid = specimen.rowid) ");
         sqlf.append(alias);
+        sqlf.appendComment("</getSpecimenAndVialFromSQL>", dialect);
         return sqlf;
     }
 
-    public static String getContainerSql(DbSchema schema)
+
+    public static SQLFragment getContainerValueSql(Container c, SqlDialect d)
     {
-        return "CAST (? AS " + schema.getSqlDialect().getGuidType() + ") AS Container";
+        SQLFragment sqlf = new SQLFragment();
+        sqlf.append("CAST(").append(c).append(" AS ").append(d.getGuidType()).append(") AS Container");
+        return sqlf;
     }
+
 
     @Override
     public boolean hasUnionTable()

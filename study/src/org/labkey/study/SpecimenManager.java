@@ -29,6 +29,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -2355,7 +2356,10 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         if (!unresolvedColumns.isEmpty())
             throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
         // generate our select SQL:
-        SQLFragment viewSql = Table.getSelectSQL(tinfo, cols, specimenDetailFilter, null);
+        SQLFragment viewSql = new SQLFragment();
+        viewSql.appendComment("<getSpecimenDetailQueryHelper>", tinfo.getSqlDialect());
+        viewSql.append(Table.getSelectSQL(tinfo, cols, specimenDetailFilter, null));
+        viewSql.appendComment("</getSpecimenDetailQueryHelper>", tinfo.getSqlDialect());
 
         // save off the aliases for our grouping columns, so we can group by them later:
         String groupingColSql = null;
@@ -2617,12 +2621,15 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
 
         SQLFragment ptidSpecimenSQL = new SQLFragment();
+        SqlDialect d = StudySchema.getInstance().getSqlDialect();
+        ptidSpecimenSQL.appendComment("<getParticipantSummaryByVisitType>", d);
         ptidSpecimenSQL.append("SELECT SpecimenQuery.Visit AS Visit, SpecimenQuery.").append(subjectCol).append(" AS ParticipantId,\n")
                 .append("COUNT(*) AS VialCount, study.Cohort.Label AS Cohort, SUM(SpecimenQuery.Volume) AS TotalVolume\n").append("FROM (");
         ptidSpecimenSQL.append(sqlHelper.getViewSql());
         ptidSpecimenSQL.append(") AS SpecimenQuery\n" + "LEFT OUTER JOIN study.Participant ON\n" + "\tSpecimenQuery.").append(subjectCol).append(" = study.Participant.ParticipantId AND\n").append("\tSpecimenQuery.Container = study.Participant.Container\n");
         ptidSpecimenSQL.append(cohortJoinClause);
         ptidSpecimenSQL.append("GROUP BY study.Cohort.Label, SpecimenQuery.").append(subjectCol).append(", Visit\n").append("ORDER BY study.Cohort.Label, SpecimenQuery.").append(subjectCol).append(", Visit");
+        ptidSpecimenSQL.appendComment("</getParticipantSummaryByVisitType>", d);
 
         return new SqlSelector(StudySchema.getInstance().getSchema(), ptidSpecimenSQL).getCollection(SummaryByVisitParticipant.class);
     }
@@ -2674,7 +2681,11 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         if (completeRequestsOnly)
             params[params.length - 2] = Boolean.TRUE;
 
-        SQLFragment fragment = new SQLFragment(sql);
+        SqlDialect d = StudySchema.getInstance().getSqlDialect();
+        SQLFragment fragment = new SQLFragment();
+        fragment.appendComment("<getRequestSummaryBySite>",d);
+        fragment.append(sql);
+        fragment.appendComment("</getRequestSummaryBySite>", d);
         fragment.addAll(params);
 
         final List<RequestSummaryByVisitType> ret = new ArrayList<>();
