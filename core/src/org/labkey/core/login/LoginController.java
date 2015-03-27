@@ -40,6 +40,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.AuthenticationProvider;
@@ -1010,10 +1011,8 @@ public class LoginController extends SpringActionController
 
                 if (result.getStatus() == AuthenticationManager.AuthenticationStatus.Success)
                 {
-                    // Log the user into the system
-                    User authenticatedUser = result.getUser();
-                    SecurityManager.setAuthenticatedUser(request, authenticatedUser);
-                    getViewContext().setUser(authenticatedUser);
+                    // This user has passed primary authentication
+                    AuthenticationManager.setPrimaryAuthenticationUser(request, user);
                     _skipProfile = form.getSkipProfile();
                 }
             }
@@ -1023,7 +1022,7 @@ public class LoginController extends SpringActionController
 
         public URLHelper getSuccessURL(SetPasswordForm form)
         {
-            return getAfterLoginURL(form.getReturnURLHelper(), form.getUrlhash(), getUser(), _skipProfile);
+            return AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer()).getRedirectURL();
         }
 
         public NavTree appendNavTrail(NavTree root)
