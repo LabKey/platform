@@ -1,4 +1,3 @@
-
 Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
 
     extend: 'Ext.panel.Panel',
@@ -9,7 +8,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
 
         var mainPanel = config.items[0];
         mainPanel.tools = [{
-            handler: function (event, toolEl, panel, config) {
+            handler: function () {
                 this.designer.close();
             },
             scope: this
@@ -107,19 +106,17 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
         return true;
     },
 
-    onToolClose : function (index, item, e)
-    {
+    onToolClose : function (index) {
         this.removeRecord(index);
         return false;
     },
 
 
-    getFieldMetaRecord : function (fieldKey)
-    {
+    getFieldMetaRecord : function (fieldKey) {
         return this.fieldMetaStore.getById(fieldKey.toUpperCase());
     },
 
-    onListBeforeToolTipShow : function (list, qt, record, el)
+    onListBeforeToolTipShow : function (list, qt, record)
     {
         if (record)
         {
@@ -150,15 +147,17 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
     addRecord : function (fieldKey) {
         var list = this.getList();
         var defaultData = this.createDefaultRecordData(fieldKey);
-        var record = new list.store.recordType(defaultData);
-        var selected = list.getSelectedIndexes();
-        if (selected && selected.length > 0)
-        {
-            var index = Ext4.Array.max(selected);
-            list.store.insert(index+1, record);
+        //var record = new list.store.recordType(defaultData);
+        var record = new list.store.model(defaultData);
+        var selected = list.getSelectedNodes();
+        //var selected = list.getSelectedIndexes();
+        if (Ext4.isEmpty(selected)) {
+            list.store.add([record]);
         }
         else {
-            list.store.add([record]);
+            //var index = Ext4.Array.max(selected);
+            //list.store.insert(index+1, record);
+            list.store.insert(0, record);
         }
         return record;
     },

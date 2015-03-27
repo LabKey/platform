@@ -3,6 +3,95 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+Ext4.define('LABKEY.ext4.designer.FieldProxy', {
+    extend: 'Ext.data.proxy.Ajax',
+    alias: 'proxy.field',
+    doRequest: function(operation, callback, scope) {
+        var writer = this.getWriter(),
+                request = this.buildRequest(operation);
+
+        if (operation.allowWrite()) {
+            request = writer.write(request);
+        }
+
+        Ext4.apply(request, {
+            binary: this.binary,
+            headers: this.headers,
+            timeout: this.timeout,
+            callback: this.createRequestCallback(request, operation, callback, scope),
+            method: this.getMethod(request),
+            disableCaching: false,
+            scope: this
+        });
+
+        // here is the special sauce, we include the node id as an
+        // 'fk' parameter when making requests against getQueryDetails
+        if (!Ext4.isEmpty(request.params.node) &&
+                request.params.node !== LABKEY.internal.ViewDesigner.FieldMetaTreeStore.ROOT_ID)
+        {
+            request.params.fk = request.params.node;
+            delete request.params.node;
+        }
+
+        Ext4.Ajax.request(request);
+
+        return request;
+    }
+});
+
+Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
+
+    extend: 'Ext.data.TreeStore',
+
+    model: 'LABKEY.internal.ViewDesigner.FieldMetaRecord',
+
+    statics: {
+        ROOT_ID: '<ROOT>'
+    },
+
+    schemaName: undefined,
+
+    queryName: undefined,
+
+    constructor : function(config) {
+
+        if (!config.schemaName || !config.queryName) {
+            throw this.$className + ' requires \'schemaName\' and \'queryName\' properties to be constructed.'
+        }
+
+        var params = {
+            schemaName: config.schemaName,
+            queryName: config.queryName
+        };
+
+        if (config.fk) {
+            params.fk = config.fk;
+        }
+
+        this.proxy = {
+            type: 'field',
+            url: LABKEY.ActionURL.buildURL('query', 'getQueryDetails.api', config.containerPath, params),
+            reader: {
+                type: 'json',
+                root: 'columns',
+                idProperty: function(json) {
+                    return json.fieldKeyPath.toUpperCase();
+                }
+            }
+        };
+
+        this.root = {
+            id: LABKEY.internal.ViewDesigner.FieldMetaTreeStore.ROOT_ID,
+            expanded: true,
+            expandable: false,
+            draggable: false
+        };
+
+        this.selModel = Ext4.create('Ext.selection.CheckboxModel');
+
+        this.callParent([config]);
+    }
+});
 
 /**
  * An Ext.data.Store for LABKEY.internal.ViewDesigner.FieldMetaRecord json objects.
@@ -13,30 +102,45 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
 
     model: 'LABKEY.internal.ViewDesigner.FieldMetaRecord',
 
+    proxy: {
+        type: 'memory',
+        reader: {
+            type: 'json',
+            root: 'columns',
+            idProperty: function (json) {
+                return json.fieldKey.toUpperCase()
+            }
+        }
+    },
+
+    remoteSort: true,
+
+    schemaName: undefined,
+
+    queryName: undefined,
+
+    statics: {
+        ROOT_ID: '<ROOT>'
+    },
+
     constructor : function (config) {
 
-        if (config.schemaName && config.queryName)
-        {
-            var params = {schemaName: config.schemaName, queryName: config.queryName};
-            if (config.fk) {
-                params.fk = config.fk;
-            }
-            this.url = LABKEY.ActionURL.buildURL("query", "getQueryDetails", config.containerPath, params);
+        if (!config.schemaName || !config.queryName) {
+            throw this.$className + ' requires \'schemaName\' and \'queryName\' properties to be constructed.'
         }
 
-        this.isLoading = false;
-
-        config.remoteSort = true;
-        config.proxy = {
-            type: 'memory',
-            reader: {
-                type: 'json',
-                root: 'columns',
-                idProperty: function (json) {
-                    return json.fieldKey.toUpperCase()
-                }
-            }
+        var params = {
+            schemaName: config.schemaName,
+            queryName: config.queryName
         };
+
+        if (config.fk) {
+            params.fk = config.fk;
+        }
+
+        this.url = LABKEY.ActionURL.buildURL('query', 'getQueryDetails.api', config.containerPath, params);
+
+        this._loading = false;
 
         this.callParent([config]);
 
@@ -46,19 +150,18 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
     },
 
     onBeforeLoad : function() {
-        this.isLoading = true;
+        this._loading = true;
     },
 
-    onLoad : function(store, records, options) {
-        this.isLoading = false;
+    onLoad : function() {
+        this._loading = false;
     },
 
-    onLoadException : function(proxy, options, response, error)
-    {
-        this.isLoading = false;
-        var loadError = {message: error};
+    onLoadException : function(proxy, options, response, error) {
+        this._loading = false;
+        var loadError = { message: error };
 
-        if(response && response.getResponseHeader && response.getResponseHeader("Content-Type").indexOf("application/json") >= 0)
+        if (response && response.getResponseHeader && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
         {
             var errorJson = Ext4.JSON.decode(response.responseText);
             if (errorJson && errorJson.exception) {
@@ -84,13 +187,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
      * </ul>
      * @param {Object} [options.scope] The scope the callback will be called in.
      */
-    loadLookup : function (options)
-    {
+    loadLookup : function (options) {
 
         // The record's name is the fieldKey relative to the root query table.
         var fieldKey = options.fieldKey || (options.record && options.record.data.fieldKey);
         if (!fieldKey) {
-            throw new Error("fieldKey or record is required");
+            throw "fieldKey or record is required";
         }
 
         if (!this.lookupLoaded) {
@@ -98,7 +200,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
         }
 
         var upperFieldKey = fieldKey.toUpperCase();
-        if (upperFieldKey == "<ROOT>" || this.lookupLoaded[upperFieldKey])
+        if (upperFieldKey == LABKEY.internal.ViewDesigner.FieldMetaStore.ROOT_ID || this.lookupLoaded[upperFieldKey])
         {
             var r = this.queryLookup(upperFieldKey);
             if (options.callback) {
@@ -117,9 +219,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
         }
     },
 
-    queryLookup : function (fieldKey)
-    {
-        var prefixMatch = fieldKey == "<ROOT>" ? "" : (fieldKey + "/");
+    queryLookup : function (fieldKey) {
+        var prefixMatch = fieldKey == LABKEY.internal.ViewDesigner.FieldMetaStore.ROOT_ID ? "" : (fieldKey + "/");
         var collection = this.queryBy(function (record, id) {
             var recordFieldKey = record.get("fieldKey");
             var idx = recordFieldKey.indexOf(prefixMatch);

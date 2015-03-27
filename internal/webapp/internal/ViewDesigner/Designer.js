@@ -10,8 +10,20 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     cls: 'customize-view-designer',
 
-    constructor : function (config)
-    {
+    layout: 'border',
+
+    height: 310,
+
+    tabWidth: 80,
+
+    activeTab: 0,
+
+    border: false,
+
+    bodyStyle: 'background-color: transparent;',
+
+    constructor : function(config) {
+
         // For tooltips on the fieldsTree TreePanel
         Ext4.tip.QuickTipManager.init();
 
@@ -75,16 +87,13 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         // Add user sort
         var newSortArray = [];
         this.userSort = config.userSort || [];
-        for (var i = 0; i < this.userSort.length; i++)
-        {
+        Ext4.each(this.userSort, function(sort) {
             // copy the sort so the original userSort isn't modified by the designer
-            var userSort = Ext4.apply({urlParameter: true}, this.userSort[i]);
-            newSortArray.push(userSort);
-        }
+            newSortArray.push(Ext4.apply({ urlParameter: true }, sort));
+        });
 
         // Merge userSort and existing customView sort.
-        for (var i = 0; i < this.customView.sort.length; i++)
-        {
+        for (var i = 0; i < this.customView.sort.length; i++) {
             var sort = this.customView.sort[i];
             var found = false;
             for (var j = 0; j < newSortArray.length; j++)
@@ -176,13 +185,20 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             customView: this.customView
         });
 
+        var treeStore = Ext4.create('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
+            containerPath: this.containerPath,
+            schemaName: this.schemaName,
+            queryName: this.queryName
+        });
+
         this.fieldsTree = Ext4.create('Ext.tree.TreePanel', {
             autoScroll: true,
             border: false,
-            cls: "labkey-fieldmeta-tree",
-            // TODO reenable after conversion to Ext4
+            cls: 'labkey-fieldmeta-tree',
+            rootVisible: false,
+            store: treeStore,
             //root: new Ext.tree.AsyncTreeNode({
-            //    id: "<ROOT>",
+            //    id: LABKEY.ext4.designer.FieldMetaStore.ROOT_ID,
             //    expanded: true,
             //    expandable: false,
             //    draggable: false
@@ -213,6 +229,51 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             }]
         });
 
+        TREE = this.fieldsTree;
+
+        this.callParent([config]);
+
+        this.addEvents('beforesaveview', 'viewsave');
+
+        // Show 'does not exist' message only for non-default views.
+        if (this.customView.doesNotExist && this.viewName) {
+            this.showMessage("Custom View '" + this.viewName + "' not found.");
+        }
+    },
+
+    initComponent : function() {
+
+        this.items = [
+            this.getTabsDataView(true, this.tabWidth),
+            this.getTabsMainPanel()
+        ];
+
+        this.callParent();
+
+        this.fieldsTree.on('checkchange', this.onCheckChange, this);
+        this.getInnerTabPanel().on('tabchange', this.onTabChange, this);
+    },
+
+    getTabsMainPanel : function() {
+        if (!this.tabsMainPanel) {
+            this.tabsMainPanel = Ext4.create('Ext.panel.Panel', {
+                region: 'center',
+                cls: 'labkey-customview-centerpanel',
+                layout: 'border',
+                border: false,
+                items: [
+                    this.getAvailableFieldsPanel(),
+                    this.getInnerTabPanel(this.activeTab),
+                    this.getBottomToolbarPanel(this.getFooterItems())
+                ]
+            })
+        }
+
+        return this.tabsMainPanel;
+    },
+
+    getFooterItems : function() {
+
         var canEdit = this.canEdit();
 
         // enabled for named editable views that exist.
@@ -221,7 +282,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         // enabled for saved (non-session) editable views or customized default view (not new) views.
         var revertEnabled = canEdit && (this.customView.session || (!this.customView.name && !this.customView.doesNotExist));
 
-        var footerBarItems = [{
+        var items = [{
             text: "Delete",
             tooltip: "Delete " + (this.customView.shared ? "shared" : "your") + " saved view",
             tooltipType: "title",
@@ -231,9 +292,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         }];
 
         // Only add Revert if we're being rendered attached to a grid
-        if (config.dataRegion)
-        {
-            footerBarItems.push({
+        if (this.dataRegion) {
+            items.push({
                 text: "Revert",
                 tooltip: "Revert " + (this.customView.shared ? "shared" : "your") + " edited view",
                 tooltipType: "title",
@@ -244,12 +304,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             });
         }
 
-        footerBarItems.push("->");
+        items.push('->');
 
         // Only add View Grid if we're being rendered attached to a grid
-        if (config.dataRegion)
-        {
-            footerBarItems.push({
+        if (this.dataRegion) {
+            items.push({
                 text: "View Grid",
                 tooltip: "Apply changes to the view and reshow grid",
                 tooltipType: "title",
@@ -258,9 +317,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             });
         }
 
-        if (!this.query.isTemporary)
-        {
-            footerBarItems.push({
+        if (!this.query.isTemporary) {
+            items.push({
                 text: "Save",
                 tooltip: "Save changes",
                 tooltipType: "title",
@@ -269,54 +327,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             });
         }
 
-        config = Ext4.applyIf(config, {
-            height: 310,
-            tabWidth: 80,
-            activeTab: 0,
-            border: false,
-            bodyStyle: 'background-color: transparent;'
-        });
-
-        config = Ext4.apply(config, {
-            layout: 'border',
-            items: [
-                this.getTabsDataView(true, config.tabWidth),
-                this.getTabsMainPanel(config.activeTab, footerBarItems)
-            ]
-        });
-
-        this.addEvents({
-            beforeviewsave: true,
-            viewsave: true
-        });
-
-        this.callParent([config]);
-
-        this.fieldsTree.on('checkchange', this.onCheckChange, this);
-        this.getInnerTabPanel().on('tabchange', this.onTabChange, this);
-
-        // Show 'does not exist' message only for non-default views.
-        if (this.customView.doesNotExist && this.viewName) {
-            this.showMessage("Custom View '" + this.viewName + "' not found.");
-        }
-    },
-
-    getTabsMainPanel : function(activeTab, footerBarItems) {
-        if (!this.tabsMainPanel) {
-            this.tabsMainPanel = Ext4.create('Ext.panel.Panel', {
-                region: 'center',
-                cls: 'labkey-customview-centerpanel',
-                layout: 'border',
-                border: false,
-                items: [
-                    this.getAvailableFieldsPanel(),
-                    this.getInnerTabPanel(activeTab),
-                    this.getBottomToolbarPanel(footerBarItems)
-                ]
-            })
-        }
-
-        return this.tabsMainPanel;
+        return items;
     },
 
     getTabsStore : function() {
@@ -525,6 +536,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         return this.editableErrors;
     },
 
+    getFieldMetaStore : function() {
+
+    },
+
     getMessageBox : function() {
         var messageContainer = this.getBottomToolbarPanel().down('box');
         if (messageContainer) {
@@ -652,10 +667,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     onCheckChange : function (node, checked) {
         if (checked) {
-            this.addRecord(node.attributes.fieldKey);
+            this.addRecord(node.get('fieldKey'));
         }
         else {
-            this.removeRecord(node.attributes.fieldKey);
+            this.removeRecord(node.get('fieldKey'));
         }
     },
 

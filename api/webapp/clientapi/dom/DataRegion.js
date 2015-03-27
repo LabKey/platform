@@ -2718,6 +2718,7 @@ if (!LABKEY.DataRegions)
         }
 
         if (this.renderTo) {
+            this.region.renderTo = this.renderTo;
             _load(this.region, function() {
                 if (LABKEY.DataRegions[this.dataRegionName]) {
                     this.region = LABKEY.DataRegions[this.dataRegionName];

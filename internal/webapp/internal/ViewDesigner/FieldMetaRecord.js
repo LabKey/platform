@@ -1,4 +1,3 @@
-
 Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaRecord', {
 
     extend: 'Ext.data.Model',
@@ -30,16 +29,61 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaRecord', {
         {name: 'caption'},
         {name: 'lookup'},
         {name: 'crosstabColumnDimension'},
-        {name: 'crosstabColumnMember'}
+        {name: 'crosstabColumnMember'},
+
+        // Tree properties
+        {
+            name: 'text',
+            type: 'string',
+            mapping: 'name',
+            convert: function(v, rec) {
+                if (!Ext4.isEmpty(rec.raw.caption) && rec.raw.caption != '&nbsp;') {
+                    return rec.raw.caption;
+                }
+                return v;
+            }
+        },{
+            name: 'leaf',
+            type: 'boolean',
+            mapping: 'lookup',
+            convert: function(v, rec) {
+                if (!Ext4.isDefined(rec.id)) {
+                    return false; // root might not be defined, return false
+                }
+                return !Ext4.isObject(v);
+            }
+        },{
+            name: 'checked',
+            type: 'boolean',
+            defaultValue: false
+        },{
+            name: 'hidden',
+            type: 'boolean',
+            convert: function(v) { return v === true; }
+        },{
+            name: 'disabled',
+            type: 'boolean',
+            mapping: 'selectable',
+            convert: function(v) { return v === false; }
+        },{
+            name: 'iconCls',
+            type: 'string',
+            defaultValue: 'x4-hide-display'
+        },{
+            name: 'qtip',
+            convert: function(v, rec) {
+                return rec.getToolTipHtml();
+            }
+        }
     ],
 
     getToolTipHtml : function () {
         var body = "<table>";
         var field = this.data;
         if (field.description) {
-            body += "<tr><td valign='top'><strong>Description:</strong></td><td>" + Ext4.util.Format.htmlEncode(field.description) + "</td></tr>";
+            body += "<tr><td valign='top'><strong>Description:</strong></td><td>" + Ext4.htmlEncode(field.description) + "</td></tr>";
         }
-        body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + Ext4.util.Format.htmlEncode(LABKEY.FieldKey.fromString(field.fieldKey).toDisplayString()) + "</td></tr>";
+        body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + Ext4.htmlEncode(LABKEY.FieldKey.fromString(field.fieldKey).toDisplayString()) + "</td></tr>";
         if (field.friendlyType) {
             body += "<tr><td valign='top'><strong>Data&nbsp;type:</strong></td><td>" + field.friendlyType + "</td></tr>";
         }
