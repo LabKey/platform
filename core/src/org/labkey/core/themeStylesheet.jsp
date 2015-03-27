@@ -653,7 +653,6 @@ li.labkey-tab-inactive a
 
 .themed-panel2 .x4-panel-header {
     background: #<%= grid %>;
-    padding: 5px;
 }
 
 .themed-panel2 .x4-panel-header-text-container-default {
