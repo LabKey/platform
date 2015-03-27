@@ -459,7 +459,7 @@ public class SequenceVisitManager extends VisitManager
 
         SQLFragment sql = new SQLFragment("SELECT DISTINCT SequenceNum\n" +
                 "FROM " + tableParticipantVisit + "\n"+
-                "WHERE Container = ? AND VisitRowId IS NULL");
+                "WHERE Container = ? AND (VisitRowId IS NULL OR VisitRowId = -1)");
         sql.add(getStudy().getContainer().getId());
 
         final TreeSet<Double> sequenceNums = new TreeSet<>();

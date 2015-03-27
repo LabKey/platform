@@ -242,7 +242,7 @@ public class RelativeDateVisitManager extends VisitManager
 
         SQLFragment sql = new SQLFragment("SELECT DISTINCT Day " +
             "FROM " + tableParticipantVisit + "\n" +
-            "WHERE Container = ? AND VisitRowId = -1");
+            "WHERE Container = ? AND (VisitRowId IS NULL OR VisitRowId = -1)");
         sql.add(getStudy().getContainer());
 
         final MutableInt days = new MutableInt(0);
