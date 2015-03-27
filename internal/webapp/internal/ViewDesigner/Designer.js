@@ -40,7 +40,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
         Ext4.each(this.query.views, function(view) {
             if (view.name == this.viewName) {
-                this.customView = this.view;
+                this.customView = view;
                 return false;
             }
         }, this);
@@ -72,9 +72,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         // Add any additional field metadata for view's selected columns, sorts, filters.
         // The view may be filtered or sorted upon columns not present in the query's selected column metadata.
         // The FieldMetaStore uses a reader that expects the field metadata to be under a 'columns' property instead of 'fields'
-        this.fieldMetaStore.loadRawData({
-            columns: this.customView.fields
-        }, true);
+        if (Ext4.isDefined(this.customView)) {
+            this.fieldMetaStore.loadRawData({
+                columns: this.customView.fields
+            }, true);
+        }
 
         // Add user filters
         this.userFilter = config.userFilter || [];
@@ -229,8 +231,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             }]
         });
 
-        TREE = this.fieldsTree;
-
         this.callParent([config]);
 
         this.addEvents('beforesaveview', 'viewsave');
@@ -244,7 +244,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     initComponent : function() {
 
         this.items = [
-            this.getTabsDataView(true, this.tabWidth),
+            this.getTabsDataView(true),
             this.getTabsMainPanel()
         ];
 
@@ -341,12 +341,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         return this.tabsDataViewStore;
     },
 
-    getTabsDataView : function(create, tabWidth) {
+    getTabsDataView : function(create) {
         if (!this.tabsDataView && create) {
             this.tabsDataView = Ext4.create('Ext.view.View', {
                 region: 'west',
                 cls: 'labkey-customview-westpanel',
-                width: tabWidth,
+                width: this.tabWidth,
                 store: this.getTabsStore(),
                 tpl: new Ext4.XTemplate(
                     '<ul><tpl for=".">',
