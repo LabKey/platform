@@ -353,7 +353,6 @@ public class SecurityManager
     }
 
 
-
     // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
     public static @Nullable User authenticateBasic(HttpServletRequest request, String basic)
     {
@@ -444,7 +443,6 @@ public class SecurityManager
                 if (null != u)
                 {
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
-                    SecurityManager.setAuthenticatedUser(request, u);
                     // accept Guest as valid credentials from authenticateBasic()
                     return u;
                 }
