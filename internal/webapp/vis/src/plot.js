@@ -1336,7 +1336,8 @@ boxPlot.render();
         }
 
         // min x-axis tick length is 10 by default
-        for (var i = config.data[config.data.length - 1].seqValue + 1; i < 10; i++)
+        var maxSeqValue = config.data.length > 0 ? config.data[config.data.length - 1].seqValue + 1 : 0;
+        for (var i = maxSeqValue; i < 10; i++)
         {
             var temp = {seqValue: i};
             temp[config.properties.xTickLabel] = "";
