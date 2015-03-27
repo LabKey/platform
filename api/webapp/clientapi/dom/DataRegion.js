@@ -1338,7 +1338,7 @@ if (!LABKEY.DataRegions)
 
                     var minWidth = Math.max(700, Math.min(1000, _getHeaderSelector(this).width())); // >= 700 && <= 1000
 
-                    this.customizeView = Ext4.create('LABKEY.ext4.designer.ViewDesigner', {
+                    this.customizeView = Ext4.create('LABKEY.internal.ViewDesigner.Designer', {
                         renderTo: Ext4.getBody().createChild({tag: 'div', customizeView: true, style: {display: 'none'}}),
                         width: minWidth,
                         activeTab: activeTab,
@@ -2381,12 +2381,18 @@ if (!LABKEY.DataRegions)
     LABKEY.DataRegion2.loadViewDesigner = function(cb, scope) {
         LABKEY.requiresExt4Sandbox(true, function() {
             LABKEY.requiresScript([
-                'extWidgets/Ext4ComponentDataView.js',
-                'designer/FieldMetaStore.js',
-                //'designer/FieldTreeLoader.js',
-                'designer/Utils.js',
-                'designer/Tabs.js',
-                'designer/Designer.js'
+                'internal/ViewDesigner/ux/ComponentDataView.js',
+                'internal/ViewDesigner/button/PaperclipButton.js',
+                'internal/ViewDesigner/field/FilterOpCombo.js',
+                'internal/ViewDesigner/field/FilterTextValue.js',
+                'internal/ViewDesigner/tab/BaseTab.js',
+                'internal/ViewDesigner/tab/ColumnsTab.js',
+                'internal/ViewDesigner/tab/FilterTab.js',
+                'internal/ViewDesigner/tab/SortTab.js',
+                'internal/ViewDesigner/FieldMetaRecord.js',
+                'internal/ViewDesigner/FieldMetaStore.js',
+                //'internal/ViewDesigner/FieldTreeLoader.js',
+                'internal/ViewDesigner/Designer.js'
             ], true, cb, scope);
         });
     };

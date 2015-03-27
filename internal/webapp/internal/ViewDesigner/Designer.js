@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
+Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     extend: 'Ext.panel.Panel',
 
@@ -50,7 +50,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         }
 
         // Create the FieldKey metadata store
-        this.fieldMetaStore = Ext4.create('LABKEY.ext4.designer.FieldMetaStore', {
+        this.fieldMetaStore = Ext4.create('LABKEY.internal.ViewDesigner.FieldMetaStore', {
             containerPath: this.containerPath,
             schemaName: this.schemaName,
             queryName: this.queryName,
@@ -152,7 +152,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
             tab.active = tab.index == config.activeTab;
         });
 
-        this.columnsTab = Ext4.create('LABKEY.ext4.designer.ColumnsTab', {
+        this.columnsTab = Ext4.create('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
             name: "ColumnsTab",
             designer: this,
             schemaName: this.schemaName,
@@ -162,14 +162,14 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
             customView: this.customView
         });
 
-        this.filterTab = Ext4.create('LABKEY.ext4.designer.FilterTab', {
+        this.filterTab = Ext4.create('LABKEY.internal.ViewDesigner.tab.FilterTab', {
             name: "FilterTab",
             designer: this,
             fieldMetaStore: this.fieldMetaStore,
             customView: this.customView
         });
 
-        this.sortTab = Ext4.create('LABKEY.ext4.designer.SortTab', {
+        this.sortTab = Ext4.create('LABKEY.internal.ViewDesigner.tab.SortTab', {
             name: "SortTab",
             designer: this,
             fieldMetaStore: this.fieldMetaStore,
@@ -347,7 +347,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
                             return active ? "labkey-customview-activetab" : "";
                         },
                         getTabJointDisplay : function(values) {
-                            var style = "top: " + (values.index * 25 + 1) + "px;";
+                            var style = "top: " + (values.index * 25 + 14) + "px;";
                             if (!values.active) {
                                 style += " display: none;";
                             }
@@ -565,7 +565,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
 
     getActiveDesignerTab : function () {
         var tab = this.getInnerTabPanel().getActiveTab().down('panel');
-        if (tab instanceof LABKEY.ext4.designer.BaseTab) {
+        if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab) {
             return tab;
         }
 
@@ -593,7 +593,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         for (var i = 0; i < tabs.length; i++)
         {
             var tab = tabs[i];
-            if (tab instanceof LABKEY.ext4.designer.BaseTab) {
+            if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab) {
                 tab.setShowHiddenFields(showHidden);
             }
         }
@@ -662,7 +662,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
     onTabChange : function () {
 
         var tab = this.getActiveDesignerTab();
-        if (tab instanceof LABKEY.ext4.designer.BaseTab)
+        if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab)
         {
             // get the checked fields from the new tab's store
             var storeRecords = tab.getList().getStore().getRange();
@@ -749,7 +749,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         for (var i = 0; i < tabs.length; i++)
         {
             var tab = tabs[i];
-            if (tab instanceof LABKEY.ext4.designer.BaseTab) {
+            if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab) {
                 tab.revert();
             }
         }
@@ -760,7 +760,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
         for (var i = 0; i < tabs.length; i++)
         {
             var tab = tabs[i];
-            if (tab instanceof LABKEY.ext4.designer.BaseTab)
+            if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab)
             {
                 if (tab.validate() === false)
                 {
@@ -786,7 +786,7 @@ Ext4.define('LABKEY.ext4.designer.ViewDesigner', {
             for (var i = 0; i < tabs.length; i++)
             {
                 var tab = tabs[i];
-                if (tab instanceof LABKEY.ext4.designer.BaseTab) {
+                if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab) {
                     tab.save(edited, urlParameters);
                 }
             }
