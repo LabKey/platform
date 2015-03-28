@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
@@ -41,8 +42,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
-import org.labkey.authentication.test.TestSecondaryProvider;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -60,7 +59,6 @@ public class DuoController extends SpringActionController
 
     public DuoController() throws Exception
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
@@ -74,9 +72,8 @@ public class DuoController extends SpringActionController
         return url;
     }
 
-    private URLHelper getAfterLoginURL(@Nullable URLHelper returnURL, @Nullable String urlHash, @Nullable User user)
+    public static URLHelper getAfterLoginURL(Container current, @Nullable URLHelper returnURL, @Nullable String urlHash, @Nullable User user)
     {
-        Container current = getContainer();
         Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
 
         // Default redirect if returnURL is not specified. Try not to redirect to a folder where the user doesn't have permissions
@@ -292,7 +289,7 @@ public class DuoController extends SpringActionController
         public ModelAndView getView(DuoForm form, boolean reshow, BindException errors) throws Exception
         {
             if (!getUser().isGuest())
-                return HttpView.redirect(getAfterLoginURL(form.getReturnURLHelper(), form.getUrlhash(), getUser()));
+                return HttpView.redirect(getAfterLoginURL(getContainer(), form.getReturnURLHelper(), form.getUrlhash(), getUser()));
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);
@@ -340,75 +337,6 @@ public class DuoController extends SpringActionController
         }
     }
 
-
-    public static ActionURL getTestSecondaryURL(Container c)
-    {
-        return new ActionURL(TestSecondaryAction.class, c);
-    }
-
-    public static class TestSecondaryForm extends ReturnUrlForm
-    {
-        private boolean _valid;
-
-        public boolean isValid()
-        {
-            return _valid;
-        }
-
-        @SuppressWarnings("unused")
-        public void setValid(boolean valid)
-        {
-            _valid = valid;
-        }
-    }
-
-    @RequiresNoPermission
-    public class TestSecondaryAction extends FormViewAction<TestSecondaryForm>
-    {
-        @Override
-        public void validateCommand(TestSecondaryForm form, Errors errors)
-        {
-        }
-
-        @Override
-        public ModelAndView getView(TestSecondaryForm form, boolean reshow, BindException errors) throws Exception
-        {
-            if (!getUser().isGuest())
-                return HttpView.redirect(getAfterLoginURL(form.getReturnURLHelper(), form.getUrlhash(), getUser()));
-
-            getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            getPageConfig().setIncludeLoginLink(false);
-            return new JspView<>("/org/labkey/authentication/test/testSecondary.jsp", null, errors);
-        }
-
-        @Override
-        public boolean handlePost(TestSecondaryForm form, BindException errors) throws Exception
-        {
-            if (form.isValid())
-            {
-                User user = AuthenticationManager.getPrimaryAuthenticationUser(getViewContext().getSession());
-
-                if (null != user)
-                    AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), TestSecondaryProvider.class, user);
-
-                return true;
-            }
-
-            return false;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(TestSecondaryForm form)
-        {
-            return AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer()).getRedirectURL();
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
 
     @RequiresSiteAdmin
     public class TestDuoAction extends FormViewAction<DuoForm>

@@ -32,6 +32,7 @@ import org.labkey.authentication.ldap.LdapController;
 import org.labkey.authentication.oauth.GoogleOAuthProvider;
 import org.labkey.authentication.oauth.OAuthController;
 import org.labkey.authentication.saml.SamlProvider;
+import org.labkey.authentication.test.TestSecondaryController;
 import org.labkey.authentication.test.TestSecondaryProvider;
 
 import java.util.Collection;
@@ -85,6 +86,7 @@ public class AuthenticationModule extends DefaultModule
 
         if (AppProps.getInstance().isDevMode())
         {
+            addController("testsecondary", TestSecondaryController.class);
             AuthenticationManager.registerProvider(new TestSecondaryProvider(), Priority.Low);
         }
     }

@@ -20,7 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.authentication.duo.DuoController;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -34,7 +33,7 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider
     @Override
     public ActionURL getRedirectURL(User candidate, Container c)
     {
-        return DuoController.getTestSecondaryURL(c);
+        return TestSecondaryController.getTestSecondaryURL(c);
     }
 
     @Nullable

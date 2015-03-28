@@ -15,14 +15,12 @@
  * limitations under the License.
  */
 %>
-
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String message1 = "Secondary Authentication";
     String user = getUser().getEmail();
     String message2 = "Is " + user + " really you?";
-
 %>
 <p><%=h(message1)%></p>
 <p><%=h(message2)%></p>
