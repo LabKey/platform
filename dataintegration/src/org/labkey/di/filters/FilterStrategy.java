@@ -15,6 +15,7 @@
  */
 package org.labkey.di.filters;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.di.VariableMap;
@@ -47,10 +48,9 @@ public interface FilterStrategy
     /* Has side effect of setting parameters */
     SimpleFilter getFilter(VariableMap variables);
     SimpleFilter getFilter(VariableMap variables, boolean deleting);
-    DeletedRowsSourceObjectType getDeletedRowsSource();
-    TableInfo getDeletedRowsTinfo();
-    String getDeletedRowsKeyCol();
-    String getTargetDeletionKeyCol();
-    void setTargetDeletionKeyCol(String col);
-
+    @Nullable DeletedRowsSourceObjectType getDeletedRowsSource();
+    @Nullable TableInfo getDeletedRowsTinfo();
+    @Nullable String getDeletedRowsKeyCol();
+    @Nullable String getTargetDeletionKeyCol();
+    void setTargetDeletionKeyCol(@Nullable String col);
 }

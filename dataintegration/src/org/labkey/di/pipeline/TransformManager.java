@@ -566,7 +566,7 @@ public class TransformManager implements DataIntegrationService.Interface
         return true;
     }
 
-    private SQLFragment transformConfigurationSQLFragment()
+    private SQLFragment transformConfigurationSQLFragment(Container c)
     {
         return new SQLFragment("with runs AS")
                 .append(" (SELECT *, ROW_NUMBER() OVER (PARTITION BY transformid, container ORDER BY starttime DESC) as rn")
@@ -580,13 +580,13 @@ public class TransformManager implements DataIntegrationService.Interface
                 .append(" LEFT JOIN runs ON c.container = runs.container AND c.transformid = runs.transformid AND runs.rn = 1")
                 .append(" LEFT JOIN pipeline.StatusFiles s ON runs.jobid = s.rowId")
                 .append(" LEFT JOIN successRuns ON c.container = successRuns.container AND c.transformid = successRuns.transformid AND successRuns.rn = 1")
-                .append(" WHERE c.container=?");
+                .append(" WHERE c.container=?").add(c.getId());
     }
 
     public List<TransformConfiguration> getTransformConfigurations(Container c)
     {
         DbScope scope = DbSchema.get("dataintegration").getScope();
-        SQLFragment sql = transformConfigurationSQLFragment().add(c.getId());
+        SQLFragment sql = transformConfigurationSQLFragment(c);
         return new SqlSelector(scope, sql).getArrayList(TransformConfiguration.class);
     }
 
@@ -594,7 +594,7 @@ public class TransformManager implements DataIntegrationService.Interface
     public TransformConfiguration getTransformConfiguration(Container c, ScheduledPipelineJobDescriptor etl)
     {
         DbScope scope = DbSchema.get("dataintegration").getScope();
-        SQLFragment sql = transformConfigurationSQLFragment().append(" and c.transformid=?").add(c.getId()).add(etl.getId());
+        SQLFragment sql = transformConfigurationSQLFragment(c).append(" and c.transformid=?").add(etl.getId());
         TransformConfiguration ret = new SqlSelector(scope, sql).getObject(TransformConfiguration.class);
         if (null != ret)
             return ret;
@@ -660,32 +660,28 @@ public class TransformManager implements DataIntegrationService.Interface
 
     public TransformRun getTransformRun(Container c, int runId)
     {
-        TransformRun run;
         SQLFragment sql = new SQLFragment("SELECT * FROM ").append(DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x"))
                 .append(" WHERE container=? and transformrunid=?").add(c.getId()).add(runId);
-        run = new SqlSelector(DataIntegrationQuerySchema.getSchema(), sql).getObject(TransformRun.class);
-        return run;
+        return new SqlSelector(DataIntegrationQuerySchema.getSchema(), sql).getObject(TransformRun.class);
     }
 
     public TransformRun getTransformRunForJob(Container c, int jobId)
     {
-        TransformRun run;
         SQLFragment sql = new SQLFragment("SELECT * FROM ").append(DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("x"))
                 .append(" WHERE container=? and jobid=?").add(c.getId()).add(jobId);
-        run = new SqlSelector(DataIntegrationQuerySchema.getSchema(), sql).getObject(TransformRun.class);
-        return run;
+        return new SqlSelector(DataIntegrationQuerySchema.getSchema(), sql).getObject(TransformRun.class);
     }
 
     public boolean transformIsPending(ContainerUser context, String transformId, String firstTaskName)
     {
         final String WAITING = PipelineJob.TaskStatus.waiting.toString();
-        SQLFragment sql = new SQLFragment("SELECT 1 WHERE EXISTS (SELECT 1 FROM ").append(DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("r"))
+        SQLFragment sql = new SQLFragment("SELECT 1 FROM ").append(DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("r"))
                 .append(" JOIN ").append(PipelineService.get().getJobsTable(context.getUser(), context.getContainer()).getFromSQL("j"))
                 .append(" ON r.jobid = j.rowid ").append(" WHERE r.container=? and r.transformid=?")
                 .append(" AND (j.status = '").append(WAITING).append("'")
-                .append(" OR j.status LIKE '%").append(firstTaskName).append(" ").append(WAITING).append("'))")
+                .append(" OR j.status LIKE '%").append(firstTaskName).append(" ").append(WAITING).append("')")
                 .add(context.getContainer().getId()).add(transformId);
-        return Boolean.TRUE.equals(new SqlSelector(DataIntegrationQuerySchema.getSchema(), sql).getObject(Boolean.class));
+        return new SqlSelector(DataIntegrationQuerySchema.getSchema(), sql).exists();
     }
 
     public TransformRun insertTransformRun(User user, TransformRun run)

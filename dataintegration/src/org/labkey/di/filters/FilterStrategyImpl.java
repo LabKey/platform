@@ -62,9 +62,14 @@ public abstract class FilterStrategyImpl implements FilterStrategy
     {
         if (_isInit)
             return;
+        initMainFilter();
+        initDeletedRowsFilter();
+        _isInit = true;
     }
 
-    protected void initDeletedRowsSource()
+    protected void initMainFilter() {}
+
+    protected void initDeletedRowsFilter()
     {
         if (null != _deletedRowsSource)
         {

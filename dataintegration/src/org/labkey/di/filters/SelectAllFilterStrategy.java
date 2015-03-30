@@ -35,14 +35,6 @@ public class SelectAllFilterStrategy extends FilterStrategyImpl
     }
 
     @Override
-    protected void init()
-    {
-        super.init();
-        initDeletedRowsSource();
-        _isInit = true;
-    }
-
-    @Override
     public boolean hasWork()
     {
         init();

@@ -35,12 +35,13 @@ public class TestTaskRefTask extends TaskRefTaskImpl
     {
         settings.put(SETTING_1, "test");
         logger.info("Log from test task");
-        if (Boolean.parseBoolean(settings.get(SLEEP)))
+        if (settings.get(SLEEP) != null)
         {
-            logger.info("Sleeping ETL task for 15 seconds");
+            int sleepSeconds = Integer.parseInt(settings.get(SLEEP));
+            logger.info("Sleeping ETL task for " +  sleepSeconds + " seconds");
             try
             {
-                Thread.sleep(15000);
+                Thread.sleep(sleepSeconds * 1000);
             }
             catch (InterruptedException e) {/* */}
         }

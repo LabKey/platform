@@ -50,6 +50,13 @@ import static org.labkey.di.DataIntegrationQuerySchema.Columns;
  * User: matthew
  * Date: 5/13/13
  * Time: 1:12 PM
+ *
+ * Run Filters rely on a separate run table, specified in the xml. This is a list of runs (synonym with batch, batchId, transferId, etc),
+ * which a further upstream process has used to stage records in the source defined for the LabKey etl. The source records must have a
+ * corresponding run (or batchId, etc) column indicating they were staged from that particular run.
+ *
+ * This filter class will took to the run table to find the next set of batches it hasn't processed, and then select the rows from
+ * source which were staged by those batch ids.
  */
 public class RunFilterStrategy extends FilterStrategyImpl
 {
@@ -81,12 +88,9 @@ public class RunFilterStrategy extends FilterStrategyImpl
         this(context, stepMeta, f._runTableSchema, f._runTableName, f._pkColumnName, f._fkColumnName, f._deletedRowsSource);
     }
 
-
     @Override
-    protected void init()
+    protected void initMainFilter()
     {
-        super.init();
-
         SchemaKey runSchemaKey = null!=_runTableSchema ? _runTableSchema : _config.getSourceSchema();
         QuerySchema runSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), runSchemaKey);
         if (null == runSchema)
@@ -97,14 +101,14 @@ public class RunFilterStrategy extends FilterStrategyImpl
             throw new IllegalArgumentException("Table not found: " + _runTableName);
         _runPkCol = _runsTable.getColumn(_pkColumnName);
         if (null == _runPkCol)
-            throw new IllegalArgumentException("Column not found: " + _runTableName + "." + _runPkCol);
+            throw new IllegalArgumentException("Column not found: " + _runTableName + "." + _pkColumnName);
 
 
         if (null != _config && _config.isUseSource())
         {
             QuerySchema sourceSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _config.getSourceSchema());
             if (null == sourceSchema)
-                throw new IllegalArgumentException("Schema not found: " + sourceSchema);
+                throw new IllegalArgumentException("Source schema not found: " + _config.getSourceSchema().toString());
 
             _sourceTable = sourceSchema.getTable(_config.getSourceQuery());
             if (null == _sourceTable)
@@ -116,16 +120,14 @@ public class RunFilterStrategy extends FilterStrategyImpl
             if (null == _sourceFkCol)
                 throw new IllegalArgumentException("Column not found: " + _config.getSourceQuery() + "." + runColumnName);
         }
-        initDeletedRowsSource();
-        _isInit = true;
     }
 
     @Override
-    protected void initDeletedRowsSource()
+    protected void initDeletedRowsFilter()
     {
         if (null != _deletedRowsSource)
         {
-            super.initDeletedRowsSource();
+            super.initDeletedRowsFilter();
 
             String runColumnName = StringUtils.defaultString(_deletedRowsSource.getRunColumnName(), _sourceFkCol.getColumnName());
             runColumnName =  StringUtils.defaultString(runColumnName, _fkDefaultColumnName);

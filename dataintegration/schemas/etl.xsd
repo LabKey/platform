@@ -25,8 +25,16 @@
     <complexType name="SourceObjectType">
         <attribute name="schemaName" type="string" use="required"/>
         <attribute name="queryName" type="string" use="required"/>
-        <attribute name="timestampColumnName" type="string" use="optional"/>
-        <attribute name="runColumnName" type="string" use="optional"/>
+        <attribute name="timestampColumnName" type="string" use="optional">
+            <annotation>
+                <documentation>Override the column name set on a ModifiedSinceFilter incremental filter.</documentation>
+            </annotation>
+        </attribute>
+        <attribute name="runColumnName" type="string" use="optional">
+            <annotation>
+                <documentation>Override the column name set on a RunFilter incremental filter.</documentation>
+            </annotation>
+        </attribute>
         <attribute name="sourceOption" type="etl:SourceOptionType" use="optional"/>
         <attribute name="remoteSource" type="string" use="optional"/>
         <attribute name="useTransaction" type="boolean" use="optional" default="true">
@@ -191,17 +199,38 @@
     </complexType>
 
     <complexType name="DeletedRowsSourceObjectType">
-        <complexContent>
+    <complexContent>
             <extension base="etl:SourceObjectType">
-                <attribute name="deletedSourceKeyColumnName" type="string" use="optional"/>
-                <attribute name="targetKeyColumnName" type="string" use="optional"/>
+                <attribute name="deletedSourceKeyColumnName" type="string" use="optional">
+                    <annotation>
+                        <documentation>
+                            The column in the deletedRowsSource which holds the key values to delete in the target. If not specified, the PK values of the delete query is used.
+                        </documentation>
+                    </annotation>
+                </attribute>
+                <attribute name="targetKeyColumnName" type="string" use="optional">
+                    <annotation>
+                        <documentation>
+                            The column in the target query corresponding to the deleted key values. If not specified, we assume the PK of the target query.&lt;br/&gt;
+                            If a non-PK column is specified, the delete values will be used as lookups to map back to the corresponding PK values in the target.
+                        </documentation>
+                    </annotation>
+                </attribute>
             </extension>
         </complexContent>
     </complexType>
 
     <complexType name="FilterType">
         <all>
-            <element name="deletedRowsSource" type="etl:DeletedRowsSourceObjectType" minOccurs="0"/>
+            <element name="deletedRowsSource" type="etl:DeletedRowsSourceObjectType" minOccurs="0">
+                <annotation>
+                    <documentation>Defines a query with a list of rows to delete from the target in this incremental run.&lt;br/&gt;
+                        Timestamp or run filter values against the delete rows source are tracked independently from the values in the&lt;br/&gt;
+                        original source query. I.e., there could be no new records in the source query, but new records in the delete rows source&lt;br/&gt;
+                        will still be found and deleted from the target.
+                    </documentation>
+                </annotation>
+            </element>
         </all>
         <!-- <all>
             <element name="properties" type="etl:PropertiesType" minOccurs="0"/>

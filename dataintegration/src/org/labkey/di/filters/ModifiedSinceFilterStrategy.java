@@ -38,7 +38,6 @@ import org.labkey.di.steps.StepMeta;
 import org.labkey.etl.xml.DeletedRowsSourceObjectType;
 import org.labkey.etl.xml.FilterType;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.util.Arrays;
@@ -108,9 +107,8 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
     }
 
     @Override
-    protected void init()
+    protected void initMainFilter()
     {
-        super.init();
         QuerySchema schema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _config.getSourceSchema());
         if (null == schema)
             throw new IllegalArgumentException("Schema not found: " + _config.getSourceSchema());
@@ -126,18 +124,14 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             throw new ConfigurationException("Column not found: " + _config.getSourceQuery() + "." + timestampColumnName);
         if (TransformUtils.isRowversionColumn(_tsCol) || _tsCol.getJdbcType().isInteger())
             _useRowversionForSelect = true;
-
-        initDeletedRowsSource();
-
-        _isInit = true;
     }
 
     @Override
-    protected void initDeletedRowsSource()
+    protected void initDeletedRowsFilter()
     {
         if (null != _deletedRowsSource)
         {
-            super.initDeletedRowsSource();
+            super.initDeletedRowsFilter();
 
             String timestampColumnName = StringUtils.defaultString(_deletedRowsSource.getTimestampColumnName(), _tsCol.getColumnName());
             _deletedQueryTsCol = _deletedRowsTinfo.getColumn(timestampColumnName);
@@ -233,7 +227,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         Map<FilterTimestamp, Object> timestamps = new HashMap<>();
         timestamps.put(FilterTimestamp.START, incrementalStartTimestamp);
         Object incrementalEndTimestamp = maxResult.getValue();
-        if (incrementalEndTimestamp == null || incrementalEndTimestamp instanceof Date || incrementalEndTimestamp instanceof Integer || incrementalEndTimestamp instanceof Long)
+        if (incrementalEndTimestamp == null || incrementalEndTimestamp instanceof Date || incrementalEndTimestamp instanceof Number)
             timestamps.put(FilterTimestamp.END, incrementalEndTimestamp);
         else if (isUseRowversion(deleting) && incrementalEndTimestamp instanceof byte[])
             timestamps.put(FilterTimestamp.END, ByteBuffer.wrap((byte[]) incrementalEndTimestamp).getLong()); // a SQL Server timestamp column
@@ -254,7 +248,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
 
         if (null == o || (o instanceof String && StringUtils.isEmpty((String)o)))
             return null;
-        if (o instanceof Integer || o instanceof Long || o instanceof BigInteger)
+        if (o instanceof Number)
             return o;
         try
         {
