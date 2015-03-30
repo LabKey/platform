@@ -595,6 +595,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return false;
         }
 
+        if (StringUtils.endsWithIgnoreCase(name, ".view") || StringUtils.endsWithIgnoreCase(name, ".api") || StringUtils.endsWithIgnoreCase(name, ".post"))
+        {
+            error.append("Folder name should not end with '.view', '.api', or '.post'.");
+            return false;
+        }
+
         //Don't allow ISOControl characters as they are not handled well by the databases
         for( int i = 0; i < name.length(); ++i)
         {
