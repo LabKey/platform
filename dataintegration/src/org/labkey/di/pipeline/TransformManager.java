@@ -349,7 +349,7 @@ public class TransformManager implements DataIntegrationService.Interface
         {
             ContainerUser context = descriptor.getJobContext(container, user, params);
             // Don't double queue jobs
-            if (transformIsPending(context, descriptor.getId()))
+            if (descriptor.isPending(context))
             {
                 LOG.info("Not queuing job because ETL is already pending: " + descriptor.getId());
                 return null;
@@ -676,12 +676,14 @@ public class TransformManager implements DataIntegrationService.Interface
         return run;
     }
 
-    public boolean transformIsPending(ContainerUser context, String transformId)
+    public boolean transformIsPending(ContainerUser context, String transformId, String firstTaskName)
     {
+        final String WAITING = PipelineJob.TaskStatus.waiting.toString();
         SQLFragment sql = new SQLFragment("SELECT 1 WHERE EXISTS (SELECT 1 FROM ").append(DataIntegrationQuerySchema.getTransformRunTableInfo().getFromSQL("r"))
                 .append(" JOIN ").append(PipelineService.get().getJobsTable(context.getUser(), context.getContainer()).getFromSQL("j"))
                 .append(" ON r.jobid = j.rowid ").append(" WHERE r.container=? and r.transformid=?")
-                .append(" AND j.status = '").append(PipelineJob.TaskStatus.waiting.toString()).append("')")
+                .append(" AND (j.status = '").append(WAITING).append("'")
+                .append(" OR j.status LIKE '%").append(firstTaskName).append(" ").append(WAITING).append("'))")
                 .add(context.getContainer().getId()).add(transformId);
         return Boolean.TRUE.equals(new SqlSelector(DataIntegrationQuerySchema.getSchema(), sql).getObject(Boolean.class));
     }

@@ -20,12 +20,14 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataIteratorResultsImpl;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -95,6 +97,8 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     protected boolean _validateSource = true;
     FilterStrategy _filterStrategy = null;
     private String _targetStringForURI;
+
+    private final int DELETE_BATCH_SIZE = 1000;
 
     public TransformTask(TransformTaskFactory factory, PipelineJob job, StepMeta meta)
     {
@@ -179,7 +183,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                     throw new IllegalArgumentException("Invalid target option specified: " + meta.getTargetOptions());
             }
 
-            _recordsDeleted = deleteRows(qus, context, c, u, options, extraContext, log);
+            _recordsDeleted = deleteRows(targetTableInfo, qus, context, c, u, options, extraContext, log);
 
             return rowCount;
         }
@@ -192,24 +196,82 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             throw new RuntimeSQLException(sqlx);
         }
     }
-    private int deleteRows(QueryUpdateService qus, DataIteratorContext dataIteratorContext, Container c, User u, Map<Enum, Object> options, Map<String, Object> extraContext, Logger log) throws SQLException, QueryUpdateServiceException, BatchValidationException
+    private int deleteRows(TableInfo targetTable, QueryUpdateService qus, DataIteratorContext dataIteratorContext, Container c, User u, Map<Enum, Object> options, Map<String, Object> extraContext, Logger log) throws SQLException, QueryUpdateServiceException, BatchValidationException
     {
         if (null == _filterStrategy || _filterStrategy.getDeletedRowsSource() == null)
             return -1;
 
-        List<Map<String, Object>> deleteKeys = new ArrayList<>();
+        // If the specified target deletion key col is the sole pk column, we can use it directly.
+        // Otherwise we'll use it as a lookup to get a pk value map
+        boolean directDelete = targetTable.getPkColumnNames().contains(_filterStrategy.getTargetDeletionKeyCol()) && targetTable.getPkColumns().size() == 1;
+        int total = 0;
         try (Results results = new TableSelector(_filterStrategy.getDeletedRowsTinfo(), Collections.singleton(_filterStrategy.getDeletedRowsKeyCol()), _filterStrategy.getFilter(getVariableMap(), true), null).getResults(false))
         {
-            while (results.next())
+            if (directDelete)
             {
-                Map<String, Object> key = new HashMap<>();
-                key.put(_filterStrategy.getTargetDeletionKeyCol(), results.getObject(_filterStrategy.getDeletedRowsKeyCol()));
-                deleteKeys.add(key);
+                List<Map<String, Object>> deleteKeys = new ArrayList<>();
+                while (results.next())
+                {
+                    Map<String, Object> key = new HashMap<>();
+                    key.put(_filterStrategy.getTargetDeletionKeyCol(), results.getObject(_filterStrategy.getDeletedRowsKeyCol()));
+                    deleteKeys.add(key);
+                    if (deleteKeys.size() == DELETE_BATCH_SIZE)
+                    {
+                        total += processDirectDeleteBatch(qus, dataIteratorContext, c, u, options, extraContext, deleteKeys);
+                        deleteKeys.clear();
+                    }
+                }
+                if (!deleteKeys.isEmpty())
+                    total += processDirectDeleteBatch(qus, dataIteratorContext, c, u, options, extraContext, deleteKeys);
+            }
+            else
+            {
+                List<Object> deleteVals = new ArrayList<>();
+                while (results.next())
+                {
+                    deleteVals.add(results.getObject(_filterStrategy.getDeletedRowsKeyCol()));
+                    if (deleteVals.size() == DELETE_BATCH_SIZE)
+                    {
+                        total += processIndirectDeleteBatch(targetTable, qus, dataIteratorContext, c, u, options, extraContext, deleteVals);
+                        deleteVals.clear();
+                    }
+                }
+                if (!deleteVals.isEmpty())
+                    total += processIndirectDeleteBatch(targetTable, qus, dataIteratorContext, c, u, options, extraContext, deleteVals);
             }
         }
-        if (deleteKeys.isEmpty())
-            return 0; // Nothing to delete
+        return total;
+    }
 
+    private int processIndirectDeleteBatch(TableInfo targetTable, QueryUpdateService qus, DataIteratorContext dataIteratorContext, Container c, User u, Map<Enum, Object> options, Map<String, Object> extraContext, List<Object> deleteVals) throws SQLException, QueryUpdateServiceException, BatchValidationException
+    {
+        List<Map<String, Object>> deleteKeys = new ArrayList<>();
+        int batchTotal = 0;
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(_filterStrategy.getTargetDeletionKeyCol()), deleteVals, CompareType.IN);
+        try (Results targetDeletes = new TableSelector(targetTable, targetTable.getPkColumns(), filter, null).getResults(false))
+        {
+            while (targetDeletes.next())
+            {
+                Map<String, Object> key = new HashMap<>();
+                for (Map.Entry<FieldKey, Object> entry : targetDeletes.getFieldKeyRowMap().entrySet())
+                {
+                    key.put(entry.getKey().toString(), entry.getValue());
+                }
+                deleteKeys.add(key);
+                if (deleteKeys.size() == DELETE_BATCH_SIZE)
+                {
+                    batchTotal += processDirectDeleteBatch(qus, dataIteratorContext, c, u, options, extraContext, deleteKeys);
+                    deleteKeys.clear();
+                }
+            }
+            if (!deleteKeys.isEmpty())
+                batchTotal += processDirectDeleteBatch(qus, dataIteratorContext, c, u, options, extraContext, deleteKeys);
+        }
+        return batchTotal;
+    }
+
+    private int processDirectDeleteBatch(QueryUpdateService qus, DataIteratorContext dataIteratorContext, Container c, User u, Map<Enum, Object> options, Map<String, Object> extraContext, List<Map<String, Object>> deleteKeys) throws BatchValidationException, QueryUpdateServiceException, SQLException
+    {
         try
         {
             return qus.deleteRows(u, c, deleteKeys, options, extraContext).size();
@@ -217,7 +279,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         catch (InvalidKeyException e) // TODO: Do we care?
         {
             dataIteratorContext.getErrors().addRowError(new ValidationException("InvalidKey: " + e.getMessage()));
-            return -1;
+            return 0;
         }
     }
 

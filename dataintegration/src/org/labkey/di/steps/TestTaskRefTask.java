@@ -29,12 +29,21 @@ import java.util.List;
 public class TestTaskRefTask extends TaskRefTaskImpl
 {
     private static final String SETTING_1 = "setting1";
-
+    private static final String SLEEP = "sleep";
     @Override
     public RecordedActionSet run() throws PipelineJobException
     {
         settings.put(SETTING_1, "test");
         logger.info("Log from test task");
+        if (Boolean.parseBoolean(settings.get(SLEEP)))
+        {
+            logger.info("Sleeping ETL task for 15 seconds");
+            try
+            {
+                Thread.sleep(15000);
+            }
+            catch (InterruptedException e) {/* */}
+        }
         return new RecordedActionSet(makeRecordedAction());
     }
 

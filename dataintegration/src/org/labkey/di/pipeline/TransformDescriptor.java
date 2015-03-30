@@ -498,7 +498,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     @Override
     public boolean isPending(ContainerUser context)
     {
-        return TransformManager.get().transformIsPending(context, getId());
+        return TransformManager.get().transformIsPending(context, getId(), getFullTaskName(_stepMetaDatas.get(0)));
     }
 
     public static class TestCase extends Assert
