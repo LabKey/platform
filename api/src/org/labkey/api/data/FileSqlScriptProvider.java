@@ -268,7 +268,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             if (!_scriptFileNamePattern.matcher(fileName).matches())
             {
                 _schema = null;
-                _log.debug(provider.getProviderName() + ", ignoring file " + fileName + ": wrong format");
+                _log.info(provider.getProviderName() + ", ignoring file " + fileName + ": wrong format");
                 return;
             }
 
