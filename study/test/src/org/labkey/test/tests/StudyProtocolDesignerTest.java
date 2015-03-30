@@ -199,7 +199,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         final String importedFolder = "Imported " + getFolderName();
         File downloadedFolder = exportFolderToBrowserAsZip();
 
-        _containerHelper.createSubfolder(getProjectName(), importedFolder, null);
+        _containerHelper.createSubfolder(getProjectName(), importedFolder);
         importFolderFromZip(downloadedFolder);
 
         verifyImportedProtocol(importedFolder);
