@@ -729,15 +729,13 @@ if (typeof LABKEY == "undefined")
 
         return {
 
-            // -- Variables
-
-            contextPath: configs.contextPath,
-
             /**
-             * @namespace The DataRegion class allows you to interact with LabKey grids,
+             * The DataRegion class allows you to interact with LabKey grids,
              * including querying and modifying selection state, filters, and more.
+             * @field
              */
             DataRegions: configs.DataRegions,
+
             demoMode: configs.demoMode,
             devMode: configs.devMode,
             dirty: configs.dirty,
@@ -752,7 +750,8 @@ if (typeof LABKEY == "undefined")
             verbose: configs.verbose,
             widget: configs.widget,
 
-            // -- Methods
+            /** @field */
+            contextPath: configs.contextPath,
 
             /**
              * Appends an element to the head of the document
@@ -770,6 +769,7 @@ if (typeof LABKEY == "undefined")
             createElement: createElement,
 
             /**
+             * @function
              * @param {String} moduleName The name of the module
              * @returns {Object} The context object for this module.  The current view must have specifically requested
              * the context for this module in its view XML
@@ -777,6 +777,7 @@ if (typeof LABKEY == "undefined")
             getModuleContext: getModuleContext,
 
             /**
+             * @function
              * @param {String} moduleName The name of the module
              * @param {String} property The property name to return
              * @returns {String} The value of the module property.  Will return null if the property has not been set.
@@ -792,6 +793,7 @@ if (typeof LABKEY == "undefined")
 
             /**
              * Loads a CSS file from the server.
+             * @function
              * @param {String} [file] The path of the CSS file to load
              * @example &lt;script type="text/javascript"&gt;
              LABKEY.requiresCss("myModule/myFile.css");
@@ -806,6 +808,7 @@ if (typeof LABKEY == "undefined")
              * from wiki pages.  For HTML or JSP pages defined in a module, see our <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=ext4Development">documentation</a> on declaration of client dependencies.
              * <p>
              * NOTE: It is important to place this line in a separate script block the your code.  For example:
+             * @function
              * @example
              &lt;script type="text/javascript"&gt;
              LABKEY.requiresExt3();
@@ -825,6 +828,7 @@ if (typeof LABKEY == "undefined")
              * from wiki pages.  For HTML or JSP pages defined in a module, see our <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=ext4Development">documentation</a> on declaration of client dependencies.
              * <p>
              * NOTE: It is important to place this line in a separate script block in your code.  For example:
+             * @function
              * @example
              &lt;script type="text/javascript"&gt;
              LABKEY.requiresExt4Sandbox(true, function(){
@@ -841,12 +845,14 @@ if (typeof LABKEY == "undefined")
 
             /**
              * Deprecated.  Use LABKEY.requiresExt3 instead.
+             * @function
              * @private
              */
             requiresExtJs: requiresExt3,
 
             /**
              * Loads a javascript file from the server.  See also LABKEY.onReady()
+             * @function
              * @param file A single file or an Array of files.
              * @param immediate True to load the script immediately; false will defer script loading until the page has been downloaded.
              * @param callback Called after the script files have been loaded.

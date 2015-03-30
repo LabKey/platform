@@ -3089,3 +3089,27 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 
 /**#@-*/
 
+/** docs for methods defined in dom/Query.js - primarily here to ensure API docs get generated with combined core/dom versions */
+
+/**
+ * Execute arbitrary LabKey SQL and export the results to Excel or TSV. After this method is
+ * called, the user will be prompted to accept a file from the server, and most browsers will allow
+ * the user to either save it or open it in an apporpriate application.
+ * For more information, see the
+ * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
+ * LabKey SQL Reference</a>.
+ *
+ * @memberOf LABKEY.Query
+ * @function
+ * @static
+ * @name exportSql
+ * @param config An object which contains the following configuration properties.
+ * @param {String} config.schemaName name of the schema to query.
+ * @param {String} config.sql The LabKey SQL to execute.
+ * @param {String} [config.format] The desired export format. May be either 'excel' or 'tsv'. Defaults to 'excel'.
+ * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
+ *       if different than the current container. If not supplied, the current container's path will be used.
+ * @param {String} [config.containerFilter] One of the values of {@link LABKEY.Query.containerFilter} that sets
+ *       the scope of this query. Defaults to containerFilter.current, and is interpreted relative to
+ *       config.containerPath.
+ */

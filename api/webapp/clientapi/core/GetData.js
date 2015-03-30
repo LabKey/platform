@@ -410,3 +410,21 @@
         }
     };
 })();
+
+/** docs for methods defined in dom/GetData.js - primarily here to ensure API docs get generated with combined core/dom versions */
+
+/**
+ * Used to render a queryWebPart around a response from GetData.
+ * @memberOf LABKEY.Query.GetData
+ * @function
+ * @static
+ * @name renderQueryWebPart
+ * @param {Object} config The config object for renderQueryWebpart is nearly identical to {@link LABKEY.Query.GetData.getRawData},
+ * except it has an additional parameter <strong><em>webPartConfig</em></strong>, which is a config object for
+ * {@link LABKEY.QueryWebPart}. Note that the Query returned from GetData is a read-only temporary query, so some
+ * features of QueryWebPart may be ignored (i.e. <em>showInsertButton</em>, <em>deleteURL</em>, etc.).
+ * @see LABKEY.QueryWebPart
+ * @see LABKEY.Query.GetData.getRawData
+ */
+
+
