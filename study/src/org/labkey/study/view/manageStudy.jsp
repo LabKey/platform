@@ -55,6 +55,8 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyReloadSource" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -102,6 +104,7 @@
     String availableStudyName = ContainerManager.getAvailableChildContainerName(c, "New Study");
 
     int numDatasets = study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER).size();
+    Collection<StudyReloadSource> reloadSources = StudyService.get().getStudyReloadSources(getContainer());
 
     if (study.hasSourceStudy() || study.isSnapshotStudy())
     {
@@ -174,6 +177,19 @@
         <td><%= h(intervalLabel) %></td>
         <td><%= textLink("Manage Reloading", ManageReloadAction.class) %></td>
     </tr>
+    <%
+        if (!reloadSources.isEmpty())
+        {
+    %>
+    <tr>
+        <th align="left">Reloading</th>
+        <td>Manage reloading from external repositories</td>
+        <td><%= textLink("Manage External Reloading", StudyController.ManageExternalReloadAction.class) %></td>
+    </tr>
+    <%
+        }
+    %>
+
     <tr>
         <th align="left">Datasets</th>
         <td>This study defines <%= numDatasets %> datasets</td>

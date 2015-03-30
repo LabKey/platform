@@ -6520,6 +6520,22 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ManageExternalReloadAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors) throws Exception
+        {
+            return new StudyJspView<>(getStudyRedirectIfNull(), "manageExternalReload.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Manage External Reloading");
+        }
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class DatasetDetailRedirectAction extends RedirectAction<DatasetDetailRedirectForm>
     {

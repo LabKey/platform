@@ -18,13 +18,9 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.importer.StudyReload.ReloadInterval" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.study.StudyReloadSource" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -34,7 +30,6 @@
     ReloadInterval currentInterval = ReloadInterval.getForSeconds(study.getReloadInterval());
 
     User reloadUser = (allowReload && null != study.getReloadUser() ? UserManager.getUser(study.getReloadUser()) : null);
-    Collection<StudyReloadSource> reloadSources = StudyService.get().getStudyReloadSources(getContainer());
 %>
 <labkey:form action="" method="post">
     <table width="80%">
@@ -89,37 +84,6 @@
         </tr>
     </table>
 </labkey:form>
-    <%
-        if (!reloadSources.isEmpty())
-        {
-    %>
-        <p/><div class="labkey-title-area-line"></div>
-        <div><span><strong>Reload from an External Repository</strong></span></div><p/>
-        <div>A study can be configured to reload its data from an external, 3rd party repository, either manually or automatically at preset intervals. Each
-            external repository can be configured separately if the repository source has a configuration link next to it. It is generally assumed that only one
-            external repository source is configured and active for each study.
-        </div><p/>
-<table>
-    <%
-        }
-    %>
-    <%
-        for (StudyReloadSource source : reloadSources)
-        {
-            ActionURL manageAction = source.getManageAction(getContainer(), getUser());
-            if (source.isEnabled(getContainer()) && manageAction != null)
-            {
-    %>
-    <tr>
-        <td><span style="padding-right: 8px"><strong><%=h(source.getName())%> repository</strong></span></td>
-        <td><%=textLink("Configure " + source.getName(), manageAction)%></td>
-    </tr>
-    <%
-            }
-        }
-    %>
-
-</table>
 <script type="text/javascript">
     function updateDisplay()
     {
