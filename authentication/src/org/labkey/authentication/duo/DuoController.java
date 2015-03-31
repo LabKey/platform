@@ -15,6 +15,7 @@
  */
 package org.labkey.authentication.duo;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -115,7 +116,12 @@ public class DuoController extends SpringActionController
 
         public void validateCommand(Config target, Errors errors)
         {
-
+            if(StringUtils.isBlank(target.getIntegrationKey()))
+                errors.reject(ERROR_MSG, "Integration Key cannot be blank.");
+            if(StringUtils.isBlank(target.getSecretKey()))
+                errors.reject(ERROR_MSG, "Secret Key cannot be blank.");
+            if(StringUtils.isBlank(target.getApiHostname()))
+                errors.reject(ERROR_MSG, "API Hostname cannot be blank.");
         }
 
         public boolean handlePost(Config config, BindException errors) throws Exception
