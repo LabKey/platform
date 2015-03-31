@@ -110,7 +110,7 @@ if (permissions.contains(AdminPermission.class))
     {
         %>&nbsp;<%= button("Delete Dataset").href(deleteDatasetURL).onClick("return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
     }
-    if (user.isSiteAdmin() || dataset.canDelete(user))
+    if (user.isSiteAdmin() || dataset.canWrite(user))
     {
         %>&nbsp;<a class="labkey-button" onClick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; truncateTable();"> <span>Delete All Rows</span></a><%
     }

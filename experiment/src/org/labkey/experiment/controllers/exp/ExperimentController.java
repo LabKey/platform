@@ -113,7 +113,6 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.MapLoader;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
@@ -2374,7 +2373,7 @@ public class ExperimentController extends SpringActionController
                 for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocol))
                 {
                     Pair<SecurableResource, ActionURL> entry = new Pair<SecurableResource, ActionURL>(dataset, PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
-                    if (dataset.canDelete(getUser()))
+                    if (dataset.canDeleteDefinition(getUser()))
                     {
                         deleteableDatasets.add(entry);
                     }

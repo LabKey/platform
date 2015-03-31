@@ -900,17 +900,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
-    /*
-     * NOTE: This is used for regular UI operations, on a read-only dataset noone has
-     * insert/update/delete permissions.  However, admins may still be able to
-     * import or truncate.  So those operations need to special case checks.
-     */
     @Override
-    public boolean canDelete(UserPrincipal user)
+    public boolean canDeleteDefinition(UserPrincipal user)
     {
-        if (getStudy().isDataspaceStudy())
-            return false;
-        // why does this check AdminPermission insted of DeletePermission?
         return getContainer().hasPermission(user, AdminPermission.class);
     }
 
@@ -1002,7 +994,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     @Override
     public void delete(User user)
     {
-        if (!canDelete(user))
+        if (!canDeleteDefinition(user))
         {
             throw new UnauthorizedException("No permission to delete dataset " + getName() + " for study in " + getContainer().getPath());
         }
