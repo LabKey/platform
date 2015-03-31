@@ -120,7 +120,7 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
      * @return whether the user has permission to delete the entire dataset. Use canWrite() to check if user can delete
      * rows from the dataset.
      */
-    public boolean canDelete(UserPrincipal user);
+    public boolean canDeleteDefinition(UserPrincipal user);
 
     /**
      * Does the user have admin permissions for this dataset
