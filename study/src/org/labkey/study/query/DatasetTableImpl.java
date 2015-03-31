@@ -621,7 +621,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         // Datasets mostly ignore container filters because they usually belong to a single container.
         // In the dataspace case, they are unfiltered (no container filter).
         // We actually need to handle the container filter in the "dataset with shared data" case
-        if (!getContainer().isProject() && _dsd.isShared())
+        if (_dsd.isShared())
         {
             TableInfo tiParticipant = _userSchema.getDbSchema().getTable("Participant");
             ColumnInfo ciContainer = tiParticipant.getColumn("Container");
@@ -629,7 +629,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             SimpleFilter.FilterClause f = super.getContainerFilterClause(cf, ciContainer.getFieldKey());
             SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
             if (((DatasetDefinition) getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
+            {
                 sqlf.append(" WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
+            }
             else
             {
                 // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
@@ -853,7 +855,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         User user = _userSchema.getUser();
         Dataset def = getDatasetDefinition();
-        if (!def.canWrite(user))
+        if (!user.isSiteAdmin() && !def.canWrite(user))
             return null;
         return new DatasetUpdateService(this);
     }

@@ -55,7 +55,9 @@
 
     StudyImpl study = StudyManager.getInstance().getStudy(c);
     Set<Class<? extends Permission>> permissions = c.getPolicy().getPermissions(user);
-    boolean isSharedDataset = dataset.isShared() && !study.getContainer().getId().equals(dataset.getDefinitionStudy().getContainer().getId());
+
+    // is definition inherited
+    boolean isDatasetInherited = dataset.isShared() && !study.getContainer().getId().equals(dataset.getDefinitionStudy().getContainer().getId());
 
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
     boolean pipelineSet = null != PipelineService.get().findPipelineRoot(c);
@@ -63,7 +65,7 @@
     List<DatasetDefinition> hidden = StudyManager.getInstance().getHiddenDatasets(study, Collections.singletonList(dataset));
 %>
 <%
-if (isSharedDataset)
+if (isDatasetInherited)
 {
     ActionURL manageShared = new ActionURL(StudyController.DatasetDetailsAction.class,dataset.getDefinitionContainer()).addParameter("id",dataset.getDatasetId());
     %>This dataset is defined in another folder: <a href="<%=h(manageShared)%>"><%=h(dataset.getDefinitionContainer().getName())%></a><br><%
@@ -104,15 +106,16 @@ if (permissions.contains(AdminPermission.class))
         &nbsp;<%= button("Edit Associated " + visitManager.getPluralLabel()).href(updateDatasetURL) %>
 <%  } %>
     &nbsp;<%= button("Manage Datasets").href(manageTypesURL) %><%
-    if (!isSharedDataset)
+    if (!isDatasetInherited)
     {
         %>&nbsp;<%= button("Delete Dataset").href(deleteDatasetURL).onClick("return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
     }
-%>
-&nbsp;<a class="labkey-button" onClick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; truncateTable();"> <span>Delete All Rows</span></a>
-<%
+    if (user.isSiteAdmin() || dataset.canDelete(user))
+    {
+        %>&nbsp;<a class="labkey-button" onClick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; truncateTable();"> <span>Delete All Rows</span></a><%
+    }
 }
-if (permissions.contains(UpdatePermission.class) && !isSharedDataset)
+if (permissions.contains(UpdatePermission.class) && !isDatasetInherited)
 {
     ActionURL showHistoryURL = new ActionURL(StudyController.ShowUploadHistoryAction.class, c);
     showHistoryURL.addParameter("id", dataset.getDatasetId());
@@ -232,8 +235,13 @@ if (!pipelineSet)
 <script type="text/javascript">
     function truncateTable()
     {
-        Ext4.Msg.confirm("Confirm Deletion",
-                "Are you sure you wish to delete all rows for the dataset "+ '<%=h(dataset.getName())%>' + "?  This action cannot be undone.",
+                var msg = "Are you sure you wish to delete all rows for the dataset "+ '<%=h(dataset.getName())%>' + "?<br>";
+                <% if (dataset.isShared() && !isDatasetInherited)
+                {
+                        %>msg +="<b>This will delete data in sub-folders that use this dataset.</b><br>";<%
+                } %>
+                msg += "This action cannot be undone.";
+                Ext4.Msg.confirm("Confirm Deletion", msg,
                 function(button){
                     if (button === 'yes') {
                         truncate();

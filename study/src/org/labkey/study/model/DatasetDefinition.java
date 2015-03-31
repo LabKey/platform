@@ -728,11 +728,20 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             CPUTimer time = new CPUTimer("purge");
             time.start();
 
+            boolean deleteSharedRows = isShared() && getContainer().getId().equals(getDefinitionContainer().getId());
+
             SQLFragment studyDataFrag = new SQLFragment("DELETE FROM " + table.getSelectName() + "\n");
-            studyDataFrag.append("WHERE container=?");
-            studyDataFrag.add(getContainer());
+            String and = "WHERE ";
+            if (!deleteSharedRows)
+            {
+                studyDataFrag.append(and).append("container=").append(getContainer());
+                and = " AND ";
+            }
             if (cutoff != null)
-                studyDataFrag.append(" AND _VisitDate > ?").add(cutoff);
+            {
+                studyDataFrag.append(and).append(" AND _VisitDate > ?").add(cutoff);
+                and = " AND ";
+            }
             SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema()).setExceptionFramework(ExceptionFramework.JDBC);
             count = executor.execute(studyDataFrag);
             StudyManager.datasetModified(this, user, true);
@@ -863,13 +872,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             }
         }
 
-        // a dataspace study always has read-only datasets
+        // a dataspace study always has read-only datasets, you cannot insert no matter who you are
         if (_study.isDataspaceStudy())
         {
-            if (result.contains(ReadPermission.class))
-                result = (Set<Class<? extends Permission>>)(Set)Collections.singleton(ReadPermission.class);
-            else
-                result = Collections.emptySet();
+            result.remove(InsertPermission.class);
         }
 
         return result;
@@ -882,6 +888,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return getPermissions(user).contains(ReadPermission.class);
     }
 
+
     @Override
     public boolean canWrite(UserPrincipal user)
     {
@@ -893,11 +900,17 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    /*
+     * NOTE: This is used for regular UI operations, on a read-only dataset noone has
+     * insert/update/delete permissions.  However, admins may still be able to
+     * import or truncate.  So those operations need to special case checks.
+     */
     @Override
     public boolean canDelete(UserPrincipal user)
     {
         if (getStudy().isDataspaceStudy())
             return false;
+        // why does this check AdminPermission insted of DeletePermission?
         return getContainer().hasPermission(user, AdminPermission.class);
     }
 
