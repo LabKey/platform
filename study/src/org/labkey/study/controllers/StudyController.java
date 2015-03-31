@@ -1125,6 +1125,11 @@ public class StudyController extends BaseStudyController
             Participant participant = StudyManager.getInstance().getParticipant(study, form.getParticipantId());
             if (participant == null)
             {
+                if (study.isDataspaceStudy())
+                {
+                    return new HtmlView("The default participant view is not supported for dataspace studies");
+                }
+
                 throw new NotFoundException("Could not find " + study.getSubjectNounSingular() + " " + form.getParticipantId());
             }
 

@@ -49,6 +49,8 @@ public class GWTDataset implements IsSerializable
 
     // read-only (not changed in the editor)
     private boolean _definitionIsShared = false;
+    private boolean _visitMapShared = false;
+
 
     private Map<String, String> _cohortMap;
 
@@ -252,5 +254,15 @@ public class GWTDataset implements IsSerializable
     public void setDefinitionShared(boolean b)
     {
         _definitionIsShared = b;
+    }
+
+    public boolean isVisitMapShared()
+    {
+        return _visitMapShared;
+    }
+
+    public void setVisitMapShared(boolean visitMapIsShared)
+    {
+        _visitMapShared = visitMapIsShared;
     }
 }

@@ -235,7 +235,8 @@ public class SecurityController extends SpringActionController
             }
             else if (_messageText != null)
             {
-                return new HtmlView(_messageText);
+                String cont = PageFlowUtil.generateDropDownButton("continue",new ActionURL(BeginAction.class, getContainer()).getLocalURIString(),null);
+                return new HtmlView(_messageText + "<br>" + cont);
             }
             else
             {
@@ -300,13 +301,16 @@ public class SecurityController extends SpringActionController
                         exporter.loadFromXmlFile(study, getUser(), tmpFile, messages);
 
                         StringBuilder sb = new StringBuilder();
-                        if (messages.size() > 0)
+                        if (messages.size() == 0)
+                        {
+                            sb.append("The import was successful.");
+                        }
+                        else
                         {
                             sb.append("The import was successful, but the following messages were generated:<br><br>");
-
                             sb.append(StringUtils.join(messages, "<br>"));
-                            _messageText = sb.toString();
                         }
+                        _messageText = sb.toString();
                     }
                 }
 
@@ -748,11 +752,14 @@ public class SecurityController extends SpringActionController
                 v.addView(dsView);
             }
 
-            JspView<StudyImpl> exportView = new JspView<>("/org/labkey/study/security/importExport.jsp", study);
-            exportView.setTitle("Import/Export Policy");
-            if (redirect != null)
-                exportView.addObject("redirect", redirect.getLocalURIString());
-            v.addView(exportView);
+            if (!study.isDataspaceStudy())
+            {
+                JspView<StudyImpl> exportView = new JspView<>("/org/labkey/study/security/importExport.jsp", study);
+                exportView.setTitle("Import/Export Policy");
+                if (redirect != null)
+                    exportView.addObject("redirect", redirect.getLocalURIString());
+                v.addView(exportView);
+            }
 
             impl = v;
         }

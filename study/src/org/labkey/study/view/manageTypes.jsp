@@ -45,6 +45,8 @@
     Container c = getContainer();
     Study study = StudyManager.getInstance().getStudy(c);
 
+    List<DatasetDefinition> hidden = StudyManager.getInstance().getHiddenDatasets(study,null);
+
     List<? extends Dataset> datasets = study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER);
     int countUndefined = 0;
     for (Dataset def : datasets)
@@ -169,4 +171,15 @@
     }
 %></table>
 <%= textLink("Create New Dataset", new ActionURL(DefineDatasetTypeAction.class,c).addParameter("autoDatasetId","true"))%>
-<% WebPartView.endTitleFrame(out); %>
+<% if (!hidden.isEmpty())
+{
+    %><p>WARNING: One or more datasets in parent study are hidden by datasets defined in this folder.<br><ul><%
+    for (DatasetDefinition h : hidden)
+    {
+        %><li><%=h(h.getDatasetId())%>:&nbsp;<%=h(h.getName())%></li><%
+    }
+    %></ul></p><%
+}
+
+    WebPartView.endTitleFrame(out);
+%>

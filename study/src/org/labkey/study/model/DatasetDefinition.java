@@ -435,7 +435,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     public String getDataSharing()
     {
-        return _datasharing.name();
+        return getDataSharingEnum().name();
     }
 
     public void setDataSharing(@NotNull String datasharing)
@@ -448,6 +448,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     public DataSharing getDataSharingEnum()
     {
+        if (!isDemographicData())
+            return DataSharing.NONE;
         return _datasharing;
     }
 
@@ -860,9 +862,19 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 }
             }
         }
-        
+
+        // a dataspace study always has read-only datasets
+        if (_study.isDataspaceStudy())
+        {
+            if (result.contains(ReadPermission.class))
+                result = (Set<Class<? extends Permission>>)(Set)Collections.singleton(ReadPermission.class);
+            else
+                result = Collections.emptySet();
+        }
+
         return result;
     }
+
 
     @Override
     public boolean canRead(UserPrincipal user)
@@ -873,7 +885,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     @Override
     public boolean canWrite(UserPrincipal user)
     {
-        if (getContainer().hasPermission(user, AdminPermission.class))
+        if (getContainer().hasPermission(user, AdminPermission.class) && !getStudy().isDataspaceStudy())
             return true;
         return getPermissions(user).contains(UpdatePermission.class);
     }

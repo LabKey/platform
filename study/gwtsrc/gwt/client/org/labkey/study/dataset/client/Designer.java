@@ -23,6 +23,8 @@ import com.google.gwt.dom.client.Node;
 import com.google.gwt.dom.client.NodeList;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -950,6 +952,40 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             cellFormatter.setStyleName(row, 0, labelStyleName);
             _table.setWidget(row++, 1, demographicData);
 
+
+            // Only for project level datasets with shared definitions
+            if (_dataset.isDefinitionShared() && _dataset.isVisitMapShared())
+            {
+                panel = new HorizontalPanel();
+                panel.add(new Label("Share demographic data"));
+                panel.add(new HelpPopup("Shared data across studies", "When 'No' is selected (default) each study folder 'owns' its own data rows.  If study has shared visits, then 'Share by Participants' means that data rows are shared across the project, and studies will only see data rows for participants that are part of that study."));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+
+                Map<String,String> options = new LinkedHashMap<String,String>();
+                options.put("No", "NONE");
+                options.put("Share by Participants", "PTID");
+                final BoundListBox sharedListBox = new BoundListBox(options,_dataset.getDataSharing(), new WidgetUpdatable()
+                {
+                    public void update(Widget widget)
+                    {
+                        _dataset.setDataSharing(((BoundListBox) widget).getSelectedValue());
+                    }
+                });
+                sharedListBox.setEnabled(_dataset.getDemographicData());
+                _table.setWidget(row++, 1, sharedListBox);
+
+                // enable/disable according to isDemographicData setting
+                demographicData.addValueChangeHandler(new ValueChangeHandler<Boolean>(){
+                    public void onValueChange(ValueChangeEvent<Boolean> event)
+                    {
+                        boolean isDemographicData = event.getValue();
+                        sharedListBox.setEnabled(isDemographicData);
+                    }
+                });
+            }
+
+
             BoundCheckBox showByDefault = new BoundCheckBox("", _dataset.getShowByDefault(), new WidgetUpdatable()
             {
                 public void update(Widget widget)
@@ -964,29 +1000,6 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
             _table.setWidget(row++, 1, showByDefault);
-
-
-            // Only for project level datasets with shared definitions
-            if (_dataset.isDefinitionShared())
-            {
-                panel = new HorizontalPanel();
-                panel.add(new Label("Share data"));
-                panel.add(new HelpPopup("Shared data across studies", "When 'No' is selected (default) each study folder 'owns' its own data rows.  If study has shared visits, then 'Share by Participants' means that data rows are shared across the project, and studies will only see data rows for participants that are part of that study."));
-                _table.setWidget(row, 0, panel);
-                cellFormatter.setStyleName(row, 0, labelStyleName);
-
-                Map<String,String> options = new LinkedHashMap<String,String>();
-                options.put("No", "NONE");
-                options.put("Share by Participants", "PTID");
-                BoundListBox sharedListBox = new BoundListBox(options,_dataset.getDataSharing(), new WidgetUpdatable()
-                {
-                    public void update(Widget widget)
-                    {
-                        _dataset.setDataSharing(((BoundListBox) widget).getSelectedValue());
-                    }
-                });
-                _table.setWidget(row++, 1, sharedListBox);
-            }
         }
 
         private void setCheckboxId(Element e, String id)

@@ -86,8 +86,13 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             PropertyUtils.copyProperties(ds, dd);
             ds.setDatasetId(dd.getDatasetId()); // upper/lowercase problem
             ds.setKeyPropertyManaged(dd.getKeyManagementType() != Dataset.KeyManagementType.None);
+
             if (study.getContainer().isProject() && study.isDataspaceStudy())
+            {
                 ds.setDefinitionShared(true);
+                if (study.getShareVisitDefinitions())
+                    ds.setVisitMapShared(true);
+            }
 
             List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
             Map<String, String> cohortMap = new HashMap<>();

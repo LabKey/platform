@@ -41,6 +41,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DatasetDefinition> me = (JspView<DatasetDefinition>) HttpView.currentView();
@@ -52,18 +53,33 @@
     String queryName = dataset.getTableInfo(user).getName();
     String schemaName = dataset.getTableInfo(user).getSchema().getQuerySchemaName();
 
-    Set<Class<? extends Permission>> permissions = c.getPolicy().getPermissions(user);
-    boolean isSharedDataset = dataset.isShared() && !c.equals(dataset.getDefinitionStudy().getContainer());
-
     StudyImpl study = StudyManager.getInstance().getStudy(c);
+    Set<Class<? extends Permission>> permissions = c.getPolicy().getPermissions(user);
+    boolean isSharedDataset = dataset.isShared() && !study.getContainer().getId().equals(dataset.getDefinitionStudy().getContainer().getId());
+
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
     boolean pipelineSet = null != PipelineService.get().findPipelineRoot(c);
+
+    List<DatasetDefinition> hidden = StudyManager.getInstance().getHiddenDatasets(study, Collections.singletonList(dataset));
 %>
 <%
 if (isSharedDataset)
 {
     ActionURL manageShared = new ActionURL(StudyController.DatasetDetailsAction.class,dataset.getDefinitionContainer()).addParameter("id",dataset.getDatasetId());
     %>This dataset is defined in another folder: <a href="<%=h(manageShared)%>"><%=h(dataset.getDefinitionContainer().getName())%></a><br><%
+}
+if (!hidden.isEmpty())
+{
+    StringBuilder sb = new StringBuilder();
+    sb.append(hidden.size() == 1 ? "A shared dataset is" : "These shared datasets are").append(" hidden by this local dataset definition:");
+    String comma = " ";
+    for (DatasetDefinition h : hidden)
+    {
+        sb.append(comma).append(h(h.getName()));
+        comma = ", ";
+    }
+    sb.append(".");
+    %><%=text(sb.toString())%><br><%
 }
 
 if (permissions.contains(AdminPermission.class))

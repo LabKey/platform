@@ -34,6 +34,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.study.model.GroupSecurityType;
@@ -193,6 +194,23 @@ public class StudyPermissionExporter
 
             StudySecurityPolicy sp = spd.getStudySecurityPolicy();
             SecurityType st = SecurityType.valueOf(sp.getSecurityType().toString());
+
+            // NOTE: we do not allow advanced security policy in a shared study
+            Study shared = StudyManager.getInstance().getSharedStudy(study.getContainer());
+            if (null != shared && shared.getShareDatasetDefinitions())
+            {
+                if (study.isDataspaceStudy())
+                {
+                    errorMsgs.add("Shared studies only support read-only datasets");
+                    return;
+                }
+                else if (st.isSupportsPerDatasetPermissions())
+                {
+                    errorMsgs.add("Studies with shared datasets do not support per dataset permissions");
+                    return;
+                }
+            }
+
             study.setSecurityType(st);
             StudyManager.getInstance().updateStudy(u, study);
 

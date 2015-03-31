@@ -41,14 +41,14 @@ public enum SecurityType
      */
     ADVANCED_READ("Custom security with read-only datasets",
             "Allows the configuration of security on individual datasets. " +
-            "Only administrators can import or delete dataset data.", true),
+            "Only administrators can import or delete dataset data.  Not supported in shared studies.", true),
 
     /**
      * Per-dataset security, read and write
      */
     ADVANCED_WRITE("Custom security with editable datasets",
             "Identical to Advanced Read-Only Security, except that datasets can be individually " +
-            "set to allow updates as well.", true);
+            "set to allow updates as well.  Not supported in shared studies.", true);
 
     private final String label;
 

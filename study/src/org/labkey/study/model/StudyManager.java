@@ -175,6 +175,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -190,7 +191,7 @@ public class StudyManager
 
     private final QueryHelper<StudyImpl> _studyHelper;
     private final QueryHelper<VisitImpl> _visitHelper;
-//    private final QueryHelper<LocationImpl> _locationHelper;
+    //    private final QueryHelper<LocationImpl> _locationHelper;
     private final QueryHelper<AssaySpecimenConfigImpl> _assaySpecimenHelper;
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
@@ -1255,7 +1256,7 @@ public class StudyManager
         map.put("cohortId", cohortId);
         map.put("containerId", container.getId());
         map = Table.insert(user, tinfo, map);
-        return (Integer)map.get("RowId");
+        return (Integer) map.get("RowId");
     }
 
     @Nullable
@@ -1290,7 +1291,9 @@ public class StudyManager
         return visitTags;
     }
 
-    public @Nullable VisitTag getVisitTag(Study study, String visitTagName)
+    public
+    @Nullable
+    VisitTag getVisitTag(Study study, String visitTagName)
     {
         final List<VisitTag> visitTags = new ArrayList<>();
         SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
@@ -1443,9 +1446,9 @@ public class StudyManager
             try
             {
                 Study visitStudy = getStudyForVisits(study);
-                Table.delete(schema.getTableInfoVisit(), new Object[] {visitStudy.getContainer(), visit.getRowId()});
+                Table.delete(schema.getTableInfoVisit(), new Object[]{visitStudy.getContainer(), visit.getRowId()});
             }
-            catch (Table.OptimisticConflictException  x)
+            catch (Table.OptimisticConflictException x)
             {
                 /* ignore */
             }
@@ -1473,7 +1476,7 @@ public class StudyManager
         Table.update(user,
                 SCHEMA.getTableInfoParticipant(),
                 participant,
-                new Object[] {participant.getContainer().getId(), participant.getParticipantId()}
+                new Object[]{participant.getContainer().getId(), participant.getParticipantId()}
         );
     }
 
@@ -1592,12 +1595,12 @@ public class StudyManager
         cols.append(")");
 
         String containerColumn = " = ? AND ";
-        if(table.getName().contains("_vial") || table.getName().equals("_specimenevent"))
+        if (table.getName().contains("_vial") || table.getName().equals("_specimenevent"))
         {
             //vials and events use a column called fr_container instead of normal container.
             containerColumn = "FR_Container" + containerColumn;
         }
-        else if(table.getName().contains("_specimen"))
+        else if (table.getName().contains("_specimen"))
         {
             params.remove(0);
             containerColumn = "";
@@ -1612,22 +1615,22 @@ public class StudyManager
 
     public boolean isLocationInUse(LocationImpl loc)
     {
-        return  isLocationInUse(loc, StudySchema.getInstance().getTableInfoSampleRequest(), "DestinationSiteId") ||
+        return isLocationInUse(loc, StudySchema.getInstance().getTableInfoSampleRequest(), "DestinationSiteId") ||
                 isLocationInUse(loc, StudySchema.getInstance().getTableInfoSampleRequestRequirement(), "SiteId") ||
                 isLocationInUse(loc, StudySchema.getInstance().getTableInfoParticipant(), "EnrollmentSiteId", "CurrentSiteId") ||
                 isLocationInUse(loc, StudySchema.getInstance().getTableInfoAssaySpecimen(), "LocationId") ||
                 isLocationInUse(loc, StudySchema.getInstance().getTableInfoVial(loc.getContainer()), "CurrentLocation", "ProcessingLocation") ||
-                  //vials and events use a column called fr_container instead of normal container.
+                //vials and events use a column called fr_container instead of normal container.
                 isLocationInUse(loc, StudySchema.getInstance().getTableInfoSpecimen(loc.getContainer()), "originatinglocationid", "ProcessingLocation") ||
-                  //Doesn't have a container or fr_container column
+                //Doesn't have a container or fr_container column
                 isLocationInUse(loc, StudySchema.getInstance().getTableInfoSpecimenEvent(loc.getContainer()), "LabId", "OriginatingLocationId");
-                  //vials and events use a column called fr_container instead of normal container.
+        //vials and events use a column called fr_container instead of normal container.
     }
 
     public void deleteLocation(LocationImpl location) throws SQLException
     {
         StudySchema schema = StudySchema.getInstance();
-        if(!isLocationInUse(location))
+        if (!isLocationInUse(location))
         {
             try (Transaction transaction = schema.getSchema().getScope().ensureTransaction())
             {
@@ -1764,7 +1767,7 @@ public class StudyManager
         {
             filter = SimpleFilter.createContainerFilter(visitStudy.getContainer());
             if (showCohorts(study.getContainer(), user))
-                filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
+                filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[]{cohort.getRowId()});
         }
 
         return _visitHelper.get(visitStudy.getContainer(), filter, order.getSortColumns());
@@ -1802,7 +1805,7 @@ public class StudyManager
             @Override
             public List<QCState> load(String key, @Nullable Object argument)
             {
-                Container container = (Container)argument;
+                Container container = (Container) argument;
                 SimpleFilter filter = SimpleFilter.createContainerFilter(container);
                 return Collections.unmodifiableList(new TableSelector(StudySchema.getInstance().getTableInfoQCState(), filter, new Sort("Label")).getArrayList(QCState.class));
             }
@@ -1818,8 +1821,8 @@ public class StudyManager
     {
         StudyImpl study = getStudy(state.getContainer());
         if (safeIntegersEqual(study.getDefaultAssayQCState(), state.getRowId()) ||
-            safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId() )||
-            safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()))
+                safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId()) ||
+                safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()))
         {
             return true;
         }
@@ -1870,7 +1873,7 @@ public class StudyManager
         QCState defaultQCState = null;
         if (defaultQcStateId != null)
             defaultQCState = StudyManager.getInstance().getQCStateForRowId(
-                study.getContainer(), defaultQcStateId);
+                    study.getContainer(), defaultQcStateId);
         return defaultQCState;
     }
 
@@ -2053,7 +2056,7 @@ public class StudyManager
             transaction.commit();
         }
     }
-    
+
     private boolean safeIntegersEqual(Integer first, Integer second)
     {
         if (first == null && second == null)
@@ -2102,7 +2105,7 @@ public class StudyManager
     public List<CohortImpl> getCohorts(Container container, User user)
     {
         assertCohortsViewable(container, user);
-        return _cohortHelper.get(container,"Label");
+        return _cohortHelper.get(container, "Label");
     }
 
     public CohortImpl getCurrentCohortForParticipant(Container container, User user, String participantId)
@@ -2205,7 +2208,6 @@ public class StudyManager
     }
 
 
-
     public List<DatasetDefinition> getDatasetDefinitions(Study study, @Nullable CohortImpl cohort, String... types)
     {
         List<DatasetDefinition> local = getDatasetDefinitionsLocal(study, cohort, types);
@@ -2243,7 +2245,8 @@ public class StudyManager
         }
 
         // sort by display order, category, and dataset ID
-        Collections.sort(combined, new Comparator<DatasetDefinition>(){
+        Collections.sort(combined, new Comparator<DatasetDefinition>()
+        {
             @Override
             public int compare(DatasetDefinition o1, DatasetDefinition o2)
             {
@@ -2265,6 +2268,48 @@ public class StudyManager
         });
 
         return Collections.unmodifiableList(combined);
+    }
+
+
+    /*
+     * This is pretty much the inverse of getDatasetDefinitions()
+     * This can be used in the management/admin UI to warn about hidden datasets
+     */
+    public List<DatasetDefinition> getHiddenDatasets(@NotNull Study study, @Nullable List<DatasetDefinition> local)
+    {
+        if (study.getContainer().isProject())
+            return Collections.emptyList();
+
+        Study sharedStudy = getSharedStudy(study);
+        if (null == sharedStudy)
+            return Collections.emptyList();
+
+        if (null == local)
+            local = getDatasetDefinitionsLocal(study, null, null);
+        List<DatasetDefinition> shared = getDatasetDefinitionsLocal(sharedStudy, null, null);
+
+        if (local.isEmpty() || shared.isEmpty())
+            return Collections.emptyList();
+
+        CaseInsensitiveHashSet names = new CaseInsensitiveHashSet();
+        HashSet<Integer> ids = new HashSet<>();
+
+        for (DatasetDefinition dsd : local)
+        {
+            if (dsd.getDefinitionContainer().equals(dsd.getContainer()))
+            {
+                names.add(dsd.getName());
+                ids.add(dsd.getDatasetId());
+            }
+        }
+        Map<Integer,DatasetDefinition> hidden = new TreeMap<>();
+        for (DatasetDefinition dsd : shared)
+        {
+            if (names.contains(dsd.getName()) || ids.contains(dsd.getDatasetId()))
+                hidden.put(dsd.getDatasetId(), dsd);
+        }
+
+        return new ArrayList<>(hidden.values());
     }
 
 
