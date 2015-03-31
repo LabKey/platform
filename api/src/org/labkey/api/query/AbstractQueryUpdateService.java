@@ -573,7 +573,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public int truncateRows(User user, Container container, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        if (!hasPermission(user, DeletePermission.class))
+        if (!container.hasPermission(user,AdminPermission.class) && !hasPermission(user, DeletePermission.class))
             throw new UnauthorizedException("You do not have permission to truncate this table.");
 
         BatchValidationException errors = new BatchValidationException();
