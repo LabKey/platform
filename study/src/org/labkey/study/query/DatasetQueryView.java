@@ -390,7 +390,7 @@ public class DatasetQueryView extends StudyQueryView
         {
             if (!isAssayDataset) // admins always get the import and manage buttons
             {
-                if ((user.isSiteAdmin() || canWrite))
+                if (canWrite)
                 {
                     // manage dataset
                     ActionButton manageButton = new ActionButton(new ActionURL(StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", _dataset.getDatasetId()), "Manage Dataset");

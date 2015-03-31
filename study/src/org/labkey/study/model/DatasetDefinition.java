@@ -885,14 +885,19 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     @Override
     public boolean canWrite(UserPrincipal user)
     {
-        if (getContainer().hasPermission(user, AdminPermission.class) && !getStudy().isDataspaceStudy())
+        if (getStudy().isDataspaceStudy())
+            return false;
+        if (getContainer().hasPermission(user, AdminPermission.class))
             return true;
         return getPermissions(user).contains(UpdatePermission.class);
     }
 
+
     @Override
     public boolean canDelete(UserPrincipal user)
     {
+        if (getStudy().isDataspaceStudy())
+            return false;
         return getContainer().hasPermission(user, AdminPermission.class);
     }
 

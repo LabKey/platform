@@ -789,11 +789,9 @@ public class StudyController extends BaseStudyController
     }
 
 
-    // TODO I don't think this is quite correct, however this is the check currently used by import and delete
-    // moved here to call it out instead of embedding it
     private static boolean canWrite(DatasetDefinition def, User user)
     {
-        return def.canWrite(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
+        return def.canWrite(user) && def.getContainer().hasPermission(user, ReadPermission.class);
     }
 
 
@@ -2332,7 +2330,7 @@ public class StudyController extends BaseStudyController
         @Override
         protected void validatePermission(User user, BindException errors)
         {
-            if (user.isSiteAdmin() || canWrite(_def, user))
+            if (canWrite(_def, user))
                 return;
             throw new UnauthorizedException("Can't update dataset: " + _def.getName());
         }
@@ -2340,6 +2338,9 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(ImportDatasetForm form, BindException errors) throws Exception
         {
             initRequest(form);
+
+            if (_def.isShared())
+                return new HtmlView("Error", "Cannot insert dataset data in this folder.  Use a sub-study to import data.", form.getDatasetId());
 
             if (_def.getTypeURI() == null)
                 return new HtmlView("Error", "Dataset is not yet defined. <a href=\"datasetDetails.view?id=%d\">Show Dataset Details</a>", form.getDatasetId());
