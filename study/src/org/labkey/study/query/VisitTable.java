@@ -38,10 +38,12 @@ public class VisitTable extends BaseStudyTable
         {
             // If we are in a sub-folder (DataspaceContainerFilter not set), check for a shared visit study.
             // If shared visits are enabled, only show visits from the project level.
-            Study study = schema.getStudy();
-            Study visitStudy = StudyManager.getInstance().getSharedStudy(study);
-            if (visitStudy != null && visitStudy.getShareVisitDefinitions())
-                cf = new ContainerFilter.Project(schema.getUser());
+            if (null != schema.getStudy())
+            {
+                Study visitStudy = StudyManager.getInstance().getSharedStudy(schema.getStudy());
+                if (visitStudy != null && visitStudy.getShareVisitDefinitions())
+                    cf = new ContainerFilter.Project(schema.getUser());
+            }
 
             _setContainerFilter(cf);
         }
