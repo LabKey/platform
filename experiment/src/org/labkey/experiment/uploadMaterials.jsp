@@ -46,7 +46,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("clientapi/ext3"));
+        resources.add(ClientDependency.fromPath("Ext3"));
         resources.add(ClientDependency.fromPath("FileUploadField.js"));
         return resources;
     }
@@ -108,16 +108,20 @@
         return sb.toString();
     }
 %>
-
+<style type="text/css">
+    #upload-field .x-form-field-wrap,
+    #upload-field #upload-run-field-file {
+        width: 212px !important;
+    }
+</style>
 <labkey:errors />
 <p>If you have an existing sample set definition in the XAR file format (a .xar or .xar.xml file), you can
     <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getContainer()) %>">upload the XAR file directly</a>
     or place the file in this folder's pipeline directory and import using the
     <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getActionURL()) %>">Data Pipeline</a>.
 </p>
-
+<labkey:form id="sampleSetUploadForm" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="POST">
 <table>
-    <labkey:form onsubmit="return validateKey();" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="post" id="sampleSetUploadForm">
     <tr>
         <td class="labkey-form-label" width="100">Name</td>
         <td>
@@ -155,6 +159,10 @@
             <input type="radio" name="uploadType" value="file" onchange="enableFileUpload()">File
         </td>
     </tr>
+    <tr id="file-field" style="display: none;">
+        <td class="labkey-form-label">Upload File</td>
+        <td id="upload-field"></td>
+    </tr>
     <tr id="sampleSetData">
         <td class="labkey-form-label">Sample Set Data</td>
         <td>
@@ -166,10 +174,8 @@
                 <br>
             <% } %>
             <br>
-            <textarea id="textbox" onchange="updateIds(this.value.trim())" rows=25 cols="120" style="width: 100%;" name="data" wrap="off"><%=h(form.getData())%></textarea>
-            <script type="text/javascript">
-                Ext.EventManager.on('textbox', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
-            </script>
+            <textarea id="textbox" rows=25 cols="120" style="width: 100%;" name="data" wrap="off"><%=h(form.getData())%></textarea>
+            <script type="text/javascript">LABKEY.Utils.tabInputHandler('#textbox');</script>
         </td>
     </tr>
     <tr>
@@ -241,147 +247,161 @@
         </td>
     </tr>
     <tr>
-        <td/>
+        <td></td>
         <td>
-            <%= button("Submit").submit(true) %>
-            <%= button("Clear").onClick("javascript:clearValues()") %></td>
-    </tr>
-    <input type="hidden" name="tsvData" value=""/>
-    </labkey:form>
-    <tr>
-        <td/>
-        <td>
-            <form id="upload-run-form" enctype="multipart/form-data" method="POST">
-                <div id="upload-run-button"></div>
-                <input id="upload-run-csrf" type="hidden" name="X-LABKEY-CSRF"/>
-            </form>
+            <%= button("Submit").submit(true).id("submit-form-btn") %>
+            <%= button("Clear").id("clear-form-btn") %>
         </td>
     </tr>
+    <input type="hidden" name="tsvData" value=""/>
 </table>
+</labkey:form>
 <div style="display:none" id="uploading">Please wait while data is uploaded.</div>
 <script type="text/javascript">
-var fields = [];
-var header = [];
-var nameColIndex = -1;
-var sampleSet = <%=dumpSampleSet(sampleSet)%>;
 
-function updateIdSelect(select, header, allowBlank)
-{
-    if (select == null)
-    {
-        return;
-    }
-    var selectedIndex = select.selectedIndex;
-    select.options.length = 0;
-    if (header.length == 0)
-    {
-        var option = new Option("<Paste sample set data, then choose a field>", 0);
-        select.options[select.options.length] = option;
-        select.disabled = false;
-        return;
-    }
-    if (allowBlank)
-    {
-        var option = new Option("", -1);
-        select.options[select.options.length] = option;
-    }
+function disableFileUpload() {
+    Ext.get('file-field').setDisplayed('none');
+    Ext.get('sampleSetData').setDisplayed('table-row');
+    Ext.getCmp('upload-run-field').disable();
+}
 
-    for (var i = 0; i < header.length; i ++)
-    {
-        if (header[i].toLowerCase() == "name")
+function enableFileUpload() {
+    Ext.get('file-field').setDisplayed('table-row');
+    Ext.get('sampleSetData').setDisplayed('none');
+    Ext.getCmp('upload-run-field').enable();
+}
+
+function runner() {
+    console.log('called runner!');
+    return true;
+}
+
+(function($) {
+
+    var fields = [];
+    var header = [];
+    var nameColIndex = -1;
+    var sampleSet = <%=dumpSampleSet(sampleSet)%>;
+    var btnText = 'Upload TSV, XLS, or XLSX File...';
+
+    var clearValues = function() {
+        var textbox = document.getElementById("textbox");
+        textbox.value = "";
+        updateIds(textbox.value);
+
+        var fileField = Ext.getCmp('upload-run-field');
+        if (fileField) {
+            fileField.reset();
+            fileField.button.setText(btnText);
+        }
+    };
+
+    var getNameColIndex = function() {
+        nameColIndex = -1;
+        for (var i = 0; i < header.length; i++)
         {
-            // Select the 'Name' column for idCol1, unselect for idCol2 and idCol3
-            if (select.id == "idCol1")
-                selectedIndex = select.options.length;
-            else if (select.id == "idCol2" || select.name == "idCol3")
-                selectedIndex = -1;
+            if (header[i].toLowerCase() == "name")
+            {
+                nameColIndex = i;
+                break;
+            }
+        }
+    };
+
+    var onTextAreaChange = function(event, textbox) {
+        updateIds(textbox.value.trim());
+    };
+
+    var updateIds = function(txt) {
+        var rows = txt.trim().split("\n");
+        header = [];
+        fields = [];
+        if (rows.length >= 2)
+        {
+            for (var i = 0; i < rows.length; i++)
+            {
+                fields[i] = rows[i].split("\t");
+            }
+            header = fields[0];
         }
 
-        var option = new Option(header[i] == "" ? "column" + i : header[i], i);
-        select.options[select.options.length] = option;
-    }
-    if (selectedIndex < select.options.length)
-    {
-        select.selectedIndex = selectedIndex;
-    }
+        getNameColIndex();
+        updateIdSelects();
+    };
 
-    // Enable/disable idCol1, idCol2, and idCol3 if "Name" column is present
-    if (select.id in {idCol1:true, idCol2:true, idCol3:true})
-        select.disabled = nameColIndex != -1;
-}
-function updateIds(txt)
-{
-    var rows = txt.trim().split("\n");
-    header = [];
-    fields = [];
-    if (rows.length >= 2)
-    {
-        for (var i = 0; i < rows.length; i++)
-        {
-            fields[i] = rows[i].split("\t");
+    var updateIdSelect = function(select, header, allowBlank) {
+        if (!select) {
+            return;
         }
-        header = fields[0];
-    }
 
-    getNameColIndex();
-    updateIdSelects();
-}
+        var selectedIndex = select.selectedIndex;
+        select.options.length = 0;
 
-function updateIdsWithData(data)
-{
-    header = [];
-    fields = [];
-    if (data.length >= 2) // why?
-    {
-        for (var i = 0; i < data.length; i++)
+        if (header.length == 0)
         {
-            fields[i] = data[i];
+            var option = new Option("<Paste sample set data, then choose a field>", 0);
+            select.options[select.options.length] = option;
+            select.disabled = false;
+            return;
         }
-        header = fields[0];
-    }
-
-    getNameColIndex();
-    updateIdSelects();
-}
-
-function getNameColIndex()
-{
-    nameColIndex = -1;
-    for (var i = 0; i < header.length; i++)
-    {
-        if (header[i].toLowerCase() == "name")
+        if (allowBlank)
         {
-            nameColIndex = i;
-            break;
+            var option = new Option("", -1);
+            select.options[select.options.length] = option;
         }
-    }
-}
 
-function updateIdSelects()
-{
-    updateIdSelect(document.getElementById("idCol1"), header, false);
-    updateIdSelect(document.getElementById("idCol2"), header, true);
-    updateIdSelect(document.getElementById("idCol3"), header, true);
-    updateIdSelect(document.getElementById("parentCol"), header, true);
-}
+        for (var i = 0; i < header.length; i ++)
+        {
+            if (header[i].toLowerCase() == "name")
+            {
+                // Select the 'Name' column for idCol1, unselect for idCol2 and idCol3
+                if (select.id == "idCol1")
+                    selectedIndex = select.options.length;
+                else if (select.id == "idCol2" || select.name == "idCol3")
+                    selectedIndex = -1;
+            }
 
-function clearValues()
-{
-    var textbox = document.getElementById("textbox");
-    textbox.value = "";
-    updateIds(textbox.value);
-}
+            var option = new Option(header[i] == "" ? "column" + i : header[i], i);
+            select.options[select.options.length] = option;
+        }
+        if (selectedIndex < select.options.length)
+        {
+            select.selectedIndex = selectedIndex;
+        }
 
-function validateKey()
-{
-    var name = document.getElementById("name").value;
-//    if (!(name != null && name.trim().length > 0))
-//    {
-//        alert("Name is required");
-//        return false;
-//    }
+        // Enable/disable idCol1, idCol2, and idCol3 if "Name" column is present
+        if (select.id in {idCol1:true, idCol2:true, idCol3:true})
+            select.disabled = nameColIndex != -1;
+    };
 
-    <% if (form.isImportMoreSamples()) { %>
+    var updateIdSelects = function() {
+        updateIdSelect(document.getElementById("idCol1"), header, false);
+        updateIdSelect(document.getElementById("idCol2"), header, true);
+        updateIdSelect(document.getElementById("idCol3"), header, true);
+        updateIdSelect(document.getElementById("parentCol"), header, true);
+    };
+
+    var updateIdsWithData = function(data) {
+        header = [];
+        fields = [];
+        if (data.length >= 2) // why?
+        {
+            for (var i = 0; i < data.length; i++)
+            {
+                fields[i] = data[i];
+            }
+            header = fields[0];
+        }
+
+        getNameColIndex();
+        updateIdSelects();
+    };
+
+    var validateKey = function() {
+        console.log('called validate key!');
+        var name = document.getElementById("name").value;
+
+        <% if (form.isImportMoreSamples()) { %>
         var insertOnlyChoice = document.getElementById("insertOnlyChoice");
         var insertIgnoreChoice = document.getElementById("insertIgnoreChoice");
         var insertOrUpdateChoice = document.getElementById("insertOrUpdateChoice");
@@ -391,189 +411,206 @@ function validateKey()
             alert("Please select how to deal with duplicates by selecting one of the insert/update options.");
             return false;
         }
-    <% } %>
+        <% } %>
 
-    if (fields == null || fields.length < 2)
-    {
-        alert("Please paste data with at least a header and one row of data.");
-        return false;
-    }
-    var select1 = document.getElementById("idCol1");
-    var select2 = document.getElementById("idCol2");
-    var select3 = document.getElementById("idCol3");
-    var colIndex = [ -1, -1, -1 ];
-    var colNames = [ '', '', '' ];
-    if (select1)
-    {
-        if (nameColIndex != -1)
+        if (fields == null || fields.length < 2)
         {
-            colIndex[0] = nameColIndex;
-            colNames[0] = header[nameColIndex];
+            alert("Please paste data with at least a header and one row of data.");
+            return false;
+        }
+        var select1 = document.getElementById("idCol1");
+        var select2 = document.getElementById("idCol2");
+        var select3 = document.getElementById("idCol3");
+        var colIndex = [ -1, -1, -1 ];
+        var colNames = [ '', '', '' ];
+        if (select1)
+        {
+            if (nameColIndex != -1)
+            {
+                colIndex[0] = nameColIndex;
+                colNames[0] = header[nameColIndex];
+            }
+            else
+            {
+                colIndex[0] = parseInt(select1.options[select1.selectedIndex].value);
+                colNames[0] = select1.options[select1.selectedIndex].text;
+
+                colIndex[1] = parseInt(select2.options[select2.selectedIndex].value);
+                colNames[1] = select2.options[select2.selectedIndex].text;
+
+                colIndex[2] = parseInt(select3.options[select3.selectedIndex].value);
+                colNames[2] = select3.options[select3.selectedIndex].text;
+            }
+
+            if (colIndex[1] != -1 && colIndex[0] == colIndex[1])
+            {
+                alert("You cannot use the same id column twice.");
+                return false;
+            }
+            if (colIndex[2] != -1 && (colIndex[0] == colIndex[2] || colIndex[1] == colIndex[2]))
+            {
+                alert("You cannot use the same id column twice.");
+                return false;
+            }
+            // Check if they selected a column 3 but not a column 2
+            if (colIndex[2] != -1 && colIndex[1] == -1)
+            {
+                colIndex[1] = colIndex[2];
+                colIndex[2] = -1;
+            }
         }
         else
         {
-            colIndex[0] = parseInt(select1.options[select1.selectedIndex].value);
-            colNames[0] = select1.options[select1.selectedIndex].text;
-
-            colIndex[1] = parseInt(select2.options[select2.selectedIndex].value);
-            colNames[1] = select2.options[select2.selectedIndex].text;
-
-            colIndex[2] = parseInt(select3.options[select3.selectedIndex].value);
-            colNames[2] = select3.options[select3.selectedIndex].text;
-        }
-
-        if (colIndex[1] != -1 && colIndex[0] == colIndex[1])
-        {
-            alert("You cannot use the same id column twice.");
-            return false;
-        }
-        if (colIndex[2] != -1 && (colIndex[0] == colIndex[2] || colIndex[1] == colIndex[2]))
-        {
-            alert("You cannot use the same id column twice.");
-            return false;
-        }
-        // Check if they selected a column 3 but not a column 2
-        if (colIndex[2] != -1 && colIndex[1] == -1)
-        {
-            colIndex[1] = colIndex[2];
-            colIndex[2] = -1;
-        }
-    }
-    else
-    {
-        if (sampleSet != null)
-        {
-            for (var colNum = 0; colNum < 3; colNum++)
+            if (sampleSet != null)
             {
-                var sampleSetCol = sampleSet["col" + (colNum+1)];
-                if (!sampleSetCol)
-                    continue;
-
-                colNames[colNum] = sampleSetCol.label;
-
-                for (var col = 0; col < header.length; col++)
+                for (var colNum = 0; colNum < 3; colNum++)
                 {
-                    var heading = header[col];
-                    if (!heading)
+                    var sampleSetCol = sampleSet["col" + (colNum+1)];
+                    if (!sampleSetCol)
                         continue;
-                    heading = heading.toLowerCase();
-                    for (var aliasIndex = 0; aliasIndex < sampleSetCol.aliases.length; aliasIndex++)
+
+                    colNames[colNum] = sampleSetCol.label;
+
+                    for (var col = 0; col < header.length; col++)
                     {
-                        var alias = sampleSetCol.aliases[aliasIndex];
-                        if (alias && alias.toLowerCase() == heading)
+                        var heading = header[col];
+                        if (!heading)
+                            continue;
+                        heading = heading.toLowerCase();
+                        for (var aliasIndex = 0; aliasIndex < sampleSetCol.aliases.length; aliasIndex++)
                         {
-                            colIndex[colNum] = col;
-                            break;
+                            var alias = sampleSetCol.aliases[aliasIndex];
+                            if (alias && alias.toLowerCase() == heading)
+                            {
+                                colIndex[colNum] = col;
+                                break;
+                            }
                         }
                     }
-                }
 
-                if (colIndex[colNum] == -1)
+                    if (colIndex[colNum] == -1)
+                    {
+                        alert("You must include the Id column '" + colNames[colNum] + "' in your data.");
+                        return false;
+                    }
+                }
+            }
+        }
+
+        var hash = {};
+        for (var i = 1; i < fields.length; i++)
+        {
+            var val = undefined;
+            for (var colNum = 0; colNum < 3; colNum++)
+            {
+                var index = colIndex[colNum];
+                if (colNum > 0 && index == -1)
+                    continue;
+                var colVal = fields[i][index];
+                if (!colVal || "" == colVal)
                 {
-                    alert("You must include the Id column '" + colNames[colNum] + "' in your data.");
+                    alert("All samples must include a value in the '" + colNames[colNum] + "' column.");
                     return false;
                 }
-            }
-        }
-    }
 
-    var hash = new Object();
-    for (var i = 1; i < fields.length; i++)
-    {
-        var val = undefined;
-        for (var colNum = 0; colNum < 3; colNum++)
-        {
-            var index = colIndex[colNum];
-            if (colNum > 0 && index == -1)
-                continue;
-            var colVal = fields[i][index];
-            if (!colVal || "" == colVal)
+                val = (colNum == 0 ? colVal : val + "-" + colVal);
+            }
+
+            if (hash[val])
             {
-                alert("All samples must include a value in the '" + colNames[colNum] + "' column.");
+                alert("The ID columns chosen do not form a unique key. The key " + val + " is on rows " + hash[val] + " and " + i + ".");
                 return false;
             }
-
-            val = (colNum == 0 ? colVal : val + "-" + colVal);
+            hash[val] = i;
         }
 
-        if (hash[val])
+        // As the last step, make sure we don't post the select2 and select3 values
+        if (select1 && nameColIndex > -1)
         {
-            alert("The ID columns chosen do not form a unique key. The key " + val + " is on rows " + hash[val] + " and " + i + ".");
-            return false;
+            select1.selectedIndex = nameColIndex;
+            select1.disabled = false; // disabled inputs don't post values
+            if (select2) select2.selectedIndex = -1;
+            if (select3) select3.selectedIndex = -1;
         }
-        hash[val] = i;
-    }
 
-    // As the last step, make sure we don't post the select2 and select3 values
-    if (select1 && nameColIndex > -1)
-    {
-        select1.selectedIndex = nameColIndex;
-        select1.disabled = false; // disabled inputs don't post values
-        if (select2) select2.selectedIndex = -1;
-        if (select3) select3.selectedIndex = -1;
-    }
+        document.getElementById("uploading").style.display = "";
+        return true;
+    };
 
-    document.getElementById("uploading").style.display = "";
-    return true;
-}
-updateIds(document.getElementById("textbox").value);
-</script>
-<script type="text/javascript">
-    var url = LABKEY.ActionURL.buildURL("experiment", "parseFile", LABKEY.ActionURL.getContainer());
-    document.getElementById("upload-run-csrf").value = LABKEY.CSRF;
+    var init = function() {
 
-    Ext.onReady(function() {
+        // initialize form submit
+        var formEl = Ext.get('sampleSetUploadForm');
+        formEl.dom.onsubmit = validateKey;
+
+        // initialize the textarea
+        var textbox = Ext.get('textbox');
+        textbox.on('change', onTextAreaChange);
+        updateIds(textbox.getValue());
+
+        var clearBtn = Ext.get('clear-form-btn');
+        clearBtn.on('click', clearValues);
+
+        // prepare the file upload field.
         new Ext.form.FileUploadField({
             id: "upload-run-field",
-            name: "file",
-            renderTo: "upload-run-button",
-            buttonText: "Upload Sample Set TSV File...",
+            renderTo: 'upload-field',
+            name: 'file',
+            buttonText: btnText,
             buttonOnly: true,
             disabled: true,
-            buttonCfg: {cls: "labkey-button"},
+            buttonCfg: {cls: 'labkey-button'},
             listeners: {
-                "fileselected": function (fb, v)
-                {
-                    var form = document.forms['upload-run-form'];
-                    var request = new XMLHttpRequest();
-                    request.open("POST", url);
-                    request.onload = function (oEvent)
-                    {
-                        var response = Ext.decode(request.responseText);
-                        console.log(response);
+                fileselected: function (fb, v) {
 
-                        if (response && response['sheets'])
-                        {
-                            var data = Ext.decode(request.responseText)['sheets'][0]['data'];
-                            updateIdsWithData(data);
+                    if (v && v.length > 0 && v.indexOf('\\') >= 0) {
+                        var path = v.split('\\');
+                        fb.button.setText(path[path.length-1]);
+                    }
+
+                    // Update submit button
+                    var submitBtn = Ext.get('submit-form-btn');
+                    submitBtn.addClass('labkey-disabled-button');
+                    submitBtn.update('<span>One moment...</span>');
+
+                    var form = new Ext.form.BasicForm(Ext.get('sampleSetUploadForm'), {
+                        url: LABKEY.ActionURL.buildURL('experiment', 'parseFile'),
+                        fileUpload: true
+                    });
+
+                    var processResponse = function(form, action) {
+
+                        submitBtn.removeClass('labkey-disabled-button');
+                        submitBtn.update('<span>Submit</span>');
+
+                        if (action.response.responseText.indexOf('<pre') === 0) {
+                            var fileContents = Ext.decode($(action.response.responseText).html());
+                            var data = fileContents.sheets[0].data;
 
                             // issue 22851
-                            alert("Successfully parsed " + (data.length - 1).toString() + " rows from the data file.");
+                            updateIdsWithData(data);
 
                             // convert data back into the tsv format (which is expected by this action)
-                            var textData = "";
-                            for (var i = 0; i < fields.length; i++)
-                                textData += fields[i].join("\t") + "\n";
+                            var textData = '';
+                            for (var i=0; i < fields.length; i++) {
+                                textData += fields[i].join('\t') + '\n';
+                            }
 
+                            document.forms['sampleSetUploadForm'].elements['data'].value = textData;
                             document.forms['sampleSetUploadForm'].elements['tsvData'].value = textData;
                         }
-                        // else error
                     };
-                    request.send(new FormData(form));
+
+                    form.submit({
+                        success: processResponse,
+                        failure: processResponse
+                    });
                 }
             }
         });
-    });
+    };
 
-    function disableFileUpload()
-    {
-        document.getElementById('sampleSetData').style.display = 'table-row';
-        Ext.getCmp("upload-run-field").disable();
-    }
+    Ext.onReady(init);
+})(jQuery);
 
-    function enableFileUpload()
-    {
-        document.getElementById('sampleSetData').style.display = 'none';
-        Ext.getCmp("upload-run-field").enable();
-    }
 </script>
