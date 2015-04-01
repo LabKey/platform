@@ -45,7 +45,7 @@ import static org.junit.Assert.*;
 @Category({DailyB.class, Study.class})
 public class StudyProtocolDesignerTest extends BaseWebDriverTest
 {
-    private static final File STUDY_ARCHIVE = new File(TestFileUtils.getSampledataPath(), "study/CohortStudy.zip");
+    private static final File STUDY_ARCHIVE = TestFileUtils.getSampleData("studies/CohortStudy.zip");
     // Cohorts: defined in study archive
     private static final String[] COHORTS = {"Positive", "Negative"};
 

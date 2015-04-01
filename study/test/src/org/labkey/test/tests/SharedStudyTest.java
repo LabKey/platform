@@ -37,18 +37,15 @@ import java.util.List;
  * Date: 2/23/15
  */
 @Category({DailyA.class, Study.class})
-public class StudySharedVisitsTest extends BaseWebDriverTest
+public class SharedStudyTest extends BaseWebDriverTest
 {
     public static final String STUDY_ONE = "Study001";
     public static final String STUDY_TWO = "Study002";
 
-    public static final String STUDY_ONE_FOLDER = "ExtraKeyStudy/folder.xml";
-
-
     @BeforeClass
     public static void setupProject()
     {
-        StudySharedVisitsTest initTest = (StudySharedVisitsTest)getCurrentTest();
+        SharedStudyTest initTest = (SharedStudyTest)getCurrentTest();
 
         initTest.doSetup();
     }
@@ -59,22 +56,19 @@ public class StudySharedVisitsTest extends BaseWebDriverTest
 
         // Create a study with shared visits
         clickButton("Create Study");
-        click(Locator.radioButtonByNameAndValue("shareDatasets", "true"));
-        click(Locator.radioButtonByNameAndValue("shareVisits", "true"));
+        checkRadioButton(Locator.radioButtonByNameAndValue("shareDatasets", "true"));
+        checkRadioButton(Locator.radioButtonByNameAndValue("shareVisits", "true"));
 
-        // TODO: do we want to test shared datasets as well?
         clickButton("Create Study");
 
-        // TODO: Remove dependency on Dataspace module
         _containerHelper.setFolderType("Dataspace");
-        setPipelineRoot(TestFileUtils.getLabKeyRoot() + StudyBaseTest.getStudySampleDataPath());
+        setPipelineRoot(TestFileUtils.getSampleData("studies/ExtraKeyStudy").getAbsolutePath());
 
         _containerHelper.createSubfolder(getProjectName(), STUDY_ONE, "Study");
-        importFolderFromPipeline(STUDY_ONE_FOLDER, 1, false);
+        importFolderFromPipeline("folder.xml", 1, false);
 
-        // TODO: CONSIDER: Import a different study -- however, dataset ids must align
-        //initTest._containerHelper.createSubfolder(initTest.getProjectName(), STUDY_TWO, "Study");
-        //initTest.importFolderFromPipeline(STUDY_ONE_FOLDER, 1, false);\
+        //_containerHelper.createSubfolder(getProjectName(), STUDY_TWO, "Study");
+        //createDefaultStudy();
     }
 
     @Override
@@ -87,7 +81,7 @@ public class StudySharedVisitsTest extends BaseWebDriverTest
     @Override
     protected String getProjectName()
     {
-        return "Shared Visits Test";
+        return getClass().getSimpleName() + " Project";
     }
 
     @Override
@@ -160,7 +154,7 @@ public class StudySharedVisitsTest extends BaseWebDriverTest
         String url = getCurrentRelativeURL();
         Assert.assertFalse("Expected redirect to project manage visits page, got: " + url, url.contains(STUDY_ONE));
 
-        String title = getLastPageTitle();
+        String title = getDriver().getTitle();
         Assert.assertTrue("Expected title to start with 'Manage Shared Visits', got:" + title, title.startsWith("Manage Shared Visits"));
     }
 
@@ -197,5 +191,17 @@ public class StudySharedVisitsTest extends BaseWebDriverTest
         click(Locator.xpath("//th[text() = 'Visit 4']/../td/a[text() = 'edit']"));
         clickButton("Delete visit");
         clickButton("Delete");
+    }
+
+    @Test
+    public void testNoSharingInSubFolders()
+    {
+        String folderName = "No Sharing";
+        _containerHelper.createSubfolder(getProjectName(), folderName, "Study");
+
+        clickButton("Create Study");
+
+        assertElementNotPresent(Locator.name("shareDatasets"));
+        assertElementNotPresent(Locator.name("shareVisits"));
     }
 }
