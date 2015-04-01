@@ -147,6 +147,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                     items: [{
                         xtype: 'labkey-filterOpCombo',
                         cls: 'test-item-op',
+                        width: 175,
                         renderTarget: 'div.item-op',
                         indexedProperty: true,
                         fieldMetaStore: this.fieldMetaStore,

@@ -5,14 +5,16 @@ Ext4.define('LABKEY.internal.ViewDesigner.field.FilterOpCombo', {
 
     alias: 'widget.labkey-filterOpCombo',
 
+    mode: 'local',
+    triggerAction: 'all',
+    forceSelection: true,
+    valueField: 'value',
+    displayField: 'text',
+    allowBlank: false,
+    matchFieldWidth: false,
+
     constructor : function (config) {
         this.fieldMetaStore = config.fieldMetaStore;
-        this.mode = 'local';
-        this.triggerAction = 'all';
-        this.forceSelection = true;
-        this.valueField = 'value';
-        this.displayField = 'text';
-        this.allowBlank = false;
 
         this.callParent([config]);
 

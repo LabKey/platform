@@ -96,6 +96,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
                     items: [{
                         xtype: 'combo',
                         cls: 'test-item-op',
+                        width: 175,
                         renderTarget: 'div.item-dir',
                         applyValue: 'dir',
                         store: [["+", "Ascending"], ["-", "Descending"]],
