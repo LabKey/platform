@@ -19,10 +19,12 @@ import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Helper methods for parsing JSON objects using Jackson.
@@ -78,6 +80,14 @@ public class JsonUtil
 
     public static Object valueOf(JsonNode n) throws JsonParseException
     {
+        if (n.isArray())
+        {
+            List<Object> result = new ArrayList<>();
+            for (Iterator<JsonNode> elements = n.elements(); elements.hasNext();)
+                result.add(valueOf(elements.next()));
+            return result;
+        }
+
         if (!n.isValueNode())
             throw new JsonParseException("Expected value node", null);
 
