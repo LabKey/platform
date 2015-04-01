@@ -27,6 +27,7 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
@@ -179,7 +180,18 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                 @Override
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
                 {
-                    DataColumn result = new DataColumn(colInfo);
+                    DataColumn result = new DataColumn(colInfo)
+                    {
+                        @Override
+                        public String renderURL(RenderContext ctx)
+                        {
+                            // Don't make a url unless there's a specimen in the target study
+                            FieldKey specimenIdKey = FieldKey.fromParts("SpecimenId", "RowId");
+                            if (null != ctx.get(specimenIdKey))
+                                return super.renderURL(ctx);
+                            return null;
+                        }
+                    };
                     result.setInputType("text");
                     return result;
                 }
