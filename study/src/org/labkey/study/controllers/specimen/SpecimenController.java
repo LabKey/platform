@@ -672,6 +672,10 @@ public class SpecimenController extends BaseStudyController
 
         public ModelAndView getView(ViewEventForm viewEventForm, BindException errors) throws Exception
         {
+            if (null == StudyManager.getInstance().getStudy(getContainer()))
+            {
+                throw new NotFoundException("Folder does not have a study.");
+            }
             _showingSelectedSamples = viewEventForm.isSelected();
             Vial vial = SpecimenManager.getInstance().getVial(getContainer(), getUser(), viewEventForm.getId());
             if (vial == null)
