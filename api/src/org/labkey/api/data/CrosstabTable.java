@@ -639,7 +639,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
      *
      * @return A default Sort object
      */
-    public static Sort getDefaultSort()
+    public Sort getDefaultSort()
     {
         return new Sort(getDefaultSortString());
     }

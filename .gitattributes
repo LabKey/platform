@@ -1559,7 +1559,6 @@ api/src/org/labkey/api/study/permissions/DesignAssayPermission.java -text
 api/src/org/labkey/api/study/permissions/SharedParticipantGroupPermission.java -text
 api/src/org/labkey/api/study/query/AssayBaseQueryView.java -text
 api/src/org/labkey/api/study/query/DataInputColumn.java -text
-api/src/org/labkey/api/study/query/PlateBasedAssayRunDataTable.java -text
 api/src/org/labkey/api/study/query/ProtocolFilteredObjectTable.java -text
 api/src/org/labkey/api/study/query/PublishResultsQueryView.java -text
 api/src/org/labkey/api/study/query/ResultsQueryView.java -text
