@@ -183,8 +183,12 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                     throw new IllegalArgumentException("Invalid target option specified: " + meta.getTargetOptions());
             }
 
-            _recordsDeleted = deleteRows(targetTableInfo, qus, context, c, u, options, extraContext, log);
+            // We shouldn't proceed to deleting records if there were errors in the main step operation. In SQL Server, this could leave data in an unknown state.
+            // On Postgres, we'll get an exception trying to reuse the connection.
+            if (context.getErrors().hasErrors())
+                return rowCount;
 
+            _recordsDeleted = deleteRows(targetTableInfo, qus, context, c, u, options, extraContext, log);
             return rowCount;
         }
         catch (BatchValidationException |QueryUpdateServiceException ex)
