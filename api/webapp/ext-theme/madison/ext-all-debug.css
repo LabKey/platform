@@ -4214,6 +4214,146 @@ div.x4-editor {
   position: absolute;
 }
 
+/* line 1, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-docked {
+  position: absolute !important;
+  z-index: 1;
+}
+
+/* line 7, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-docked-vertical {
+  position: static;
+}
+
+/* line 11, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-docked-top {
+  border-bottom-width: 0 !important;
+}
+
+/* line 15, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-docked-bottom {
+  border-top-width: 0 !important;
+}
+
+/* line 19, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-docked-left {
+  border-right-width: 0 !important;
+}
+
+/* line 23, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-docked-right {
+  border-left-width: 0 !important;
+}
+
+/* line 27, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-docked-noborder-top {
+  border-top-width: 0 !important;
+}
+
+/* line 31, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-docked-noborder-right {
+  border-right-width: 0 !important;
+}
+
+/* line 35, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-docked-noborder-bottom {
+  border-bottom-width: 0 !important;
+}
+
+/* line 39, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-docked-noborder-left {
+  border-left-width: 0 !important;
+}
+
+/* line 45, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-l {
+  border-left-width: 0 !important;
+}
+
+/* line 48, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-b {
+  border-bottom-width: 0 !important;
+}
+
+/* line 51, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-bl {
+  border-bottom-width: 0 !important;
+  border-left-width: 0 !important;
+}
+
+/* line 55, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-r {
+  border-right-width: 0 !important;
+}
+
+/* line 58, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-rl {
+  border-right-width: 0 !important;
+  border-left-width: 0 !important;
+}
+
+/* line 62, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-rb {
+  border-right-width: 0 !important;
+  border-bottom-width: 0 !important;
+}
+
+/* line 66, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-rbl {
+  border-right-width: 0 !important;
+  border-bottom-width: 0 !important;
+  border-left-width: 0 !important;
+}
+
+/* line 71, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-t {
+  border-top-width: 0 !important;
+}
+
+/* line 74, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-tl {
+  border-top-width: 0 !important;
+  border-left-width: 0 !important;
+}
+
+/* line 78, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-tb {
+  border-top-width: 0 !important;
+  border-bottom-width: 0 !important;
+}
+
+/* line 82, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-tbl {
+  border-top-width: 0 !important;
+  border-bottom-width: 0 !important;
+  border-left-width: 0 !important;
+}
+
+/* line 87, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-tr {
+  border-top-width: 0 !important;
+  border-right-width: 0 !important;
+}
+
+/* line 91, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-trl {
+  border-top-width: 0 !important;
+  border-right-width: 0 !important;
+  border-left-width: 0 !important;
+}
+
+/* line 96, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-trb {
+  border-top-width: 0 !important;
+  border-right-width: 0 !important;
+  border-bottom-width: 0 !important;
+}
+
+/* line 101, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
+.x4-noborder-trbl {
+  border-width: 0 !important;
+}
+
 /* line 1, ../../../../ext/packages/ext-theme-base/sass/src/button/Button.scss */
 .x4-btn {
   display: inline-block;
@@ -4362,146 +4502,6 @@ div.x4-editor {
 /* line 29, ../../../../ext/packages/ext-theme-base/sass/src/toolbar/Toolbar.scss */
 .x4-toolbar-plain {
   border: 0;
-}
-
-/* line 1, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-docked {
-  position: absolute !important;
-  z-index: 1;
-}
-
-/* line 7, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-docked-vertical {
-  position: static;
-}
-
-/* line 11, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-docked-top {
-  border-bottom-width: 0 !important;
-}
-
-/* line 15, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-docked-bottom {
-  border-top-width: 0 !important;
-}
-
-/* line 19, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-docked-left {
-  border-right-width: 0 !important;
-}
-
-/* line 23, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-docked-right {
-  border-left-width: 0 !important;
-}
-
-/* line 27, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-docked-noborder-top {
-  border-top-width: 0 !important;
-}
-
-/* line 31, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-docked-noborder-right {
-  border-right-width: 0 !important;
-}
-
-/* line 35, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-docked-noborder-bottom {
-  border-bottom-width: 0 !important;
-}
-
-/* line 39, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-docked-noborder-left {
-  border-left-width: 0 !important;
-}
-
-/* line 45, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-l {
-  border-left-width: 0 !important;
-}
-
-/* line 48, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-b {
-  border-bottom-width: 0 !important;
-}
-
-/* line 51, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-bl {
-  border-bottom-width: 0 !important;
-  border-left-width: 0 !important;
-}
-
-/* line 55, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-r {
-  border-right-width: 0 !important;
-}
-
-/* line 58, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-rl {
-  border-right-width: 0 !important;
-  border-left-width: 0 !important;
-}
-
-/* line 62, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-rb {
-  border-right-width: 0 !important;
-  border-bottom-width: 0 !important;
-}
-
-/* line 66, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-rbl {
-  border-right-width: 0 !important;
-  border-bottom-width: 0 !important;
-  border-left-width: 0 !important;
-}
-
-/* line 71, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-t {
-  border-top-width: 0 !important;
-}
-
-/* line 74, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-tl {
-  border-top-width: 0 !important;
-  border-left-width: 0 !important;
-}
-
-/* line 78, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-tb {
-  border-top-width: 0 !important;
-  border-bottom-width: 0 !important;
-}
-
-/* line 82, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-tbl {
-  border-top-width: 0 !important;
-  border-bottom-width: 0 !important;
-  border-left-width: 0 !important;
-}
-
-/* line 87, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-tr {
-  border-top-width: 0 !important;
-  border-right-width: 0 !important;
-}
-
-/* line 91, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-trl {
-  border-top-width: 0 !important;
-  border-right-width: 0 !important;
-  border-left-width: 0 !important;
-}
-
-/* line 96, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-trb {
-  border-top-width: 0 !important;
-  border-right-width: 0 !important;
-  border-bottom-width: 0 !important;
-}
-
-/* line 101, ../../../../ext/packages/ext-theme-base/sass/src/layout/component/Dock.scss */
-.x4-noborder-trbl {
-  border-width: 0 !important;
 }
 
 /* line 1, ../../../../ext/packages/ext-theme-base/sass/src/panel/Header.scss */
@@ -6371,14 +6371,13 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 /* line 541, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-small-menu-active,
 .x4-btn-default-small-pressed {
-  border-color: #333333;
   background-image: none;
-  background-color: white;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #ffffff), color-stop(100%, #e4e4e4));
-  background-image: -webkit-linear-gradient(top, #ffffff, #e4e4e4);
-  background-image: -moz-linear-gradient(top, #ffffff, #e4e4e4);
-  background-image: -o-linear-gradient(top, #ffffff, #e4e4e4);
-  background-image: linear-gradient(top, #ffffff, #e4e4e4);
+  background-color: silver;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #c0c0c0), color-stop(100%, #dddddd));
+  background-image: -webkit-linear-gradient(top, #c0c0c0, #dddddd);
+  background-image: -moz-linear-gradient(top, #c0c0c0, #dddddd);
+  background-image: -o-linear-gradient(top, #c0c0c0, #dddddd);
+  background-image: linear-gradient(top, #c0c0c0, #dddddd);
 }
 /* line 549, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-small-menu-active .x4-btn-inner,
@@ -6451,7 +6450,7 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 /* line 625, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-small-menu-active .x4-frame-mc,
 .x4-btn-default-small-pressed .x4-frame-mc {
-  background-color: white;
+  background-color: silver;
   background-image: url(images/btn/btn-default-small-pressed-fbg.gif);
 }
 
@@ -6902,14 +6901,13 @@ body.x4-nbr .x4-btn-default-medium-frameInfo {
 /* line 541, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-medium-menu-active,
 .x4-btn-default-medium-pressed {
-  border-color: #333333;
   background-image: none;
-  background-color: white;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #ffffff), color-stop(100%, #e4e4e4));
-  background-image: -webkit-linear-gradient(top, #ffffff, #e4e4e4);
-  background-image: -moz-linear-gradient(top, #ffffff, #e4e4e4);
-  background-image: -o-linear-gradient(top, #ffffff, #e4e4e4);
-  background-image: linear-gradient(top, #ffffff, #e4e4e4);
+  background-color: silver;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #c0c0c0), color-stop(100%, #dddddd));
+  background-image: -webkit-linear-gradient(top, #c0c0c0, #dddddd);
+  background-image: -moz-linear-gradient(top, #c0c0c0, #dddddd);
+  background-image: -o-linear-gradient(top, #c0c0c0, #dddddd);
+  background-image: linear-gradient(top, #c0c0c0, #dddddd);
 }
 /* line 549, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-medium-menu-active .x4-btn-inner,
@@ -6982,7 +6980,7 @@ body.x4-nbr .x4-btn-default-medium-frameInfo {
 /* line 625, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-medium-menu-active .x4-frame-mc,
 .x4-btn-default-medium-pressed .x4-frame-mc {
-  background-color: white;
+  background-color: silver;
   background-image: url(images/btn/btn-default-medium-pressed-fbg.gif);
 }
 
@@ -7433,14 +7431,13 @@ body.x4-nbr .x4-btn-default-large-frameInfo {
 /* line 541, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-large-menu-active,
 .x4-btn-default-large-pressed {
-  border-color: #333333;
   background-image: none;
-  background-color: white;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #ffffff), color-stop(100%, #e4e4e4));
-  background-image: -webkit-linear-gradient(top, #ffffff, #e4e4e4);
-  background-image: -moz-linear-gradient(top, #ffffff, #e4e4e4);
-  background-image: -o-linear-gradient(top, #ffffff, #e4e4e4);
-  background-image: linear-gradient(top, #ffffff, #e4e4e4);
+  background-color: silver;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #c0c0c0), color-stop(100%, #dddddd));
+  background-image: -webkit-linear-gradient(top, #c0c0c0, #dddddd);
+  background-image: -moz-linear-gradient(top, #c0c0c0, #dddddd);
+  background-image: -o-linear-gradient(top, #c0c0c0, #dddddd);
+  background-image: linear-gradient(top, #c0c0c0, #dddddd);
 }
 /* line 549, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-large-menu-active .x4-btn-inner,
@@ -7513,7 +7510,7 @@ body.x4-nbr .x4-btn-default-large-frameInfo {
 /* line 625, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-large-menu-active .x4-frame-mc,
 .x4-btn-default-large-pressed .x4-frame-mc {
-  background-color: white;
+  background-color: silver;
   background-image: url(images/btn/btn-default-large-pressed-fbg.gif);
 }
 
@@ -7925,14 +7922,9 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 /* line 541, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-toolbar-small-menu-active,
 .x4-btn-default-toolbar-small-pressed {
-  border-color: #333333;
+  border-color: #b4b4b4;
   background-image: none;
-  background-color: white;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #e4e4e4), color-stop(100%, #ffffff));
-  background-image: -webkit-linear-gradient(top, #e4e4e4, #ffffff);
-  background-image: -moz-linear-gradient(top, #e4e4e4, #ffffff);
-  background-image: -o-linear-gradient(top, #e4e4e4, #ffffff);
-  background-image: linear-gradient(top, #e4e4e4, #ffffff);
+  background-color: silver;
 }
 
 /* line 573, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
@@ -8000,8 +7992,7 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 /* line 625, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-toolbar-small-menu-active .x4-frame-mc,
 .x4-btn-default-toolbar-small-pressed .x4-frame-mc {
-  background-color: white;
-  background-image: url(images/btn/btn-default-toolbar-small-pressed-fbg.gif);
+  background-color: silver;
 }
 
 /* line 640, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
@@ -8031,12 +8022,6 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 /* line 667, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-nlg .x4-btn-default-toolbar-small-focus {
   background-image: url(images/btn/btn-default-toolbar-small-focus-bg.gif);
-}
-
-/* line 676, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
-.x4-nlg .x4-btn-default-toolbar-small-menu-active,
-.x4-nlg .x4-btn-default-toolbar-small-pressed {
-  background-image: url(images/btn/btn-default-toolbar-small-pressed-bg.gif);
 }
 
 /* line 691, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
@@ -8092,7 +8077,7 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 /* line 78, ../../../../ext/packages/ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-btn-default-toolbar-small-pressed:after {
   display: none;
-  content: "x-slicer:stretch:bottom, corners:url(images/btn/btn-default-toolbar-small-pressed-corners.gif), sides:url(images/btn/btn-default-toolbar-small-pressed-sides.gif), frame-bg:url(images/btn/btn-default-toolbar-small-pressed-fbg.gif), bg:url(images/btn/btn-default-toolbar-small-pressed-bg.gif)";
+  content: "x-slicer:stretch:bottom, corners:url(images/btn/btn-default-toolbar-small-pressed-corners.gif), sides:url(images/btn/btn-default-toolbar-small-pressed-sides.gif)";
 }
 
 /*</if slicer>*/
@@ -8405,14 +8390,9 @@ body.x4-nbr .x4-btn-default-toolbar-medium-frameInfo {
 /* line 541, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-toolbar-medium-menu-active,
 .x4-btn-default-toolbar-medium-pressed {
-  border-color: #333333;
+  border-color: #b4b4b4;
   background-image: none;
-  background-color: white;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #e4e4e4), color-stop(100%, #ffffff));
-  background-image: -webkit-linear-gradient(top, #e4e4e4, #ffffff);
-  background-image: -moz-linear-gradient(top, #e4e4e4, #ffffff);
-  background-image: -o-linear-gradient(top, #e4e4e4, #ffffff);
-  background-image: linear-gradient(top, #e4e4e4, #ffffff);
+  background-color: silver;
 }
 
 /* line 573, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
@@ -8480,8 +8460,7 @@ body.x4-nbr .x4-btn-default-toolbar-medium-frameInfo {
 /* line 625, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-toolbar-medium-menu-active .x4-frame-mc,
 .x4-btn-default-toolbar-medium-pressed .x4-frame-mc {
-  background-color: white;
-  background-image: url(images/btn/btn-default-toolbar-medium-pressed-fbg.gif);
+  background-color: silver;
 }
 
 /* line 640, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
@@ -8511,12 +8490,6 @@ body.x4-nbr .x4-btn-default-toolbar-medium-frameInfo {
 /* line 667, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-nlg .x4-btn-default-toolbar-medium-focus {
   background-image: url(images/btn/btn-default-toolbar-medium-focus-bg.gif);
-}
-
-/* line 676, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
-.x4-nlg .x4-btn-default-toolbar-medium-menu-active,
-.x4-nlg .x4-btn-default-toolbar-medium-pressed {
-  background-image: url(images/btn/btn-default-toolbar-medium-pressed-bg.gif);
 }
 
 /* line 691, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
@@ -8572,7 +8545,7 @@ body.x4-nbr .x4-btn-default-toolbar-medium-frameInfo {
 /* line 78, ../../../../ext/packages/ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-btn-default-toolbar-medium-pressed:after {
   display: none;
-  content: "x-slicer:stretch:bottom, corners:url(images/btn/btn-default-toolbar-medium-pressed-corners.gif), sides:url(images/btn/btn-default-toolbar-medium-pressed-sides.gif), frame-bg:url(images/btn/btn-default-toolbar-medium-pressed-fbg.gif), bg:url(images/btn/btn-default-toolbar-medium-pressed-bg.gif)";
+  content: "x-slicer:stretch:bottom, corners:url(images/btn/btn-default-toolbar-medium-pressed-corners.gif), sides:url(images/btn/btn-default-toolbar-medium-pressed-sides.gif)";
 }
 
 /*</if slicer>*/
@@ -8885,14 +8858,9 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 /* line 541, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-toolbar-large-menu-active,
 .x4-btn-default-toolbar-large-pressed {
-  border-color: #333333;
+  border-color: #b4b4b4;
   background-image: none;
-  background-color: white;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #e4e4e4), color-stop(100%, #ffffff));
-  background-image: -webkit-linear-gradient(top, #e4e4e4, #ffffff);
-  background-image: -moz-linear-gradient(top, #e4e4e4, #ffffff);
-  background-image: -o-linear-gradient(top, #e4e4e4, #ffffff);
-  background-image: linear-gradient(top, #e4e4e4, #ffffff);
+  background-color: silver;
 }
 
 /* line 573, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
@@ -8960,8 +8928,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 /* line 625, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-toolbar-large-menu-active .x4-frame-mc,
 .x4-btn-default-toolbar-large-pressed .x4-frame-mc {
-  background-color: white;
-  background-image: url(images/btn/btn-default-toolbar-large-pressed-fbg.gif);
+  background-color: silver;
 }
 
 /* line 640, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
@@ -8991,12 +8958,6 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 /* line 667, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-nlg .x4-btn-default-toolbar-large-focus {
   background-image: url(images/btn/btn-default-toolbar-large-focus-bg.gif);
-}
-
-/* line 676, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
-.x4-nlg .x4-btn-default-toolbar-large-menu-active,
-.x4-nlg .x4-btn-default-toolbar-large-pressed {
-  background-image: url(images/btn/btn-default-toolbar-large-pressed-bg.gif);
 }
 
 /* line 691, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
@@ -9052,7 +9013,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 /* line 78, ../../../../ext/packages/ext-theme-base/sass/etc/mixins/slicer.scss */
 .x4-btn-default-toolbar-large-pressed:after {
   display: none;
-  content: "x-slicer:stretch:bottom, corners:url(images/btn/btn-default-toolbar-large-pressed-corners.gif), sides:url(images/btn/btn-default-toolbar-large-pressed-sides.gif), frame-bg:url(images/btn/btn-default-toolbar-large-pressed-fbg.gif), bg:url(images/btn/btn-default-toolbar-large-pressed-bg.gif)";
+  content: "x-slicer:stretch:bottom, corners:url(images/btn/btn-default-toolbar-large-pressed-corners.gif), sides:url(images/btn/btn-default-toolbar-large-pressed-sides.gif)";
 }
 
 /*</if slicer>*/
