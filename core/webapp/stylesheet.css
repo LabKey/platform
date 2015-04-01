@@ -1403,6 +1403,18 @@ img.labkey-grid-filter-icon
     margin-top: 3px;
 }
 
+.labkey-customview-filter-item .x4-field td,
+.labkey-customview-sort-item .x4-field td,
+.labkey-fieldmeta-tree td
+{
+    padding: 0; /* see .labkey-data-region-header-container td */
+}
+
+.labkey-fieldmeta-tree .x4-grid-body
+{
+    border-top-width: 0;
+}
+
 .labkey-customview-tab {
     cursor: pointer;
     font-size: 11px;
