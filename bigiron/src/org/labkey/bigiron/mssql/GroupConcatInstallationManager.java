@@ -99,7 +99,7 @@ public class GroupConcatInstallationManager
             // is not the end of the world
 
             // Wrap the exception to provide an explanation to the admin
-            Exception wrap = new Exception("Failure uninstalling the existing GROUP_CONCAT aggregate function, which means it can't be upgraded to the latest version. Contact LabKey if you need assistance installing the newest version of this function.", t);
+            Exception wrap = new Exception("Failure uninstalling the existing GROUP_CONCAT aggregate function, which means it can't be upgraded to the latest version. Contact LabKey Software if you need assistance installing the newest version of this function, or see https://www.labkey.org/wiki/home/Documentation/page.view?name=groupconcatinstall", t);
             ExceptionUtil.logExceptionToMothership(null, wrap);
             ModuleLoader.getInstance().addModuleFailure("Core", wrap);
 
@@ -123,7 +123,7 @@ public class GroupConcatInstallationManager
             // upgrading. Not having GROUP_CONCAT is not a disaster; admin can install the function manually later.
 
             // Wrap the exception to provide an explanation to the admin
-            Exception wrap = new Exception("Failure installing GROUP_CONCAT aggregate function. This function is required for optimal operation of this server. Contact LabKey if you need assistance installing this function.", t);
+            Exception wrap = new Exception("Failure installing GROUP_CONCAT aggregate function. This function is required for optimal operation of this server. Contact LabKey Software if you need assistance installing this function, or see https://www.labkey.org/wiki/home/Documentation/page.view?name=groupconcatinstall", t);
             ExceptionUtil.logExceptionToMothership(null, wrap);
             ModuleLoader.getInstance().addModuleFailure("Core", wrap);
         }
