@@ -634,11 +634,12 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
     }
 
     /**
-     * Retrns a new Sort object initialized with the string returned from
+     * Returns a new Sort object initialized with the string returned from
      * {@link #getDefaultSortString}.
      *
      * @return A default Sort object
      */
+    @Override
     public Sort getDefaultSort()
     {
         return new Sort(getDefaultSortString());

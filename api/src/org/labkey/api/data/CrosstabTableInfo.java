@@ -59,4 +59,10 @@ public interface CrosstabTableInfo extends TableInfo
      */
     void setAggregateFilter(Filter filter);
 
+    /**
+     * Returns the desired default sort for the table.
+     *
+     * @return The default sort
+     */
+    Sort getDefaultSort();
 }
