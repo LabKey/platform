@@ -102,18 +102,21 @@ public class DuoController extends SpringActionController
     @CSRF
     public class ConfigureAction extends FormViewAction<Config>
     {
+        @Override
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/authentication/duo/configure.jsp", form, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("Configure Duo 2-Factor");
+            setHelpTopic("configureDuoTwoFactor");
             PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure Duo 2 Factor Authentication");
             return root;
         }
 
+        @Override
         public void validateCommand(Config target, Errors errors)
         {
             if(StringUtils.isBlank(target.getIntegrationKey()))
@@ -124,6 +127,7 @@ public class DuoController extends SpringActionController
                 errors.reject(ERROR_MSG, "API Hostname cannot be blank.");
         }
 
+        @Override
         public boolean handlePost(Config config, BindException errors) throws Exception
         {
             List<String> dirtyProps = new ArrayList<>();
@@ -153,6 +157,7 @@ public class DuoController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(Config config)
         {
             return getConfigureURL(true);  // Redirect to same action -- reload props from database
@@ -161,8 +166,6 @@ public class DuoController extends SpringActionController
 
     public static class Config extends ReturnUrlForm
     {
-        public boolean reshow = false;
-
         private String integrationKey = DuoManager.getIntegrationKey();
         private String secretKey = DuoManager.getSecretKey();
         private String applicationKey = DuoManager.getApplicationKey();//Application key and Application Secret key (as sometimes used in Duo docs) are synonymous.
@@ -211,16 +214,6 @@ public class DuoController extends SpringActionController
         {
             this.apiHostname = apiHostname;
         }
-        @SuppressWarnings("UnusedDeclaration")
-        public boolean isReshow()
-        {
-            return reshow;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public void setReshow(boolean reshow) {
-            this.reshow = reshow;
-        }
 
     }
 
@@ -231,6 +224,7 @@ public class DuoController extends SpringActionController
         private String sig_response;
         private boolean test = false;
 
+        @SuppressWarnings("UnusedDeclaration")
         public boolean isStatus()
         {
             return status;
@@ -243,6 +237,7 @@ public class DuoController extends SpringActionController
 
         private boolean status = false; //Duo success or failure flag
 
+        @SuppressWarnings("UnusedDeclaration")
         public String getSig_request()
         {
             return sig_request;
@@ -258,6 +253,7 @@ public class DuoController extends SpringActionController
             return sig_response;
         }
 
+        @SuppressWarnings("UnusedDeclaration")
         public void setSig_response(String sig_response)
         {
             this.sig_response = sig_response;
@@ -274,6 +270,7 @@ public class DuoController extends SpringActionController
         }
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public static ActionURL getValidateURL(Container c)
     {
         return new ActionURL(ValidateAction.class, c);
@@ -299,7 +296,7 @@ public class DuoController extends SpringActionController
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);
-            getPageConfig().setHelpTopic(new HelpTopic("Duo 2-Factor"));
+            getPageConfig().setHelpTopic(new HelpTopic("duoTwoFactor"));
             return new JspView<>("/org/labkey/authentication/duo/duoEntry.jsp", form, errors);
         }
 
