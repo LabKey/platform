@@ -2339,7 +2339,8 @@ public class StudyController extends BaseStudyController
         {
             initRequest(form);
 
-            if (_def.isShared())
+            // TODO need a shorthand for this check
+            if (_def.isShared() && _def.getContainer().equals(_def.getDefinitionContainer()))
                 return new HtmlView("Error", "Cannot insert dataset data in this folder.  Use a sub-study to import data.", form.getDatasetId());
 
             if (_def.getTypeURI() == null)
