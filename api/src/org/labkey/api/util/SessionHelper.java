@@ -96,13 +96,24 @@ public class SessionHelper
     }
 
 
+    /**
+     * Clears all session attributes.
+     *
+     * @param request Current user request
+     */
     public static void clearSession(@NotNull HttpServletRequest request)
     {
         clearSession(request, Collections.<String>emptySet());
     }
 
 
-    public static void clearSession(@NotNull HttpServletRequest request, Set<String> attributesToPreserve)
+    /**
+     * Clears all session attributes, except for those specified in attributesToPreserve.
+     *
+     * @param request Current user request
+     * @param attributesToPreserve Names of attributes to preserve in the session
+     */
+    public static void clearSession(@NotNull HttpServletRequest request, @NotNull Set<String> attributesToPreserve)
     {
         if (request instanceof AuthenticatedRequest)
         {
