@@ -20,25 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.AggregateColumnInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.CrosstabDimension;
-import org.labkey.api.data.CrosstabMeasure;
-import org.labkey.api.data.CrosstabMember;
-import org.labkey.api.data.CrosstabSettings;
-import org.labkey.api.data.CrosstabTableInfo;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.NullColumnInfo;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.query.AliasManager;
@@ -935,6 +917,13 @@ public class QueryPivot extends QueryRelation
         {
             // UNDONE
         }
+
+        @Override
+        public Sort getDefaultSort()
+        {
+            return new Sort();
+        }
+
     }
 
     private CrosstabMeasure.AggregateFunction toAggFn(QAggregate.Type aggType)
