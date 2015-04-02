@@ -57,7 +57,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                 title: "Selected Fields",
                 border: false,
                 width: 200,
-                style: {"border-left-width": "1px"},
+                style: 'border-left-width: 1px',
                 layout: {
                     type: "hbox",
                     align: "stretch"
@@ -82,7 +82,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                             '    <td class="labkey-grab"></td>',
                             '    <td><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
                             '    <td><div class="item-aggregate">{[this.getAggegateCaption(values)]}</div></td>',
+
+                            /* Clicking this will fire the onToolGear() function */
                             '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-gear" title="Edit"></div></td>',
+
+                            /* Clicking this will fire the onToolClose() function */
                             '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
                             '  </tr>',
                             '</table>',
@@ -90,45 +94,46 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                             {
                                 getFieldCaption : function (values) {
                                     if (values.title) {
-                                        return Ext4.util.Format.htmlEncode(values.title);
+                                        return Ext4.htmlEncode(values.title);
                                     }
 
                                     var fieldKey = values.fieldKey;
                                     var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
-                                    if (fieldMeta)
-                                    {
+                                    if (fieldMeta) {
                                         // caption is already htmlEncoded
                                         if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
                                             return fieldMeta.data.caption;
                                         }
-                                        return Ext4.util.Format.htmlEncode(fieldMeta.data.name);
+                                        return Ext4.htmlEncode(fieldMeta.data.name);
                                     }
-                                    return Ext4.util.Format.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
+                                    return Ext4.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
                                 },
 
                                 getAggegateCaption : function (values) {
-                                    var fieldKey = values.fieldKey;
-                                    var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
-                                    var labels = [];
-                                    aggregateStore.each(function(rec){
-                                        if (rec.get('fieldKey') == fieldKey) {
+                                    var fieldKey = values.fieldKey,
+                                        labels = [],
+                                        caption = '';
+
+                                    aggregateStore.each(function(rec) {
+                                        if (rec.get('fieldKey') === fieldKey) {
                                             labels.push(rec.get('type'));
                                         }
-                                    }, this);
+                                    });
+
                                     labels = Ext4.Array.unique(labels);
 
                                     if (labels.length) {
-                                        return Ext4.util.Format.htmlEncode(labels.join(','));
+                                        caption = Ext4.htmlEncode(labels.join(','));
                                     }
 
-                                    return "";
+                                    return caption;
                                 }
                             }
                     ),
                     listeners: {
                         scope: this,
                         render: function(view) {
-                            this.addDataViewDragDop(view, 'columnsTabView');
+                            this.addDataViewDragDrop(view, 'columnsTabView');
                         }
                     }
                 }]
@@ -162,9 +167,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
         var fieldKey = columnRecord.data.fieldKey;
         var metadataRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
 
-        if (!this._editPropsWin)
-        {
-            var fieldMetaStore = this.fieldMetaStore;
+        if (!this._editPropsWin) {
             var aggregateStoreCopy = this.createAggregateStore(); //NOTE: we deliberately create a separate store to use with this window.
             var aggregateStore = this.aggregateStore;
             var columnsList = this.getList();
@@ -335,9 +338,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
     },
 
     createDefaultRecordData : function (fieldKey) {
-        if (fieldKey)
-        {
-            var o = {fieldKey: fieldKey};
+        var o = {};
+
+        if (fieldKey) {
+            o.fieldKey = fieldKey;
             var fk = LABKEY.FieldKey.fromString(fieldKey);
             var record = this.fieldMetaStore.getById(fieldKey.toUpperCase());
             if (record) {
@@ -346,10 +350,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
             else {
                 o.name = fk.name + " (not found)";
             }
-            return o;
         }
 
-        return { };
+        return o;
     },
 
     setShowHiddenFields : function (showHidden) {

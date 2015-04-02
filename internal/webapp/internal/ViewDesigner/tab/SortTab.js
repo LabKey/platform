@@ -90,7 +90,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
                     listeners: {
                         scope: this,
                         render: function(view) {
-                            this.addDataViewDragDop(view, 'sortsTabView');
+                            this.addDataViewDragDrop(view, 'sortsTabView');
                         }
                     },
                     items: [{

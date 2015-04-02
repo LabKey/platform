@@ -15,14 +15,19 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
         }];
 
         this.callParent([config]);
+
+        this.addEvents('beforetooltipshow', 'recordremoved');
     },
 
     initComponent : function () {
         this.callParent();
 
-        this.getList().on('selectionchange', this.onListSelectionChange, this);
-        this.getList().on('render', function (list) {
-            this.addEvents("beforetooltipshow");
+        var list = this.getList();
+
+        list.on('selectionchange', this.onListSelectionChange, this);
+        list.on('beforetooltipshow', this.onListBeforeToolTipShow, this);
+        list.on('beforeitemclick', this.onListBeforeClick, this);
+        list.on('render', function() {
             this.tooltip = Ext4.create('Ext.tip.ToolTip',{
                 renderTo: Ext4.getBody(),
                 target: this.getEl(),
@@ -34,14 +39,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
                         if (!el)
                             return false;
                         var record = this.getRecord(el.dom);
-                        return this.fireEvent("beforetooltipshow", this, qt, record, el);
+                        return this.fireEvent('beforetooltipshow', this, qt, record, el);
                     },
                     scope: this
                 }
             });
         }, this.getList(), {single: true});
-        this.getList().on('beforetooltipshow', this.onListBeforeToolTipShow, this);
-        this.getList().on('beforeitemclick', this.onListBeforeClick, this);
     },
 
     setShowHiddenFields : Ext4.emptyFn,
@@ -183,30 +186,23 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
     },
 
     removeRecord : function (fieldKeyOrIndex) {
-        var index = this.getRecordIndex(fieldKeyOrIndex);
-        var record = this.getList().store.getAt(index);
-        if (record)
-        {
+        var index = this.getRecordIndex(fieldKeyOrIndex),
+            store = this.getList().store,
+            record = store.getAt(index);
+
+        if (record) {
             // remove from the store and select sibling
-            this.getList().store.removeAt(index);
-            var i = index < this.getList().store.getCount() ? index : index - 1;
+            store.removeAt(index);
+            var i = index < store.getCount() ? index : index - 1;
             if (i > -1) {
                 this.getList().select(i);
             }
 
-            // uncheck the field tree
-            // TODO reenable after conversion to Ext4
-            //var upperFieldKey = record.data.fieldKey.toUpperCase();
-            //var treeNode = this.designer.fieldsTree.getRootNode().findChildBy(function (node) {
-            //    return node.attributes.fieldKey.toUpperCase() == upperFieldKey;
-            //}, null, true);
-            //if (treeNode) {
-            //    treeNode.getUI().toggleCheck(false);
-            //}
+            this.fireEvent('recordremoved', record.get('fieldKey').toUpperCase());
         }
     },
 
-    addDataViewDragDop : function(view, groupName) {
+    addDataViewDragDrop : function(view, groupName) {
         new Ext4.view.DragZone({
             view: view,
             ddGroup: groupName,

@@ -141,7 +141,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                     listeners: {
                         scope: this,
                         render: function(view) {
-                            this.addDataViewDragDop(view, 'filtersTabView');
+                            this.addDataViewDragDrop(view, 'filtersTabView');
                         }
                     },
                     items: [{
@@ -318,8 +318,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
         };
     },
 
-    onToolClose : function (index, item, e)
-    {
+    onToolClose : function (index, item, e) {
         var o = this.getClauseFromNode(index, e.getTarget());
         if (!o) {
             return;

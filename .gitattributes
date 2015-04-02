@@ -8091,6 +8091,7 @@ internal/webapp/internal/ViewDesigner/FieldMetaRecord.js -text
 internal/webapp/internal/ViewDesigner/FieldMetaStore.js -text
 internal/webapp/internal/ViewDesigner/FieldTreeLoader.js -text
 internal/webapp/internal/ViewDesigner/button/PaperclipButton.js -text
+internal/webapp/internal/ViewDesigner/data/Cache.js -text
 internal/webapp/internal/ViewDesigner/field/FilterOpCombo.js -text
 internal/webapp/internal/ViewDesigner/field/FilterTextValue.js -text
 internal/webapp/internal/ViewDesigner/tab/BaseTab.js -text

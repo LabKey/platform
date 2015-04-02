@@ -3,42 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext4.define('LABKEY.ext4.designer.FieldProxy', {
-    extend: 'Ext.data.proxy.Ajax',
-    alias: 'proxy.field',
-    doRequest: function(operation, callback, scope) {
-        var writer = this.getWriter(),
-                request = this.buildRequest(operation);
-
-        if (operation.allowWrite()) {
-            request = writer.write(request);
-        }
-
-        Ext4.apply(request, {
-            binary: this.binary,
-            headers: this.headers,
-            timeout: this.timeout,
-            callback: this.createRequestCallback(request, operation, callback, scope),
-            method: this.getMethod(request),
-            disableCaching: false,
-            scope: this
-        });
-
-        // here is the special sauce, we include the node id as an
-        // 'fk' parameter when making requests against getQueryDetails
-        if (!Ext4.isEmpty(request.params.node) &&
-                request.params.node !== LABKEY.internal.ViewDesigner.FieldMetaTreeStore.ROOT_ID)
-        {
-            request.params.fk = request.params.node;
-            delete request.params.node;
-        }
-
-        Ext4.Ajax.request(request);
-
-        return request;
-    }
-});
-
 Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
 
     extend: 'Ext.data.TreeStore',
@@ -53,6 +17,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
 
     queryName: undefined,
 
+    viewName: undefined,
+
     constructor : function(config) {
 
         if (!config.schemaName || !config.queryName) {
@@ -61,7 +27,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
 
         var params = {
             schemaName: config.schemaName,
-            queryName: config.queryName
+            queryName: config.queryName,
+            viewName: config.viewName
         };
 
         if (config.fk) {
@@ -69,8 +36,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
         }
 
         this.proxy = {
-            type: 'field',
-            url: LABKEY.ActionURL.buildURL('query', 'getQueryDetails.api', config.containerPath, params),
+            type: 'querydetails',
+            schema: config.schemaName,
+            query: config.queryName,
+            view: config.viewName,
             reader: {
                 type: 'json',
                 root: 'columns',
@@ -119,6 +88,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
 
     queryName: undefined,
 
+    viewName: undefined,
+
     statics: {
         ROOT_ID: '<ROOT>'
     },
@@ -131,14 +102,27 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
 
         var params = {
             schemaName: config.schemaName,
-            queryName: config.queryName
+            queryName: config.queryName,
+            viewName: config.viewName
         };
 
         if (config.fk) {
             params.fk = config.fk;
         }
 
-        this.url = LABKEY.ActionURL.buildURL('query', 'getQueryDetails.api', config.containerPath, params);
+        this.proxy = {
+            type: 'querydetails',
+            schema: config.schemaName,
+            query: config.queryName,
+            view: config.viewName,
+            reader: {
+                type: 'json',
+                root: 'columns',
+                idProperty: function(json) {
+                    return json.fieldKeyPath.toUpperCase();
+                }
+            }
+        };
 
         this._loading = false;
 
@@ -161,9 +145,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
         this._loading = false;
         var loadError = { message: error };
 
-        if (response && response.getResponseHeader && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
-        {
-            var errorJson = Ext4.JSON.decode(response.responseText);
+        if (response && response.getResponseHeader && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0) {
+            var errorJson = Ext4.decode(response.responseText);
             if (errorJson && errorJson.exception) {
                 loadError.message = errorJson.exception;
             }
@@ -200,15 +183,13 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
         }
 
         var upperFieldKey = fieldKey.toUpperCase();
-        if (upperFieldKey == LABKEY.internal.ViewDesigner.FieldMetaStore.ROOT_ID || this.lookupLoaded[upperFieldKey])
-        {
+        if (upperFieldKey == LABKEY.internal.ViewDesigner.FieldMetaStore.ROOT_ID || this.lookupLoaded[upperFieldKey]) {
             var r = this.queryLookup(upperFieldKey);
             if (options.callback) {
                 options.callback.call(options.scope || this, r, options, true);
             }
         }
-        else
-        {
+        else {
             var o = Ext4.applyIf({
                 params: { fk: fieldKey },
                 callback: options.callback.createSequence(function () { this.lookupLoaded[upperFieldKey] = true; }, this),

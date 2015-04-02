@@ -3,7 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
 Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     extend: 'Ext.panel.Panel',
@@ -27,6 +26,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         // For tooltips on the fieldsTree TreePanel
         Ext4.tip.QuickTipManager.init();
 
+        this.cache = LABKEY.internal.ViewDesigner.QueryDetailsCache;
         this.dataRegion = config.dataRegion;
 
         this.containerPath = config.containerPath;
@@ -34,6 +34,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         this.queryName = config.queryName;
         this.viewName = config.viewName || "";
         this.query = config.query;
+
+        this.cache.add({
+            schema: this.schemaName,
+            query: this.queryName,
+            view: this.viewName
+        }, this.query);
 
         // Find the custom view in the LABKEY.Query.getQueryDetails() response.
         this.customView = null;
@@ -69,13 +75,15 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             data: this.query
         });
 
+        this.getColumnTree();
+
         // Add any additional field metadata for view's selected columns, sorts, filters.
         // The view may be filtered or sorted upon columns not present in the query's selected column metadata.
         // The FieldMetaStore uses a reader that expects the field metadata to be under a 'columns' property instead of 'fields'
         if (Ext4.isDefined(this.customView)) {
             this.fieldMetaStore.loadRawData({
                 columns: this.customView.fields
-            }, true);
+            }, true /* append the records */);
         }
 
         // Add user filters
@@ -170,65 +178,48 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             queryName: this.queryName,
             viewName: this.viewName,
             fieldMetaStore: this.fieldMetaStore,
-            customView: this.customView
+            customView: this.customView,
+            listeners: {
+                recordremoved: function(fieldKey) {
+                    var node = this.getColumnTree().getStore().getNodeById(fieldKey);
+                    if (node) {
+                        node.set('checked', false);
+                    }
+                },
+                scope: this
+            }
         });
 
         this.filterTab = Ext4.create('LABKEY.internal.ViewDesigner.tab.FilterTab', {
             name: "FilterTab",
             designer: this,
             fieldMetaStore: this.fieldMetaStore,
-            customView: this.customView
+            customView: this.customView,
+            listeners: {
+                recordremoved: function(fieldKey) {
+                    var node = this.getColumnTree().getStore().getNodeById(fieldKey);
+                    if (node) {
+                        node.set('checked', false);
+                    }
+                },
+                scope: this
+            }
         });
 
         this.sortTab = Ext4.create('LABKEY.internal.ViewDesigner.tab.SortTab', {
             name: "SortTab",
             designer: this,
             fieldMetaStore: this.fieldMetaStore,
-            customView: this.customView
-        });
-
-        var treeStore = Ext4.create('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
-            containerPath: this.containerPath,
-            schemaName: this.schemaName,
-            queryName: this.queryName
-        });
-
-        this.fieldsTree = Ext4.create('Ext.tree.TreePanel', {
-            autoScroll: true,
-            border: false,
-            cls: 'labkey-fieldmeta-tree',
-            rootVisible: false,
-            store: treeStore,
-            //root: new Ext.tree.AsyncTreeNode({
-            //    id: LABKEY.ext4.designer.FieldMetaStore.ROOT_ID,
-            //    expanded: true,
-            //    expandable: false,
-            //    draggable: false
-            //}),
-            //rootVisible: false,
-            //loader: new LABKEY.ext.FieldTreeLoader({
-            //    store: this.fieldMetaStore,
-            //    designer: this,
-            //    containerPath: this.containerPath,
-            //    schemaName: this.schemaName,
-            //    queryName: this.queryName,
-            //    createNodeConfigFn: {fn: this.createNodeAttrs, scope: this}
-            //}),
-            dockedItems: [{
-                xtype: 'toolbar',
-                dock: 'bottom',
-                ui: 'footer',
-                cls: 'labkey-customview-treepanel-footer',
-                items: ['->',{
-                    xtype: "checkbox",
-                    boxLabel: "Show Hidden Fields",
-                    checked: this.showHiddenFields,
-                    handler: function (checkbox, checked) {
-                        this.setShowHiddenFields(checked);
-                    },
-                    scope: this
-                }]
-            }]
+            customView: this.customView,
+            listeners: {
+                recordremoved: function(fieldKey) {
+                    var node = this.getColumnTree().getStore().getNodeById(fieldKey);
+                    if (node) {
+                        node.set('checked', false);
+                    }
+                },
+                scope: this
+            }
         });
 
         this.callParent([config]);
@@ -252,6 +243,86 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
         this.fieldsTree.on('checkchange', this.onCheckChange, this);
         this.getInnerTabPanel().on('tabchange', this.onTabChange, this);
+    },
+
+    getColumnTree : function() {
+
+        if (!this.fieldsTree) {
+            var loaded = false,
+                rendered = false,
+                isExpand = false,
+                me = this;
+
+            var firstCheck = function() {
+                if (loaded && rendered) {
+                    if (isExpand) {
+                        isExpand = false;
+                        me.configureHidden();
+                        me.configureChecked();
+                    }
+                    else {
+                        // let things render
+                        Ext4.defer(function() {
+                            me.configureHidden();
+                            me.configureChecked();
+                        }, 300);
+                    }
+                }
+            };
+
+            // Create the tree store
+            var treeStore = Ext4.create('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
+                containerPath: this.containerPath,
+                schemaName: this.schemaName,
+                queryName: this.queryName,
+                viewName: this.viewName,
+                listeners: {
+                    load: function(store) {
+                        loaded = true;
+                        firstCheck();
+
+                        this.fieldMetaStore.loadRawData(store.getProxy().getReader().rawData, true);
+                    },
+                    expand: function() {
+                        isExpand = true;
+                        firstCheck(); // each expand needs to configure the nodes again for hidden/checked
+                    },
+                    scope: this
+                }
+            });
+
+            this.fieldsTree = Ext4.create('Ext.tree.TreePanel', {
+                autoScroll: true,
+                border: false,
+                cls: 'labkey-fieldmeta-tree',
+                rootVisible: false,
+                store: treeStore,
+                dockedItems: [{
+                    xtype: 'toolbar',
+                    dock: 'bottom',
+                    ui: 'footer',
+                    cls: 'labkey-customview-treepanel-footer',
+                    items: ['->',{
+                        xtype: 'checkbox',
+                        boxLabel: 'Show Hidden Fields',
+                        checked: this.showHiddenFields,
+                        handler: function(checkbox, checked) {
+                            this.setShowHiddenFields(checked);
+                        },
+                        scope: this
+                    }]
+                }],
+                listeners: {
+                    afterrender: function() {
+                        rendered = true;
+                        firstCheck();
+                    },
+                    scope: this
+                }
+            });
+        }
+
+        return this.fieldsTree;
     },
 
     getTabsMainPanel : function() {
@@ -587,22 +658,41 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         return undefined;
     },
 
+    showHideNodes : function() {
+
+        var showHidden = this.showHiddenFields,
+            view = this.fieldsTree.getView();
+
+        // show hidden fields in fieldsTree
+        this.fieldsTree.getRootNode().cascadeBy(function(node) {
+            if (node.isRoot()) {
+                return;
+            }
+
+            var hiddenField = node.get('hidden'),
+                elem = Ext4.fly(view.getNode(node));
+
+            if (elem) {
+                if (showHidden) {
+                    if (hiddenField) {
+                        elem.setDisplayed('block');
+                    }
+                }
+                else if (hiddenField) {
+                    elem.setDisplayed('none');
+                }
+            }
+            //else {
+            //    console.warn('Unable to find the element for:', "'" + node.get('fieldKey') + "'");
+            //}
+        });
+
+    },
+
     setShowHiddenFields : function (showHidden) {
         this.showHiddenFields = showHidden;
 
-        // show hidden fields in fieldsTree
-        this.fieldsTree.getRootNode().cascade(function (node) {
-            if (showHidden) {
-                if (node.hidden) {
-                    node.ui.show();
-                }
-            }
-            else {
-                if (node.attributes.hidden) {
-                    node.ui.hide();
-                }
-            }
-        }, this);
+        this.showHideNodes();
 
         var tabs = this.getDesignerTabs();
         for (var i = 0; i < tabs.length; i++)
@@ -667,35 +757,37 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     onCheckChange : function (node, checked) {
         if (checked) {
+            //console.log('add:', '\'' + node.get('fieldKey') + '\'');
             this.addRecord(node.get('fieldKey'));
         }
         else {
+            //console.log('remove:', '\'' + node.get('fieldKey') + '\'');
             this.removeRecord(node.get('fieldKey'));
         }
     },
 
     onTabChange : function () {
+        this.configureChecked();
+    },
 
+    configureHidden : function() {
+        this.showHideNodes();
+    },
+
+    configureChecked : function() {
         var tab = this.getActiveDesignerTab();
-        if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab)
-        {
+        if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab) {
             // get the checked fields from the new tab's store
-            var storeRecords = tab.getList().getStore().getRange();
-            var checkedFieldKeys = {};
-            for (var i = 0; i < storeRecords.length; i++) {
-                checkedFieldKeys[storeRecords[i].get("fieldKey").toUpperCase()] = true;
+            var columns = tab.getList().getStore().getRange(),
+                checkedFieldKeys = {};
+
+            for (var i = 0; i < columns.length; i++) {
+                checkedFieldKeys[columns[i].get('fieldKey').toUpperCase()] = true;
             }
 
-            // suspend check events so checked items aren't re-added to the tab's store
-            // TODO reenable after conversion to Ext4
-            //this.fieldsTree.suspendEvents();
-            //this.fieldsTree.root.cascade(function () {
-            //    var fieldKey = this.attributes.fieldKey;
-            //    if (fieldKey) {
-            //        this.getUI().toggleCheck(fieldKey.toUpperCase() in checkedFieldKeys);
-            //    }
-            //});
-            //this.fieldsTree.resumeEvents();
+            this.getColumnTree().getRootNode().cascadeBy(function(node) {
+                node.set('checked', node.internalId in checkedFieldKeys);
+            }, this);
         }
     },
 
@@ -731,14 +823,13 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     onApplyClick : function (btn, e) {
         // Save a session view. Session views can't be inherited or shared.
-        var props = {
+        this.save({
             name: this.customView.name,
             hidden: this.customView.hidden,
             shared: false,
             inherit: false,
             session: true
-        };
-        this.save(props);
+        });
     },
 
     onSaveClick : function (btn, e) {
@@ -788,31 +879,32 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         return true;
     },
 
-    save : function (properties, callback, scope) {
-        if (this.fireEvent("beforeviewsave", this) !== false)
-        {
+    save : function(properties, callback, scope) {
+        if (this.fireEvent('beforeviewsave', this) !== false) {
             if (!this.validate()) {
                 return false;
             }
 
-            var edited = { };
-            var urlParameters = { };
-            var tabs = this.getDesignerTabs();
-            for (var i = 0; i < tabs.length; i++)
-            {
-                var tab = tabs[i];
+            var edited = {},
+                urlParameters = {},
+                tabs = this.getDesignerTabs(),
+                tab, i;
+
+            for (i = 0; i < tabs.length; i++) {
+                tab = tabs[i];
                 if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab) {
                     tab.save(edited, urlParameters);
                 }
             }
+
             Ext4.apply(edited, properties);
 
-            this.doSave(edited, urlParameters, callback);
+            this.doSave(edited, urlParameters, callback, scope);
         }
     },
 
     // private
-    doSave : function (edited, urlParameters, callback, scope)
+    doSave : function(edited, urlParameters, callback, scope)
     {
         LABKEY.Query.saveQueryViews({
             containerPath: this.containerPath,
@@ -831,7 +923,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         });
     },
 
-    close : function ()
+    close : function()
     {
         if (this.dataRegion) {
             this.dataRegion.hideCustomizeView(true);

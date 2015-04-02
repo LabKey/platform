@@ -38,7 +38,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaRecord', {
             mapping: 'name',
             convert: function(v, rec) {
                 if (!Ext4.isEmpty(rec.raw.caption) && rec.raw.caption != '&nbsp;') {
-                    return rec.raw.caption;
+                    return rec.raw.caption; // + (rec.raw.hidden === true ? ' (hidden)' : '');
                 }
                 return v;
             }
@@ -65,16 +65,17 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaRecord', {
             type: 'boolean',
             mapping: 'selectable',
             convert: function(v) { return v === false; }
-        },{
+        }, {
             name: 'iconCls',
             type: 'string',
             defaultValue: 'x4-hide-display'
-        },{
-            name: 'qtip',
-            convert: function(v, rec) {
-                return rec.getToolTipHtml();
-            }
         }
+        //},{
+        //    name: 'qtip',
+        //    convert: function(v, rec) {
+        //        return rec.getToolTipHtml();
+        //    }
+        //}
     ],
 
     getToolTipHtml : function () {

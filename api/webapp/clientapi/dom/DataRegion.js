@@ -2381,6 +2381,7 @@ if (!LABKEY.DataRegions)
     LABKEY.DataRegion2.loadViewDesigner = function(cb, scope) {
         LABKEY.requiresExt4Sandbox(true, function() {
             LABKEY.requiresScript([
+                'internal/ViewDesigner/data/Cache.js',
                 'internal/ViewDesigner/ux/ComponentDataView.js',
                 'internal/ViewDesigner/button/PaperclipButton.js',
                 'internal/ViewDesigner/field/FilterOpCombo.js',
