@@ -31,17 +31,17 @@ import javax.servlet.http.HttpServletResponse;
  * Date: Oct 10, 2007
  * Time: 6:49:05 PM
  */
-public abstract interface AuthenticationProvider
+public interface AuthenticationProvider
 {
-    public @Nullable ActionURL getConfigurationLink();
-    public String getName();
-    public String getDescription();
-    public void logout(HttpServletRequest request);
-    public void activate() throws Exception;
-    public void deactivate() throws Exception;
-    public boolean isPermanent();
+    @Nullable ActionURL getConfigurationLink();
+    String getName();
+    String getDescription();
+    void logout(HttpServletRequest request);
+    void activate() throws Exception;
+    void deactivate() throws Exception;
+    boolean isPermanent();
 
-    interface RequestAuthenticationProvider extends AuthenticationProvider
+    interface SSOAuthenticationProvider extends AuthenticationProvider
     {
         AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws InvalidEmailException;
     }
@@ -69,7 +69,7 @@ public abstract interface AuthenticationProvider
         boolean bypass();
     }
 
-    public static class AuthenticationResponse
+    class AuthenticationResponse
     {
         private final @Nullable ValidEmail _email;
         private final @Nullable FailureReason _failureReason;
@@ -131,7 +131,7 @@ public abstract interface AuthenticationProvider
 
     // FailureReasons are only reported to administrators (in the audit log and/or server log), NOT to users (and potential
     // hackers).  We try to be as specific as possible.
-    public enum FailureReason
+    enum FailureReason
     {
         userDoesNotExist(ReportType.onFailure, "user does not exist"),
         badPassword(ReportType.onFailure, "incorrect password"),
@@ -161,7 +161,7 @@ public abstract interface AuthenticationProvider
         }
     }
 
-    public enum ReportType
+    enum ReportType
     {
         always, onFailure, never
     }

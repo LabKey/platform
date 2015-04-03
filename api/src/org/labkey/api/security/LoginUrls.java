@@ -17,13 +17,11 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
-
-import javax.servlet.http.HttpServletRequest;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 
 /**
  * User: adam
@@ -32,17 +30,20 @@ import javax.servlet.http.HttpServletRequest;
  */
 public interface LoginUrls extends UrlProvider
 {
-    public ActionURL getConfigureURL();
-    public ActionURL getConfigureDbLoginURL();
-    public ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable Pair<String, String>[] extraParameters);
-    public ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message);
-    public NavTree appendAuthenticationNavTrail(NavTree root);
-    public ActionURL getInitialUserURL();
-    public ActionURL getLoginURL();
-    public ActionURL getLoginURL(URLHelper returnURL);
-    public ActionURL getLoginURL(Container c, @Nullable URLHelper returnURL);
-    public ActionURL getLogoutURL(Container c);
-    public ActionURL getLogoutURL(Container c, URLHelper returnURL);
-    public ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL);
-    public ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL);
+    ActionURL getConfigureURL();
+    ActionURL getConfigureDbLoginURL();
+    ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable Pair<String, String>[] extraParameters);
+    ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message);
+    ActionURL getInitialUserURL();
+    ActionURL getLoginURL();
+    ActionURL getLoginURL(URLHelper returnURL);
+    ActionURL getLoginURL(Container c, @Nullable URLHelper returnURL);
+    ActionURL getLogoutURL(Container c);
+    ActionURL getLogoutURL(Container c, URLHelper returnURL);
+    ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL);
+    ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL);
+    ActionURL getEnableProviderURL(AuthenticationProvider provider);
+    ActionURL getDisableProviderURL(AuthenticationProvider provider);
+
+    NavTree appendAuthenticationNavTrail(NavTree root);
 }

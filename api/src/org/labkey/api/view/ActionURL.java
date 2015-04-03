@@ -45,7 +45,7 @@ public class ActionURL extends URLHelper implements Cloneable
         return AppProps.getInstance().getUseContainerRelativeURL();
     }
 
-    public static enum Param
+    public enum Param
     {
         returnUrl,
         redirectUrl,

@@ -38,9 +38,10 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
-import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
+import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.DateUtil;
@@ -99,6 +100,7 @@ public class AuthenticationManager
 
     public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";
     public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_";
+
     public enum Priority { High, Low }
 
     // TODO: Replace this with a generic domain-claiming mechanism
@@ -413,10 +415,10 @@ public class AuthenticationManager
                     if (areNotBlank(id, password))
                         authResponse = ((LoginFormAuthenticationProvider)authProvider).authenticate(id, password, returnURL);
                 }
-                else if (authProvider instanceof RequestAuthenticationProvider)
+                else if (authProvider instanceof SSOAuthenticationProvider)
                 {
                     if (areNotNull(request, response))
-                        authResponse = ((RequestAuthenticationProvider)authProvider).authenticate(request, response, returnURL);
+                        authResponse = ((SSOAuthenticationProvider)authProvider).authenticate(request, response, returnURL);
                 }
             }
             catch (RedirectException e)
@@ -431,31 +433,7 @@ public class AuthenticationManager
             {
                 if (authResponse.isAuthenticated())
                 {
-                    ValidEmail email = authResponse.getValidEmail();
-                    User user;
-
-                    try
-                    {
-                        user = SecurityManager.afterAuthenticate(email);
-                    }
-                    catch (SecurityManager.UserManagementException e)
-                    {
-                        // Make sure we record any unexpected problems during user creation; one goal is to help track down cause of #20712
-                        ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, email.getEmailAddress(), true);
-                        ExceptionUtil.logExceptionToMothership(request, e);
-
-                        return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationError);
-                    }
-
-                    if (!user.isActive())
-                    {
-                        addAuditEvent(user, request, "Inactive user " + user.getEmail() + " attempted to login");
-                        return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
-                    }
-
-                    _userProviders.put(user.getUserId(), authProvider);
-                    addAuditEvent(user, request, email + " logged in successfully via " + authProvider.getName() + " authentication.");
-                    return new PrimaryAuthenticationResult(user);
+                    return finalizePrimaryAuthentication(request, authProvider, authResponse.getValidEmail());
                 }
                 else
                 {
@@ -540,6 +518,36 @@ public class AuthenticationManager
         }
 
         return new PrimaryAuthenticationResult(AuthenticationStatus.BadCredentials);
+    }
+
+    @NotNull
+    public static PrimaryAuthenticationResult finalizePrimaryAuthentication(HttpServletRequest request, AuthenticationProvider authProvider, ValidEmail email)
+    {
+        User user;
+
+        try
+        {
+            user = SecurityManager.afterAuthenticate(email);
+        }
+        catch (SecurityManager.UserManagementException e)
+        {
+            // Make sure we record any unexpected problems during user creation; one goal is to help track down cause of #20712
+            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, email.getEmailAddress(), true);
+            ExceptionUtil.logExceptionToMothership(request, e);
+
+            return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationError);
+        }
+
+        if (!user.isActive())
+        {
+            addAuditEvent(user, request, "Inactive user " + user.getEmail() + " attempted to login");
+            return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
+        }
+
+        _userProviders.put(user.getUserId(), authProvider);
+        addAuditEvent(user, request, email + " logged in successfully via " + authProvider.getName() + " authentication.");
+
+        return new PrimaryAuthenticationResult(user);
     }
 
 
@@ -668,13 +676,6 @@ public class AuthenticationManager
     }
 
 
-    // TODO: Remove... use LoginUrls instead
-    public interface URLFactory
-    {
-        ActionURL getActionURL(AuthenticationProvider provider);
-    }
-
-
     public static boolean isActive(String providerName)
     {
         AuthenticationProvider provider = getProvider(providerName);
@@ -732,6 +733,11 @@ public class AuthenticationManager
         private final String _urlhash;
         private final boolean _skipProfile;
 
+        private LoginReturnProperties()
+        {
+            this(null, null, false);
+        }
+
         public LoginReturnProperties(URLHelper returnUrl, String urlhash, boolean skipProfile)
         {
             _returnUrl = returnUrl;
@@ -760,6 +766,13 @@ public class AuthenticationManager
     {
         HttpSession session = request.getSession(true);
         session.setAttribute(getLoginReturnPropertiesSessionKey(), properties);
+    }
+
+
+    public static @Nullable LoginReturnProperties getLoginReturnProperties(HttpServletRequest request)
+    {
+        HttpSession session = request.getSession(true);
+        return (LoginReturnProperties)session.getAttribute(getLoginReturnPropertiesSessionKey());
     }
 
 
@@ -861,16 +874,51 @@ public class AuthenticationManager
             }
         }
 
-        LoginReturnProperties properties = (LoginReturnProperties)session.getAttribute(getLoginReturnPropertiesSessionKey());
-
+        LoginReturnProperties properties = getLoginReturnProperties(request);
         SecurityManager.setAuthenticatedUser(request, primaryAuthUser);
-
-        // TODO: Use LoginController.getAfterLoginURL() instead
-        URLHelper url = AppProps.getInstance().getHomePageActionURL();
-        if (null != properties && null != properties.getReturnUrl())
-            url = properties.getReturnUrl();
+        URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
         return new AuthenticationResult(primaryAuthUser, url);
+    }
+
+
+    public static URLHelper getAfterLoginURL(Container current, @Nullable LoginReturnProperties properties, @NotNull User user)
+    {
+        if (null == properties)
+            properties = new LoginReturnProperties();
+
+        URLHelper returnURL;
+
+        if (null != properties.getReturnUrl())
+        {
+            returnURL = properties.getReturnUrl();
+        }
+        else
+        {
+            // We don't have a returnURL. Try not to redirect to a folder where the user doesn't have permissions, #12947
+            Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
+            returnURL = !c.hasPermission(user, ReadPermission.class) ? getWelcomeURL() : c.getStartURL(user);
+        }
+
+        // If this is user's first log in or some required field isn't filled in then go to update page first
+        if (!properties.isSkipProfile())
+        {
+            returnURL = PageFlowUtil.urlProvider(UserUrls.class).getCheckUserUpdateURL(current, returnURL, user.getUserId(), !user.isFirstLogin());
+        }
+
+        if (null != properties.getUrlhash())
+        {
+            returnURL.setFragment(properties.getUrlhash().replace("#", ""));
+        }
+
+        return returnURL;
+    }
+
+
+    public static URLHelper getWelcomeURL()
+    {
+        // goto "/" and let the default redirect happen
+        return new URLHelper(true);
     }
 
 

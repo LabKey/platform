@@ -26,8 +26,9 @@ import java.util.Map;
 
 public class ExprColumn extends ColumnInfo
 {
-    static public final String STR_TABLE_ALIAS = "'''~~TABLE~~'''";
-    SQLFragment _sql;
+    public static final String STR_TABLE_ALIAS = "'''~~TABLE~~'''";
+
+    private SQLFragment _sql;
     private ColumnInfo[] _dependentColumns;
 
     public ExprColumn(TableInfo parent, FieldKey key, SQLFragment sql, JdbcType type, ColumnInfo ... dependentColumns)
