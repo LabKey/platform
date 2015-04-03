@@ -40,7 +40,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.AuthenticationProvider;
@@ -57,10 +56,8 @@ import org.labkey.api.security.SecurityMessage;
 import org.labkey.api.security.TokenAuthentication;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -234,6 +231,25 @@ public class LoginController extends SpringActionController
             url.addReturnURL(returnURL);
             return url;
         }
+
+        @Override
+        public ActionURL getEnableProviderURL(AuthenticationProvider provider)
+        {
+            return getActionURL(provider, EnableAction.class);
+        }
+
+        @Override
+        public ActionURL getDisableProviderURL(AuthenticationProvider provider)
+        {
+            return getActionURL(provider, DisableAction.class);
+        }
+
+        private ActionURL getActionURL(AuthenticationProvider provider, Class<? extends Controller> getActionClass)
+        {
+            ActionURL url = new ActionURL(getActionClass, ContainerManager.getRoot());
+            url.addParameter("name", provider.getName());
+            return url;
+        }
     }
 
 
@@ -330,11 +346,6 @@ public class LoginController extends SpringActionController
 
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors) throws Exception
         {
-            // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
-            // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
-            if (!getUser().isGuest())
-                return HttpView.redirect(getAfterLoginURL(form.getReturnURLHelper(), form.getUrlhash(), getUser(), form.getSkipProfile()));   // TODO: This may be wrong...
-
             HttpServletRequest request = getViewContext().getRequest();
 
             // If we're reshowing, the user must have entered incorrect credentials.
@@ -346,18 +357,29 @@ public class LoginController extends SpringActionController
             }
             else
             {
-                // Reset authentication state. If, for example, user hits back button in the midst of two-factor auth
-                // workflow then start over.
-                SessionHelper.clearSession(request, PageFlowUtil.set(AuthenticationManager.getLoginReturnPropertiesSessionKey()));   // Preserve login return properties, if they exist
+                boolean isGuest = getUser().isGuest();
+
+                if (isGuest)
+                {
+                    // Reset authentication state. If, for example, user hits back button in the midst of two-factor auth
+                    // workflow then start over. Preserve login return properties, if they exist
+                    SessionHelper.clearSession(request, PageFlowUtil.set(AuthenticationManager.getLoginReturnPropertiesSessionKey()));
+                }
 
                 URLHelper returnURL = form.getReturnURLHelper();
+                LoginReturnProperties properties = null;
 
-                // Replace LoginReturnProperties if we have a returnURL
+                // Create LoginReturnProperties if we have a returnURL
                 if (null != returnURL)
-                {
-                    LoginReturnProperties properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
+                    properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
+
+                // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
+                // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
+                if (!isGuest)
+                    HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
+
+                if (null != properties)
                     AuthenticationManager.setLoginReturnProperties(request, properties);
-                }
             }
 
             return showLogin(form, errors, request, getPageConfig());
@@ -365,6 +387,20 @@ public class LoginController extends SpringActionController
 
         public boolean handlePost(LoginForm form, BindException errors) throws Exception
         {
+            // Handle a hash (#Example) on the originally requested URL. These aren't passed to the server on GET, so getView()
+            // never sees them. The standard login page uses JavaScript to post them as a hidden parameter. If we have one,
+            // update any previously stashed LoginReturnProperties.
+            if (null != form.getUrlhash())
+            {
+                HttpServletRequest request = getViewContext().getRequest();
+                LoginReturnProperties properties = AuthenticationManager.getLoginReturnProperties(request);
+
+                if (null != properties)
+                {
+                    AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(properties.getReturnUrl(), form.getUrlhash(), properties.isSkipProfile()));
+                }
+            }
+
             Project termsProject = getTermsOfUseProject(form);
 
             if (!isTermsOfUseApproved(form))
@@ -545,33 +581,6 @@ public class LoginController extends SpringActionController
         vBox.addView(view);
 
         return vBox;
-    }
-
-
-    private URLHelper getAfterLoginURL(@Nullable URLHelper returnURL, @Nullable String urlHash, @Nullable User user, boolean skipProfile)
-    {
-        Container current = getContainer();
-        Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
-
-        // Default redirect if returnURL is not specified. Try not to redirect to a folder where the user doesn't have permissions, #12947
-        if (null == returnURL)
-        {
-            returnURL = null == current || current.isRoot() || (null != user && !c.hasPermission(user, ReadPermission.class)) ? getWelcomeURL() :
-                    null != user ? c.getStartURL(user) : AppProps.getInstance().getHomePageActionURL();
-        }
-
-        // If this is user's first log in or some required field isn't filled in then go to update page first
-        if (!skipProfile && null != user)
-        {
-            returnURL = PageFlowUtil.urlProvider(UserUrls.class).getCheckUserUpdateURL(c, returnURL, user.getUserId(), !user.isFirstLogin());
-        }
-
-        if (null != urlHash)
-        {
-            returnURL.setFragment(urlHash.replace("#", ""));
-        }
-
-        return returnURL;
     }
 
 
@@ -845,13 +854,6 @@ public class LoginController extends SpringActionController
     }
 
 
-    private static URLHelper getWelcomeURL()
-    {
-        // goto "/" and let the default redirect happen
-        return new URLHelper(true);
-    }
-
-
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
@@ -865,7 +867,7 @@ public class LoginController extends SpringActionController
 
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            return form.getReturnURLHelper(getWelcomeURL());
+            return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
 
         public boolean doAction(ReturnUrlForm form, BindException errors) throws Exception
@@ -877,6 +879,7 @@ public class LoginController extends SpringActionController
         {
         }
     }
+
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
@@ -1697,39 +1700,6 @@ public class LoginController extends SpringActionController
             return returnUrl;
         }
     }
-
-
-    // TODO: No need for a factory... just add this to LoginUrls!
-    private static abstract class ConfigURLFactory implements AuthenticationManager.URLFactory
-    {
-        public ActionURL getActionURL(AuthenticationProvider provider)
-        {
-            ActionURL url = new ActionURL(getActionClass(), ContainerManager.getRoot());
-            url.addParameter("name", provider.getName());
-            return url;
-        }
-
-        protected abstract Class<? extends Controller> getActionClass();
-    }
-
-
-    public static class EnableURLFactory extends ConfigURLFactory
-    {
-        protected Class<? extends Controller> getActionClass()
-        {
-            return EnableAction.class;
-        }
-    }
-
-
-    public static class DisableURLFactory extends ConfigURLFactory
-    {
-        protected Class<? extends Controller> getActionClass()
-        {
-            return DisableAction.class;
-        }
-    }
-
 
 
     @AdminConsoleAction

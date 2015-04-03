@@ -31,7 +31,7 @@ import javax.servlet.http.HttpServletResponse;
  * User: tgaluhn
  * Date: 1/19/2015
  */
-public class SamlProvider implements AuthenticationProvider.RequestAuthenticationProvider
+public class SamlProvider implements AuthenticationProvider.SSOAuthenticationProvider
 {
     @Override
     public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException

@@ -35,7 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 
 @Deprecated
 // No longer supported, no longer works. However, this code is a useful model for future SSO providers (e.g., OpenID).
-public class OpenSSOProvider implements AuthenticationProvider.RequestAuthenticationProvider
+public class OpenSSOProvider implements AuthenticationProvider.SSOAuthenticationProvider
 {
     private static final Logger _log = Logger.getLogger(OpenSSOProvider.class);
     public static final String NAME = "OpenSSO";

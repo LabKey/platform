@@ -17,14 +17,12 @@
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
-<%@ page import="org.labkey.api.security.AuthenticationManager.URLFactory" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider" %>
+<%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
-<%@ page import="org.labkey.core.login.LoginController.DisableURLFactory" %>
-<%@ page import="org.labkey.core.login.LoginController.EnableURLFactory" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -33,8 +31,7 @@
     List<AuthenticationProvider> primary = AuthenticationManager.getAllPrimaryProviders();
     List<SecondaryAuthenticationProvider> secondary = AuthenticationManager.getAllSecondaryProviders();
 
-    URLFactory enable = new EnableURLFactory();
-    URLFactory disable = new DisableURLFactory();
+    LoginUrls urls = urlProvider(LoginUrls.class);
 %>
 
 <table>
@@ -50,7 +47,7 @@
 
     <tr><td colspan="5">These are the installed primary authentication providers:<br><br></td></tr>
 
-    <% appendProviders(out, primary, enable, disable); %>
+    <% appendProviders(out, primary, urls); %>
 
 <%
     if (!secondary.isEmpty())
@@ -59,7 +56,7 @@
         <tr><td colspan="5">&nbsp;</td></tr>
         <tr><td colspan="5">These are the installed secondary authentication providers:<br><br></td></tr>
 
-        <% appendProviders(out, secondary, enable, disable); %>
+        <% appendProviders(out, secondary, urls); %>
 <%
     }
 %>
@@ -70,7 +67,7 @@
 </table>
 
 <%!
-    private static void appendProviders(JspWriter out, List<? extends AuthenticationProvider> providers, URLFactory enable, URLFactory disable) throws IOException
+    private static void appendProviders(JspWriter out, List<? extends AuthenticationProvider> providers, LoginUrls urls) throws IOException
     {
         for (AuthenticationProvider authProvider : providers)
         {
@@ -87,13 +84,13 @@
                 if (AuthenticationManager.isActive(authProvider))
                 {
                     out.write("<td>");
-                    out.write(PageFlowUtil.textLink("disable", disable.getActionURL(authProvider).getEncodedLocalURIString()));
+                    out.write(PageFlowUtil.textLink("disable", urls.getDisableProviderURL(authProvider).getEncodedLocalURIString()));
                     out.write("</td>");
                 }
                 else
                 {
                     out.write("<td>");
-                    out.write(PageFlowUtil.textLink("enable", enable.getActionURL(authProvider).getEncodedLocalURIString()));
+                    out.write(PageFlowUtil.textLink("enable", urls.getEnableProviderURL(authProvider).getEncodedLocalURIString()));
                     out.write("</td>");
                 }
             }

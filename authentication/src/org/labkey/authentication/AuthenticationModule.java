@@ -25,6 +25,8 @@ import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.authentication.cas.CasAuthenticationProvider;
+import org.labkey.authentication.cas.CasController;
 import org.labkey.authentication.duo.DuoController;
 import org.labkey.authentication.duo.DuoProvider;
 import org.labkey.authentication.ldap.LdapAuthenticationProvider;
@@ -43,7 +45,6 @@ public class AuthenticationModule extends DefaultModule
     private static Logger _log = Logger.getLogger(AuthenticationModule.class);
     public static final String EXPERIMENTAL_OPENID_GOOGLE = "experimental-openid-google";
     public static final String EXPERIMENTAL_SAML_SERVICE_PROVIDER = "experimental-saml-sp";
-    public static final String EXPERIMENTAL_DUO_TWO_FACTOR_AUTHENTICATION = "experimental-duo";
 
     public String getName()
     {
@@ -69,6 +70,7 @@ public class AuthenticationModule extends DefaultModule
     protected void init()
     {
         addController("ldap", LdapController.class);
+        addController("cas", CasController.class);
         addController("oauth", OAuthController.class);
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_OPENID_GOOGLE, "Login using your Google account", "Authenticate using Google and OAuth 2.0.", true);
 
@@ -80,6 +82,8 @@ public class AuthenticationModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_SAML_SERVICE_PROVIDER, "Login using SAML", "Authenticate using a SAML Identity Provider.", true);
         if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_SAML_SERVICE_PROVIDER))
             AuthenticationManager.registerProvider(new SamlProvider(), Priority.Low);
+
+        AuthenticationManager.registerProvider(CasAuthenticationProvider.getInstance(), Priority.Low);
 
         addController("duo", DuoController.class);
         AuthenticationManager.registerProvider(new DuoProvider(), Priority.Low);

@@ -121,6 +121,7 @@ authentication/lib/jopenid-1.08.jar -text
 authentication/module.properties -text
 authentication/resources/credits/jars.txt -text
 authentication/resources/credits/source.txt -text
+authentication/schemas/casResponse.xsd -text
 authentication/src/com/duosecurity/duoweb/Base64.java -text
 authentication/src/com/duosecurity/duoweb/DuoWeb.java -text
 authentication/src/com/duosecurity/duoweb/DuoWebException.java -text
@@ -133,6 +134,10 @@ authentication/src/com/onelogin/saml/AuthRequest.java -text
 authentication/src/com/onelogin/saml/Certificate.java -text
 authentication/src/com/onelogin/saml/Response.java -text
 authentication/src/org/labkey/authentication/AuthenticationModule.java -text
+authentication/src/org/labkey/authentication/cas/CasAuthenticationProvider.java -text
+authentication/src/org/labkey/authentication/cas/CasController.java -text
+authentication/src/org/labkey/authentication/cas/CasManager.java -text
+authentication/src/org/labkey/authentication/cas/configure.jsp -text
 authentication/src/org/labkey/authentication/duo/DuoController.java -text
 authentication/src/org/labkey/authentication/duo/DuoManager.java -text
 authentication/src/org/labkey/authentication/duo/DuoProvider.java -text

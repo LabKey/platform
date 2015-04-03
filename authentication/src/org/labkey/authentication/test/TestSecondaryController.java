@@ -13,7 +13,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.authentication.duo.DuoController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -65,7 +64,7 @@ public class TestSecondaryController extends SpringActionController
         public ModelAndView getView(TestSecondaryForm form, boolean reshow, BindException errors) throws Exception
         {
             if (!getUser().isGuest())
-                return HttpView.redirect(DuoController.getAfterLoginURL(getContainer(), form.getReturnURLHelper(), form.getUrlhash(), getUser()));
+                HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), null, getUser()));
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);

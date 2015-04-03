@@ -36,6 +36,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFException;
@@ -54,7 +55,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class GoogleOAuthProvider implements AuthenticationProvider.RequestAuthenticationProvider
+public class GoogleOAuthProvider implements SSOAuthenticationProvider
 {
     public static final String NAME = "Google";
 

@@ -16,7 +16,6 @@
 package org.labkey.authentication.duo;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
@@ -32,9 +31,6 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserUrls;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -71,31 +67,6 @@ public class DuoController extends SpringActionController
             url.addParameter("reshow", "1");
 
         return url;
-    }
-
-    public static URLHelper getAfterLoginURL(Container current, @Nullable URLHelper returnURL, @Nullable String urlHash, @Nullable User user)
-    {
-        Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
-
-        // Default redirect if returnURL is not specified. Try not to redirect to a folder where the user doesn't have permissions
-        if (null == returnURL)
-        {
-            returnURL = null == current || current.isRoot() || (null != user && !c.hasPermission(user, ReadPermission.class)) ? new URLHelper(true) :
-                    null != user ? c.getStartURL(user) : AppProps.getInstance().getHomePageActionURL();
-        }
-
-        // If this is user's first log in or some required field isn't filled in then go to update page first
-        if (null != user)
-        {
-            returnURL = PageFlowUtil.urlProvider(UserUrls.class).getCheckUserUpdateURL(c, returnURL, user.getUserId(), !user.isFirstLogin());
-        }
-
-        if (null != urlHash)
-        {
-            returnURL.setFragment(urlHash.replace("#", ""));
-        }
-
-        return returnURL;
     }
 
     @AdminConsoleAction
@@ -218,7 +189,7 @@ public class DuoController extends SpringActionController
     }
 
 
-    public static class DuoForm extends ReturnUrlForm
+    public static class DuoForm
     {
         private String sig_request;
         private String sig_response;
@@ -279,20 +250,18 @@ public class DuoController extends SpringActionController
     @RequiresNoPermission
     public class ValidateAction extends FormViewAction<DuoForm>
     {
-
-        public static final String DUO_2_FACTOR_AUTHENTICATION = "Duo 2-Factor Authentication";
+        private static final String DUO_2_FACTOR_AUTHENTICATION = "Duo 2-Factor Authentication";
 
         @Override
         public void validateCommand(DuoForm form, Errors errors)
         {
-
         }
 
         @Override
         public ModelAndView getView(DuoForm form, boolean reshow, BindException errors) throws Exception
         {
             if (!getUser().isGuest())
-                return HttpView.redirect(getAfterLoginURL(getContainer(), form.getReturnURLHelper(), form.getUrlhash(), getUser()));
+                HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), null, getUser()));
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);

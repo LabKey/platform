@@ -81,8 +81,8 @@ import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
-import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
+import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -94,7 +94,6 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -127,7 +126,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1528,7 +1526,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresLogin @CSRF
+    @RequiresLogin @CSRF   // TODO: Move the "requiresUpdate()" check into AuthenticationManager.getAfterLoginUrl() and avoid an extra redirect
     public class CheckUpdateAction extends RedirectAction<CheckUserUpdateForm>
     {
         private URLHelper _target;
@@ -1545,7 +1543,7 @@ public class UserController extends SpringActionController
             if (form.isCheckIfRequired() && form.getReturnUrl() != null)
             {
                 getViewContext().addContextualRole(ReadPermission.class);
-                if (!requiresUpdate(getUser(), errors))
+                if (!requiresUpdate(getUser()))
                     _target = form.getReturnUrl().getURLHelper();
             }
 
@@ -1560,22 +1558,22 @@ public class UserController extends SpringActionController
                 _target = url;
             }
 
-            return !errors.hasErrors();
+            return true;
         }
 
-        private boolean requiresUpdate(User user, BindException errors) throws SQLException
+        private boolean requiresUpdate(User user) throws SQLException
         {
             String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), user);
             Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
 
             if (domain != null)
             {
-                try {
-
+                try
+                {
                     List<String> requiredFields = new ArrayList<>();
                     for (DomainProperty prop : domain.getProperties())
                     {
-                        if (prop.isRequired())
+                        if (prop.isRequired() && prop.isShownInUpdateView())
                             requiredFields.add(prop.getName());
                     }
 
@@ -1588,11 +1586,10 @@ public class UserController extends SpringActionController
 
                         Map<String, Object> params = Collections.emptyMap();
                         TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
-                        Results results = QueryService.get().select(table, table.getColumns(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()),
-                                null, params, true);
-                        ResultSet rs = results.getResultSet();
 
-                        try {
+                        try (Results results = QueryService.get().select(table, table.getColumns(),
+                                new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()), null, params, true))
+                        {
                             if (results.next())
                             {
                                 for (String fieldName : requiredFields)
@@ -1606,10 +1603,6 @@ public class UserController extends SpringActionController
                                     }
                                 }
                             }
-                        }
-                        finally
-                        {
-                            ResultSetUtil.close(rs);
                         }
                     }
                 }
