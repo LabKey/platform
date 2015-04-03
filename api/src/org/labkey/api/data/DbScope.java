@@ -1546,7 +1546,8 @@ public class DbScope
 
         private void runCommitTasks(CommitTaskOption taskOption)
         {
-            Set<Runnable> tasks = (taskOption == CommitTaskOption.PRECOMMIT ? _preCommitTasks : _postCommitTasks);
+            // Copy to avoid ConcurrentModificationExceptions
+            Set<Runnable> tasks = new HashSet<>(taskOption == CommitTaskOption.PRECOMMIT ? _preCommitTasks : _postCommitTasks);
 
             for (Runnable task : tasks)
             {
