@@ -326,7 +326,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         this.sideBar = new Ext.Panel({
-            //This is going to be where the sidebar content goes.
             name: 'sidebar',
             width: 195,
             border: false,
@@ -511,9 +510,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             style: {
                 paddingLeft: '22px',
                 paddingBottom: '10px'
-            },
-            bbarCfg: [{hidden:true}],
-            tbarCfg: [{hidden:true}]
+            }
         });
         grid.initialValue = null; // used for dirty logic
 
@@ -541,7 +538,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var panel = new Ext.Panel({
-            cls: 'extContainer',
             border: false,
             name:  'Previous Settings',
             layout: 'vbox',
@@ -829,7 +825,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         items.push(this.nameFormPanel);
 
         var panel = new Ext.Panel({
-            cls : 'extContainer',
             border: false,
             name: "General Setup",
             layout: 'vbox',
@@ -1120,6 +1115,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     }
                 }
             }),
+            style: 'padding-top: 10px;',
             title : 'Hidden Datasets',
             viewConfig: {forceFit: true},
             loadMask:{msg:"Loading, please wait..."},
@@ -1136,15 +1132,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         items.push(grid);
         items.push(hiddenGrid);
 
-        grid.on('render', function(cmp){
-            //This is to hide the background color of the bbar/tbar.
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
-        hiddenGrid.on('render', function(cmp){
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
         grid.on('columnmodelcustomize', this.customizeColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.info.datasets = cmp.getSelections();}, this);
         hiddenGrid.on('columnmodelcustomize', this.customizeColumnModel, this);
@@ -1246,13 +1233,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         });
 
-        panel.on('afterrender', function(cmp) {
+        panel.on('afterrender', function() {
             // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
             // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
-            cmp.on('settingsChange', viewReadyFunc(grid), this);
-            cmp.on('settingsChange', viewReadyFunc(hiddenGrid), this);
+            this.on('settingsChange', viewReadyFunc(grid), this);
+            this.on('settingsChange', viewReadyFunc(hiddenGrid), this);
             if(this.allowRefresh)
-                cmp.on('settingsChange', afterRenderFunc, this);
+                this.on('settingsChange', afterRenderFunc, this);
         }, this);
         
         return panel;
@@ -1313,6 +1300,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var grid = new Ext.grid.EditorGridPanel({
             store: viewsStore,
             selModel: selectionModel,
+            viewConfig: {forceFit: true},
             columns: [
                 selectionModel,
                 {header: 'Name', width: 270, sortable: true, dataIndex: 'name', renderer: Ext.util.Format.htmlEncode},
@@ -1325,8 +1313,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             pageSize: 300000,
             cls: 'studyWizardViewList',
             flex: 1,
-            bbar: [{hidden:true}],
-            tbar: [{hidden:true}]
+            bbarCfg: [{hidden:true}],
+            tbarCfg: [{hidden:true}]
         });
 
         items.push(grid);
@@ -1347,11 +1335,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         };
 
-        grid.on('render', function(cmp){
-            //This is to hide the background color of the bbar/tbar.
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
         grid.on('viewready', viewReadyFunc, this);
 
         var panel = new Ext.Panel({
@@ -1408,10 +1391,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     },
 
     getStudyPropsPanel : function(){
+        var items = [];
+
         var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Study Objects'})+
             Ext.DomHelper.markup({tag:'div', html: '&nbsp'})+
             Ext.DomHelper.markup({tag:'div', html: 'Choose additional study objects to publish:'})+
             Ext.DomHelper.markup({tag:'div', html: '&nbsp'});
+
+        items.push({xtype:'displayfield', html: txt});
 
         var selectionModel = new Ext.grid.CheckboxSelectionModel({
             moveEditorOnEnter: false,
@@ -1436,7 +1423,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cls : 'studyObjects',
             store: studyStore,
             selModel: selectionModel,
-            viewConfig: {forceFit: true, scrollOffset: 0},
+            viewConfig: {forceFit: true},
             columns: [
                 selectionModel,
                 {header: 'Name', sortable: true, dataIndex: 'name'}
@@ -1446,9 +1433,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             stripeRows: true,
             pageSize: 300000,
             flex: 1,
-            bbar: [{hidden:true}],
-            tbar: [{hidden:true}]
+            bbarCfg: [{hidden:true}],
+            tbarCfg: [{hidden:true}]
         });
+
+        items.push(grid);
 
         var viewReadyFunc = function(){
             grid.getSelectionModel().clearSelections();
@@ -1466,28 +1455,26 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         };
 
-        grid.on('render', function(cmp){
-            //This is to hide the background color of the bbar/tbar.
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
         grid.on('viewready', viewReadyFunc, this);
 
-        this.studyPropsPanel = new Ext.FormPanel({
+        var panel = new Ext.Panel({
+            border: false,
             name : 'Study Objects',
-            html : txt,
-            border : false,
-            layout : 'vbox',
-            items : grid
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: items
         });
 
-        this.studyPropsPanel.on('afterrender', function(cmp) {
+        panel.on('afterrender', function(cmp) {
             // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
             // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
             this.on('settingsChange', viewReadyFunc, this);
         }, this);
 
-        return this.studyPropsPanel;
+        return panel;
     },
 
     getReportsPanel: function(){
@@ -1547,9 +1534,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var grid = new Ext.grid.EditorGridPanel({
-            viewConfig : {
-                forceFit : true
-            },
+            viewConfig : {forceFit : true},
             store: reportsStore,
             selModel: selectionModel,
             columns: [
@@ -1570,8 +1555,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             pageSize: 300000,
             cls: 'studyWizardReportList',
             flex: 1,
-            bbar: [{hidden:true}],
-            tbar: [{hidden:true}]
+            bbarCfg: [{hidden:true}],
+            tbarCfg: [{hidden:true}]
         });
 
         items.push(grid);
@@ -1592,11 +1577,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         };
 
-        grid.on('render', function(cmp){
-            //This is to hide the background color of the bbar/tbar.
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
         grid.on('viewready', viewReadyFunc, this);
 
         this.pageOptions.reports.value = this.selectedReports;
@@ -1732,16 +1712,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             pageSize: 300000,
             cls: 'studyWizardVisitList',
             flex: 1,
-            bbar: [{hidden:true}],
-            tbar: [{hidden:true}]
+            bbarCfg: [{hidden:true}],
+            tbarCfg: [{hidden:true}]
         });
 
         items.push(grid);
-        grid.on('render', function(cmp){
-            //This is to hide the background color of the bbar/tbar.
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
+
         grid.on('columnmodelcustomize', this.customizeVisitColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.selectedVisits = cmp.getSelections();}, this);
 
@@ -1853,17 +1829,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             pageSize: 300000,
             cls: 'studyWizardListList',
             flex: 1,
-            bbar: [{hidden:true}],
-            tbar: [{hidden:true}]
+            bbarCfg: [{hidden:true}],
+            tbarCfg: [{hidden:true}]
         });
 
         items.push(grid);
-
-        grid.on('render', function(cmp){
-            //This is to hide the background color of the bbar/tbar.
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
 
         var viewReadyFunc = function(){
             grid.getSelectionModel().clearSelections();
@@ -1905,10 +1875,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     },
 
     getFolderPropsPanel : function(){
+        var items = [];
+
         var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Folder Objects'})+
                 Ext.DomHelper.markup({tag:'div', html: '&nbsp'})+
                 Ext.DomHelper.markup({tag:'div', html: 'Choose additional folder objects to publish:'})+
                 Ext.DomHelper.markup({tag:'div', html: '&nbsp'});
+
+        items.push({xtype:'displayfield', html: txt});
 
         var selectionModel = new Ext.grid.CheckboxSelectionModel({
             moveEditorOnEnter: false,
@@ -1933,7 +1907,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cls: 'folderObjects',
             store: folderStore,
             selModel: selectionModel,
-            viewConfig: {forceFit: true, scrollOffset: 0},
+            viewConfig: {forceFit: true},
             columns: [
                 selectionModel,
                 {header: 'Name', sortable: true, dataIndex: 'name', name: 'name'}
@@ -1943,15 +1917,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             stripeRows: true,
             pageSize: 300000,
             flex: 1,
-            bbar: [{hidden:true}],
-            tbar: [{hidden:true}]
+            bbarCfg: [{hidden:true}],
+            tbarCfg: [{hidden:true}]
         });
 
-        grid.on('render', function(cmp){
-            //This is to hide the background color of the bbar/tbar.
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
+        items.push(grid);
 
         var viewReadyFunc = function(){
             grid.getSelectionModel().clearSelections();
@@ -1979,28 +1949,35 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         grid.on('viewready', viewReadyFunc, this);
 
-        this.folderPropsPanel = new Ext.FormPanel({
+        var panel = new Ext.Panel({
+            border: false,
             name : 'Folder Objects',
-            html : txt,
-            border : false,
-            layout : 'vbox',
-            items : grid
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: items
         });
 
-        this.folderPropsPanel.on('afterrender', function(cmp) {
+        panel.on('afterrender', function(cmp) {
             // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
             // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
             this.on('settingsChange', viewReadyFunc, this);
         }, this);
 
-        return this.folderPropsPanel;
+        return panel;
     },
 
     getPublishOptionsPanel: function(){
+        var items = [];
+
         var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Publish Options'}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
                 Ext.DomHelper.markup({tag:'div', html:'Choose publish options:'}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+
+        items.push({xtype:'displayfield', html: txt});
 
         var selectionModel = new Ext.grid.CheckboxSelectionModel({
             moveEditorOnEnter: false,
@@ -2043,7 +2020,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cls: 'studyWizardPublishOptionsList',
             store: publishOptionsStore,
             selModel: selectionModel,
-            viewConfig: {forceFit: true, scrollOffset: 0},
+            viewConfig: {forceFit: true},
             columns: [
                 selectionModel,
                 {header: 'Name', width: 220, sortable: true, dataIndex: 'name', name: 'name'},
@@ -2054,15 +2031,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             stripeRows: true,
             pageSize: 300000,
             flex: 1,
-            bbar: [{hidden:true}],
-            tbar: [{hidden:true}]
+            bbarCfg: [{hidden:true}],
+            tbarCfg: [{hidden:true}]
         });
 
-        grid.on('render', function(cmp){
-            //This is to hide the background color of the bbar/tbar.
-            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
-            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
-        });
+        items.push(grid);
 
         var viewReadyFunc = function(){
             grid.getSelectionModel().clearSelections();
@@ -2082,21 +2055,24 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         grid.on('viewready', viewReadyFunc, this);
 
-        this.publishOptionsPanel = new Ext.Panel({
+        var panel = new Ext.Panel({
             border: false,
-            name: "Publish Options",
+            name : 'Publish Options',
             layout: 'vbox',
-            html: txt,
-            items: grid
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: items
         });
 
-        this.publishOptionsPanel.on('afterrender', function(cmp) {
+        panel.on('afterrender', function(cmp) {
             // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
             // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
             this.on('settingsChange', viewReadyFunc, this);
         }, this);
 
-        return this.publishOptionsPanel;
+        return panel;
     },
 
     customizeColumnModel : function(colModel, index, c){
