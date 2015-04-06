@@ -17,6 +17,7 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -264,7 +265,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             try
             {
                 Object output = runScript(engine, context, outputSubst, inputDataTsv, inputParameters);
-                saveConsoleOutput(output, outputSubst);
+                saveConsoleOutput(output, outputSubst, context);
                 return output != null ? output.toString() : "";
             }
             catch(Exception e)
@@ -276,11 +277,11 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         throw new ScriptException("A script engine implementation was not found for the specified report");
     }
 
-    protected void saveConsoleOutput(Object output, List<ParamReplacement> outputSubst) throws IOException
+    protected void saveConsoleOutput(Object output, List<ParamReplacement> outputSubst, @NotNull ContainerUser context) throws IOException
     {
         if (null != output)
         {
-            File console = new File(getReportDir(), CONSOLE_OUTPUT);
+            File console = new File(getReportDir(context.getContainer().getId()), CONSOLE_OUTPUT);
 
             try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(console))))
             {
@@ -300,7 +301,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         try
         {
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir().getAbsolutePath());
+            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
 
             if (engine instanceof RserveScriptEngine)
             {
@@ -363,7 +364,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         {
             synchronized(_cachedReportURLMap)
             {
-                File cacheDir = getCacheDir();
+                File cacheDir = getCacheDir(context.getContainer().getId());
 
                 if (null == cacheDir)
                     return;
@@ -403,9 +404,9 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         }
     }
 
-    public void clearCache()
+    public void clearCache(@NotNull String executingContainerId)
     {
-        File cacheDir = getCacheDir();
+        File cacheDir = getCacheDir(executingContainerId);
         if (null != cacheDir && cacheDir.exists())
             FileUtil.deleteDir(cacheDir);
     }
@@ -419,10 +420,10 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             {
                 if (urlDirty(context.getActionURL()))
                 {
-                    clearCache();
+                    clearCache(context.getContainer().getId());
                     return false;
                 }
-                File cacheDir = getCacheDir();
+                File cacheDir = getCacheDir(context.getContainer().getId());
                 if (null == cacheDir)
                     return false;
 
@@ -483,16 +484,17 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     {
         // clean up any temp files
         clearCache();
-        deleteReportDir();
+        deleteReportDir(context);
         super.beforeDelete(context);
     }
 
-    protected File getCacheDir()
+    protected File getCacheDir(@NotNull String executingContainerId)
     {
         if (getDescriptor().getReportId() == null)
             return null;
 
-        File cacheDir = new File(getTempRoot(getDescriptor()), "Report_" + FileUtil.makeLegalName(getDescriptor().getReportId().toString()) + File.separator + CACHE_DIR);
+        File cacheDir = new File(getTempRoot(getDescriptor()), executingContainerId + File.separator + "Report_" + FileUtil.makeLegalName(getDescriptor().getReportId().toString()) + File.separator + CACHE_DIR);
+
         if (!cacheDir.exists())
             cacheDir.mkdirs();
 

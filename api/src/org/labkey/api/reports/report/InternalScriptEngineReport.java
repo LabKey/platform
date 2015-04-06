@@ -112,7 +112,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
                 bindings.put("viewContext", context);
                 bindings.put("consoleOut", consolePw);
 
-                bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir().getAbsolutePath());
+                bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
                 Object output = engine.eval(createScript(engine, context, outputSubst, inputDataTsv, inputParameters));
                 consolePw.flush();
                 String consoleString = consoleOut.toString();
@@ -120,7 +120,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
                 // render the output into the console
                 if (output != null || consoleString != null)
                 {
-                    File console = new File(getReportDir(), CONSOLE_OUTPUT);
+                    File console = new File(getReportDir(context.getContainer().getId()), CONSOLE_OUTPUT);
 
                     try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(console))))
                     {
@@ -155,7 +155,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
      */
     public void beforeDelete(ContainerUser context)
     {
-        deleteReportDir();
+        deleteReportDir(context);
         super.beforeDelete(context);
     }
 }

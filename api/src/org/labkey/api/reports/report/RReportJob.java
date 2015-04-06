@@ -18,6 +18,7 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reports.Report;
@@ -53,23 +54,24 @@ public class RReportJob extends PipelineJob implements Serializable
     {
         super(provider, info, root);
         _reportId = reportId;
-        init();
+        init(this.getContainerId());
     }
 
     public RReportJob(String provider, ViewBackgroundInfo info, RReportBean form, PipeRoot root) throws Exception
     {
         super(provider, info, root);
         _form = form;
-        init();
+        init(this.getContainerId());
     }
 
-    protected void init()
+    protected void init(@NotNull String executingContainerId)
     {
         Report report = getReport();
 
+
         if (report instanceof RReport)
         {
-            File logFile = new File(((RReport)report).getReportDir(), LOG_FILE_NAME);
+            File logFile = new File(((RReport)report).getReportDir(executingContainerId), LOG_FILE_NAME);
             this.setLogFile(logFile);
         }
     }
@@ -167,9 +169,9 @@ public class RReportJob extends PipelineJob implements Serializable
         }
     }
 
-    protected File inputFile(RReport report, ViewContext context) throws Exception
+    protected File inputFile(RReport report, @NotNull ViewContext context) throws Exception
     {
-        return new File(report.getReportDir(), RReport.DATA_INPUT);
+        return new File(report.getReportDir(context.getContainer().getId()), RReport.DATA_INPUT);
     }
 
     protected void processOutputs(RReport report, List<ParamReplacement> outputSubst) throws Exception
@@ -177,7 +179,7 @@ public class RReportJob extends PipelineJob implements Serializable
         if (outputSubst.size() > 0)
         {
             // write the output substitution map to disk so we can render the view later
-            File file = new File(report.getReportDir(), RReport.SUBSTITUTION_MAP);
+            File file = new File(report.getReportDir(this.getContainerId()), RReport.SUBSTITUTION_MAP);
             ParamReplacementSvc.get().toFile(outputSubst, file);
         }
     }

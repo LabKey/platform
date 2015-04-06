@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -371,9 +372,9 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     @Override
-    protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements) throws Exception
+    protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context) throws Exception
     {
-        File reportDir = getReportDir();
+        File reportDir = getReportDir(context.getContainer().getId());
         String scriptOut = null;
 
         if (engine instanceof RserveScriptEngine)
@@ -394,7 +395,7 @@ public class RReport extends ExternalScriptEngineReport
     protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws Exception
     {
         String script = super.createScript(engine, context, outputSubst, inputDataTsv, inputParameters);
-        File inputData = new File(getReportDir(), DATA_INPUT);
+        File inputData = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);
 
         /**
          * for each included script, the source script is processed for input/output replacements
@@ -413,7 +414,7 @@ public class RReport extends ExternalScriptEngineReport
                 {
                     final String rName = report.getDescriptor().getProperty(ReportDescriptor.Prop.reportName);
                     final String rScript = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
-                    final File rScriptFile = new File(getReportDir(), rName + ".R");
+                    final File rScriptFile = new File(getReportDir(context.getContainer().getId()), rName + ".R");
 
                     String includedScript = processScript(engine, context, rScript, inputData, outputSubst, inputParameters);
 
@@ -439,17 +440,18 @@ public class RReport extends ExternalScriptEngineReport
      * is not the same as report caching.  Report caching saves off the output parameters of the report and then serves
      * them up without executing the script again if the incoming URL is the same.
      * For Knitr caching, we always run the R script and let the knitr library manage the caching options.
+     * @param executingContainerId id of the container in which the report is running
      */
     @Override
-    public File getReportDir()
+    public File getReportDir(@NotNull String executingContainerId)
     {
         File reportDir = null;
 
         if (getKnitrFormat() != RReportDescriptor.KnitrFormat.None)
-            reportDir = getCacheDir();
+            reportDir = getCacheDir(executingContainerId);
 
         if (null == reportDir)
-            reportDir = super.getReportDir();
+            reportDir = super.getReportDir(executingContainerId);
 
          return reportDir;
     }
@@ -486,7 +488,7 @@ public class RReport extends ExternalScriptEngineReport
 
                 if (getKnitrFormat() == RReportDescriptor.KnitrFormat.None)
                 {
-                    saveConsoleOutput(output, outputSubst);
+                    saveConsoleOutput(output, outputSubst, context);
                 }
                 else
                 {

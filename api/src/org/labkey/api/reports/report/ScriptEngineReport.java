@@ -19,6 +19,7 @@ import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnHeaderType;
@@ -66,6 +67,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import javax.script.ScriptEngine;
@@ -236,9 +238,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     /*
      * Create the .tsv associated with the data grid for this report.
      */
-    public File createInputDataFile(ViewContext context) throws Exception
+    public File createInputDataFile(@NotNull ViewContext context) throws Exception
     {
-        File resultFile = new File(getReportDir(), DATA_INPUT);
+        File resultFile = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);
 
         if (context != null)
         {
@@ -261,7 +263,12 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return resultFile;
     }
 
-    public File getReportDir()
+    /**
+     *
+     * @param executingContainerId id of the container in which the report is running
+     * @return directory, which has been created, to contain the generated report
+     */
+    public File getReportDir(@NotNull String executingContainerId)
     {
         boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
 
@@ -271,9 +278,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             String reportId = FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())).replaceAll(" ", "_");
 
             if (isPipeline)
-                _tempFolder = new File(tempRoot, "Report_" + reportId);
+                _tempFolder = new File(tempRoot, executingContainerId + File.separator + "Report_" + reportId);
             else
-                _tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + "Report_" + reportId, String.valueOf(Thread.currentThread().getId()));
+                _tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + executingContainerId + File.separator + "Report_" + reportId, String.valueOf(Thread.currentThread().getId()));
 
             _tempFolderPipeline = isPipeline;
 
@@ -284,13 +291,13 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return _tempFolder;
     }
 
-    public void deleteReportDir()
+    public void deleteReportDir(@NotNull ContainerUser context)
     {
         boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
 
         try
         {
-            File dir = getReportDir();
+            File dir = getReportDir(context.getContainer().getId());
 
             if (!isPipeline)
                 dir = dir.getParentFile();
@@ -521,10 +528,10 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             }
 
             @Override
-            public List<ScriptOutput> cleanup(ScriptEngineReport report)
+            public List<ScriptOutput> cleanup(ScriptEngineReport report, ContainerUser context)
             {
                 if (report.shouldCleanup())
-                    FileUtil.deleteDir(new File(report.getReportDir().getAbsolutePath()));
+                    FileUtil.deleteDir(new File(report.getReportDir(context.getContainer().getId()).getAbsolutePath()));
 
                 return scriptOutputs;
             }
@@ -549,10 +556,10 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             }
 
             @Override
-            public HttpView cleanup(ScriptEngineReport report)
+            public HttpView cleanup(ScriptEngineReport report, ContainerUser context)
             {
                 if (report.shouldCleanup())
-                    view.addView(new TempFileCleanup(report.getReportDir().getAbsolutePath()));
+                    view.addView(new TempFileCleanup(report.getReportDir(context.getContainer().getId()).getAbsolutePath()));
 
                 return view;
             }
@@ -580,7 +587,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             }
 
             @Override
-            public Thumbnail cleanup(ScriptEngineReport report)
+            public Thumbnail cleanup(ScriptEngineReport report, ContainerUser context)
             {
                 // TODO: Delete file?
                 return _thumbnail;
@@ -610,14 +617,14 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             }
         }
 
-        return handler.cleanup(report);
+        return handler.cleanup(report, context);
     }
 
 
     private interface ParameterHandler<K>
     {
         boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException;
-        K cleanup(ScriptEngineReport report);
+        K cleanup(ScriptEngineReport report, ContainerUser context);
     }
 
 
@@ -664,7 +671,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
             if (inputFile != null)
                 script = processInputReplacement(engine, script, inputFile);
-            script = processOutputReplacements(engine, script, outputSubst);
+            script = processOutputReplacements(engine, script, outputSubst, context);
         }
         return script;
     }
@@ -679,9 +686,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile.getAbsolutePath().replaceAll("\\\\", "/"));
     }
 
-    protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements) throws Exception
+    protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context) throws Exception
     {
-        return ParamReplacementSvc.get().processParamReplacement(script, getReportDir(), null, replacements);
+        return ParamReplacementSvc.get().processParamReplacement(script, getReportDir(context.getContainer().getId()), null, replacements);
     }
 
     @Override

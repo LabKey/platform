@@ -18,7 +18,6 @@ package org.labkey.api.reports.report.r.view;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.settings.AppProps;
@@ -30,8 +29,6 @@ import org.labkey.api.view.ViewContext;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 /**
@@ -110,7 +107,8 @@ public class KnitrOutput extends HtmlOutput
 
                 // replace all ${hrefout:<filename>} with the appropriate url
                 htmlOut.append( ParamReplacementSvc.get().processHrefParamReplacement(_report,
-                        htmlIn, _report.getReportDir(), Pattern.compile(pattern), 2));
+                        htmlIn, _report.getReportDir(this.getViewContext().getContainer().getId()), Pattern.compile(pattern), 2));
+
 
                 htmlOut.append("</div>");
                 return htmlOut.toString();

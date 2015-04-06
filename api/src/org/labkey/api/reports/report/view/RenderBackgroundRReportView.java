@@ -46,7 +46,7 @@ public class RenderBackgroundRReportView extends HttpView
     {
         if (_report != null)
         {
-            File logFile = new File(_report.getReportDir(), RReportJob.LOG_FILE_NAME);
+            File logFile = new File(_report.getReportDir(this.getViewContext().getContainer().getId()), RReportJob.LOG_FILE_NAME);
             VBox view = new VBox();
             view.addView(new JspView<>("/org/labkey/api/reports/report/view/ajaxReportRenderBackground.jsp", _report));
 
