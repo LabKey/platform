@@ -217,6 +217,8 @@ public class ExceptionUtil
         if (requestURL != null && MothershipReport.isMothershipExceptionReport(requestURL))
             return;
 
+        _logStatic.error("Exception detected and logged to mothership", ex);
+
         // Once to labkey.org, if so configured
         logExceptionToMothership(request, ex, requestURL, false, getExceptionReportingLevel());
 
@@ -292,8 +294,6 @@ public class ExceptionUtil
                 username = user.getEmail() == null ? "Guest" : user.getEmail();
             }
         }
-
-        _logStatic.error("Exception detected and logged to mothership:\n" + stackTrace);
 
         reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, local, level);
     }

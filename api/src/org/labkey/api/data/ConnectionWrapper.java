@@ -65,6 +65,8 @@ public class ConnectionWrapper implements java.sql.Connection
     private final java.util.Date _allocationTime = new java.util.Date();
     private final String _allocatingThreadName;
 
+    private final static Logger LOG = Logger.getLogger(ConnectionWrapper.class);
+
     private static final Map<ConnectionWrapper, Pair<Thread,Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<ConnectionWrapper, Pair<Thread, Throwable>>());
 
     private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
@@ -85,6 +87,11 @@ public class ConnectionWrapper implements java.sql.Connection
     private static boolean _explicitLogger = _logDefault.getLevel() != null || _logDefault.getParent() != null  && _logDefault.getParent().getName().equals("org.labkey.api.data");
 
     private final @NotNull Logger _log;
+
+    /** Remember the first SQLException that happened on this connection, as it may have leave the connection in a bad state */
+    private SQLException _originalSqlException;
+
+    /** Remember code that closed the Transaction but didn't commit - it may be faulty if it doesn't signal the failure back to the caller */
     private Throwable _suspiciousCloseStackTrace;
 
     public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, @Nullable Logger log) throws SQLException
@@ -200,28 +207,56 @@ public class ConnectionWrapper implements java.sql.Connection
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.createStatement());
+        try
+        {
+            return getStatementWrapper(this, _connection.createStatement());
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public PreparedStatement prepareStatement(String sql)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.prepareStatement(sql), sql);
+        try
+        {
+            return getStatementWrapper(this, _connection.prepareStatement(sql), sql);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public CallableStatement prepareCall(String sql)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.prepareCall(sql), sql);
+        try
+        {
+            return getStatementWrapper(this, _connection.prepareCall(sql), sql);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public String nativeSQL(String sql)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return _connection.nativeSQL(sql);
+        try
+        {
+            return _connection.nativeSQL(sql);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public void setAutoCommit(boolean autoCommit)
@@ -229,14 +264,28 @@ public class ConnectionWrapper implements java.sql.Connection
     {
         checkForSuspiciousClose();
         _log.debug("setAutoCommit(" + (autoCommit?"TRUE)":"FALSE)"));
-        _connection.setAutoCommit(autoCommit);
+        try
+        {
+            _connection.setAutoCommit(autoCommit);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public boolean getAutoCommit()
     throws SQLException
     {
         checkForSuspiciousClose();
-        return _connection.getAutoCommit();
+        try
+        {
+            return _connection.getAutoCommit();
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public void commit()
@@ -244,7 +293,14 @@ public class ConnectionWrapper implements java.sql.Connection
     {
         checkForSuspiciousClose();
         _log.debug("commit()");
-        _connection.commit();
+        try
+        {
+            _connection.commit();
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public void rollback()
@@ -252,7 +308,15 @@ public class ConnectionWrapper implements java.sql.Connection
     {
         checkForSuspiciousClose();
         _log.debug("rollback()");
-        _connection.rollback();
+        try
+        {
+            _connection.rollback();
+        }
+        catch (SQLException e)
+        {
+            LOG.debug("SQLException", e);
+            throw e;
+        }
     }
 
     public void close()
@@ -263,77 +327,156 @@ public class ConnectionWrapper implements java.sql.Connection
         // The Tomcat connection pool violates the API for close() - it throws an exception
         // if it's already been closed instead of doing a no-op
         if (null != _connection && !isClosed())
-            _connection.close();
+        {
+            try
+            {
+                _connection.close();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
+        }
     }
 
     public boolean isClosed()
     throws SQLException
     {
-        return _connection.isClosed();
+        try
+        {
+            return _connection.isClosed();
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public DatabaseMetaData getMetaData()
     throws SQLException
     {
         checkForSuspiciousClose();
-        final DatabaseMetaData md = _connection.getMetaData();
-        return new DatabaseMetaDataWrapper(md);
+        try
+        {
+            final DatabaseMetaData md = _connection.getMetaData();
+            return new DatabaseMetaDataWrapper(md);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public void setReadOnly(boolean readOnly)
     throws SQLException
     {
         checkForSuspiciousClose();
-        _connection.setReadOnly(readOnly);
+        try
+        {
+            _connection.setReadOnly(readOnly);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public boolean isReadOnly()
     throws SQLException
     {
         checkForSuspiciousClose();
-        return _connection.isReadOnly();
+        try
+        {
+            return _connection.isReadOnly();
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public void setCatalog(String catalog)
     throws SQLException
     {
         checkForSuspiciousClose();
-        _connection.setCatalog(catalog);
+        try
+        {
+            _connection.setCatalog(catalog);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public String getCatalog()
     throws SQLException
     {
         checkForSuspiciousClose();
-        return _connection.getCatalog();
+        try
+        {
+            return _connection.getCatalog();
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public void setTransactionIsolation(int level)
     throws SQLException
     {
         checkForSuspiciousClose();
-        _connection.setTransactionIsolation(level);
+        try
+        {
+            _connection.setTransactionIsolation(level);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public int getTransactionIsolation()
     throws SQLException
     {
         checkForSuspiciousClose();
-        return _connection.getTransactionIsolation();
+        try
+        {
+            return _connection.getTransactionIsolation();
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public SQLWarning getWarnings()
     throws SQLException
     {
         checkForSuspiciousClose();
-        return _connection.getWarnings();
+        try
+        {
+            return _connection.getWarnings();
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public void clearWarnings()
     throws SQLException
     {
         checkForSuspiciousClose();
-        _connection.clearWarnings();
+        try
+        {
+            _connection.clearWarnings();
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     private StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
@@ -357,119 +500,263 @@ public class ConnectionWrapper implements java.sql.Connection
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.createStatement(resultSetType, resultSetConcurrency));
+        try
+        {
+            return getStatementWrapper(this, _connection.createStatement(resultSetType, resultSetConcurrency));
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.prepareStatement(sql, resultSetType, resultSetConcurrency), sql);
+        try
+        {
+            return getStatementWrapper(this, _connection.prepareStatement(sql, resultSetType, resultSetConcurrency), sql);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.prepareCall(sql, resultSetType, resultSetConcurrency), sql);
+        try
+        {
+            return getStatementWrapper(this, _connection.prepareCall(sql, resultSetType, resultSetConcurrency), sql);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public Map<String, Class<?>> getTypeMap()
     throws SQLException
     {
         checkForSuspiciousClose();
-        return _connection.getTypeMap();
+        try
+        {
+            return _connection.getTypeMap();
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
+    }
+
+    public SQLException logAndCheckException(SQLException e)
+    {
+        LOG.debug("SQLException", e);
+
+        // Remember the first exception than happened on this connection. It may leave the connection in a bad state
+        // for subsequent users
+        if (_originalSqlException == null)
+        {
+            _originalSqlException = e;
+        }
+        else
+        {
+            // Some other code may have left the connection in a bad state. Suggest it as a possible culprit
+            if (_scope.isTransactionActive())
+            {
+                LOG.warn("Additional SQLException on a Connection that has already thrown a SQLException. Additional exception to be logged separately, original exception is: ", _originalSqlException);
+            }
+            else
+            {
+                LOG.debug("Additional SQLException on a Connection that has already thrown a SQLException. Additional exception to be logged separately, original exception is: ", _originalSqlException);
+            }
+        }
+        return e;
     }
 
     public void setTypeMap(Map<String, Class<?>> map)
     throws SQLException
     {
         checkForSuspiciousClose();
-        _connection.setTypeMap(map);
+        try
+        {
+            _connection.setTypeMap(map);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public void setHoldability(int holdability)
     throws SQLException
     {
         checkForSuspiciousClose();
-        _connection.setHoldability(holdability);
+        try
+        {
+            _connection.setHoldability(holdability);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public int getHoldability()
     throws SQLException
     {
         checkForSuspiciousClose();
-        return _connection.getHoldability();
+        try
+        {
+            return _connection.getHoldability();
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public Savepoint setSavepoint()
     throws SQLException
     {
         checkForSuspiciousClose();
-        return _connection.setSavepoint();
+        try
+        {
+            return _connection.setSavepoint();
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public Savepoint setSavepoint(String name)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return _connection.setSavepoint(name);
+        try
+        {
+            return _connection.setSavepoint(name);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public void rollback(Savepoint savepoint)
     throws SQLException
     {
         checkForSuspiciousClose();
-        _connection.rollback(savepoint);
+        try
+        {
+            _connection.rollback(savepoint);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public void releaseSavepoint(Savepoint savepoint)
     throws SQLException
     {
         checkForSuspiciousClose();
-        _connection.releaseSavepoint(savepoint);
+        try
+        {
+            _connection.releaseSavepoint(savepoint);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability));
+        try
+        {
+            return getStatementWrapper(this, _connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability));
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
+        try
+        {
+            return getStatementWrapper(this, _connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
+        try
+        {
+            return getStatementWrapper(this, _connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.prepareStatement(sql, autoGeneratedKeys), sql);
+        try
+        {
+            return getStatementWrapper(this, _connection.prepareStatement(sql, autoGeneratedKeys), sql);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public PreparedStatement prepareStatement(String sql, int[] columnIndexes)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.prepareStatement(sql, columnIndexes), sql);
+        try
+        {
+            return getStatementWrapper(this, _connection.prepareStatement(sql, columnIndexes), sql);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public PreparedStatement prepareStatement(String sql, String[] columnNames)
     throws SQLException
     {
         checkForSuspiciousClose();
-        return getStatementWrapper(this, _connection.prepareStatement(sql, columnNames), sql);
+        try
+        {
+            return getStatementWrapper(this, _connection.prepareStatement(sql, columnNames), sql);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public static int getActiveConnectionCount()
@@ -510,7 +797,15 @@ public class ConnectionWrapper implements java.sql.Connection
 
     public Array createArrayOf(String typeName, Object[] elements) throws SQLException
     {
-        return _connection.createArrayOf(typeName, elements);
+        checkForSuspiciousClose();
+        try
+        {
+            return _connection.createArrayOf(typeName, elements);
+        }
+        catch (SQLException e)
+        {
+            throw logAndCheckException(e);
+        }
     }
 
     public Blob createBlob() throws SQLException
@@ -628,91 +923,182 @@ public class ConnectionWrapper implements java.sql.Connection
         public boolean allProceduresAreCallable()
                 throws SQLException
         {
-            return _md.allProceduresAreCallable();
+            try
+            {
+                return _md.allProceduresAreCallable();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean allTablesAreSelectable()
                 throws SQLException
         {
-            return _md.allTablesAreSelectable();
+            try
+            {
+                return _md.allTablesAreSelectable();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getURL()
                 throws SQLException
         {
-            return _md.getURL();
+            try
+            {
+                return _md.getURL();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getUserName()
                 throws SQLException
         {
-            return _md.getUserName();
+            try
+            {
+                return _md.getUserName();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean isReadOnly()
                 throws SQLException
         {
-            return _md.isReadOnly();
+            try
+            {
+                return _md.isReadOnly();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean nullsAreSortedHigh()
                 throws SQLException
         {
-            return _md.nullsAreSortedHigh();
+            try
+            {
+                return _md.nullsAreSortedHigh();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean nullsAreSortedLow()
                 throws SQLException
         {
-            return _md.nullsAreSortedLow();
+            try
+            {
+                return _md.nullsAreSortedLow();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean nullsAreSortedAtStart()
                 throws SQLException
         {
-            return _md.nullsAreSortedAtStart();
+            try
+            {
+                return _md.nullsAreSortedAtStart();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean nullsAreSortedAtEnd()
                 throws SQLException
         {
-            return _md.nullsAreSortedAtEnd();
+            try
+            {
+                return _md.nullsAreSortedAtEnd();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getDatabaseProductName()
                 throws SQLException
         {
-            return _md.getDatabaseProductName();
+            try
+            {
+                return _md.getDatabaseProductName();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getDatabaseProductVersion()
                 throws SQLException
         {
-            return _md.getDatabaseProductVersion();
+            try
+            {
+                return _md.getDatabaseProductVersion();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getDriverName()
                 throws SQLException
         {
-            return _md.getDriverName();
+            try
+            {
+                return _md.getDriverName();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getDriverVersion()
                 throws SQLException
         {
-            return _md.getDriverVersion();
+            try
+            {
+                return _md.getDriverVersion();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
@@ -731,1109 +1117,2208 @@ public class ConnectionWrapper implements java.sql.Connection
         public boolean usesLocalFiles()
                 throws SQLException
         {
-            return _md.usesLocalFiles();
+            try
+            {
+                return _md.usesLocalFiles();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean usesLocalFilePerTable()
                 throws SQLException
         {
-            return _md.usesLocalFilePerTable();
+            try
+            {
+                return _md.usesLocalFilePerTable();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsMixedCaseIdentifiers()
                 throws SQLException
         {
-            return _md.supportsMixedCaseIdentifiers();
+            try
+            {
+                return _md.supportsMixedCaseIdentifiers();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean storesUpperCaseIdentifiers()
                 throws SQLException
         {
-            return _md.storesUpperCaseIdentifiers();
+            try
+            {
+                return _md.storesUpperCaseIdentifiers();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean storesLowerCaseIdentifiers()
                 throws SQLException
         {
-            return _md.storesLowerCaseIdentifiers();
+            try
+            {
+                return _md.storesLowerCaseIdentifiers();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean storesMixedCaseIdentifiers()
                 throws SQLException
         {
-            return _md.storesMixedCaseIdentifiers();
+            try
+            {
+                return _md.storesMixedCaseIdentifiers();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsMixedCaseQuotedIdentifiers()
                 throws SQLException
         {
-            return _md.supportsMixedCaseQuotedIdentifiers();
+            try
+            {
+                return _md.supportsMixedCaseQuotedIdentifiers();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean storesUpperCaseQuotedIdentifiers()
                 throws SQLException
         {
-            return _md.storesUpperCaseQuotedIdentifiers();
+            try
+            {
+                return _md.storesUpperCaseQuotedIdentifiers();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean storesLowerCaseQuotedIdentifiers()
                 throws SQLException
         {
-            return _md.storesLowerCaseQuotedIdentifiers();
+            try
+            {
+                return _md.storesLowerCaseQuotedIdentifiers();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean storesMixedCaseQuotedIdentifiers()
                 throws SQLException
         {
-            return _md.storesMixedCaseQuotedIdentifiers();
+            try
+            {
+                return _md.storesMixedCaseQuotedIdentifiers();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getIdentifierQuoteString()
                 throws SQLException
         {
-            return _md.getIdentifierQuoteString();
+            try
+            {
+                return _md.getIdentifierQuoteString();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getSQLKeywords()
                 throws SQLException
         {
-            return _md.getSQLKeywords();
+            try
+            {
+                return _md.getSQLKeywords();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getNumericFunctions()
                 throws SQLException
         {
-            return _md.getNumericFunctions();
+            try
+            {
+                return _md.getNumericFunctions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getStringFunctions()
                 throws SQLException
         {
-            return _md.getStringFunctions();
+            try
+            {
+                return _md.getStringFunctions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getSystemFunctions()
                 throws SQLException
         {
-            return _md.getSystemFunctions();
+            try
+            {
+                return _md.getSystemFunctions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getTimeDateFunctions()
                 throws SQLException
         {
-            return _md.getTimeDateFunctions();
+            try
+            {
+                return _md.getTimeDateFunctions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getSearchStringEscape()
                 throws SQLException
         {
-            return _md.getSearchStringEscape();
+            try
+            {
+                return _md.getSearchStringEscape();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getExtraNameCharacters()
                 throws SQLException
         {
-            return _md.getExtraNameCharacters();
+            try
+            {
+                return _md.getExtraNameCharacters();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsAlterTableWithAddColumn()
                 throws SQLException
         {
-            return _md.supportsAlterTableWithAddColumn();
+            try
+            {
+                return _md.supportsAlterTableWithAddColumn();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsAlterTableWithDropColumn()
                 throws SQLException
         {
-            return _md.supportsAlterTableWithDropColumn();
+            try
+            {
+                return _md.supportsAlterTableWithDropColumn();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsColumnAliasing()
                 throws SQLException
         {
-            return _md.supportsColumnAliasing();
+            try
+            {
+                return _md.supportsColumnAliasing();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean nullPlusNonNullIsNull()
                 throws SQLException
         {
-            return _md.nullPlusNonNullIsNull();
+            try
+            {
+                return _md.nullPlusNonNullIsNull();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsConvert()
                 throws SQLException
         {
-            return _md.supportsConvert();
+            try
+            {
+                return _md.supportsConvert();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsConvert(int fromType, int toType)
                 throws SQLException
         {
-            return _md.supportsConvert(fromType, toType);
+            try
+            {
+                return _md.supportsConvert(fromType, toType);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsTableCorrelationNames()
                 throws SQLException
         {
-            return _md.supportsTableCorrelationNames();
+            try
+            {
+                return _md.supportsTableCorrelationNames();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsDifferentTableCorrelationNames()
                 throws SQLException
         {
-            return _md.supportsDifferentTableCorrelationNames();
+            try
+            {
+                return _md.supportsDifferentTableCorrelationNames();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsExpressionsInOrderBy()
                 throws SQLException
         {
-            return _md.supportsExpressionsInOrderBy();
+            try
+            {
+                return _md.supportsExpressionsInOrderBy();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsOrderByUnrelated()
                 throws SQLException
         {
-            return _md.supportsOrderByUnrelated();
+            try
+            {
+                return _md.supportsOrderByUnrelated();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsGroupBy()
                 throws SQLException
         {
-            return _md.supportsGroupBy();
+            try
+            {
+                return _md.supportsGroupBy();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsGroupByUnrelated()
                 throws SQLException
         {
-            return _md.supportsGroupByUnrelated();
+            try
+            {
+                return _md.supportsGroupByUnrelated();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsGroupByBeyondSelect()
                 throws SQLException
         {
-            return _md.supportsGroupByBeyondSelect();
+            try
+            {
+                return _md.supportsGroupByBeyondSelect();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsLikeEscapeClause()
                 throws SQLException
         {
-            return _md.supportsLikeEscapeClause();
+            try
+            {
+                return _md.supportsLikeEscapeClause();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsMultipleResultSets()
                 throws SQLException
         {
-            return _md.supportsMultipleResultSets();
+            try
+            {
+                return _md.supportsMultipleResultSets();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsMultipleTransactions()
                 throws SQLException
         {
-            return _md.supportsMultipleTransactions();
+            try
+            {
+                return _md.supportsMultipleTransactions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsNonNullableColumns()
                 throws SQLException
         {
-            return _md.supportsNonNullableColumns();
+            try
+            {
+                return _md.supportsNonNullableColumns();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsMinimumSQLGrammar()
                 throws SQLException
         {
-            return _md.supportsMinimumSQLGrammar();
+            try
+            {
+                return _md.supportsMinimumSQLGrammar();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsCoreSQLGrammar()
                 throws SQLException
         {
-            return _md.supportsCoreSQLGrammar();
+            try
+            {
+                return _md.supportsCoreSQLGrammar();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsExtendedSQLGrammar()
                 throws SQLException
         {
-            return _md.supportsExtendedSQLGrammar();
+            try
+            {
+                return _md.supportsExtendedSQLGrammar();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsANSI92EntryLevelSQL()
                 throws SQLException
         {
-            return _md.supportsANSI92EntryLevelSQL();
+            try
+            {
+                return _md.supportsANSI92EntryLevelSQL();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsANSI92IntermediateSQL()
                 throws SQLException
         {
-            return _md.supportsANSI92IntermediateSQL();
+            try
+            {
+                return _md.supportsANSI92IntermediateSQL();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsANSI92FullSQL()
                 throws SQLException
         {
-            return _md.supportsANSI92FullSQL();
+            try
+            {
+                return _md.supportsANSI92FullSQL();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsIntegrityEnhancementFacility()
                 throws SQLException
         {
-            return _md.supportsIntegrityEnhancementFacility();
+            try
+            {
+                return _md.supportsIntegrityEnhancementFacility();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsOuterJoins()
                 throws SQLException
         {
-            return _md.supportsOuterJoins();
+            try
+            {
+                return _md.supportsOuterJoins();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsFullOuterJoins()
                 throws SQLException
         {
-            return _md.supportsFullOuterJoins();
+            try
+            {
+                return _md.supportsFullOuterJoins();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsLimitedOuterJoins()
                 throws SQLException
         {
-            return _md.supportsLimitedOuterJoins();
+            try
+            {
+                return _md.supportsLimitedOuterJoins();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getSchemaTerm()
                 throws SQLException
         {
-            return _md.getSchemaTerm();
+            try
+            {
+                return _md.getSchemaTerm();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getProcedureTerm()
                 throws SQLException
         {
-            return _md.getProcedureTerm();
+            try
+            {
+                return _md.getProcedureTerm();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getCatalogTerm()
                 throws SQLException
         {
-            return _md.getCatalogTerm();
+            try
+            {
+                return _md.getCatalogTerm();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean isCatalogAtStart()
                 throws SQLException
         {
-            return _md.isCatalogAtStart();
+            try
+            {
+                return _md.isCatalogAtStart();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public String getCatalogSeparator()
                 throws SQLException
         {
-            return _md.getCatalogSeparator();
+            try
+            {
+                return _md.getCatalogSeparator();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsSchemasInDataManipulation()
                 throws SQLException
         {
-            return _md.supportsSchemasInDataManipulation();
+            try
+            {
+                return _md.supportsSchemasInDataManipulation();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsSchemasInProcedureCalls()
                 throws SQLException
         {
-            return _md.supportsSchemasInProcedureCalls();
+            try
+            {
+                return _md.supportsSchemasInProcedureCalls();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsSchemasInTableDefinitions()
                 throws SQLException
         {
-            return _md.supportsSchemasInTableDefinitions();
+            try
+            {
+                return _md.supportsSchemasInTableDefinitions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsSchemasInIndexDefinitions()
                 throws SQLException
         {
-            return _md.supportsSchemasInIndexDefinitions();
+            try
+            {
+                return _md.supportsSchemasInIndexDefinitions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsSchemasInPrivilegeDefinitions()
                 throws SQLException
         {
-            return _md.supportsSchemasInPrivilegeDefinitions();
+            try
+            {
+                return _md.supportsSchemasInPrivilegeDefinitions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsCatalogsInDataManipulation()
                 throws SQLException
         {
-            return _md.supportsCatalogsInDataManipulation();
+            try
+            {
+                return _md.supportsCatalogsInDataManipulation();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsCatalogsInProcedureCalls()
                 throws SQLException
         {
-            return _md.supportsCatalogsInProcedureCalls();
+            try
+            {
+                return _md.supportsCatalogsInProcedureCalls();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsCatalogsInTableDefinitions()
                 throws SQLException
         {
-            return _md.supportsCatalogsInTableDefinitions();
+            try
+            {
+                return _md.supportsCatalogsInTableDefinitions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsCatalogsInIndexDefinitions()
                 throws SQLException
         {
-            return _md.supportsCatalogsInIndexDefinitions();
+            try
+            {
+                return _md.supportsCatalogsInIndexDefinitions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsCatalogsInPrivilegeDefinitions()
                 throws SQLException
         {
-            return _md.supportsCatalogsInPrivilegeDefinitions();
+            try
+            {
+                return _md.supportsCatalogsInPrivilegeDefinitions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsPositionedDelete()
                 throws SQLException
         {
-            return _md.supportsPositionedDelete();
+            try
+            {
+                return _md.supportsPositionedDelete();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsPositionedUpdate()
                 throws SQLException
         {
-            return _md.supportsPositionedUpdate();
+            try
+            {
+                return _md.supportsPositionedUpdate();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsSelectForUpdate()
                 throws SQLException
         {
-            return _md.supportsSelectForUpdate();
+            try
+            {
+                return _md.supportsSelectForUpdate();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsStoredProcedures()
                 throws SQLException
         {
-            return _md.supportsStoredProcedures();
+            try
+            {
+                return _md.supportsStoredProcedures();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsSubqueriesInComparisons()
                 throws SQLException
         {
-            return _md.supportsSubqueriesInComparisons();
+            try
+            {
+                return _md.supportsSubqueriesInComparisons();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsSubqueriesInExists()
                 throws SQLException
         {
-            return _md.supportsSubqueriesInExists();
+            try
+            {
+                return _md.supportsSubqueriesInExists();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsSubqueriesInIns()
                 throws SQLException
         {
-            return _md.supportsSubqueriesInIns();
+            try
+            {
+                return _md.supportsSubqueriesInIns();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsSubqueriesInQuantifieds()
                 throws SQLException
         {
-            return _md.supportsSubqueriesInQuantifieds();
+            try
+            {
+                return _md.supportsSubqueriesInQuantifieds();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsCorrelatedSubqueries()
                 throws SQLException
         {
-            return _md.supportsCorrelatedSubqueries();
+            try
+            {
+                return _md.supportsCorrelatedSubqueries();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsUnion()
                 throws SQLException
         {
-            return _md.supportsUnion();
+            try
+            {
+                return _md.supportsUnion();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsUnionAll()
                 throws SQLException
         {
-            return _md.supportsUnionAll();
+            try
+            {
+                return _md.supportsUnionAll();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsOpenCursorsAcrossCommit()
                 throws SQLException
         {
-            return _md.supportsOpenCursorsAcrossCommit();
+            try
+            {
+                return _md.supportsOpenCursorsAcrossCommit();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsOpenCursorsAcrossRollback()
                 throws SQLException
         {
-            return _md.supportsOpenCursorsAcrossRollback();
+            try
+            {
+                return _md.supportsOpenCursorsAcrossRollback();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsOpenStatementsAcrossCommit()
                 throws SQLException
         {
-            return _md.supportsOpenStatementsAcrossCommit();
+            try
+            {
+                return _md.supportsOpenStatementsAcrossCommit();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsOpenStatementsAcrossRollback()
                 throws SQLException
         {
-            return _md.supportsOpenStatementsAcrossRollback();
+            try
+            {
+                return _md.supportsOpenStatementsAcrossRollback();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxBinaryLiteralLength()
                 throws SQLException
         {
-            return _md.getMaxBinaryLiteralLength();
+            try
+            {
+                return _md.getMaxBinaryLiteralLength();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxCharLiteralLength()
                 throws SQLException
         {
-            return _md.getMaxCharLiteralLength();
+            try
+            {
+                return _md.getMaxCharLiteralLength();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxColumnNameLength()
                 throws SQLException
         {
-            return _md.getMaxColumnNameLength();
+            try
+            {
+                return _md.getMaxColumnNameLength();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxColumnsInGroupBy()
                 throws SQLException
         {
-            return _md.getMaxColumnsInGroupBy();
+            try
+            {
+                return _md.getMaxColumnsInGroupBy();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxColumnsInIndex()
                 throws SQLException
         {
-            return _md.getMaxColumnsInIndex();
+            try
+            {
+                return _md.getMaxColumnsInIndex();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxColumnsInOrderBy()
                 throws SQLException
         {
-            return _md.getMaxColumnsInOrderBy();
+            try
+            {
+                return _md.getMaxColumnsInOrderBy();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxColumnsInSelect()
                 throws SQLException
         {
-            return _md.getMaxColumnsInSelect();
+            try
+            {
+                return _md.getMaxColumnsInSelect();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxColumnsInTable()
                 throws SQLException
         {
-            return _md.getMaxColumnsInTable();
+            try
+            {
+                return _md.getMaxColumnsInTable();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxConnections()
                 throws SQLException
         {
-            return _md.getMaxConnections();
+            try
+            {
+                return _md.getMaxConnections();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxCursorNameLength()
                 throws SQLException
         {
-            return _md.getMaxCursorNameLength();
+            try
+            {
+                return _md.getMaxCursorNameLength();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxIndexLength()
                 throws SQLException
         {
-            return _md.getMaxIndexLength();
+            try
+            {
+                return _md.getMaxIndexLength();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxSchemaNameLength()
                 throws SQLException
         {
-            return _md.getMaxSchemaNameLength();
+            try
+            {
+                return _md.getMaxSchemaNameLength();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxProcedureNameLength()
                 throws SQLException
         {
-            return _md.getMaxProcedureNameLength();
+            try
+            {
+                return _md.getMaxProcedureNameLength();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxCatalogNameLength()
                 throws SQLException
         {
-            return _md.getMaxCatalogNameLength();
+            try
+            {
+                return _md.getMaxCatalogNameLength();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxRowSize()
                 throws SQLException
         {
-            return _md.getMaxRowSize();
+            try
+            {
+                return _md.getMaxRowSize();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean doesMaxRowSizeIncludeBlobs()
                 throws SQLException
         {
-            return _md.doesMaxRowSizeIncludeBlobs();
+            try
+            {
+                return _md.doesMaxRowSizeIncludeBlobs();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxStatementLength()
                 throws SQLException
         {
-            return _md.getMaxStatementLength();
+            try
+            {
+                return _md.getMaxStatementLength();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxStatements()
                 throws SQLException
         {
-            return _md.getMaxStatements();
+            try
+            {
+                return _md.getMaxStatements();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxTableNameLength()
                 throws SQLException
         {
-            return _md.getMaxTableNameLength();
+            try
+            {
+                return _md.getMaxTableNameLength();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxTablesInSelect()
                 throws SQLException
         {
-            return _md.getMaxTablesInSelect();
+            try
+            {
+                return _md.getMaxTablesInSelect();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getMaxUserNameLength()
                 throws SQLException
         {
-            return _md.getMaxUserNameLength();
+            try
+            {
+                return _md.getMaxUserNameLength();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getDefaultTransactionIsolation()
                 throws SQLException
         {
-            return _md.getDefaultTransactionIsolation();
+            try
+            {
+                return _md.getDefaultTransactionIsolation();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsTransactions()
                 throws SQLException
         {
-            return _md.supportsTransactions();
+            try
+            {
+                return _md.supportsTransactions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsTransactionIsolationLevel(int level) throws SQLException
         {
-            return _md.supportsTransactionIsolationLevel(level);
+            try
+            {
+                return _md.supportsTransactionIsolationLevel(level);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException
         {
-            return _md.supportsDataDefinitionAndDataManipulationTransactions();
+            try
+            {
+                return _md.supportsDataDefinitionAndDataManipulationTransactions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsDataManipulationTransactionsOnly() throws SQLException
         {
-            return _md.supportsDataManipulationTransactionsOnly();
+            try
+            {
+                return _md.supportsDataManipulationTransactionsOnly();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean dataDefinitionCausesTransactionCommit()
                 throws SQLException
         {
-            return _md.dataDefinitionCausesTransactionCommit();
+            try
+            {
+                return _md.dataDefinitionCausesTransactionCommit();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean dataDefinitionIgnoredInTransactions()
                 throws SQLException
         {
-            return _md.dataDefinitionIgnoredInTransactions();
+            try
+            {
+                return _md.dataDefinitionIgnoredInTransactions();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException
         {
-            return _md.getProcedures(catalog, schemaPattern, procedureNamePattern);
+            try
+            {
+                return _md.getProcedures(catalog, schemaPattern, procedureNamePattern);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern) throws SQLException
         {
-            return _md.getProcedureColumns(catalog, schemaPattern, procedureNamePattern, columnNamePattern);
+            try
+            {
+                return _md.getProcedureColumns(catalog, schemaPattern, procedureNamePattern, columnNamePattern);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException
         {
-            long start = System.currentTimeMillis();
-            ResultSet ret = _md.getTables(catalog, schemaPattern, tableNamePattern, types);
-            log("getTables()", "getTables(" + catalog + ", " + schemaPattern + ", " + tableNamePattern + ")", start);
+            try
+            {
+                long start = System.currentTimeMillis();
+                ResultSet ret = _md.getTables(catalog, schemaPattern, tableNamePattern, types);
+                log("getTables()", "getTables(" + catalog + ", " + schemaPattern + ", " + tableNamePattern + ")", start);
 
-            return ret;
+                return ret;
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getSchemas() throws SQLException
         {
-            long start = System.currentTimeMillis();
-            ResultSet ret = _md.getSchemas();
-            log("getSchemas()", "getSchemas()", start);
+            try
+            {
+                long start = System.currentTimeMillis();
+                ResultSet ret = _md.getSchemas();
+                log("getSchemas()", "getSchemas()", start);
 
-            return ret;
+                return ret;
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getCatalogs() throws SQLException
         {
-            long start = System.currentTimeMillis();
-            ResultSet ret = _md.getCatalogs();
-            log("getCatalogs()", "getCatalogs()", start);
+            try
+            {
+                long start = System.currentTimeMillis();
+                ResultSet ret = _md.getCatalogs();
+                log("getCatalogs()", "getCatalogs()", start);
 
-            return ret;
+                return ret;
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getTableTypes() throws SQLException
         {
-            long start = System.currentTimeMillis();
-            ResultSet ret =  _md.getTableTypes();
-            log("getTableTypes()", "getTableTypes()", start);
+            try
+            {
+                long start = System.currentTimeMillis();
+                ResultSet ret =  _md.getTableTypes();
+                log("getTableTypes()", "getTableTypes()", start);
 
-            return ret;
+                return ret;
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException
         {
-            long start = System.currentTimeMillis();
-            ResultSet ret = _md.getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern);
-            log("getColumns()", "getColumns(" + catalog + ", " + schemaPattern + ", " + tableNamePattern + ", " + columnNamePattern + ")", start);
+            try
+            {
+                long start = System.currentTimeMillis();
+                ResultSet ret = _md.getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern);
+                log("getColumns()", "getColumns(" + catalog + ", " + schemaPattern + ", " + tableNamePattern + ", " + columnNamePattern + ")", start);
 
-            return ret;
+                return ret;
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException
         {
-            return _md.getColumnPrivileges(catalog, schema, table, columnNamePattern);
+            try
+            {
+                return _md.getColumnPrivileges(catalog, schema, table, columnNamePattern);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException
         {
-            return _md.getTablePrivileges(catalog, schemaPattern, tableNamePattern);
+            try
+            {
+                return _md.getTablePrivileges(catalog, schemaPattern, tableNamePattern);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException
         {
-            return _md.getBestRowIdentifier(catalog, schema, table, scope, nullable);
+            try
+            {
+                return _md.getBestRowIdentifier(catalog, schema, table, scope, nullable);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException
         {
-            return _md.getVersionColumns(catalog, schema, table);
+            try
+            {
+                return _md.getVersionColumns(catalog, schema, table);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException
         {
-            long start = System.currentTimeMillis();
-            ResultSet ret = _md.getPrimaryKeys(catalog, schema, table);
-            log("getPrimaryKeys()", "getPrimaryKeys(" + catalog + ", " + schema + ", " + table + ")", start);
+            try
+            {
+                long start = System.currentTimeMillis();
+                ResultSet ret = _md.getPrimaryKeys(catalog, schema, table);
+                log("getPrimaryKeys()", "getPrimaryKeys(" + catalog + ", " + schema + ", " + table + ")", start);
 
-            return ret;
+                return ret;
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException
         {
-            long start = System.currentTimeMillis();
-            ResultSet ret = _md.getImportedKeys(catalog, schema, table);
-            log("getImportedKeys()", "getImportedKeys(" + catalog + ", " + schema + ", " + table + ")", start);
+            try
+            {
+                long start = System.currentTimeMillis();
+                ResultSet ret = _md.getImportedKeys(catalog, schema, table);
+                log("getImportedKeys()", "getImportedKeys(" + catalog + ", " + schema + ", " + table + ")", start);
 
-            return ret;
+                return ret;
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException
         {
-            return _md.getExportedKeys(catalog, schema, table);
+            try
+            {
+                return _md.getExportedKeys(catalog, schema, table);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable)
                 throws SQLException
         {
-            return _md.getCrossReference(parentCatalog, parentSchema, parentTable, foreignCatalog, foreignSchema, foreignTable);
+            try
+            {
+                return _md.getCrossReference(parentCatalog, parentSchema, parentTable, foreignCatalog, foreignSchema, foreignTable);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getTypeInfo()
                 throws SQLException
         {
-            return _md.getTypeInfo();
+            try
+            {
+                return _md.getTypeInfo();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException
         {
-            return _md.getIndexInfo(catalog, schema, table, unique, approximate);
+            try
+            {
+                return _md.getIndexInfo(catalog, schema, table, unique, approximate);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsResultSetType(int type)
                 throws SQLException
         {
-            return _md.supportsResultSetType(type);
+            try
+            {
+                return _md.supportsResultSetType(type);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsResultSetConcurrency(int type, int concurrency)
                 throws SQLException
         {
-            return _md.supportsResultSetConcurrency(type, concurrency);
+            try
+            {
+                return _md.supportsResultSetConcurrency(type, concurrency);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean ownUpdatesAreVisible(int type)
                 throws SQLException
         {
-            return _md.ownUpdatesAreVisible(type);
+            try
+            {
+                return _md.ownUpdatesAreVisible(type);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean ownDeletesAreVisible(int type)
                 throws SQLException
         {
-            return _md.ownDeletesAreVisible(type);
+            try
+            {
+                return _md.ownDeletesAreVisible(type);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean ownInsertsAreVisible(int type)
                 throws SQLException
         {
-            return _md.ownInsertsAreVisible(type);
+            try
+            {
+                return _md.ownInsertsAreVisible(type);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean othersUpdatesAreVisible(int type)
                 throws SQLException
         {
-            return _md.othersUpdatesAreVisible(type);
+            try
+            {
+                return _md.othersUpdatesAreVisible(type);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean othersDeletesAreVisible(int type)
                 throws SQLException
         {
-            return _md.othersDeletesAreVisible(type);
+            try
+            {
+                return _md.othersDeletesAreVisible(type);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean othersInsertsAreVisible(int type)
                 throws SQLException
         {
-            return _md.othersInsertsAreVisible(type);
+            try
+            {
+                return _md.othersInsertsAreVisible(type);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean updatesAreDetected(int type)
                 throws SQLException
         {
-            return _md.updatesAreDetected(type);
+            try
+            {
+                return _md.updatesAreDetected(type);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean deletesAreDetected(int type)
                 throws SQLException
         {
-            return _md.deletesAreDetected(type);
+            try
+            {
+                return _md.deletesAreDetected(type);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean insertsAreDetected(int type)
                 throws SQLException
         {
-            return _md.insertsAreDetected(type);
+            try
+            {
+                return _md.insertsAreDetected(type);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsBatchUpdates()
                 throws SQLException
         {
-            return _md.supportsBatchUpdates();
+            try
+            {
+                return _md.supportsBatchUpdates();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types)
                 throws SQLException
         {
-            return _md.getUDTs(catalog, schemaPattern, typeNamePattern, types);
+            try
+            {
+                return _md.getUDTs(catalog, schemaPattern, typeNamePattern, types);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public Connection getConnection()
                 throws SQLException
         {
-            return _md.getConnection();
+            try
+            {
+                return _md.getConnection();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsSavepoints()
                 throws SQLException
         {
-            return _md.supportsSavepoints();
+            try
+            {
+                return _md.supportsSavepoints();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsNamedParameters()
                 throws SQLException
         {
-            return _md.supportsNamedParameters();
+            try
+            {
+                return _md.supportsNamedParameters();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsMultipleOpenResults()
                 throws SQLException
         {
-            return _md.supportsMultipleOpenResults();
+            try
+            {
+                return _md.supportsMultipleOpenResults();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsGetGeneratedKeys()
                 throws SQLException
         {
-            return _md.supportsGetGeneratedKeys();
+            try
+            {
+                return _md.supportsGetGeneratedKeys();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern)
                 throws SQLException
         {
-            return _md.getSuperTypes(catalog, schemaPattern, typeNamePattern);
+            try
+            {
+                return _md.getSuperTypes(catalog, schemaPattern, typeNamePattern);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern)
                 throws SQLException
         {
-            return _md.getSuperTables(catalog, schemaPattern, tableNamePattern);
+            try
+            {
+                return _md.getSuperTables(catalog, schemaPattern, tableNamePattern);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern)
                 throws SQLException
         {
-            return _md.getAttributes(catalog, schemaPattern, typeNamePattern, attributeNamePattern);
+            try
+            {
+                return _md.getAttributes(catalog, schemaPattern, typeNamePattern, attributeNamePattern);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsResultSetHoldability(int holdability)
                 throws SQLException
         {
-            return _md.supportsResultSetHoldability(holdability);
+            try
+            {
+                return _md.supportsResultSetHoldability(holdability);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getResultSetHoldability()
                 throws SQLException
         {
-            return _md.getResultSetHoldability();
+            try
+            {
+                return _md.getResultSetHoldability();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getDatabaseMajorVersion()
                 throws SQLException
         {
-            return _md.getDatabaseMajorVersion();
+            try
+            {
+                return _md.getDatabaseMajorVersion();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getDatabaseMinorVersion()
                 throws SQLException
         {
-            return _md.getDatabaseMinorVersion();
+            try
+            {
+                return _md.getDatabaseMinorVersion();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getJDBCMajorVersion()
                 throws SQLException
         {
-            return _md.getJDBCMajorVersion();
+            try
+            {
+                return _md.getJDBCMajorVersion();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getJDBCMinorVersion()
                 throws SQLException
         {
-            return _md.getJDBCMinorVersion();
+            try
+            {
+                return _md.getJDBCMinorVersion();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public int getSQLStateType()
                 throws SQLException
         {
-            return _md.getSQLStateType();
+            try
+            {
+                return _md.getSQLStateType();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean locatorsUpdateCopy()
                 throws SQLException
         {
-            return _md.locatorsUpdateCopy();
+            try
+            {
+                return _md.locatorsUpdateCopy();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsStatementPooling()
                 throws SQLException
         {
-            return _md.supportsStatementPooling();
+            try
+            {
+                return _md.supportsStatementPooling();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public RowIdLifetime getRowIdLifetime()
                 throws SQLException
         {
-            return _md.getRowIdLifetime();
+            try
+            {
+                return _md.getRowIdLifetime();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getSchemas(String catalog, String schemaPattern)
                 throws SQLException
         {
-            return _md.getSchemas(catalog, schemaPattern);
+            try
+            {
+                return _md.getSchemas(catalog, schemaPattern);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean supportsStoredFunctionsUsingCallSyntax()
                 throws SQLException
         {
-            return _md.supportsStoredFunctionsUsingCallSyntax();
+            try
+            {
+                return _md.supportsStoredFunctionsUsingCallSyntax();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public boolean autoCommitFailureClosesAllResultSets()
                 throws SQLException
         {
-            return _md.autoCommitFailureClosesAllResultSets();
+            try
+            {
+                return _md.autoCommitFailureClosesAllResultSets();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getClientInfoProperties()
                 throws SQLException
         {
-            return _md.getClientInfoProperties();
+            try
+            {
+                return _md.getClientInfoProperties();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern)
                 throws SQLException
         {
-            return _md.getFunctions(catalog, schemaPattern, functionNamePattern);
+            try
+            {
+                return _md.getFunctions(catalog, schemaPattern, functionNamePattern);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
         public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern)
                 throws SQLException
         {
-            return _md.getFunctionColumns(catalog, schemaPattern, functionNamePattern, columnNamePattern);
+            try
+            {
+                return _md.getFunctionColumns(catalog, schemaPattern, functionNamePattern, columnNamePattern);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         @Override
@@ -1855,12 +3340,26 @@ public class ConnectionWrapper implements java.sql.Connection
 
         public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException
         {
-            throw new UnsupportedOperationException();
+            try
+            {
+                return _md.getPseudoColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern);
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
 
         public boolean generatedKeyAlwaysReturned() throws SQLException
         {
-            throw new UnsupportedOperationException();
+            try
+            {
+                return _md.generatedKeyAlwaysReturned();
+            }
+            catch (SQLException e)
+            {
+                throw logAndCheckException(e);
+            }
         }
     }
 }
