@@ -1188,7 +1188,7 @@ public class ReportsController extends SpringActionController
         public ApiResponse execute(ScriptReportBean bean, BindException errors) throws Exception
         {
             Report report = bean.getReport(getViewContext());
-            File logFile = new File(((RReport)report).getReportDir(), RReportJob.LOG_FILE_NAME);
+            File logFile = new File(((RReport)report).getReportDir(this.getViewContext().getContainer().getId()), RReportJob.LOG_FILE_NAME);
             PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile);
 
             VBox vbox = new VBox();
@@ -1529,7 +1529,7 @@ public class ReportsController extends SpringActionController
 
             if (report instanceof RReport)
             {
-                ((RReport)report).deleteReportDir();
+                ((RReport)report).deleteReportDir(context);
                 ((RReport)report).createInputDataFile(getViewContext());
                 PipelineService.get().queueJob(job);
                 response.put("success", true);
