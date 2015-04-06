@@ -37,6 +37,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -198,7 +199,7 @@ public class QueryWebPart extends VBox
     {
         if (_schema == null || _settings == null)
         {
-            throw new ValidationException("Invalid Schema provided: " + (_schemaName != null ? _schemaName : "<empty>"));
+            throw new NotFoundException("Invalid Schema provided: " + (_schemaName != null ? _schemaName : "<empty>"));
         }
 
         QueryDefinition queryDef = _settings.getQueryDef(_schema);

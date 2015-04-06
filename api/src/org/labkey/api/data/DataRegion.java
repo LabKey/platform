@@ -50,6 +50,7 @@ import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.ViewContext;
 
@@ -1880,7 +1881,12 @@ public class DataRegion extends AbstractDataRegion
 
         ctx.setResults(new ResultsImpl(null, selectKeyMap));
 
-        SimpleFilter.InClause clause = new SimpleFilter.InClause(FieldKey.fromParts(viewForm.getPkName()), Arrays.asList(viewForm.getSelectedRows()), true);
+        String[] selectedRows = viewForm.getSelectedRows();
+        if (selectedRows == null)
+        {
+            throw new NotFoundException("No selected rows found");
+        }
+        SimpleFilter.InClause clause = new SimpleFilter.InClause(FieldKey.fromParts(viewForm.getPkName()), Arrays.asList(selectedRows), true);
         SimpleFilter pkFilter = new SimpleFilter(clause);
 
         for (Map.Entry<FieldKey, ColumnInfo> entry : selectKeyMap.entrySet())

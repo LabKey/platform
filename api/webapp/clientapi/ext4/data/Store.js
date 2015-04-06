@@ -698,7 +698,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
     },
 
     /**
-     * Returns a field metadata object fo the specified field
+     * Returns a field metadata object of the specified field
      *
      * @name findFieldMetadata
      * @function

@@ -21,25 +21,23 @@ package org.labkey.api.query;
  */
 public class RuntimeValidationException extends RuntimeException
 {
-    private ValidationException _vex;
-
     public RuntimeValidationException(ValidationException vex)
     {
-        _vex = vex;
+        super(vex);
     }
 
     public RuntimeValidationException(String message)
     {
-        _vex = new ValidationException(message);
+        super(new ValidationException(message));
     }
 
     public RuntimeValidationException(String message, String property)
     {
-        _vex = new ValidationException(message, property);
+        super(new ValidationException(message, property));
     }
 
     public ValidationException getValidationException()
     {
-        return _vex;
+        return (ValidationException)getCause();
     }
 }
