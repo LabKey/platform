@@ -237,6 +237,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private TaskId _activeTaskId;
     private TaskStatus _activeTaskStatus;
     private int _activeTaskRetries;
+    @NotNull
     private PipeRoot _pipeRoot;
     private File _logFile;
     volatile private boolean _interrupted;
@@ -253,7 +254,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     /** Although having a null provider is legal, it is recommended that one be used
      * so that it can respond to events as needed */ 
-    public PipelineJob(@Nullable String provider, ViewBackgroundInfo info, PipeRoot root)
+    public PipelineJob(@Nullable String provider, ViewBackgroundInfo info, @NotNull PipeRoot root)
     {
         _info = info;
         _provider = provider;
@@ -387,6 +388,7 @@ abstract public class PipelineJob extends Job implements Serializable
         return PipelineJobService.get().getTaskFactory(getActiveTaskId());
     }
 
+    @NotNull
     public PipeRoot getPipeRoot()
     {
         return _pipeRoot;
