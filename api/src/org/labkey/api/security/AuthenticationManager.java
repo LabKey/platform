@@ -269,24 +269,6 @@ public class AuthenticationManager
     }
 
 
-    private static final String AUTHENTICATION_SETTINGS_SET = "AuthenticationSettings";
-    private static final String ALLOW_BROWSER_CACHING = "AllowBrowserCaching";
-
-    public static void setBrowserCaching(boolean allow)
-    {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_SETTINGS_SET, true);
-        props.put(ALLOW_BROWSER_CACHING, allow ? "TRUE" : "FALSE");
-        props.save();
-    }
-
-
-    public static boolean isBrowserCachingAllowed()
-    {
-        String value = PropertyManager.getProperties(AUTHENTICATION_SETTINGS_SET).get(ALLOW_BROWSER_CACHING);
-        return !"FALSE".equalsIgnoreCase(value);  // Default to TRUE
-    }
-
-
     private static void loadProperties()
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_PROVIDERS_SET);
