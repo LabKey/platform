@@ -1737,44 +1737,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
-    public static class SettingsForm
-    {
-        private boolean _allowBrowserCaching;
-
-        public boolean getAllowBrowserCaching()
-        {
-            return _allowBrowserCaching;
-        }
-
-        @SuppressWarnings("unused")
-        public void setAllowBrowserCaching(boolean allowBrowserCaching)
-        {
-            _allowBrowserCaching = allowBrowserCaching;
-        }
-    }
-
-
-    @RequiresSiteAdmin
-    public class SaveSettingsAction extends RedirectAction<SettingsForm>
-    {
-        public ActionURL getSuccessURL(SettingsForm form)
-        {
-            return getUrls().getConfigureURL();
-        }
-
-        public boolean doAction(SettingsForm form, BindException errors) throws Exception
-        {
-            AuthenticationManager.setBrowserCaching(form.getAllowBrowserCaching());
-            return true;
-        }
-
-        public void validateCommand(SettingsForm form, Errors errors)
-        {
-        }
-    }
-
-
     @RequiresSiteAdmin
     public class DisableAction extends RedirectAction<ProviderConfigurationForm>
     {

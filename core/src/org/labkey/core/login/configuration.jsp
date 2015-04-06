@@ -35,16 +35,6 @@
 %>
 
 <table>
-    <tr><td colspan="5">Most web browsers save and automatically enter passwords on login pages, but, for security reasons, administrators may want to disable this ability on the LabKey Server login page.<br><br></td></tr>
-    <tr><td>&nbsp;&nbsp;</td>
-
-    <labkey:form action="<%=h(buildURL(LoginController.SaveSettingsAction.class))%>" method="post" name="settings">
-        <td>Allow browser caching of credentials</td><td><input type="checkbox" name="allowBrowserCaching" onclick="document.forms.settings.submit();" <%=checked(AuthenticationManager.isBrowserCachingAllowed())%>/></td>
-    </labkey:form>
-
-    </tr>
-    <tr><td colspan="5">&nbsp;</td></tr>
-
     <tr><td colspan="5">These are the installed primary authentication providers:<br><br></td></tr>
 
     <% appendProviders(out, primary, urls); %>

@@ -41,9 +41,6 @@
     String formURL = agreeOnly ? buildURL(LoginController.AgreeToTermsAction.class) : buildURL(LoginController.LoginAction.class);
     String email = bean.form.getEmail();
     boolean focusEmail = StringUtils.isBlank(email);
-    boolean isBrowserCachingAllowed = AuthenticationManager.isBrowserCachingAllowed();
-    String autoCompleteOnOff = (isBrowserCachingAllowed) ? "on" : "off";
-
 %>
 <style type="text/css">
     .labkey-error {
@@ -58,7 +55,7 @@
     <div class="auth-header">Sign In</div>
     <% } %>
     <labkey:errors />
-    <form name="login" method="POST" action="<%=h(formURL)%>" accept-charset="UTF-8" autocomplete="<%=text(autoCompleteOnOff)%>"><labkey:csrf/>
+    <form name="login" method="POST" action="<%=h(formURL)%>" accept-charset="UTF-8"><labkey:csrf/>
         <div class="auth-form-body">
             <% if (!agreeOnly) { %>
             <label for="email">Email</label>
