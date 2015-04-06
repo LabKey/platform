@@ -125,7 +125,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             t.addCommitTask(new Runnable() {
                 public void run()
                 {
-                    DatabaseCache.this.remove(key);
+                    getCache().remove(key);
                 }
             }, DbScope.CommitTaskOption.POSTCOMMIT);
         }
@@ -143,7 +143,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             t.addCommitTask(new Runnable() {
                  public void run()
                  {
-                     DatabaseCache.this.removeUsingPrefix(prefix);
+                     getCache().removeUsingPrefix(prefix);
                  }
             }, DbScope.CommitTaskOption.POSTCOMMIT);
         }
@@ -161,7 +161,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             t.addCommitTask(new Runnable() {
                 public void run()
                 {
-                    DatabaseCache.this.clear();
+                    getCache().clear();
                 }
             }, DbScope.CommitTaskOption.POSTCOMMIT);
         }
