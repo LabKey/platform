@@ -35,11 +35,7 @@ public class PipelineTaskRunner
         {
             job.runActiveTask();
         }
-        catch (IOException e)
-        {
-            job.error(e.getMessage(), e);
-        }
-        catch (PipelineJobException e)
+        catch (IOException | PipelineJobException e)
         {
             job.error(e.getMessage(), e);
         }

@@ -31,7 +31,7 @@
 <table>
     <%=formatMissedErrorsInTable("form", 2)%>
     <tr>
-        <td class="labkey-form-label">LDAP servers<%= PageFlowUtil.helpPopup("LDAP servers", "Specifies the addresses of your organization's LDAP server or servers. You can provide a list of multiple servers separated by semicolons. The general form for the LDAP server address is ldap://servername.domain.org:389")%></td>
+        <td class="labkey-form-label">LDAP server URLs<%= PageFlowUtil.helpPopup("LDAP servers", "Specifies the addresses of your organization's LDAP server or servers. You can provide a list of multiple servers separated by semicolons. The general form for the LDAP server address is ldap://servername.domain.org:389")%></td>
         <td><input type="text" name="servers" size="50" value="<%=h(bean.getServers()) %>"></td>
     </tr>
     <tr>
