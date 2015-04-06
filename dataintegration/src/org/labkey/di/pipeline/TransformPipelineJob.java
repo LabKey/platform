@@ -69,8 +69,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
                 new ViewBackgroundInfo(info.getContainer(), info.getUser(), null),
                 PipelineService.get().findPipelineRoot(info.getContainer()));
         _etlDescriptor = etlDescriptor;
-        if (null == getPipeRoot())
-            throw new IllegalStateException("Pipeline root has not been set.");
+
         File etlLogDir = getPipeRoot().resolvePath("etlLogs");
         //TODO: The string replace is a temp workaround until we remove the braces from the module name and switch
         // to passing around a TaskId instead.
