@@ -319,7 +319,7 @@ public class CoreQuerySchema extends UserSchema
         members.setDefaultVisibleColumns(defCols);
 
         members.setDescription("Contains rows indicating which users are in which groups in the current project." +
-            " The data in this table are available only to users who are signed in (not guests). Guests will see no rows.");
+            " By default, the data in this table are available only to administrators. The \"See Email Addresses\" role can be explicitly granted to other users and groups.");
 
         return members;
     }
@@ -357,7 +357,8 @@ public class CoreQuerySchema extends UserSchema
 
         users.setDescription("Contains all users who are members of the current project." +
         " The data in this table are available only to users who are signed-in (not guests). Guests will see no rows." +
-        " All signed-in users will see the columns UserId, EntityId, DisplayName, Email, FirstName, LastName, Description, Created, Modified." +
+        " All signed-in users will see the columns UserId, EntityId, DisplayName, Email, FirstName, LastName, Description, Created, Modified," +
+        " although non-administrator users must be added to the \"See Email Addresses\" role to see values in the Email column." +
         " Users with administrator permissions will also see the columns Phone, Mobile, Pager, IM, Active and LastLogin.");
 
         return users;
