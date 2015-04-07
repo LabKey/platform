@@ -268,11 +268,12 @@ function disableFileUpload() {
 function enableFileUpload() {
     Ext.get('file-field').setDisplayed('table-row');
     Ext.get('sampleSetData').setDisplayed('none');
-    Ext.getCmp('upload-run-field').enable();
+    var fileUpload = Ext.getCmp('upload-run-field');
+    if (fileUpload)
+        fileUpload.enable();
 }
 
 function runner() {
-    console.log('called runner!');
     return true;
 }
 
@@ -398,7 +399,6 @@ function runner() {
     };
 
     var validateKey = function() {
-        console.log('called validate key!');
         var name = document.getElementById("name").value;
 
         <% if (form.isImportMoreSamples()) { %>
@@ -432,14 +432,23 @@ function runner() {
             }
             else
             {
-                colIndex[0] = parseInt(select1.options[select1.selectedIndex].value);
-                colNames[0] = select1.options[select1.selectedIndex].text;
+                var selOption1 = select1.options[select1.selectedIndex];
+                if (selOption1) {
+                    colIndex[0] = parseInt(selOption1.value);
+                    colNames[0] = selOption1.text;
+                }
 
-                colIndex[1] = parseInt(select2.options[select2.selectedIndex].value);
-                colNames[1] = select2.options[select2.selectedIndex].text;
+                var selOption2 = select2.options[select2.selectedIndex];
+                if (selOption2) {
+                    colIndex[1] = parseInt(selOption2.value);
+                    colNames[1] = selOption2.text;
+                }
 
-                colIndex[2] = parseInt(select3.options[select3.selectedIndex].value);
-                colNames[2] = select3.options[select3.selectedIndex].text;
+                var selOption3 = select3.options[select3.selectedIndex];
+                if (selOption3) {
+                    colIndex[2] = parseInt(selOption3.value);
+                    colNames[2] = selOption3.text;
+                }
             }
 
             if (colIndex[1] != -1 && colIndex[0] == colIndex[1])
@@ -538,6 +547,12 @@ function runner() {
     };
 
     var init = function() {
+
+        // reshow corner case
+        var el = Ext.query('input[name=uploadType][value=paste]');
+        if (el.length == 1) {
+            el[0].checked = true;
+        }
 
         // initialize form submit
         var formEl = Ext.get('sampleSetUploadForm');
