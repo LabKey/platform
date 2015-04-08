@@ -105,7 +105,7 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest implements Sq
 
         clickTab("Clinical and Assay Data");
         waitAndClickAndWait(Locator.linkWithText("Results"));
-        _listHelper.importDataFromFile(DATA_RESULTS);
+        _listHelper.importDataFromFile(DATA_RESULTS, 5 * 60000);
 
         // Group A = 00001 - 00500
         _studyHelper.createCustomParticipantGroup(getProjectName(), getProjectName(), "Group A", "Participant", "Test Category", true, true, getPtidsForGroup(1));
