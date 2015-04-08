@@ -69,7 +69,7 @@ public class RequeueLostJobsRequest implements StatusRequest
                       */
                     synchronized(LOCK)
                     {
-                        _log.info("Requeueing jobs for location " + location);
+                        _log.info("Requeueing jobs for location " + location + (_hostName == null ? "" : " and host name " + _hostName));
                         for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(location, true))
                         {
                             if (!_jobIds.contains(sf.getJobId()) && sf.getJobStore() != null && (sf.getActiveHostName() == null || sf.getActiveHostName().equals(_hostName)))

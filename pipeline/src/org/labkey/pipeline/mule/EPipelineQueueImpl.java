@@ -168,6 +168,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         UMOEndpoint ep = (UMOEndpoint) endpoints.get("JobQueue");
         if (ep == null)
         {
+            PipelineJob.logStartStopInfo("JobQueue is not available in JMS. Unable to cancel job ID: " + job.getJobGUID() + " if it is in the JMS queue");
             return false;
         }
 
@@ -193,8 +194,16 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
                     job.getLogger().info("Cancelling job by deleting from JMS queue.");
                     PipelineJob.logStartStopInfo("Cancelling job by deleting from JMS queue. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
                 }
+                else
+                {
+                    PipelineJob.logStartStopInfo("Failed to deserialize job being canceled. Job ID: " + statusFile.getJobId() + ", " + statusFile.getFilePath());
+                }
                 statusFile.setStatus(PipelineJob.TaskStatus.cancelled.toString());
                 statusFile.save();
+            }
+            else
+            {
+                PipelineJob.logStartStopInfo("Failed find job in JMS queue to cancel it. It may already be running its next task. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
             }
         }
         catch (JMSException e)

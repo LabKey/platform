@@ -17,6 +17,7 @@
 package org.labkey.pipeline.api;
 
 import com.thoughtworks.xstream.converters.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -30,7 +31,6 @@ import org.labkey.api.pipeline.TaskId;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -81,8 +81,9 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             PipelineService.get().queueJob(job);
 
             job.getLogger().info("Retrying job.");
+            job.getLogger().debug("Database indicates active task ID is " + job.getActiveTaskId() + (sf.getActiveHostName() == null ? "" : ", assigned to host '" + sf.getActiveHostName() + "'"));
             job.getLogger().debug("Retry details: Old Job ID: " + oldJobId +
-                    (Objects.equals(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
+                    (StringUtils.equalsIgnoreCase(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
         }
         catch (ConversionException e)
         {

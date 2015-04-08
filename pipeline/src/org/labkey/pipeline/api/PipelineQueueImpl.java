@@ -166,7 +166,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         for (ListIterator<PipelineJob> it = _pending.listIterator(); it.hasNext();)
         {
             PipelineJob job = it.next();
-            if (job.getJobGUID().equals(statusFile.getJobId()) && inContainer(c, job))
+            if (job.getJobGUID().equalsIgnoreCase(statusFile.getJobId()) && inContainer(c, job))
             {
                 job.cancel(false);
                 it.remove();
@@ -181,7 +181,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         for (ListIterator<PipelineJob> it = _running.listIterator(); it.hasNext();)
         {
             PipelineJob job = it.next();
-            if (job.getJobGUID().equals(statusFile.getJobId()) && inContainer(c, job))
+            if (job.getJobGUID().equalsIgnoreCase(statusFile.getJobId()) && inContainer(c, job))
             {
                 job.getLogger().info("Interrupting job by sending interrupt request.");
                 PipelineJob.logStartStopInfo("Interrupting job by sending interrupt request. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
