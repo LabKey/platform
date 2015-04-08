@@ -53,8 +53,9 @@ public class RunDataLinkDisplayColumn extends DataInputColumn
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        super.renderGridCellContents(ctx, out);
-        int runId = ((Integer) _runIdCol.getValue(ctx)).intValue();
+        if (null != _objectIdCol)
+            super.renderGridCellContents(ctx, out);
+        int runId = (Integer)_runIdCol.getValue(ctx);
         ActionURL runURL = new ActionURL(AssayDetailRedirectAction.class, ctx.getContainer());
         runURL.addParameter("runId", runId);
         out.write(PageFlowUtil.textLink("View Run", runURL));
@@ -70,6 +71,7 @@ public class RunDataLinkDisplayColumn extends DataInputColumn
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
         columns.add(_runIdCol);
-        columns.add(_objectIdCol);
+        if (null != _objectIdCol)
+            columns.add(_objectIdCol);
     }
 }
