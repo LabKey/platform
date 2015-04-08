@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -76,7 +77,6 @@ import org.labkey.study.visualization.StudyVisualizationProvider;
 import org.labkey.study.writer.AbstractContext;
 import org.springframework.validation.BindException;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -164,7 +164,7 @@ public class StudyQuerySchema extends UserSchema
     }
 
 
-    public static StudyQuerySchema createSchema(StudyImpl study, User user, boolean mustCheckPermissions)
+    public static StudyQuerySchema createSchema(@NotNull StudyImpl study, User user, boolean mustCheckPermissions)
     {
         if (study.isDataspaceStudy())
             return new DataspaceQuerySchema(study, user, mustCheckPermissions);

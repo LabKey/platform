@@ -55,24 +55,43 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.VialSpecimenRollup;
-import org.labkey.study.model.*;
+import org.labkey.study.model.AdditiveType;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.DerivativeType;
+import org.labkey.study.model.ExtendedSpecimenRequestView;
+import org.labkey.study.model.LocationImpl;
+import org.labkey.study.model.PrimaryType;
+import org.labkey.study.model.SpecimenComment;
+import org.labkey.study.model.SpecimenEvent;
+import org.labkey.study.model.SpecimenRequest;
+import org.labkey.study.model.SpecimenRequestActor;
+import org.labkey.study.model.SpecimenRequestEvent;
+import org.labkey.study.model.SpecimenRequestRequirement;
+import org.labkey.study.model.SpecimenRequestStatus;
+import org.labkey.study.model.SpecimenTypeSummary;
+import org.labkey.study.model.SpecimenTypeSummaryRow;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.Vial;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.study.security.permissions.ManageRequestsPermission;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.specimen.SpecimenCommentAuditViewFactory;
 import org.labkey.study.specimen.report.SpecimenCountSummary;
 import org.labkey.study.specimen.settings.DisplaySettings;
 import org.labkey.study.specimen.settings.RepositorySettings;
 import org.labkey.study.specimen.settings.RequestNotificationSettings;
 import org.labkey.study.specimen.settings.StatusSettings;
-import org.labkey.study.security.permissions.ManageRequestsPermission;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -3350,6 +3369,10 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     public TableSelector getSpecimensSelector(final Container container, final User user, SimpleFilter filter)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
+        if (study == null)
+        {
+            throw new NotFoundException("No study in container " + container.getPath());
+        }
         StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, true);
         TableInfo specimenTable = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         return new TableSelector(specimenTable, filter, null);
