@@ -356,7 +356,9 @@ core/src/org/labkey/core/admin/importFolder.jsp -text
 core/src/org/labkey/core/admin/importer/FolderTypeImporterFactory.java -text
 core/src/org/labkey/core/admin/importer/ModulePropertiesImporterFactory.java -text
 core/src/org/labkey/core/admin/importer/PageImporterFactory.java -text
+core/src/org/labkey/core/admin/importer/RoleAssignmentsImporterFactory.java -text
 core/src/org/labkey/core/admin/importer/SearchSettingsImporterFactory.java -text
+core/src/org/labkey/core/admin/importer/SecurityGroupImporterFactory.java -text
 core/src/org/labkey/core/admin/importer/SubfolderImporterFactory.java -text
 core/src/org/labkey/core/admin/installComplete.jsp -text
 core/src/org/labkey/core/admin/logger/LoggerController.java -text
@@ -395,7 +397,9 @@ core/src/org/labkey/core/admin/writer/FolderSerializationRegistryImpl.java -text
 core/src/org/labkey/core/admin/writer/FolderTypeWriterFactory.java -text
 core/src/org/labkey/core/admin/writer/ModulePropertiesWriterFactory.java -text
 core/src/org/labkey/core/admin/writer/PageWriterFactory.java -text
+core/src/org/labkey/core/admin/writer/RoleAssignmentsWriterFactory.java -text
 core/src/org/labkey/core/admin/writer/SearchSettingsWriterFactory.java -text
+core/src/org/labkey/core/admin/writer/SecurityGroupWriterFactory.java -text
 core/src/org/labkey/core/analytics/AnalyticsController.java -text
 core/src/org/labkey/core/analytics/AnalyticsServiceImpl.java -text
 core/src/org/labkey/core/analytics/analyticsSettings.jsp -text

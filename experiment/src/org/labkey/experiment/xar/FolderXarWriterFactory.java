@@ -77,7 +77,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public boolean includeInType(AbstractFolderContext.ExportType type)
+        public boolean selectedByDefault(AbstractFolderContext.ExportType type)
         {
             return false; // Should be unchecked by default.
         }

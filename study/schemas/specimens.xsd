@@ -61,13 +61,7 @@
                         <xs:element name="actor" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="groups" minOccurs="0">
-                                        <xs:complexType>
-                                            <xs:sequence minOccurs="0" maxOccurs="unbounded">
-                                                <xs:element name="group" type="sec:groupType"/>
-                                            </xs:sequence>
-                                        </xs:complexType>
-                                    </xs:element>
+                                    <xs:element name="groups" type="sec:groupsType" minOccurs="0"/>
                                 </xs:sequence>
                                 <xs:attribute name="label" type="xs:string"/>
                                 <xs:attribute name="type">

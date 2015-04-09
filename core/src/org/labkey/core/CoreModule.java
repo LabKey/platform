@@ -135,6 +135,8 @@ import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
 import org.labkey.core.admin.importer.ModulePropertiesImporterFactory;
 import org.labkey.core.admin.importer.PageImporterFactory;
+import org.labkey.core.admin.importer.RoleAssignmentsImporterFactory;
+import org.labkey.core.admin.importer.SecurityGroupImporterFactory;
 import org.labkey.core.admin.importer.SearchSettingsImporterFactory;
 import org.labkey.core.admin.importer.SubfolderImporterFactory;
 import org.labkey.core.admin.logger.LoggerController;
@@ -144,6 +146,8 @@ import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
 import org.labkey.core.admin.writer.FolderTypeWriterFactory;
 import org.labkey.core.admin.writer.ModulePropertiesWriterFactory;
 import org.labkey.core.admin.writer.PageWriterFactory;
+import org.labkey.core.admin.writer.RoleAssignmentsWriterFactory;
+import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.admin.writer.SearchSettingsWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
@@ -670,6 +674,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fsr.addFactories(new SearchSettingsWriterFactory(), new SearchSettingsImporterFactory());
             fsr.addFactories(new PageWriterFactory(), new PageImporterFactory());
             fsr.addFactories(new ModulePropertiesWriterFactory(), new ModulePropertiesImporterFactory());
+            fsr.addFactories(new SecurityGroupWriterFactory(), new SecurityGroupImporterFactory());
+            fsr.addFactories(new RoleAssignmentsWriterFactory(), new RoleAssignmentsImporterFactory());
             fsr.addImportFactory(new SubfolderImporterFactory());
         }
 

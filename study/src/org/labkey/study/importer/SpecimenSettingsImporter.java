@@ -278,9 +278,9 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                                     }
                                 }
 
-                                // note: currently, request actor groups only have users as membesr (no groups in groups)
+                                // note: currently, request actor groups only have users as members (no groups in groups)
                                 Integer newGroupId = actor.getGroupId(location, true);
-                                GroupManager.importGroupMembers(SecurityManager.getGroup(newGroupId), newActorGroup, ctx.getLogger());
+                                GroupManager.importGroupMembers(SecurityManager.getGroup(newGroupId), newActorGroup, ctx.getLogger(), ctx.getContainer());
                             }
                         }
                     }

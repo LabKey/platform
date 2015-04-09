@@ -20,6 +20,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
+import org.labkey.security.xml.GroupsType;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
@@ -167,7 +168,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
                 xmlActor.setLabel(actor.getLabel());
                 xmlActor.setType(actor.isPerSite() ? SpecimenSettingsType.RequestActors.Actor.Type.LOCATION : SpecimenSettingsType.RequestActors.Actor.Type.STUDY);
 
-                SpecimenSettingsType.RequestActors.Actor.Groups xmlGroups = xmlActor.addNewGroups();
+                GroupsType xmlGroups = xmlActor.addNewGroups();
                 if (!actor.isPerSite())
                 {
                     if (actor.getMembers().length > 0)

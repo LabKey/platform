@@ -1,0 +1,100 @@
+package org.labkey.core.admin.importer;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AbstractFolderImportFactory;
+import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.ImportContext;
+import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.FolderDocument;
+import org.labkey.security.xml.GroupType;
+import org.labkey.security.xml.GroupsType;
+
+import java.util.Collection;
+import java.util.Collections;
+
+/**
+ * Created by susanh on 4/6/15.
+ */
+public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
+{
+    @Override
+    public FolderImporter create()
+    {
+        return new SecurityGroupImporter();
+    }
+
+    @Override
+    public int getPriority()
+    {
+        return 1;
+    }
+
+    public class SecurityGroupImporter implements FolderImporter<FolderDocument.Folder>
+    {
+
+        @Override
+        public String getDescription()
+        {
+            return "project-level groups";
+        }
+
+
+        @Override
+        public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        {
+            GroupsType groups = ctx.getXml().getGroups();
+
+            if (groups == null) // no groups to import
+                return;
+
+            // first create all the groups in the list that are not empty
+            for (GroupType xmlGroupType : groups.getGroupArray())
+            {
+                if (xmlGroupType.getGroups() != null || xmlGroupType.getUsers() != null)
+                {
+                    Integer groupId = SecurityManager.getGroupId(ctx.getContainer(), xmlGroupType.getName(), false);
+                    if (groupId == null)
+                        SecurityManager.createGroup(ctx.getContainer(), xmlGroupType.getName());
+                }
+                else
+                {
+                    ctx.getLogger().warn("Empty group definition not imported: " + xmlGroupType.getName());
+                }
+            }
+            // now populate the groups with their members
+            for (GroupType xmlGroupType : groups.getGroupArray())
+            {
+                GroupManager.importGroupMembers(GroupManager.getGroup(ctx.getContainer(), xmlGroupType.getName(), true), xmlGroupType, ctx.getLogger(), ctx.getContainer());
+            }
+
+        }
+
+        private Group getGroup(Container container, String name)
+        {
+            Integer groupId = org.labkey.api.security.SecurityManager.getGroupId(container, name, false);
+            if (groupId == null)
+                return SecurityManager.createGroup(container, name);
+            else
+                return SecurityManager.getGroup(groupId);
+        }
+
+        @NotNull
+        @Override
+        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return true;
+        }
+    }
+}

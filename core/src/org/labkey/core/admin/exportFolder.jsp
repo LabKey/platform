@@ -65,7 +65,7 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
                 String parent = writer.getSelectionText();
                 if (null != parent && writer.show(c) && !(c.isDataspace() && "Study".equals(parent)))
                 {
-                    boolean checked = writer.includeInType(form.getExportType());
+                    boolean checked = writer.selectedByDefault(form.getExportType());
                     %>formItems.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "types", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: <%=checked%>, objectType: "parent"});<%
 
                     Collection<Writer> children = writer.getChildren(true);

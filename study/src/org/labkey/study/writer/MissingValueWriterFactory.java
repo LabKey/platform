@@ -50,7 +50,7 @@ public class MissingValueWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public boolean includeInType(AbstractFolderContext.ExportType type)
+        public boolean selectedByDefault(AbstractFolderContext.ExportType type)
         {
             return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
         }
