@@ -56,6 +56,7 @@
  *              it is an an array of all possible input values to the scale.</li>
  *          <li><strong>range:</strong> An array of values that all input values (the domain) will be mapped to. Not
  *          used for any axis scales. For continuous color scales it is an array[min, max] hex values.</li>
+ *          <li><strong>sortFn:</strong> If scaleType is "discrete", the sortFn can be used to order the values of the domain</li>
  *      </ul>
  * @param {Object} [config.labels] (Optional) An object with the following properties: main, x, y (or yLeft), yRight.
  *      Each property can have a {String} value, {Boolean} lookClickable, and {Object} listeners. The value is the text
@@ -315,6 +316,7 @@ boxPlot.render();
                 origScale = origScales[scaleName];
 
                 newScale.scaleType = origScale.scaleType ? origScale.scaleType : 'continuous';
+                newScale.sortFn = origScale.sortFn ? origScale.sortFn : null;
                 newScale.trans = origScale.trans ? origScale.trans : 'linear';
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
                 newScale.tickHoverText = origScale.tickHoverText ? origScale.tickHoverText : null;
@@ -435,6 +437,11 @@ boxPlot.render();
 
         if (scale.scaleType == 'discrete') {
             tempDomain = getDiscreteAxisDomain(data, acc);
+
+            if (scale.sortFn) {
+                tempDomain.sort(scale.sortFn);
+            }
+
             if (!curDomain) {
                 return tempDomain;
             }
