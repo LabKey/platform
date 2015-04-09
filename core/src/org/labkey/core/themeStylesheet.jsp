@@ -651,7 +651,8 @@ li.labkey-tab-inactive a
     box-shadow: #<%= webpart %> 0 1px 0px 0 inset;
 }
 
-.themed-panel2 .x4-panel-header {
+.themed-panel2 .x4-panel-header,
+.themed-panel2 .x4-toolbar-footer {
     background: #<%= grid %>;
 }
 
