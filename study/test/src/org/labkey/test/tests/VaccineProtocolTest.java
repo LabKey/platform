@@ -47,7 +47,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
     public void testSteps()
     {
         _containerHelper.createProject(PROJECT_NAME, null);
-        createSubfolder(PROJECT_NAME, PROJECT_NAME, FOLDER_NAME, "None", null);
+        _containerHelper.createSubfolder(PROJECT_NAME, PROJECT_NAME, FOLDER_NAME, "None", null);
 
         populateStudyDesignLookups();
 

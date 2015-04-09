@@ -2285,8 +2285,8 @@ public class StudyManager
             return Collections.emptyList();
 
         if (null == local)
-            local = getDatasetDefinitionsLocal(study, null, null);
-        List<DatasetDefinition> shared = getDatasetDefinitionsLocal(sharedStudy, null, null);
+            local = getDatasetDefinitionsLocal(study, null);
+        List<DatasetDefinition> shared = getDatasetDefinitionsLocal(sharedStudy, null);
 
         if (local.isEmpty() || shared.isEmpty())
             return Collections.emptyList();
