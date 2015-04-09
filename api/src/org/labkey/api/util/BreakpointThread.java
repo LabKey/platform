@@ -213,7 +213,7 @@ public class BreakpointThread extends Thread implements ShutdownListener
             if (e.getTargetException() instanceof IOException)
             {
                 // Rethrow a with a more helpful error message
-                throw new IOException("Failed to write heap dump to " + destination, e.getTargetException());
+                throw new IOException("Failed to write heap dump to " + destination + ", possibly due to a permissions issue", e.getTargetException());
             }
             throw e;
         }
