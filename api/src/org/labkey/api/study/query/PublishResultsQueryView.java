@@ -1043,7 +1043,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
 
-        columns.add(new RunDataLinkDisplayColumn(null, resolverHelper, runIdCol, null));
+        columns.add(new RunDataLinkDisplayColumn(null, resolverHelper, runIdCol, objectIdCol));
 
         ParticipantIDDataInputColumn participantColumn = new ParticipantIDDataInputColumn(resolverHelper, assayPTIDCol);
         columns.add(participantColumn);
