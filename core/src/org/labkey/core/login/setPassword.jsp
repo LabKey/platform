@@ -17,11 +17,12 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.collections.NamedObject" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.login.DbLoginManager" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.core.portal.ProjectController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
@@ -93,6 +94,9 @@
             }
         %>
         </div>
-    <div style="padding-top: 1em;"><%= button(bean.buttonText).submit(true).attributes("name=\"set\"") %><%=text(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper()).toString() : "")%></div><%
-    } %>
+    <div style="padding-top: 1em;">
+        <%= button(bean.buttonText).submit(true).attributes("name=\"set\"") %>
+        <%=text(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.HomeAction.class, getContainer())).toString() : "")%>
+    </div>
+    <% } %>
 </labkey:form>
