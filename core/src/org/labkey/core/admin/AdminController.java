@@ -2010,6 +2010,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            getPageConfig().setHelpTopic(new HelpTopic("runningThreads"));
             return appendAdminNavTrail(root, "Current Threads", this.getClass());
         }
     }
@@ -2025,6 +2026,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            getPageConfig().setHelpTopic(new HelpTopic("dumpHeap"));
             PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Heap dump", null);
             return root;
         }
@@ -2189,6 +2191,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            getPageConfig().setHelpTopic(new HelpTopic("actionsDiagnostics"));
             return appendAdminNavTrail(root, "Actions", this.getClass());
         }
     }
@@ -2535,6 +2538,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            getPageConfig().setHelpTopic(new HelpTopic("cachesDiagnostics"));
             return appendAdminNavTrail(root, "Cache Statistics", this.getClass());
         }
     }
@@ -2753,6 +2757,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            getPageConfig().setHelpTopic(new HelpTopic("memTracker"));
             return appendAdminNavTrail(root, "Memory usage -- " + DateUtil.formatDateTime(getContainer()), this.getClass());
         }
     }
