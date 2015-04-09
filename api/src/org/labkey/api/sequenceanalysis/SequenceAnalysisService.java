@@ -24,9 +24,11 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.security.User;
 import org.labkey.api.sequenceanalysis.model.ReadData;
 import org.labkey.api.sequenceanalysis.model.Readset;
+import org.labkey.api.sequenceanalysis.pipeline.ReferenceGenome;
 import org.labkey.api.sequenceanalysis.pipeline.SequenceOutputHandler;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -54,7 +56,7 @@ abstract public class SequenceAnalysisService
 
     abstract public void registerFileHandler(SequenceOutputHandler handler);
 
-    abstract public File createTabixIndex(File input, @Nullable Logger log) throws PipelineJobException;
+    //abstract public File createTabixIndex(File input, @Nullable Logger log) throws PipelineJobException;
 
     abstract public void registerDataProvider(SequenceDataProvider p);
 
@@ -63,4 +65,8 @@ abstract public class SequenceAnalysisService
     abstract public ReadData getReadData(int rowId, User u);
 
     abstract public Readset getReadset(int readsetId, User u);
+
+    abstract public ReferenceGenome getReferenceGenome(int rowId, User u);
+
+    abstract public File ensureVcfIndex(File vcf, Logger log) throws IOException;
 }

@@ -687,6 +687,15 @@ abstract public class PipelineJob extends Job implements Serializable
             {
                 logStartStopInfo("Starting to run task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
                 getLogger().info("Starting to run task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
+                if (PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer)
+                {
+                    PipelineJobService.RemoteServerProperties remoteProps = PipelineJobService.get().getRemoteServerProperties();
+                    if (remoteProps != null)
+                    {
+                        getLogger().info("on host: '" + remoteProps.getHostName() + "'");
+                    }
+                }
+
                 if (task instanceof WorkDirectoryTask)
                 {
                     workDirectory = factory.createWorkDirectory(getJobGUID(), getJobSupport(FileAnalysisJobSupport.class), getLogger());

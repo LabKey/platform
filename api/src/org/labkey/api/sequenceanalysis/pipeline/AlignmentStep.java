@@ -44,6 +44,8 @@ public interface AlignmentStep extends PipelineStep
 
     public boolean doMergeUnalignedReads();
 
+    public boolean doAddReadGroups();
+
     public boolean doSortIndexBam();
 
     public static interface AlignmentOutput extends PipelineStepOutput

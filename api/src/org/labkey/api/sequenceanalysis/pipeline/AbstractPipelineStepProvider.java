@@ -114,7 +114,7 @@ abstract public class AbstractPipelineStepProvider<StepType extends PipelineStep
     @Override
     public List<ToolParameterDescriptor> getParameters()
     {
-        return _parameters;
+        return Collections.unmodifiableList(_parameters);
     }
 
     @Override

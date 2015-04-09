@@ -20,6 +20,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.pipeline.PipelineJobService;
 
 import java.io.File;
 import java.io.Serializable;
@@ -199,11 +200,21 @@ public class SequenceOutputFile implements Serializable
 
     public static SequenceOutputFile getForId(Integer rowId)
     {
+        if (PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer)
+        {
+            throw new IllegalAccessError("This method should only be called from the webserver");
+        }
+
         return new TableSelector(DbSchema.get("sequenceanalysis").getTable("outputfiles")).getObject(rowId, SequenceOutputFile.class);
     }
 
     public ExpData getExpData()
     {
+        if (PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer)
+        {
+            throw new IllegalAccessError("This method should only be called from the webserver");
+        }
+
         return _dataId > 0 ? ExperimentService.get().getExpData(_dataId) : null;
     }
 
@@ -216,12 +227,19 @@ public class SequenceOutputFile implements Serializable
 
         ExpData data = getExpData();
 
-        return data == null ? null : data.getFile();
+        _file = data == null ? null : data.getFile();
+
+        return _file;
     }
 
     public void setFile(File file)
     {
         _file = file;
+    }
+
+    public void cacheForRemoteServer()
+    {
+        getFile();
     }
 
     public JSONObject toJSON()
@@ -230,6 +248,7 @@ public class SequenceOutputFile implements Serializable
         ret.put("name", _name);
         ret.put("category", _category);
         ret.put("description", _description);
+        ret.put("genomeId", _library_id);
         ret.put("dataId", _dataId);
         ExpData d = getExpData();
         if (d != null)

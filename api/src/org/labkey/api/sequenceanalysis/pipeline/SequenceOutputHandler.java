@@ -100,6 +100,7 @@ public interface SequenceOutputHandler
         /**
          * Allows handlers to perform setup on the webserver prior to remote running.  This will be run in the background as a pipeline job.
          * @param job             The pipeline job running this task
+         * @param support Provides context about the active pipeline job
          * @param inputFiles      The list of input files to process
          * @param params
          * @param outputDir
@@ -107,23 +108,23 @@ public interface SequenceOutputHandler
          * @param outputsToCreate
          * @return A list of new SequenceOutputFile records to create
          */
-        public void init(PipelineJob job, List<SequenceOutputFile> inputFiles, JSONObject params, File outputDir, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
+        public void init(PipelineJob job, SequenceAnalysisJobSupport support, List<SequenceOutputFile> inputFiles, JSONObject params, File outputDir, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
 
         /**
          * Allows handlers to perform processing on the input SequenceOutputFiles locally.  This will be run in the background as a pipeline job.
          * The intention is to allow handlers to only implement the actual processing code they need, without a separate server-side action, pipeline job, etc.
          * Certain handlers will not use this method, and it is recommended that they throw an IllegalArgumentException
          *
-         * @param job             The pipeline job running this task
-         * @param inputFiles      The list of input files to process
+         * @param support Provides context about the active pipeline job
+         * @param inputFiles The list of input files to process
          * @param params
          * @param outputDir
          * @param actions
          * @param outputsToCreate
          * @return A list of new SequenceOutputFile records to create
          */
-        public void processFilesOnWebserver(PipelineJob job, List<SequenceOutputFile> inputFiles, JSONObject params, File outputDir, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
+        public void processFilesOnWebserver(PipelineJob job, SequenceAnalysisJobSupport support, List<SequenceOutputFile> inputFiles, JSONObject params, File outputDir, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
 
-        public void processFilesRemote(SequenceAnalysisJobSupport support, List<SequenceOutputFile> inputFiles, JSONObject params, File outputDir, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
+        public void processFilesRemote(PipelineJob job, SequenceAnalysisJobSupport support, List<SequenceOutputFile> inputFiles, JSONObject params, File outputDir, List<RecordedAction> actions, List<SequenceOutputFile> outputsToCreate) throws UnsupportedOperationException, PipelineJobException;
     }
 }

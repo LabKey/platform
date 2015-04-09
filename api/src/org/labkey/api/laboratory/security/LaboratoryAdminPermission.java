@@ -25,6 +25,6 @@ public class LaboratoryAdminPermission extends AbstractPermission
 {
     public LaboratoryAdminPermission()
     {
-        super("LaboratoryAdminPermission", "This allows users to edit folder-level settings in the laboratory module");
+        super("LaboratoryAdminPermission", "This allows users to edit folder-level settings in the laboratory and other DISCVR modules");
     }
 }

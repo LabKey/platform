@@ -46,7 +46,9 @@ public interface SequenceAnalysisJobSupport extends Serializable
 
     public List<AnalysisModel> getCachedAnalyses();
 
+    public void cacheGenome(ReferenceGenome m);
+
     public ReferenceGenome getCachedGenome(int genomeId);
 
-    public PipelineJob getJob();
+    //public PipelineJob getJob();
 }

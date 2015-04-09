@@ -35,8 +35,9 @@ public class ToolParameterDescriptor
     private String _fieldXtype;
     private JSONObject _additionalExtConfig;
     private Object _defaultValue;
+    private boolean _isExpData;
 
-    public ToolParameterDescriptor(CommandLineParam ca, String name, String label, String description, String fieldXtype, @Nullable Object defaultValue, @Nullable JSONObject additionalExtConfig)
+    public ToolParameterDescriptor(CommandLineParam ca, String name, String label, String description, String fieldXtype, @Nullable Object defaultValue, @Nullable JSONObject additionalExtConfig, boolean isExpData)
     {
         _ca = ca;
         _name = name;
@@ -45,16 +46,22 @@ public class ToolParameterDescriptor
         _fieldXtype = fieldXtype;
         _defaultValue = defaultValue;
         _additionalExtConfig = additionalExtConfig;
+        _isExpData = isExpData;
     }
 
     public static ToolParameterDescriptor create(String name, String label, String description, String fieldXtype, @Nullable JSONObject additionalExtConfig, @Nullable Object defaultValue)
     {
-        return new ToolParameterDescriptor(null, name, label, description, fieldXtype, defaultValue, additionalExtConfig);
+        return new ToolParameterDescriptor(null, name, label, description, fieldXtype, defaultValue, additionalExtConfig, false);
+    }
+
+    public static ToolParameterDescriptor createExpDataParam(String name, String label, String description, String fieldXtype, @Nullable JSONObject additionalExtConfig, @Nullable Object defaultValue)
+    {
+        return new ToolParameterDescriptor(null, name, label, description, fieldXtype, defaultValue, additionalExtConfig, true);
     }
 
     public static ToolParameterDescriptor createCommandLineParam(CommandLineParam ca, String name, String label, String description, String fieldXtype, @Nullable JSONObject additionalExtConfig, @Nullable Object defaultValue)
     {
-        return new ToolParameterDescriptor(ca, name, label, description, fieldXtype, defaultValue, additionalExtConfig);
+        return new ToolParameterDescriptor(ca, name, label, description, fieldXtype, defaultValue, additionalExtConfig, false);
     }
 
     public String getName()
@@ -87,6 +94,16 @@ public class ToolParameterDescriptor
         _description = description;
     }
 
+    public boolean isExpData()
+    {
+        return _isExpData;
+    }
+
+    public void setExpData(boolean isExpData)
+    {
+        _isExpData = isExpData;
+    }
+
     public CommandLineParam getCommandLineParam()
     {
         return _ca;
@@ -116,8 +133,8 @@ public class ToolParameterDescriptor
         ret.put("fieldXtype", _fieldXtype);
         ret.put("additionalExtConfig", _additionalExtConfig);
         ret.put("defaultValue", _defaultValue);
+        ret.put("isExpData", _isExpData);
         ret.put("commandLineParam", _ca == null ? null : _ca.getArgName());
-
 
         return ret;
     }
