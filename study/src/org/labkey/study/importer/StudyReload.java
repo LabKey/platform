@@ -307,7 +307,7 @@ public class StudyReload
             }
         }
 
-        public ReloadStatus attemptReload(ImportOptions options, String source) throws SQLException, ImportException
+        public ReloadStatus attemptReload(ImportOptions options, String source) throws ImportException
         {
             Container c = ContainerManager.getForId(options.getContainerId());
 
@@ -341,7 +341,7 @@ public class StudyReload
 
                     File studyload = root.resolvePath(STUDY_LOAD_FILENAME);
 
-                    if (studyload.exists() && studyload.isFile())
+                    if (studyload != null && studyload.isFile())
                     {
                         long lastModified = studyload.lastModified();
                         Date lastReload = study.getLastReload();

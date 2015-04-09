@@ -1608,7 +1608,7 @@ public class ExperimentController extends SpringActionController
             DataLoaderFactory dlf = DataLoader.get().findFactory(realContent, null);
             if (null == dlf)
             {
-                throw new FileNotFoundException("Unable to parser file " + realContent);
+                throw new FileNotFoundException("Unable to parse file " + realContent);
             }
             DataLoader tabLoader = dlf.createLoader(realContent, true);
             tabLoader.setScanAheadLineCount(5000);

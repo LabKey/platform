@@ -2273,6 +2273,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            getPageConfig().setHelpTopic(new HelpTopic("queryLogger"));
             return appendAdminNavTrail(root, "Queries", this.getClass());
         }
     }
