@@ -47,6 +47,9 @@
     <xs:complexType name="AttributesType">
         <xs:sequence>
 <!--
+            The official XSD includes these elements, but, according to XMLBeans, including named elements plus <any> at
+            the same level is illegal. So, we'll just rely on "any" handling for all properties.
+
             <xs:element name="authenticationDate" type="xs:dateTime" minOccurs="1" maxOccurs="1"></xs:element>
             <xs:element name="longTermAuthenticationRequestTokenUsed" type="xs:boolean" minOccurs="1" maxOccurs="1">
                 <xs:annotation>

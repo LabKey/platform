@@ -35,7 +35,6 @@ import org.json.JSONTokener;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
-import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
@@ -111,14 +110,14 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
     public static String getAuthenticationUrl(HttpServletRequest request, HttpServletResponse response, @NotNull URLHelper returnUrl) throws URISyntaxException
     {
         URLHelper toGoogle = new URLHelper("https://accounts.google.com/o/oauth2/auth");
-        toGoogle.addParameter("response_type","code");
+        toGoogle.addParameter("response_type", "code");
         toGoogle.addParameter("client_id", getClientId());
-        toGoogle.addParameter("redirect_uri",returnUrl.getURIString());
-        toGoogle.addParameter("scope","openid email");
-        toGoogle.addParameter("state", CSRFUtil.getExpectedToken(request,response));
-        toGoogle.addParameter("access_type","online");
+        toGoogle.addParameter("redirect_uri", returnUrl.getURIString());
+        toGoogle.addParameter("scope", "openid email");
+        toGoogle.addParameter("state", CSRFUtil.getExpectedToken(request, response));
+        toGoogle.addParameter("access_type", "online");
         toGoogle.addParameter("openid.realm", "");
-        toGoogle.addParameter("approval_prompt","auto");
+        toGoogle.addParameter("approval_prompt", "auto");
         // TODO login_hint if user selected remember email
         return toGoogle.getURIString();
     }

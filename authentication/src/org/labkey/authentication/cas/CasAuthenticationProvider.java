@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 public class CasAuthenticationProvider implements SSOAuthenticationProvider
 {
     private static final CasAuthenticationProvider INSTANCE = new CasAuthenticationProvider();
-    static final String NAME = "Apereo CAS";
+    static final String NAME = "ApereoCAS";
 
     private CasAuthenticationProvider()
     {

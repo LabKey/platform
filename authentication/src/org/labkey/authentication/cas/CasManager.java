@@ -62,7 +62,6 @@ public class CasManager
 
     public URLHelper getServerURL(String action)
     {
-        // TODO: Save and load base server URL from properties
         String baseURL = getServerUrlProperty();
 
         try

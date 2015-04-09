@@ -46,6 +46,7 @@ public class CasController extends SpringActionController
         @Override
         public ModelAndView getView(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
         {
+            // TODO: Check if provider is enabled
             // TODO: Check for already logged in?
             // TODO: Stash returnURL if present
 
@@ -89,6 +90,7 @@ public class CasController extends SpringActionController
         @Override
         public ModelAndView getView(CasForm form, BindException errors) throws Exception
         {
+            // TODO: Check if provider is enabled
             String ticket = form.getTicket();
             String email = CasManager.getInstance().validate(ticket);
             HttpServletRequest request = getViewContext().getRequest();
