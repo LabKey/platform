@@ -2471,10 +2471,8 @@ public class SecurityManager
     public static SecurityMessage getRegistrationMessage(String mailPrefix, boolean isAdminCopy) throws Exception
     {
         SecurityMessage sm = new SecurityMessage();
-
-        EmailTemplate et = EmailTemplateService.get().getEmailTemplate(
-                isAdminCopy ? RegistrationAdminEmailTemplate.class
-                            : RegistrationEmailTemplate.class);
+        Class<? extends RegistrationEmailTemplate> templateClass = isAdminCopy ? RegistrationAdminEmailTemplate.class : RegistrationEmailTemplate.class;
+        EmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
         sm.setMessagePrefix(mailPrefix);
         sm.setEmailTemplate((SecurityEmailTemplate)et);
         sm.setType("User Registration Email");
@@ -2485,10 +2483,8 @@ public class SecurityManager
     public static SecurityMessage getResetMessage(boolean isAdminCopy) throws Exception
     {
         SecurityMessage sm = new SecurityMessage();
-
-        EmailTemplate et = EmailTemplateService.get().getEmailTemplate(
-                isAdminCopy ? PasswordResetAdminEmailTemplate.class
-                            : PasswordResetEmailTemplate.class);
+        Class<? extends PasswordResetEmailTemplate> templateClass = isAdminCopy ? PasswordResetAdminEmailTemplate.class : PasswordResetEmailTemplate.class;
+        EmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
         sm.setEmailTemplate((SecurityEmailTemplate)et);
         sm.setType("Reset Password Email");
         return sm;
