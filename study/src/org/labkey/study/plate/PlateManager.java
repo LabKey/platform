@@ -349,16 +349,16 @@ public class PlateManager implements PlateService.Service
     {
         SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
         Sort sort = new Sort("Col,Row");
-        return new TableSelector(StudySchema.getInstance().getTableInfoWell(),
-                plateFilter, sort).getArray(plate.isTemplate() ? PositionImpl.class : WellImpl.class);
+        Class<? extends PositionImpl> clazz = plate.isTemplate() ? PositionImpl.class : WellImpl.class;
+        return new TableSelector(StudySchema.getInstance().getTableInfoWell(), plateFilter, sort).getArray(clazz);
 
     }
 
     private WellGroupTemplateImpl[] getWellGroups(PlateTemplateImpl plate)
     {
         SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
-        return new TableSelector(StudySchema.getInstance().getTableInfoWellGroup(),
-                plateFilter, null).getArray(plate.isTemplate() ? WellGroupTemplateImpl.class : WellGroupImpl.class);
+        Class<? extends WellGroupTemplateImpl> clazz = plate.isTemplate() ? WellGroupTemplateImpl.class : WellGroupImpl.class;
+        return new TableSelector(StudySchema.getInstance().getTableInfoWellGroup(), plateFilter, null).getArray(clazz);
     }
 
     private String getLsid(PlateTemplateImpl plate, Class type, boolean instance)

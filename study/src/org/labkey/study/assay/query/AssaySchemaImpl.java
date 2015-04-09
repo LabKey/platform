@@ -277,7 +277,7 @@ public class AssaySchemaImpl extends AssaySchema
                 allowing(_provider1).getResourceName();
                 will(returnValue("Provider1"));
 
-                allowing(_provider1).createProviderSchema(with(any(User.class)), with(any(Container.class)), (Container) with(same(null)));
+                allowing(_provider1).createProviderSchema(with(any(User.class)), with(any(Container.class)), with(same((Container)null)));
             }});
 
             Map<ExpProtocol, AssayProvider> designs = new HashMap<>();
