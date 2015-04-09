@@ -15,7 +15,8 @@ import javax.servlet.http.HttpServletResponse;
 public class CasAuthenticationProvider implements SSOAuthenticationProvider
 {
     private static final CasAuthenticationProvider INSTANCE = new CasAuthenticationProvider();
-    static final String NAME = "ApereoCAS";
+
+    static final String NAME = "CAS";
 
     private CasAuthenticationProvider()
     {
@@ -30,6 +31,12 @@ public class CasAuthenticationProvider implements SSOAuthenticationProvider
     public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
         return null;
+    }
+
+    @Override
+    public URLHelper getURL()
+    {
+        return CasManager.getInstance().getLoginURL();
     }
 
     @Nullable

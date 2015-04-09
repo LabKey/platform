@@ -40,27 +40,6 @@ public class CasController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresNoPermission
-    public class RedirectAction extends SimpleViewAction<ReturnUrlForm>
-    {
-        @Override
-        public ModelAndView getView(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
-        {
-            // TODO: Check if provider is enabled
-            // TODO: Check for already logged in?
-            // TODO: Stash returnURL if present
-
-            return HttpView.redirect(CasManager.getInstance().getLoginURL().getURIString());
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
     public static ActionURL getValidateURL()
     {
         return new ActionURL(ValidateAction.class, ContainerManager.getRoot());
@@ -91,15 +70,13 @@ public class CasController extends SpringActionController
         public ModelAndView getView(CasForm form, BindException errors) throws Exception
         {
             // TODO: Check if provider is enabled
-            String ticket = form.getTicket();
-            String email = CasManager.getInstance().validate(ticket);
             HttpServletRequest request = getViewContext().getRequest();
+            String ticket = form.getTicket();
+            ValidEmail email = CasManager.getInstance().validate(ticket);
 
             if (null != email)
             {
-                ValidEmail validEmail = new ValidEmail(email);
-
-                PrimaryAuthenticationResult result = AuthenticationManager.finalizePrimaryAuthentication(request, CasAuthenticationProvider.getInstance(), validEmail);
+                PrimaryAuthenticationResult result = AuthenticationManager.finalizePrimaryAuthentication(request, CasAuthenticationProvider.getInstance(), email);
 
                 if (null != result.getUser())
                     AuthenticationManager.setPrimaryAuthenticationUser(request, result.getUser());
@@ -203,44 +180,6 @@ public class CasController extends SpringActionController
         public void setServerUrl(String serverUrl)
         {
             _serverUrl = serverUrl;
-        }
-    }
-
-
-    public static ActionURL getPickAuthLogoURL()
-    {
-        return new ActionURL(PickAuthLogoAction.class, ContainerManager.getRoot());
-    }
-
-
-    @AdminConsoleAction
-    public class PickAuthLogoAction extends AuthenticationManager.AbstractPickAuthLogoAction
-    {
-        @Override
-        protected String getProviderName()
-        {
-            return CasAuthenticationProvider.NAME;
-        }
-
-        @Override
-        protected ActionURL getPostURL()
-        {
-            return getPickAuthLogoURL();
-        }
-
-        protected ActionURL getReturnURL()
-        {
-            return getConfigureURL();
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            ConfigureAction action = new ConfigureAction();
-            action.setViewContext(getViewContext());
-            action.setPageConfig(getPageConfig());
-            action.appendNavTrail(root);
-
-            return root;
         }
     }
 }

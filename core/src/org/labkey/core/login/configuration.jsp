@@ -18,11 +18,11 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider" %>
+<%@ page import="org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -65,38 +65,36 @@
             out.write(PageFlowUtil.filter(authProvider.getName()));
             out.write("</td>");
 
+            out.write("<td>");
             if (authProvider.isPermanent())
             {
-                out.write("<td>&nbsp;</td>");
+                out.write("&nbsp;");
             }
             else
             {
                 if (AuthenticationManager.isActive(authProvider))
-                {
-                    out.write("<td>");
-                    out.write(PageFlowUtil.textLink("disable", urls.getDisableProviderURL(authProvider).getEncodedLocalURIString()));
-                    out.write("</td>");
-                }
+                    out.write(PageFlowUtil.textLink("disable", urls.getDisableProviderURL(authProvider)));
                 else
-                {
-                    out.write("<td>");
-                    out.write(PageFlowUtil.textLink("enable", urls.getEnableProviderURL(authProvider).getEncodedLocalURIString()));
-                    out.write("</td>");
-                }
+                    out.write(PageFlowUtil.textLink("enable", urls.getEnableProviderURL(authProvider)));
             }
+            out.write("</td>");
 
             ActionURL url = authProvider.getConfigurationLink();
 
+            out.write("<td>");
             if (null == url)
-            {
-                out.write("<td>&nbsp;</td>");
-            }
+                out.write("&nbsp;");
             else
+                out.write(PageFlowUtil.textLink("configure", url));
+            out.write("</td>");
+
+            out.write("<td>");
+            if (authProvider instanceof SSOAuthenticationProvider)
             {
-                out.write("<td>");
-                out.write(PageFlowUtil.textLink("configure", url.getEncodedLocalURIString()));
-                out.write("</td>");
-            }
+                ActionURL pickLogoURL = urls.getPickLogosURL(authProvider);
+                out.write(PageFlowUtil.textLink("pick logos", pickLogoURL));
+            };
+            out.write("</td>");
 
             out.write("<td>");
             out.write(authProvider.getDescription());

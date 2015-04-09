@@ -234,6 +234,12 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
         }
     }
 
+    @Override
+    public URLHelper getURL()
+    {
+        return null;  // TODO!!
+    }
+
 
     public void logout(HttpServletRequest request)
     {

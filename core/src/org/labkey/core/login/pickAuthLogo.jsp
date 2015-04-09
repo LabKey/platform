@@ -15,19 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.AuthenticationManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.core.login.LoginController.AuthLogoBean" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<AuthenticationManager.AuthLogoBean> me = (HttpView<AuthenticationManager.AuthLogoBean>) HttpView.currentView();
-    AuthenticationManager.AuthLogoBean bean = me.getModelBean();
-%><labkey:form action="<%=h(bean.postURL)%>" enctype="multipart/form-data" method="post">
+    HttpView<AuthLogoBean> me = (HttpView<AuthLogoBean>) HttpView.currentView();
+    AuthLogoBean bean = me.getModelBean();
+%><labkey:form enctype="multipart/form-data" method="post">
 <table>
 <%=formatMissedErrorsInTable("form", 3)%>
 <tr>
-    <td colspan="3"><input type="hidden" name="name" value="<%=h(bean.name)%>"></td>
+    <td colspan="3"><input type="hidden" name="name" value="<%=h(bean.provider.getName())%>"></td>
 </tr>
 <tr id="auth_header_logo_row">
     <td class="labkey-form-label" nowrap>Page header logo</td>
@@ -38,15 +38,13 @@
     <%=text(bean.loginPageLogo)%>
 </tr>
 <tr>
-    <td class="labkey-form-label" nowrap>Enter a URL<%=PageFlowUtil.helpPopup("URL Instructions", "Include <code>%returnURL%</code> as the redirect parameter within the URL.  <code>%returnURL%</code> will be replaced with a link to the login page including the current page as a redirect parameter.  Examples:<br><br>http://localhost:8080/openfm/UI/Login?service=adminconsoleservice&goto=%returnURL%<br>https://machine.domain.org:8443/openfm/WSFederationServlet/metaAlias/wsfedsp?wreply=%returnURL%", true, 700)%></td>
-    <td colspan="2"><input type="text" name="url" size="130" value="<%=h(bean.url)%>"></td>
-</tr>
-<tr>
     <td colspan="3">&nbsp;</td>
 </tr>
 <tr>
-    <td colspan="3"><%= button("Save").submit(true) %>&nbsp;
-        <%= button(bean.reshow ? "Done" : "Cancel").href(bean.returnURL) %></td>
+    <td colspan="3">
+        <%= button("Save").submit(true) %>
+        <%= button(bean.reshow ? "Done" : "Cancel").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
+    </td>
 </tr>
 </table>
 </labkey:form>
@@ -70,7 +68,7 @@
         var hidden = document.createElement('input');
         hidden.setAttribute('type', 'hidden');
         hidden.setAttribute("name", "deletedLogos");
-        hidden.setAttribute("value", prefix + '<%=bean.name%>');
+        hidden.setAttribute("value", prefix + '<%=bean.provider.getName()%>');
 
         newTd.appendChild(fb);
         newTd.appendChild(hidden);

@@ -106,13 +106,19 @@ public class OpenSSOProvider implements AuthenticationProvider.SSOAuthentication
 
                 if (null != factory && null != returnURL)
                 {
-                    String url = factory.getURL(returnURL);
+                    ActionURL url = factory.getURL(returnURL);
                     throw new RedirectException(url);
                 }
             }
         }
 
         return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);     // Rely on login screen to present link to OpenSSO
+    }
+
+    @Override
+    public URLHelper getURL()
+    {
+        return null;
     }
 
 

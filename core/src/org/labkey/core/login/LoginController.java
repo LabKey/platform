@@ -28,6 +28,10 @@ import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.AttachmentCache;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -40,9 +44,11 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -87,6 +93,7 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -95,11 +102,14 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * User: adam
@@ -248,6 +258,22 @@ public class LoginController extends SpringActionController
         {
             ActionURL url = new ActionURL(getActionClass, ContainerManager.getRoot());
             url.addParameter("name", provider.getName());
+            return url;
+        }
+
+        @Override
+        public ActionURL getPickLogosURL(AuthenticationProvider provider)
+        {
+            return new ActionURL(PickAuthLogoAction.class, ContainerManager.getRoot()).addParameter("provider", provider.getName());
+        }
+
+        @Override
+        public ActionURL getSSORedirectURL(AuthenticationProvider provider, URLHelper returnURL)
+        {
+            ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
+            url.addParameter("provider", provider.getName());
+            url.addReturnURL(returnURL);
+
             return url;
         }
     }
@@ -423,7 +449,7 @@ public class LoginController extends SpringActionController
 
             if (success)
             {
-                // Terms of use are approved only if we've posted from the login page.  In SSO case, we will attempt
+                // Terms of use are approved only if we've posted from the login page. In SSO case, we will attempt
                 // to access the page and will get a TermsOfUseException if terms of use approval is required.
                 if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.PROJECT_LEVEL)
                     SecurityManager.setTermsOfUseApproved(getViewContext(), termsProject, true);
@@ -890,6 +916,55 @@ public class LoginController extends SpringActionController
         public Object execute(Object o, BindException errors) throws Exception
         {
             return new ApiSimpleResponse("success", deauthenticate(getUser(), getViewContext()));
+        }
+    }
+
+
+    public static class SsoRedirectForm extends ReturnUrlForm
+    {
+        private String _provider;
+
+        public String getProvider()
+        {
+            return _provider;
+        }
+
+        @SuppressWarnings("unused")
+        public void setProvider(String provider)
+        {
+            _provider = provider;
+        }
+    }
+
+
+    @RequiresNoPermission
+    public class SsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
+    {
+        @Override
+        public ModelAndView getView(SsoRedirectForm form, BindException errors) throws Exception
+        {
+            // TODO: Check if provider exists, is an SSO provider, and is enabled
+            // TODO: Check for already logged in?
+            // TODO: Stash returnURL if present
+
+            AuthenticationProvider provider = AuthenticationManager.getProvider(form.getProvider());
+
+            // AuthenticationManager.isActive(provider);
+
+            URLHelper url;
+
+            if (provider instanceof SSOAuthenticationProvider)
+                url = ((SSOAuthenticationProvider) provider).getURL();
+            else
+                url = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
+
+            return HttpView.redirect(url.getURIString());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
@@ -1858,6 +1933,7 @@ public class LoginController extends SpringActionController
             return strength;
         }
 
+        @SuppressWarnings("unused")
         public void setStrength(String strength)
         {
             this.strength = strength;
@@ -1868,9 +1944,172 @@ public class LoginController extends SpringActionController
             return expiration;
         }
 
+        @SuppressWarnings("unused")
         public void setExpiration(String expiration)
         {
             this.expiration = expiration;
+        }
+    }
+
+
+    @AdminConsoleAction
+    public class PickAuthLogoAction extends FormViewAction<AuthLogoForm>
+    {
+        private SSOAuthenticationProvider _provider;
+
+        public void validateCommand(AuthLogoForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors) throws Exception
+        {
+            _provider = (SSOAuthenticationProvider)AuthenticationManager.getProvider(form.getProvider());
+            return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(_provider, reshow), errors);
+        }
+
+        public boolean handlePost(AuthLogoForm form, BindException errors) throws Exception
+        {
+            Map<String, MultipartFile> fileMap = getFileMap();
+
+            boolean changedLogos = deleteLogos(form);
+
+            try
+            {
+                changedLogos |= handleLogo(form.getProvider(), fileMap, AuthenticationManager.HEADER_LOGO_PREFIX);
+                changedLogos |= handleLogo(form.getProvider(), fileMap, AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX);
+            }
+            catch (Exception e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                return false;
+            }
+
+            // If user changed one or both logos then...
+            if (changedLogos)
+            {
+                // Clear the image cache so the web server sends the new logo
+                AttachmentCache.clearAuthLogoCache();
+                // Bump the look & feel revision to force browsers to retrieve new logo
+                WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+            }
+
+            AuthenticationManager.loadProperties();
+
+            return false;  // Always reshow the page so user can view updates.  After post, second button will change to "Done".
+        }
+
+        // Returns true if a new logo is saved
+        private boolean handleLogo(String providerName, Map<String, MultipartFile> fileMap, String prefix) throws IOException, SQLException, ServletException
+        {
+            MultipartFile file = fileMap.get(prefix + "file");
+
+            if (null == file || file.isEmpty())
+                return false;
+
+            if (!file.getContentType().startsWith("image/"))
+                throw new ServletException(file.getOriginalFilename() + " does not appear to be an image file");
+
+            AttachmentFile aFile = new SpringAttachmentFile(file, prefix + providerName);
+            AttachmentService.get().addAttachments(ContainerManager.RootContainer.get(), Collections.singletonList(aFile), getUser());
+
+            return true;
+        }
+
+        // Returns true if a logo is deleted
+        public boolean deleteLogos(AuthLogoForm form) throws SQLException
+        {
+            String[] deletedLogos = form.getDeletedLogos();
+
+            if (null == deletedLogos)
+                return false;
+
+            for (String logoName : deletedLogos)
+                AttachmentService.get().deleteAttachment(ContainerManager.RootContainer.get(), logoName, getUser());
+
+            return true;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Pick logos for " + _provider.getName());
+            return root;
+        }
+
+        public ActionURL getSuccessURL(AuthLogoForm form)
+        {
+            return null;  // Should never get here
+        }
+    }
+
+
+    public static class AuthLogoBean
+    {
+        public final SSOAuthenticationProvider provider;
+        public final String headerLogo;
+        public final String loginPageLogo;
+        public final boolean reshow;
+
+        private AuthLogoBean(SSOAuthenticationProvider provider, boolean reshow)
+        {
+            this.provider = provider;
+            this.reshow = reshow;
+            headerLogo = getAuthLogoHtml(AuthenticationManager.HEADER_LOGO_PREFIX);
+            loginPageLogo = getAuthLogoHtml(AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX);
+        }
+
+        public String getAuthLogoHtml(String prefix)
+        {
+            LinkFactory factory = new LinkFactory(provider);
+            String logo = factory.getImg(prefix);
+
+            if (null == logo)
+            {
+                return "<td colspan=\"2\"><input name=\"" + prefix + "file\" type=\"file\" size=\"60\"></td>";
+            }
+            else
+            {
+                StringBuilder html = new StringBuilder();
+
+                String id1 = prefix + "td1";
+                String id2 = prefix + "td2";
+
+                html.append("<td id=\"").append(id1).append("\">");
+                html.append(logo);
+                html.append("</td><td id=\"").append(id2).append("\" width=\"100%\">");
+                html.append(PageFlowUtil.textLink("delete", "javascript:{}", "deleteLogo('" + prefix + "');", "")); // RE_CHECK
+                html.append("</td>\n");
+
+                return html.toString();
+            }
+        }
+    }
+
+
+    public static class AuthLogoForm
+    {
+        private String[] _deletedLogos;
+        private String _provider;
+
+        public String[] getDeletedLogos()
+        {
+            return _deletedLogos;
+        }
+
+        @SuppressWarnings("unused")
+        public void setDeletedLogos(String[] deletedLogos)
+        {
+            _deletedLogos = deletedLogos;
+        }
+
+        public String getProvider()
+        {
+            return _provider;
+        }
+
+        @SuppressWarnings("unused")
+        public void setProvider(String provider)
+        {
+            _provider = provider;
         }
     }
 }

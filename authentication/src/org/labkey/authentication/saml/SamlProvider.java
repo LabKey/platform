@@ -64,9 +64,15 @@ public class SamlProvider implements AuthenticationProvider.SSOAuthenticationPro
     }
 
     @Override
+    public URLHelper getURL()
+    {
+        return null;  // TODO!!
+    }
+
+    @Override
     public String getName()
     {
-        return "SAML 2.0";
+        return "SAML";
     }
 
     @Override
@@ -95,6 +101,4 @@ public class SamlProvider implements AuthenticationProvider.SSOAuthenticationPro
     {
         return false;
     }
-
-
 }

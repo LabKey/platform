@@ -4,6 +4,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.User;
@@ -53,6 +54,7 @@ public class TestSecondaryController extends SpringActionController
     }
 
     @RequiresNoPermission
+    @AllowedDuringUpgrade
     public class TestSecondaryAction extends FormViewAction<TestSecondaryForm>
     {
         @Override

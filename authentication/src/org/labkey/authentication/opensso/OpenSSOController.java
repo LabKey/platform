@@ -117,7 +117,6 @@ public class OpenSSOController extends SpringActionController
         public ModelAndView getView(ConfigProperties form, BindException errors) throws Exception
         {
             form.props = OpenSSOManager.get().getSystemSettings();
-            form.authLogoURL = getPickAuthLogoURL();
             form.pickRefererPrefixURL = getPickReferrerURL();
             return new JspView<>("/org/labkey/authentication/opensso/view/currentSettings.jsp", form);
         }
@@ -132,41 +131,7 @@ public class OpenSSOController extends SpringActionController
     public static class ConfigProperties
     {
         public Map<String, String> props;
-        public ActionURL authLogoURL;
         public ActionURL pickRefererPrefixURL;
-    }
-
-
-    public static ActionURL getPickAuthLogoURL()
-    {
-        return new ActionURL(PickAuthLogoAction.class, ContainerManager.getRoot());
-    }
-
-
-    @AdminConsoleAction
-    public class PickAuthLogoAction extends AuthenticationManager.AbstractPickAuthLogoAction
-    {
-        @Override
-        protected String getProviderName()
-        {
-            return OpenSSOProvider.NAME;
-        }
-
-        @Override
-        protected ActionURL getPostURL()
-        {
-            return getPickAuthLogoURL();
-        }
-
-        protected ActionURL getReturnURL()
-        {
-            return getCurrentSettingsURL();
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendConfigNavTrail(root, "Configure OpenSSO URL and logos");
-        }
     }
 
 

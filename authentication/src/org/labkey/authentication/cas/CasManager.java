@@ -13,6 +13,8 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.util.URLHelper;
 
 import java.io.IOException;
@@ -77,7 +79,7 @@ public class CasManager
         }
     }
 
-    public URLHelper getLoginURL() throws URISyntaxException
+    public URLHelper getLoginURL()
     {
         return getServerURL("login");
     }
@@ -88,8 +90,7 @@ public class CasManager
         return CasController.getValidateURL().getURIString();
     }
 
-    // TODO: Make this return a ValidEmail
-    public @Nullable String validate(String ticket) throws IOException, XmlException
+    public @Nullable ValidEmail validate(String ticket) throws IOException, XmlException, InvalidEmailException
     {
         // Assume CAS 3.0 protocol
         URLHelper validateURL = getServerURL("p3/serviceValidate");
@@ -111,7 +112,7 @@ public class CasManager
         {
             AttributesType attributes = response.getAuthenticationSuccess().getAttributes();
 
-            return getValue(attributes, "email");
+            return new ValidEmail(getValue(attributes, "email"));
         }
         else
         {
