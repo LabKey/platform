@@ -27,6 +27,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -449,6 +450,37 @@ public class SecurityPolicy implements HasPermission
         }
         props.put("assignments", assignments);
         return props;
+    }
+
+    /**
+     * Create a map of the roleAssignments with the key as the role name and the value as a map
+     * between the principalType and the list of UserPrincipals of that type assigned the particular role
+     * @return a map representing the list of users and groups assigned to each role in this policy
+     */
+    @NotNull
+    public Map<String, Map<PrincipalType, List<UserPrincipal>>> getAssignmentsAsMap()
+    {
+        Map<String, Map<PrincipalType, List<UserPrincipal>>> assignmentsMap = new HashMap<String, Map<PrincipalType, List<UserPrincipal>>>();
+        for (RoleAssignment assignment : getAssignments())
+        {
+            // userId may be the id of either a group or a user.  Find out which.
+            UserPrincipal principal = SecurityManager.getGroup(assignment.getUserId());
+            if (principal == null)
+            {
+                principal = UserManager.getUser(assignment.getUserId());
+            }
+            if (principal != null)
+            {
+                if (!assignmentsMap.containsKey(assignment.getRole().getUniqueName()))
+                    assignmentsMap.put(assignment.getRole().getUniqueName(), new HashMap<PrincipalType, List<UserPrincipal>>());
+                Map<PrincipalType, List<UserPrincipal>> assignees = assignmentsMap.get(assignment.getRole().getUniqueName());
+                if (!assignees.containsKey(principal.getPrincipalType()))
+                    assignees.put(principal.getPrincipalType(), new ArrayList<UserPrincipal>());
+                List<UserPrincipal> principalsList = assignees.get(principal.getPrincipalType());
+                principalsList.add(principal);
+            }
+        }
+        return assignmentsMap;
     }
 
     @NotNull

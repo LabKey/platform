@@ -44,8 +44,10 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.security.xml.GroupEnumType;
 import org.labkey.security.xml.GroupRefType;
+import org.labkey.security.xml.GroupRefsType;
 import org.labkey.security.xml.GroupType;
 import org.labkey.security.xml.UserRefType;
+import org.labkey.security.xml.UserRefsType;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
@@ -216,7 +218,7 @@ public class GroupManager
 
         if (memberGroups != null && memberGroups.size() > 0)
         {
-            GroupType.Groups xmlGroups = xmlGroupType.addNewGroups();
+            GroupRefsType xmlGroups = xmlGroupType.addNewGroups();
             for (Group member : memberGroups)
             {
                 GroupRefType xmlGroupRefType = xmlGroups.addNewGroup();
@@ -227,7 +229,7 @@ public class GroupManager
 
         if (memberUsers != null && memberUsers.size() > 0)
         {
-            GroupType.Users xmlUsers = xmlGroupType.addNewUsers();
+            UserRefsType  xmlUsers = xmlGroupType.addNewUsers();
             for (User member : memberUsers)
             {
                 xmlUsers.addNewUser().setName(member.getEmail());
@@ -235,22 +237,62 @@ public class GroupManager
         }
     }
 
-    public static void importGroupMembers(Group group, GroupType xmlGroupType, Logger log)
+    @Nullable
+    public static Group getGroup(Container container, String name, Boolean includeInherited)
     {
-        if (group != null && xmlGroupType != null)
+        Integer groupId = SecurityManager.getGroupId(container, name, false);
+        if (groupId == null && includeInherited)
         {
+            Container currentContainer = container;
+            while (groupId == null && !currentContainer.isRoot())
+            {
+                groupId = SecurityManager.getGroupId(currentContainer, name, false);
+                // FIXME is it possible to define groups at the root level?
+                currentContainer = currentContainer.getParent();
+            }
+        }
+        if (groupId != null)
+            return SecurityManager.getGroup(groupId);
+        else
+            return null;
+    }
+
+    public static void importGroupMembers(Group group, GroupType xmlGroupType, Logger log, Container container)
+    {
+        // don't do anything if the group has no members (i.e., empty groups will not be created upon import)
+        if (group != null && xmlGroupType != null && (xmlGroupType.getGroups() != null || xmlGroupType.getUsers() != null))
+        {
+            // remove existing group members, full replacement
+            List<UserPrincipal> membersToDelete = new ArrayList<>();
+            membersToDelete.addAll(SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS));
+            SecurityManager.deleteMembers(group, membersToDelete);
+
             if (xmlGroupType.getGroups() != null)
             {
-                // TODO: not yet implemented
+                for (GroupRefType xmlGroupMember : xmlGroupType.getGroups().getGroupArray())
+                {
+                    Group memberGroup = getGroup(container, xmlGroupMember.getName(), true);
+                    if (memberGroup != null)
+                    {
+                        try
+                        {
+                            SecurityManager.addMember(group, memberGroup);
+                        }
+                        catch (InvalidGroupMembershipException e)
+                        {
+                            // Best effort, but log any exceptions
+                            ExceptionUtil.logExceptionToMothership(null, e);
+                        }
+                    }
+                    else
+                    {
+                        log.warn("Invalid group name for group member: " + xmlGroupMember.getName());
+                    }
+                }
             }
 
             if (xmlGroupType.getUsers() != null)
             {
-                // remove existing group members, full replacement
-                List<UserPrincipal> membersToDelete = new ArrayList<>();
-                membersToDelete.addAll(SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS));
-                SecurityManager.deleteMembers(group, membersToDelete);
-
                 for (UserRefType xmlMember : xmlGroupType.getUsers().getUserArray())
                 {
                     try

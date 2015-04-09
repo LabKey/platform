@@ -1365,7 +1365,7 @@ public class SecurityManager
 
 
     // Site groups are first (if included) followed by project groups. Each list is sorted by name (case-insensitive).
-    public static Group[] getGroups(@Nullable Container project, boolean includeGlobalGroups)
+    public static @NotNull Group[] getGroups(@Nullable Container project, boolean includeGlobalGroups)
     {
         if (null != project)
             return ProjectAndSiteGroupsCache.getProjectGroups(project, includeGlobalGroups);

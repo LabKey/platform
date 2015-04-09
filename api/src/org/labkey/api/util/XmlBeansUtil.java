@@ -46,6 +46,7 @@ public class XmlBeansUtil
         options.setCharacterEncoding("UTF-8");
         options.setSaveCDataEntityCountThreshold(0);
         options.setSaveCDataLengthThreshold(0);
+        options.setSaveAggressiveNamespaces(); // causes the saver to reduce the number of namespace declarations
 
         return options;
     }
