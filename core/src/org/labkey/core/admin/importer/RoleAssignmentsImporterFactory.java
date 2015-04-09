@@ -128,65 +128,6 @@ public class RoleAssignmentsImporterFactory extends AbstractFolderImportFactory
             }
         }
 
-        // Code that process the flat roleAssignment schema
-//        public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
-//        {
-//            RoleAssignmentsType assignments = ctx.getXml().getRoleAssignments();
-//
-//            if (assignments == null) // nothing to import
-//                return;
-//
-//            // we get assignments inherited by default if we do not explicitly set any such assignments
-//            if (!assignments.getInherited())
-//            {
-//                MutableSecurityPolicy policy = new MutableSecurityPolicy(ctx.getContainer());
-//                for (RoleAssignmentType assignmentXml : assignments.getRoleAssignmentArray())
-//                {
-//                    Role role = RoleManager.getRole(assignmentXml.getRole());
-//                    if (role != null)
-//                    {
-//                        UserPrincipal principal = null;
-//                        if (assignmentXml.getPrincipalType() == PrincipalEnumType.GROUP)
-//                        {
-//                            principal = GroupManager.getGroup(ctx.getContainer(), assignmentXml.getPrincipal(), true);
-//                            if (principal == null)
-//                            {
-//                                ctx.getLogger().warn("Non-existent group in role assignment for role " + assignmentXml.getRole() + " will be ignored: " + assignmentXml.getPrincipal());
-//                            }
-//                        }
-//                        else if (assignmentXml.getPrincipalType() == PrincipalEnumType.USER)
-//                        {
-//                            try
-//                            {
-//                                ValidEmail validEmail = new ValidEmail(assignmentXml.getPrincipal());
-//                                principal = UserManager.getUser(validEmail);
-//
-//                                if (principal == null)
-//                                {
-//                                    ctx.getLogger().warn("Non-existent user in role assignment for role " + assignmentXml.getRole() + " will be ignored: " + assignmentXml.getPrincipal());
-//                                }
-//                            }
-//                            catch (ValidEmail.InvalidEmailException e)
-//                            {
-//                                ctx.getLogger().error("Invalid email in role assignment for role " + assignmentXml.getRole());
-//                            }
-//                        }
-//                        else
-//                        {
-//                            ctx.getLogger().error("Invalid principal type in role assignment for role " + assignmentXml.getRole() + ": " + assignmentXml.getPrincipalType());
-//                        }
-//                        if (principal != null)
-//                            policy.addRoleAssignment(principal, role);
-//                    }
-//                    else
-//                    {
-//                        ctx.getLogger().warn("Invalid role name ignored: " + assignmentXml.getRole());
-//                    }
-//                    SecurityPolicyManager.savePolicy(policy);
-//                }
-//            }
-//        }
-
 
         @NotNull
         @Override

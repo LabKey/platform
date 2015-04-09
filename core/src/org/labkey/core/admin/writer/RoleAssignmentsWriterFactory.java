@@ -89,38 +89,6 @@ public class RoleAssignmentsWriterFactory implements FolderWriterFactory
             }
         }
 
-        // Code that produces output for the flat roleAssignment schema
-//        public void writeAsFlatXML(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
-//        {
-//            SecurityPolicy existingPolicy = SecurityPolicyManager.getPolicy(c);
-//
-//            if (!existingPolicy.getAssignments().isEmpty())
-//            {
-//                FolderDocument.Folder folderXml = ctx.getXml();
-//                RoleAssignmentsType roleAssignments = folderXml.addNewRoleAssignments();
-//                roleAssignments.setInherited(c.isInheritedAcl());
-//
-//                if (!c.isInheritedAcl())
-//                {
-//                    for (RoleAssignment assignment : existingPolicy.getAssignments())
-//                    {
-//                        UserPrincipal principal = SecurityManager.getGroup(assignment.getUserId());
-//                        if (principal == null) // it's a user role
-//                        {
-//                            principal = UserManager.getUser(assignment.getUserId());
-//                        }
-//                        if (principal != null)
-//                        {
-//                            RoleAssignmentType roleAssignment = roleAssignments.addNewRoleAssignment();
-//                            roleAssignment.setRole(assignment.getRole().getUniqueName());
-//                            roleAssignment.setPrincipal(principal.getName());
-//                            roleAssignment.setPrincipalType((principal.getPrincipalType() == PrincipalType.GROUP) ? PrincipalEnumType.GROUP : PrincipalEnumType.USER);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-
         @Override
         public boolean supportsVirtualFile()
         {
