@@ -407,17 +407,28 @@ public class ListController extends SpringActionController
     public class GridAction extends SimpleViewAction<ListQueryForm>
     {
         private ListDefinition _list;
+        private String _title;
+
         public ModelAndView getView(ListQueryForm form, BindException errors) throws Exception
         {
             _list = form.getList();
             if (null == _list)
                 throw new NotFoundException("List does not exist in this container");
-            return new ListQueryView(form, errors);
+
+            ListQueryView view = new ListQueryView(form, errors);
+
+            TableInfo ti = view.getTable();
+            if (ti != null)
+            {
+                _title = ti.getTitle();
+            }
+
+            return view;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, null);
+            return appendListNavTrail(root, _list, _title);
         }
     }
 

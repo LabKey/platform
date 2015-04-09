@@ -15,6 +15,8 @@
  */
 package org.labkey.pipeline.mule.transformers;
 
+import org.apache.log4j.Logger;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.mule.providers.jms.transformers.JMSMessageToObject;
 import org.mule.transformers.AbstractEventAwareTransformer;
@@ -29,6 +31,8 @@ import javax.jms.TextMessage;
  */
 public class JMSMessageToPipelineJob extends AbstractEventAwareTransformer
 {
+    private static final Logger LOG = Logger.getLogger(JMSMessageToPipelineJob.class);
+
     private JMSMessageToObject _transformerFromJMS;
 
     public JMSMessageToPipelineJob()
@@ -39,7 +43,9 @@ public class JMSMessageToPipelineJob extends AbstractEventAwareTransformer
     public Object transform(Object src, String encoding, UMOEventContext context) throws TransformerException
     {
         String xml = (String) getJMSTransformer().doTransform(src, encoding);
-        return PipelineJobService.get().getJobStore().fromXML(xml);
+        PipelineJob result = PipelineJobService.get().getJobStore().fromXML(xml);
+        LOG.debug("Transformed XML to job: " + result);
+        return result;
     }
 
     protected JMSMessageToObject getJMSTransformer()

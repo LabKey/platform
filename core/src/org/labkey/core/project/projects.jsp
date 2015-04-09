@@ -77,9 +77,12 @@ Ext4.onReady(function(){
     var config = '<%=jsonProps%>';
     config = Ext4.decode(config);
     config.hideCreateButton = config.hideCreateButton === 'true';
+    if (config.containerTypes){
+        config.noun = config.containerTypes.match(/project/) ? 'Project' : 'Subfolder';
+    }
 
     if(<%=target == null%>){
-        Ext4.get('<%=text(renderTarget)%>').update('The target container has been deleted. To reset, remove the webpart and readd it.');
+        Ext4.get('<%=text(renderTarget)%>').update('The target project/folder has been deleted. To reset, remove the webpart and re-add it');
         return;
     }
 
@@ -173,11 +176,12 @@ Ext4.onReady(function(){
 
     //NOTE: separated to differentiate site admins from those w/ admin permission in this container
     if (<%=isAdmin%>) {
+        var isProject = !!(panelCfg.containerTypes && panelCfg.containerTypes.match(/project/));
         panelCfg.buttons = [{
             text: 'Create New ' + config.noun,
             hidden: !LABKEY.Security.currentUser.isAdmin || config.hideCreateButton,
             target: '_self',
-            href: LABKEY.ActionURL.buildURL('admin', 'createFolder', '/')
+            href: LABKEY.ActionURL.buildURL('admin', 'createFolder', (isProject ? '/' : config.containerPath))
         }]
     }
 
@@ -347,6 +351,7 @@ Ext4.onReady(function(){
                                 panel.containerTypes = 'project';
                                 panel.store.containerPath = LABKEY.Security.getHomeContainer();
                                 panel.store.filterArray = panel.getFilterArray(panel);
+                                panel.noun = 'Project';
                             }
                             else {
                                 var container = btn.up('window').down('#containerPath').getValue();
@@ -361,6 +366,7 @@ Ext4.onReady(function(){
                                 if(btn.up('window').down('#includeWorkbooks').getValue())
                                     panel.containerTypes.push('workbook');
                                 panel.containerTypes = panel.containerTypes.join(';');
+                                panel.noun = 'Subfolder';
 
                                 var directDescendants = btn.up('window').down('#directDescendants').getValue();
                                 panel.store.containerFilter = directDescendants ? 'CurrentAndFirstChildren' : 'CurrentAndSubfolders';
@@ -376,6 +382,7 @@ Ext4.onReady(function(){
                                 var createBtn = panel.getDockedItems()[0].down('button');
                                 if (createBtn) {
                                     createBtn.setVisible(!hideCreateButton);
+                                    createBtn.setText('Create New ' + panel.noun);
                                 }
                             }
 
