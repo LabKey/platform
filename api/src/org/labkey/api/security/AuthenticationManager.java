@@ -21,13 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentCache;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -43,7 +38,6 @@ import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationPro
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HeartBeat;
@@ -52,24 +46,15 @@ import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.RedirectException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,8 +62,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * User: adam
@@ -96,7 +79,7 @@ public class AuthenticationManager
     // Map of user id to login provider.  This is needed to handle clean up on logout.
     private static final Map<Integer, AuthenticationProvider> _userProviders = new ConcurrentHashMap<>();
 
-    private static volatile Map<String, LinkFactory> _linkFactories = new HashMap<>();
+    private static volatile Map<String, LinkFactory> _ssoLogoLinkFactories = new HashMap<>();
 
     public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";
     public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_";
@@ -126,30 +109,30 @@ public class AuthenticationManager
 
     public static LinkFactory getLinkFactory(String providerName)
     {
-        return _linkFactories.get(providerName);
+        return _ssoLogoLinkFactories.get(providerName);
     }
 
 
-    public static String getHeaderLogoHtml(ActionURL currentURL)
+    public static @Nullable String getHeaderLogoHtml(ActionURL currentURL)
     {
         return getAuthLogoHtml(currentURL, HEADER_LOGO_PREFIX);
     }
 
 
-    public static String getLoginPageLogoHtml(ActionURL currentURL)
+    public static @Nullable String getLoginPageLogoHtml(ActionURL currentURL)
     {
         return getAuthLogoHtml(currentURL, LOGIN_PAGE_LOGO_PREFIX);
     }
 
 
-    private static String getAuthLogoHtml(ActionURL currentURL, String prefix)
+    private static @Nullable String getAuthLogoHtml(ActionURL currentURL, String prefix)
     {
-        if (_linkFactories.isEmpty())
+        if (_ssoLogoLinkFactories.isEmpty())
             return null;
 
         StringBuilder html = new StringBuilder();
 
-        for (LinkFactory factory : _linkFactories.values())
+        for (LinkFactory factory : _ssoLogoLinkFactories.values())
         {
             String link = factory.getLink(currentURL, prefix);
 
@@ -220,7 +203,7 @@ public class AuthenticationManager
         AuditLogService.get().addEvent(user, event);
     }
 
-    private static AuthenticationProvider getProvider(String name)
+    public static AuthenticationProvider getProvider(String name)
     {
         for (AuthenticationProvider provider : _allProviders)
             if (provider.getName().equals(name))
@@ -253,23 +236,7 @@ public class AuthenticationManager
     }
 
 
-    private static final String AUTH_LOGO_URL_SET = "AuthenticationLogoUrls";
-
-    private static void saveAuthLogoURL(String name, String url)
-    {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTH_LOGO_URL_SET, true);
-        props.put(name, url);
-        props.save();
-    }
-
-
-    private static Map<String, String> getAuthLogoURLs()
-    {
-        return PropertyManager.getProperties(AUTH_LOGO_URL_SET);
-    }
-
-
-    private static void loadProperties()
+    public static void loadProperties()
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_PROVIDERS_SET);
         String activeProviderProp = props.get(PROVIDERS_KEY);
@@ -283,16 +250,15 @@ public class AuthenticationManager
             if (provider.isPermanent() || activeNames.contains(provider.getName()))
                 addProvider(activeProviders, provider);
 
-        props = getAuthLogoURLs();
         Map<String, LinkFactory> factories = new HashMap<>();
 
-        for (String key : props.keySet())
-            if (activeProviders.contains(getProvider(key)))
-                factories.put(key, new LinkFactory(props.get(key), key));
+        for (AuthenticationProvider provider : activeProviders)
+            if (provider instanceof SSOAuthenticationProvider)
+                factories.put(provider.getName(), new LinkFactory((SSOAuthenticationProvider)provider));
 
         _activeProviders.clear();
         _activeProviders.addAll(activeProviders);
-        _linkFactories = factories;
+        _ssoLogoLinkFactories = factories;
     }
 
 
@@ -904,195 +870,21 @@ public class AuthenticationManager
     }
 
 
-    // Implementers should annotate with @AdminConsoleAction
-    public abstract static class AbstractPickAuthLogoAction extends FormViewAction<AuthLogoForm>
-    {
-        abstract protected String getProviderName();
-        abstract protected ActionURL getReturnURL();
-        abstract protected ActionURL getPostURL();
-
-        public void validateCommand(AuthLogoForm target, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(getProviderName(), getPostURL(), getReturnURL(), reshow), errors);
-        }
-
-        public boolean handlePost(AuthLogoForm form, BindException errors) throws Exception
-        {
-            Map<String, MultipartFile> fileMap = getFileMap();
-
-            boolean changedLogos = deleteLogos(form);
-
-            try
-            {
-                changedLogos |= handleLogo(fileMap, HEADER_LOGO_PREFIX);
-                changedLogos |= handleLogo(fileMap, LOGIN_PAGE_LOGO_PREFIX);
-            }
-            catch (Exception e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                return false;
-            }
-
-            // If user changed one or both logos then...
-            if (changedLogos)
-            {
-                // Clear the image cache so the web server sends the new logo
-                AttachmentCache.clearAuthLogoCache();
-                // Bump the look & feel revision to force browsers to retrieve new logo
-                WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-            }
-
-            saveAuthLogoURL(getProviderName(), form.getUrl());
-            loadProperties();
-
-            return false;  // Always reshow the page so user can view updates.  After post, second button will change to "Done".
-        }
-
-        // Returns true if a new logo is saved
-        private boolean handleLogo(Map<String, MultipartFile> fileMap, String prefix) throws IOException, SQLException, ServletException
-        {
-            MultipartFile file = fileMap.get(prefix + "file");
-
-            if (null == file || file.isEmpty())
-                return false;
-
-            if (!file.getContentType().startsWith("image/"))
-                throw new ServletException(file.getOriginalFilename() + " does not appear to be an image file");
-
-            AttachmentFile aFile = new SpringAttachmentFile(file, prefix + getProviderName());
-            AttachmentService.get().addAttachments(ContainerManager.RootContainer.get(), Collections.singletonList(aFile), getUser());
-
-            return true;
-        }
-
-        // Returns true if a logo is deleted
-        public boolean deleteLogos(AuthLogoForm form) throws SQLException
-        {
-            String[] deletedLogos = form.getDeletedLogos();
-
-            if (null == deletedLogos)
-                return false;
-
-            for (String logoName : deletedLogos)
-                AttachmentService.get().deleteAttachment(ContainerManager.RootContainer.get(), logoName, getUser());
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(AuthLogoForm form)
-        {
-            return null;  // Should never get here
-        }
-    }
-
-
-    public static class AuthLogoBean
-    {
-        public final String name;
-        public final ActionURL returnURL;
-        public final ActionURL postURL;
-        public final String url;
-        public final String headerLogo;
-        public final String loginPageLogo;
-        public final boolean reshow;
-
-        private AuthLogoBean(String name, ActionURL postURL, ActionURL returnURL, boolean reshow)
-        {
-            this.name = name;
-            this.postURL = postURL;
-            this.returnURL = returnURL;
-            this.reshow = reshow;
-            url = getAuthLogoURLs().get(name);
-            headerLogo = getAuthLogoHtml(name, HEADER_LOGO_PREFIX);
-            loginPageLogo = getAuthLogoHtml(name, LOGIN_PAGE_LOGO_PREFIX);
-        }
-
-        public String getAuthLogoHtml(String name, String prefix)
-        {
-            LinkFactory factory = new LinkFactory("", name);
-            String logo = factory.getImg(prefix);
-
-            if (null == logo)
-            {
-                return "<td colspan=\"2\"><input name=\"" + prefix + "file\" type=\"file\" size=\"60\"></td>";
-            }
-            else
-            {
-                StringBuilder html = new StringBuilder();
-
-                String id1 = prefix + "td1";
-                String id2 = prefix + "td2";
-
-                html.append("<td id=\"").append(id1).append("\">");
-                html.append(logo);
-                html.append("</td><td id=\"").append(id2).append("\" width=\"100%\">");
-                html.append(PageFlowUtil.textLink("delete", "javascript:{}", "deleteLogo('" + prefix + "');", "")); // RE_CHECK
-                html.append("</td>\n");
-
-                return html.toString();
-            }
-        }
-    }
-
-
-    public static class AuthLogoForm
-    {
-        private String _url;
-        private String[] _deletedLogos;
-
-        public String getUrl()
-        {
-            return _url;
-        }
-
-        public void setUrl(String url)
-        {
-            _url = url;
-        }
-
-        public String[] getDeletedLogos()
-        {
-            return _deletedLogos;
-        }
-
-        public void setDeletedLogos(String[] deletedLogos)
-        {
-            _deletedLogos = deletedLogos;
-        }
-    }
-
-
     public static class LinkFactory
     {
-        private final String NO_LOGO = "NO_LOGO";
-        private boolean _isFixedURL;
-        private String _urlPrefix = null;
-        private String _urlSuffix = null;
-        private String _name;
+        private final static String NO_LOGO = "NO_LOGO";
+        private final static LoginUrls URLS = PageFlowUtil.urlProvider(LoginUrls.class);
+
+        private final SSOAuthenticationProvider _provider;
+        private final String _providerName;
 
         // Need to check the attachments service to see if logo exists... use map to check this once and cache result
         private Map<String, String> _imgMap = new HashMap<>();
 
-        private LinkFactory(String redirectUrl, String name)
+        public LinkFactory(SSOAuthenticationProvider provider)
         {
-            _name = name;
-            Matcher matcher = Pattern.compile("%returnURL%", Pattern.CASE_INSENSITIVE).matcher(redirectUrl);
-
-            _isFixedURL = !matcher.find();
-
-            if (_isFixedURL)
-            {
-                _urlPrefix = redirectUrl;
-            }
-            else
-            {
-                _urlPrefix = redirectUrl.substring(0, matcher.start());
-                _urlSuffix = redirectUrl.substring(matcher.end(), redirectUrl.length());
-            }
+            _provider = provider;
+            _providerName = provider.getName(); // Just for convenience
         }
 
         private String getLink(ActionURL returnURL, String prefix)
@@ -1105,20 +897,12 @@ public class AuthenticationManager
                 return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\">" + img + "</a>";
         }
 
-        public String getURL(URLHelper returnURL)
+        public ActionURL getURL(URLHelper returnURL)
         {
-            if (_isFixedURL)
-            {
-                return _urlPrefix;
-            }
-            else
-            {
-                ActionURL loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(returnURL);
-                return _urlPrefix + loginURL.getURIString() + _urlSuffix;
-            }
+            return URLS.getSSORedirectURL(_provider, returnURL);
         }
 
-        private String getImg(String prefix)
+        public String getImg(String prefix)
         {
             String img = _imgMap.get(prefix);
 
@@ -1128,10 +912,10 @@ public class AuthenticationManager
 
                 try
                 {
-                    Attachment logo = AttachmentService.get().getAttachment(ContainerManager.RootContainer.get(), prefix + _name);
+                    Attachment logo = AttachmentService.get().getAttachment(ContainerManager.RootContainer.get(), prefix + _providerName);
 
                     if (null != logo)
-                        img = "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + prefix + _name + ".image?revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\" alt=\"Sign in using " + _name + "\">";
+                        img = "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + prefix + _providerName + ".image?revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\" alt=\"Sign in using " + _providerName + "\">";
                 }
                 catch (RuntimeSQLException e)
                 {

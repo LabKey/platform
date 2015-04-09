@@ -44,6 +44,8 @@ public interface LoginUrls extends UrlProvider
     ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL);
     ActionURL getEnableProviderURL(AuthenticationProvider provider);
     ActionURL getDisableProviderURL(AuthenticationProvider provider);
+    ActionURL getPickLogosURL(AuthenticationProvider provider);
+    ActionURL getSSORedirectURL(AuthenticationProvider provider, URLHelper returnURL);
 
     NavTree appendAuthenticationNavTrail(NavTree root);
 }
