@@ -83,6 +83,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
@@ -257,7 +258,7 @@ public class LoginController extends SpringActionController
         private ActionURL getActionURL(AuthenticationProvider provider, Class<? extends Controller> getActionClass)
         {
             ActionURL url = new ActionURL(getActionClass, ContainerManager.getRoot());
-            url.addParameter("name", provider.getName());
+            url.addParameter("provider", provider.getName());
             return url;
         }
 
@@ -938,31 +939,38 @@ public class LoginController extends SpringActionController
 
 
     @RequiresNoPermission
+    @AllowedDuringUpgrade
     public class SsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
     {
         @Override
         public ModelAndView getView(SsoRedirectForm form, BindException errors) throws Exception
         {
-            // TODO: Check if provider exists, is an SSO provider, and is enabled
-            // TODO: Check for already logged in?
-            // TODO: Stash returnURL if present
+            // If logged in then redirect immediately
+            if (!getUser().isGuest())
+                return HttpView.redirect(form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL()));
 
-            AuthenticationProvider provider = AuthenticationManager.getProvider(form.getProvider());
+            // Check for valid, active, SSO provider
+            SSOAuthenticationProvider provider = AuthenticationManager.getActiveSSOProvider(form.getProvider());
 
-            // AuthenticationManager.isActive(provider);
+            if (null == provider)
+                throw new NotFoundException("Authentication provider is not valid");
 
-            URLHelper url;
+            URLHelper returnURL = form.getReturnURLHelper();
 
-            if (provider instanceof SSOAuthenticationProvider)
-                url = ((SSOAuthenticationProvider) provider).getURL();
-            else
-                url = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
+            // If we have a returnURL then create and stash LoginReturnProperties
+            if (null != returnURL)
+            {
+                LoginReturnProperties properties = new LoginReturnProperties(returnURL, form.getUrlhash(), false);
+                AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
+            }
+
+            URLHelper url = provider.getURL();
 
             return HttpView.redirect(url.getURIString());
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public final NavTree appendNavTrail(NavTree root)
         {
             return null;
         }
@@ -1794,56 +1802,57 @@ public class LoginController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class EnableAction extends RedirectAction<ProviderConfigurationForm>
+    public class EnableAction extends RedirectAction<ProviderForm>
     {
-        public ActionURL getSuccessURL(ProviderConfigurationForm form)
+        public ActionURL getSuccessURL(ProviderForm form)
         {
             return getUrls().getConfigureURL();
         }
 
-        public boolean doAction(ProviderConfigurationForm form, BindException errors) throws Exception
+        public boolean doAction(ProviderForm form, BindException errors) throws Exception
         {
-            AuthenticationManager.enableProvider(form.getName(), getUser());
+            AuthenticationManager.enableProvider(form.getProvider(), getUser());
             return true;
         }
 
-        public void validateCommand(ProviderConfigurationForm target, Errors errors)
+        public void validateCommand(ProviderForm form, Errors errors)
         {
         }
     }
 
     @RequiresSiteAdmin
-    public class DisableAction extends RedirectAction<ProviderConfigurationForm>
+    public class DisableAction extends RedirectAction<ProviderForm>
     {
-        public ActionURL getSuccessURL(ProviderConfigurationForm form)
+        public ActionURL getSuccessURL(ProviderForm form)
         {
             return getUrls().getConfigureURL();
         }
 
-        public boolean doAction(ProviderConfigurationForm form, BindException errors) throws Exception
+        public boolean doAction(ProviderForm form, BindException errors) throws Exception
         {
-            AuthenticationManager.disableProvider(form.getName(), getUser());
+            AuthenticationManager.disableProvider(form.getProvider(), getUser());
             return true;
         }
 
-        public void validateCommand(ProviderConfigurationForm target, Errors errors)
+        public void validateCommand(ProviderForm target, Errors errors)
         {
         }
     }
 
 
-    public static class ProviderConfigurationForm
+    public static class ProviderForm
     {
-        String _name;
+        private String _provider;
 
-        public String getName()
+        public String getProvider()
         {
-            return _name;
+            return _provider;
         }
 
-        public void setName(String name)
+        @SuppressWarnings("unused")
+        public void setProvider(String provider)
         {
-            _name = name;
+            _provider = provider;
         }
     }
 
@@ -1869,7 +1878,7 @@ public class LoginController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure Database Authentication");
+            getUrls().appendAuthenticationNavTrail(root).addChild("Configure Database Authentication");
             setHelpTopic(new HelpTopic("configDbLogin"));
             return root;
         }
@@ -1957,13 +1966,17 @@ public class LoginController extends SpringActionController
     {
         private SSOAuthenticationProvider _provider;
 
-        public void validateCommand(AuthLogoForm target, Errors errors)
+        public void validateCommand(AuthLogoForm form, Errors errors)
         {
         }
 
         public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors) throws Exception
         {
-            _provider = (SSOAuthenticationProvider)AuthenticationManager.getProvider(form.getProvider());
+            _provider = AuthenticationManager.getActiveSSOProvider(form.getProvider());
+
+            if (null == _provider)
+                throw new NotFoundException("Authentication provider is not valid");
+
             return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(_provider, reshow), errors);
         }
 
@@ -2031,7 +2044,7 @@ public class LoginController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Pick logos for " + _provider.getName());
+            getUrls().appendAuthenticationNavTrail(root).addChild("Pick logos for " + _provider.getName());
             return root;
         }
 
@@ -2085,10 +2098,9 @@ public class LoginController extends SpringActionController
     }
 
 
-    public static class AuthLogoForm
+    public static class AuthLogoForm extends ProviderForm
     {
         private String[] _deletedLogos;
-        private String _provider;
 
         public String[] getDeletedLogos()
         {
@@ -2099,17 +2111,6 @@ public class LoginController extends SpringActionController
         public void setDeletedLogos(String[] deletedLogos)
         {
             _deletedLogos = deletedLogos;
-        }
-
-        public String getProvider()
-        {
-            return _provider;
-        }
-
-        @SuppressWarnings("unused")
-        public void setProvider(String provider)
-        {
-            _provider = provider;
         }
     }
 }

@@ -1,15 +1,16 @@
 package org.labkey.authentication.cas;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
-import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
+import org.labkey.api.security.AuthenticationManager.BaseSsoValidateAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
@@ -17,14 +18,13 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -64,33 +64,22 @@ public class CasController extends SpringActionController
     // TODO: CAS server might POST to this action to invalidate sessions on logout; check with USF.
 
     @RequiresNoPermission
-    public class ValidateAction extends SimpleViewAction<CasForm>
+    @AllowedDuringUpgrade
+    public class ValidateAction extends BaseSsoValidateAction<CasForm>
     {
+        @NotNull
         @Override
-        public ModelAndView getView(CasForm form, BindException errors) throws Exception
+        public String getProviderName()
         {
-            // TODO: Check if provider is enabled
-            HttpServletRequest request = getViewContext().getRequest();
-            String ticket = form.getTicket();
-            ValidEmail email = CasManager.getInstance().validate(ticket);
-
-            if (null != email)
-            {
-                PrimaryAuthenticationResult result = AuthenticationManager.finalizePrimaryAuthentication(request, CasAuthenticationProvider.getInstance(), email);
-
-                if (null != result.getUser())
-                    AuthenticationManager.setPrimaryAuthenticationUser(request, result.getUser());
-            }
-
-            AuthenticationResult result = AuthenticationManager.handleAuthentication(request, getContainer());
-
-            return HttpView.redirect(result.getRedirectURL());
+            return CasAuthenticationProvider.NAME;
         }
 
+        @Nullable
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public ValidEmail validate(CasForm form) throws XmlException, IOException, ValidEmail.InvalidEmailException
         {
-            return null;
+            String ticket = form.getTicket();
+            return CasManager.getInstance().validate(ticket);
         }
     }
 
