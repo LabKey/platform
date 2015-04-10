@@ -24,7 +24,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +67,7 @@ public class SiteValidationManager implements SiteValidationService.Interface
     @Override
     public Map<Container, List<SiteValidationResult>> runContainerScopeValidators(Container topLevel, User u)
     {
-        Map<Container, List<SiteValidationResult>> containerResults = new HashMap<>();
+        Map<Container, List<SiteValidationResult>> containerResults = new LinkedHashMap<>();
         if (containerValidators.isEmpty())
         {
             List<SiteValidationResult> noValidators = new ArrayList<>();
@@ -75,7 +76,9 @@ public class SiteValidationManager implements SiteValidationService.Interface
         }
         else
         {
-            for (Container c : ContainerManager.getAllChildren(topLevel, u))
+            List<Container> allChildren = ContainerManager.getAllChildren(topLevel, u);
+            Collections.sort(allChildren);
+            for (Container c : allChildren)
             {
                 for (SiteValidationProvider validator : containerValidators)
                 {

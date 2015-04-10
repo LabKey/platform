@@ -1342,7 +1342,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public static class SiteValidationAction extends SimpleViewAction
+    public class SiteValidationAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1352,12 +1352,8 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            URLHelper returnUrl = getViewContext().getActionURL().getReturnURL();
-            if (null != returnUrl)
-                root.addChild("Return to Project", returnUrl);
-            root.addChild("Site Validation");
             getPageConfig().setHelpTopic(new HelpTopic("siteValidation"));
-            return root;
+            return appendAdminNavTrail(root, "Site Validation", this.getClass());
         }
     }
 
