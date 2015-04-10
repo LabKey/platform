@@ -22,6 +22,7 @@ import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -141,6 +142,7 @@ import org.labkey.core.admin.importer.SearchSettingsImporterFactory;
 import org.labkey.core.admin.importer.SubfolderImporterFactory;
 import org.labkey.core.admin.logger.LoggerController;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
+import org.labkey.core.admin.sitevalidation.SiteValidationManager;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
 import org.labkey.core.admin.writer.FolderTypeWriterFactory;
@@ -280,6 +282,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ServiceRegistry.get().registerService(ShortURLService.class, new ShortURLServiceImpl());
         ServiceRegistry.get().registerService(StatsService.class, new StatsServiceImpl());
         AnalyticsServiceImpl.register();
+        SiteValidationService.setInstance(new SiteValidationManager());
 
         ModuleStaticResolverImpl.get();
 

@@ -246,6 +246,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "site validation", new ActionURL(SiteValidationAction.class, root));
     }
 
     public AdminController()
@@ -1337,6 +1338,26 @@ public class AdminController extends SpringActionController
             this.upgradeInProgress = upgradeInProgress;
             this.testInPage = testInPage;
             this.showSelfReportExceptions = MothershipReport.isShowSelfReportExceptions();
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public static class SiteValidationAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            URLHelper returnUrl = getViewContext().getActionURL().getReturnURL();
+            if (null != returnUrl)
+                root.addChild("Return to Project", returnUrl);
+            root.addChild("Site Validation");
+            getPageConfig().setHelpTopic(new HelpTopic("siteValidation"));
+            return root;
         }
     }
 

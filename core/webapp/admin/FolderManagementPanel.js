@@ -88,7 +88,8 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
             remove : 'deleteFolder',
             rename : 'renameFolder',
             reorder: 'reorderFolders',
-            revert : this.revertAction
+            revert : this.revertAction,
+            validate : 'siteValidation'
         };
 
 
@@ -107,7 +108,8 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
                     {text : 'Rename',               itemId : 'rename',  handler : function() { this.action('rename'); },  scope : this, tooltip: "Rename the selected folder" },
                     {text : 'Revert',               itemId : 'revert',  handler : function() { this.action('revert'); },  scope : this,
                         tooltip: "For a tab folder, revert to the original folder type; for a folder with child tab folders, revert each child tab folder to its original folder type"
-                    }
+                    },
+                    {text : 'Validate',             itemId : 'validate',  handler : function() { this.action('validate'); },  scope : this, tooltip: "Run validation on the selected folder tree" },
                 ]
             }];
         }
