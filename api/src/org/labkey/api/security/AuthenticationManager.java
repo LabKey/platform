@@ -235,8 +235,7 @@ public class AuthenticationManager
         addProviderAuditEvent(user, name, "enabled");
     }
 
-
-    public static void disableProvider(String name, User user) throws Exception
+    public static void disableProvider(String name, User user)
     {
         AuthenticationProvider provider = getProvider(name);
         provider.deactivate();
@@ -254,13 +253,17 @@ public class AuthenticationManager
         AuditLogService.get().addEvent(user, event);
     }
 
+    /**
+     * @throws org.labkey.api.view.NotFoundException if there is no registered provider with the given name
+     */
+    @NotNull
     public static AuthenticationProvider getProvider(String name)
     {
         for (AuthenticationProvider provider : _allProviders)
             if (provider.getName().equals(name))
                 return provider;
 
-        return null;
+        throw new NotFoundException("No such AuthenticationProvider available: " + name);
     }
 
 
@@ -696,7 +699,7 @@ public class AuthenticationManager
     {
         AuthenticationProvider provider = getProvider(providerName);
 
-        return null != provider && isActive(provider);
+        return isActive(provider);
     }
 
 

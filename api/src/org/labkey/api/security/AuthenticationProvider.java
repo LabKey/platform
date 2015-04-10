@@ -37,8 +37,8 @@ public interface AuthenticationProvider
     String getName();
     String getDescription();
     void logout(HttpServletRequest request);
-    void activate() throws Exception;
-    void deactivate() throws Exception;
+    void activate();
+    void deactivate();
     boolean isPermanent();
 
     interface SSOAuthenticationProvider extends AuthenticationProvider
