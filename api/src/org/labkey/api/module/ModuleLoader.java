@@ -66,6 +66,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.template.TemplateHeaderView;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
@@ -791,13 +792,27 @@ public class ModuleLoader implements Filter
         return _webappDir;
     }
 
+    /**
+     * Checks Java version and throws if it's not supported.
+     *
+     * Warnings for deprecated Java versions are specified here: {@link TemplateHeaderView#buildWarningMessageList}
+     *
+     * @throws ConfigurationException if Java version is not supported
+     */
     private void verifyJavaVersion() throws ConfigurationException
     {
         if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_7))
             throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 7.");
     }
 
-    // Returns null if servlet container name is not recognized
+    /**
+     * Returns running Tomcat version (if servlet container is recognized and supported) or null if not recognized.
+     *
+     * Warnings for deprecated Tomcat versions are specified here: {@link TemplateHeaderView#buildWarningMessageList}
+     *
+     * @return Tomcat version
+     * @throws ConfigurationException if Tomcat version is not supported
+     */
     private @Nullable Integer verifyTomcatVersion()
     {
         String serverInfo = ModuleLoader.getServletContext().getServerInfo();
