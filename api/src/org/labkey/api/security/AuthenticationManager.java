@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -46,9 +47,14 @@ import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -152,6 +158,51 @@ public class AuthenticationManager
     }
 
 
+    public static abstract class BaseSsoValidateAction <FORM> extends SimpleViewAction<FORM>
+    {
+        @Override
+        public ModelAndView getView(FORM form, BindException errors) throws Exception
+        {
+            // Must specify an active SSO provider
+            SSOAuthenticationProvider provider = getActiveSSOProvider(getProviderName());
+
+            // Not valid, not SSO, or not active... bail out
+            if (null == provider)
+                throw new NotFoundException("Authentication provider is not valid");
+
+            ValidEmail email = validate(form);
+            HttpServletRequest request = getViewContext().getRequest();
+
+            if (null != email)
+            {
+                PrimaryAuthenticationResult result = AuthenticationManager.finalizePrimaryAuthentication(request, provider, email);
+
+                if (null != result.getUser())
+                    AuthenticationManager.setPrimaryAuthenticationUser(request, result.getUser());
+            }
+
+            AuthenticationResult result = AuthenticationManager.handleAuthentication(request, getContainer());
+
+            return HttpView.redirect(result.getRedirectURL());
+        }
+
+        @Override
+        protected String getCommandClassMethodName()
+        {
+            return "validate";
+        }
+
+        public abstract @NotNull String getProviderName();
+        public abstract @Nullable ValidEmail validate(FORM form) throws Exception;
+
+        @Override
+        public final NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
     public static void registerProvider(AuthenticationProvider authProvider, Priority priority)
     {
         if (Priority.High == priority)
@@ -208,6 +259,23 @@ public class AuthenticationManager
         for (AuthenticationProvider provider : _allProviders)
             if (provider.getName().equals(name))
                 return provider;
+
+        return null;
+    }
+
+
+    public static @Nullable SSOAuthenticationProvider getActiveSSOProvider(String name)
+    {
+        for (AuthenticationProvider provider : _activeProviders)
+        {
+            if (provider.getName().equals(name))
+            {
+                if (provider instanceof SSOAuthenticationProvider)
+                    return (SSOAuthenticationProvider)provider;
+                else
+                    return null; // Not an SSO provider
+            }
+        }
 
         return null;
     }
