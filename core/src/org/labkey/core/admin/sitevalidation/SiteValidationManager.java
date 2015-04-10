@@ -53,7 +53,7 @@ public class SiteValidationManager implements SiteValidationService.Interface
     {
         List<SiteValidationResult> siteResults = new ArrayList<>();
         if (siteValidators.isEmpty())
-            siteResults.add(new SiteValidationResult(SiteValidationResult.Level.INFO, "No site-wide validators have been registered."));
+            siteResults.add(SiteValidationResult.Level.INFO.create("No site-wide validators have been registered."));
         else
         {
             for (SiteValidationProvider validator : siteValidators)
@@ -71,7 +71,7 @@ public class SiteValidationManager implements SiteValidationService.Interface
         if (containerValidators.isEmpty())
         {
             List<SiteValidationResult> noValidators = new ArrayList<>();
-            noValidators.add(new SiteValidationResult(SiteValidationResult.Level.INFO, "No folder validators have been registered."));
+            noValidators.add(SiteValidationResult.Level.INFO.create("No folder validators have been registered."));
             containerResults.put(ContainerManager.getRoot(), noValidators);
         }
         else
