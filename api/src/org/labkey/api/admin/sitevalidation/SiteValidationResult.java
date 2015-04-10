@@ -25,13 +25,15 @@ public class SiteValidationResult
     {
         INFO,
         WARN,
-        ERROR
+        ERROR;
+
+        public SiteValidationResult create(String message) { return new SiteValidationResult(this, message);}
     }
 
     final Level level;
     final String message;
 
-    public SiteValidationResult(Level level, String message)
+    private SiteValidationResult(Level level, String message)
     {
         this.level = level;
         this.message = message;

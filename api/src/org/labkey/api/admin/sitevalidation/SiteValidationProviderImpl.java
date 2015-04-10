@@ -38,16 +38,16 @@ public abstract class SiteValidationProviderImpl implements SiteValidationProvid
 
     public static SiteValidationResult info(String message)
     {
-        return new SiteValidationResult(SiteValidationResult.Level.INFO, message);
+        return SiteValidationResult.Level.INFO.create(message);
     }
 
     public static SiteValidationResult warn(String message)
     {
-        return new SiteValidationResult(SiteValidationResult.Level.WARN, message);
+        return SiteValidationResult.Level.WARN.create(message);
     }
 
     public static SiteValidationResult error(String message)
     {
-        return new SiteValidationResult(SiteValidationResult.Level.ERROR, message);
+        return SiteValidationResult.Level.ERROR.create(message);
     }
 }
