@@ -21,11 +21,13 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * User: adam
@@ -45,12 +47,19 @@ public class OpenSSOProvider implements AuthenticationProvider.SSOAuthentication
         return false;
     }
 
-    public void activate() throws Exception
+    public void activate()
     {
-        OpenSSOManager.get().activate();
+        try
+        {
+            OpenSSOManager.get().activate();
+        }
+        catch (IOException e)
+        {
+            throw new UnexpectedException(e);
+        }
     }
 
-    public void deactivate() throws Exception
+    public void deactivate()
     {
     }
 

@@ -80,11 +80,11 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
         return false;
     }
 
-    public void activate() throws Exception
+    public void activate()
     {
     }
 
-    public void deactivate() throws Exception
+    public void deactivate()
     {
     }
 

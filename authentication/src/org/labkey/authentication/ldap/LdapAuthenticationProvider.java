@@ -41,12 +41,12 @@ public class LdapAuthenticationProvider implements AuthenticationProvider.LoginF
         return false;
     }
 
-    public void activate() throws Exception
+    public void activate()
     {
         LdapAuthenticationManager.activate();
     }
 
-    public void deactivate() throws Exception
+    public void deactivate()
     {
         LdapAuthenticationManager.deactivate();
     }

@@ -49,11 +49,11 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         return true;
     }
 
-    public void activate() throws Exception
+    public void activate()
     {
     }
 
-    public void deactivate() throws Exception
+    public void deactivate()
     {
     }
 

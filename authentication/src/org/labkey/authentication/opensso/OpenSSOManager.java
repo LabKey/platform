@@ -38,7 +38,7 @@ public class OpenSSOManager
     }
 
 
-    public void activate() throws Exception
+    public void activate() throws IOException
     {
         Properties props = loadProps("AMClient.properties");
         replaceDefaults(props, getSystemSettings());  // System settings will replace values in static properties file
@@ -48,19 +48,11 @@ public class OpenSSOManager
 
     private Properties loadProps(String filename) throws IOException
     {
-        InputStream is = null;
-
-        try
+        try (InputStream is = OpenSSOManager.class.getResourceAsStream(filename)) // TODO: Fix this so it works better with Tomcat reload
         {
-            is = OpenSSOManager.class.getResourceAsStream(filename);  // TODO: Fix this so it works better with Tomcat reload
             Properties props = new Properties();
             props.load(is);
             return props;
-        }
-        finally
-        {
-            if (null != is)
-                is.close();
         }
     }
 

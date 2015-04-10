@@ -61,12 +61,12 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider
     }
 
     @Override
-    public void activate() throws Exception
+    public void activate()
     {
     }
 
     @Override
-    public void deactivate() throws Exception
+    public void deactivate()
     {
     }
 
