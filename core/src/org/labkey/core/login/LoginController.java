@@ -1972,7 +1972,7 @@ public class LoginController extends SpringActionController
 
         public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors) throws Exception
         {
-            _provider = AuthenticationManager.getActiveSSOProvider(form.getProvider());
+            _provider = AuthenticationManager.getSSOProvider(form.getProvider());
 
             if (null == _provider)
                 throw new NotFoundException("Authentication provider is not valid");
