@@ -284,6 +284,17 @@ public class AuthenticationManager
     }
 
 
+    public static @Nullable SSOAuthenticationProvider getSSOProvider(String name)
+    {
+        AuthenticationProvider provider = getProvider(name);
+
+        if (provider instanceof SSOAuthenticationProvider)
+            return (SSOAuthenticationProvider)provider;
+        else
+            return null; // Not an SSO provider
+    }
+
+
     private static final String AUTHENTICATION_PROVIDERS_SET = "Authentication";
     private static final String PROVIDERS_KEY = "Authentication";
     private static final String PROP_SEPARATOR = ":";
