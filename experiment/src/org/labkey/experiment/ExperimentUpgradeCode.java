@@ -51,6 +51,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     private static final String LIST_SEQUENCE_NAME = "org.labkey.list.Lists";    // Matches name in ListManager
     private static final Logger LOG = Logger.getLogger(ExperimentUpgradeCode.class);
 
+    /** Called from 13.10-14.10 **/
     public void createListSequences(ModuleContext moduleContext)
     {
         String sql = "SELECT Container, MAX(ListId) AS Max FROM exp.List GROUP BY Container";

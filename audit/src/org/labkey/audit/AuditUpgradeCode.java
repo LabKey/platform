@@ -21,7 +21,6 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
@@ -40,7 +39,7 @@ public class AuditUpgradeCode implements UpgradeCode
 
     /**
      * This upgrade code isn't called directly by an upgrade script, but
-     * is called immediately after all modules have started up during the 13.2 to 13.3 ugprade.
+     * is called immediately after all modules have started up during the 13.2 to 13.3 upgrade.
      *
      * When this migration code is removed in release 16.2 (per our two-year upgrade policy)
      * we can remove all the deprecated AuditLogEvent, AuditViewFactory, and related classes.
