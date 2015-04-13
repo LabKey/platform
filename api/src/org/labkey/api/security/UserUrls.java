@@ -17,9 +17,9 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
 /**
  * User: adam
@@ -34,5 +34,10 @@ public interface UserUrls extends UrlProvider
     ActionURL getUserDetailsURL(Container container, int userId, @Nullable URLHelper returnURL);
     ActionURL getUserDetailsURL(Container c, @Nullable URLHelper returnURL);
     ActionURL getUserUpdateURL(Container c, URLHelper returnURL, int userId);
-    ActionURL getCheckUserUpdateURL(Container c, URLHelper returnURL, int userId, boolean checkIfRequired);
+
+    /**
+     * Does this user's profile need to be updated? In other words, are there required fields that are blank? Doesn't
+     * return a URL, so perhaps it should be on a different service, but there aren't any obvious choices.
+     */
+    boolean requiresProfileUpdate(User user);
 }

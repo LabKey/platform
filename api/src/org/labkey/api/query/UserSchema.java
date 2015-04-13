@@ -42,6 +42,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationProvider;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
@@ -503,10 +504,27 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
     public final QuerySettings getSettings(PropertyValues pvs, String dataRegionName)
     {
-        QuerySettings settings = createQuerySettings(dataRegionName, null, null);
+        return getSettings(pvs, dataRegionName, null, null);
+    }
+
+    public final QuerySettings getSettings(String dataRegionName, @Nullable String queryName)
+    {
+        return getSettings(new MutablePropertyValues(), dataRegionName, queryName, null);
+    }
+
+    public final QuerySettings getSettings(PropertyValues pvs, String dataRegionName, @Nullable String queryName, @Nullable String viewName)
+    {
+        QuerySettings settings = createQuerySettings(dataRegionName, queryName, viewName);
         settings.init(pvs);
         settings.setSchemaName(getSchemaName());
-
+        if (queryName != null)
+        {
+            settings.setQueryName(queryName);
+        }
+        if (viewName != null)
+        {
+            settings.setViewName(viewName);
+        }
         return settings;
     }
 

@@ -930,10 +930,11 @@ public class AuthenticationManager
             returnURL = !c.hasPermission(user, ReadPermission.class) ? getWelcomeURL() : c.getStartURL(user);
         }
 
-        // If this is user's first log in or some required field isn't filled in then go to update page first
+        // If this is user's first login or some required field is blank then go to update page first
         if (!properties.isSkipProfile())
         {
-            returnURL = PageFlowUtil.urlProvider(UserUrls.class).getCheckUserUpdateURL(current, returnURL, user.getUserId(), !user.isFirstLogin());
+            if (user.isFirstLogin() || PageFlowUtil.urlProvider(UserUrls.class).requiresProfileUpdate(user))
+                returnURL = PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(current, returnURL, user.getUserId());
         }
 
         if (null != properties.getUrlhash())
