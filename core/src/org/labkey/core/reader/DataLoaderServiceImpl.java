@@ -73,7 +73,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
 
         for (String s : fileType.getSuffixes())
         {
-            _extensionToFactory.put(s, factory);
+            _extensionToFactory.put(s.toLowerCase(), factory);
         }
 
         _fileTypeToFactory.put(fileType, factory);
@@ -168,6 +168,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
         String ext = FileUtil.getExtension(filename);
         if (ext != null)
         {
+            ext = ext.toLowerCase();
             Collection<DataLoaderFactory> factories = _extensionToFactory.get(ext);
             if (factories == null && !ext.startsWith("."))
                 factories = _extensionToFactory.get("." + ext);
