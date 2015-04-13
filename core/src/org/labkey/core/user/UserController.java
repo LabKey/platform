@@ -40,7 +40,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -48,7 +47,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
@@ -126,7 +124,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -157,17 +154,20 @@ public class UserController extends SpringActionController
 
     public static class UserUrlsImpl implements UserUrls
     {
+        @Override
         public ActionURL getSiteUsersURL()
         {
             return new ActionURL(ShowUsersAction.class, ContainerManager.getRoot());
             // TODO: Always add lastFilter?
         }
 
+        @Override
         public ActionURL getProjectUsersURL(Container container)
         {
             return new ActionURL(ShowUsersAction.class, container);
         }
 
+        @Override
         public ActionURL getUserAccessURL(Container container, int userId)
         {
             ActionURL url = getUserAccessURL(container);
@@ -180,6 +180,7 @@ public class UserController extends SpringActionController
             return new ActionURL(UserAccessAction.class, container);
         }
 
+        @Override
         public ActionURL getUserDetailsURL(Container c, int userId, @Nullable URLHelper returnURL)
         {
             ActionURL url = new ActionURL(DetailsAction.class, c);
@@ -191,6 +192,7 @@ public class UserController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getUserDetailsURL(Container c, @Nullable URLHelper returnURL)
         {
             ActionURL url = new ActionURL(DetailsAction.class, c);
@@ -201,25 +203,22 @@ public class UserController extends SpringActionController
             return url;
         }
 
-        public ActionURL getCheckUserUpdateURL(Container c, URLHelper returnURL, int userId, boolean checkIfRequired)
+        @Override
+        public ActionURL getUserUpdateURL(Container c, URLHelper returnURL, int userId)
         {
-            ActionURL url = new ActionURL(CheckUpdateAction.class, c);
-            url.addReturnURL(returnURL);
+            ActionURL url = new ActionURL(ShowUpdateAction.class, c);
             url.addParameter("userId", userId);
-            url.addParameter("checkIfRequired", checkIfRequired);
+            url.addParameter(QueryParam.schemaName.toString(), "core");
+            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
+            url.addReturnURL(returnURL);
 
             return url;
         }
 
-        public ActionURL getUserUpdateURL(Container c, URLHelper returnURL, int userId)
+        @Override
+        public boolean requiresProfileUpdate(User user)
         {
-            ActionURL url = new ActionURL(ShowUpdateAction.class, c);
-            url.addReturnURL(returnURL);
-            url.addParameter("userId", userId);
-            url.addParameter(QueryParam.schemaName.toString(), "core");
-            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
-
-            return url;
+            return CoreQuerySchema.requiresProfileUpdate(user);
         }
     }
 
@@ -1526,115 +1525,6 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresLogin @CSRF   // TODO: Move the "requiresUpdate()" check into AuthenticationManager.getAfterLoginUrl() and avoid an extra redirect
-    public class CheckUpdateAction extends RedirectAction<CheckUserUpdateForm>
-    {
-        private URLHelper _target;
-
-        @Override
-        public URLHelper getSuccessURL(CheckUserUpdateForm form)
-        {
-            return _target;
-        }
-
-        @Override
-        public boolean doAction(CheckUserUpdateForm form, BindException errors) throws Exception
-        {
-            if (form.isCheckIfRequired() && form.getReturnUrl() != null)
-            {
-                getViewContext().addContextualRole(ReadPermission.class);
-                if (!requiresUpdate(getUser()))
-                    _target = form.getReturnUrl().getURLHelper();
-            }
-
-            if (_target == null)
-            {
-                ActionURL url = new ActionURL(ShowUpdateAction.class, getContainer());
-                url.addParameter(QueryParam.schemaName.toString(), "core");
-                url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
-                url.addParameter("userId", getUser().getUserId());
-                //url.addParameter(QueryParam.srcURL, form.getReturnUrl().toString());
-
-                _target = url;
-            }
-
-            return true;
-        }
-
-        private boolean requiresUpdate(User user) throws SQLException
-        {
-            String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), user);
-            Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
-
-            if (domain != null)
-            {
-                try
-                {
-                    List<String> requiredFields = new ArrayList<>();
-                    for (DomainProperty prop : domain.getProperties())
-                    {
-                        if (prop.isRequired() && prop.isShownInUpdateView())
-                            requiredFields.add(prop.getName());
-                    }
-
-                    if (!requiredFields.isEmpty())
-                    {
-                        UserSchema schema = new CoreQuerySchema(getUser(), getContainer(), false);
-                        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, CoreQuerySchema.USERS_TABLE_NAME);
-
-                        settings.setBaseFilter(new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
-
-                        Map<String, Object> params = Collections.emptyMap();
-                        TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
-
-                        try (Results results = QueryService.get().select(table, table.getColumns(),
-                                new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()), null, params, true))
-                        {
-                            if (results.next())
-                            {
-                                for (String fieldName : requiredFields)
-                                {
-                                    FieldKey fieldKey = FieldKey.fromParts(fieldName);
-                                    if (results.hasColumn(fieldKey))
-                                    {
-                                        Object val = results.getObject(fieldKey);
-                                        if (val == null || val.toString().trim().length() == 0)
-                                            return true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw new SQLException(e);
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public void validateCommand(CheckUserUpdateForm target, Errors errors)
-        {
-        }
-    }
-
-    public static class CheckUserUpdateForm extends ReturnUrlForm
-    {
-        private boolean _checkIfRequired;
-
-        public boolean isCheckIfRequired()
-        {
-            return _checkIfRequired;
-        }
-
-        public void setCheckIfRequired(boolean checkIfRequired)
-        {
-            _checkIfRequired = checkIfRequired;
-        }
-    }
-
 
     private static ActionURL getChangeEmailAction(Container c, User user)
     {
@@ -1975,7 +1865,7 @@ public class UserController extends SpringActionController
 
                 for (User user : users)
                 {
-                    // TODO: consider performance here (Aaron gets picky about this)
+                    // TODO: consider performance here
                     // if permissions passed, then validate the user has all of such permissions
                     if (form.getPermissions() != null)
                     {

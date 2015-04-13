@@ -19,6 +19,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
@@ -26,14 +27,21 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
@@ -45,7 +53,12 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.workbook.WorkbooksTableInfo;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -475,11 +488,12 @@ public class CoreQuerySchema extends UserSchema
         t = def.getTable(this, errors, true);
         if (!errors.isEmpty())
             throw errors.get(0);
-        t.getColumn("UserId").setDisplayColumnFactory(new DisplayColumnFactory(){
+        t.getColumn("UserId").setDisplayColumnFactory(new DisplayColumnFactory()
+        {
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new DataColumn(colInfo,false)
+                return new DataColumn(colInfo, false)
                 {
                     public String renderURL(RenderContext ctx)
                     {
@@ -527,4 +541,57 @@ public class CoreQuerySchema extends UserSchema
         }
     }
 
+    public static boolean requiresProfileUpdate(User user)
+    {
+        Container c = ContainerManager.getRoot();
+        String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), user);
+        Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+
+        if (domain != null)
+        {
+            try
+            {
+                List<String> requiredFields = new ArrayList<>();
+                for (DomainProperty prop : domain.getProperties())
+                {
+                    if (prop.isRequired() && prop.isShownInUpdateView())
+                        requiredFields.add(prop.getName());
+                }
+
+                if (!requiredFields.isEmpty())
+                {
+                    UserSchema schema = new CoreQuerySchema(user, c, false);
+                    QuerySettings settings = schema.getSettings(QueryView.DATAREGIONNAME_DEFAULT, CoreQuerySchema.USERS_TABLE_NAME);
+
+                    settings.setBaseFilter(new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
+
+                    Map<String, Object> params = Collections.emptyMap();
+                    TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
+
+                    try (Results results = QueryService.get().select(table, table.getColumns(),
+                            new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()), null, params, true))
+                    {
+                        if (results.next())
+                        {
+                            for (String fieldName : requiredFields)
+                            {
+                                FieldKey fieldKey = FieldKey.fromParts(fieldName);
+                                if (results.hasColumn(fieldKey))
+                                {
+                                    Object val = results.getObject(fieldKey);
+                                    if (val == null || val.toString().trim().length() == 0)
+                                        return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        return false;
+    }
 }
