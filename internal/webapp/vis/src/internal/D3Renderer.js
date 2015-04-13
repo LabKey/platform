@@ -1276,7 +1276,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderErrorBar = function(layer, plot, geom, data) {
-        var colorAcc, altColorAcc, sizeAcc, topFn, bottomFn, middleFn, selection, newBars;
+        var colorAcc, altColorAcc, sizeAcc, topFn, bottomFn, verticalFn, selection, newBars;
 
         colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
         altColorAcc = geom.altColor ? geom.altColor : colorAcc;
@@ -1301,7 +1301,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             }
             return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
         };
-        middleFn = function(d) {
+        verticalFn = function(d) {
             var x, y1, y2, value, error;
             x = geom.getX(d);
             value = geom.yAes.getValue(d);
@@ -1312,7 +1312,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             if (y2 == null && geom.yScale.trans == "log") {
                 y2 = geom.yScale.range[0];
             }
-            return isNaN(x) || isNaN(value) || isNaN(error) ? null : LABKEY.vis.makeLine(x, y1, x, y2);
+            return isNaN(x) || isNaN(value) || isNaN(error) || !isFinite(y1) || !isFinite(y2) ? null : LABKEY.vis.makeLine(x, y1, x, y2);
         };
 
         data.filter(function(d) {
@@ -1328,12 +1328,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         newBars = selection.enter().append('g').attr('class', 'error-bar');
         newBars.append('path').attr('class','error-bar-top');
-        newBars.append('path').attr('class','error-bar-mid');
         newBars.append('path').attr('class','error-bar-bottom');
+        newBars.append('path').attr('class','error-bar-vert');
 
         selection.selectAll('.error-bar-top').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
         selection.selectAll('.error-bar-bottom').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
-        selection.selectAll('.error-bar-mid').attr('d', middleFn).attr('stroke', altColorAcc).attr('stroke-width', sizeAcc);
+        selection.selectAll('.error-bar-vert').attr('d', verticalFn).attr('stroke', altColorAcc).attr('stroke-width', sizeAcc);
 
         if (geom.dashed) {
             selection.selectAll('.error-bar-top').style("stroke-dasharray", ("2, 1"));

@@ -1346,7 +1346,7 @@ boxPlot.render();
         var maxSeqValue = config.data.length > 0 ? config.data[config.data.length - 1].seqValue + 1 : 0;
         for (var i = maxSeqValue; i < 10; i++)
         {
-            var temp = {seqValue: i};
+            var temp = {type: 'empty', seqValue: i};
             temp[config.properties.xTickLabel] = "";
             if (config.properties.color && config.data[0]) {
                 temp[config.properties.color] = config.data[0][config.properties.color];
@@ -1396,7 +1396,7 @@ boxPlot.render();
         };
         config.margins = {
             top: config.labels && config.labels.main ? 30 : config.properties.topMargin || 10,
-            right: config.properties.color || config.legendData ? 150 : 40,
+            right: config.properties.color || (config.legendData && config.legendData.length > 0) ? 150 : 40,
             bottom: config.labels && config.labels.x ? 75 : 55,
             left: config.labels && config.labels.y ? 75 : 55
         };
@@ -1464,6 +1464,9 @@ boxPlot.render();
         };
         if (config.properties.color) {
             pointLayerConfig.aes.color = function(row){return row[config.properties.color];};
+        }
+        if (config.properties.shape) {
+            pointLayerConfig.aes.shape = function(row){return row[config.properties.shape];};
         }
         if (config.properties.hoverTextFn) {
             pointLayerConfig.aes.hoverText = config.properties.hoverTextFn;
