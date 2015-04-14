@@ -26,9 +26,12 @@ import org.labkey.api.util.Filter;
  */
 public class TransactionCache<K, V> implements Cache<K, V>
 {
+    /** Cache shared by other threads */
     private final Cache<K, V> _sharedCache;
+    /** Our own private, transaction-specific cache, which may contain database changes that have not yet been committed */
     private final Cache<K, V> _privateCache;
 
+    /** Whether or not we've written to our private, transaction-specific cache */
     private boolean _hasWritten = false;
 
     public TransactionCache(Cache<K, V> sharedCache, Cache<K, V> privateCache)
@@ -57,16 +60,23 @@ public class TransactionCache<K, V> implements Cache<K, V>
         V v;
 
         if (_hasWritten)
-            v = _privateCache.get(key);
+        {
+            // Look only in our private cache at this point
+            v = _privateCache.get(key, arg, loader);
+        }
         else
+        {
+            // This doesn't handle caching of null values correct - nulls will cause us to always requery and store
+            // in the private cache
             v = _sharedCache.get(key);
 
-        if (null == v)
-        {
-            v = loader.load(key, arg);
-            CacheManager.validate(loader, v);
-            _hasWritten = true;
-            _privateCache.put(key, v);
+            if (null == v)
+            {
+                v = loader.load(key, arg);
+                CacheManager.validate(loader, v);
+                _hasWritten = true;
+                _privateCache.put(key, v);
+            }
         }
 
         return v;
