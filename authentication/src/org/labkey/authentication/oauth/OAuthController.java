@@ -15,6 +15,8 @@
  */
 package org.labkey.authentication.oauth;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
@@ -22,9 +24,13 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.ValidEmail;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -64,7 +70,8 @@ public class OAuthController extends SpringActionController
 
             // openid return_to
             URLHelper return_to = new ActionURL(ReturnAction.class,getContainer());
-            String redirect = GoogleOAuthProvider.getAuthenticationUrl(request, response, return_to);
+            String csrf = CSRFUtil.getExpectedToken(request,response);
+            String redirect = GoogleOAuthProvider.getAuthenticationUrl(csrf, return_to);
             throw new RedirectException(redirect);
         }
 
@@ -77,21 +84,22 @@ public class OAuthController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class ReturnAction extends SimpleViewAction<ReturnUrlForm>
+    public class ReturnAction extends AuthenticationManager.BaseSsoValidateAction<ReturnUrlForm>
     {
+        @NotNull
         @Override
-        public ModelAndView getView(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
+        public String getProviderName()
         {
-            HttpServletRequest request = getViewContext().getRequest();
-            URLHelper returnURL = (URLHelper)request.getSession().getAttribute(OAuthController.class.getName() + "$returnURL");
-            ActionURL login = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(returnURL);
-            login.addParameters(getViewContext().getActionURL().getParameters());
-            throw new RedirectException(login);
+            return GoogleOAuthProvider.NAME;
         }
 
+        @Nullable
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public ValidEmail validate(ReturnUrlForm form) throws Exception
         {
+            AuthenticationProvider.AuthenticationResponse auth = new GoogleOAuthProvider().authenticate(getViewContext().getRequest(), getViewContext().getResponse(), form.getReturnURLHelper());
+            if (auth.isAuthenticated())
+                return auth.getValidEmail();
             return null;
         }
     }

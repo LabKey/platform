@@ -40,6 +40,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFException;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
@@ -107,18 +108,18 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
 
 
     /* NOTE: the Google+ signin button could link directly to this URL, rather than redirecting through oauth/redirect.view */
-    public static String getAuthenticationUrl(HttpServletRequest request, HttpServletResponse response, @NotNull URLHelper returnUrl) throws URISyntaxException
+    public static String getAuthenticationUrl(String state, @NotNull URLHelper returnUrl) throws URISyntaxException
     {
         URLHelper toGoogle = new URLHelper("https://accounts.google.com/o/oauth2/auth");
         toGoogle.addParameter("response_type", "code");
         toGoogle.addParameter("client_id", getClientId());
         toGoogle.addParameter("redirect_uri", returnUrl.getURIString());
         toGoogle.addParameter("scope", "openid email");
-        toGoogle.addParameter("state", CSRFUtil.getExpectedToken(request, response));
+        toGoogle.addParameter("state", state);
         toGoogle.addParameter("access_type", "online");
         toGoogle.addParameter("openid.realm", "");
         toGoogle.addParameter("approval_prompt", "auto");
-        // TODO login_hint if user selected remember email
+        // TODO login_hint if user selected "remember email"
         return toGoogle.getURIString();
     }
 
@@ -235,9 +236,18 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
     }
 
     @Override
-    public URLHelper getURL()
+    public URLHelper getURL(String secret)
     {
-        return null;  // TODO!!
+        try
+        {
+            URLHelper return_to = new ActionURL(OAuthController.ReturnAction.class, ContainerManager.getRoot());
+            String redirect = GoogleOAuthProvider.getAuthenticationUrl(secret, return_to);
+            return new URLHelper(redirect);
+        }
+        catch (URISyntaxException x)
+        {
+            throw new ConfigurationException("Could not parse SSO provider URL", x);
+        }
     }
 
 

@@ -273,8 +273,8 @@ public class LoginController extends SpringActionController
         {
             ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
             url.addParameter("provider", provider.getName());
-            url.addReturnURL(returnURL);
-
+            if (null != returnURL)
+                url.addReturnURL(returnURL);
             return url;
         }
     }
@@ -964,7 +964,8 @@ public class LoginController extends SpringActionController
                 AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
             }
 
-            URLHelper url = provider.getURL();
+            String csrf = CSRFUtil.getExpectedToken(getViewContext());
+            URLHelper url = provider.getURL(csrf);
 
             return HttpView.redirect(url.getURIString());
         }

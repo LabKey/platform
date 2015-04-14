@@ -64,7 +64,7 @@ public class SamlProvider implements AuthenticationProvider.SSOAuthenticationPro
     }
 
     @Override
-    public URLHelper getURL()
+    public URLHelper getURL(String secret)
     {
         return null;  // TODO!!
     }

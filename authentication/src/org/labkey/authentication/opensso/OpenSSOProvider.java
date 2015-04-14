@@ -125,7 +125,7 @@ public class OpenSSOProvider implements AuthenticationProvider.SSOAuthentication
     }
 
     @Override
-    public URLHelper getURL()
+    public URLHelper getURL(String secret)
     {
         return null;
     }

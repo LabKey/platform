@@ -49,7 +49,7 @@ public class CasAuthenticationProvider implements SSOAuthenticationProvider
     }
 
     @Override
-    public URLHelper getURL()
+    public URLHelper getURL(String secret)
     {
         return CasManager.getInstance().getLoginURL();
     }
