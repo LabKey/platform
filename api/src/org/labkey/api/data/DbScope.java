@@ -438,7 +438,7 @@ public class DbScope
         try
         {
             conn = _getConnection(null);
-            // we expect connetions coming from the cache to be at a low transaction isolation level
+            // we expect connections coming from the cache to be at a low transaction isolation level
             // if not then we probably didn't reset after a previous commit/abort
             //assert Connection.TRANSACTION_READ_COMMITTED >= conn.getTransactionIsolation();
             //conn.setTransactionIsolation(isolationLevel);
