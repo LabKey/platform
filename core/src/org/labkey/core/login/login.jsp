@@ -28,7 +28,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
-<%@ page import="org.apache.http.auth.AUTH" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -95,21 +94,31 @@
         <% } %>
         <input type="hidden" id="urlhash" name="urlhash">
     </form>
-    <%-- this should be controlled by the authentication provider --%>
+     <%--this should be controlled by the authentication provider--%>
+    <%--<%--%>
+        <%--if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-openid-google"))--%>
+        <%--{--%>
+            <%--boolean hasGoogle = false;--%>
+            <%--for (AuthenticationProvider ap : AuthenticationManager.getActiveProviders())--%>
+                <%--if (ap.getName().equals("Google"))--%>
+                    <%--hasGoogle = true;--%>
+            <%--if (hasGoogle)--%>
+            <%--{--%>
+                <%--ActionURL toGoogle = new ActionURL("oauth","redirect",ContainerManager.getRoot()).addParameter("provider","Google").addParameter("returnUrl",returnURL.getLocalURIString());--%>
+                <%--%><a href="<%=h(toGoogle)%>"><img class="auth-item" src="<%=getContextPath()%>/authentication/openid_google.png"></a><%--%>
+            <%--}--%>
+        <%--} --%>
+    <%--%>--%>
+    <% String otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(bean.form.getReturnActionURL());
+    if(StringUtils.isNotEmpty(otherLoginMechanisms))
+    {
+    %>
+        <br><h3>Or</h3>
+        <div class="auth-header">Sign In using:</div>
+        <br><%= text(otherLoginMechanisms)%>
     <%
-        if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-openid-google"))
-        {
-            boolean hasGoogle = false;
-            for (AuthenticationProvider ap : AuthenticationManager.getActiveProviders())
-                if (ap.getName().equals("Google"))
-                    hasGoogle = true;
-            if (hasGoogle)
-            {
-                ActionURL toGoogle = new ActionURL("oauth","redirect",ContainerManager.getRoot()).addParameter("provider","Google").addParameter("returnUrl",returnURL.getLocalURIString());
-                %><a href="<%=h(toGoogle)%>"><img class="auth-item" src="<%=getContextPath()%>/authentication/openid_google.png"></a><%
-            }
-        }
-%>
+    }
+    %>
 </div>
 <script type="text/javascript">
     <% // Provide support for persisting the url hash through a login redirect %>
