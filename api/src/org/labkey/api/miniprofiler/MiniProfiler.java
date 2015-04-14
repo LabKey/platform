@@ -187,7 +187,7 @@ public class MiniProfiler
         if (requestInfo == null || requestInfo.isIgnored())
             return null;
 
-        if (!(ModuleLoader.getInstance().isStartupComplete() && getSettings().isEnabled()))
+        if (!(ModuleLoader.getInstance().isStartupComplete())) // && getSettings().isEnabled()))
             return null;
 
         return requestInfo.custom(category, msg);
@@ -217,7 +217,7 @@ public class MiniProfiler
         if (requestInfo == null || requestInfo.isIgnored())
             return;
 
-        if (!(ModuleLoader.getInstance().isStartupComplete() && getSettings().isEnabled()))
+        if (!(ModuleLoader.getInstance().isStartupComplete())) // && getSettings().isEnabled()))
             return;
 
         requestInfo.addCustomTiming(category, elapsed, msg, detailsUrl, stackTrace);
