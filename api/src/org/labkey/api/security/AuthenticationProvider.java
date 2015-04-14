@@ -50,7 +50,7 @@ public interface AuthenticationProvider
          * Return the external service's URL.
          * @return The redirect URL
          */
-        URLHelper getURL();
+        URLHelper getURL(String secret);
     }
 
     interface LoginFormAuthenticationProvider extends AuthenticationProvider
