@@ -35,6 +35,7 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -136,6 +137,10 @@ public class LocationTable extends BaseStudyTable
             if (!c.hasPermission(user, AdminPermission.class))
                 throw new UnauthorizedException();
 
+            // this should not get called with > 1 row
+            if (1 != rows.size())
+                throw new IllegalStateException("Bulk update not allowed on locations.");
+
             Map<String, Object> map = rows.get(0);
 
             Integer locId = (Integer)map.get("RowId");
@@ -144,7 +149,7 @@ public class LocationTable extends BaseStudyTable
 
             LocationImpl loc = StudyManager.getInstance().getLocation(c, locId);
             if (null == loc)
-                throw new InvalidKeyException("Location not found");
+                throw new BatchValidationException(Collections.singletonList(new ValidationException("Location not found: " + locId)), extraScriptContext);
             loc.createMutable();    // Test mutability
 
             return super.updateRows(user, c, rows, oldKeys, configParameters, extraScriptContext);
@@ -156,6 +161,7 @@ public class LocationTable extends BaseStudyTable
             assert null == configParameters && null == extraScriptContext;      // We're not expecting these for this table
             StudyManager mgr = StudyManager.getInstance();
 
+            List<ValidationException> validationExceptions = new ArrayList<>();
             for (Map<String, Object> map : keys)
             {
                 Integer locId = (Integer)map.get("RowId");
@@ -164,24 +170,33 @@ public class LocationTable extends BaseStudyTable
 
                 String cid = (String)map.get("Container");
                 if (null == cid)
-                    throw new InvalidKeyException("Invalid container ID");
+                    throw new IllegalStateException("Invalid container ID");
 
                 Container c = ContainerManager.getForId(cid);
                 if (null == c)
-                    throw new InvalidKeyException("Container not found");
+                    throw new IllegalStateException("Container not found");
 
                 if (!c.hasPermission(user, AdminPermission.class))
                     throw new UnauthorizedException();
 
                 LocationImpl loc = mgr.getLocation(c, locId);
                 if (null == loc)
-                    throw new InvalidKeyException("Location not found");
+                {
+                    validationExceptions.add(new ValidationException("Location not found: " + locId));
+                    continue;
+                }
 
                 if (mgr.isLocationInUse(loc))
-                    throw new InvalidKeyException("Locations currently in use cannot be deleted");
+                {
+                    validationExceptions.add(new ValidationException("Location is currently in use and cannot be deleted: " + loc.getDisplayName()));
+                    continue;
+                }
 
                 StudyManager.getInstance().deleteLocation(loc);
             }
+
+            if (!validationExceptions.isEmpty())
+                throw new BatchValidationException(validationExceptions, extraScriptContext);
 
             return Collections.emptyList();
         }
