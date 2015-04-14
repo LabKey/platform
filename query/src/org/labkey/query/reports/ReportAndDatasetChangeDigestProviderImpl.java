@@ -34,17 +34,14 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -132,37 +129,22 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
                     User user = UserManager.getUser(userEntry.getKey());
                     if (null != user)
                     {
-                        Map<Integer, List<NotificationInfo>> reportsForUserInitial = new HashMap<>();
                         SortedSet<Integer> categories = userEntry.getValue();       // Set has a NotifyOption in it
                         NotifyOption notifyOption = ReportContentEmailManager.removeNotifyOption(categories);
-                        if (!NotifyOption.NONE.equals(notifyOption))
+                        Map<Integer, List<NotificationInfo>> reportsForUserInitial = notifyOption.getReportsForUserByCategory(reportInfosByCategory, categories, allCategories);
+
+                        if (!reportsForUserInitial.isEmpty())
                         {
-                            if (NotifyOption.ALL.equals(notifyOption))
-                                categories = allCategories;
+                            // Make email
+                            Map<Integer, ViewCategory> viewCategoryMap = getViewCategoryMap(container);
+                            Map<ViewCategory, List<NotificationInfo>> reportsForUser = new LinkedHashMap<>();
+                            List<ViewCategory> viewCategories = getSortedViewCategories(viewCategoryMap);
+                            for (ViewCategory viewCategory : viewCategories)
+                                if (reportsForUserInitial.containsKey(viewCategory.getRowId()))
+                                    reportsForUser.put(viewCategory, sortNotificationInfoList(reportsForUserInitial.get(viewCategory.getRowId())));
 
-                            for (Integer category : categories)
-                            {
-                                if (null != category)
-                                {
-                                    List<NotificationInfo> reportsForCategory = reportInfosByCategory.get(category);
-                                    if (null != reportsForCategory)
-                                        reportsForUserInitial.put(category, reportsForCategory);
-                                }
-                            }
-
-                            if (!reportsForUserInitial.isEmpty())
-                            {
-                                // Make email
-                                Map<Integer, ViewCategory> viewCategoryMap = getViewCategoryMap(container, user);
-                                Map<ViewCategory, List<NotificationInfo>> reportsForUser = new LinkedHashMap<>();
-                                List<ViewCategory> viewCategories = getSortedViewCategories(viewCategoryMap);
-                                for (ViewCategory viewCategory : viewCategories)
-                                    if (reportsForUserInitial.containsKey(viewCategory.getRowId()))
-                                        reportsForUser.put(viewCategory, sortNotificationInfoList(reportsForUserInitial.get(viewCategory.getRowId())));
-
-                                ReportAndDatasetDigestForm form = new ReportAndDatasetDigestForm(user, container, reportsForUser);
-                                messages.add(createDigestMessage(emailService, form));
-                            }
+                            ReportAndDatasetDigestForm form = new ReportAndDatasetDigestForm(user, container, reportsForUser);
+                            messages.add(createDigestMessage(emailService, form));
                         }
                     }
                 }
@@ -192,9 +174,9 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
 
     public static class ReportAndDatasetDigestForm
     {
-        Map<ViewCategory, List<NotificationInfo>> _reports;
-        User _user;
-        Container _container;
+        private final Map<ViewCategory, List<NotificationInfo>> _reports;
+        private final User _user;
+        private final Container _container;
 
         public ReportAndDatasetDigestForm(User user, Container container, Map<ViewCategory, List<NotificationInfo>> reports)
         {
@@ -221,12 +203,12 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
         }
     }
 
-    private Map<Integer, ViewCategory> getViewCategoryMap(Container container, User user)
+    private Map<Integer, ViewCategory> getViewCategoryMap(Container container)
     {
         Map<Integer, ViewCategory> viewCategoryMap = new HashMap<>();
-        ViewCategory uncategoriedCategory = ReportUtil.getDefaultCategory(container, null, null);
-        uncategoriedCategory.setRowId(ViewCategoryManager.UNCATEGORIZED_ROWID);
-        viewCategoryMap.put(ViewCategoryManager.UNCATEGORIZED_ROWID, uncategoriedCategory);
+        ViewCategory uncategorizedCategory = ReportUtil.getDefaultCategory(container, null, null);
+        uncategorizedCategory.setRowId(ViewCategoryManager.UNCATEGORIZED_ROWID);
+        viewCategoryMap.put(ViewCategoryManager.UNCATEGORIZED_ROWID, uncategorizedCategory);
 
         for (ViewCategory viewCategory : ViewCategoryManager.getInstance().getAllCategories(container))
         {
