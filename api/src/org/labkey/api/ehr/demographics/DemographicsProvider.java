@@ -16,11 +16,9 @@
 package org.labkey.api.ehr.demographics;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,6 +29,8 @@ import java.util.Set;
  */
 public interface DemographicsProvider
 {
+    public static final int MAXIMUM_BATCH_SIZE = 1000;
+
     public String getName();
 
     public boolean isAvailable(Container c);

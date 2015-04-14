@@ -79,7 +79,7 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
 
     public Map<String, Map<String, Object>> getProperties(Container c, User u, Collection<String> ids)
     {
-        if (ids.size() > 500)
+        if (ids.size() > DemographicsProvider.MAXIMUM_BATCH_SIZE)
         {
             _log.error("unexpected amount of IDs in demographics provider: " + getName() + ".  was: " + ids.size(), new Exception());
         }
