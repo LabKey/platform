@@ -324,6 +324,10 @@ boxPlot.render();
                 newScale.domain = origScale.domain ? origScale.domain : null;
                 newScale.range = origScale.range ? origScale.range : null;
 
+                newScale.tickClick = origScale.tickClick ? origScale.tickClick : null;
+                newScale.tickMouseOver = origScale.tickMouseOver ? origScale.tickMouseOver : null;
+                newScale.tickMouseOut = origScale.tickMouseOut ? origScale.tickMouseOut : null;
+
                 if (!origScale.domain &&((origScale.hasOwnProperty('min') && LABKEY.vis.isValid(origScale.min)) ||
                         (origScale.hasOwnProperty('max') && LABKEY.vis.isValid(origScale.max)))) {
                     console.log('scale.min and scale.max are deprecated. Please use scale.domain.');

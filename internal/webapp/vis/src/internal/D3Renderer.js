@@ -11,8 +11,8 @@ if (!LABKEY.vis.internal) {
 LABKEY.vis.internal.Axis = function() {
     // This emulates a lot of the d3.svg.axis() functionality, but adds in the ability for us to have tickHovers,
     // different colored tick & gridlines, etc.
-    var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, axisSel, tickSel, textSel,
-            gridLineSel, borderSel, grid;
+    var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
+            tickClick, axisSel, tickSel, textSel, gridLineSel, borderSel, grid;
     var tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000';
     var tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1;
 
@@ -118,8 +118,51 @@ LABKEY.vis.internal.Axis = function() {
                 .attr('fill', tickTextColor)
                 .style('font', '10px arial, verdana, helvetica, sans-serif');
 
+        var highlightX = function() {
+            return this.nextSibling.getBBox().x;
+        };
+
+        var highlightY = function() {
+            return this.nextSibling.getBBox().y;
+        };
+
+        var highlightWidth = function() {
+            return this.nextSibling.getBBox().width;
+        };
+
+        var highlightHeight = function() {
+            return this.nextSibling.getBBox().height;
+        };
+
+        var addHighlightRects = function (anchors)
+        {
+            anchors.selectAll('rect.highlight').remove();
+
+            anchors.insert("rect", "text")
+                    .attr('class', 'highlight')
+                    .attr('x', highlightX)
+                    .attr('y', highlightY)
+                    .attr('width', highlightWidth)
+                    .attr('height', highlightHeight)
+                    .attr('fill', 'white');
+        };
+
+        addHighlightRects(textAnchors);
+
         if (tickHover) {
             textEls.append('title').text(tickHover);
+        }
+
+        if (tickClick) {
+            textEls.on('click', tickClick);
+        }
+
+        if (tickMouseOver) {
+            textEls.on('mouseover', tickMouseOver);
+        }
+
+        if (tickMouseOut) {
+            textEls.on('mouseout', tickMouseOut);
         }
 
         if (orientation == 'bottom') {
@@ -136,8 +179,14 @@ LABKEY.vis.internal.Axis = function() {
             if (hasOverlap) {
                 textEls.attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';})
                         .attr('text-anchor', 'start');
+
+                addHighlightRects(textAnchors);
+                textAnchors.selectAll('rect.highlight')
+                        .attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';});
+
             } else {
                 textEls.attr('transform', '');
+                textAnchors.selectAll('rect.highlight').attr('transform', '');
             }
         }
 
@@ -160,6 +209,9 @@ LABKEY.vis.internal.Axis = function() {
     axis.tickFormat = function(f) {tickFormat = f; return axis;};
     axis.tickHover = function(h) {tickHover = h; return axis;};
     axis.tickCls = function(c) {tickCls = c; return axis;};
+    axis.tickClick = function(h) {tickClick = h; return axis;};
+    axis.tickMouseOver = function(h) {tickMouseOver = h; return axis;};
+    axis.tickMouseOut = function(h) {tickMouseOut = h; return axis;};
 
     axis.tickPadding = function(p) {
         if (p !== null && p !== undefined) {
@@ -346,6 +398,18 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         if (plot.scales.x.tickCls) {
             xAxis.tickCls(plot.scales.x.tickCls);
+        }
+
+        if (plot.scales.x.tickClick) {
+            xAxis.tickClick(plot.scales.x.tickClick);
+        }
+
+        if (plot.scales.x.tickMouseOver) {
+            xAxis.tickMouseOver(plot.scales.x.tickMouseOver);
+        }
+
+        if (plot.scales.x.tickMouseOut) {
+            xAxis.tickMouseOut(plot.scales.x.tickMouseOut);
         }
 
         this.canvas.call(xAxis);
