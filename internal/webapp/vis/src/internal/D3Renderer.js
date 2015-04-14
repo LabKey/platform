@@ -119,19 +119,19 @@ LABKEY.vis.internal.Axis = function() {
                 .style('font', '10px arial, verdana, helvetica, sans-serif');
 
         var highlightX = function() {
-            return this.nextSibling.getBBox().x;
+            return this.nextSibling.getBBox().x - 4;
         };
 
         var highlightY = function() {
-            return this.nextSibling.getBBox().y;
+            return this.nextSibling.getBBox().y - 3;
         };
 
         var highlightWidth = function() {
-            return this.nextSibling.getBBox().width;
+            return this.nextSibling.getBBox().width + 8;
         };
 
         var highlightHeight = function() {
-            return this.nextSibling.getBBox().height;
+            return this.nextSibling.getBBox().height + 6;
         };
 
         var addHighlightRects = function (anchors)
