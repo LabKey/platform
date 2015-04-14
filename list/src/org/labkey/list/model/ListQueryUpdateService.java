@@ -685,7 +685,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                         InputStream aIS = attachmentDir.getDir(p.domainProperty.getName()).getInputStream(p.uniquifier.uniquify(filename));
                         if (aIS == null)
                         {
-                            throw new BatchValidationException(Collections.singletonList(new ValidationException("Could not find referenced file " + filename, p.domainProperty.getName())), null);
+                            errors.addRowError(new ValidationException("Could not find referenced file " + filename, p.domainProperty.getName()));
+                            return false;
                         }
                         attachmentFile = new InputStreamAttachmentFile(aIS, filename);
                     }
@@ -720,7 +721,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 }
                 return ret;
             }
-            catch (AttachmentService.DuplicateFilenameException e)
+            catch (AttachmentService.DuplicateFilenameException | AttachmentService.FileTooLargeException e)
             {
                 errors.addRowError(new ValidationException(e.getMessage()));
                 return false;
