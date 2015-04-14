@@ -43,6 +43,7 @@ import org.labkey.data.xml.query.QueryType;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -120,7 +121,7 @@ public class QueryImporter implements FolderImporter
                 if (null == queryDoc)
                     throw new ServletException("QueryImport: SQL file \"" + sqlFileName + "\" has no corresponding meta data file.");
 
-                String sql = PageFlowUtil.getStreamContentsAsString(queriesDir.getInputStream(sqlFileName));
+                String sql = PageFlowUtil.getStreamContentsAsString(queriesDir.getInputStream(sqlFileName), StandardCharsets.UTF_8);
 
                 QueryType queryXml = queryDoc.getQuery();
 

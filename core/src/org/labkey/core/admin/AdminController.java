@@ -15,7 +15,6 @@
  */
 package org.labkey.core.admin;
 
-import org.apache.commons.compress.utils.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -172,6 +171,7 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -903,7 +903,7 @@ public class AdminController extends SpringActionController
         // New way... in /resources/credits
         InputStream is = module.getResourceStream("credits/" + filename);
 
-        return null == is ? null : PageFlowUtil.getStreamContentsAsString(is, Charsets.UTF_8);
+        return null == is ? null : PageFlowUtil.getStreamContentsAsString(is, StandardCharsets.UTF_8);
     }
 
 

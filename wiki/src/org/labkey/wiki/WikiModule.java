@@ -49,6 +49,7 @@ import org.labkey.wiki.renderer.RadeoxRenderer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -181,7 +182,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         wikiversion.setTitle(new HString(title));
 
         InputStream is = getClass().getResourceAsStream(resource);
-        String body = PageFlowUtil.getStreamContentsAsString(is);
+        String body = PageFlowUtil.getStreamContentsAsString(is, StandardCharsets.UTF_8);
         wikiversion.setBody(body);
 
         if (renderAs == null)
