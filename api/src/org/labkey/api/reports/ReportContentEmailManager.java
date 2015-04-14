@@ -18,10 +18,13 @@ package org.labkey.api.reports;
 import org.labkey.api.data.Container;
 import org.labkey.api.notification.EmailPref;
 import org.labkey.api.notification.EmailService;
+import org.labkey.api.reports.model.NotificationInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -34,14 +37,39 @@ public class ReportContentEmailManager
         NONE
         {
             public int getSpecialCategoryId() {return -1;}
+            public  Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
+                                                                                     SortedSet<Integer> categories, SortedSet<Integer> allCategories)
+            {
+                return Collections.emptyMap();
+            }
         },
         ALL
         {
             public int getSpecialCategoryId() {return -2;}
+            public  Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
+                                                                                     SortedSet<Integer> categories, SortedSet<Integer> allCategories)
+            {
+                return SELECT.getReportsForUserByCategory(reportInfosByCategory, allCategories, allCategories);
+            }
         },
         SELECT
         {
             public int getSpecialCategoryId() {return -3;}
+            public Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
+                                                                                    SortedSet<Integer> categories, SortedSet<Integer> allCategories)
+            {
+                Map<Integer, List<NotificationInfo>> reportsForUserInitial = new HashMap<>();
+                for (Integer category : categories)
+                {
+                    if (null != category)
+                    {
+                        List<NotificationInfo> reportsForCategory = reportInfosByCategory.get(category);
+                        if (null != reportsForCategory)
+                            reportsForUserInitial.put(category, reportsForCategory);
+                    }
+                }
+                return reportsForUserInitial;
+            }
         };
 
         public abstract int getSpecialCategoryId();
@@ -53,6 +81,9 @@ public class ReportContentEmailManager
                 return SELECT;
             return NONE;        // default to NONE even if str is bad
         }
+
+        public abstract Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
+                                                                                         SortedSet<Integer> categories, SortedSet<Integer> allCategories);
     }
 
     public static class ReportContentEmailPref extends EmailPref
