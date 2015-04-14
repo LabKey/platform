@@ -34,6 +34,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
@@ -543,6 +544,11 @@ public class CoreQuerySchema extends UserSchema
 
     public static boolean requiresProfileUpdate(User user)
     {
+        // This gets called on every authentication, possibly including admins installing or upgrading the server. Skip
+        // the check if the server is upgrading or starting up... the exp schema might not even exist.
+        if (!ModuleLoader.getInstance().isStartupComplete())
+            return false;
+
         Container c = ContainerManager.getRoot();
         String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), user);
         Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
