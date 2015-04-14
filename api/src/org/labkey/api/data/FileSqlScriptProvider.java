@@ -37,6 +37,7 @@ import org.labkey.api.writer.UTF8PrintWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -172,7 +173,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
             if (filename.endsWith(".sql"))
             {
-                return PageFlowUtil.getStreamContentsAsString(r.getInputStream());
+                return PageFlowUtil.getStreamContentsAsString(r.getInputStream(), StandardCharsets.UTF_8);
             }
             else // jsp, the only other format allowed by FileSqlScript
             {
