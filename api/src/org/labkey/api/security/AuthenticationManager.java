@@ -998,7 +998,17 @@ public class AuthenticationManager
                     Attachment logo = AttachmentService.get().getAttachment(ContainerManager.RootContainer.get(), prefix + _providerName);
 
                     if (null != logo)
-                        img = "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + prefix + _providerName + ".image?revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\" alt=\"Sign in using " + _providerName + "\">";
+                    {
+                        img = "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + prefix + _providerName + ".image?revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\" alt=\"Sign in using " + _providerName + "\"";
+
+                        if(HEADER_LOGO_PREFIX.equals(prefix))
+                            img += " height=\"16px\"";
+
+                        else if(LOGIN_PAGE_LOGO_PREFIX.equals(prefix))
+                            img += " height=\"32px\"";
+
+                        img += ">";
+                    }
                 }
                 catch (RuntimeSQLException e)
                 {
