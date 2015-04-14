@@ -973,6 +973,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                     }
                 });
                 sharedListBox.setEnabled(_dataset.getDemographicData());
+                sharedListBox.setName("demographicsSharedBy");
                 _table.setWidget(row++, 1, sharedListBox);
 
                 // enable/disable according to isDemographicData setting

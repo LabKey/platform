@@ -28,7 +28,9 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.categories.Study;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.DatasetDomainEditor;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
@@ -39,8 +41,10 @@ import java.util.List;
 @Category({DailyA.class, Study.class})
 public class SharedStudyTest extends BaseWebDriverTest
 {
-    public static final String STUDY_ONE = "Study001";
-    public static final String STUDY_TWO = "Study002";
+    private static final String STUDY_ONE = "Study001";
+    private static final String STUDY_TWO = "Study002";
+    private static final String SHARED_DEMOGRAPHICS = "P_One_Shared";
+    public static final File STUDY_DIR = TestFileUtils.getSampleData("studies/ExtraKeyStudy");
 
     @BeforeClass
     public static void setupProject()
@@ -56,19 +60,26 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         // Create a study with shared visits
         clickButton("Create Study");
+        setFormElement(Locator.name("subjectNounSingular"), "Panda");
+        setFormElement(Locator.name("subjectNounPlural"), "Pandas");
+        setFormElement(Locator.name("subjectColumnName"), "PandaId");
         checkRadioButton(Locator.radioButtonByNameAndValue("shareDatasets", "true"));
         checkRadioButton(Locator.radioButtonByNameAndValue("shareVisits", "true"));
-
         clickButton("Create Study");
-
         _containerHelper.setFolderType("Dataspace");
-        setPipelineRoot(TestFileUtils.getSampleData("studies/ExtraKeyStudy").getAbsolutePath());
 
+        DatasetDomainEditor datasetDomainEditor = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
+        datasetDomainEditor.checkDemographicData();
+        datasetDomainEditor.shareDemographics(DatasetDomainEditor.ShareDemographicsBy.PTID);
+        datasetDomainEditor.inferFieldsFromFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));
+        datasetDomainEditor.save();
+
+        setPipelineRoot(STUDY_DIR.getAbsolutePath());
         _containerHelper.createSubfolder(getProjectName(), STUDY_ONE, "Study");
         importFolderFromPipeline("folder.xml", 1, false);
 
-        //_containerHelper.createSubfolder(getProjectName(), STUDY_TWO, "Study");
-        //createDefaultStudy();
+        _containerHelper.createSubfolder(getProjectName(), STUDY_TWO, "Study");
+        createDefaultStudy();
     }
 
     @Override
@@ -138,10 +149,10 @@ public class SharedStudyTest extends BaseWebDriverTest
     {
         log("Verify sub-folder study PV_One dataset has 2 participants at 'Visit 1'");
         beginAt("/study/" + getProjectName() + "/" + STUDY_ONE + "/overview.view?");
-        Assert.assertEquals("PV_One?", getTableCellText(Locator.id("studyOverview"), 5, 0));
+        Assert.assertEquals("PV_One?", getTableCellText(Locator.id("studyOverview"), 6, 0));
         String visitLabel = getTableCellText(Locator.id("studyOverview"), 0, 4);
         Assert.assertTrue("Expected 'Visit 1', got: " + visitLabel, visitLabel.contains("Visit 1"));
-        Assert.assertEquals("2", getTableCellText(Locator.id("studyOverview"), 5, 4));
+        Assert.assertEquals("2", getTableCellText(Locator.id("studyOverview"), 6, 4));
     }
 
     @Test
@@ -155,7 +166,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         Assert.assertFalse("Expected redirect to project manage visits page, got: " + url, url.contains(STUDY_ONE));
 
         String title = getDriver().getTitle();
-        Assert.assertTrue("Expected title to start with 'Manage Shared Visits', got:" + title, title.startsWith("Manage Shared Visits"));
+        Assert.assertTrue("Expected title to start with 'Manage Shared Timepoints', got:" + title, title.startsWith("Manage Shared Visits"));
     }
 
     @Test
