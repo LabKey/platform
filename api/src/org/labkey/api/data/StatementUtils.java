@@ -63,7 +63,91 @@ public class StatementUtils
 {
     static Logger _log = Logger.getLogger(StatementUtils.class);
 
-    private enum operation {insert, update, merge}
+    public enum Operation {insert, update, merge}
+    public static String OWNEROBJECTID = "exp$object$ownerobjectid";
+
+    // configuration parameters
+    Operation _operation = Operation.insert;
+    SqlDialect _dialect;
+    TableInfo _table;
+    Set<String> _keyColumnNames = null;       // override the primary key of _table
+    Set<String> _skipColumnNames = null;
+    Set<String> _dontUpdateColumnNames = null;
+    boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardETL
+    boolean _selectIds = false;
+    boolean _allowUpdateAutoIncrement = false;
+
+    // variable/parameter tracking helpers
+    boolean useVariables = false;
+    final Map<String, Object> _constants = new CaseInsensitiveHashMap<>();
+    final Map<String, ParameterHolder> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ParameterHolder>());
+
+
+    //
+    // builder style methods
+    //
+
+    public StatementUtils(@NotNull Operation op, @NotNull TableInfo table)
+    {
+        this._operation = op;
+        this._dialect = table.getSqlDialect();
+        this._table = table;
+    }
+
+    public StatementUtils dialect(SqlDialect dialect)
+    {
+        this._dialect = dialect;
+        return this;
+    }
+
+    public StatementUtils operation(@NotNull Operation op)
+    {
+        _operation = op;
+        return this;
+    }
+
+    public StatementUtils constants(@NotNull Map<String,Object> constants)
+    {
+        this._constants.putAll(constants);
+        return this;
+    }
+
+    public StatementUtils keys(Set<String> keyNames)
+    {
+        _keyColumnNames = keyNames;
+        return this;
+    }
+
+    public StatementUtils skip(Set<String> skip)
+    {
+        _skipColumnNames = skip;
+        return this;
+    }
+
+    public StatementUtils noupdate(Set<String> noupdate)
+    {
+        _dontUpdateColumnNames = noupdate;
+        return this;
+    }
+
+    public StatementUtils updateBuiltinColumns(boolean b)
+    {
+        this._updateBuiltInColumns = b;
+        return this;
+    }
+
+    public StatementUtils selectIds(boolean b)
+    {
+        _selectIds = b;
+        return this;
+    }
+
+    public StatementUtils allowSetAutoIncrement(boolean b)
+    {
+        _allowUpdateAutoIncrement = b;
+        return this;
+    }
+
 
 
     /**
@@ -79,16 +163,26 @@ public class StatementUtils
      */
     public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo table, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, null, null, null, c, user, selectIds, autoFillDefaultColumns, operation.insert, false);
+        return new StatementUtils(Operation.insert, table)
+            .updateBuiltinColumns(autoFillDefaultColumns)
+            .selectIds(selectIds)
+            .createStatement(conn, c, user);
     }
 
 
     public static Parameter.ParameterMap insertStatement(
             Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames,
-            @Nullable Container c, @Nullable User user, Map<String,Object> constants,
+            @Nullable Container c, @Nullable User user, @Nullable Map<String,Object> constants,
             boolean selectIds, boolean autoFillDefaultColumns, boolean supportsAutoIncrementKey) throws SQLException
     {
-        return new StatementUtils(table, constants).createStatement(conn, table, null, skipColumnNames, null, c, user, selectIds, autoFillDefaultColumns, operation.insert, supportsAutoIncrementKey);
+        StatementUtils utils = new StatementUtils(Operation.insert, table)
+                .skip(skipColumnNames)
+                .allowSetAutoIncrement(supportsAutoIncrementKey)
+                .updateBuiltinColumns(autoFillDefaultColumns)
+                .selectIds(selectIds);
+        if (null != constants)
+            utils.constants(constants);
+        return utils.createStatement(conn, c, user);
     }
 
 
@@ -105,19 +199,33 @@ public class StatementUtils
      */
     public static Parameter.ParameterMap updateStatement(Connection conn, TableInfo table, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, null, null, null, c, user, selectIds, autoFillDefaultColumns, operation.update, false);
+        return new StatementUtils(Operation.update, table)
+                .updateBuiltinColumns(autoFillDefaultColumns)
+                .selectIds(selectIds)
+                .createStatement(conn, c, user);
     }
 
 
     public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, null, skipColumnNames, dontUpdate, c, user, selectIds, autoFillDefaultColumns, operation.merge, false);
+        return new StatementUtils(Operation.merge, table)
+                .skip(skipColumnNames)
+                .noupdate(dontUpdate)
+                .updateBuiltinColumns(autoFillDefaultColumns)
+                .selectIds(selectIds)
+                .createStatement(conn, c, user);
     }
 
 
     public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> keyNames, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, keyNames, skipColumnNames, dontUpdate, c, user, selectIds, autoFillDefaultColumns, operation.merge, false);
+        return new StatementUtils(Operation.merge, table)
+                .keys(keyNames)
+                .skip(skipColumnNames)
+                .noupdate(dontUpdate)
+                .updateBuiltinColumns(autoFillDefaultColumns)
+                .selectIds(selectIds)
+                .createStatement(conn, c, user);
     }
 
 
@@ -125,12 +233,6 @@ public class StatementUtils
     /*
      * Parameter and Variable helpers
      */
-
-    boolean useVariables = false;
-    final SqlDialect dialect;
-    final Map<String, Object> constants = new CaseInsensitiveHashMap<>();
-    final Map<String, ParameterHolder> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ParameterHolder>());
-
 
     private static class ParameterHolder
     {
@@ -144,7 +246,7 @@ public class StatementUtils
 
     private String makeVariableName(String name)
     {
-        return (dialect.isSqlServer() ? "@p" : "_$p") + (parameters.size()+1) + AliasManager.makeLegalName(name, null);
+        return (_dialect.isSqlServer() ? "@p" : "_$p") + (parameters.size()+1) + AliasManager.makeLegalName(name, null);
     }
 
 
@@ -165,11 +267,12 @@ public class StatementUtils
     {
         String name = ph.p.getName();
         JdbcType type = ph.p.getType();
-        if (constants.containsKey(name))
+        assert null != type;
+        if (_constants.containsKey(name))
         {
             try
             {
-                Object value = Parameter.getValueToBind(constants.get(name), type);
+                Object value = Parameter.getValueToBind(_constants.get(name), type);
                 if (null == value || value instanceof Number || value instanceof String || value instanceof java.util.Date)
                 {
                     ph.isConstant = true;
@@ -219,7 +322,7 @@ public class StatementUtils
     {
         if (ph.isConstant)
         {
-            toLiteral(f, ph.constantValue, ph.p.getType());
+            toLiteral(f, ph.constantValue);
         }
         else if (useVariables)
         {
@@ -230,15 +333,6 @@ public class StatementUtils
             f.append("?");
             f.add(ph.p);
         }
-        return f;
-    }
-
-
-    public SQLFragment appendParameterOrVariableOrConstant(SQLFragment f, ParameterHolder ph, String literal)
-    {
-        if (null == literal)
-            return appendParameterOrVariable(f, ph);
-        f.append(literal);
         return f;
     }
 
@@ -256,9 +350,9 @@ public class StatementUtils
         {
             f.append("CASE CAST(");
             appendParameterOrVariable(f, p);
-            f.append(" AS ").append(dialect.getBooleanDataType()).append(")")
-                    .append(" WHEN ").append(dialect.getBooleanTRUE()).append(" THEN 1.0 ")
-                    .append(" WHEN ").append(dialect.getBooleanFALSE()).append(" THEN 0.0 ")
+            f.append(" AS ").append(_dialect.getBooleanDataType()).append(")")
+                    .append(" WHEN ").append(_dialect.getBooleanTRUE()).append(" THEN 1.0 ")
+                    .append(" WHEN ").append(_dialect.getBooleanFALSE()).append(" THEN 0.0 ")
                     .append(" ELSE NULL END");
             return f;
         }
@@ -269,50 +363,35 @@ public class StatementUtils
     }
 
 
-    private StatementUtils(@NotNull TableInfo t)
+
+    private Parameter.ParameterMap createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
     {
-        dialect = t.getSqlDialect();
-    }
-
-
-    private StatementUtils(@NotNull TableInfo t, @Nullable Map<String,Object> constants)
-    {
-        dialect = t.getSqlDialect();
-        if (null != constants)
-            this.constants.putAll(constants);
-    }
-
-
-    private Parameter.ParameterMap createStatement(Connection conn, TableInfo t,
-       @Nullable Set<String> keyNames, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate,
-       @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns, operation op, boolean supportsAutoIncrementKey) throws SQLException
-    {
-        if (!(t instanceof UpdateableTableInfo))
+        if (!(_table instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Table must be an UpdateableTableInfo");
 
-        UpdateableTableInfo updatable = (UpdateableTableInfo)t;
+        UpdateableTableInfo updatable = (UpdateableTableInfo)_table;
         TableInfo table = updatable.getSchemaTableInfo();
 
         if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataName())
             throw new IllegalArgumentException();
 
-        if (operation.merge == op)
+        if (Operation.merge == _operation)
         {
-            if (!dialect.isPostgreSQL() && !dialect.isSqlServer())
+            if (!this._dialect.isPostgreSQL() && !this._dialect.isSqlServer())
                 throw new IllegalArgumentException("Merge is only supported/tested on postgres and sql server");
-            if (selectIds)
+            if (_selectIds)
                 throw new IllegalArgumentException("Merge does not support the selectid option");
         }
 
-        useVariables = operation.merge == op; //  && dialect.isPostgreSQL();
-        String ifTHEN = dialect.isSqlServer() ? " BEGIN " : " THEN ";
-        String ifEND = dialect.isSqlServer() ? " END " : " END IF ";
+        useVariables = Operation.merge == _operation; //  && dialect.isPostgreSQL();
+        String ifTHEN = this._dialect.isSqlServer() ? " BEGIN " : " THEN ";
+        String ifEND = this._dialect.isSqlServer() ? " END " : " END IF ";
 
         if (null != c)
         {
-            assert null == constants.get("container") || c.getId().equals(constants.get("container"));
-            if (null == constants.get("container"))
-                constants.put("container",c.getId());
+            assert null == _constants.get("container") || c.getId().equals(_constants.get("container"));
+            if (null == _constants.get("container"))
+                _constants.put("container",c.getId());
         }
 
         String objectURIColumnName = updatable.getObjectUriType() == UpdateableTableInfo.ObjectUriType.schemaColumn
@@ -327,7 +406,7 @@ public class StatementUtils
 
         String objectIdVar = null;
         String rowIdVar = null;
-        String setKeyword = dialect.isPostgreSQL() ? "" : "SET ";
+        String setKeyword = this._dialect.isPostgreSQL() ? "" : "SET ";
 
         //
         // Keys for UPDATE or MERGE
@@ -340,9 +419,9 @@ public class StatementUtils
         ColumnInfo col = table.getColumn("Container");
         if (null != col)
             keys.put(col.getFieldKey(), col);
-        if (null != keyNames && !keyNames.isEmpty())
+        if (null != _keyColumnNames && !_keyColumnNames.isEmpty())
         {
-            for (String name : keyNames)
+            for (String name : _keyColumnNames)
             {
                 col = table.getColumn(name);
                 if (null == col)
@@ -373,8 +452,8 @@ public class StatementUtils
         SQLFragment sqlfObjectProperty = new SQLFragment();
         SQLFragment sqlfDelete = new SQLFragment();
 
-        Domain domain = t.getDomain();
-        DomainKind domainKind = t.getDomainKind();
+        Domain domain = _table.getDomain();
+        DomainKind domainKind = _table.getDomainKind();
         List<? extends DomainProperty> properties = Collections.emptyList();
 
         if (null != domain && null != domainKind && StringUtils.isEmpty(domainKind.getStorageSchemaName()))
@@ -383,13 +462,13 @@ public class StatementUtils
 
             if (!properties.isEmpty())
             {
-                if (!dialect.isPostgreSQL() && !dialect.isSqlServer())
+                if (!_dialect.isPostgreSQL() && !_dialect.isSqlServer())
                     throw new IllegalStateException("Domains are only supported for sql server and postgres");
-                if (operation.merge == op)
+                if (Operation.merge == _operation)
                     throw new IllegalStateException("Merge is not tested for extensible tables yet");
 
-                objectIdVar = dialect.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
-                useVariables = dialect.isPostgreSQL();
+                objectIdVar = _dialect.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
+                useVariables = _dialect.isPostgreSQL();
                 sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT;\n");
 
                 ParameterHolder containerParameter = createParameter("container", JdbcType.GUID);
@@ -417,7 +496,7 @@ public class StatementUtils
                 appendParameterOrVariable(sqlfSelectObject, objecturiParameter);
                 sqlfSelectObject.append(");\n");
 
-                if (operation.insert != op)
+                if (Operation.insert != _operation)
                 {
                     // Clear out any existing property values for this domain
                     sqlfDelete.append("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
@@ -443,7 +522,7 @@ public class StatementUtils
         List<SQLFragment> values = new ArrayList<>();
 
 
-        if (autoFillDefaultColumns && operation.update != op)
+        if (_updateBuiltInColumns && Operation.update != _operation)
         {
             col = table.getColumn("Owner");
             if (null != col && null != user)
@@ -470,7 +549,7 @@ public class StatementUtils
 
         ColumnInfo colModifiedBy = table.getColumn("ModifiedBy");
 
-        if (autoFillDefaultColumns && null != colModifiedBy && null != user)
+        if (_updateBuiltInColumns && null != colModifiedBy && null != user)
         {
             cols.add(new SQLFragment(colModifiedBy.getSelectName()));
             values.add(new SQLFragment().append(user.getUserId()));
@@ -479,14 +558,14 @@ public class StatementUtils
 
         ColumnInfo colModified = table.getColumn("Modified");
 
-        if (autoFillDefaultColumns && null != colModified)
+        if (_updateBuiltInColumns && null != colModified)
         {
             cols.add(new SQLFragment(colModified.getSelectName()));
             values.add(new SQLFragment("{fn now()}"));
             done.add("Modified");
         }
         ColumnInfo colVersion = table.getVersionColumn();
-        if (autoFillDefaultColumns && null != colVersion && !done.contains(colVersion.getName()))
+        if (_updateBuiltInColumns && null != colVersion && !done.contains(colVersion.getName()))
         {
             SQLFragment expr = colVersion.getVersionUpdateExpression();
             if (null != expr)
@@ -507,7 +586,8 @@ public class StatementUtils
         {
             if (column instanceof WrappedColumn)
                 continue;
-            if (column.isAutoIncrement() && !supportsAutoIncrementKey)
+            // if we're allowing the caller to set the auto-increment column, then treat like a regular column
+            if (column.isAutoIncrement() && !_allowUpdateAutoIncrement)
             {
                 autoIncrementColumn = column;
                 continue;
@@ -530,7 +610,7 @@ public class StatementUtils
             }
             else
             {
-                if (null != skipColumnNames && skipColumnNames.contains(StringUtils.defaultString(remap.get(name),name)))
+                if (null != _skipColumnNames && _skipColumnNames.contains(StringUtils.defaultString(remap.get(name),name)))
                     continue;
                 ParameterHolder ph = createParameter(column);
                 appendParameterOrVariable(valueSQL, ph);
@@ -549,7 +629,7 @@ public class StatementUtils
         //
 
         SQLFragment sqlfInsertInto = new SQLFragment();
-        if (operation.insert == op || operation.merge == op)
+        if (Operation.insert == _operation || Operation.merge == _operation)
         {
             // Create a standard INSERT INTO table (col1, col2) VALUES (val1, val2) statement
             // or (for degenerate, empty values case) INSERT INTO table VALUES (DEFAULT)
@@ -581,15 +661,15 @@ public class StatementUtils
                 }
             }
 
-            if (selectIds && null != autoIncrementColumn)
+            if (_selectIds && null != autoIncrementColumn)
             {
                 selectAutoIncrement = true;
                 if (null != objectIdVar)
                 {
-                    rowIdVar = dialect.isPostgreSQL() ? "_$rowid$_" : "@_rowid_";
+                    rowIdVar = _dialect.isPostgreSQL() ? "_$rowid$_" : "@_rowid_";
                     sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;\n");
                 }
-                dialect.appendSelectAutoIncrement(sqlfInsertInto, autoIncrementColumn.getSelectName(), rowIdVar);
+                _dialect.appendSelectAutoIncrement(sqlfInsertInto, autoIncrementColumn.getSelectName(), rowIdVar);
             }
         }
 
@@ -600,7 +680,7 @@ public class StatementUtils
         SQLFragment sqlfUpdate = new SQLFragment();
         SQLFragment sqlfWherePK = new SQLFragment();
 
-        if (operation.update == op || operation.merge == op)
+        if (Operation.update == _operation || Operation.merge == _operation)
         {
             // Create a standard UPDATE table SET col1 = val1, col2 = val2 statement
             sqlfUpdate.append("UPDATE ").append(table.getSelectName()).append("\nSET ");
@@ -609,7 +689,7 @@ public class StatementUtils
             for (int i = 0; i < cols.size(); i++)
             {
                 FieldKey fk = new FieldKey(null, cols.get(i).getSQL());
-                if (keys.containsKey(fk) || null != dontUpdate && dontUpdate.contains(fk.getName()))
+                if (keys.containsKey(fk) || null != _dontUpdateColumnNames && _dontUpdateColumnNames.contains(fk.getName()))
                     continue;
                 sqlfUpdate.append(comma);
                 comma = ", ";
@@ -642,7 +722,7 @@ public class StatementUtils
             sqlfUpdate.append(sqlfWherePK);
             sqlfUpdate.append(";\n");
 
-            if (operation.merge == op)
+            if (Operation.merge == _operation)
             {
                 // updateCount can equal 0.  This happens particularly when inserting into junction tables where
                 // there are two columns and both are in the primary key
@@ -656,7 +736,7 @@ public class StatementUtils
                 else
                 {
                     sqlfUpdate.append("IF ");
-                    sqlfUpdate.append(dialect.isSqlServer() ? "@@ROWCOUNT=0" : "NOT FOUND");
+                    sqlfUpdate.append(_dialect.isSqlServer() ? "@@ROWCOUNT=0" : "NOT FOUND");
                     sqlfUpdate.append(ifTHEN).append("\n\t");
 
                     sqlfInsertInto.append(";\n");
@@ -665,10 +745,10 @@ public class StatementUtils
             }
         }
 
-        if (operation.insert == op || operation.merge == op)
+        if (Operation.insert == _operation || Operation.merge == _operation)
             sqlfInsertInto.append(";\n");
 
-        if (selectIds && (null != objectIdVar || null != rowIdVar))
+        if (_selectIds && (null != objectIdVar || null != rowIdVar))
         {
             sqlfSelectIds = new SQLFragment("SELECT ");
             comma = "";
@@ -757,7 +837,7 @@ public class StatementUtils
                     script.append(f);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
         }
-        else if (dialect.isSqlServer())
+        else if (_dialect.isSqlServer())
         {
             if (!parameters.isEmpty())
             {
@@ -789,7 +869,7 @@ public class StatementUtils
         {
             // wrap in a function
             SQLFragment fn = new SQLFragment();
-            String fnName = dialect.getGlobalTempTablePrefix() + "fn_" + GUID.makeHash();
+            String fnName = _dialect.getGlobalTempTablePrefix() + "fn_" + GUID.makeHash();
             fn.append("CREATE FUNCTION ").append(fnName).append("(");
             // TODO d.execute() doesn't handle temp schema
             SQLFragment call = new SQLFragment();
@@ -800,7 +880,7 @@ public class StatementUtils
             {
                 ParameterHolder ph = e.getValue();
                 String variable = ph.variableName;
-                String type = dialect.sqlTypeNameFromJdbcType(ph.p.getType());
+                String type = _dialect.sqlTypeNameFromJdbcType(ph.p.getType());
                 fn.append("\n").append(comma);
                 fn.append(variable);
                 fn.append(" ");
@@ -872,7 +952,7 @@ public class StatementUtils
             }});
         }
 
-        if (selectIds)
+        if (_selectIds)
         {
             // Why is one of these boolean and the other an index?? I don't know
             ret.setSelectRowId(selectAutoIncrement);
@@ -889,9 +969,12 @@ public class StatementUtils
         String variable = ph.variableName;
         sqlfDeclare.append(variable);
         sqlfDeclare.append(" ");
-        String type = dialect.sqlTypeNameFromJdbcType(ph.p.getType());
+        JdbcType jdbcType = ph.p.getType();
+        assert null != jdbcType;
+        String type = _dialect.sqlTypeNameFromJdbcType(jdbcType);
+        assert null != type;
         sqlfDeclare.append(type);
-        if (ph.p.getType().isText() && ph.p.getType() != JdbcType.LONGVARCHAR && ph.p.getType() != JdbcType.GUID)
+        if (jdbcType.isText() && ph.p.getType() != JdbcType.LONGVARCHAR && ph.p.getType() != JdbcType.GUID)
         {
             int length = ph.length > 0 ? ph.length : 4000;
             sqlfDeclare.append("(").append(length).append(")");
@@ -900,7 +983,7 @@ public class StatementUtils
     }
 
 
-    void toLiteral(SQLFragment f, Object value, JdbcType type)
+    void toLiteral(SQLFragment f, Object value)
     {
         if (null == value)
         {
@@ -929,7 +1012,7 @@ public class StatementUtils
         }
         assert value instanceof String;
         value = String.valueOf(value);
-        f.append(dialect.getStringHandler().quoteStringLiteral((String)value));
+        f.append(_dialect.getStringHandler().quoteStringLiteral((String) value));
     }
 
 
