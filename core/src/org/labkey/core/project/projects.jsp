@@ -31,7 +31,7 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromPath("Ext4ClientApi"));
+      resources.add(ClientDependency.fromPath("Ext4ClientApi")); // needed for labkey-combo
       resources.add(ClientDependency.fromPath("/extWidgets/IconPanel.js"));
       resources.add(ClientDependency.fromPath("extWidgets/IconPanel.css"));
       return resources;
@@ -69,26 +69,27 @@
         }
     }
 %>
-<div id='<%=text(renderTarget)%>'></div>
+<div id="<%=text(renderTarget)%>"></div>
 <script type="text/javascript">
 
-Ext4.onReady(function(){
-    //assume server-supplied webpart config
-    var config = '<%=jsonProps%>';
-    config = Ext4.decode(config);
-    config.hideCreateButton = config.hideCreateButton === 'true';
-    if (config.containerTypes){
-        config.noun = config.containerTypes.match(/project/) ? 'Project' : 'Subfolder';
-    }
+Ext4.onReady(function() {
 
-    if(<%=target == null%>){
+    if (<%=target == null%>) {
         Ext4.get('<%=text(renderTarget)%>').update('The target project/folder has been deleted. To reset, remove the webpart and re-add it');
         return;
     }
 
-    if(!<%=hasPermission%>){
+    if (!<%=hasPermission%>) {
         Ext4.get('<%=text(renderTarget)%>').update('You do not have permission to view this folder');
         return;
+    }
+
+    //assume server-supplied webpart config
+    var config = <%= PageFlowUtil.jsString(jsonProps.toString()) %>;
+    config = Ext4.decode(config);
+    config.hideCreateButton = config.hideCreateButton === 'true';
+    if (config.containerTypes) {
+        config.noun = config.containerTypes.match(/project/) ? 'Project' : 'Subfolder';
     }
 
     Ext4.applyIf(config, {
@@ -101,22 +102,22 @@ Ext4.onReady(function(){
         noun: 'Project'
     });
 
-    function getFilterArray(panel){
+    function getFilterArray(panel) {
         var filterArray = [];
-        if(panel.containerTypes)
+        if (panel.containerTypes)
             filterArray.push(LABKEY.Filter.create('containerType', panel.containerTypes, LABKEY.Filter.Types.EQUALS_ONE_OF));
 
         //exclude system-generated containers
-        if(LABKEY.Security.getHomeContainer())
+        if (LABKEY.Security.getHomeContainer())
             filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getHomeContainer(), LABKEY.Filter.Types.NOT_EQUAL));
-        if(LABKEY.Security.getSharedContainer())
+        if (LABKEY.Security.getSharedContainer())
             filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getSharedContainer(), LABKEY.Filter.Types.NOT_EQUAL));
 
-        if (panel.containerFilter == 'CurrentAndFirstChildren'){
+        if (panel.containerFilter == 'CurrentAndFirstChildren') {
             //NOTE: path is not directly filterable, so we settle for Client-side filtering
-            panel.store.on('load', function(){
+            panel.store.on('load', function() {
                 var path = this.containerPath;
-                this.filterBy(function(rec){
+                this.filterBy(function(rec) {
                     return rec.get('Path') != path;
                 })
             }, null, {single: true});
@@ -137,14 +138,14 @@ Ext4.onReady(function(){
             iconurl: {
                 createIfDoesNotExist: true,
                 setValueOnLoad: true,
-                getInitialValue: function(val, rec){
+                getInitialValue: function(val, rec) {
                     return LABKEY.ActionURL.buildURL('project', 'downloadProjectIcon', rec.get('EntityId'))
                 }
             },
             url: {
                 createIfDoesNotExist: true,
                 setValueOnLoad: true,
-                getInitialValue: function(val, rec){
+                getInitialValue: function(val, rec) {
                     return LABKEY.ActionURL.buildURL('project', 'start', rec.get('Path'))
                 }
             }
@@ -176,12 +177,15 @@ Ext4.onReady(function(){
 
     //NOTE: separated to differentiate site admins from those w/ admin permission in this container
     if (<%=isAdmin%>) {
-        var isProject = !!(panelCfg.containerTypes && panelCfg.containerTypes.match(/project/));
         panelCfg.buttons = [{
             text: 'Create New ' + config.noun,
             hidden: !LABKEY.Security.currentUser.isAdmin || config.hideCreateButton,
-            target: '_self',
-            href: LABKEY.ActionURL.buildURL('admin', 'createFolder', (isProject ? '/' : config.containerPath))
+            handler: function() {
+                var isProject = !!(panelCfg.containerTypes && panelCfg.containerTypes.match(/project/)),
+                    params = { returnUrl: <%= q(getActionURL().toString()) %> };
+
+                window.location = LABKEY.ActionURL.buildURL('admin', 'createFolder', (isProject ? '/' : config.containerPath), params);
+            }
         }]
     }
 

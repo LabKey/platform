@@ -36,7 +36,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("clientapi/ext4"));
         resources.add(ClientDependency.fromPath("createFolder.css"));
         return resources;
     }
@@ -68,6 +68,8 @@
     }
 
 %>
+<%=formatMissedErrors("form")%>
+<div id="createFormDiv"></div>
 <script type="text/javascript">
     Ext4.QuickTips.init();
 
@@ -118,36 +120,75 @@
             }
         });
         request.add(LABKEY.Security.getModules, {
-            success: function(data){
+            success: function(data) {
                 moduleTypes = data;
             }
         });
 
         var onSuccess = function() {
 
+            var doSubmit = function() {
+                var f = panel.getForm();
+                if (f.isValid()) {
+                    if (!f.submitInProgress) {
+                        f.submit();
+                    }
+                    f.submitInProgress = true;
+                }
+            };
+
+            var scrollToBottom = function() {
+                Ext4.defer(function() {
+                    if (Ext4.isChrome) {
+                        Ext4.getBody().scroll('b', 10000, true);
+                    }
+                    else {
+                        // sadly, cannot get other browsers to animate properly
+                        window.scrollTo(0, document.body.scrollHeight);
+                    }
+                }, 200);
+            };
+
             var panel = Ext4.create('Ext.form.Panel', {
+                renderTo: 'createFormDiv',
                 border: false,
-                autoHeight: true,
-                width: 'auto',
                 style: 'padding-top: 20px;',
                 defaults: {
                     border: false
                 },
-                url: LABKEY.ActionURL.buildURL('admin','createFolder.view'),
+
+                /* Ext.form.Basic configurations */
+                url: LABKEY.ActionURL.buildURL('admin', 'createFolder.view'),
                 method: 'POST',
                 standardSubmit: true,
+
                 listeners: {
-                    render: function(panel){
-                        var target = panel.down('#folderType');
-                        if(target.getValue() && target.getValue().folderType == 'None')
-                            panel.renderModules();
-                        else if(target.getValue() && target.getValue().folderType == 'Template')
-                            panel.renderTemplateInfo();
+                    render: function(panel) {
+                        var value = panel.down('#folderType').getValue();
+                        if (value) {
+                            if (value.folderType === 'None') {
+                                panel.renderModules();
+                            }
+                            else if (value.folderType === 'Template') {
+                                panel.renderTemplateInfo();
+                            }
+                        }
+                    },
+                    boxready: {
+                        fn: function(panel) {
+                            panel.doLayout();
+
+                            var el = panel.getEl().parent();
+                            Ext4.EventManager.onWindowResize(function() {
+                                panel.setWidth(el.getBox().width);
+                            }, panel, {delay: 200});
+                        },
+                        single: true
                     }
                 },
-                items: [
-                { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF },
-                {
+                items: [{
+                    xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
+                },{
                     html: 'Name:',
                     cls: 'labkey-wizard-header',
                     style: 'padding-bottom: 5px;'
@@ -163,6 +204,7 @@
                     value: '<%=h(name)%>',
                     allowBlank: false,
                     maxLength: 255,
+                    validateOnBlur: false,
                     regex: /^[^@\/\\;:?<>*|"^][^\/\\;:?<>*|"^]*$/,
                     regexText: "Folder must be a legal filename and not start with '@' or contain one of '/', '\\', ';', ':', '?', '<', '>', '*', '|', '\"', or '^'",
                     listeners: {
@@ -193,26 +235,27 @@
                         minWidth: 400
                     },
                     listeners: {
-                        change: {fn: function(btn, val){this.onTypeChange(btn, val)}, buffer: 20}
-                    },
-                    onTypeChange: function(btn, val){
-                        var parent = this.up('form');
-                        parent.down('#additionalTypeInfo').removeAll();
-                        parent.doLayout();
-                        if(val.folderType=='None'){
-                            parent.renderModules();
+                        change: {
+                            fn: function(btn, val) {
+                                var parent = this.up('form');
+                                parent.down('#additionalTypeInfo').removeAll();
+                                parent.doLayout();
+                                if (val.folderType == 'None') {
+                                    parent.renderModules();
+                                }
+                                else if (val.folderType == 'Template') {
+                                    parent.renderTemplateInfo();
+                                }
+                                parent.doLayout();
+                            },
+                            buffer: 20
                         }
-                        else if (val.folderType=='Template'){
-                            parent.renderTemplateInfo();
-                        }
-                        parent.doLayout();
                     },
                     //NOTE: this could be shifted to use labkey-checkboxgroup with an arraystore
-                    items: function(){
+                    items: function() {
                         var items = [];
-                        var ft;
-                        Ext4.each(folderTypes, function(ft){
-                            if(!ft.workbookType){
+                        Ext4.each(folderTypes, function(ft) {
+                            if (!ft.workbookType) {
                                 items.push({
                                     xtype: 'radio',
                                     name: 'folderType',
@@ -221,7 +264,7 @@
                                     value: ft.name,
                                     boxLabel: ft.label,
                                     labelWidth: 500,
-                                    checked: (ft.name == <%=PageFlowUtil.jsString(folderTypeName)%> ? true : false),
+                                    checked: ft.name == <%=PageFlowUtil.jsString(folderTypeName)%>,
                                     listeners: {
                                         scope: this,
                                         single: true,
@@ -248,26 +291,17 @@
                     style: 'padding-left: 15px;'
                 }],
                 buttons: [{
-                    xtype: 'button',
-                    cls: 'labkey-button',
                     text: 'Next',
-                    handler: function(btn){
-                        var f = btn.up('form').getForm();
-                        if (f.isValid()){
-                            if(!f.submitInProgress)
-                                f.submit();
-                            f.submitInProgress = true;
-                        }
-                    }
-                },{
-                    xtype: 'button',
                     cls: 'labkey-button',
+                    handler: doSubmit
+                },{
                     text: 'Cancel',
+                    cls: 'labkey-button',
                     handler: function(btn) {
                         window.location = <%= PageFlowUtil.jsString(form.getReturnURLHelper(new ActionURL(ProjectController.StartAction.class, ContainerManager.getHomeContainer())).toString()) %>;
                     }
                 }],
-                renderModules: function(){
+                renderModules: function() {
                     var target = this.down('#additionalTypeInfo');
                     target.add([
                         {
@@ -316,14 +350,14 @@
                                         var store = combo.store;
                                         store.removeAll();
 
-                                        if (!val.activeModules){
+                                        if (!val.activeModules) {
                                             combo.reset();
                                             return;
                                         }
 
                                         var records;
-                                        if(Ext4.isArray(val.activeModules)){
-                                            records = Ext4.Array.map(val.activeModules, function(item){
+                                        if (Ext4.isArray(val.activeModules)) {
+                                            records = Ext4.Array.map(val.activeModules, function(item) {
                                                 return {module: item, tabName: moduleTypesMap[item]};
                                             }, this);
                                         }
@@ -332,7 +366,7 @@
                                         }
                                         store.add(records);
 
-                                        if(records.length==1)
+                                        if (records.length == 1)
                                             combo.setValue(records[0].module);
                                         else if (oldVal)
                                             combo.setValue(oldVal);
@@ -344,22 +378,22 @@
                             },
                             items: function(){
                                 var items = [];
-                                if(moduleTypes){
-                                    Ext4.each(moduleTypes.modules, function(m){
+                                if (moduleTypes) {
+                                    Ext4.each(moduleTypes.modules, function(m) {
                                         // keep a map from the module name to the display/tab name
                                         moduleTypesMap[m.name] = m.tabName;
 
                                         //the effect of this is that by default, a new container inherits modules from the parent
                                         //if creating a project, there is nothing to inherit, so we set to Portal below
-                                        if((m.active || m.enabled) && (userHasEnableRestrictedModulesPermission || !m.requireSitePermission))
+                                        if ((m.active || m.enabled) && (userHasEnableRestrictedModulesPermission || !m.requireSitePermission)) {
                                             items.push({
                                                 xtype: 'checkbox',
                                                 name: 'activeModules',
-                                                inputValue:m.name,
+                                                inputValue: m.name,
                                                 boxLabel: m.tabName,
-                                                checked: (hasLoaded ? (selectedModules && selectedModules.indexOf(m.name)!=-1) : m.active)
-                                                //disabled: !m.enabled
+                                                checked: (hasLoaded ? (selectedModules && selectedModules.indexOf(m.name) != -1) : m.active)
                                             });
+                                        }
                                     }, this);
                                 }
 
@@ -370,9 +404,14 @@
                     ]);
 
                     //default to portal (i.e., "Core" module) if none selected
-                    if(!hasLoaded && (!this.getForm().getValues().activeModules || !this.getForm().getValues().activeModules.length)){
-                        this.getForm().findField('activeModules').setValue({activeModules: ['Core']});
+                    var form = this.getForm(),
+                        values = form.getValues();
+
+                    if (!hasLoaded && (!values.activeModules || !values.activeModules.length)) {
+                        form.findField('activeModules').setValue({activeModules: ['Core']});
                     }
+
+                    scrollToBottom();
                 },
                 renderTemplateInfo : function() {
                     var target = this.down('#additionalTypeInfo');
@@ -380,8 +419,7 @@
                         {
                             html: 'Choose Template Folder:',
                             cls: 'labkey-wizard-header'
-                        },
-                        {
+                        },{
                             xtype: 'combo',
                             name: 'templateSourceId',
                             itemId: 'sourceFolderCombo',
@@ -390,17 +428,16 @@
                             valueField: 'id',
                             value: hasLoaded ? selectedTemplateFolder : null,
                             editable: false,
+                            validateOnBlur: false,
                             width: 400, 
                             store: Ext4.create('Ext.data.ArrayStore', {
                                 fields: ['id', 'path'],
                                 data: templateFolders
                             })
-                        },
-                        {
+                        },{
                             html: 'Folder objects to copy:',
                             cls: 'labkey-wizard-header'
-                        },
-                        {
+                        },{
                             xtype: 'panel',
                             border: false,
                             items: function(){
@@ -411,12 +448,10 @@
 
                                 return folderTemplateWriters;
                             }()
-                        },
-                        {
+                        },{
                             html: 'Options:',
                             cls: 'labkey-wizard-header'
-                        },
-                        {
+                        },{
                             xtype: 'checkbox',
                             hideLabel: true,
                             boxLabel: 'Include Subfolders',
@@ -425,8 +460,7 @@
                         }
                     ]);
 
-                    if (templateFolders.length == 0)
-                    {
+                    if (templateFolders.length == 0) {
                         // mask the combo while loading the container list
                         var combo = this.down('#sourceFolderCombo');
                         combo.setLoading(true);
@@ -437,19 +471,14 @@
                             success: initTemplateFolders(combo)
                         });
                     }
+
+                    scrollToBottom();
                 }
-            }).render('createFormDiv');
+            });
 
             Ext4.create('Ext.util.KeyNav', Ext4.getBody(), {
-                scope: this,
-                enter: function(){
-                    var f = panel.getForm();
-                    if (f.isValid()){
-                        if(!f.submitInProgress)
-                            f.submit();
-                        f.submitInProgress = true;
-                    }
-                }
+                enter: doSubmit,
+                scope: this
             });
         };
 
@@ -510,7 +539,3 @@
         %>
     });
 </script>
-
-<%=formatMissedErrors("form")%>
-<div id="createFormDiv"></div>
-
