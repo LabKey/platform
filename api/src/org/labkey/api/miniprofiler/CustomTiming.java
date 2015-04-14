@@ -29,9 +29,9 @@ public class CustomTiming implements AutoCloseable
 {
     /*package*/ final Timing _parent;
     private final String _category;
-    private final String _message;
+    private final String _message; // TODO: collapse duplicate message or just have reference to QueryTracker
     private final @Nullable String _url;
-    private final @Nullable StackTraceElement[] _stackTrace;
+    private final @Nullable StackTraceElement[] _stackTrace; // TODO: collapse duplicate stacktrace or just have reference to QueryTracker
 
     private final CPUTimer _timer;
     private final long _startOffset;

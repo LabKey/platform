@@ -15,8 +15,13 @@
  */
 package org.labkey.api.miniprofiler;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
@@ -39,6 +44,31 @@ public class MiniProfiler
 
     private static final BeanObjectFactory<Settings> SETTINGS_FACTORY = new BeanObjectFactory<>(Settings.class);
 
+    private static final Cache<User, Settings> SETTINGS_CACHE = CacheManager.getBlockingCache(1000, CacheManager.DEFAULT_TIMEOUT, "miniprofiler settings", new CacheLoader<User, Settings>()
+    {
+        @Override
+        public Settings load(User user, @Nullable Object argument)
+        {
+            // site-wide settings keyed by guest user, otherwise per-user settings
+            RequestInfo current = MemTracker.get().current();
+            boolean ignored = current != null && current.isIgnored();
+            try
+            {
+                // suspend profiler while we load the settings
+                if (current != null)
+                    current.setIgnored(true);
+                Map<String, String> properties = PropertyManager.getProperties(user, ContainerManager.getRoot(), CATEGORY);
+                return SETTINGS_FACTORY.fromMap(properties);
+            }
+            finally
+            {
+                // resume profiling
+                if (current != null)
+                    current.setIgnored(ignored);
+            }
+        }
+    });
+
     private MiniProfiler() { }
 
     public static HelpTopic getHelpTopic()
@@ -57,23 +87,50 @@ public class MiniProfiler
         return ModuleLoader.getInstance().isStartupComplete() && user != null && user.isDeveloper() && getSettings().isEnabled();
     }
 
+    /** Get site-wide settings. */
     public static Settings getSettings()
     {
-        // TODO: Cache the site-level settings object
-        Map<String, String> properties = PropertyManager.getProperties(CATEGORY);
-        return SETTINGS_FACTORY.fromMap(properties);
+        return SETTINGS_CACHE.get(User.guest);
     }
 
-    public static void saveSettings(Settings settings)
+    /** Get per-user settings if available or site-wide */
+    public static Settings getSettings(@Nullable User user)
+    {
+        Settings settings = null;
+        if (user != null)
+            settings = SETTINGS_CACHE.get(user);
+
+        if (settings == null)
+            settings = SETTINGS_CACHE.get(User.guest);
+
+        return settings;
+    }
+
+    /** Save site-wide settings. */
+    public static void saveSettings(@NotNull Settings settings)
+    {
+        saveSettings(settings, User.guest);
+    }
+
+    public static void saveSettings(@NotNull Settings settings, @NotNull User user)
     {
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(CATEGORY, true);
         SETTINGS_FACTORY.toStringMap(settings, map);
         map.save();
+        SETTINGS_CACHE.remove(user);
     }
 
+    /** Reset site-wide settings. */
     public static void resetSettings()
     {
+        resetSettings(User.guest);
+    }
+
+    /** Reset per-user settings. */
+    public static void resetSettings(@NotNull User user)
+    {
         PropertyManager.getNormalStore().deletePropertySet(CATEGORY);
+        SETTINGS_CACHE.remove(user);
     }
 
     public static String renderInitScript(long currentId, Set<Long> ids, String version)
@@ -109,7 +166,10 @@ public class MiniProfiler
     public static Timing step(String name)
     {
         RequestInfo requestInfo = MemTracker.getInstance().current();
-        if (requestInfo == null)
+        if (requestInfo == null || requestInfo.isIgnored())
+            return null;
+
+        if (!(ModuleLoader.getInstance().isStartupComplete() && getSettings().isEnabled()))
             return null;
 
         return requestInfo.step(name);
@@ -124,7 +184,10 @@ public class MiniProfiler
     public static CustomTiming custom(String category, String msg)
     {
         RequestInfo requestInfo = MemTracker.getInstance().current();
-        if (requestInfo == null)
+        if (requestInfo == null || requestInfo.isIgnored())
+            return null;
+
+        if (!(ModuleLoader.getInstance().isStartupComplete() && getSettings().isEnabled()))
             return null;
 
         return requestInfo.custom(category, msg);
@@ -151,7 +214,10 @@ public class MiniProfiler
     public static void addCustomTiming(String category, long elapsed, String msg, @Nullable String detailsUrl, @Nullable StackTraceElement[] stackTrace)
     {
         RequestInfo requestInfo = MemTracker.getInstance().current();
-        if (requestInfo == null)
+        if (requestInfo == null || requestInfo.isIgnored())
+            return;
+
+        if (!(ModuleLoader.getInstance().isStartupComplete() && getSettings().isEnabled()))
             return;
 
         requestInfo.addCustomTiming(category, elapsed, msg, detailsUrl, stackTrace);

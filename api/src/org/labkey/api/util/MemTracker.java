@@ -214,8 +214,7 @@ public class MemTracker
     }
 
     /**
-     * Mark the current profiling session as ignored.  Timings will still be collected but won't
-     * be reported to the user.
+     * Mark the current profiling session as ignored.  Timings won't be collected.
      */
     public synchronized void ignore()
     {

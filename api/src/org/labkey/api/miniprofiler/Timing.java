@@ -20,9 +20,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -34,6 +34,8 @@ import java.util.TreeMap;
 @JsonPropertyOrder({"name", "id", "duration", "durationExclusive", "children"})
 public class Timing implements AutoCloseable
 {
+    private static final int MAX_TIMINGS = 1000;
+
     private final GUID _id;
     private final RequestInfo _req;
     private final Timing _parent;
@@ -44,9 +46,10 @@ public class Timing implements AutoCloseable
     private long _duration;
 
     private final Map<String, Integer> _objects = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    private ArrayList<Timing> _children;
+    private List<Timing> _children;
 
     private Map<String, List<CustomTiming>> _customTimings;
+    private boolean _overflow;
 
     public Timing(RequestInfo req, Timing parent, String name)
     {
@@ -103,11 +106,21 @@ public class Timing implements AutoCloseable
         }
     }
 
+    private void limitList(List<?> list)
+    {
+        if (list.size() > MAX_TIMINGS)
+        {
+            _overflow = true;
+            list.subList(0, list.size() - 1000).clear();
+        }
+    }
+
     protected void addChild(Timing timing)
     {
         if (_children == null)
-            _children = new ArrayList<>();
+            _children = new LinkedList<>();
 
+        limitList(_children);
         _children.add(timing);
     }
 
@@ -118,8 +131,9 @@ public class Timing implements AutoCloseable
             _customTimings = new HashMap<>();
         List<CustomTiming> timings = _customTimings.get(category);
         if (timings == null)
-            _customTimings.put(category, timings = new ArrayList<>());
+            _customTimings.put(category, timings = new LinkedList<>());
 
+        limitList(timings);
         timings.add(custom);
     }
 
@@ -128,6 +142,15 @@ public class Timing implements AutoCloseable
         if (_customTimings == null)
             return null;
         return Collections.unmodifiableMap(_customTimings);
+    }
+
+    /**
+     * True when too many custom timings have been captured and the reported
+     * results are limited to include only the most recent timings.
+     */
+    public boolean isOverflow()
+    {
+        return _overflow;
     }
 
     public long getStartOffset()
