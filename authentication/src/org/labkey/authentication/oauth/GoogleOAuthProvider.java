@@ -141,8 +141,7 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
     }
 
 
-    @Override
-    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException
+    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response) throws ValidEmail.InvalidEmailException
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(AuthenticationModule.EXPERIMENTAL_OPENID_GOOGLE))
             return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);
@@ -161,7 +160,7 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
         if (StringUtils.isAnyEmpty(bean.code, bean.state, bean.session_state, bean.authuser))
             return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);
 
-        if (!StringUtils.equals(bean.state,CSRFUtil.getExpectedToken(request,response)))
+        if (!StringUtils.equals(bean.state,CSRFUtil.getExpectedToken(request, response)))
             throw new CSRFException();
 
         SessionHelper.setAttribute(request, GoogleAuthBean.class.getName(), bean, true);

@@ -292,8 +292,8 @@ public class LoginController extends SpringActionController
 
         try
         {
-            // Attempt authentication with all active primary providers
-            PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
+            // Attempt authentication with all active form providers
+            PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
             LookAndFeelProperties laf;
 
             switch (result.getStatus())
@@ -1094,7 +1094,7 @@ public class LoginController extends SpringActionController
             // where a user is already logged in (normal change password, admins initializing another user's password, etc.)
             if (getUser().isGuest())
             {
-                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
+                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
 
                 if (result.getStatus() == AuthenticationManager.AuthenticationStatus.Success)
                 {

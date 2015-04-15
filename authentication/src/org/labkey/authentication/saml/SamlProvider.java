@@ -18,6 +18,7 @@ package org.labkey.authentication.saml;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
@@ -31,10 +32,10 @@ import javax.servlet.http.HttpServletResponse;
  * User: tgaluhn
  * Date: 1/19/2015
  */
-public class SamlProvider implements AuthenticationProvider.SSOAuthenticationProvider
+public class SamlProvider implements SSOAuthenticationProvider
 {
-    @Override
-    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException
+    // TODO: Fix this... authenticate() is no longer called
+    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response) throws ValidEmail.InvalidEmailException
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(AuthenticationModule.EXPERIMENTAL_SAML_SERVICE_PROVIDER))
             return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);

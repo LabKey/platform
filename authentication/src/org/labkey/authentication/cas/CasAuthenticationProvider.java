@@ -43,12 +43,6 @@ public class CasAuthenticationProvider implements SSOAuthenticationProvider
     }
 
     @Override
-    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException
-    {
-        return null;
-    }
-
-    @Override
     public URLHelper getURL(String secret)
     {
         return CasManager.getInstance().getLoginURL();
