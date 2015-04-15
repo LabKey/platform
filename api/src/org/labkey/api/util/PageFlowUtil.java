@@ -972,6 +972,7 @@ public class PageFlowUtil
 
 
     // Fetch the contents of a text file, and return it in a String.
+    @Deprecated  // TODO: Remove -- this uses the server's default character encoding, which is unpredictable
     public static String getFileContentsAsString(File aFile)
     {
         StringBuilder contents = new StringBuilder();
@@ -1146,15 +1147,6 @@ public class PageFlowUtil
             return true;
         }
         return true;
-    }
-
-
-	// UNDONE: Move to FileUtil
-    /** Fetch the contents of an InputStream using the default charset and return in a String. Closes the reader after consuming it */
-    @Deprecated  // Bad method, uses default encoding, which is a crap shoot. Use getStreamContentsAsString(InputStream, Charset) instead.
-    public static String getStreamContentsAsString(InputStream is)
-    {
-		return getReaderContentsAsString(new BufferedReader(new InputStreamReader(is)));
     }
 
 
