@@ -57,7 +57,6 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -411,7 +410,7 @@ public class AuthenticationManager
 
 
     public static @NotNull
-    PrimaryAuthenticationResult authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
+    PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
         PrimaryAuthenticationResult result = null;
         try
@@ -419,7 +418,7 @@ public class AuthenticationManager
             result = _beforeAuthenticate(request, id, password);
             if (null != result)
                 return result;
-            result = _authenticate(request, response, id, password, returnURL, logFailures);
+            result = _authenticate(request, id, password, returnURL, logFailures);
             return result;
         }
         finally
@@ -430,121 +429,118 @@ public class AuthenticationManager
 
 
     private static @NotNull
-    PrimaryAuthenticationResult _authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
+    PrimaryAuthenticationResult _authenticate(HttpServletRequest request, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
-        AuthenticationResponse firstFailure = null;
-
-        for (AuthenticationProvider authProvider : getActiveProviders())
+        if (areNotBlank(id, password))
         {
-            AuthenticationResponse authResponse = null;
+            AuthenticationResponse firstFailure = null;
 
-            try
+            for (AuthenticationProvider authProvider : getActiveProviders())
             {
-                if (authProvider instanceof LoginFormAuthenticationProvider)
-                {
-                    if (areNotBlank(id, password))
-                        authResponse = ((LoginFormAuthenticationProvider)authProvider).authenticate(id, password, returnURL);
-                }
-                else if (authProvider instanceof SSOAuthenticationProvider)
-                {
-                    if (areNotNull(request, response))
-                        authResponse = ((SSOAuthenticationProvider)authProvider).authenticate(request, response, returnURL);
-                }
-            }
-            catch (RedirectException e)
-            {
-                // Some authentication provider has chosen to redirect (e.g., to retrieve auth credentials from
-                // a different server or to force change password due to expiration).
-                throw new RuntimeException(e);
-            }
-
-            // Null only if params are blank... just ignore that case
-            if (null != authResponse)
-            {
-                if (authResponse.isAuthenticated())
-                {
-                    return finalizePrimaryAuthentication(request, authProvider, authResponse.getValidEmail());
-                }
-                else
-                {
-                    AuthenticationProvider.FailureReason reason = authResponse.getFailureReason();
-
-                    switch (reason.getReportType())
-                    {
-                        // Log the first one we encounter to the audit log, always
-                        case always:
-                            if (null == firstFailure)
-                                firstFailure = authResponse;
-                            break;
-
-                        // Log the first one we encounter to the audit log, but only if the login fails (i.e., this
-                        // login may succeed on another provider)
-                        case onFailure:
-                            if (logFailures && null == firstFailure)
-                                firstFailure = authResponse;
-                            break;
-
-                        // Just not the right provider... ignore.
-                        case never:
-                            break;
-
-                        default:
-                            assert false : "Unknown AuthenticationProvider.ReportType: " + reason.getReportType();
-                    }
-                }
-            }
-        }
-
-        // Login failed all providers... log the first interesting failure (but only if logFailures == true)
-        if (null != firstFailure)
-        {
-            User user = null;
-            String emailAddress = null;
-
-            // Try to determine who is attempting to login.
-            if (!StringUtils.isBlank(id))
-            {
-                emailAddress = id;
-                ValidEmail email = null;
+                AuthenticationResponse authResponse = null;
 
                 try
                 {
-                    email = new ValidEmail(id);
-                    emailAddress = email.getEmailAddress();  // If this user doesn't exist we can still report the normalized email address
+                    if (authProvider instanceof LoginFormAuthenticationProvider)
+                    {
+                        authResponse = ((LoginFormAuthenticationProvider) authProvider).authenticate(id, password, returnURL);
+                    }
                 }
-                catch (InvalidEmailException e)
+                catch (RedirectException e)
                 {
+                    // Some authentication provider has chosen to redirect (e.g., to retrieve auth credentials from
+                    // a different server or to force change password due to expiration).
+                    throw new RuntimeException(e);
                 }
 
-                if (null != email)
-                    user = UserManager.getUser(email);
+                // Null only if no form authentication provider... which is currently not possible
+                if (null != authResponse)
+                {
+                    if (authResponse.isAuthenticated())
+                    {
+                        return finalizePrimaryAuthentication(request, authProvider, authResponse.getValidEmail());
+                    }
+                    else
+                    {
+                        AuthenticationProvider.FailureReason reason = authResponse.getFailureReason();
+
+                        switch (reason.getReportType())
+                        {
+                            // Log the first one we encounter to the audit log, always
+                            case always:
+                                if (null == firstFailure)
+                                    firstFailure = authResponse;
+                                break;
+
+                            // Log the first one we encounter to the audit log, but only if the login fails (i.e., this
+                            // login may succeed on another provider)
+                            case onFailure:
+                                if (logFailures && null == firstFailure)
+                                    firstFailure = authResponse;
+                                break;
+
+                            // Just not the right provider... ignore.
+                            case never:
+                                break;
+
+                            default:
+                                assert false : "Unknown AuthenticationProvider.ReportType: " + reason.getReportType();
+                        }
+                    }
+                }
             }
 
-            String message = " failed to login: " + firstFailure.getFailureReason().getMessage();
-
-            if (null != user)
+            // Login failed all providers... log the first interesting failure (but only if logFailures == true)
+            if (null != firstFailure)
             {
-                addAuditEvent(user, request, user.getEmail() + message);
-                _log.warn(user.getEmail() + message);
-            }
-            else if (null != emailAddress)
-            {
-                // Funny audit case -- user doesn't exist, so there's no user to associate with the event.  Use guest.
-                addAuditEvent(User.guest, request, emailAddress + message);
-                _log.warn(emailAddress + message);
-            }
-            else
-            {
-                // Funny audit case -- user doesn't exist, so there's no user to associate with the event.  Use guest.
-                addAuditEvent(User.guest, request, message);
-                _log.warn("Unknown user " + message);
-            }
+                User user = null;
+                String emailAddress = null;
 
-            // For now, redirectURL is only checked in the failure case, see #19778 for some history on redirect handling
-            ActionURL redirectURL = firstFailure.getRedirectURL();
+                // Try to determine who is attempting to login.
+                if (!StringUtils.isBlank(id))
+                {
+                    emailAddress = id;
+                    ValidEmail email = null;
 
-            if (null != redirectURL)
-                throw new RedirectException(redirectURL);
+                    try
+                    {
+                        email = new ValidEmail(id);
+                        emailAddress = email.getEmailAddress();  // If this user doesn't exist we can still report the normalized email address
+                    }
+                    catch (InvalidEmailException e)
+                    {
+                    }
+
+                    if (null != email)
+                        user = UserManager.getUser(email);
+                }
+
+                String message = " failed to login: " + firstFailure.getFailureReason().getMessage();
+
+                if (null != user)
+                {
+                    addAuditEvent(user, request, user.getEmail() + message);
+                    _log.warn(user.getEmail() + message);
+                }
+                else if (null != emailAddress)
+                {
+                    // Funny audit case -- user doesn't exist, so there's no user to associate with the event.  Use guest.
+                    addAuditEvent(User.guest, request, emailAddress + message);
+                    _log.warn(emailAddress + message);
+                }
+                else
+                {
+                    // Funny audit case -- user doesn't exist, so there's no user to associate with the event.  Use guest.
+                    addAuditEvent(User.guest, request, message);
+                    _log.warn("Unknown user " + message);
+                }
+
+                // For now, redirectURL is only checked in the failure case, see #19778 for some history on redirect handling
+                ActionURL redirectURL = firstFailure.getRedirectURL();
+
+                if (null != redirectURL)
+                    throw new RedirectException(redirectURL);
+            }
         }
 
         return new PrimaryAuthenticationResult(AuthenticationStatus.BadCredentials);
@@ -668,7 +664,7 @@ public class AuthenticationManager
     // Returns null if credentials are incorrect, user doesn't exist, user is inactive, or secondary auth is enabled.
     public static User authenticate(HttpServletRequest request, String id, String password) throws InvalidEmailException
     {
-        PrimaryAuthenticationResult primaryResult = authenticate(request, null, id, password, null, true);
+        PrimaryAuthenticationResult primaryResult = authenticate(request, id, password, null, true);
 
         // If primary authentication is successful then look for secondary authentication. handleAuthentication() will
         // always return a failure result (i.e., null user) if secondary authentication is enabled. #22944
@@ -697,12 +693,6 @@ public class AuthenticationManager
     private static boolean areNotBlank(String id, String password)
     {
         return StringUtils.isNotBlank(id) && StringUtils.isNotBlank(password);
-    }
-
-
-    private static boolean areNotNull(HttpServletRequest request, HttpServletResponse response)
-    {
-        return null != request && null != response;
     }
 
 
@@ -1051,7 +1041,7 @@ public class AuthenticationManager
             for (i=0 ; i<20 ; i++)
             {
                 remoteAddr[0] = "127.0.0.1" + (i%256);
-                PrimaryAuthenticationResult r = AuthenticationManager.authenticate(req, res, "testA@localhost.test", "passwordA"+i, null, false);
+                PrimaryAuthenticationResult r = AuthenticationManager.authenticate(req, "testA@localhost.test", "passwordA"+i, null, false);
                 if (r.getStatus() == AuthenticationStatus.LoginPaused)
                     break;
             }
@@ -1065,7 +1055,7 @@ public class AuthenticationManager
             for (i=0 ; i<20 ; i++)
             {
                 remoteAddr[0] = "127.0.1.1" + (i%256);
-                PrimaryAuthenticationResult r = AuthenticationManager.authenticate(req, res, "testB" + i + "@localhost.test", "passwordB", null, false);
+                PrimaryAuthenticationResult r = AuthenticationManager.authenticate(req, "testB" + i + "@localhost.test", "passwordB", null, false);
                 if (r.getStatus() == AuthenticationStatus.LoginPaused)
                     break;
             }
@@ -1079,7 +1069,7 @@ public class AuthenticationManager
             for (i=0 ; i<20 ; i++)
             {
                 remoteAddr[0] = "127.0.2.1";
-                PrimaryAuthenticationResult r = AuthenticationManager.authenticate(req, res, "testC@localhost.test", "passwordC", null, false);
+                PrimaryAuthenticationResult r = AuthenticationManager.authenticate(req, "testC@localhost.test", "passwordC", null, false);
                 if (r.getStatus() == AuthenticationStatus.LoginPaused)
                     break;
             }

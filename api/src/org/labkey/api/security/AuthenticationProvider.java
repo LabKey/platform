@@ -43,9 +43,6 @@ public interface AuthenticationProvider
 
     interface SSOAuthenticationProvider extends AuthenticationProvider
     {
-        @Deprecated
-        AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws InvalidEmailException;
-
         /**
          * Return the external service's URL.
          * @return The redirect URL
