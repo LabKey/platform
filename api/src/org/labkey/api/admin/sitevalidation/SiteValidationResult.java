@@ -15,6 +15,10 @@
  */
 package org.labkey.api.admin.sitevalidation;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.view.ActionURL;
+
 /**
  * User: tgaluhn
  * Date: 4/8/2015
@@ -23,20 +27,24 @@ public class SiteValidationResult
 {
     public enum Level
     {
+        TITLE,
         INFO,
         WARN,
         ERROR;
 
-        public SiteValidationResult create(String message) { return new SiteValidationResult(this, message);}
+        public SiteValidationResult create(String message) { return create(message, null);}
+        public SiteValidationResult create(String message, ActionURL link) { return new SiteValidationResult(this, message, link);}
     }
 
     final Level level;
     final String message;
+    final ActionURL link;
 
-    private SiteValidationResult(Level level, String message)
+    private SiteValidationResult(@NotNull Level level, @NotNull String message, @Nullable ActionURL link)
     {
         this.level = level;
         this.message = message;
+        this.link = link;
     }
 
     public Level getLevel()
@@ -47,5 +55,10 @@ public class SiteValidationResult
     public String getMessage()
     {
         return message;
+    }
+
+    public ActionURL getLink()
+    {
+        return link;
     }
 }

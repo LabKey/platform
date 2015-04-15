@@ -19,6 +19,7 @@ import org.labkey.api.pipeline.PipelineJobService;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -28,6 +29,8 @@ public class RequiredInLine extends TaskToCommandArgs
 {
     private String _value;
     private boolean _addPipelineToolsDir = false;
+    private String _softwarePackage;
+    private String _versionParamName;
 
     public String getValue()
     {
@@ -49,9 +52,39 @@ public class RequiredInLine extends TaskToCommandArgs
         this._addPipelineToolsDir = addPipelineToolsDir;
     }
 
+    public String getSoftwarePackage()
+    {
+        return _softwarePackage;
+    }
+
+    public void setSoftwarePackage(String softwarePackage)
+    {
+        _softwarePackage = softwarePackage;
+    }
+
+    public String getVersionParamName()
+    {
+        return _versionParamName;
+    }
+
+    public void setVersionParamName(String versionParamName)
+    {
+        _versionParamName = versionParamName;
+    }
+
+    private String getVersion(CommandTask task)
+    {
+        if (_versionParamName == null)
+            return null;
+
+        Map<String, String> jobParams = task.getJob().getParameters();
+
+        return (jobParams == null ? null : jobParams.get(_versionParamName));
+    }
+
     protected String getFullValue(CommandTask task) throws FileNotFoundException
     {
-        return isAddPipelineToolsDir() ? PipelineJobService.get().getExecutablePath(getValue(), null, null, null, task.getJob().getLogger()) : getValue();
+        return isAddPipelineToolsDir() ? PipelineJobService.get().getExecutablePath(getValue(), null,  _softwarePackage, getVersion(task), task.getJob().getLogger()) : getValue();
     }
 
     public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException

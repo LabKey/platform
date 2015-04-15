@@ -33,7 +33,12 @@ public abstract class SiteValidationProviderImpl implements SiteValidationProvid
     @Override
     public boolean isSiteScope()
     {
-        return false;
+        return true;
+    }
+
+    public static SiteValidationResult title(String message)
+    {
+        return SiteValidationResult.Level.TITLE.create(message);
     }
 
     public static SiteValidationResult info(String message)
