@@ -572,7 +572,7 @@ public class VisualizationController extends SpringActionController
             String contentType = request.getContentType();
 
             if (null != contentType && contentType.startsWith("text/xml"))
-                _svgSource = PageFlowUtil.getStreamContentsAsString(request.getInputStream());
+                _svgSource = PageFlowUtil.getReaderContentsAsString(request.getReader());
             else
                 _svgSource = request.getParameter("svg");
 

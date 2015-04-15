@@ -4685,7 +4685,7 @@ public class QueryController extends SpringActionController
 
             String sql = (String)getProperty("sql");
             if (sql == null)
-                sql = PageFlowUtil.getStreamContentsAsString(getViewContext().getRequest().getInputStream());
+                sql = PageFlowUtil.getReaderContentsAsString(getViewContext().getRequest().getReader());
             ErrorsDocument ret = ErrorsDocument.Factory.newInstance();
             org.labkey.query.design.Errors xbErrors = ret.addNewErrors();
             List<QueryParseException> errors = new ArrayList<>();

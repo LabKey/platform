@@ -220,7 +220,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 
 		public long copyFrom(User user, FileStream in) throws IOException
 		{
-			String sql = PageFlowUtil.getStreamContentsAsString(in.openInputStream());
+			String sql = PageFlowUtil.getStreamContentsAsString(in.openInputStream(), StringUtilsLabKey.DEFAULT_CHARSET);
 			_q.setSql(sql);
 			try
 			{

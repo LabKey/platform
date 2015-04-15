@@ -92,6 +92,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -384,7 +385,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     if (isTooBig(fs, type))
                         html = "<html><body></body></html>";
                     else
-                        html = PageFlowUtil.getStreamContentsAsString(is);
+                        html = PageFlowUtil.getStreamContentsAsString(is, StandardCharsets.UTF_8);
 
                     // TODO: Need better check for issue HTML vs. rendered page HTML
                     if (r instanceof ActionResource)
@@ -412,7 +413,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     if (isTooBig(fs, type))
                         body = "";
                     else
-                        body = PageFlowUtil.getStreamContentsAsString(is);
+                        body = PageFlowUtil.getStreamContentsAsString(is, StandardCharsets.UTF_8);
                 }
                 else
                 {

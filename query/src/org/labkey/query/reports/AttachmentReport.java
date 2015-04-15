@@ -56,6 +56,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.zip.ZipEntry;
@@ -270,7 +271,7 @@ public class AttachmentReport extends BaseRedirectReport
 
                     try
                     {
-                        svc.svgToPng(PageFlowUtil.getStreamContentsAsString(report.getInputStream()), os, ImageType.Large.getHeight());
+                        svc.svgToPng(PageFlowUtil.getStreamContentsAsString(report.getInputStream(), StandardCharsets.UTF_8), os, ImageType.Large.getHeight());
 
                         return os.getThumbnail("image/png");
                     }
