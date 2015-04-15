@@ -22,12 +22,14 @@ import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.security.xml.GroupEnumType;
 import org.labkey.security.xml.GroupRefType;
 import org.labkey.security.xml.GroupRefsType;
 import org.labkey.security.xml.UserRefType;
@@ -68,9 +70,11 @@ public class RoleAssignmentsWriterFactory implements FolderWriterFactory
             {
                 FolderDocument.Folder folderXml = ctx.getXml();
                 RoleAssignmentsType roleAssignments = folderXml.addNewRoleAssignments();
-                roleAssignments.setInherited(c.isInheritedAcl());
-
-                if (!c.isInheritedAcl())
+                if (c.isInheritedAcl())
+                {
+                    roleAssignments.setInherited(true);
+                }
+                else
                 {
                     Map<String, Map<PrincipalType, List<UserPrincipal>>> map = existingPolicy.getAssignmentsAsMap();
 
@@ -83,10 +87,12 @@ public class RoleAssignmentsWriterFactory implements FolderWriterFactory
                         if (assignees.get(PrincipalType.GROUP) != null)
                         {
                             GroupRefsType groups = roleAssignment.addNewGroups();
-                            for (UserPrincipal group : assignees.get(PrincipalType.GROUP))
+                            for (UserPrincipal user : assignees.get(PrincipalType.GROUP))
                             {
+                                Group group = (Group) user;
                                 GroupRefType groupRef = groups.addNewGroup();
                                 groupRef.setName(group.getName());
+                                groupRef.setType(group.isProjectGroup() ? GroupEnumType.PROJECT : GroupEnumType.SITE);
                             }
                         }
                         if (assignees.get(PrincipalType.USER) != null)

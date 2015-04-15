@@ -97,7 +97,7 @@ public class RoleAssignmentsImporterFactory extends AbstractFolderImportFactory
                         {
                             for (GroupRefType groupRef : groups.getGroupArray())
                             {
-                                UserPrincipal principal = GroupManager.getGroup(ctx.getContainer(), groupRef.getName(), true);
+                                UserPrincipal principal = GroupManager.getGroup(ctx.getContainer(), groupRef.getName(), groupRef.getType());
                                 if (principal == null)
                                 {
                                     ctx.getLogger().warn("Non-existent group in role assignment for role " + assignmentXml.getRole() + " will be ignored: " + groupRef.getName());

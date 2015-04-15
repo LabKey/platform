@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.*;
@@ -63,6 +62,11 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
+            if (!ctx.getContainer().isProject())
+            {
+                ctx.getLogger().warn("Import of groups outside of project context not supported.");
+                return;
+            }
             GroupsType groups = ctx.getXml().getGroups();
 
             if (groups == null) // no groups to import
@@ -85,19 +89,11 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
             // now populate the groups with their members
             for (GroupType xmlGroupType : groups.getGroupArray())
             {
-                GroupManager.importGroupMembers(GroupManager.getGroup(ctx.getContainer(), xmlGroupType.getName(), true), xmlGroupType, ctx.getLogger(), ctx.getContainer());
+                GroupManager.importGroupMembers(GroupManager.getGroup(ctx.getContainer(), xmlGroupType.getName(), xmlGroupType.getType()), xmlGroupType, ctx.getLogger(), ctx.getContainer());
             }
 
         }
 
-        private Group getGroup(Container container, String name)
-        {
-            Integer groupId = org.labkey.api.security.SecurityManager.getGroupId(container, name, false);
-            if (groupId == null)
-                return SecurityManager.createGroup(container, name);
-            else
-                return SecurityManager.getGroup(groupId);
-        }
 
         @NotNull
         @Override
