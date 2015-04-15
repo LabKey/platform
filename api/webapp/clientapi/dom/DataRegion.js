@@ -135,6 +135,7 @@ if (!LABKEY.DataRegions)
                 this[s] = settings[s];
             }
         }
+        this._allowHeaderLock = this.allowHeaderLock === true;
 
         if (!this.messages) {
             this.messages = {};
@@ -203,6 +204,7 @@ if (!LABKEY.DataRegions)
 
         this._initMessaging();
         this._initSelection();
+        this._initHeaderLocking();
         this._initPaging();
         this._initCustomViews();
         this._initPanes();
@@ -1490,6 +1492,12 @@ if (!LABKEY.DataRegions)
     // Misc
     //
 
+    Proto._initHeaderLocking = function() {
+        if (this._allowHeaderLock === true) {
+            this.hLock = new HeaderLock(this);
+        }
+    };
+
     Proto._initPanes = function() {
         var callbacks = _paneCache[this.name];
         if (callbacks) {
@@ -1600,6 +1608,12 @@ if (!LABKEY.DataRegions)
     };
 
     Proto.headerLock = function() { return this._allowHeaderLock === true; };
+
+    Proto.disableHeaderLock = function() {
+        if (this.headerLock() && this.hLock) {
+            this.hLock.disable();
+        }
+    };
 
     /**
      * @private
@@ -2378,6 +2392,299 @@ if (!LABKEY.DataRegions)
         });
     };
 
+    var HeaderLock = function(region) {
+
+        var me = this,
+            timeout;
+
+        var calculateHeaderPosition = function(recalcPosition) {
+            calculateLockPosition(recalcPosition);
+            onScroll();
+        };
+
+        var calculateLockPosition = function(recalcPosition) {
+            var el, s, src, i = 0;
+
+            for (; i < me.rowContent.length; i++) {
+                src = $(me.firstRow[i]);
+                el = $(me.rowContent[i]);
+
+                s = {
+                    width: src.width(),
+                    height: el.height()
+                }; // note: width coming from data row not header
+
+                el.width(s.width); // 15420
+
+                $(me.rowSpacerContent[i]).height(s.height).width(s.width);
+            }
+
+            if (recalcPosition === true) {
+                me.hdrCoord = findPos();
+            }
+
+            me.hdrLocked = false;
+        };
+
+        var disable = function() {
+            me.region._allowHeaderLock = false;
+
+            if (timeout) {
+                clearTimeout(timeout);
+            }
+
+            $(window).unbind('load', onResize);
+            $(window).unbind('resize', onResize);
+            $(window).unbind('scroll', onScroll);
+            $(document).unbind('DOMNodeInserted', onResize);
+        };
+
+        var ensurePaginationVisible = function() {
+            if (me.paginationEl) {
+                // in case header locking is not on
+                if (!me.region.headerLock() || !me.hdrCoord || me.hdrCoord.length == 0) {
+                    me.hdrCoord = findPos();
+                }
+
+                var measure = $('body').width() - me.hdrCoord[0];
+                if (measure < me.headerRow.width()) {
+                    me.paginationEl.width(measure);
+                }
+            }
+        };
+
+        /**
+         * Returns an array of containing the following values:
+         * [0] - X-coordinate of the top of the object relative to the offset parent. See Ext.Element.getXY()
+         * [1] - Y-coordinate of the top of the object relative to the offset parent. See Ext.Element.getXY()
+         * [2] - Y-coordinate of the bottom of the object.
+         * [3] - The height of the header for this Data Region. This includes the button bar if it is present.
+         * This method assumes interaction with the Header of the Data Region.
+         */
+        var findPos = function() {
+            var o,
+                pos,
+                curbottom,
+                hdrOffset = 0;
+
+            if (me.includeHeader) {
+                o = (me.hdrLocked ? me.headerSpacer : me.headerRow);
+                //hdrOffset = me.headerSpacer.getComputedHeight();
+                hdrOffset = me.headerSpacer.height();
+            }
+            else {
+                o = (me.hdrLocked ? me.colHeaderRowSpacer : me.colHeaderRow);
+            }
+
+            pos = o.position();
+            curbottom = pos.top + me.table.height() - (o.height() * 2);
+
+            return [ pos.left, pos.top, curbottom, hdrOffset ];
+        };
+
+        var onResize = function() {
+            if (!me.table) {
+                return;
+            }
+
+            if (me.region.headerLock()) {
+                if (timeout) {
+                    clearTimeout(timeout);
+                }
+                timeout = setTimeout(resizeTask, 110);
+            }
+            else {
+                ensurePaginationVisible();
+            }
+        };
+
+        /**
+         * WARNING: This function is called often. Performance implications for each line.
+         * NOTE: window.pageYOffset and pageXOffset are not available in IE7-. For these document.documentElement.scrollTop
+         * and document.documentElement.scrollLeft could be used. Additionally, position: fixed is not recognized by
+         * IE7- and can be best approximated with position: absolute and explicit top/left.
+         */
+        var onScroll = function() {
+            var hrStyle, chrStyle;
+
+            // calculate Y scrolling
+            if (window.pageYOffset >= me.hdrCoord[1] && window.pageYOffset < me.hdrCoord[2]) {
+                // The header has reached the top of the window and needs to be locked
+                var tWidth = me.table.width();
+
+                hrStyle = {
+                    top: 0,
+                    position: 'fixed',
+                    'min-width': tWidth,
+                    'z-index': 9000 // 13229
+                };
+                chrStyle = {
+                    top: me.hdrCoord[3],
+                    position: 'fixed',
+                    background: 'white',
+                    'min-width': tWidth,
+                    'box-shadow': '-2px 5px 5px #DCDCDC',
+                    'z-index': 9000 // 13229
+                };
+
+                me.headerSpacer.css('display', 'table-row');
+                me.colHeaderRowSpacer.css('display', 'table-row');
+                me.headerRowContent.css('min-width', tWidth - 3);
+                me.hdrLocked = true;
+            }
+            else if (me.hdrLocked && window.pageYOffset >= me.hdrCoord[2]) {
+                // The bottom of the Data Region is near the top of the window and the locked header
+                // needs to start 'sliding' out of view.
+                var top = me.hdrCoord[2] - window.pageYOffset;
+                hrStyle = { top: top };
+                chrStyle = { top: (top + me.hdrCoord[3]) };
+            }
+            else if (me.hdrLocked) { // only reset if the header is locked
+                // the header should not be locked
+                reset(false);
+            }
+
+            // Calculate X Scrolling
+            if (me.hdrLocked) {
+                if (!hrStyle) {
+                    hrStyle = {};
+                }
+                if (!chrStyle) {
+                    chrStyle = {};
+                }
+
+                hrStyle.left = me.hdrCoord[0] - window.pageXOffset;
+                chrStyle.left = me.hdrCoord[0] - window.pageXOffset;
+            }
+
+            if (hrStyle) {
+                me.headerRow.css(hrStyle);
+            }
+            if (chrStyle) {
+                me.colHeaderRow.css(chrStyle);
+            }
+        };
+
+        /**
+         * Adjusts the header styling to the best approximate of what the defaults are when the header is not locked
+         */
+        var reset = function(recalc) {
+            me.hdrLocked = false;
+            me.headerRow.css({
+                top: 'auto',
+                position: 'static',
+                'min-width': 0
+            });
+            me.headerRowContent.css('min-width', 0);
+            me.colHeaderRow.css({
+                top: 'auto',
+                position: 'static',
+                'min-width': 0,
+                'box-shadow': 'none'
+            });
+            me.headerSpacer.hide();
+            me.headerSpacer.height(me.headerRow.height());
+            me.colHeaderRowSpacer.hide();
+            calculateHeaderPosition(recalc);
+        };
+
+        var resizeTask = function() {
+            reset(true);
+            ensurePaginationVisible();
+        };
+
+        var validBrowser = function() {
+            return true; // Ext.isIE9 || Ext.isIE10p || Ext.isWebKit || Ext.isGecko
+        };
+
+        // init
+        if (!region.headerLock() || !validBrowser()) {
+            region._allowHeaderLock = false;
+            return;
+        }
+
+        this.region = region;
+
+        // initialize constants
+        this.headerRow = $('#dataregion_header_row_' + region.name);
+        if (!this.headerRow) {
+            region._allowHeaderLock = false;
+            return;
+        }
+
+        this.table = $('#dataregion_' + region.name);
+        this.headerRowContent = this.headerRow.children('td');
+        this.headerSpacer = $('#dataregion_header_row_spacer_' + region.name);
+        this.colHeaderRow = $('#dataregion_column_header_row_' + region.name);
+        this.colHeaderRowSpacer = $('#dataregion_column_header_row_spacer_' + region.name);
+        this.paginationEl = $('#dataregion_header_' + region.name);
+
+        // check if the header row is being used
+        this.includeHeader = this.headerRow.is(':visible'); // formerly isDisplayed()
+
+        // initialize row contents
+        // Check if we have colHeaderRow and colHeaderRowSpacer - they won't be present if there was an SQLException
+        // during query execution, so we didn't get column metadata back
+        if (this.colHeaderRow) {
+            this.rowContent = this.colHeaderRow.find('td.labkey-column-header');
+            //this.rowContent = Ext.query(" > td[class*=labkey-column-header]", dr.colHeaderRow.id);
+        }
+        if (this.colHeaderRowSpacer) {
+            this.rowSpacerContent = this.colHeaderRowSpacer.find('td.labkey-column-header');
+        }
+        this.firstRow = this.table.find('tr.labkey-alternate-row').first().children('td');
+
+        // performance degradation
+        var tooManyColumns = this.rowContent.length > 80; //|| ((this.rowContent.length > 40) && !Ext.isWebKit && !Ext.isIE10p);
+        var tooManyRows = (region.rowCount && region.rowCount > 1000);
+
+        if (tooManyColumns || tooManyRows) {
+            region._allowHeaderLock = false;
+            return;
+        }
+
+        // If no data rows exist just turn off header locking
+        if (this.firstRow.length == 0) {
+            this.firstRow = this.table.find('tr.labkey-row').first().children('td');
+            if (this.firstRow.length == 0) {
+                region._allowHeaderLock = false;
+                return;
+            }
+        }
+
+        // initialize additional listeners
+        $(window).one('load', onResize);
+        $(window).on('resize', onResize);
+        $(document).bind('DOMNodeInserted', onResize); // Issue #13121
+        $(window).scroll(onScroll);
+
+        ensurePaginationVisible();
+
+        // initialize panel listeners
+        // 13669: customize view jumping when using drag/drop to reorder columns/filters/sorts
+        // must manage DOMNodeInserted Listeners due to panels possibly dynamically adding elements to page
+        //dr.on('afterpanelshow', function ()
+        //{
+        //    Ext.EventManager.un(document, 'DOMNodeInserted', this.onResize, this); // suspend listener
+        //    this.onResize();
+        //}, this);
+        //
+        //dr.on('afterpanelhide', function ()
+        //{
+        //    Ext.EventManager.on(document, 'DOMNodeInserted', this.onResize, this); // resume listener
+        //    this.onResize();
+        //}, this);
+
+        this.hdrCoord = [];
+
+        reset(true);
+
+        return {
+            disable: disable
+        };
+    };
+
+
     LABKEY.DataRegion2.loadViewDesigner = function(cb, scope) {
         LABKEY.requiresExt4Sandbox(true, function() {
             LABKEY.requiresScript([
@@ -2619,7 +2926,9 @@ if (!LABKEY.DataRegions)
     };
 
     MsgProto.render = function() {
-        var hasMsg = false, html = '';
+        var hasMsg = false,
+            html = '';
+
         $.each(this.parts, function(part, msg) {
             if (msg) {
                 if (hasMsg) {
