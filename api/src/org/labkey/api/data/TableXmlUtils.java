@@ -229,10 +229,7 @@ public class TableXmlUtils
                 }
 
                 dbCols = tt.getColumns().getColumnArray();
-                if (null != xmlTable.getColumns())
-                    xmlCols = xmlTable.getColumns().getColumnArray();
-                else
-                    xmlCols = new ColumnType[0];
+                xmlCols = xmlTable.getColumns().getColumnArray();
 
                 mXmlColOrdinals = new TreeMap<>();
                 mDbColOrdinals = new TreeMap<>();
@@ -540,7 +537,7 @@ public class TableXmlUtils
                 sbOut.append("WARNING: (case mismatch) ");
         }
         else
-            sbOut.append("WARNING:   ");
+            sbOut.append("WARNING   ");
 
         if (!bMatch)
         {
