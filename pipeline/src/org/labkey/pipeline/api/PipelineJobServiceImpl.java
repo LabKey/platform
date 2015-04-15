@@ -616,12 +616,12 @@ public class PipelineJobServiceImpl extends PipelineJobService
         }
 
         // Handle version string replacement.
-        if (StringUtils.isBlank(ver))
-            return path;
+        if (ver == null)
+            ver = "";
         ver = ver.trim();
         if (path.contains(VERSION_PLAIN_SUBSTITUTION))
             return path.replace(VERSION_PLAIN_SUBSTITUTION, ver);
-        if (_prependVersionWithDot)
+        if (!"".equals(ver) && _prependVersionWithDot)
             ver = "." + ver;
         return path.replace(VERSION_SUBSTITUTION, ver);
     }
