@@ -975,7 +975,12 @@ public class AuthenticationManager
             String img = getImg(prefix);
 
             if (null == img)
-                return null;
+            {
+                if(LOGIN_PAGE_LOGO_PREFIX.equals(prefix))
+                    return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\"><font size=\"4\">" + _providerName + "</font></a>";
+                else
+                    return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\"><font size=\"2\" color=\"yellow\">" + _providerName + "</font></a>";
+            }
             else
                 return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\">" + img + "</a>";
         }
