@@ -17,6 +17,7 @@
 package org.labkey.api.security;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
@@ -36,7 +37,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -237,27 +237,30 @@ public class GroupManager
         }
     }
 
+    /**
+     * Get a group by a given name of a certain type (either site or project) for the container.  This is generally only used for importing
+     * groups from a serialization that includes the name and type but not the id.  In this context, it is expected that there will be a
+     * container.
+     * @param container container in which the group is being referenced
+     * @param name the unique name for the group (including the package)
+     * @param groupType the type of group (either site or project)
+     * @return The group referenced or null if no such group exists
+     */
     @Nullable
-    public static Group getGroup(Container container, String name, Boolean includeInherited)
+    public static Group getGroup(@NotNull Container container, String name, GroupEnumType.Enum groupType)
     {
-        Integer groupId = SecurityManager.getGroupId(container, name, false);
-        if (groupId == null && includeInherited)
-        {
-            Container currentContainer = container;
-            while (groupId == null && !currentContainer.isRoot())
-            {
-                groupId = SecurityManager.getGroupId(currentContainer, name, false);
-                // FIXME is it possible to define groups at the root level?
-                currentContainer = currentContainer.getParent();
-            }
-        }
+        Container project = null;
+        if (groupType != GroupEnumType.SITE)
+            project = container.getProject();
+
+        Integer groupId = SecurityManager.getGroupId(project, name, false);
         if (groupId != null)
             return SecurityManager.getGroup(groupId);
         else
             return null;
     }
 
-    public static void importGroupMembers(Group group, GroupType xmlGroupType, Logger log, Container container)
+    public static void importGroupMembers(@Nullable Group group, GroupType xmlGroupType, Logger log, Container container)
     {
         // don't do anything if the group has no members (i.e., empty groups will not be created upon import)
         if (group != null && xmlGroupType != null && (xmlGroupType.getGroups() != null || xmlGroupType.getUsers() != null))
@@ -271,7 +274,7 @@ public class GroupManager
             {
                 for (GroupRefType xmlGroupMember : xmlGroupType.getGroups().getGroupArray())
                 {
-                    Group memberGroup = getGroup(container, xmlGroupMember.getName(), true);
+                    Group memberGroup = getGroup(container, xmlGroupMember.getName(), xmlGroupMember.getType());
                     if (memberGroup != null)
                     {
                         try
@@ -281,7 +284,7 @@ public class GroupManager
                         catch (InvalidGroupMembershipException e)
                         {
                             // Best effort, but log any exceptions
-                            ExceptionUtil.logExceptionToMothership(null, e);
+                            log.warn(e);
                         }
                     }
                     else
@@ -307,7 +310,7 @@ public class GroupManager
                             catch (InvalidGroupMembershipException e)
                             {
                                 // Best effort, but log any exceptions
-                                ExceptionUtil.logExceptionToMothership(null, e);
+                                log.warn(e);
                             }
                         }
                         else
