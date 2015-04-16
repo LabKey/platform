@@ -604,7 +604,7 @@ LABKEY.Query = new function()
          * Returns a list of reports, views and/or datasets in a container
          * @param config
          * @param {String} [config.containerPath] A container path in which to execute this command.  If not provided, the current container will be used
-         * @param {Array} [config.dataTypes] An array of data types to return, which can be any of: 'reports', 'datasets' or 'queries'.  If blank, all will be returned
+         * @param {Array} [config.dataTypes] An array of data types to return, which can be any of: 'reports', 'datasets' or 'queries'.  If null, all will be returned
          * @param {Function} [config.success] A function called on success.  It will be passed a single argument with the following properties:
          * <ul>
          * <li>data: An array with one element per dataview.  Each view is a map with the following properties:
@@ -643,10 +643,16 @@ LABKEY.Query = new function()
             if(config.dataTypes)
                 dataObject.dataTypes = config.dataTypes;
 
+            var callbackFn = LABKEY.Utils.getOnSuccess(config);
+            var success = LABKEY.Utils.getCallbackWrapper(function(data, response, options){
+                                            if (callbackFn)
+                                                callbackFn.call(config.scope || this, data.data, options, response);
+                                        }, this);
+
             return LABKEY.Ajax.request({
-                url : LABKEY.ActionURL.buildURL('study', 'browseData', config.containerPath),
+                url : LABKEY.ActionURL.buildURL('reports', 'browseData', config.containerPath),
                 method : 'POST',
-                success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), false, config.scope),
+                success: success,
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 jsonData : dataObject,
                 headers : {
