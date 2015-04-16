@@ -282,7 +282,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             try
             {
                 // If it produces nothing for the command line, then this command should not be executed.
-                return commandNameConverter.toArgs(task, new HashSet<TaskToCommandArgs>()).length != 0;
+                return commandNameConverter.toArgs(task, new HashSet<TaskToCommandArgs>()).size() != 0;
             }
             finally
             {
@@ -340,7 +340,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             _converter = converter;
         }
 
-        public String[] toArgs(CommandTask task) throws IOException
+        public List<String> toArgs(CommandTask task) throws IOException
         {
             return _converter.toArgs(task, new HashSet<TaskToCommandArgs>());
         }

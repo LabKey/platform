@@ -16,7 +16,6 @@
 package org.labkey.pipeline.api;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
@@ -41,6 +40,7 @@ import javax.script.ScriptEngineManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -220,7 +220,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
     }
 
     @Override
-    public String[] toArgs(CommandTask task) throws IOException
+    public List<String> toArgs(CommandTask task) throws IOException
     {
         throw new IllegalStateException();
     }
