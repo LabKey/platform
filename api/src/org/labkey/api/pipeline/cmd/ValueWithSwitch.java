@@ -15,16 +15,19 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * <code>ValueWithSwitch</code>
 */
 public class ValueWithSwitch extends AbstractValueToNamedSwitch
 {
-    public String[] toArgs(String value)
+    public List<String> toArgs(String value)
     {
         if (value != null && value.length() > 0)
             return getSwitchFormat().format(getSwitchName(), value);
 
-        return new String[0];
+        return Collections.emptyList();
     }
 }

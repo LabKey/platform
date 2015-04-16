@@ -15,6 +15,10 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Used for -SWITCH_NAME SWITCH_VALUE arguments
 */
@@ -48,22 +52,22 @@ public class UnixSwitchFormat implements SwitchFormat
         return _switch + name;
     }
 
-    public String[] format(String name)
+    public List<String> format(String name)
     {
         return format(name, null);
     }
 
-    public String[] format(String name, String value)
+    public List<String> format(String name, String value)
     {
         // If no value, return only the formatted switch.
         if (value == null)
-            return new String[] { getCommandSwitch(name) };
+            return Collections.singletonList(getCommandSwitch(name));
 
         // If separator is a space, then return two separate command args.
         if (" ".equals(_separator))
-            return new String[] { getCommandSwitch(name), value };
+            return Arrays.asList(getCommandSwitch(name), value);
 
         // Format as a single command arg.
-        return new String[] { getCommandSwitch(name) + getSeparator() + value };
+        return Arrays.asList(getCommandSwitch(name) + getSeparator() + value);
     }
 }

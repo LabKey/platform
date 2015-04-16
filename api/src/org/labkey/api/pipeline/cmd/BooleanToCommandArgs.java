@@ -15,8 +15,9 @@
  */
 package org.labkey.api.pipeline.cmd;
 
-import java.util.Set;
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
 /**
  * <code>BooleanToCommandArgs</code>
@@ -53,7 +54,7 @@ public class BooleanToCommandArgs extends JobParamToCommandArgs
         elseConverter.setParent(this);
     }
 
-    public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
         String value = getValue(task.getJob());
         if ("yes".equalsIgnoreCase(value))

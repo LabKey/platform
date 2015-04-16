@@ -16,20 +16,21 @@
 package org.labkey.api.pipeline.cmd;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <code>PathInLine</code>
 */
 public class PathInLine extends PathToCommandArgs
 {
-    public String[] toArgs(String[] paths)
+    public List<String> toArgs(String[] paths)
     {
-        ArrayList<String> args = new ArrayList<>();
+        List<String> args = new ArrayList<>();
         for (String path : paths)
         {
             if (path != null && path.length() > 0)
                 args.add(path);
         }
-        return args.toArray(new String[args.size()]);
+        return args;
     }
 }

@@ -17,6 +17,9 @@ package org.labkey.api.pipeline.cmd;
 
 import org.labkey.api.util.StringSubstitution;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * <code>SubstitutionInLine</code>
 */
@@ -44,15 +47,15 @@ public class SubstitutionInLine extends ValueToCommandArgs
         _converter.setSubstitution(substitution);
     }
 
-    public String[] toArgs(String value)
+    public List<String> toArgs(String value)
     {
         if (value != null)
         {
             String valueSubst = _converter.makeSubstitution(value);
             if (valueSubst != null)
-                return new String[] { valueSubst };
+                return Collections.singletonList(valueSubst);
         }
 
-        return new String[0];
+        return Collections.emptyList();
     }
 }

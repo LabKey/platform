@@ -17,6 +17,9 @@ package org.labkey.api.pipeline.cmd;
 
 import org.labkey.api.util.StringSubstitution;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * <code>SubstitutionWithSwitch</code>
 */
@@ -44,7 +47,7 @@ public class SubstitutionWithSwitch extends AbstractValueToNamedSwitch
         _converter.setSubstitution(substitution);
     }
 
-    public String[] toArgs(String value)
+    public List<String> toArgs(String value)
     {
         if (value != null)
         {
@@ -53,6 +56,6 @@ public class SubstitutionWithSwitch extends AbstractValueToNamedSwitch
                 return getSwitchFormat().format(getSwitchName(), valueSubst);
         }
 
-        return new String[0];
+        return Collections.emptyList();
     }
 }

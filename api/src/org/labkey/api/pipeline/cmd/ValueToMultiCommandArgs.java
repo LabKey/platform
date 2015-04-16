@@ -16,7 +16,8 @@
 package org.labkey.api.pipeline.cmd;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * <code>ValueToMultiCommandArgs</code>
@@ -47,7 +48,7 @@ public class ValueToMultiCommandArgs extends ValueToCommandArgs
         converter.setParent(this);
     }
 
-    public String[] toArgs(String value)
+    public List<String> toArgs(String value)
     {
         if (value != null && value.length() > 0)
         {
@@ -55,10 +56,10 @@ public class ValueToMultiCommandArgs extends ValueToCommandArgs
 
             ArrayList<String> params = new ArrayList<>();
             for (String part : valueParts)
-                params.addAll(Arrays.asList(_converter.toArgs(part)));
-            return params.toArray(new String[params.size()]);
+                params.addAll(_converter.toArgs(part));
+            return params;
         }
 
-        return new String[0];
+        return Collections.emptyList();
     }
 }

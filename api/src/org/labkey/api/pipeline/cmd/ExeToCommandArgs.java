@@ -17,11 +17,12 @@ package org.labkey.api.pipeline.cmd;
 
 import org.labkey.api.pipeline.PipelineJobService;
 
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <code>ExeToCommandArgs</code>
@@ -72,18 +73,18 @@ public class ExeToCommandArgs extends ListToCommandArgs
         return (jobParams == null ? null : jobParams.get(_versionParamName));
     }
 
-    public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
         if (_exePath == null || _exePath.length() == 0)
-            return new String[0];
+            return Collections.emptyList();
 
         ArrayList<String> args = new ArrayList<>();
 
         RequiredInLine converterInline = new RequiredInLine();
         converterInline.setValue(PipelineJobService.get().getExecutablePath(_exePath,
                 task.getInstallPath(), _softwarePackage, getVersion(task), task.getJob().getLogger()));
-        args.addAll(Arrays.asList(converterInline.toArgs(task, visited)));
+        args.addAll(converterInline.toArgs(task, visited));
 
-        return args.toArray(new String[args.size()]);
+        return args;
     }
 }

@@ -15,11 +15,10 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.io.IOException;
 
 /**
  * <code>ListToCommandArgs</code>
@@ -63,11 +62,11 @@ public class ListToCommandArgs extends TaskToCommandArgs
         _converters.add(converter);
     }
 
-    public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
         ArrayList<String> args = new ArrayList<>();
         for (TaskToCommandArgs converter : getConverters())
-            args.addAll(Arrays.asList(converter.toArgs(task, visited)));
-        return args.toArray(new String[args.size()]);
+            args.addAll(converter.toArgs(task, visited));
+        return args;
     }
 }

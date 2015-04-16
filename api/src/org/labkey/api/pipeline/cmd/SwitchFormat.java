@@ -15,12 +15,14 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import java.util.List;
+
 /**
  * <code>SwitchFormat</code>
 */
 public interface SwitchFormat
 {
-    String[] format(String name);
+    List<String> format(String name);
 
-    String[] format(String name, String value);
+    List<String> format(String name, String value);
 }

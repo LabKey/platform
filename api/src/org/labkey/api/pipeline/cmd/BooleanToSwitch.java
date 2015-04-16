@@ -15,6 +15,9 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * <code>BooleanToSwitch</code>
 */
@@ -37,14 +40,14 @@ public class BooleanToSwitch extends AbstractValueToNamedSwitch
         _negative = negative;
     }
 
-    public String[] toArgs(String value)
+    public List<String> toArgs(String value)
     {
-        String[] params = getSwitchFormat().format(getSwitchName());
+        List<String> params = getSwitchFormat().format(getSwitchName());
 
         if ((!_negative && "yes".equalsIgnoreCase(value)) ||
                 (_negative && "no".equalsIgnoreCase(value)))
             return params;
 
-        return new String[0];
+        return Collections.emptyList();
     }
 }

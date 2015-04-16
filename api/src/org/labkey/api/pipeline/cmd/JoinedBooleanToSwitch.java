@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.io.IOException;
@@ -38,17 +39,17 @@ public class JoinedBooleanToSwitch extends TaskToCommandArgs
             converter.setParent(this);
     }
 
-    public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
-        StringBuffer switches = new StringBuffer();
+        StringBuilder switches = new StringBuilder();
         for (BooleanToSwitch converter : getConverters())
         {
-            if (converter.toArgs(task, visited).length > 0)
+            if (converter.toArgs(task, visited).size() > 0)
                 switches.append(converter.getSwitchName());
         }
         if (switches.length() > 0)
             return getSwitchFormat().format(switches.toString());
 
-        return new String[0];
+        return Collections.emptyList();
     }
 }

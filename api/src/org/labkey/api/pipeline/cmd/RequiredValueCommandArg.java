@@ -15,8 +15,9 @@
  */
 package org.labkey.api.pipeline.cmd;
 
-import java.util.Set;
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
 /**
  * <code>RequiredValueCommandArg</code>
@@ -46,7 +47,7 @@ public class RequiredValueCommandArg extends JobParamToCommandArgs
         _formatter = formatter;
     }
 
-    public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
         return _formatter.toArgs(_value);
     }

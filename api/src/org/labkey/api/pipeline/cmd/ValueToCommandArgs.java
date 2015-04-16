@@ -15,11 +15,12 @@
  */
 package org.labkey.api.pipeline.cmd;
 
-import java.util.Set;
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
 /**
-     * <code>ValueToCommandArgs<code> handles the work of converting the key
+ * <code>ValueToCommandArgs<code> handles the work of converting the key
  * supplied in the Spring configuration to a value from the <code>PipelineJob</code>.
  * <p>
  * Currently, this is limited to looking at the values in
@@ -28,10 +29,10 @@ import java.io.IOException;
  */
 public abstract class ValueToCommandArgs extends JobParamToCommandArgs
 {
-    public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
         return toArgs(getValue(task.getJob()));
     }
 
-    abstract public String[] toArgs(String value);
+    abstract public List<String> toArgs(String value);
 }

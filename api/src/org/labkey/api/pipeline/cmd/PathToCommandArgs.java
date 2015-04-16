@@ -15,18 +15,19 @@
  */
 package org.labkey.api.pipeline.cmd;
 
-import java.util.Set;
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
 /**
  * <code>PathToCommandArgs</code>
 */
 public abstract class PathToCommandArgs extends TaskPathToCommandArgs
 {
-    public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
         return toArgs(getPaths(task));
     }
 
-    abstract public String[] toArgs(String[] paths);
+    abstract public List<String> toArgs(String[] paths);
 }

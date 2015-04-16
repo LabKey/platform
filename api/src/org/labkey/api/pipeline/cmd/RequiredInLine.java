@@ -19,6 +19,8 @@ import org.labkey.api.pipeline.PipelineJobService;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -87,8 +89,8 @@ public class RequiredInLine extends TaskToCommandArgs
         return isAddPipelineToolsDir() ? PipelineJobService.get().getExecutablePath(getValue(), null,  _softwarePackage, getVersion(task), task.getJob().getLogger()) : getValue();
     }
 
-    public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
-        return new String[] { getFullValue(task) };
+        return Collections.singletonList(getFullValue(task));
     }
 }

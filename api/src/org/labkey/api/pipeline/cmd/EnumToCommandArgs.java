@@ -15,9 +15,11 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.io.IOException;
 
 /**
  * <code>EnumToCommandArgs</code>
@@ -43,7 +45,7 @@ public class EnumToCommandArgs extends JobParamToCommandArgs
         return _converters.get(value);
     }
 
-    public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
         String keyConverter = getValue(task.getJob());
         if (keyConverter != null)
@@ -53,6 +55,6 @@ public class EnumToCommandArgs extends JobParamToCommandArgs
                 return converter.toArgs(task, visited);
         }
 
-        return new String[0];
+        return Collections.emptyList();
     }
 }

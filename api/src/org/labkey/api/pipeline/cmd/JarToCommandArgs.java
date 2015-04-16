@@ -19,7 +19,8 @@ import org.labkey.api.pipeline.PipelineJobService;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -77,27 +78,27 @@ public class JarToCommandArgs extends ListToCommandArgs
         return (jobParams == null ? null : jobParams.get(_versionParamName));
     }
 
-    public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
         if (_jarPath == null || _jarPath.length() == 0)
-            return new String[0];
+            return Collections.emptyList();
 
         ArrayList<String> args = new ArrayList<>();
 
         RequiredInLine converterInline = new RequiredInLine();
         converterInline.setParent(this);
         converterInline.setValue(PipelineJobService.get().getJavaPath());
-        args.addAll(Arrays.asList(converterInline.toArgs(task, visited)));
+        args.addAll(converterInline.toArgs(task, visited));
 
         for (TaskToCommandArgs converter : getConverters())
-            args.addAll(Arrays.asList(converter.toArgs(task, visited)));
+            args.addAll(converter.toArgs(task, visited));
 
         args.add("-jar");
 
         converterInline.setValue(PipelineJobService.get().getJarPath(_jarPath,
                 task.getInstallPath(), _softwarePackage, getVersion(task)));
-        args.addAll(Arrays.asList(converterInline.toArgs(task, visited)));
+        args.addAll(converterInline.toArgs(task, visited));
 
-        return args.toArray(new String[args.size()]);
+        return args;
     }
 }

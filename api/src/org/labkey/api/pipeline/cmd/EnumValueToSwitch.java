@@ -15,6 +15,8 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,11 +41,11 @@ public class EnumValueToSwitch extends ValueToCommandArgs
         _switches = switches;
     }
 
-    public String[] toArgs(String value)
+    public List<String> toArgs(String value)
     {
         if (value != null)
             return getSwitchFormat().format(getSwitchName(value));
 
-        return new String[0];
+        return Collections.emptyList();
     }
 }
