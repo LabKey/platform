@@ -53,15 +53,38 @@ function validateForm(form)
 {
     var trimmedTitle = form.title.value.trim();
 
-    if (trimmedTitle.length > 0)
-        return true;
+    if (trimmedTitle.length == 0)
+    {
+        Ext4.MessageBox.alert("Error", "Title must not be blank.");
+        Ext4.get('submitButton').replaceCls('labkey-disabled-button', 'labkey-button');
+        return false;
+    }
 
-    Ext.Msg.alert("Error", "Title must not be blank.");
-    Ext.get('submitButton').replaceClass('labkey-disabled-button', 'labkey-button');
-    return false;
+    var text = document.getElementById('body').value.toLowerCase();
+    var textType = document.getElementById('rendererType').value;
+    if ((text.indexOf("<a") != -1 || text.indexOf("<table") != -1 || text.indexOf("<div") != -1 || text.indexOf("<span") != -1) && textType != 'HTML')
+    {
+        var currentTypeDescription = document.getElementById('rendererType').options[document.getElementById('rendererType').selectedIndex].text;
+        Ext4.MessageBox.confirm("Confirm message formatting", "The content of your message may contain HTML. Are you sure that you want to submit it as " + currentTypeDescription + "?",
+                function (btn)
+                {
+                    if (btn == 'yes')
+                    {
+                        form.submit();
+                    }
+                    else
+                    {
+                        Ext4.get('submitButton').replaceCls('labkey-disabled-button', 'labkey-button');
+                    }
+                }
+        );
+        return false;
+    }
+
+    return true;
 }
 </script>
-<labkey:form method="POST" enctype="multipart/form-data" action="<%=insertUrl%>" onsubmit="return validateForm(this)">
+<labkey:form method="POST" enctype="multipart/form-data" action="<%=insertUrl%>" id="insertMessageForm">
 <input type=hidden name=cancelUrl value="<%=h(null != cancelURL ? cancelURL.getLocalURIString() : null)%>">
 <%=generateReturnUrlFormField(cancelURL)%>
 <input type=hidden name=fromDiscussion value="<%=bean.fromDiscussion%>">
@@ -100,7 +123,7 @@ function validateForm(form)
     if (settings.hasFormatPicker())
     {
         %><tr><td class="labkey-form-label">Render As</td><td colspan="2">
-        <select name="rendererType"><%
+        <select name="rendererType" id="rendererType"><%
             for (WikiRendererType type : bean.renderers)
             {
                 String value = type.name();
@@ -129,7 +152,7 @@ function validateForm(form)
         }
     %>
 </table>
-<br>&nbsp;<%= button("Submit").submit(true).attributes("id=submitButton").disableOnClick(true) %>&nbsp;<%
+<br>&nbsp;<%= button("Submit").submit(true).onClick("return validateForm(this.form)").attributes("id=submitButton").disableOnClick(true) %>&nbsp;<%
 if (null != cancelURL)
 {
     %><%= button("Cancel").href(cancelURL) %><%
@@ -145,10 +168,8 @@ else
 <p/>
 <% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>
 <script type="text/javascript">
-    LABKEY.requiresExt3(true, function() {
-        Ext.onReady(function(){
-            new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
-        });
+    Ext.onReady(function(){
+        new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
     });
 </script>
 

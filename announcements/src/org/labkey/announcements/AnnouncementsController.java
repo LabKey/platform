@@ -112,6 +112,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -1184,6 +1185,7 @@ public class AnnouncementsController extends SpringActionController
         {
             super("/org/labkey/announcements/insert.jsp", new InsertBean(), form, cancelURL, title, errors, null, reshow, fromDiscussion);
 
+            addClientDependency(ClientDependency.fromPath("Ext4"));
             InsertBean bean = getModelBean();
             bean.allowMultipleDiscussions = allowMultipleDiscussions;
         }
