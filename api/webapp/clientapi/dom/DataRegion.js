@@ -1367,31 +1367,35 @@ if (!LABKEY.DataRegions)
                     var showFn = function(id, panel, element, callback, scope) {
                         element.removeClass('extContainer');
                         if (first) {
+                            panel.hide();
                             panel.getEl().appendTo(Ext4.get(element[0]));
                             first = false;
                         }
                         panel.doLayout();
-                        panel.setVisible(true);
-                        Ext4.get(element[0]).slideIn('t', {
-                            callback: function() {
-                                callback.call(scope);
-                            },
-                            duration: 400,
-                            scope: this
-                        });
+                        panel.show();
+                        callback.call(scope);
+                        //Ext4.get(element[0]).slideIn('t', {
+                        //    callback: function() {
+                        //        callback.call(scope);
+                        //    },
+                        //    duration: 400,
+                        //    scope: this
+                        //});
                     };
 
                     // Called when customize view needs to be hidden
                     var hideFn = function(id, panel, element, callback, scope) {
-                        Ext4.get(element[0]).slideOut('t', {
-                            callback: function() {
-                                panel.setVisible(false);
-                                callback.call(scope);
-                            },
-                            concurrent: true,
-                            duration: 400,
-                            scope: this
-                        });
+                        panel.hide();
+                        callback.call(scope);
+                        //Ext4.get(element[0]).slideOut('t', {
+                        //    callback: function() {
+                        //        panel.setVisible(false);
+                        //        callback.call(scope);
+                        //    },
+                        //    concurrent: true,
+                        //    duration: 400,
+                        //    scope: this
+                        //});
                     };
 
                     this.publishPanel(CUSTOM_VIEW_PANELID, this.customizeView, showFn, hideFn, this);
@@ -1455,6 +1459,7 @@ if (!LABKEY.DataRegions)
                     if ($.isFunction(callback)) {
                         callback.call(scope || this);
                     }
+                    $(this).trigger($.Event('afterpanelhide'), [this]);
                 }, this);
             }
         }
@@ -1474,16 +1479,18 @@ if (!LABKEY.DataRegions)
             return;
         }
 
-        // find the ribbon container
-        var ribbon = _getHeaderSelector(this).find('.labkey-ribbon');
-
         this.hidePanel(function() {
             this.activePanelId = panelId;
+
+            // find the ribbon container
+            var ribbon = _getHeaderSelector(this).find('.labkey-ribbon');
+
             ribbon.show();
             config.show.call(config.scope || this, this.activePanelId, config.panel, ribbon, function() {
                 if ($.isFunction(callback)) {
                     callback.call(scope || this);
                 }
+                $(this).trigger($.Event('afterpanelshow'), [this]);
            }, this);
         }, this);
     };
@@ -2145,22 +2152,18 @@ if (!LABKEY.DataRegions)
                 scope: this
             });
 
-            callback.call(scope);
         }, this);
     };
 
     var _hideExt3Panel = function(id, panel, element, callback, scope) {
         var region = this;
 
-        var doHide = function() {
-            panel.hide();
-            panel.getEl().setVisible(false);
-            $(region).trigger('afterpanelhide');
-            callback.call(scope);
-        };
-
         panel.getEl().slideOut('t', {
-            callback: doHide,
+            callback: function() {
+                panel.hide();
+                panel.getEl().setVisible(false);
+                callback.call(scope);
+            },
             concurrent: true,
             duration: 0.4,
             scope: region
@@ -2197,7 +2200,6 @@ if (!LABKEY.DataRegions)
                 //}
 
                 var target = $('#' + renderTo);
-                console.log('target:', '#' + renderTo);
                 if (target.length > 0) {
 
                     //if (dr) {
@@ -2469,7 +2471,6 @@ if (!LABKEY.DataRegions)
 
             if (me.includeHeader) {
                 o = (me.hdrLocked ? me.headerSpacer : me.headerRow);
-                //hdrOffset = me.headerSpacer.getComputedHeight();
                 hdrOffset = me.headerSpacer.height();
             }
             else {
@@ -2627,7 +2628,6 @@ if (!LABKEY.DataRegions)
         // during query execution, so we didn't get column metadata back
         if (this.colHeaderRow) {
             this.rowContent = this.colHeaderRow.find('td.labkey-column-header');
-            //this.rowContent = Ext.query(" > td[class*=labkey-column-header]", dr.colHeaderRow.id);
         }
         if (this.colHeaderRowSpacer) {
             this.rowSpacerContent = this.colHeaderRowSpacer.find('td.labkey-column-header');
@@ -2663,22 +2663,21 @@ if (!LABKEY.DataRegions)
         // initialize panel listeners
         // 13669: customize view jumping when using drag/drop to reorder columns/filters/sorts
         // must manage DOMNodeInserted Listeners due to panels possibly dynamically adding elements to page
-        //dr.on('afterpanelshow', function ()
-        //{
-        //    Ext.EventManager.un(document, 'DOMNodeInserted', this.onResize, this); // suspend listener
-        //    this.onResize();
-        //}, this);
-        //
-        //dr.on('afterpanelhide', function ()
-        //{
-        //    Ext.EventManager.on(document, 'DOMNodeInserted', this.onResize, this); // resume listener
-        //    this.onResize();
-        //}, this);
+        region.on('afterpanelshow', function() {
+            $(document).unbind('DOMNodeInserted', onResize); // suspend listener
+            onResize();
+        }, this);
+
+        region.on('afterpanelhide', function() {
+            $(document).bind('DOMNodeInserted', onResize); // resume listener
+            onResize();
+        }, this);
 
         this.hdrCoord = [];
 
         reset(true);
 
+        // public methods
         return {
             disable: disable
         };
@@ -2699,7 +2698,6 @@ if (!LABKEY.DataRegions)
                 'internal/ViewDesigner/tab/SortTab.js',
                 'internal/ViewDesigner/FieldMetaRecord.js',
                 'internal/ViewDesigner/FieldMetaStore.js',
-                //'internal/ViewDesigner/FieldTreeLoader.js',
                 'internal/ViewDesigner/Designer.js'
             ], true, cb, scope);
         });
