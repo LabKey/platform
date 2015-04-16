@@ -22,6 +22,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
@@ -247,6 +248,7 @@ public class DuoController extends SpringActionController
         return new ActionURL(ValidateAction.class, c);
     }
 
+    @AllowedDuringUpgrade
     @RequiresNoPermission
     public class ValidateAction extends FormViewAction<DuoForm>
     {
