@@ -26,12 +26,8 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * User: jeckels
@@ -42,8 +38,6 @@ public abstract class AbstractXarImporter
     protected final XarSource _xarSource;
     protected final PipelineJob _job;
     protected ExperimentArchiveType _experimentArchive;
-
-    protected Map<String, Domain> _loadedDomains = new HashMap<>();
 
     public AbstractXarImporter(XarSource source, PipelineJob job)
     {

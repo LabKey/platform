@@ -242,7 +242,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public Vial getVial(Container container, User user, long rowId)
     {
-        SimpleFilter filter = new SimpleFilter("RowId", rowId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
         List<Vial> vials = getVials(container, user, filter);
         if (vials.isEmpty())
             return null;
@@ -1029,12 +1029,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return _requestEventHelper.create(user, event);
     }
 
-    private static final String REQUEST_SPECIMEN_JOIN = "SELECT SpecimenDetail.* FROM study.SampleRequest AS request, " +
-            "study.SampleRequestSpecimen AS map, study.SpecimenDetail AS SpecimenDetail\n" +
-            "WHERE request.RowId = map.SampleRequestId AND SpecimenDetail.GlobalUniqueId = map.SpecimenGlobalUniqueId\n" +
-            "AND request.Container = map.Container AND map.Container = SpecimenDetail.Container AND " +
-            "request.RowId = ? AND request.Container = ?;";
-
     public List<Vial> getRequestVials(SpecimenRequest request)
     {
         final Container container = request.getContainer();
@@ -1595,11 +1589,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         TableInfo primaryTypeTableInfo = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container);
         String tableInfoSelectName = "SpecimenWrap";
 
-        String cacheKey = container.getId() + "/SpecimenTypeSummary";
-        SpecimenTypeSummary summary = null; // (SpecimenTypeSummary) DbCache.get(tableInfoSpecimenWrap, cacheKey);   // TODO: different cache
-
-        if (summary != null)
-            return summary;
+        // TODO: consider caching
 
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (study == null)
@@ -1673,9 +1663,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         SpecimenTypeSummaryRow[] rows = new SqlSelector(StudySchema.getInstance().getSchema(), specimenTypeSummarySQL).getArray(SpecimenTypeSummaryRow.class);
 
-        summary = new SpecimenTypeSummary(container, rows);
-//        DbCache.put(tableInfoSpecimenWrap, cacheKey, summary, 8 * CacheManager.HOUR);
-        return summary;
+        return new SpecimenTypeSummary(container, rows);
     }
 
     private class DistinctValueList extends ArrayList<String> implements StudyCachable
