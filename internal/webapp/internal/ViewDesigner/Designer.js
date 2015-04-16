@@ -253,6 +253,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 isExpand = false,
                 me = this;
 
+            // each expand/collapse needs to configure the nodes again for hidden/checked
+            var expandCollapse = function() {
+                isExpand = true;
+                firstCheck();
+            };
+
             var firstCheck = function() {
                 if (loaded && rendered) {
                     if (isExpand) {
@@ -283,10 +289,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
                         this.fieldMetaStore.loadRawData(store.getProxy().getReader().rawData, true);
                     },
-                    expand: function() {
-                        isExpand = true;
-                        firstCheck(); // each expand needs to configure the nodes again for hidden/checked
-                    },
+                    expand: expandCollapse,
+                    collapse: expandCollapse,
                     scope: this
                 }
             });
@@ -316,6 +320,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                     afterrender: function() {
                         rendered = true;
                         firstCheck();
+                    },
+                    beforeselect: function(tree, record) {
+                        if (record.get('disabled')) {
+                            return false; // do not allow selection of disabled nodes
+                        }
                     },
                     scope: this
                 }
@@ -779,7 +788,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab) {
             // get the checked fields from the new tab's store
             var columns = tab.getList().getStore().getRange(),
-                checkedFieldKeys = {};
+                checkedFieldKeys = {},
+                treeView = this.getColumnTree().getView(),
+                nodeEl;
 
             for (var i = 0; i < columns.length; i++) {
                 checkedFieldKeys[columns[i].get('fieldKey').toUpperCase()] = true;
@@ -787,6 +798,18 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
             this.getColumnTree().getRootNode().cascadeBy(function(node) {
                 node.set('checked', node.internalId in checkedFieldKeys);
+
+                // yup, we have to manually do the disabled state ourselves! hooray!
+                if (node.get('disabled') === true) {
+                    nodeEl = treeView.getNode(node);
+                    if (nodeEl) {
+                        nodeEl = Ext4.get(nodeEl);
+
+                        // disable the checkbox
+                        Ext4.get(Ext4.DomQuery.select('input.x4-tree-checkbox', nodeEl.id)).set({disabled: ''});
+                        Ext4.get(Ext4.DomQuery.select('span.x4-tree-node-text', nodeEl.id)).setStyle('color', 'gray');
+                    }
+                }
             }, this);
         }
     },

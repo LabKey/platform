@@ -155,18 +155,17 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
     addRecord : function (fieldKey) {
         var list = this.getList();
         var defaultData = this.createDefaultRecordData(fieldKey);
-        //var record = new list.store.recordType(defaultData);
         var record = new list.store.model(defaultData);
-        var selected = list.getSelectedNodes();
-        //var selected = list.getSelectedIndexes();
-        if (Ext4.isEmpty(selected)) {
+        var listSelection = list.getSelectionModel().getSelection();
+
+        if (Ext4.isEmpty(listSelection)) {
             list.store.add([record]);
         }
         else {
-            //var index = Ext4.Array.max(selected);
-            //list.store.insert(index+1, record);
-            list.store.insert(0, record);
+            var index = list.getStore().indexOf(listSelection[listSelection.length-1]);
+            list.store.insert(index+1, record);
         }
+
         return record;
     },
 
