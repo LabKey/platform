@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
@@ -51,6 +52,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
@@ -169,7 +171,15 @@ public class AuthenticationManager
             if (null == provider)
                 throw new NotFoundException("Authentication provider is not valid");
 
-            ValidEmail email = validate(form);
+            ValidEmail email = validateAuthentication(form, errors);
+
+            // Show validation error(s), if any
+            if (errors.hasErrors())
+            {
+                getPageConfig().setTemplate(PageConfig.Template.Dialog);
+                return new SimpleErrorView(errors, false);
+            }
+
             HttpServletRequest request = getViewContext().getRequest();
 
             if (null != email)
@@ -188,11 +198,11 @@ public class AuthenticationManager
         @Override
         protected String getCommandClassMethodName()
         {
-            return "validate";
+            return "validateAuthentication";
         }
 
         public abstract @NotNull String getProviderName();
-        public abstract @Nullable ValidEmail validate(FORM form) throws Exception;
+        public abstract @Nullable ValidEmail validateAuthentication(FORM form, BindException errors) throws Exception;
 
         @Override
         public final NavTree appendNavTrail(NavTree root)
