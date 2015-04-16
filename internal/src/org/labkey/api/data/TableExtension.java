@@ -99,7 +99,7 @@ public final class TableExtension
 
         ColumnInfo lookupCol = _extensionFK.createLookupColumn(_extensionCol, baseCol.getName());
         AliasedColumn aliased = new AliasedColumn(_primaryTable, newColName, lookupCol);
-        if (lookupCol.isHidden())
+        if (lookupCol.isHidden() || baseCol.isHidden())
             aliased.setHidden(true);
 
         return _primaryTable.addColumn(aliased);
