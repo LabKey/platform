@@ -213,24 +213,35 @@ public class QueryImporter implements FolderImporter
             User user = ctx.getUser();
             DefaultSchema defSchema = DefaultSchema.get(user, container);
 
-            ValidateQueriesVisitor validator = new ValidateQueriesVisitor();
-            Boolean valid = validator.visitTop(defSchema, ctx.getLogger());
-
-            ctx.getLogger().info("Finished validating queries.");
-            if (valid != null && valid)
+            try
             {
-                assert validator.getTotalCount() == validator.getValidCount();
-                ctx.getLogger().info(String.format("Finished validating queries: All %d passed validation.", validator.getTotalCount()));
+                // Retrieve userid for queries being validated through the pipeline (study import).
+                QueryService.get().setEnvironment(QueryService.Environment.USER, user);
+                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, container);
+
+                ValidateQueriesVisitor validator = new ValidateQueriesVisitor();
+                Boolean valid = validator.visitTop(defSchema, ctx.getLogger());
+
+                ctx.getLogger().info("Finished validating queries.");
+                if (valid != null && valid)
+                {
+                    assert validator.getTotalCount() == validator.getValidCount();
+                    ctx.getLogger().info(String.format("Finished validating queries: All %d passed validation.", validator.getTotalCount()));
+                }
+                else
+                {
+                    ctx.getLogger().info(String.format("Finished validating queries: %d of %d failed validation.", validator.getInvalidCount(), validator.getTotalCount()));
+                }
+
+
+                for (Pair<String, ? extends Throwable> warn : validator.getWarnings())
+                {
+                    warnings.add(new PipelineJobWarning(warn.first, warn.second));
+                }
             }
-            else
+            finally
             {
-                ctx.getLogger().info(String.format("Finished validating queries: %d of %d failed validation.", validator.getInvalidCount(), validator.getTotalCount()));
-            }
-
-
-            for (Pair<String, ? extends Throwable> warn : validator.getWarnings())
-            {
-                warnings.add(new PipelineJobWarning(warn.first, warn.second));
+                QueryService.get().clearEnvironment();
             }
         }
 
