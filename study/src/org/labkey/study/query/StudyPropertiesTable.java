@@ -193,4 +193,10 @@ public class StudyPropertiesTable extends BaseStudyTable
     {
         return FieldKey.fromParts("Container");
     }
+
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return true;
+    }
 }

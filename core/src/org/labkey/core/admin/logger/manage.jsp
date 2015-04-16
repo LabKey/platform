@@ -149,7 +149,7 @@
         "INFO": "INFO",
         "DEBUG": "DEBUG",
         "TRACE": "TRACE",
-        "ALL": "ALL",
+        "ALL": "ALL"
     };
 
     //
@@ -170,7 +170,8 @@
             url: LABKEY.ActionURL.buildURL("logger", "list.api"),
             success: LABKEY.Utils.getCallbackWrapper(function (response)
             {
-                updateDisplay(response["loggers"]);
+                if (response.success)
+                    updateDisplay(response["data"]);
             }, this)
         });
     }
@@ -235,13 +236,15 @@
             url: LABKEY.ActionURL.buildURL("logger", "reset.api"),
             success: LABKEY.Utils.getCallbackWrapper(function (response)
             {
-                // Reset inputs back to default state
-                searchInput.value = '';
-                showLevelSelect.value = '';
-                showInheritedInput.checked = true;
+                if (response.success) {
+                    // Reset inputs back to default state
+                    searchInput.value = '';
+                    showLevelSelect.value = '';
+                    showInheritedInput.checked = true;
 
-                // Reload the list of loggers
-                refreshLoggers();
+                    // Reload the list of loggers
+                    refreshLoggers();
+                }
             })
         });
     }

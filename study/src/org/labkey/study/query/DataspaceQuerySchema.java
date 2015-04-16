@@ -15,12 +15,19 @@
  */
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.visualization.DataspaceVisualizationProvider;
+
+import java.util.List;
 
 /**
  * Created by matthew on 2/11/14.
@@ -31,9 +38,25 @@ import org.labkey.study.visualization.DataspaceVisualizationProvider;
 
 public class DataspaceQuerySchema extends StudyQuerySchema
 {
-    public DataspaceQuerySchema(StudyImpl study, User user, boolean mustCheckPermissions)
+    public static final String SHARED_STUDY_CONTAINER_FILTER_KEY = "sharedStudyContainerFilter.";
+
+    private final List<GUID> _sharedStudyContainerFilter;
+
+    public DataspaceQuerySchema(@NotNull StudyImpl study, User user, boolean mustCheckPermissions)
     {
         super(study, user, mustCheckPermissions);
+
+        Container project = study.getContainer().getProject();
+        List<GUID> containerIds = null;
+        ViewContext context = HttpView.hasCurrentView() ? HttpView.currentContext() : null;
+        if (project != null && context != null)
+        {
+            Object o = context.getSession().getAttribute(SHARED_STUDY_CONTAINER_FILTER_KEY + project.getRowId());
+            if (o instanceof List)
+                containerIds = (List)o;
+        }
+
+        _sharedStudyContainerFilter = containerIds;
     }
 
     /* for tables that support container filter, should they turn on support or not */
@@ -47,7 +70,7 @@ public class DataspaceQuerySchema extends StudyQuerySchema
     @Override
     ContainerFilter getDefaultContainerFilter()
     {
-        return new DataspaceContainerFilter(getUser());
+        return new DataspaceContainerFilter(getUser(), _sharedStudyContainerFilter);
     }
 
 

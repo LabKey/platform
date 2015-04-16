@@ -17,6 +17,8 @@
 package org.labkey.demo;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
+import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.NavTrailAction;
@@ -53,6 +55,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.Validator;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.AbstractController;
 import org.springframework.web.servlet.mvc.SimpleFormController;
@@ -709,4 +712,26 @@ public class DemoController extends SpringActionController
             return "Form Binding Test";
         }
     }
+
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class ConvertXlsToJsonAction extends ApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            Map<String, MultipartFile> files = getFileMap();
+            JSONObject json = new JSONObject();
+            json.put("success", true);
+
+            List<String> names = new ArrayList<>();
+            for (MultipartFile file : files.values())
+                names.add(file.getOriginalFilename());
+            json.put("fileNames", names);
+
+            return json;
+        }
+    }
+
+
 }

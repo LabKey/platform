@@ -150,7 +150,7 @@ public class LoggerController extends SpringActionController
     public class ListAction extends ApiAction<ListFilter>
     {
         @Override
-        public Map<String, Collection<LoggerLevel>> execute(ListFilter filter, BindException errors) throws Exception
+        public SimpleResponse<Collection<LoggerLevel>> execute(ListFilter filter, BindException errors) throws Exception
         {
             Level filterLevel = filter.getLevel() != null ? Level.toLevel(filter.getLevel()) : null;
 
@@ -171,7 +171,7 @@ public class LoggerController extends SpringActionController
                 loggers.add(LoggerLevel.fromLogger(log));
             }
 
-            return Collections.singletonMap("loggers", loggers);
+            return success(loggers);
         }
     }
 
@@ -184,7 +184,7 @@ public class LoggerController extends SpringActionController
             LogManager.resetConfiguration();
             URL url = getClass().getResource("/log4j.xml");
             DOMConfigurator.configure(url);
-            return new SimpleResponse(true);
+            return success();
         }
     }
 
@@ -199,7 +199,7 @@ public class LoggerController extends SpringActionController
         }
 
         @Override
-        public LoggerLevel execute(LoggerLevel loggerLevel, BindException errors) throws Exception
+        public SimpleResponse<LoggerLevel> execute(LoggerLevel loggerLevel, BindException errors) throws Exception
         {
             Logger logger = LogManager.getLogger(loggerLevel.name);
             if (logger == null)
@@ -211,7 +211,7 @@ public class LoggerController extends SpringActionController
                 logger.setLevel(Level.toLevel(loggerLevel.level));
             }
 
-            return LoggerLevel.fromLogger(logger);
+            return success(LoggerLevel.fromLogger(logger));
         }
     }
 
