@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.log4j.Logger;
+import org.apache.poi.ss.formula.functions.T;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -513,4 +514,29 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
     public abstract Object execute(FORM form, BindException errors) throws Exception;
 
+    //
+    // Static helpers to create a simple response object for Jackson serialization
+    //
+
+    public static SimpleResponse success()
+    {
+        return new SimpleResponse(true);
+    }
+
+    public static SimpleResponse success(String message)
+    {
+        return new SimpleResponse(true, message);
+    }
+
+    public static <T> SimpleResponse<T> success(T data)
+    {
+        return new SimpleResponse<>(true, null, data);
+    }
+
+    public static <T> SimpleResponse<T> success(String message, T data)
+    {
+        return new SimpleResponse<>(true, message, data);
+    }
+
 }
+

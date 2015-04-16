@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.JdbcType;
@@ -277,6 +278,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue
         _str = str;
     }
 
+    @JsonValue
     @Override
     public String toString()
     {
