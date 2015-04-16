@@ -91,7 +91,7 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest implements Sq
         timeChartWizard.saveReport("Test time chart", "", true);
     }
 
-    @LogMethod(category = LogMethod.MethodType.SETUP)
+    @LogMethod
     protected void setupFolder()
     {
         _containerHelper.createProject(getProjectName(), null);
