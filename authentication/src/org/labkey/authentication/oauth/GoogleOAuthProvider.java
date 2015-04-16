@@ -141,7 +141,7 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
     }
 
 
-    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response) throws ValidEmail.InvalidEmailException
+    public static AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response) throws ValidEmail.InvalidEmailException
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(AuthenticationModule.EXPERIMENTAL_OPENID_GOOGLE))
             return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);

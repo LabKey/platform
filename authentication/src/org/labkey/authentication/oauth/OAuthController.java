@@ -24,7 +24,8 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
-import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.security.AuthenticationManager.BaseSsoValidateAction;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
@@ -84,7 +85,8 @@ public class OAuthController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class ReturnAction extends AuthenticationManager.BaseSsoValidateAction<ReturnUrlForm>
+    @AllowedDuringUpgrade
+    public class ReturnAction extends BaseSsoValidateAction<ReturnUrlForm>
     {
         @NotNull
         @Override
@@ -95,9 +97,9 @@ public class OAuthController extends SpringActionController
 
         @Nullable
         @Override
-        public ValidEmail validate(ReturnUrlForm form) throws Exception
+        public ValidEmail validateAuthentication(ReturnUrlForm form, BindException errors) throws Exception
         {
-            AuthenticationProvider.AuthenticationResponse auth = new GoogleOAuthProvider().authenticate(getViewContext().getRequest(), getViewContext().getResponse());
+            AuthenticationProvider.AuthenticationResponse auth = GoogleOAuthProvider.authenticate(getViewContext().getRequest(), getViewContext().getResponse());
             if (auth.isAuthenticated())
                 return auth.getValidEmail();
             return null;

@@ -91,10 +91,10 @@ public class CasController extends SpringActionController
 
         @Nullable
         @Override
-        public ValidEmail validate(CasForm form) throws XmlException, IOException, ValidEmail.InvalidEmailException
+        public ValidEmail validateAuthentication(CasForm form, BindException errors) throws XmlException, IOException, ValidEmail.InvalidEmailException
         {
             String ticket = form.getTicket();
-            return CasManager.getInstance().validate(ticket);
+            return CasManager.getInstance().validate(ticket, errors);
         }
     }
 

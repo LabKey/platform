@@ -31,6 +31,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.util.URLHelper;
+import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -105,7 +106,7 @@ public class CasManager
         return CasController.getValidateURL().getURIString();
     }
 
-    public @Nullable ValidEmail validate(String ticket) throws IOException, XmlException, InvalidEmailException
+    public @Nullable ValidEmail validate(String ticket, BindException errors) throws IOException, XmlException, InvalidEmailException
     {
         // Assume CAS 3.0 protocol
         URLHelper validateURL = getServerURL("p3/serviceValidate");
@@ -131,6 +132,7 @@ public class CasManager
         }
         else
         {
+            errors.reject(null, "Invalid ticket");
             return null;
         }
     }
