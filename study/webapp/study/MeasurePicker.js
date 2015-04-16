@@ -1088,92 +1088,102 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         var filter = this.filter || LABKEY.Query.Visualization.Filter.create({schemaName: 'study'});
 
-        LABKEY.Query.Visualization.getMeasures({
-            filters      : [filter],
-            allColumns   : this.allColumns,
-            showHidden   : this.showHidden,
-            success      : function(measures, response){
-                this.isLoading = false;
-                this.measuresStoreData = Ext4.JSON.decode(response.responseText);
+        if (!this.measuresStoreData) {
+            LABKEY.Query.Visualization.getMeasures({
+                filters      : [filter],
+                allColumns   : this.allColumns,
+                showHidden   : this.showHidden,
+                success      : function(measures, response) {
+                    this.measuresStoreData = measures;
+                    this.processMeasuresStoreData();
+                },
+                failure      : function(info, response, options) {
+                    this.isLoading = false;
+                    LABKEY.Utils.displayAjaxErrorResponse(response, options);
+                },
+                scope : this
+            });
+        }
+        else {
+            this.processMeasuresStoreData();
+        }
+    },
 
-                this.sourcesStoreKeys = [];
-                this.sourcesStoreData = [];
+    processMeasuresStoreData : function() {
 
-                if (this.supportSelectionGroup === true && this.multiSelect) {
-                    this.measuresStoreData.measures.push({
-                        sortOrder: -100,
-                        schemaName: '_current',
-                        name: '',
-                        queryName: null,
-                        queryLabel: this.supportSelectionLabel,
-                        queryDescription: this.supportSelectionDescription,
-                        variableType: 'SELECTION'
-                    });
-                }
+        this.isLoading = false;
 
-                if (this.supportSessionGroup === true && this.multiSelect) {
-                    this.measuresStoreData.measures.push({
-                        sortOrder: -99,
-                        schemaName: '_session',
-                        name: '',
-                        queryName: null,
-                        queryLabel: this.supportSessionLabel,
-                        queryDescription: this.supportSessionDescription,
-                        variableType: 'SESSION'
-                    });
-                }
+        this.sourcesStoreKeys = [];
+        this.sourcesStoreData = [];
 
-                Ext4.each(this.getAdditionalMeasuresArray(), function(measure) {
-                    this.measuresStoreData.measures.push(measure);
-                }, this);
+        if (this.supportSelectionGroup === true && this.multiSelect) {
+            this.measuresStoreData.push({
+                sortOrder: -100,
+                schemaName: '_current',
+                name: '',
+                queryName: null,
+                queryLabel: this.supportSelectionLabel,
+                queryDescription: this.supportSelectionDescription,
+                variableType: 'SELECTION'
+            });
+        }
 
-                // Apply the user filter here. The userFilter is a function used to further filter down the available
-                // measures. Needed in CDS so the color picker only displays categorical measures.
-                if (this.hasOwnProperty('userFilter') && Ext.isFunction(this.userFilter))
-                {
-                    try
-                    {
-                        this.measuresStoreData.measures = this.measuresStoreData.measures.filter(this.userFilter);
-                    }
-                    catch (error)
-                    {
-                        // Fail gracefully and dump error into log.
-                        console.error('Error applying userFilter to measure data.');
-                        console.error(error);
-                    }
-                }
+        if (this.supportSessionGroup === true && this.multiSelect) {
+            this.measuresStoreData.push({
+                sortOrder: -99,
+                schemaName: '_session',
+                name: '',
+                queryName: null,
+                queryLabel: this.supportSessionLabel,
+                queryDescription: this.supportSessionDescription,
+                variableType: 'SESSION'
+            });
+        }
 
-                Ext4.each(this.measuresStoreData.measures, function(measure) {
-                    var key = measure.schemaName + "|" + measure.queryName;
+        Ext4.each(this.getAdditionalMeasuresArray(), function(measure) {
+            this.measuresStoreData.push(measure);
+        }, this);
 
-                    if (this.sourcesStoreKeys.indexOf(key) == -1)
-                    {
-                        this.sourcesStoreKeys.push(key);
-                        this.sourcesStoreData.push({
-                            sortOrder: measure.sortOrder,
-                            schemaName : measure.schemaName,
-                            queryName : measure.queryName,
-                            queryLabel : measure.queryLabel,
-                            description : measure.queryDescription,
-                            variableType : measure.variableType
-                        });
-                    }
-                }, this);
+        // Apply the user filter here. The userFilter is a function used to further filter down the available
+        // measures. Needed in CDS so the color picker only displays categorical measures.
+        if (this.hasOwnProperty('userFilter') && Ext.isFunction(this.userFilter))
+        {
+            try
+            {
+                this.measuresStoreData = this.measuresStoreData.filter(this.userFilter);
+            }
+            catch (error)
+            {
+                // Fail gracefully and dump error into log.
+                console.error('Error applying userFilter to measure data.');
+                console.error(error);
+            }
+        }
 
-                this.fireEvent('beforeMeasuresStoreLoad', this, this.measuresStoreData);
+        Ext4.each(this.measuresStoreData, function(measure) {
+            var key = measure.schemaName + "|" + measure.queryName;
 
-                // Load the full measures list for the measuresStore, but we will only show filtered sets of measures
-                this.measuresStore.loadRawData(this.measuresStoreData);
+            if (this.sourcesStoreKeys.indexOf(key) == -1)
+            {
+                this.sourcesStoreKeys.push(key);
+                this.sourcesStoreData.push({
+                    sortOrder: measure.sortOrder,
+                    schemaName : measure.schemaName,
+                    queryName : measure.queryName,
+                    queryLabel : measure.queryLabel,
+                    description : measure.queryDescription,
+                    variableType : measure.variableType
+                });
+            }
+        }, this);
 
-                // Load only the list of queries (i.e. sources) for the souresStore
-                this.getSourceStore().loadRawData({measures: this.sourcesStoreData});
-            },
-            failure      : function(info, response, options) {
-                this.isLoading = false;
-                LABKEY.Utils.displayAjaxErrorResponse(response, options);
-            },
-            scope : this
-        });
+        this.fireEvent('beforeMeasuresStoreLoad', this, {measures: this.measuresStoreData});
+
+        // Load the full measures list for the measuresStore, but we will only show filtered sets of measures
+        this.measuresStore.loadRawData({measures: this.measuresStoreData});
+
+        // Load only the list of queries (i.e. sources) for the souresStore
+        this.getSourceStore().loadRawData({measures: this.sourcesStoreData});
     },
 
     /**
@@ -1412,42 +1422,45 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     }
 });
 
+Ext4.define('LABKEY.ext4.Measure', {
+    extend : 'Ext.data.Model',
+    idProperty : 'alias', // default to alias, this can be overridden by the stores proxy/reader
+    fields : [
+        {name : 'id'},
+        {name : 'alias'},
+        {name : 'name'},
+        {name : 'label'},
+        {name : 'description'},
+        {name : 'isUserDefined'},
+        {name : 'isMeasure', defaultValue: false},
+        {name : 'isDimension', defaultValue: false},
+        {name : 'isDemographic', defaultValue: false},
+        {name : 'inNotNullSet', defaultValue: undefined},
+        {name : 'hidden', defaultValue: false},
+        {name : 'queryLabel'},
+        {name : 'queryName'},
+        {name : 'schemaName'},
+        {name : 'lookup', defaultValue: {}},
+        {name : 'type'},
+        {name : 'isKeyVariable', type: 'boolean', defaultValue: false},
+        {name : 'keyVariableGrouper', convert: function(val, rec){ return rec.data.isKeyVariable ? '0' : '1'; }},
+        {name : 'defaultScale'},
+        {name : 'sortOrder', defaultValue: 0},
+        {name : 'variableType', defaultValue: null}, // i.e. TIME, USER_GROUPS (default to null for query based variables)
+        {name : 'queryType', defaultValue: null}, // see LABKEY.Query.Visualization.Filter.QueryType
+        {name : 'sourceCount', defaultValue: undefined}
+    ]
+});
+
 Ext4.define('LABKEY.ext4.MeasuresStore', {
 
     extend: 'Ext.data.Store',
 
     constructor : function(config) {
 
-        if (!Ext4.ModelManager.isRegistered('Measure')) {
-            Ext4.define('Measure', {
-                extend : 'Ext.data.Model',
-                fields : [
-                    {name   : 'id'},
-                    {name   : 'name'},
-                    {name   : 'label'},
-                    {name   : 'description'},
-                    {name   : 'isUserDefined'},
-                    {name   : 'isDemographic', defaultValue: false},
-                    {name   : 'inNotNullSet', defaultValue: undefined},
-                    {name   : 'queryLabel'},
-                    {name   : 'queryName'},
-                    {name   : 'schemaName'},
-                    {name   : 'lookup', defaultValue: {}},
-                    {name   : 'type'},
-                    {name   : 'alias'},
-                    {name   : 'isKeyVariable', type: 'boolean', defaultValue: false},
-                    {name   : 'keyVariableGrouper', convert: function(val, rec){ return rec.data.isKeyVariable ? '0' : '1'; }},
-                    {name   : 'defaultScale'},
-                    {name   : 'sortOrder', defaultValue: 0},
-                    {name   : 'variableType', defaultValue: null}, // i.e. TIME, USER_GROUPS (default to null for query based variables)
-                    {name   : 'sourceCount', defaultValue: undefined}
-                ]
-            });
-        }
-
         Ext4.apply(this, config, {
             autoLoad: false,
-            model: 'Measure',
+            model: 'LABKEY.ext4.Measure',
             proxy: {
                 type: 'memory',
                 reader: {

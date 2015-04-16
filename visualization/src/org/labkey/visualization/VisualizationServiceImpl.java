@@ -228,6 +228,8 @@ public class VisualizationServiceImpl implements VisualizationService
             props.put("queryDescription", getQueryDefinition(query, _tableInfoMap));
             props.put("isUserDefined", !query.isTableQueryDefinition());
             props.put("isDemographic", isDemographicQueryDefinition(query));
+            props.put("hidden", column.isHidden() || (tableInfo != null && !tableInfo.getDefaultVisibleColumns().contains(column.getFieldKey())));
+            props.put("queryType", getQueryType(query, _tableInfoMap));
             props.put("id", count++);
 
             measuresJSON.add(props);
@@ -247,6 +249,8 @@ public class VisualizationServiceImpl implements VisualizationService
         props.put("description", StringUtils.trimToEmpty(col.getDescription()));
         props.put("alias", VisualizationSourceColumn.getAlias(query.getSchemaName(), getQueryName(query, false, _tableInfoMap), col.getName()));
 
+        props.put("isMeasure", col.isMeasure());
+        props.put("isDimension", col.isDimension());
         props.put("isKeyVariable", col.isKeyVariable());
         props.put("defaultScale", col.getDefaultScale().name());
 
@@ -300,5 +304,22 @@ public class VisualizationServiceImpl implements VisualizationService
         }
 
         return description;
+    }
+
+    private String getQueryType(QueryDefinition query, Map<QueryDefinition, TableInfo> _tableInfoMap)
+    {
+        if (_tableInfoMap.containsKey(query))
+        {
+            TableInfo table = _tableInfoMap.get(query);
+            if (table instanceof DatasetTable)
+                return VisualizationProvider.QueryType.datasets.toString();
+        }
+
+        if (query.isTableQueryDefinition())
+        {
+            return VisualizationProvider.QueryType.builtIn.toString();
+        }
+
+        return VisualizationProvider.QueryType.custom.toString();
     }
 }
