@@ -743,7 +743,6 @@ api/src/org/labkey/api/files/view/FilesWebPart.java -text
 api/src/org/labkey/api/files/view/customizeWebPart.jsp -text
 api/src/org/labkey/api/files/view/filesWebPart.jsp -text
 api/src/org/labkey/api/flow/api/FlowService.java -text
-api/src/org/labkey/api/issues/IssuesUrls.java -text
 api/src/org/labkey/api/iterator/BeanIterator.java -text
 api/src/org/labkey/api/iterator/CloseableFilteredIterator.java -text
 api/src/org/labkey/api/iterator/CloseableIterator.java -text
