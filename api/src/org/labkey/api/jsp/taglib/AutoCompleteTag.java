@@ -81,7 +81,7 @@ public abstract class AutoCompleteTag extends SimpleTagBase
         StringBuilder sb = new StringBuilder();
 
         sb.append("<script type=\"text/javascript\">");
-        sb.append("LABKEY.requiresExt4Sandbox();\n");
+        sb.append("LABKEY.requiresExt4Sandbox(true);\n");
         sb.append("LABKEY.requiresScript('completion.js');\n");
 
         sb.append("Ext4.onReady(function(){\n" +
