@@ -368,7 +368,7 @@ public class ParticipantGroupManager
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("LABKEY.requiresScript('study/ParticipantGroup.js', true, function(){");
+        sb.append("LABKEY.requiresScript('study/ParticipantGroup.js', function(){");
         sb.append(createNewParticipantGroupCallback(context, dataRegionName, fromSelection));
         sb.append("},this);");
 

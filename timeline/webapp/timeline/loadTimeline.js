@@ -56,7 +56,7 @@ LABKEY.requiresTimeline = function(fn)
             prefix + 'Timeline.js'
         ];
 
-        LABKEY.requiresScript(dependencies, true, fn, null, true);
+        LABKEY.requiresScript(dependencies, fn, null, true);
     }
     else
     {

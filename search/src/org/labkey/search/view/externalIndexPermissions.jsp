@@ -45,7 +45,7 @@
 </style>
 <script type="text/javascript">
 LABKEY.requiresCss("SecurityAdmin.css");
-LABKEY.requiresScript("SecurityAdmin.js", true);
+LABKEY.requiresScript("SecurityAdmin.js");
 Ext.QuickTips.init();
 </script>
 <script type="text/javascript">

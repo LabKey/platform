@@ -120,7 +120,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "    };\n" +
             "\n" +
             "   // Load the script dependencies for charts. \n" +
-            "   LABKEY.requiresScript('/vis/genericChart/genericChartHelper.js', true, function(){LABKEY.vis.GenericChartHelper.loadVisDependencies(dependencyCallback);});\n" +
+            "   LABKEY.requiresScript('/vis/genericChart/genericChartHelper.js', function(){LABKEY.vis.GenericChartHelper.loadVisDependencies(dependencyCallback);});\n" +
             "})();\n" +
             '</script>',
 

@@ -360,7 +360,7 @@
             config.dom = wikiEl;
 
             var dependencies = [ "tiny_mce/tiny_mce_src.js" ];
-            LABKEY.requiresScript(dependencies, true, function () { inlineWikiEdit(config); }, this, false);
+            LABKEY.requiresScript(dependencies, function () { inlineWikiEdit(config); }, this);
         },
         toggleTable : function(tocTable, expand, notify) {
             //Structure of a navtree table:

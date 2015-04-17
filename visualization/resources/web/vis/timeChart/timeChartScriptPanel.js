@@ -145,7 +145,7 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "    };\n" +
             "\n" +
             "    // Load the script dependencies for charts. \n" +
-            "    LABKEY.requiresScript('/vis/timeChart/timeChartHelper.js', true, function(){LABKEY.vis.TimeChartHelper.loadVisDependencies(dependencyCallback);});\n" +
+            "    LABKEY.requiresScript('/vis/timeChart/timeChartHelper.js', function(){LABKEY.vis.TimeChartHelper.loadVisDependencies(dependencyCallback);});\n" +
             "})();\n" +
             "</script>",
 
