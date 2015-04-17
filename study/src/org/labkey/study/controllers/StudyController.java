@@ -4693,7 +4693,7 @@ public class StudyController extends BaseStudyController
             "<div id=\"participantData\">Loading...</div>\n" +
             "\n" +
             "<script type=\"text/javascript\">\n" +
-            "    LABKEY.requiresClientAPI(function() {\n" +
+            "    LABKEY.requiresClientAPI(true, function() {\n" +
             "       /* get the participant id from the request URL: this parameter is required. */\n" +
             "       var participantId = LABKEY.ActionURL.getParameter('participantId');\n" +
             "       /* get the dataset id from the request URL: this is used to remember expand/collapse\n" +

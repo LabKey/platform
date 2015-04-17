@@ -29,7 +29,7 @@
     AddUsersForm form = (AddUsersForm)HttpView.currentModel();
 %>
 <script type="text/javascript">
-    LABKEY.requiresExt4Sandbox();
+    LABKEY.requiresExt4Sandbox(true);
     LABKEY.requiresScript('completion.js');
 </script>
 <script type="text/javascript">

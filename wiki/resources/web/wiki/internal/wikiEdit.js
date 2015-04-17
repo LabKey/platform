@@ -265,7 +265,7 @@ function tinyMceHandleEvent(evt) {
     };
 
     var getExt4 = function(cb) {
-        LABKEY.requiresExt4Sandbox(function() { Ext4.onReady(cb); });
+        LABKEY.requiresExt4Sandbox(true, function() { Ext4.onReady(cb); });
     };
 
     var getFileName = function(pathname) {

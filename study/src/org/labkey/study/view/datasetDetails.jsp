@@ -229,7 +229,7 @@ if (!pipelineSet)
 <% } %>
 
 <script type="text/javascript">
-    LABKEY.requiresExt4Sandbox();
+    LABKEY.requiresExt4Sandbox(true);
 </script>
 
 <script type="text/javascript">
