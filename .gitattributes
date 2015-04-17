@@ -867,11 +867,6 @@ api/src/org/labkey/api/module/SimpleModule.java -text
 api/src/org/labkey/api/module/SimpleModuleContainerListener.java -text
 api/src/org/labkey/api/module/SimpleWebPartFactory.java -text
 api/src/org/labkey/api/module/SpringModule.java -text
-api/src/org/labkey/api/ms1/MS1Service.java -text
-api/src/org/labkey/api/ms1/MS1Urls.java -text
-api/src/org/labkey/api/ms2/MS2Service.java -text
-api/src/org/labkey/api/ms2/MS2Urls.java -text
-api/src/org/labkey/api/ms2/SearchClient.java -text
 api/src/org/labkey/api/nab/NabUrls.java -text
 api/src/org/labkey/api/notification/EmailMessage.java -text
 api/src/org/labkey/api/notification/EmailPref.java -text

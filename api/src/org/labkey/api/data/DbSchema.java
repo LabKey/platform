@@ -28,7 +28,6 @@ import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.resource.Resource;
@@ -919,7 +918,7 @@ public class DbSchema
                     }
                     else if (t.getSchema().getName().equals("ms2") && null != t.getColumn("Run"))
                     {
-                        sbSql.append(" AND Run IN (SELECT Run FROM ").append(MS2Service.get().getRunsTableName()).append(" WHERE Deleted = ? ) ");
+                        sbSql.append(" AND Run IN (SELECT Run FROM ms2.runs WHERE Deleted = ? ) ");
                         sbSql.add(Boolean.FALSE);
                     }
 
