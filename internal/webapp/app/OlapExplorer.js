@@ -598,6 +598,8 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
 
     barLabelCls: 'barlabel',
 
+    barExpandHeight: 27,
+
     altRequestDimNamedFilters : undefined,
 
     statics: {
@@ -836,7 +838,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                 else // expand
                 {
                     animConfig = {
-                        to : {opacity: 1, height: 27},
+                        to : {opacity: 1, height: this.barExpandHeight},
                         setDisplay : 'block',
                         collapsed : false,
                         sign  : '-',
