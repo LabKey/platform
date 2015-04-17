@@ -1809,8 +1809,8 @@ public class QueryController extends SpringActionController
                 QueryView queryView = schema.createView(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryDef.getName(), errors);
                 if (queryView != null)
                 {
-                    List<ContainerFilter.Type> allowableContainerFilterTypes = queryView.getAllowableContainerFilterTypes();
-                    if (allowableContainerFilterTypes == null || allowableContainerFilterTypes.size() <= 1)
+                    Set<ContainerFilter.Type> allowableContainerFilterTypes = queryView.getAllowableContainerFilterTypes();
+                    if (allowableContainerFilterTypes.size() <= 1)
                     {
                         errors.reject(ERROR_MSG, "QueryView doesn't support inherited custom views");
                         return null;
