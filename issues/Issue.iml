@@ -18,6 +18,6 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="module" module-name="Issue-API" />
   </component>
 </module>
-

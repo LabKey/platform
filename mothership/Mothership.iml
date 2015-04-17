@@ -9,6 +9,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="Internal" />
+    <orderEntry type="module" module-name="Issue-API" />
   </component>
 </module>
-
