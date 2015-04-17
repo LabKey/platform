@@ -1627,7 +1627,7 @@ if (!LABKEY.DataRegions)
      */
     Proto._openFilter = function(columnName) {
         var me = this;
-        LABKEY.requiresExt3ClientAPI(true, function() {
+        LABKEY.requiresExt3ClientAPI(function() {
             new LABKEY.FilterDialog({
                 dataRegionName: me.name,
                 column: me.getColumn(columnName)
@@ -2092,7 +2092,7 @@ if (!LABKEY.DataRegions)
     };
 
     var _showExt3Panel = function(id, tabPanelConfig, element, callback, scope) {
-        LABKEY.requiresExt3ClientAPI(true, function() {
+        LABKEY.requiresExt3ClientAPI(function() {
             // can assume Ext 3 exists as 'Ext'
             element.addClass('extContainer');
             var panelDiv = Ext.get(element[0]);
@@ -2685,7 +2685,7 @@ if (!LABKEY.DataRegions)
 
 
     LABKEY.DataRegion2.loadViewDesigner = function(cb, scope) {
-        LABKEY.requiresExt4Sandbox(true, function() {
+        LABKEY.requiresExt4Sandbox(function() {
             LABKEY.requiresScript([
                 'internal/ViewDesigner/data/Cache.js',
                 'internal/ViewDesigner/ux/ComponentDataView.js',

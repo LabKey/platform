@@ -253,7 +253,7 @@
         // TODO: This should be considered 'Native UI' and be migrated away from ExtJS
         var showEditTabWindow = function(title, handler, name)
         {
-            LABKEY.requiresExt4Sandbox(true, function() {
+            LABKEY.requiresExt4Sandbox(function() {
                 Ext4.onReady(function() {
                     var nameTextField = Ext4.create('Ext.form.field.Text', {
                         xtype: 'textfield',
@@ -320,7 +320,7 @@
             };
 
             var loader = function() {
-                LABKEY.requiresExt4Sandbox(true, function() {
+                LABKEY.requiresExt4Sandbox(function() {
                     LABKEY.requiresScript('WebPartPermissionsPanel.js', true, display, this);
                 }, this);
             };
