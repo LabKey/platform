@@ -311,7 +311,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     }
                 };
 
-                LABKEY.requiresExt4Sandbox(true, function() {
+                LABKEY.requiresExt4Sandbox(function() {
                     LABKEY.requiresScript([
                         '/study/ReportFilterPanel.js',
                         '/study/ParticipantFilterPanel.js',

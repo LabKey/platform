@@ -19,14 +19,14 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-import java.io.*;
 
 /**
  * User: jeckels
@@ -40,7 +40,7 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
     {
         return new HtmlView("<textarea id=\"" + FORM_ELEMENT_NAME + "\" name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>\n" +
                 "<script type=\"text/javascript\">\n" +
-                "    LABKEY.requiresExt3ClientAPI(true, function() {\n" +
+                "    LABKEY.requiresExt3ClientAPI(function() {\n" +
                 "       Ext.EventManager.on('" + FORM_ELEMENT_NAME + "', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);\n" +
                 "    });\n" +
                 "</script>");

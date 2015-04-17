@@ -732,7 +732,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 {
                     if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
                     {
-                        out.write("<script type=\"text/javascript\">LABKEY.requiresExt4Sandbox(true);\nLABKEY.requiresScript(\"completion.js\");</script>");
+                        out.write("<script type=\"text/javascript\">LABKEY.requiresExt4Sandbox();\nLABKEY.requiresScript(\"completion.js\");</script>");
 
                         // wire up the completions div on input tag focus
                         StringBuilder sb = new StringBuilder();

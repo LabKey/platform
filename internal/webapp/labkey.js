@@ -96,8 +96,7 @@ if (typeof LABKEY == "undefined")
                     for (var c=0; c < cbs.length; c++)
                     {
                         cb = cbs[c];
-                        if (typeof cb.fn == "function")
-                            cb.fn.call(cb.scope);
+                        handle(cb.fn, cb.scope);
                     }
                 }
             };
@@ -120,7 +119,7 @@ if (typeof LABKEY == "undefined")
                 if (!cache[key])
                     cache[key] = [];
 
-                if (typeof cb == "function")
+                if (isFunction(cb))
                     cache[key].push({fn: cb, scope: s});
             };
 
@@ -220,6 +219,15 @@ if (typeof LABKEY == "undefined")
             return configs.submit;
         };
 
+        // simple callback handler that will type check then call with scope
+        var handle = function(callback, scope)
+        {
+            if (isFunction(callback))
+            {
+                callback.call(scope || this);
+            }
+        };
+
         // If we're in demo mode, replace each ID with an equal length string of "*".  This code should match DemoMode.id().
         var id = function(id)
         {
@@ -257,7 +265,7 @@ if (typeof LABKEY == "undefined")
                 'Ext.ux.dd.GridDragDropRowOrder.js'
             ];
 
-            requiresExt3ClientAPI(true, function() {
+            requiresExt3ClientAPI(function() {
                 requiresScript(scripts, true, function() {
                     requiresScript('designer/designer2.js', true, cb, scope)
                 });
@@ -267,9 +275,19 @@ if (typeof LABKEY == "undefined")
             requiresCss("groupTabPanel/UngroupedTab.css");
         };
 
+        var isBoolean = function(value)
+        {
+            return typeof value === "boolean";
+        };
+
         var isDirty = function()
         {
             return configs.dirty;
+        };
+
+        var isFunction = function(value)
+        {
+            return typeof value === "function";
         };
 
         var loadScripts = function()
@@ -338,12 +356,17 @@ if (typeof LABKEY == "undefined")
             return ret;
         };
 
-        var requiresClientAPI = function(immediate, callback, scope)
+        var requiresClientAPI = function(callback, scope)
         {
-            if (arguments.length < 1) immediate = true;
+            // backwards compat for 'immediate'
+            if (arguments.length > 0 && isBoolean(arguments[0]))
+            {
+                callback = arguments[1];
+                scope = arguments[2];
+            }
 
             var coreDone = function() {
-                requiresExt3ClientAPI(immediate, callback, scope);
+                requiresExt3ClientAPI(callback, scope);
             };
 
             if (configs.devMode)
@@ -381,35 +404,54 @@ if (typeof LABKEY == "undefined")
                     "clientapi/dom/GetData.js",
                     "clientapi/dom/WebPart.js"
                 ];
-                requiresScript(scripts, immediate, coreDone);
+                requiresScript(scripts, true, coreDone);
             }
             else
             {
-                requiresExt4Sandbox(immediate, function() {
-                    requiresScript("clientapi.min.js", immediate, coreDone);
+                requiresExt4Sandbox(function() {
+                    requiresScript("clientapi.min.js", true, coreDone);
                 });
             }
         };
 
-        var requiresExt3 = function(immediate, callback, scope)
+        var requiresExt3 = function(callback, scope)
         {
             // Mimic the results handed down by Ext3.lib.xml
-            if (arguments.length < 1) immediate = true;
 
-            // Require that these CSS files be placed first in the <head> block so that they can be overridden by user customizations
-            requiresCss(configs.extJsRoot + '/resources/css/ext-all.css');
+            // backwards compat for 'immediate'
+            if (arguments.length > 0 && isBoolean(arguments[0]))
+            {
+                callback = arguments[1];
+                scope = arguments[2];
+            }
 
-            requiresScript([
-                configs.extJsRoot + "/adapter/ext/ext-base" + (configs.devMode ?  "-debug.js" : ".js"),
-                configs.extJsRoot + "/ext-all" + (configs.devMode ?  "-debug.js" : ".js"),
-                configs.extJsRoot + "/ext-patches.js"
-            ], immediate, callback, scope, true);
+            if (window.Ext)
+            {
+                handle(callback, scope);
+            }
+            else
+            {
+                // Require that these CSS files be placed first in the <head> block so that they can be overridden by user customizations
+                requiresCss(configs.extJsRoot + '/resources/css/ext-all.css');
+
+                requiresScript([
+                    configs.extJsRoot + "/adapter/ext/ext-base" + (configs.devMode ?  "-debug.js" : ".js"),
+                    configs.extJsRoot + "/ext-all" + (configs.devMode ?  "-debug.js" : ".js"),
+                    configs.extJsRoot + "/ext-patches.js"
+                ], true, callback, scope, true);
+            }
         };
 
-        var requiresExt3ClientAPI = function(immediate, callback, scope)
+        var requiresExt3ClientAPI = function(callback, scope)
         {
             // Mimic the results handed down by clientapi/ext3.lib.xml
-            if (arguments.length < 1) immediate = true;
+
+            // backwards compat for 'immediate'
+            if (arguments.length > 0 && isBoolean(arguments[0]))
+            {
+                callback = arguments[1];
+                scope = arguments[2];
+            }
 
             var scripts;
 
@@ -454,23 +496,21 @@ if (typeof LABKEY == "undefined")
             LABKEY.requiresCss('groupTabPanel/UngroupedTab.css');
             LABKEY.requiresCss('GuidedTip.css');
 
-            if (!window.Ext)
+            requiresExt3(function()
             {
-                requiresExt3(immediate, function()
-                {
-                    //load individual scripts so that they get loaded from source tree
-                    requiresScript(scripts, immediate, callback, scope);
-                });
-            }
-            else
-            {
-                requiresScript(scripts, immediate, callback, scope);
-            }
+                //load individual scripts so that they get loaded from source tree
+                requiresScript(scripts, true, callback, scope);
+            });
         };
 
-        var requiresExt4ClientAPI = function(immediate, callback, scope)
+        var requiresExt4ClientAPI = function(callback, scope)
         {
-            if (arguments.length < 1) immediate = true;
+            // backwards compat for 'immediate'
+            if (arguments.length > 0 && isBoolean(arguments[0]))
+            {
+                callback = arguments[1];
+                scope = arguments[2];
+            }
 
             var scripts;
             if (configs.devMode)
@@ -498,38 +538,33 @@ if (typeof LABKEY == "undefined")
                 ];
             }
 
-            if (!window.Ext4)
+            requiresExt4Sandbox(function()
             {
-                requiresExt4Sandbox(immediate, function()
-                {
-                    requiresScript(scripts, immediate, callback, scope, true);
-                });
+                requiresScript(scripts, true, callback, scope, true);
+            });
+        };
+
+        var requiresExt4Sandbox = function(callback, scope)
+        {
+            // backwards compat for 'immediate'
+            if (arguments.length > 0 && isBoolean(arguments[0]))
+            {
+                callback = arguments[1];
+                scope = arguments[2];
+            }
+
+            if (window.Ext4)
+            {
+                handle(callback, scope);
             }
             else
             {
-                requiresScript(scripts, immediate, callback, scope, true);
-            }
-        };
-
-        var requiresExt4Sandbox = function(immediate, callback, scope)
-        {
-            if (!window.Ext4)
-            {
-                if (arguments.length < 1) immediate = true;
-
                 var scripts = [
                     configs.extJsRoot_42 + "/ext-all-sandbox" + (configs.devMode ?  "-debug.js" : ".js"),
                     configs.extJsRoot_42 + "/ext-patches.js"
                 ];
 
-                requiresScript(scripts, immediate, callback, scope);
-            }
-            else
-            {
-                if (typeof callback == "function")
-                {
-                    callback.call(scope || this);
-                }
+                requiresScript(scripts, true, callback, scope);
             }
         };
 
@@ -537,12 +572,6 @@ if (typeof LABKEY == "undefined")
         {
             if (arguments.length < 2 || (typeof immediate === "undefined"))
                 immediate = true;
-
-            var onScriptLoad = function(cb, s)
-            {
-                if (typeof cb == "function")
-                    cb.call(s);
-            };
 
             if (Object.prototype.toString.call(file) == "[object Array]")
             {
@@ -555,7 +584,9 @@ if (typeof LABKEY == "undefined")
                     {
                         loaded++;
                         if (loaded == requestedLength)
-                            onScriptLoad(callback, scope);
+                        {
+                            handle(callback, scope);
+                        }
                         else if (loaded < requestedLength)
                             requiresScript(file[loaded], immediate, chain, true);
                     };
@@ -575,7 +606,7 @@ if (typeof LABKEY == "undefined")
                         loaded++;
                         if (loaded == requestedLength)
                         {
-                            onScriptLoad(callback, scope);
+                            handle(callback, scope);
                         }
                     };
 
@@ -600,7 +631,7 @@ if (typeof LABKEY == "undefined")
             if (scriptCache.inCache(file))
             {
                 // cache hit -- script is loaded and ready to go
-                onScriptLoad(callback, scope);
+                handle(callback, scope);
                 return;
             }
             else if (scriptCache.inFlightCache(file))

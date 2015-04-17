@@ -13,7 +13,7 @@ LABKEY.Security = new function(impl) {
         // Helper for lazy intializing impersonation dependencies
         var _display = function(componentName)
         {
-            LABKEY.requiresExt4ClientAPI(true, function() {
+            LABKEY.requiresExt4ClientAPI(function() {
                 LABKEY.requiresScript('Impersonate.js', true, function() {
                     Ext4.onReady(function() {
                         Ext4.create(componentName).show();
