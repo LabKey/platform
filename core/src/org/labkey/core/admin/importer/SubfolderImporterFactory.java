@@ -158,11 +158,5 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
         {
             return Collections.emptyList();
         }
-
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
     }
 }

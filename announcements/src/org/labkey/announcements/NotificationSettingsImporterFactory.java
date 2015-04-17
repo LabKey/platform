@@ -92,11 +92,5 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
         {
             return Collections.emptyList();
         }
-
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
     }
 }

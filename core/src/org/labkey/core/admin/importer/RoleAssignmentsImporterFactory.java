@@ -150,11 +150,5 @@ public class RoleAssignmentsImporterFactory extends AbstractFolderImportFactory
         {
             return Collections.emptyList();
         }
-
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
     }
 }

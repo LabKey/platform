@@ -70,12 +70,6 @@ public class FolderListImporter implements FolderImporter
         return Collections.emptyList();
     }
 
-    @Override
-    public boolean supportsVirtualFile()
-    {
-        return true;
-    }
-
     public static class Factory extends AbstractFolderImportFactory
     {
         public FolderImporter create()

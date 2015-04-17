@@ -186,11 +186,5 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
         {
             return Collections.emptyList();
         }
-
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
     }
 }

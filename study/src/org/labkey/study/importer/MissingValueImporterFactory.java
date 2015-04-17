@@ -93,12 +93,6 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
             return Collections.emptyList();
         }
 
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
-
         private MissingValueIndicatorsType getMissingValueIndicatorsFromXml(XmlObject xml)
         {
             // This conversion of the xml object to either a Study doc or a Folder doc is to support backward

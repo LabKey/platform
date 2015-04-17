@@ -101,11 +101,5 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
         {
             return Collections.emptyList();
         }
-
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
     }
 }

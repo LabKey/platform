@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin.importer;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
@@ -76,16 +77,11 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
             }
         }
 
+        @NotNull
         @Override
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             return Collections.emptyList();
-        }
-
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
         }
     }
 }

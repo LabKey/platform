@@ -249,12 +249,6 @@ public class QueryImporter implements FolderImporter
         return warnings;
     }
     
-    @Override
-    public boolean supportsVirtualFile()
-    {
-        return false;
-    }
-
     public static class Factory extends AbstractFolderImportFactory
     {
         public FolderImporter create()

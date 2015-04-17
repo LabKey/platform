@@ -147,12 +147,6 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         {
             return Collections.emptyList();
         }
-
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return false;
-        }
     }
 
     private class FolderExportXarSourceWrapper

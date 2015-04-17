@@ -229,11 +229,5 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
         {
             return Collections.emptySet();
         }
-
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }        
     }
 }

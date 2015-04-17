@@ -127,11 +127,5 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         {
             return Collections.emptyList();
         }
-
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return false;
-        }
     }
 }
