@@ -35,8 +35,7 @@ if (typeof LABKEY == "undefined")
         };
 
         // private variables not configurable
-        var _requestedCssFiles = {},
-            _requestedScriptFiles = [];
+        var _requestedCssFiles = {};
 
         // prepare null console to avoid errors in old versions of IE
         (function(){
@@ -65,11 +64,6 @@ if (typeof LABKEY == "undefined")
         var ScriptCache = function()
         {
             var cache = {};
-
-            var isArray = function(obj)
-            {
-                return Object.prototype.toString.call(obj) == "[object Array]";
-            };
 
             var callbacksOnCache = function(key)
             {
@@ -266,13 +260,18 @@ if (typeof LABKEY == "undefined")
             ];
 
             requiresExt3ClientAPI(function() {
-                requiresScript(scripts, true, function() {
-                    requiresScript('designer/designer2.js', true, cb, scope)
+                requiresScript(scripts, function() {
+                    requiresScript('designer/designer2.js', cb, scope)
                 });
             });
 
             requiresCss("groupTabPanel/GroupTab.css");
             requiresCss("groupTabPanel/UngroupedTab.css");
+        };
+
+        var isArray = function(value)
+        {
+            return Object.prototype.toString.call(value) === "[object Array]";
         };
 
         var isBoolean = function(value)
@@ -292,13 +291,6 @@ if (typeof LABKEY == "undefined")
 
         var loadScripts = function()
         {
-            var o, i=0;
-
-            for (; i < _requestedScriptFiles.length; i++)
-            {
-                o = _requestedScriptFiles[i];
-                requiresScript(o.file, true, o.callback, o.scope);
-            }
             configs.isDocumentClosed = true;
         };
 
@@ -306,7 +298,7 @@ if (typeof LABKEY == "undefined")
         {
             for (var i=0; i < arguments.length; i++)
             {
-                if (Object.prototype.toString.call(arguments[i]) == "[object Array]")
+                if (isArray(arguments[i]))
                 {
                     for (var j=0; j < arguments[i].length; j++)
                     {
@@ -323,7 +315,7 @@ if (typeof LABKEY == "undefined")
 
         var requiresCss = function(file)
         {
-            if (Object.prototype.toString.call(file) == "[object Array]")
+            if (isArray(file))
             {
                 for (var i=0;i<file.length;i++)
                     requiresCss(file[i]);
@@ -404,12 +396,12 @@ if (typeof LABKEY == "undefined")
                     "clientapi/dom/GetData.js",
                     "clientapi/dom/WebPart.js"
                 ];
-                requiresScript(scripts, true, coreDone);
+                requiresScript(scripts, coreDone);
             }
             else
             {
                 requiresExt4Sandbox(function() {
-                    requiresScript("clientapi.min.js", true, coreDone);
+                    requiresScript("clientapi.min.js", coreDone);
                 });
             }
         };
@@ -438,7 +430,7 @@ if (typeof LABKEY == "undefined")
                     configs.extJsRoot + "/adapter/ext/ext-base" + (configs.devMode ?  "-debug.js" : ".js"),
                     configs.extJsRoot + "/ext-all" + (configs.devMode ?  "-debug.js" : ".js"),
                     configs.extJsRoot + "/ext-patches.js"
-                ], true, callback, scope, true);
+                ], callback, scope, true);
             }
         };
 
@@ -499,7 +491,7 @@ if (typeof LABKEY == "undefined")
             requiresExt3(function()
             {
                 //load individual scripts so that they get loaded from source tree
-                requiresScript(scripts, true, callback, scope);
+                requiresScript(scripts, callback, scope);
             });
         };
 
@@ -540,7 +532,7 @@ if (typeof LABKEY == "undefined")
 
             requiresExt4Sandbox(function()
             {
-                requiresScript(scripts, true, callback, scope, true);
+                requiresScript(scripts, callback, scope, true);
             });
         };
 
@@ -564,16 +556,26 @@ if (typeof LABKEY == "undefined")
                     configs.extJsRoot_42 + "/ext-patches.js"
                 ];
 
-                requiresScript(scripts, true, callback, scope);
+                requiresScript(scripts, callback, scope);
             }
         };
 
-        var requiresScript = function(file, immediate, callback, scope, inOrder)
+        var requiresScript = function(file, callback, scope, inOrder)
         {
-            if (arguments.length < 2 || (typeof immediate === "undefined"))
-                immediate = true;
+            if (arguments.length === 0)
+            {
+                throw "LABKEY.requiresScript() requires the 'file' parameter.";
+            }
 
-            if (Object.prototype.toString.call(file) == "[object Array]")
+            // backwards compat for 'immediate'
+            if (arguments.length > 1 && isBoolean(arguments[1]))
+            {
+                callback = arguments[2];
+                scope = arguments[3];
+                inOrder = arguments[4];
+            }
+
+            if (isArray(file))
             {
                 var requestedLength = file.length;
                 var loaded = 0;
@@ -588,7 +590,7 @@ if (typeof LABKEY == "undefined")
                             handle(callback, scope);
                         }
                         else if (loaded < requestedLength)
-                            requiresScript(file[loaded], immediate, chain, true);
+                            requiresScript(file[loaded], chain, undefined, true);
                     };
 
                     if (scriptCache.inCache(file[loaded]))
@@ -596,7 +598,7 @@ if (typeof LABKEY == "undefined")
                         chain();
                     }
                     else
-                        requiresScript(file[loaded], immediate, chain, true);
+                        requiresScript(file[loaded], chain, undefined, true);
                 }
                 else
                 {
@@ -617,7 +619,7 @@ if (typeof LABKEY == "undefined")
                             allDone();
                         }
                         else
-                            requiresScript(file[i], immediate, allDone);
+                            requiresScript(file[i], allDone);
                     }
                 }
                 return;
@@ -646,53 +648,46 @@ if (typeof LABKEY == "undefined")
                 scriptCache.loadCache(file, callback, scope);
             }
 
-            if (!immediate)
+            // although FireFox and Safari allow scripts to use the DOM
+            // during parse time, IE does not. So if the document is
+            // closed, use the DOM to create a script element and append it
+            // to the head element. Otherwise (still parsing), use document.write()
+
+            // Support both LabKey and external JavaScript files
+            var src = file.substr(0, 4) != "http" ? configs.contextPath + "/" + file + '?' + configs.hash : file;
+
+            var cacheLoader = function()
             {
-                _requestedScriptFiles.push({file: file, callback: callback, scope: scope});
-            }
-            else
+                scriptCache.callbacksOnCache(file);
+            };
+
+            if (configs.isDocumentClosed || callback)
             {
-                //although FireFox and Safari allow scripts to use the DOM
-                //during parse time, IE does not. So if the document is
-                //closed, use the DOM to create a script element and append it
-                //to the head element. Otherwise (still parsing), use document.write()
+                //create a new script element and append it to the head element
+                var script = addElemToHead("script", {
+                    src: src,
+                    type: "text/javascript"
+                });
 
-                // Support both LabKey and external JavaScript files
-                var src = file.substr(0, 4) != "http" ? configs.contextPath + "/" + file + '?' + configs.hash : file;
-
-                var cacheLoader = function()
+                // IE has a different way of handling <script> loads
+                if (script.readyState)
                 {
-                    scriptCache.callbacksOnCache(file);
-                };
-
-                if (configs.isDocumentClosed || callback)
-                {
-                    //create a new script element and append it to the head element
-                    var script = addElemToHead("script", {
-                        src: src,
-                        type: "text/javascript"
-                    });
-
-                    // IE has a different way of handling <script> loads
-                    if (script.readyState)
-                    {
-                        script.onreadystatechange = function() {
-                            if (script.readyState == "loaded" || script.readyState == "complete") {
-                                script.onreadystatechange = null;
-                                cacheLoader();
-                            }
-                        };
-                    }
-                    else
-                    {
-                        script.onload = cacheLoader;
-                    }
+                    script.onreadystatechange = function() {
+                        if (script.readyState == "loaded" || script.readyState == "complete") {
+                            script.onreadystatechange = null;
+                            cacheLoader();
+                        }
+                    };
                 }
                 else
                 {
-                    document.write('\n<script type="text/javascript" src="' + src + '"></script>\n');
-                    cacheLoader();
+                    script.onload = cacheLoader;
                 }
+            }
+            else
+            {
+                document.write('\n<script type="text/javascript" src="' + src + '"></script>\n');
+                cacheLoader();
             }
         };
 
@@ -735,7 +730,7 @@ if (typeof LABKEY == "undefined")
                 ]);
             }
 
-            requiresScript(scripts, true, callback, scope, true);
+            requiresScript(scripts, callback, scope, true);
         };
 
         var setDirty = function (dirty)

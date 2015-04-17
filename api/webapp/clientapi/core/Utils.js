@@ -441,13 +441,10 @@ LABKEY.Utils = new function()
          * @param {String} filePath The path to the script file to include. This path should be relative to the web application
          * root. So for example, if you wanted to include a file in your module's web/mymodule/scripts/ directory,
          * the path would be "mymodule/scripts/myscript.js"
-         * @param {Boolean} [immediate] Set to false to indicate that the script is not needed until the page is fully
-         * loaded (defaults to true). If true, a script element referencing this path will be added immediately
-         * following the script block from which this function is called.
          */
-        requiresScript : function(filePath, immediate)
+        requiresScript : function(filePath)
         {
-            LABKEY.requiresScript(filePath, immediate);
+            LABKEY.requiresScript(filePath);
         },
 
         /**

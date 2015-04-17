@@ -321,7 +321,7 @@
 
             var loader = function() {
                 LABKEY.requiresExt4Sandbox(function() {
-                    LABKEY.requiresScript('WebPartPermissionsPanel.js', true, display, this);
+                    LABKEY.requiresScript('WebPartPermissionsPanel.js', display, this);
                 }, this);
             };
 

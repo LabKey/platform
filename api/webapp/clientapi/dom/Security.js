@@ -14,7 +14,7 @@ LABKEY.Security = new function(impl) {
         var _display = function(componentName)
         {
             LABKEY.requiresExt4ClientAPI(function() {
-                LABKEY.requiresScript('Impersonate.js', true, function() {
+                LABKEY.requiresScript('Impersonate.js', function() {
                     Ext4.onReady(function() {
                         Ext4.create(componentName).show();
                     });

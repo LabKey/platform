@@ -156,7 +156,7 @@
         {
             var script = "/hopscotch/js/hopscotch" + (LABKEY.devMode ? "" : ".min") + ".js";
             var style = "/hopscotch/css/hopscotch" + (LABKEY.devMode ? "" : ".min") + ".css";
-            LABKEY.requiresScript(script, true, fn, scope);
+            LABKEY.requiresScript(script, fn, scope);
             LABKEY.requiresCss(style);
         };
 

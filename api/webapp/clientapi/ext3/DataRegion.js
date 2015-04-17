@@ -316,7 +316,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         '/study/ReportFilterPanel.js',
                         '/study/ParticipantFilterPanel.js',
                         '/dataregion/panel/Facet.js'
-                    ], true, initFacet);
+                    ], initFacet);
                 });
             },
 

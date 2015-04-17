@@ -274,7 +274,7 @@ LABKEY.Utils = new function(impl, $) {
 
         if (scripts)
         {
-            LABKEY.requiresScript(scripts, true, callback, scope, true);
+            LABKEY.requiresScript(scripts, callback, scope, true);
         }
         else
         {
@@ -342,7 +342,7 @@ LABKEY.Utils = new function(impl, $) {
 
         if (json.requiredJsScripts && json.requiredJsScripts.length)
         {
-            LABKEY.requiresScript(json.requiredJsScripts, true, onLoaded, this, true);
+            LABKEY.requiresScript(json.requiredJsScripts, onLoaded, this, true);
         }
         else
         {
