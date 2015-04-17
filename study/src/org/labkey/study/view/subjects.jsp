@@ -45,6 +45,12 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.data.ColumnInfo" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -62,9 +68,17 @@
     Container container  = getContainer();
     User user            = getUser();
     Study study = StudyService.get().getStudy(container);
+    StudyManager manager = StudyManager.getInstance();
+    StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl)study, user, true);
+    String subjectTableName = StudyService.get().getSubjectTableName(container);
+    String subjectColumnname = StudyService.get().getSubjectColumnName(container);
 
     String singularNoun  = StudyService.get().getSubjectNounSingular(container);
     String pluralNoun    = StudyService.get().getSubjectNounPlural(container);
+    TableInfo tableParticipants = schema.getTable(subjectTableName);
+    ColumnInfo columnParticipant = tableParticipants.getColumn(subjectColumnname);
+    ColumnInfo columnCurrentCohortId = tableParticipants.getColumn("cohort");
+
 
     ActionURL subjectUrl = new ActionURL(StudyController.ParticipantAction.class, container);
     String urlTemplate   = subjectUrl.getEncodedLocalURIString();
@@ -96,6 +110,15 @@
     }
 
     li.ptid a.unhighlight
+    {
+        color:#dddddd;
+    }
+
+    div.lk-filter-panel-label.highlight
+    {
+    }
+
+    div.lk-filter-panel-label.unhighlight
     {
         color:#dddddd;
     }
@@ -133,8 +156,7 @@
 <script type="text/javascript">
 <%=viewObject%> = (function()
 {
-    var X = Ext4;
-    var $h = X.util.Format.htmlEncode;
+    var $h = Ext4.util.Format.htmlEncode;
     var first = true;
 
     var _urlTemplate = '<%= urlTemplate %>';
@@ -151,13 +173,19 @@
     var _ptids = [<%
         final String[] commas = new String[]{"\n"};
         final HashMap<String,Integer> ptidMap = new HashMap<>();
-        (new SqlSelector(dbschema, "SELECT participantId FROM study.participant WHERE container=? ORDER BY 1", container)).forEach(new Selector.ForEachBlock<ResultSet>()
+
+        SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ")
+            .append(columnParticipant.getValueSql("P")).append(" AS participantId FROM ")
+            .append(tableParticipants.getFromSQL("P"))
+            .append(" ORDER BY 1");
+
+        new SqlSelector(dbschema, sqlf).forEach(new Selector.ForEachBlock<ResultSet>()
         {
             public void exec(ResultSet rs) throws SQLException
             {
                 String ptid = rs.getString(1);
                 ptidMap.put(ptid,ptidMap.size());
-                try { _out.write(commas[0]); _out.write(q(ptid)); commas[0]=",\n"; } catch (IOException x) {}
+                try { _out.write(commas[0]); _out.write(q(ptid)); commas[0]=(0==ptidMap.size()%10?",\n":","); } catch (IOException x) {}
             }
         });
         %>];
@@ -166,17 +194,22 @@
         int index = 0;
 
         // cohorts
-        final HashMap<Integer,Integer> cohortMap = new HashMap<>();
-        List<CohortImpl> cohorts = Collections.emptyList();
+        final HashMap<Integer,Integer> cohortIndexMap = new HashMap<>();
+        final List<CohortImpl> cohorts = new ArrayList<>();
         if (StudyManager.getInstance().showCohorts(container, user))
-            cohorts = StudyManager.getInstance().getCohorts(container, user);
+            cohorts.addAll(StudyManager.getInstance().getCohorts(container, user));
         boolean hasCohorts = cohorts.size() > 0;
         boolean hasUnenrolledCohorts = false;
+        int nocohortIndex = -1;
+        int unenrolledIndex = -1;
         if (hasCohorts)
         {
+            if (study != null && StudyManager.getInstance().getParticipantIdsNotInCohorts(study).length > 0)
+                hasUnenrolledCohorts = true;
+
             for (Cohort co : cohorts)
             {
-                cohortMap.put(((CohortImpl)co).getRowId(), index);
+                cohortIndexMap.put(((CohortImpl)co).getRowId(), index);
                 %><%=commas[0]%>{id:<%=((CohortImpl)co).getRowId()%>, index:<%=index%>, type:'cohort', label:<%=q(co.getLabel())%>, enrolled:<%=co.isEnrolled()%>}<%
                 commas[0]=",\n";
                 index++;
@@ -185,20 +218,27 @@
                     hasUnenrolledCohorts = true;
                 }
             }
-            // 'no cohort place holder
-            cohortMap.put(-1, index);
-            %><%=commas[0]%>{id:-1, index:<%=index%>, type:'cohort', label:'{no cohort}', enrolled:false}<%
-            commas[0]=",\n";
+
+            unenrolledIndex = index;
+            cohortIndexMap.put(-2, index);
+            %><%=commas[0]%>{id:-2, index:<%=index%>, type:'cohort', label:'{unenrolled}', enrolled:false}<%
             index++;
-            if (study != null && StudyManager.getInstance().getParticipantIdsNotInCohorts(study).length > 0)
-                hasUnenrolledCohorts = true;
         }
+        // 'no cohort place holder
+        nocohortIndex = index;
+        cohortIndexMap.put(-1, index);
+        %><%=commas[0]%>{id:-1, index:<%=index%>, type:'cohort', label:'{no cohort}', enrolled:false}<%
+        commas[0]=",\n";
+        index++;
+
 
         // groups/categories
         final HashMap<Integer,Integer> groupMap = new HashMap<>();
         ParticipantGroupManager m = ParticipantGroupManager.getInstance();
         ParticipantCategoryImpl[] categories = m.getParticipantCategories(container, user);
         boolean hasGroups = categories.length > 0;
+        int nogroupIndex = -1;
+        int firstGroupIndex = index;
         if (hasGroups)
         {
             for (int isShared=1 ; isShared>=0 ; isShared--)
@@ -218,6 +258,7 @@
                     }
                 }
             }
+            nogroupIndex = index;
             groupMap.put(-1, index);
             // UNDONE: groupid vs categoryid???
             %><%=commas[0]%>{categoryId:-1, id:-1, index:<%=index%>, shared:false, type:'participantGroup', label:'{no group}'}<%
@@ -226,31 +267,43 @@
         }
         %>];
 <%
-        final BitSet[] memberSets = new BitSet[index];
-        for (int i=0 ; i<memberSets.length ; i++)
+        int size = index;
+        final BitSet[] memberSets = new BitSet[size];
+        for (int i=0 ; i<size ; i++)
             memberSets[i] = new BitSet();
         if (hasCohorts)
         {
-            final int nocohort = cohorts.size();
-            memberSets[nocohort].flip(0,ptidMap.size());
-            (new SqlSelector(dbschema, "SELECT currentcohortid, participantid FROM study.participant WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
+            sqlf = new SQLFragment("SELECT ")
+                .append(columnCurrentCohortId.getValueSql("P")).append(" as currentcohortid, ")
+                .append(columnParticipant.getValueSql("P")).append(" AS participantid FROM ")
+                .append(tableParticipants.getFromSQL("P"));
+
+            new SqlSelector(dbschema, sqlf).forEach(new Selector.ForEachBlock<ResultSet>()
             {
                 public void exec(ResultSet rs) throws SQLException
                 {
-                    Integer icohortid = cohortMap.get(rs.getInt(1));
+                    Integer icohortid = cohortIndexMap.get(rs.getInt(1));
                     Integer iptid = ptidMap.get(rs.getString(2));
                     if (null!=icohortid && null!=iptid)
-                    {
                         memberSets[icohortid].set(iptid);
-                        memberSets[nocohort].clear(iptid);
-                    }
                 }
             });
+            BitSet setNoCohort = memberSets[nocohortIndex];
+            setNoCohort.set(0,ptidMap.size());
+            for (int i=0 ; i<cohorts.size() ; i++)
+            {
+                setNoCohort.andNot(memberSets[i]);
+            }
+            BitSet setUnenrolled = memberSets[unenrolledIndex];
+            setUnenrolled.set(0,ptidMap.size());
+            for (int i=0 ; i<cohorts.size() ; i++)
+            {
+                if (cohorts.get(i).isEnrolled())
+                   setUnenrolled.andNot(memberSets[i]);
+            }
         }
         if (hasGroups)
         {
-            final int nogroup = memberSets.length-1;
-            memberSets[nogroup].flip(0,ptidMap.size());
             (new SqlSelector(dbschema, "SELECT groupid, participantid FROM study.participantgroupmap WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
             {
                 public void exec(ResultSet rs) throws SQLException
@@ -260,11 +313,18 @@
                     if (null!=igroup && null!=iptid)
                     {
                         memberSets[igroup].set(iptid);
-                        memberSets[nogroup].clear(iptid);
                     }
                 }
             });
+            BitSet setNoGroup = memberSets[nogroupIndex];
+            setNoGroup.set(0,ptidMap.size());
+            for (int i=firstGroupIndex ; i<nogroupIndex ; i++)
+            {
+                setNoGroup.andNot(memberSets[i]);
+            }
         }
+
+
 %>
     var _ptidGroupMap = [<%
         String comma = "\n";
@@ -283,6 +343,7 @@
             comma = ",\n";
         }
     %>];
+    var _unenrolled = <%=unenrolledIndex%>;
     <% int ptidsPerCol = Math.min(Math.max(20,groupMap.size()), Math.max(6, ptidMap.size()/6));%>
     <% if (!bean.getWide()) {
         ptidsPerCol = ptidMap.size()/2;
@@ -327,15 +388,15 @@
         if (index == _highlightGroup) return;
         _highlightGroup = index;
         if (null == _highlightGroupTask)
-            _highlightGroupTask = new X.util.DelayedTask(_highlightPtidsInGroup);
+            _highlightGroupTask = new Ext4.util.DelayedTask(_highlightPtidsInGroup);
         _highlightGroupTask.delay(50);
     }
 
     function _highlightPtidsInGroup()
     {
-        var list = X.DomQuery.select("LI.ptid",_divId);
+        var list = Ext4.DomQuery.select("LI.ptid",_divId);
         <%-- note removeClass() and addClass() are pretty expensive when used on a lot of elements --%>
-        X.Array.each(list, function(li){
+        Ext4.Array.each(list, function(li){
             var a = li.firstChild;
             if (_highlightGroup == -1)
                 a.className = '';
@@ -354,21 +415,25 @@
         if (index == _highlightPtid) return;
         _highlightPtid = index;
         if (null == _highlightPtidTask)
-            _highlightPtidTask = new X.util.DelayedTask(_highlightGroupsForPart);
+            _highlightPtidTask = new Ext4.util.DelayedTask(_highlightGroupsForPart);
         _highlightPtidTask.delay(50);
     }
 
     function _highlightGroupsForPart()
     {
         var p = _highlightPtid;
-        var list = X.DomQuery.select("DIV.group",'<%=groupsDivId%>');
+        var list = Ext4.DomQuery.select("DIV.lk-filter-panel-label",'<%=groupsDivId%>');
         for (var i=0 ; i<list.length ; i++)
         {
-            var div = X.get(list[i]);
+            var div = Ext4.get(list[i]);
             div.removeCls(['highlight', 'unhighlight']);
             if (p == -1) continue;
-            g = parseInt(div.dom.attributes.index.value);
-            var inGroup = testGroupPtid(g,p);
+            var id = intAttribute(div,'data-id',-99);
+            var type = stringAttribute(div,'data-type',null);
+            if (id == -99)
+                continue;
+            var g = getIndexForGroup({id:id, type:type});
+            var inGroup = g>=0 && testGroupPtid(g,p);
             if (inGroup)
                 div.addCls('highlight');
             else
@@ -376,38 +441,73 @@
         }
     }
 
+    function stringAttribute(el,name,def)
+    {
+        el = Ext4.get(el);
+        if (!el)
+            return def;
+        var dom = el.dom;
+        var attr = dom.attributes[name];
+        if (!attr || !attr.value)
+            return def;
+        return attr.value;
+    }
+    function intAttribute(el,name,def)
+    {
+        try
+        {
+            var v = stringAttribute(el,name,null);
+            return v===null ? def : parseInt(v);
+        }
+        catch (err)
+        {
+            return def;
+        }
+    }
+
     function filter(selected)
     {
-        X.Ajax.request({
+        Ext4.Ajax.request({
             url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
             method   : 'POST',
-            jsonData : X.encode({
+            jsonData : Ext4.encode({
                 groups : selected
             }),
             success  : function(response)
             {
-                var json = X.decode(response.responseText);
+                var json = Ext4.decode(response.responseText);
                 _filterGroupMap = {};
                 for (var i=0; i < json.subjects.length; i++)
                     _filterGroupMap[json.subjects[i]] = true;
                 renderSubjects();
             },
             failure  : function(response){
-                X.Msg.alert('Failure', X.decode(response.responseText));
+                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText));
             },
             scope : this
         });
     }
 
+
+    function getIndexForGroup(data)
+    {
+        var g=-1;
+        for (var i=0 ; i<_groups.length ; i++)
+            if (_groups[i].id==data.id && _groups[i].type==data.type)
+                g = i;
+        return g;
+    }
+
+
     function renderGroups()
     {
-        var filterTask = new X.util.DelayedTask(filter);
+        var filterTask = new Ext4.util.DelayedTask(filter);
 
         <% if (bean.getWide()) { %>
-        var ptidPanel = X.create('LABKEY.study.ParticipantFilterPanel',
+        var ptidPanel = Ext4.create('LABKEY.study.ParticipantFilterPanel',
         {
             id : <%=q(groupsPanelId)%>,
-            renderTo : X.get(<%=q(groupsDivId)%>),
+            renderTo : Ext4.get(<%=q(groupsDivId)%>),
             title : 'Show',
             border : true,
             cls : 'themed-panel iScroll',
@@ -420,10 +520,7 @@
             listeners : {
                 itemmouseenter : function(v,r,item,idx)
                 {
-                    var g=-1;
-                    for (var i=0 ; i<_groups.length ; i++)
-                        if (_groups[i].id==r.data.id && _groups[i].type==r.data.type)
-                            g = i;
+                    var g=getIndexForGroup(r.data);
                     highlightPtidsInGroup(g);
                 },
                 itemmouseleave : function()
@@ -434,7 +531,8 @@
                 {
                     var json = [];
                     var filters = ptidPanel.getFilterPanel().getSelection(true);
-                    for (var f=0; f < filters.length; f++) {
+                    for (var f=0; f < filters.length; f++)
+                    {
                         json.push(filters[f].data);
                     }
                     filterTask.delay(400, null, null, [json]);
@@ -493,7 +591,7 @@
             }
         });
 
-        X.create('Ext.resizer.Resizer', {
+        Ext4.create('Ext.resizer.Resizer', {
             // default handles are east, south, and souteast
             target: ptidPanel,
             dynamic: false,
@@ -509,11 +607,11 @@
         <% } %>
 
         function scrollHorizontal(evt) {
-            X.get(<%=q(listDivId)%>).scroll((evt.getWheelDeltas().y > 0) ? 'r' : 'l', 20);
+            Ext4.get(<%=q(listDivId)%>).scroll((evt.getWheelDeltas().y > 0) ? 'r' : 'l', 20);
             evt.stopEvent();
         }
 
-        X.get(<%=q(listDivId)%>).on(X.supports.MouseWheel ? 'mousewheel' : 'DOMMouseScroll', scrollHorizontal);
+        Ext4.get(<%=q(listDivId)%>).on(Ext4.supports.MouseWheel ? 'mousewheel' : 'DOMMouseScroll', scrollHorizontal);
     }
 
 
@@ -539,8 +637,7 @@
             {
                 // For the wide participant list, we have a _filterGroupMap we can use.  For the narrow participant list
                 // there is no group filter but we still only want to show enrolled participants so do the filter manually.
-                if (_isWide ||
-                    isParticipantEnrolled(subjectIndex))
+                if (_isWide || isParticipantEnrolled(subjectIndex))
                 {
                     if (++count > 1 && count % _ptidPerCol == 1)
                         html.push('</ul></td><td valign="top"><ul class="subjectlist">');
@@ -577,8 +674,8 @@
         }
         html.push('</div>');
 
-        X.get(<%=q(listDivId)%>).update(html.join(''));
-        X.get(<%=q(divId + ".status")%>).update(message);
+        Ext4.get(<%=q(listDivId)%>).update(html.join(''));
+        Ext4.get(<%=q(divId + ".status")%>).update(message);
     }
 
 
@@ -616,21 +713,12 @@
         return html.join("");
     }
 
+
     function isParticipantEnrolled(subjectIndex)
     {
-        for (var g = 0; g < _groups.length; g++)
-        {
-            if (_groups[g].type == 'cohort' && testGroupPtid(g,subjectIndex))
-            {
-                if (!_groups[g].enrolled)
-                {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        return _unenrolled < 0 || !testGroupPtid(_unenrolled,subjectIndex);
     }
+
 
     function render()
     {
@@ -650,7 +738,7 @@
         renderGroups();
         renderSubjects();
 
-        X.create('Ext.tip.ToolTip',
+        Ext4.create('Ext.tip.ToolTip',
         {
             target     : <%=q(listDivId)%>,
             delegate   : "LI.ptid",
@@ -661,7 +749,7 @@
                 {
                     var dom = tip.triggerElement || tip.target;
                     var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
-                    if (!X.isDefined(indexAttr))
+                    if (!Ext4.isDefined(indexAttr))
                         return false;
                     var html = generateToolTip(parseInt(indexAttr.value));
                     tip.update(html);
@@ -671,17 +759,17 @@
 
         /* filter events */
 
-        var inp = X.get('<%=divId%>.filter');
+        var inp = Ext4.get('<%=divId%>.filter');
         inp.on('keyup', function(a){filterPtidContains(a.target.value);}, null, {buffer:200});
         inp.on('change', function(a){filterPtidContains(a.target.value);}, null, {buffer:200});
 
         /* ptids events */
 
-        var ptidDiv = X.get(<%=q(listDivId)%>);
+        var ptidDiv = Ext4.get(<%=q(listDivId)%>);
         ptidDiv.on('mouseover', function(e,dom)
         {
             var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
-            if (X.isDefined(indexAttr))
+            if (Ext4.isDefined(indexAttr))
                 highlightGroupsForPart(parseInt(indexAttr.value));
         });
         ptidDiv.on('mouseout', function(e,dom)
@@ -693,23 +781,23 @@
         ptidDiv.setHeight(ptidDiv.getHeight());
 
         // the groups panel starts with a height of 350, but make that bigger to match the ptid div
-        var groupsPanel = X.ComponentQuery.query('participantfilter[id=<%=(groupsPanelId)%>]');
+        var groupsPanel = Ext4.ComponentQuery.query('participantfilter[id=<%=(groupsPanelId)%>]');
         if (groupsPanel.length == 1 && groupsPanel[0].getHeight() < ptidDiv.getHeight())
             groupsPanel[0].setHeight(ptidDiv.getHeight());
 
-        X.EventManager.onWindowResize(doAdjustSize);
+        Ext4.EventManager.onWindowResize(doAdjustSize);
         doAdjustSize();
     }
 
     function doAdjustSize()
     {
         // CONSIDER: register for window resize
-        var listDiv = X.get(<%=q(listDivId)%>);
+        var listDiv = Ext4.get(<%=q(listDivId)%>);
         if (!listDiv) return;
         var rightAreaWidth = 15;
-        try {rightAreaWidth = X.fly(X.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
+        try {rightAreaWidth = Ext4.fly(Ext4.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
         var padding = 60;
-        var viewWidth = X.getBody().getViewSize().width;
+        var viewWidth = Ext4.getBody().getViewSize().width;
         var right = viewWidth - padding - rightAreaWidth;
         var x = listDiv.getXY()[0];
         var width = Math.max(<%=bean.getWide() ? 350 : 200%>, (right-x));

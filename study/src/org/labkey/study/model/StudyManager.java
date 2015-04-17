@@ -2313,7 +2313,7 @@ public class StudyManager
     }
 
 
-    private List<DatasetDefinition> getDatasetDefinitionsLocal(Study study, @Nullable CohortImpl cohort, String... types)
+    public List<DatasetDefinition> getDatasetDefinitionsLocal(Study study, @Nullable CohortImpl cohort, String... types)
     {
         SimpleFilter filter = null;
         if (cohort != null)

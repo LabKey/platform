@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.study.Dataset"%>
 <%@ page import="org.labkey.api.study.Study"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -53,7 +52,7 @@
 
     ActionURL cancelURL = new ActionURL(StudyController.ManageTypesAction.class, study.getContainer());
 
-    for (Dataset def : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
+    for (Dataset def : StudyManager.getInstance().getDatasetDefinitionsLocal(study, null, Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
     {
         ActionURL detailsURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, study.getContainer());
         detailsURL.addParameter("datasetId", def.getDatasetId());

@@ -28,7 +28,8 @@ Ext4.define('Study.window.ParticipantGroup', {
             width : window.innerWidth < 950 ? window.innerWidth : 950,
             height : config.hideDataRegion ? 325 : 500,
             type : config.type || 'manual',
-            shared : config.shared || false
+            shared : config.shared || false,
+            resizable : false
         });
 
         Ext4.apply(config, {
@@ -36,7 +37,6 @@ Ext4.define('Study.window.ParticipantGroup', {
             layout : 'fit',
             autoScroll : true,
             modal : true,
-            resizable : false,
             listeners: {
                 show: function(win){
                     new Ext4.util.KeyNav(win.getEl(), {

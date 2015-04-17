@@ -96,7 +96,8 @@
                 groupLabel: (row ? row.get("label") : null),
                 categoryParticipantIds: (row ? row.get("participantIds") : null),
                 categoryShared : (row ? row.get("shared") : false),
-                canEdit : (row ? row.get("canEdit") :  true) // TODO: Modify this to adhere to API to check (participant) group permission
+                canEdit : (row ? row.get("canEdit") :  true), // TODO: Modify this to adhere to API to check (participant) group permission
+                resizable: true
             });
         };
 

@@ -340,10 +340,24 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         else
             field = '{'+this.labelField+':htmlEncode}';
 
+        var classes = ['group-label','lk-filter-panel-label'];
+        var style='';
+        if (this.normalWrap)
+            classes.push('normalwrap-gridcell');
+        if (isHeader)
+        {
+            classes.push('filter-description');
+            style = 'font-weight:bold;';  // CONSIDER add to filter-description class?
+        }
         var tpl = [
-            '<div><span ext:qtip=" " class="' + (this.normalWrap ? 'lk-filter-panel-label normalwrap-gridcell' : 'lk-filter-panel-label') + '">',
-            (isHeader) ? '<b class="filter-description">' + field + '</b>' : field,
-            '</span></div>'
+            '<div ext:qtip=" "',
+                'class="' + classes.join(' ') + '"',
+                'style="' + style + '"',
+                'data-id="{id}"',
+                'data-type="{type}"',
+            '>',
+            field,
+            '</div>'
         ];
 
         return [{
