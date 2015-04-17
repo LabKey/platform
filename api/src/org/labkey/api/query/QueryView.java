@@ -170,7 +170,12 @@ public class QueryView extends WebPartView<Object>
     private boolean _showDeleteButton = true;
     private boolean _showConfiguredButtons = true;
     private boolean _allowExportExternalQuery = true;
-    private List<ContainerFilter.Type> _allowableContainerFilterTypes = Arrays.asList(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentAndSubfolders);
+
+    private static final Set<ContainerFilter.Type> STANDARD_CONTAINER_FILTERS = Collections.unmodifiableSet(new LinkedHashSet<>(Arrays.asList(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentAndSubfolders, ContainerFilter.Type.AllFolders)));
+
+    /** The container filters (called "Folder Filter" in the UI) that should be available to users in the Views menu */
+    @NotNull
+    private Set<ContainerFilter.Type> _allowableContainerFilterTypes = STANDARD_CONTAINER_FILTERS;
     private boolean _useQueryViewActionExportURLs = false;
     private boolean _printView = false;
     private boolean _exportView = false;
@@ -2758,14 +2763,15 @@ public class QueryView extends WebPartView<Object>
         _showConfiguredButtons = showConfiguredButtons;
     }
 
-    public List<ContainerFilter.Type> getAllowableContainerFilterTypes()
+    @NotNull
+    public Set<ContainerFilter.Type> getAllowableContainerFilterTypes()
     {
         return _allowableContainerFilterTypes;
     }
 
-    public void setAllowableContainerFilterTypes(List<ContainerFilter.Type> allowableContainerFilterTypes)
+    public void setAllowableContainerFilterTypes(@NotNull Collection<ContainerFilter.Type> allowableContainerFilterTypes)
     {
-        _allowableContainerFilterTypes = allowableContainerFilterTypes;
+        _allowableContainerFilterTypes = Collections.unmodifiableSet(new LinkedHashSet<>(allowableContainerFilterTypes));
     }
 
     public void setAllowableContainerFilterTypes(ContainerFilter.Type... allowableContainerFilterTypes)
@@ -2775,7 +2781,7 @@ public class QueryView extends WebPartView<Object>
 
     public void disableContainerFilterSelection()
     {
-        _allowableContainerFilterTypes = Collections.emptyList();
+        _allowableContainerFilterTypes = Collections.emptySet();
     }
 
     public List<Aggregate> getAggregates()

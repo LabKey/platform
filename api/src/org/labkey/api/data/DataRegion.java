@@ -1047,7 +1047,7 @@ public class DataRegion extends AbstractDataRegion
 
         // TODO: Don't get available container filters from render context.
         // 11082: Populate customize view with list of allowable container filters from the QueryView
-        List<ContainerFilter.Type> allowableContainerFilterTypes = (List<ContainerFilter.Type>) ctx.get("allowableContainerFilterTypes");
+        Set<ContainerFilter.Type> allowableContainerFilterTypes = (Set<ContainerFilter.Type>) ctx.get("allowableContainerFilterTypes");
         if (allowableContainerFilterTypes != null && allowableContainerFilterTypes.size() > 0)
         {
             JSONArray containerFiltersJSON = new JSONArray();
