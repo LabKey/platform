@@ -66,10 +66,7 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
     public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
         for (FolderImporter importer : _importers)
-        {
-            if (!_usingVirtualFile || importer.supportsVirtualFile())
-                importer.process(job, ctx, vf);
-        }
+            importer.process(job, ctx, vf);
     }
 
     @NotNull
@@ -79,14 +76,11 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
         List<PipelineJobWarning> warnings = new ArrayList<>();
         for (FolderImporter importer : _importers)
         {
-            if (!_usingVirtualFile || importer.supportsVirtualFile())
-            {
-                if (null != _job)
-                    _job.setStatus("POST-PROCESS " + importer.getDescription());
+            if (null != _job)
+                _job.setStatus("POST-PROCESS " + importer.getDescription());
 
-                Collection<PipelineJobWarning> importerWarnings = importer.postProcess(ctx, vf);
-                warnings.addAll(importerWarnings);
-            }
+            Collection<PipelineJobWarning> importerWarnings = importer.postProcess(ctx, vf);
+            warnings.addAll(importerWarnings);
         }
         return warnings;
     }
@@ -105,11 +99,5 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
 
         if (toRemove != null)
             _importers.remove(toRemove);
-    }
-
-    @Override
-    public boolean supportsVirtualFile()
-    {
-        return false;
     }
 }

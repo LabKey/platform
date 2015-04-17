@@ -36,6 +36,4 @@ public interface FolderImporter<DocumentRoot extends XmlObject>
     void process(@Nullable PipelineJob job, ImportContext<DocumentRoot> ctx, VirtualFile root) throws Exception;
     @NotNull
     Collection<PipelineJobWarning> postProcess(ImportContext<DocumentRoot> ctx, VirtualFile root) throws Exception;
-    /* temporary setting until all importers support using VirtualFile */
-    boolean supportsVirtualFile();
 }
