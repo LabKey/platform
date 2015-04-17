@@ -105,7 +105,7 @@ function validateForm(form)
         return true;
     }
 }
-LABKEY.requiresExt3(true, function() {
+LABKEY.requiresExt3(function() {
     Ext.onReady(function(){
         new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
     });
