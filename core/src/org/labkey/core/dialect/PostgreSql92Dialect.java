@@ -24,7 +24,7 @@ import java.util.Set;
  * Date: 5/21/12
  * Time: 8:52 AM
  */
-public class PostgreSql92Dialect extends PostgreSql90Dialect
+public class PostgreSql92Dialect extends PostgreSql91Dialect
 {
     @Override
     public String getAdminWarningMessage()
