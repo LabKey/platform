@@ -99,10 +99,7 @@ public class OAuthController extends SpringActionController
         @Override
         public ValidEmail validateAuthentication(ReturnUrlForm form, BindException errors) throws Exception
         {
-            AuthenticationProvider.AuthenticationResponse auth = GoogleOAuthProvider.authenticate(getViewContext().getRequest(), getViewContext().getResponse());
-            if (auth.isAuthenticated())
-                return auth.getValidEmail();
-            return null;
+            return GoogleOAuthProvider.authenticate(getViewContext().getRequest(), getViewContext().getResponse(), errors);
         }
     }
 

@@ -29,16 +29,17 @@ import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CSRFException;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.SessionHelper;
@@ -46,6 +47,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.authentication.AuthenticationModule;
+import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -141,10 +143,14 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
     }
 
 
-    public static AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response) throws ValidEmail.InvalidEmailException
+    @Nullable
+    public static ValidEmail authenticate(HttpServletRequest request, HttpServletResponse response, BindException errors) throws ValidEmail.InvalidEmailException
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(AuthenticationModule.EXPERIMENTAL_OPENID_GOOGLE))
-            return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);
+        {
+            errors.reject(SpringActionController.ERROR_MSG,"OAuth not supported");
+            return null;
+        }
 
         GoogleAuthBean bean = new GoogleAuthBean();
         bean.error = request.getParameter("error");
@@ -153,16 +159,23 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
         bean.session_state = request.getParameter("session_state");
         bean.authuser = request.getParameter("authuser");
 
-        // TODO good error reporting
         if (StringUtils.isNotEmpty(bean.error))
-            return AuthenticationResponse.createFailureResponse(FailureReason.badCredentials,null);
+        {
+            errors.reject(SpringActionController.ERROR_MSG,bean.error);
+            return null;
+        }
 
         if (StringUtils.isAnyEmpty(bean.code, bean.state, bean.session_state, bean.authuser))
-            return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);
+        {
+            errors.reject(SpringActionController.ERROR_MSG,"Bad response from authentication server");
+            return null;
+        }
 
         if (!StringUtils.equals(bean.state,CSRFUtil.getExpectedToken(request, response)))
-            throw new CSRFException();
-
+        {
+            errors.reject(SpringActionController.ERROR_MSG,"Bad response from authentication server");
+            return null;
+        }
         SessionHelper.setAttribute(request, GoogleAuthBean.class.getName(), bean, true);
 
         // Turn "code" into "access_token"
@@ -190,12 +203,11 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
                 bean.id_token = (String)result.get("id_token");
                 bean.token_type = (String)result.get("token_type");
                 bean.expires_in = (Integer)result.get("expires_in");
-                System.err.println(json);
             }
             else
             {
-                // TODO good error reporting
-                return AuthenticationResponse.createFailureResponse(FailureReason.badCredentials,null);
+                errors.reject(SpringActionController.ERROR_MSG,"Bad response from authentication server: " + status.getStatusCode() + " from " + tokenAPI);
+                return null;
             }
         }
         catch (IOException x)
@@ -219,20 +231,21 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
                 JSONArray array = (JSONArray)result.get("emails");
                 JSONObject emailObj = (JSONObject)array.get(0);
                 String email = (String)emailObj.get("value");
-                // TODO handle multiple emails?
-                return AuthenticationResponse.createSuccessResponse(new ValidEmail(email));
+                return new ValidEmail(email);
             }
             else
             {
-                // TODO good error reporting
-                return AuthenticationResponse.createFailureResponse(FailureReason.badCredentials,null);
+                errors.reject(SpringActionController.ERROR_MSG,"Bad response from authentication server: " + status.getStatusCode() + " from " + peopleApi);
+                return null;
             }
         }
         catch (IOException x)
         {
-            throw new UnexpectedException(x);
+            errors.reject(x.getMessage());
+            return null;
         }
     }
+
 
     @Override
     public URLHelper getURL(String secret)
