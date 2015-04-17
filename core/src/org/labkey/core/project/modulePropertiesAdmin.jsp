@@ -40,7 +40,7 @@
 %>
 <script type="text/javascript">
 
-    LABKEY.requiresExt4ClientAPI(true);
+    LABKEY.requiresExt4ClientAPI();
     LABKEY.requiresScript("ModulePropertiesAdminPanel.js");
 
 </script>

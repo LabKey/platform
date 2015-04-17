@@ -173,7 +173,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     },
 
     renderDataGrid : function(cmp) {
-        LABKEY.requiresExt3ClientAPI(true, function() { this._doRenderGrid(cmp); }, this);
+        LABKEY.requiresExt3ClientAPI(function() { this._doRenderGrid(cmp); }, this);
     },
 
     _doRenderGrid : function(cmp) {
