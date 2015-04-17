@@ -117,14 +117,11 @@ public class PostgreSql90Dialect extends SqlDialect
             "all, analyse, analyze, and, any, array, as, asc, asymmetric, authorization, binary, both, case, cast, " +
             "check, collate, column, concurrently, constraint, create, cross, current_catalog, current_date, " +
             "current_role, current_schema, current_time, current_timestamp, current_user, default, deferrable, desc, " +
-            "distinct, do, else, end, end-exec, except, fetch, for, foreign, freeze, from, full, grant, group, having, " +
+            "distinct, do, else, end, end-exec, except, false, fetch, for, foreign, freeze, from, full, grant, group, having, " +
             "ilike, in, initially, inner, intersect, into, is, isnull, join, leading, left, like, limit, localtime, " +
             "localtimestamp, natural, not, notnull, null, offset, on, only, or, order, outer, over, overlaps, placing, " +
             "primary, references, returning, right, select, session_user, similar, some, symmetric, table, then, to, " +
-            "trailing, union, unique, user, using, variadic, verbose, when, where, window, with" +
-
-            // For = PostgreSQL 8.3
-            ", false, true"));
+            "trailing, true, union, unique, user, using, variadic, verbose, when, where, window, with"));
     }
 
     @Override

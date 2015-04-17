@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
-import org.labkey.api.data.SqlScriptExecutor;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
@@ -35,7 +34,6 @@ import org.labkey.api.util.VersionNumber;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 /*
 * User: adam
@@ -76,22 +74,19 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
     {
         int version = versionNumber.getVersionInt();
 
-        // Version 9.0 or greater is allowed
-        if (version >= 90)
+        // Version 9.1 or greater is allowed
+        if (version >= 91)
         {
             // This approach is used when it's time to deprecate a version of PostgreSQL. Also, change the old dialect's
             // getAdminWarning() method to return a message that gets displayed in the page header for admins.
-            if (90 == version)
+            if (91 == version)
             {
-                // PostgreSQL 9.0 is deprecated; support will be removed in LabKey Server 15.3
+                // PostgreSQL 9.1 is deprecated; support will be removed soon
                 if (logWarnings)
                     _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
                 return new PostgreSql90Dialect();
             }
-
-            if (91 == version)
-                return new PostgreSql91Dialect();
 
             if (92 == version)
                 return new PostgreSql92Dialect();
@@ -123,7 +118,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        // 9.1+ dialects are nearly identical to 9.0
+        // 9.2+ dialects are nearly identical to 9.1
         return PageFlowUtil.set(
             new PostgreSql90Dialect(true),
             new PostgreSql90Dialect(false)
@@ -139,12 +134,11 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             badProductName("Postgres", 8.0, 9.5, "");
             badProductName("postgresql", 8.0, 9.5, "");
 
-            // < 9.0 should result in bad version number exception
-            badVersion("PostgreSQL", 0.0, 8.5, null);
+            // < 9.1 should result in bad version number exception
+            badVersion("PostgreSQL", 0.0, 9.0, null);
 
-            // >= 9.0 should be good
-            good("PostgreSQL", 9.0, 9.1, "", PostgreSql90Dialect.class);
-            good("PostgreSQL", 9.1, 9.2, "", PostgreSql91Dialect.class);
+            // >= 9.1 should be good
+            good("PostgreSQL", 9.1, 9.2, "", PostgreSql90Dialect.class);
             good("PostgreSQL", 9.2, 9.3, "", PostgreSql92Dialect.class);
             good("PostgreSQL", 9.3, 9.4, "", PostgreSql93Dialect.class);
             good("PostgreSQL", 9.4, 11.0, "", PostgreSql94Dialect.class);

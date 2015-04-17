@@ -24,8 +24,14 @@ import java.util.Set;
  * Date: 5/21/12
  * Time: 8:52 AM
  */
-public class PostgreSql92Dialect extends PostgreSql91Dialect
+public class PostgreSql92Dialect extends PostgreSql90Dialect
 {
+    @Override
+    public String getAdminWarningMessage()
+    {
+        return null;
+    }
+
     @NotNull
     @Override
     protected Set<String> getReservedWords()
