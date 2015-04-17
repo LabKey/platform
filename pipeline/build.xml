@@ -7,7 +7,16 @@
     <target name="init">
     </target>
 
-    <target name="build" depends="init, build_module" />
+    <target name="build" depends="init, build_module_api, build_module" />
+
+    <!-- Called by the main build.xml with inheritall = true; other callers (e.g., top-level build target)
+         must define all the properties used below. -->
+    <target name="build_module_api">
+        <ant antfile="${basedir}/build.xml"
+             target="sub_build_module_api"
+             inheritall="true">
+        </ant>
+    </target>
 
     <!-- Called by the main build.xml with inheritall = true; other callers (e.g., top-level build target)
          must define all the properties used below. -->

@@ -9,6 +9,15 @@
         <ant antfile="${basedir}/build.xml" target="sub_build_module" inheritall="true" />
     </target>
 
+    <!-- Called by the main build.xml with inheritall = true; other callers (e.g., top-level build target)
+         must define all the properties used below. -->
+    <target name="build_module_api">
+        <ant antfile="${basedir}/build.xml"
+             target="sub_build_module_api"
+             inheritall="true">
+        </ant>
+    </target>
+
     <target name="antlr">
         <property name="antlr.output.dir" value="${gensrc.dir}/antlr/org/labkey/query/sql/antlr" />
         <property name="antlr.source" value="${moduleDir}/src/org/labkey/query/sql/SqlBase.g" />

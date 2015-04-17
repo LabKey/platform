@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<project name="Build Pipeline" default="build" basedir="../../">
+<project name="Build Wiki" default="build" basedir="../../">
     <dirname property="moduleDir" file="${ant.file}"/>
 
     <!-- TODO: Need to set some properties for build_module to work standalone -->
     <target name="init">
     </target>
 
-    <target name="build" depends="init, build_module" />
+    <target name="build" depends="init, build_module_api, build_module" />
+
+    <!-- Called by the main build.xml with inheritall = true; other callers (e.g., top-level build target)
+         must define all the properties used below. -->
+    <target name="build_module_api">
+        <ant antfile="${basedir}/build.xml"
+             target="sub_build_module_api"
+             inheritall="true">
+        </ant>
+    </target>
 
     <!-- Called by the main build.xml with inheritall = true; other callers (e.g., top-level build target)
          must define all the properties used below. -->
