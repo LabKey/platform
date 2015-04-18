@@ -19,32 +19,52 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.categories.Study;
+import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.DatasetDomainEditor;
+import org.labkey.test.util.Maps;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * User: kevink
- * Date: 2/23/15
- */
 @Category({DailyA.class, Study.class})
 public class SharedStudyTest extends BaseWebDriverTest
 {
-    private static final String STUDY_ONE = "Study001";
-    private static final String STUDY_TWO = "Study002";
+    private static final String IMPORTED_STUDY = "Study001";
+    private static final String EMPTY_STUDY = "Study002";
     private static final String SHARED_DEMOGRAPHICS = "P_One_Shared";
+    private static final String SHARED_DEMOGRAPHICS_ID = "5001";
     public static final File STUDY_DIR = TestFileUtils.getSampleData("studies/ExtraKeyStudy");
+
+    @Nullable
+    @Override
+    protected String getProjectName()
+    {
+        return getClass().getSimpleName() + " Project";
+    }
+
+    @Override
+    public List<String> getAssociatedModules()
+    {
+        return Arrays.asList("study");
+    }
+
+    @Override
+    protected void doCleanup(boolean afterTest) throws TestTimeoutException
+    {
+        super.doCleanup(afterTest);
+    }
 
     @BeforeClass
     public static void setupProject()
@@ -75,30 +95,11 @@ public class SharedStudyTest extends BaseWebDriverTest
         datasetDomainEditor.save();
 
         setPipelineRoot(STUDY_DIR.getAbsolutePath());
-        _containerHelper.createSubfolder(getProjectName(), STUDY_ONE, "Study");
+        _containerHelper.createSubfolder(getProjectName(), IMPORTED_STUDY, "Study");
         importFolderFromPipeline("folder.xml", 1, false);
 
-        _containerHelper.createSubfolder(getProjectName(), STUDY_TWO, "Study");
+        _containerHelper.createSubfolder(getProjectName(), EMPTY_STUDY, "Study");
         createDefaultStudy();
-    }
-
-    @Override
-    protected void doCleanup(boolean afterTest) throws TestTimeoutException
-    {
-        super.doCleanup(afterTest);
-    }
-
-    @Nullable
-    @Override
-    protected String getProjectName()
-    {
-        return getClass().getSimpleName() + " Project";
-    }
-
-    @Override
-    public List<String> getAssociatedModules()
-    {
-        return Arrays.asList("study");
     }
 
     @Before
@@ -124,7 +125,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         Assert.assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
 
         log("Verify visit folder is project");
-        beginAt("/query/" + getProjectName() + "/" + STUDY_ONE + "/executeQuery.view?schemaName=study&query.queryName=Visit&query.viewName=" + viewName);
+        beginAt("/query/" + getProjectName() + "/" + IMPORTED_STUDY + "/executeQuery.view?schemaName=study&query.queryName=Visit&query.viewName=" + viewName);
         table = new DataRegionTable("query", this, false);
         Assert.assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
     }
@@ -133,10 +134,10 @@ public class SharedStudyTest extends BaseWebDriverTest
     public void testVisitLookup()
     {
         log("Create custom view with 'folder' column");
-        beginAt("/query/" + getProjectName() + "/" + STUDY_ONE + "/executeQuery.view?schemaName=study&query.queryName=PVString_Two");
+        beginAt("/query/" + getProjectName() + "/" + IMPORTED_STUDY + "/executeQuery.view?schemaName=study&query.queryName=PVString_Two");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
-        _customizeViewsHelper.addCustomizeViewColumn(new String[] { "PandaVisit", "Visit", "Folder" });
+        _customizeViewsHelper.addCustomizeViewColumn(new String[]{"PandaVisit", "Visit", "Folder"});
         _customizeViewsHelper.saveCustomView("withfolder");
 
         log("Verify visit folder is project");
@@ -148,7 +149,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     public void testStudyOverview()
     {
         log("Verify sub-folder study PV_One dataset has 2 participants at 'Visit 1'");
-        beginAt("/study/" + getProjectName() + "/" + STUDY_ONE + "/overview.view?");
+        beginAt("/study/" + getProjectName() + "/" + IMPORTED_STUDY + "/overview.view?");
         Assert.assertEquals("PV_One?", getTableCellText(Locator.id("studyOverview"), 6, 0));
         String visitLabel = getTableCellText(Locator.id("studyOverview"), 0, 4);
         Assert.assertTrue("Expected 'Visit 1', got: " + visitLabel, visitLabel.contains("Visit 1"));
@@ -159,11 +160,11 @@ public class SharedStudyTest extends BaseWebDriverTest
     public void testManageVisitsRedirect()
     {
         log("Verify 'manage visits' redirect");
-        clickFolder(STUDY_ONE);
+        clickFolder(IMPORTED_STUDY);
         goToManageStudy();
         click(Locator.linkWithText("manage shared visits"));
         String url = getCurrentRelativeURL();
-        Assert.assertFalse("Expected redirect to project manage visits page, got: " + url, url.contains(STUDY_ONE));
+        Assert.assertFalse("Expected redirect to project manage visits page, got: " + url, url.contains(IMPORTED_STUDY));
 
         String title = getDriver().getTitle();
         Assert.assertTrue("Expected title to start with 'Manage Shared Timepoints', got:" + title, title.startsWith("Manage Shared Visits"));
@@ -185,7 +186,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     @Test
     public void testCreateVisitViaAssaySchedule()
     {
-        clickFolder(STUDY_ONE);
+        clickFolder(IMPORTED_STUDY);
         goToManageStudy();
         clickAndWait(Locator.linkWithText("manage assay schedule"));
 
@@ -197,7 +198,7 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         click(Locator.linkWithText("manage visits"));
         String url = getCurrentRelativeURL();
-        Assert.assertFalse("Expected redirect to project manage visits page, got: " + url, url.contains(STUDY_ONE));
+        Assert.assertFalse("Expected redirect to project manage visits page, got: " + url, url.contains(IMPORTED_STUDY));
 
         click(Locator.xpath("//th[text() = 'Visit 4']/../td/a[text() = 'edit']"));
         clickButton("Delete visit");
@@ -205,7 +206,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testNoSharingInSubFolders()
+    public void testNoSharingFromSubFolders()
     {
         String folderName = "No Sharing";
         _containerHelper.createSubfolder(getProjectName(), folderName, "Study");
@@ -215,4 +216,81 @@ public class SharedStudyTest extends BaseWebDriverTest
         assertElementNotPresent(Locator.name("shareDatasets"));
         assertElementNotPresent(Locator.name("shareVisits"));
     }
+
+    @Test
+    public void testNoInsertIntoSharedDemographicsFromProject()
+    {
+        beginAt(WebTestHelper.buildURL("dataset", getProjectName(), "insert", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
+
+        Assert.assertEquals("403: Error Page -- User does not have permission to edit this dataset", getDriver().getTitle());
+        assertElementNotPresent(Locator.css("table.labkey-data-region"));
+    }
+
+    @Test
+    public void testInsertIntoSharedDemographicsFromFolder()
+    {
+        final String insertedPtid = "insertedParticipant";
+
+        beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + EMPTY_STUDY, "dataset", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
+
+        DataRegionTable table = new DataRegionTable("Dataset", this);
+        int initialRows = table.getDataRowCount();
+        table.clickHeaderButtonByText("Insert New");
+        DatasetInsertPage insertPage = new DatasetInsertPage(this, SHARED_DEMOGRAPHICS);
+        insertPage.insert(Maps.of("ParticipantId", insertedPtid));
+
+        assertElementPresent(Locator.linkWithText(insertedPtid));
+        Assert.assertEquals("Wrong number of rows", initialRows + 1, table.getDataRowCount());
+
+        // Inserted participant should not appear in adjacent study
+        beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + IMPORTED_STUDY, "dataset", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
+        assertElementNotPresent(Locator.linkWithText(insertedPtid));
+        Assert.assertEquals("Wrong number of rows", 4, table.getDataRowCount());
+
+        // Inserted participant should appear in parent study
+        beginAt(WebTestHelper.buildURL("study", getProjectName(), "dataset", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
+        assertElementPresent(Locator.linkWithText(insertedPtid));
+        Assert.assertEquals("Wrong number of rows", initialRows + 5, table.getDataRowCount());
+    }
+
+    @Test
+    public void testHidingSharedDataset()
+    {
+        final String datasetName = "Hiding Dataset";
+
+        _containerHelper.createSubfolder(getProjectName(), datasetName, "Study");
+        createDefaultStudy();
+
+        goToManageStudy();
+        clickAndWait(Locator.linkWithText("Manage Datasets"));
+        assertElementPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
+        clickAndWait(Locator.linkWithText("Create New Dataset"));
+
+        setFormElement(Locator.name("typeName"), datasetName);
+        // Default dataset ID will overlap shared demographics (5001)
+        clickButton("Next");
+        waitAndClick(Locator.id("partdelete_0"));
+        clickButton("Save");
+
+        assertTextPresent(String.format("A shared dataset is hidden by this local dataset definition: %s.", SHARED_DEMOGRAPHICS));
+        clickAndWait(Locator.linkWithText("Manage Datasets"));
+        assertTextPresent("WARNING: One or more datasets in parent study are hidden by datasets defined in this folder.");
+        assertElementNotPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
+    }
+
+    @Test @Ignore
+    public void testOverlappingParticipants()
+    {}
+
+    @Test @Ignore
+    public void testMultiStudyParticipantGroup()
+    {}
+
+    @Test @Ignore
+    public void testSharedDatasetSubfolderSecurity()
+    {}
+
+    @Test @Ignore
+    public void testParticipantWebpart()
+    {}
 }
