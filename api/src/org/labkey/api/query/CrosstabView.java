@@ -160,16 +160,19 @@ public class CrosstabView extends QueryView
         {
             for (CrosstabMember member : table.getColMembers())
             {
-                for (FieldKey col : measureFieldKeys)
+                if (isMemberIncluded(member))
                 {
-                    List<String> parts = new ArrayList<>(col.getParts());
-                    parts.set(0, AggregateColumnInfo.getColumnName(member, table.getMeasureFromKey(col.getParts().get(0))));
+                    for (FieldKey col : measureFieldKeys)
+                    {
+                        List<String> parts = new ArrayList<>(col.getParts());
+                        parts.set(0, AggregateColumnInfo.getColumnName(member, table.getMeasureFromKey(col.getParts().get(0))));
 
-                    FieldKey measureMemberFieldKey = FieldKey.fromParts(parts);
-                    List<FieldKey> fieldKeys = measureFieldKeysByMember.get(member);
-                    if (fieldKeys == null)
-                        measureFieldKeysByMember.put(member, fieldKeys = new ArrayList<>());
-                    fieldKeys.add(measureMemberFieldKey);
+                        FieldKey measureMemberFieldKey = FieldKey.fromParts(parts);
+                        List<FieldKey> fieldKeys = measureFieldKeysByMember.get(member);
+                        if (fieldKeys == null)
+                            measureFieldKeysByMember.put(member, fieldKeys = new ArrayList<>());
+                        fieldKeys.add(measureMemberFieldKey);
+                    }
                 }
             }
         }
@@ -265,5 +268,10 @@ public class CrosstabView extends QueryView
         {
             throw new RuntimeSQLException(e);
         }
+    }
+
+    public boolean isMemberIncluded(CrosstabMember member)
+    {
+        return true;
     }
 }
