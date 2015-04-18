@@ -81,6 +81,10 @@ public class TempTableInfo extends SchemaTableInfo
         _ttt = TempTableTracker.track(tableName, this);
     }
 
+    public boolean isTracking()
+    {
+        return null != _ttt;
+    }
 
     public void delete()
     {
