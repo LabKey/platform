@@ -17,7 +17,7 @@ package org.labkey.core.admin.sitevalidation;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.sitevalidation.SiteValidationProvider;
-import org.labkey.api.admin.sitevalidation.SiteValidationResult;
+import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * User: tgaluhn
@@ -35,43 +36,60 @@ import java.util.Map;
  */
 public class SiteValidationManager implements SiteValidationService.Interface
 {
-    private List<SiteValidationProvider> siteValidators = new ArrayList<>();
-    private List<SiteValidationProvider> containerValidators = new ArrayList<>();
+    private Map<String, List<SiteValidationProvider>> siteValidators = new TreeMap<>();
+    private Map<String, List<SiteValidationProvider>> containerValidators = new TreeMap<>();
+    private List<SiteValidationProvider> _allContainerValidators;
 
     @Override
-    public void registerProvider(SiteValidationProvider provider)
+    public void registerProvider(String module, SiteValidationProvider provider)
     {
-        if (provider.isSiteScope())
-            siteValidators.add(provider);
-        else
-            containerValidators.add(provider);
+        addProvider(module, provider, provider.isSiteScope() ? siteValidators : containerValidators);
+    }
+
+    private void addProvider(String module, SiteValidationProvider provider, Map<String, List<SiteValidationProvider>> validators)
+    {
+        List<SiteValidationProvider> providerList = validators.get(module);
+        if (null == providerList)
+        {
+            providerList = new ArrayList<>();
+            validators.put(module, providerList);
+        }
+        providerList.add(provider);
     }
 
     @NotNull
     @Override
-    public List<SiteValidationResult> runSiteScopeValidators(User u)
+    public Map<String, SiteValidationResultList> runSiteScopeValidators(User u)
     {
-        List<SiteValidationResult> siteResults = new ArrayList<>();
+        Map<String, SiteValidationResultList> siteResults = new LinkedHashMap<>();
         if (siteValidators.isEmpty())
-            siteResults.add(SiteValidationResult.Level.INFO.create("No site-wide validators have been registered."));
+        {
+            SiteValidationResultList noValidators = new SiteValidationResultList();
+            noValidators.addInfo("No site-wide validators have been registered.");
+            siteResults.put("", noValidators);
+        }
         else
         {
-            for (SiteValidationProvider validator : siteValidators)
-                siteResults.addAll(validator.runValidation(ContainerManager.getRoot(), u));
+            for (Map.Entry<String, List<SiteValidationProvider>> entry : siteValidators.entrySet())
+            {
+                SiteValidationResultList moduleResults = new SiteValidationResultList();
+                siteResults.put(entry.getKey(), moduleResults);
+                for (SiteValidationProvider validator : entry.getValue())
+                    moduleResults.addAll(validator.runValidation(ContainerManager.getRoot(), u));
+            }
         }
-
         return siteResults;
     }
 
     @NotNull
     @Override
-    public Map<Container, List<SiteValidationResult>> runContainerScopeValidators(Container topLevel, User u)
+    public Map<Container, SiteValidationResultList> runContainerScopeValidators(Container topLevel, User u)
     {
-        Map<Container, List<SiteValidationResult>> containerResults = new LinkedHashMap<>();
-        if (containerValidators.isEmpty())
+        Map<Container, SiteValidationResultList> containerResults = new LinkedHashMap<>();
+        if (catContainerValidatorLists().isEmpty())
         {
-            List<SiteValidationResult> noValidators = new ArrayList<>();
-            noValidators.add(SiteValidationResult.Level.INFO.create("No folder validators have been registered."));
+            SiteValidationResultList noValidators = new SiteValidationResultList();
+            noValidators.addInfo("No folder validators have been registered.");
             containerResults.put(ContainerManager.getRoot(), noValidators);
         }
         else
@@ -80,7 +98,7 @@ public class SiteValidationManager implements SiteValidationService.Interface
             Collections.sort(allChildren);
             for (Container c : allChildren)
             {
-                for (SiteValidationProvider validator : containerValidators)
+                for (SiteValidationProvider validator : catContainerValidatorLists())
                 {
                     if (validator.shouldRun(c, u))
                         containerResults.put(c, validator.runValidation(c, u));
@@ -88,6 +106,17 @@ public class SiteValidationManager implements SiteValidationService.Interface
             }
         }
         return containerResults;
+    }
+
+    private List<SiteValidationProvider> catContainerValidatorLists()
+    {
+        if (null == _allContainerValidators)
+        {
+            _allContainerValidators = new ArrayList<>();
+            for (List<SiteValidationProvider> validators : containerValidators.values())
+                _allContainerValidators.addAll(validators);
+        }
+        return _allContainerValidators;
     }
 
 }

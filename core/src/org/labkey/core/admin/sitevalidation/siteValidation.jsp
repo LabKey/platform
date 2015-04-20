@@ -22,38 +22,122 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationResultList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    List<SiteValidationResult> siteResults = SiteValidationService.get().runSiteScopeValidators(getUser());
-    Map<Container, List<SiteValidationResult>> containerResults = SiteValidationService.get().runContainerScopeValidators(getContainer(), getUser());
+    Map<String, SiteValidationResultList> siteResults = SiteValidationService.get().runSiteScopeValidators(getUser());
+    Map<Container, SiteValidationResultList> containerResults = SiteValidationService.get().runContainerScopeValidators(getContainer(), getUser());
 %>
 <table>
-    <tr>
-        <td colspan="2"><b>Site Level Validation Results</b></td>
-    </tr>
-    <% for (SiteValidationResult result : siteResults) { %>
-    <tr>
-        <td>&nbsp;</td>
-        <td><span class="<%=result.getLevel().equals(Level.ERROR) ? "labkey-error" : ""%>"><%=h(result.getMessage())%></span></td>
-    </tr>
-    <% } %>
-</table>
-<table>
-    <tr>
-        <td colspan="3"><b>Folder Validation Results</b></td>
-    </tr>
-    <% for (Map.Entry<Container, List<SiteValidationResult>> containerResult : containerResults.entrySet()) { %>
-    <tr>
-        <td>&nbsp;</td>
-        <td><%=h(StringUtils.substringAfter(containerResult.getKey().getPath(), "/"))%></td>
-    </tr>
-        <% if (containerResult.getValue() != null) { for (SiteValidationResult result : containerResult.getValue()) { %>
+    <thead>
         <tr>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
-            <td><span class="<%=result.getLevel().equals(Level.ERROR) ? "labkey-error" : ""%>"><%=h(result.getMessage())%></span></td>
+            <th>Site Level Validation Results</th>
         </tr>
-        <% } } %>
+    </thead>
+        <tbody>
+        <%  List<SiteValidationResult> moduleInfos;
+            List<SiteValidationResult> moduleErrors;
+            List<SiteValidationResult> moduleWarnings;
+            for (Map.Entry<String, SiteValidationResultList> moduleResults : siteResults.entrySet())
+            {
+                moduleInfos = moduleResults.getValue().getResults(Level.INFO);
+                moduleWarnings = moduleResults.getValue().getResults(Level.WARN);
+                moduleErrors = moduleResults.getValue().getResults(Level.ERROR);
+        %>
+            <tr>
+                <td><%=h("Module: " + moduleResults.getKey())%></td>
+            </tr>
+        <% for (SiteValidationResult result : moduleInfos) { %>
+        <tr>
+            <td>&nbsp;&nbsp;<%=h(result.getMessage())%></td>
+        </tr>
+        <% } %>
+        <% if (moduleErrors.size() > 0) { %>
+            <tr><td>&nbsp;</td></tr>
+            <tr>
+                <td>&nbsp;&nbsp;Errors:</td>
+            </tr>
+            <% for (SiteValidationResult result : moduleErrors) { %>
+            <tr>
+                <td><span class="labkey-error">&nbsp;&nbsp;&nbsp;&nbsp;<%=h(result.getMessage())%></span></td>
+            </tr>
+            <% } %>
+        <% } %>
+        <% if (moduleWarnings.size() > 0) { %>
+            <tr><td>&nbsp;</td></tr>
+            <tr>
+                <td>&nbsp;&nbsp;Warnings:</td>
+            </tr>
+            <% for (SiteValidationResult result : moduleWarnings) { %>
+            <tr>
+                <td>&nbsp;&nbsp;&nbsp;&nbsp;<%=h(result.getMessage())%></td>
+            </tr>
+            <% } %>
+        <% } %>
+        <% } %>
+    </tbody>
+</table>
+<br/><br/>
+<table>
+    <thead>
+    <tr>
+        <th>Folder Validation Results</th>
+    </tr>
+    </thead>
+    <tbody>
+    <%
+        List<SiteValidationResult> containerInfos;
+        List<SiteValidationResult> containerErrors;
+        List<SiteValidationResult> containerWarnings;
+        Container titleProject = null;
+        Container currentProject;
+        for (Map.Entry<Container, SiteValidationResultList> containerResult : containerResults.entrySet()) {
+            Container c = containerResult.getKey();
+            currentProject = c.getProject();
+            if (null != currentProject && !currentProject.equals(titleProject))
+            {
+                titleProject = currentProject;
+    %>
+            <tr><td>&nbsp;</td></tr>
+            <tr>
+                <td><%=h("Project: " + StringUtils.substringAfter(titleProject.getPath(), "/"))%></td>
+            </tr>
+        <% } %>
+        <tr>
+            <td>&nbsp;&nbsp;<%=h("Folder: " + StringUtils.substringAfter(c.getPath(), "/"))%></td>
+        </tr>
+        <% if (containerResult.getValue() != null)
+        {
+            containerInfos = containerResult.getValue().getResults(Level.INFO);
+            containerErrors = containerResult.getValue().getResults(Level.ERROR);
+            containerWarnings = containerResult.getValue().getResults(Level.WARN);
+            for (SiteValidationResult result : containerInfos) { %>
+            <tr>
+                <td>&nbsp;&nbsp;&nbsp;&nbsp;<%=h(result.getMessage())%></td>
+            </tr>
+            <% } %>
+            <% if (containerErrors.size() > 0) { %>
+                <tr>
+                    <td>&nbsp;&nbsp;&nbsp;&nbsp;Errors:</td>
+                </tr>
+                <% for (SiteValidationResult result : containerErrors) { %>
+                <tr>
+                    <td><span class="labkey-error">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%=h(result.getMessage())%></span></td>
+                </tr>
+                <% } %>
+            <% } %>
+            <% if (containerWarnings.size() > 0) { %>
+                <tr>
+                    <td>&nbsp;&nbsp;&nbsp;&nbsp;Warnings:</td>
+                </tr>
+                <% for (SiteValidationResult result : containerWarnings) { %>
+                <tr>
+                    <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%=h(result.getMessage())%></td>
+                </tr>
+                <% } %>
+            <% } %>
+        <% } %>
     <% } %>
+    </tbody>
 </table>
 

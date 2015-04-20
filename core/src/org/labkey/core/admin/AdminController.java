@@ -3750,7 +3750,7 @@ public class AdminController extends SpringActionController
 
                 for (DbSchema schema : schemas)
                 {
-                    String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false);
+                    String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false).getResultsString();
                     if (null!=sOut)
                     {
                         contentBuilder.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;ERROR: Inconsistency in Schema ");
