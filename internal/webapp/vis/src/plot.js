@@ -104,6 +104,7 @@
  * @param {Boolean} [config.clipRect] (Optional) Used to toggle the use of a clipRect, which prevents values that appear
  *      outside of the specified grid area from being visible. Use of clipRect can negatively affect performance, do not
  *      use if there is a large amount of elements on the grid. Defaults to false.
+ * @param {String} [config.fontFamily] (Optional) Font-family to use for plot text (labels, legend, etc.).
  * @param {Boolean} [config.throwErrors] (Optional) Used to toggle between the plot throwing errors or displaying errors.
  *      If true the plot will throw an error instead of displaying an error when necessary and possible. Defaults to
  *      false.
@@ -753,6 +754,7 @@ boxPlot.render();
         this.bgColor = config.bgColor ? config.bgColor : null;
         this.gridColor = config.gridColor ? config.gridColor : null;
         this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
+        this.fontFamily = config.fontFamily ? config.fontFamily : null;
         this.tickColor = config.tickColor ? config.tickColor : null;
         this.borderColor = config.borderColor ? config.borderColor : null;
         this.tickTextColor = config.tickTextColor ? config.tickTextColor : null;

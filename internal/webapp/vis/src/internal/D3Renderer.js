@@ -15,6 +15,7 @@ LABKEY.vis.internal.Axis = function() {
             tickClick, axisSel, tickSel, textSel, gridLineSel, borderSel, grid;
     var tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000';
     var tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1;
+    var fontFamily = 'verdana, arial, helvetica, sans-serif';
 
     var axis = function(selection) {
         var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i,
@@ -116,7 +117,7 @@ LABKEY.vis.internal.Axis = function() {
                 .attr('y', textYFn)
                 .attr('text-anchor', textAnchor)
                 .attr('fill', tickTextColor)
-                .style('font', '10px arial, verdana, helvetica, sans-serif');
+                .style('font', '10px ' + fontFamily);
 
         var highlightX = function() {
             return this.nextSibling.getBBox().x - 4;
@@ -273,6 +274,12 @@ LABKEY.vis.internal.Axis = function() {
         }
         return axis;
     };
+    axis.fontFamily = function(f) {
+        if (f !== undefined && f !== null) {
+            fontFamily = f;
+        }
+        return axis;
+    }
 
     return axis;
 };
@@ -284,24 +291,25 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var initLabelElements = function() {
         labelElements = {};
         var labels, fontSize, mainLabel = {}, yLeftLabel = {}, yRightLabel = {}, xLabel = {};
+        var fontFamily = plot.fontFamily ? plot.fontFamily : 'verdana, arial, helvetica, sans-serif';
 
         labels = this.canvas.append('g').attr('class', plot.renderTo + '-labels');
 
         fontSize = plot.labels.main && plot.labels.main.fontSize != undefined ? plot.labels.main.fontSize : 18;
         mainLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .style('font', fontSize + 'px verdana, arial, helvetica, sans-serif');
+                .style('font', fontSize + 'px ' + fontFamily);
 
         fontSize = plot.labels.x && plot.labels.x.fontSize != undefined ? plot.labels.x.fontSize : 14;
         xLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .style('font', fontSize + 'px verdana, arial, helvetica, sans-serif');
+                .style('font', fontSize + 'px ' + fontFamily);
 
         fontSize = plot.labels.yLeft && plot.labels.yLeft.fontSize != undefined ? plot.labels.yLeft.fontSize : 14;
         yLeftLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .style('font', fontSize + 'px verdana, arial, helvetica, sans-serif');
+                .style('font', fontSize + 'px ' + fontFamily);
 
         fontSize = plot.labels.yRight && plot.labels.yRight.fontSize != undefined ? plot.labels.yRight.fontSize : 14;
         yRightLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .style('font', fontSize + 'px verdana, arial, helvetica, sans-serif');
+                .style('font', fontSize + 'px ' + fontFamily);
 
         labelElements.main = mainLabel;
         labelElements.y = yLeftLabel;
@@ -378,6 +386,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             .borderWidth(plot.borderWidth)
             .tickTextColor(plot.tickTextColor)
             .tickOverlapRotation(plot.tickOverlapRotation)
+            .fontFamily(plot.fontFamily)
     };
 
     var renderXAxis = function() {
@@ -1169,7 +1178,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var renderLegendItem = function(selection, plot) {
         var i, xPad, glyphX, textX, yAcc, colorAcc, shapeAcc, textNodes, currentItem, cBBox, pBBox;
 
-        selection.attr('font-family', 'verdana, arial, helvetica, sans-serif').attr('font-size', '10px');
+        var fontFamily = plot.fontFamily ? plot.fontFamily : 'verdana, arial, helvetica, sans-serif';
+        selection.attr('font-family', fontFamily).attr('font-size', '10px');
 
         xPad = plot.scales.yRight && plot.scales.yRight.scale ? 40 : 0;
         glyphX = plot.grid.rightEdge + 30 + xPad;

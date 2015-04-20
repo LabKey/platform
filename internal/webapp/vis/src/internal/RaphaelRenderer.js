@@ -289,6 +289,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         if (this.paper && plot.labels[name] && plot.labels[name].value) {
             var x, y, labelEl;
             var fontSize = plot.labels[name].fontSize;
+            var fontFamily = plot.fontFamily ? plot.fontFamily : "verdana, arial, helvetica, sans-serif";
 
             if (labelElements[name] && labelElements[name].text) {
                 labelElements[name].text.remove();
@@ -303,27 +304,27 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 y = plot.labels[name].position != undefined ? plot.labels[name].position : 30;
                 fontSize = fontSize != undefined ? fontSize : 18;
                 labelEl.text = this.paper.text(x, y, plot.labels[name].value)
-                        .attr({font: fontSize + "px verdana, arial, helvetica, sans-serif"});
+                        .attr({font: fontSize + "px " + fontFamily});
             } else if (name == 'y' || name == 'yLeft') {
                 x = plot.grid.leftEdge - (plot.labels[name].position != undefined ? plot.labels[name].position : 55);
                 y = plot.grid.height / 2;
                 fontSize = fontSize != undefined ? fontSize : 14;
                 labelEl.text = this.paper.text(x, y, plot.labels[name].value)
-                        .attr({font: fontSize + "px verdana, arial, helvetica, sans-serif"})
+                        .attr({font: fontSize + "px " + fontFamily})
                         .transform("t0,r270");
             } else if (name == 'yRight') {
                 x = plot.grid.rightEdge + (plot.labels[name].position != undefined ? plot.labels[name].position : 45);
                 y = plot.grid.height / 2;
                 fontSize = fontSize != undefined ? fontSize : 14;
                 labelEl.text = this.paper.text(x, y, plot.labels[name].value)
-                        .attr({font: fontSize + "px verdana, arial, helvetica, sans-serif"})
+                        .attr({font: fontSize + "px " + fontFamily})
                         .transform("t0,r90");
             } else if (name = 'x') {
                 x = plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2;
                 y = plot.grid.height - (plot.labels[name].position != undefined ? plot.labels[name].position : 10);
                 fontSize = fontSize != undefined ? fontSize : 14;
                 labelEl.text = this.paper.text(x, y, plot.labels[name].value)
-                        .attr({font: fontSize + "px verdana, arial, helvetica, sans-serif"})
+                        .attr({font: fontSize + "px " + fontFamily})
                         .attr({'text-anchor': 'middle'});
 
                 // Create a rect that goes behind the x label because sometimes the x-axis tick marks get in the way.
@@ -721,13 +722,13 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
     /*
         LEGEND STUFF BELOW HERE
      */
-    var wrapText = function(text, legendWidth) {
+    var wrapText = function(text, legendWidth, fontFamily) {
         var tempText = '',
             newLines = 0,
             words = text.split(' '),
             textObj = this.paper.text(-100, -100)
                 .attr('text-anchor', 'start')
-                .attr('font-family', "verdana, arial, helvetica, sans-serif");
+                .attr('font-family', fontFamily);
 
         for (var i = 0; i < words.length; i++) {
             textObj.attr('text', tempText + ' ' + words[i]);
@@ -752,13 +753,14 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             legendWidth = this.paper.width - x - 25,
             defaultColor = '#333333',
             defaultPath = "M" + -5 + "," + -2.5 + "L" + 5 + "," + -2.5 + " " + 5 + "," + 2.5 + " " + -5 + "," + 2.5 + "Z",
-            legendData = plot.legendData || plot.getLegendData();
+            legendData = plot.legendData || plot.getLegendData(),
+            fontFamily = plot.fontFamily ? plot.fontFamily : "verdana, arial, helvetica, sans-serif";
 
         if (legendData.length > 0) {
             for (i = 0; i < legendData.length; i++) {
                 color = legendData[i].color == null ? defaultColor : legendData[i].color;
                 path = legendData[i].shape == null ? defaultPath : legendData[i].shape(5);
-                convertedText = wrapText.call(this, legendData[i].text, legendWidth);
+                convertedText = wrapText.call(this, legendData[i].text, legendWidth, fontFamily);
 
                 this.paper.path(path)
                         .attr('fill', color)
@@ -770,7 +772,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 this.paper.text(x + 20, y, convertedText.text)
                         .attr('text-anchor', 'start')
                         .attr('title', legendData[i].text)
-                        .attr({"font-family": "verdana, arial, helvetica, sans-serif"});
+                        .attr({"font-family": fontFamily});
 
                 y = y + 16 + (convertedText.newLines * 10);
             }
