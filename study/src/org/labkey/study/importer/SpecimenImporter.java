@@ -2713,15 +2713,6 @@ public class SpecimenImporter
             }
         }
 
-        List<T> uniqueCols = new ArrayList<>();
-        for (T col : availableColumns)
-        {
-            if (col.isUnique())
-            {
-                uniqueCols.add(col);
-                keyColumns.add(col.getDbColumnName());
-            }
-        }
         if (hasContainerColumn)
         {
             keyColumns.add("Container");
