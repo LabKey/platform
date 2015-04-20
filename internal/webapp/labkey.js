@@ -756,6 +756,12 @@ if (typeof LABKEY == "undefined")
         return {
 
             /**
+             * This callback type is called 'requireCallback' and is displayed as a global symbol
+             *
+             * @callback requireCallback
+             */
+
+            /**
              * The DataRegion class allows you to interact with LabKey grids,
              * including querying and modifying selection state, filters, and more.
              * @field
@@ -820,9 +826,10 @@ if (typeof LABKEY == "undefined")
             /**
              * Loads a CSS file from the server.
              * @function
-             * @param {String} [file] The path of the CSS file to load
-             * @example &lt;script type="text/javascript"&gt;
-             LABKEY.requiresCss("myModule/myFile.css");
+             * @param {(string|string[])} file - The path of the CSS file to load
+             * @example
+             &lt;script type="text/javascript"&gt;
+                LABKEY.requiresCss("myModule/myFile.css");
              &lt;/script&gt;
              */
             requiresCss: requiresCss,
@@ -832,39 +839,67 @@ if (typeof LABKEY == "undefined")
             /**
              * This can be added to any LABKEY page in order to load ExtJS 3.  This is the preferred method to declare Ext3 usage
              * from wiki pages.  For HTML or JSP pages defined in a module, see our <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=ext4Development">documentation</a> on declaration of client dependencies.
-             * <p>
-             * NOTE: It is important to place this line in a separate script block the your code.  For example:
              * @function
+             * @param {boolean} [immediate=true] - True to load the script immediately; false will defer script loading until the page has been downloaded.
+             * @param {requireCallback} [callback] - Callback for when all dependencies are loaded.
+             * @param {Object} [scope] - Scope of callback.
              * @example
              &lt;script type="text/javascript"&gt;
-             LABKEY.requiresExt3();
-             &lt;/script&gt;
-             &lt;script type="text/javascript"&gt;
-             Ext.onReady(function(){
-             //your code here
-             });
+                LABKEY.requiresExt3(true, function() {
+                    Ext.onReady(function() {
+                        // Ext 3 is loaded and ready
+                    });
+                });
              &lt;/script&gt;
              */
             requiresExt3: requiresExt3,
+
+            /**
+             * This can be added to any LABKEY page in order to load the LabKey ExtJS 3 Client API.
+             * @function
+             * @param {boolean} [immediate=true] - True to load the script immediately; false will defer script loading until the page has been downloaded.
+             * @param {requireCallback} [callback] - Callback for when all dependencies are loaded.
+             * @param {Object} [scope] - Scope of callback.
+             * @example
+             &lt;script type="text/javascript"&gt;
+                 LABKEY.requiresExt3ClientAPI(true, function() {
+                    // your code here
+                 });
+             &lt;/script&gt;
+             */
             requiresExt3ClientAPI: requiresExt3ClientAPI,
+
+            /**
+             * This can be added to any LABKEY page in order to load the LabKey ExtJS 4 Client API. This primarily
+             * consists of a set of utility methods {@link LABKEY.ext4.Util} and an extended Ext.data.Store {@link LABKEY.ext4.data.Store}.
+             * It will load ExtJS 4 as a dependency.
+             * @function
+             * @param {boolean} [immediate=true] - True to load the script immediately; false will defer script loading until the page has been downloaded.
+             * @param {requireCallback} [callback] - Callback for when all dependencies are loaded.
+             * @param {Object} [scope] - Scope of callback.
+             * @example
+             &lt;script type="text/javascript"&gt;
+                 LABKEY.requiresExt4ClientAPI(true, function() {
+                    // your code here
+                 });
+             &lt;/script&gt;
+             */
             requiresExt4ClientAPI: requiresExt4ClientAPI,
 
             /**
              * This can be added to any LABKEY page in order to load ExtJS 4.  This is the preferred method to declare Ext4 usage
              * from wiki pages.  For HTML or JSP pages defined in a module, see our <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=ext4Development">documentation</a> on declaration of client dependencies.
-             * <p>
-             * NOTE: It is important to place this line in a separate script block in your code.  For example:
              * @function
+             * @param {boolean} [immediate=true] - True to load the script immediately; false will defer script loading until the page has been downloaded.
+             * @param {requireCallback} [callback] - Callback for when all dependencies are loaded.
+             * @param {Object} [scope] - Scope of callback.
              * @example
              &lt;script type="text/javascript"&gt;
-             LABKEY.requiresExt4Sandbox(true, function(){
-             //your code here
-             });
-             &lt;/script&gt;
-             &lt;script type="text/javascript"&gt;
-             Ext4.onReady(function(){
-             //your code here
-             });
+                 LABKEY.requiresExt4Sandbox(true, function() {
+                    Ext4.onReady(function(){
+                        // Ext4 is loaded and ready
+                    });
+                 });
              &lt;/script&gt;
              */
             requiresExt4Sandbox: requiresExt4Sandbox,
@@ -877,15 +912,18 @@ if (typeof LABKEY == "undefined")
             requiresExtJs: requiresExt3,
 
             /**
-             * Loads a javascript file from the server.  See also LABKEY.onReady()
+             * Loads JavaScript file(s) from the server.
              * @function
-             * @param file A single file or an Array of files.
-             * @param immediate True to load the script immediately; false will defer script loading until the page has been downloaded.
-             * @param callback Called after the script files have been loaded.
-             * @param scope Callback scope.
-             * @param inOrder True to load the scripts in the order they are passed in. Default is false.
-             * @example &lt;script type="text/javascript"&gt;
-             LABKEY.requiresScript("myModule/myScript.js");
+             * @param {(string|string[])} file - A file or Array of files to load.
+             * @param {boolean} [immediate=true] - True to load the script immediately; false will defer script loading until the page has been downloaded.
+             * @param {requireCallback} [callback] - Callback for when all dependencies are loaded.
+             * @param {Object} [scope] - Scope of callback.
+             * @param {boolean} [inOrder=false] - True to load the scripts in the order they are passed in. Default is false.
+             * @example
+             &lt;script type="text/javascript"&gt;
+                LABKEY.requiresScript("myModule/myScript.js", true, function() {
+                    // your script is loaded
+                });
              &lt;/script&gt;
              */
             requiresScript: requiresScript,
