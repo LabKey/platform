@@ -61,10 +61,11 @@ function validateForm(form)
     }
 
     var text = document.getElementById('body').value.toLowerCase();
-    var textType = document.getElementById('rendererType').value;
-    if ((text.indexOf("<a") != -1 || text.indexOf("<table") != -1 || text.indexOf("<div") != -1 || text.indexOf("<span") != -1) && textType != 'HTML')
+    // Not all message board configurations include the rendererType option
+    var rendererTypeElement = document.getElementById('rendererType');
+    if (rendererTypeElement && (text.indexOf("<a") != -1 || text.indexOf("<table") != -1 || text.indexOf("<div") != -1 || text.indexOf("<span") != -1) && rendererTypeElement.value != 'HTML')
     {
-        var currentTypeDescription = document.getElementById('rendererType').options[document.getElementById('rendererType').selectedIndex].text;
+        var currentTypeDescription = rendererTypeElement.options[rendererTypeElement.selectedIndex].text;
         Ext4.MessageBox.confirm("Confirm message formatting", "The content of your message may contain HTML. Are you sure that you want to submit it as " + currentTypeDescription + "?",
                 function (btn)
                 {
