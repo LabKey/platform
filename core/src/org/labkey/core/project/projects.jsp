@@ -181,7 +181,7 @@ Ext4.onReady(function() {
             text: 'Create New ' + config.noun,
             hidden: !LABKEY.Security.currentUser.isAdmin || config.hideCreateButton,
             handler: function() {
-                var isProject = !!(panelCfg.containerTypes && panelCfg.containerTypes.match(/project/)),
+                var isProject = panel.containerTypes && panel.containerTypes.match(/project/),
                     params = { returnUrl: <%= q(getActionURL().toString()) %> };
 
                 window.location = LABKEY.ActionURL.buildURL('admin', 'createFolder', (isProject ? '/' : config.containerPath), params);
