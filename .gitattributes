@@ -105,6 +105,7 @@ api/src/org/labkey/api/admin/SubfolderWriter.java -text
 api/src/org/labkey/api/admin/sitevalidation/SiteValidationProvider.java -text
 api/src/org/labkey/api/admin/sitevalidation/SiteValidationProviderImpl.java -text
 api/src/org/labkey/api/admin/sitevalidation/SiteValidationResult.java -text
+api/src/org/labkey/api/admin/sitevalidation/SiteValidationResultList.java -text
 api/src/org/labkey/api/admin/sitevalidation/SiteValidationService.java -text
 api/src/org/labkey/api/analytics/AnalyticsService.java -text
 api/src/org/labkey/api/annotations/JavaRuntimeVersion.java -text

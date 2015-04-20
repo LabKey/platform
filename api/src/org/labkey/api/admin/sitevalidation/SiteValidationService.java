@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -55,14 +54,14 @@ public class SiteValidationService
 
     public interface Interface
     {
-        void registerProvider(SiteValidationProvider provider);
+        void registerProvider(String module, SiteValidationProvider provider);
 
         // TODO: Allow module specification?
 
         @NotNull
-        List<SiteValidationResult> runSiteScopeValidators(User u);
+        Map<String, SiteValidationResultList> runSiteScopeValidators(User u);
         @NotNull
-        Map<Container, List<SiteValidationResult>> runContainerScopeValidators(Container topLevel, User u);
+        Map<Container, SiteValidationResultList> runContainerScopeValidators(Container topLevel, User u);
 
     }
 

@@ -35,24 +35,4 @@ public abstract class SiteValidationProviderImpl implements SiteValidationProvid
     {
         return true;
     }
-
-    public static SiteValidationResult title(String message)
-    {
-        return SiteValidationResult.Level.TITLE.create(message);
-    }
-
-    public static SiteValidationResult info(String message)
-    {
-        return SiteValidationResult.Level.INFO.create(message);
-    }
-
-    public static SiteValidationResult warn(String message)
-    {
-        return SiteValidationResult.Level.WARN.create(message);
-    }
-
-    public static SiteValidationResult error(String message)
-    {
-        return SiteValidationResult.Level.ERROR.create(message);
-    }
 }

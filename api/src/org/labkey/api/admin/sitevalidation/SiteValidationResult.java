@@ -27,11 +27,11 @@ public class SiteValidationResult
 {
     public enum Level
     {
-        TITLE,
         INFO,
         WARN,
         ERROR;
 
+        public SiteValidationResult create() { return create("");}
         public SiteValidationResult create(String message) { return create(message, null);}
         public SiteValidationResult create(String message, ActionURL link) { return new SiteValidationResult(this, message, link);}
     }
@@ -54,11 +54,28 @@ public class SiteValidationResult
 
     public String getMessage()
     {
+        if (null != sb)
+            return sb.toString();
         return message;
     }
 
     public ActionURL getLink()
     {
         return link;
+    }
+
+    private StringBuilder sb;
+
+    private StringBuilder getStringBuilder()
+    {
+        if (null == sb)
+            sb = new StringBuilder(message);
+        return sb;
+    }
+
+    public SiteValidationResult append(Object o)
+    {
+        getStringBuilder().append(o);
+        return this;
     }
 }
