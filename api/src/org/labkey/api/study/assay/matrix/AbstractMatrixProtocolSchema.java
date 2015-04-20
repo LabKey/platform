@@ -75,7 +75,7 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
     {
         if (name.equals(getDataBySampleTableName()))
         {
-            return getDataBySampleTable(rowAxisId, colAxisId, valueMeasureName, title);
+            return getDataBySampleTable(rowAxisId, colAxisId, valueMeasureName, title); //TODO: change
         }
 
         return super.createTable(name);

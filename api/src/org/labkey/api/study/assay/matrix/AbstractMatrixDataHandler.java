@@ -66,29 +66,22 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
     protected final String _dbSchemaName;
     protected final String _dataTableName;
 
+    private static final Logger LOG = Logger.getLogger(AbstractMatrixDataHandler.class);
+    private static boolean autoCreateSamples = true;     // CONSIDER: move this flag to the assay design
+
     public AbstractMatrixDataHandler(String idColName, String dbSchemaName, String dataTableName)
     {
         _idColumnName = idColName;
         _dbSchemaName = dbSchemaName;
         _dataTableName = dataTableName;
     }
-    private static final Logger LOG = Logger.getLogger(AbstractMatrixDataHandler.class);
-
-    // CONSIDER: move this flag to the assay design
-    private static boolean autoCreateSamples = true;
-
-    public String getIdColumnName()
-    {
-        return _idColumnName;
-    }
 
     public abstract DbSchema getDbSchema();
     public abstract void insertMatrixData(Container c, User user, Map<String, Integer> samplesMap, DataLoader loader, Map<String, String> runProps, Integer dataRowId) throws ExperimentException;
 
-    @Override
-    public DataType getDataType()
+    public String getIdColumnName()
     {
-        return null;
+        return _idColumnName;
     }
 
     public String getDbSchemaName()
@@ -99,6 +92,12 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
     public String getDataTableName()
     {
         return _dataTableName;
+    }
+
+    @Override
+    public DataType getDataType()
+    {
+        return null;
     }
 
     @Override

@@ -56,6 +56,7 @@ public abstract class AbstractMatrixRunCreator <ProviderType extends AbstractAss
         return result;
     }
 
+    //TODO: may not need this
     protected TransformResult transformSetId(AssayRunUploadContext<ProviderType> context, ExpRun run, TransformResult result) throws ValidationException, ExperimentException
     {
         Map<DomainProperty, String> runProps = result.getRunProperties() != null && !result.getRunProperties().isEmpty() ? result.getRunProperties() : context.getRunProperties();
@@ -91,6 +92,7 @@ public abstract class AbstractMatrixRunCreator <ProviderType extends AbstractAss
      * @return The set id only if it needs to be saved back to the "set" property; otherwise null.
      * @throws ValidationException
      */
+    //TODO: may not need this
     public abstract Integer ensureSet(@NotNull AssayRunUploadContext<ProviderType> context, @Nullable File runPath, @NotNull String idNameOrFilePath) throws ValidationException, ExperimentException;
 
     private Map.Entry<DomainProperty, String> findSetProperty(Map<DomainProperty, String> runProps)
