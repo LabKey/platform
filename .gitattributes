@@ -1544,6 +1544,10 @@ api/src/org/labkey/api/study/assay/ThawListResolverType.java -text
 api/src/org/labkey/api/study/assay/TsvDataHandler.java -text
 api/src/org/labkey/api/study/assay/bulkPropertiesInput.jsp -text
 api/src/org/labkey/api/study/assay/fileUpload.jsp -text
+api/src/org/labkey/api/study/assay/matrix/AbstractMatrixDataHandler.java -text
+api/src/org/labkey/api/study/assay/matrix/AbstractMatrixProtocolSchema.java -text
+api/src/org/labkey/api/study/assay/matrix/AbstractMatrixRunCreator.java -text
+api/src/org/labkey/api/study/assay/matrix/ColumnMappingProperty.java -text
 api/src/org/labkey/api/study/assay/pipeline/AssayImportRunTaskFactorySettings.java -text
 api/src/org/labkey/api/study/assay/pipeline/AssayImportRunTaskId.java -text
 api/src/org/labkey/api/study/assay/pipeline/AssayRunAsyncContext.java -text
