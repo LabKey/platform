@@ -28,116 +28,107 @@
     Map<String, SiteValidationResultList> siteResults = SiteValidationService.get().runSiteScopeValidators(getUser());
     Map<Container, SiteValidationResultList> containerResults = SiteValidationService.get().runContainerScopeValidators(getContainer(), getUser());
 %>
-<table>
-    <thead>
-        <tr>
-            <th>Site Level Validation Results</th>
-        </tr>
-    </thead>
-        <tbody>
-        <%  List<SiteValidationResult> moduleInfos;
-            List<SiteValidationResult> moduleErrors;
-            List<SiteValidationResult> moduleWarnings;
-            for (Map.Entry<String, SiteValidationResultList> moduleResults : siteResults.entrySet())
-            {
-                moduleInfos = moduleResults.getValue().getResults(Level.INFO);
-                moduleWarnings = moduleResults.getValue().getResults(Level.WARN);
-                moduleErrors = moduleResults.getValue().getResults(Level.ERROR);
-        %>
-            <tr>
-                <td><%=h("Module: " + moduleResults.getKey())%></td>
-            </tr>
-        <% for (SiteValidationResult result : moduleInfos) { %>
-        <tr>
-            <td>&nbsp;&nbsp;<%=h(result.getMessage())%></td>
-        </tr>
-        <% } %>
-        <% if (moduleErrors.size() > 0) { %>
-            <tr><td>&nbsp;</td></tr>
-            <tr>
-                <td>&nbsp;&nbsp;Errors:</td>
-            </tr>
-            <% for (SiteValidationResult result : moduleErrors) { %>
-            <tr>
-                <td><span class="labkey-error">&nbsp;&nbsp;&nbsp;&nbsp;<%=h(result.getMessage())%></span></td>
-            </tr>
-            <% } %>
-        <% } %>
-        <% if (moduleWarnings.size() > 0) { %>
-            <tr><td>&nbsp;</td></tr>
-            <tr>
-                <td>&nbsp;&nbsp;Warnings:</td>
-            </tr>
-            <% for (SiteValidationResult result : moduleWarnings) { %>
-            <tr>
-                <td>&nbsp;&nbsp;&nbsp;&nbsp;<%=h(result.getMessage())%></td>
-            </tr>
-            <% } %>
-        <% } %>
-        <% } %>
-    </tbody>
-</table>
+<style type="text/css">
+    ul {list-style-type: none; padding-left: 5px;}
+</style>
+<strong>Site Level Validation Results</strong>
+<ul>
+    <%  List<SiteValidationResult> moduleInfos;
+        List<SiteValidationResult> moduleErrors;
+        List<SiteValidationResult> moduleWarnings;
+        for (Map.Entry<String, SiteValidationResultList> moduleResults : siteResults.entrySet())
+        {
+            moduleInfos = moduleResults.getValue().getResults(Level.INFO);
+            moduleWarnings = moduleResults.getValue().getResults(Level.WARN);
+            moduleErrors = moduleResults.getValue().getResults(Level.ERROR);
+    %>
+    <li><%=h("Module: " + moduleResults.getKey())%>
+        <ul>
+    <% for (SiteValidationResult result : moduleInfos) { %>
+    <li>
+        <%=h(result.getMessage())%>
+    </li>
+    <% } %>
+    <% if (moduleErrors.size() > 0) { %>
+            <li><br/></li>
+            <li>Errors:
+    <ul>
+    <% for (SiteValidationResult result : moduleErrors) { %>
+    <li>
+        <span class="labkey-error"><%=h(result.getMessage())%></span>
+    </li>
+    <% } %>
+    <% } %></ul></li>
+    <% if (moduleWarnings.size() > 0) { %>
+            <li>><br/></li>
+            <li>Warnings:
+    <ul>
+    <% for (SiteValidationResult result : moduleWarnings) { %>
+    <li>
+        <%=h(result.getMessage())%>
+    </li>
+    <% } %></ul></li>
+    <% } %></ul></li>
+    <% } %>
+</ul>
+
 <br/><br/>
-<table>
-    <thead>
-    <tr>
-        <th>Folder Validation Results</th>
-    </tr>
-    </thead>
-    <tbody>
+<strong>Folder Validation Results</strong>
+
+<ul>
+    <% if (containerResults.isEmpty()) { %>
+       <li>No folder validators have been registered for configured folders.</li>
+    <%}%>
     <%
         List<SiteValidationResult> containerInfos;
         List<SiteValidationResult> containerErrors;
         List<SiteValidationResult> containerWarnings;
         Container titleProject = null;
         Container currentProject;
+        boolean seenFirstProject = false;
         for (Map.Entry<Container, SiteValidationResultList> containerResult : containerResults.entrySet()) {
             Container c = containerResult.getKey();
             currentProject = c.getProject();
             if (null != currentProject && !currentProject.equals(titleProject))
             {
+                if (seenFirstProject)
+                {   %>
+                    </ul></li>
+                <%}
+                    seenFirstProject = true;
                 titleProject = currentProject;
     %>
-            <tr><td>&nbsp;</td></tr>
-            <tr>
-                <td><%=h("Project: " + StringUtils.substringAfter(titleProject.getPath(), "/"))%></td>
-            </tr>
+            <li><br/><%=h("Project: " + StringUtils.substringAfter(titleProject.getPath(), "/"))%>
+                <ul>
         <% } %>
-        <tr>
-            <td>&nbsp;&nbsp;<%=h("Folder: " + StringUtils.substringAfter(c.getPath(), "/"))%></td>
-        </tr>
+            <li><%=h("Folder: " + StringUtils.substringAfter(c.getPath(), "/"))%>
+                <ul>
         <% if (containerResult.getValue() != null)
         {
             containerInfos = containerResult.getValue().getResults(Level.INFO);
             containerErrors = containerResult.getValue().getResults(Level.ERROR);
             containerWarnings = containerResult.getValue().getResults(Level.WARN);
             for (SiteValidationResult result : containerInfos) { %>
-            <tr>
-                <td>&nbsp;&nbsp;&nbsp;&nbsp;<%=h(result.getMessage())%></td>
-            </tr>
+            <li><%=h(result.getMessage())%></li>
             <% } %>
             <% if (containerErrors.size() > 0) { %>
-                <tr>
-                    <td>&nbsp;&nbsp;&nbsp;&nbsp;Errors:</td>
-                </tr>
+                <li>Errors:
+                <ul>
                 <% for (SiteValidationResult result : containerErrors) { %>
-                <tr>
-                    <td><span class="labkey-error">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%=h(result.getMessage())%></span></td>
-                </tr>
-                <% } %>
+                <li><span class="labkey-error"><%=h(result.getMessage())%></span></li>
+                <% } %></ul></li>
             <% } %>
             <% if (containerWarnings.size() > 0) { %>
-                <tr>
-                    <td>&nbsp;&nbsp;&nbsp;&nbsp;Warnings:</td>
-                </tr>
-                <% for (SiteValidationResult result : containerWarnings) { %>
-                <tr>
-                    <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%=h(result.getMessage())%></td>
-                </tr>
-                <% } %>
+                <li>Warnings:
+                    <ul>
+                    <% for (SiteValidationResult result : containerWarnings) { %>
+                    <li><%=h(result.getMessage())%></li>
+                <% } %></ul></li>
             <% } %>
-        <% } %>
+        <% } %></ul>
+    <% } %></li>
+    <% if (!containerResults.isEmpty()) { %>
+            </ul></li>
     <% } %>
-    </tbody>
-</table>
+</ul>
 
