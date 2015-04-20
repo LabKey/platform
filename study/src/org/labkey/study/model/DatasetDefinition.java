@@ -903,6 +903,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     @Override
     public boolean canDeleteDefinition(UserPrincipal user)
     {
+        if (!getContainer().equals(getDefinitionContainer()))
+            return false;
         return getContainer().hasPermission(user, AdminPermission.class);
     }
 

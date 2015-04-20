@@ -2661,9 +2661,12 @@ public class StudyManager
     {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
 
+        if (!ds.canDeleteDefinition(user))
+            throw new IllegalStateException("Can't delete dataset: " + ds.getName());
+
         deleteDatasetType(study, user, ds);
         try {
-            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(study.getContainer(), 
+            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(study.getContainer(),
                     StudySchema.getInstance().getSchemaName(), ds.getName());
             if (def != null)
                 def.delete(user);
@@ -2709,26 +2712,20 @@ public class StudyManager
         if (null == ds)
             return;
 
-        if (ds.isShared())
-        {
-            // only delete rows, other containers might be using this definition
-            // TODO: how to clean-up the root study???
-            ds.deleteAllRows(user);
-        }
-        else
-        {
-            StorageProvisioner.drop(ds.getDomain());
+        if (!ds.canDeleteDefinition(user))
+            throw new IllegalStateException("Can't delete dataset: " + ds.getName());
 
-            if (ds.getTypeURI() != null)
+        StorageProvisioner.drop(ds.getDomain());
+
+        if (ds.getTypeURI() != null)
+        {
+            try
             {
-                try
-                {
-                    OntologyManager.deleteType(ds.getTypeURI(), study.getContainer());
-                }
-                catch (DomainNotFoundException x)
-                {
-                    // continue
-                }
+                OntologyManager.deleteType(ds.getTypeURI(), study.getContainer());
+            }
+            catch (DomainNotFoundException x)
+            {
+                // continue
             }
         }
     }
@@ -2790,7 +2787,12 @@ public class StudyManager
             StudyDesignManager.get().deleteStudyDesignLookupValues(c, deletedTables);
 
             for (DatasetDefinition dsd : dsds)
-                deleteDataset(study, user, dsd, false);
+            {
+                if (dsd.getContainer().equals(dsd.getDefinitionContainer()))
+                    deleteDataset(study, user, dsd, false);
+                else
+                    dsd.deleteAllRows(user);
+            }
 
             //
             // samples

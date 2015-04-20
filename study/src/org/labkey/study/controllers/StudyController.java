@@ -4670,6 +4670,11 @@ public class StudyController extends BaseStudyController
             DatasetDefinition ds = StudyManager.getInstance().getDatasetDefinition(study, form.getId());
             if (null == ds)
                 redirectTypeNotFound(form.getId());
+            if (!ds.canDeleteDefinition(getUser()))
+                errors.reject(ERROR_MSG, "Can't delete this dataset: " + ds.getName());
+
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors);
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
             try (DbScope.Transaction transaction = scope.ensureTransaction())

@@ -280,6 +280,8 @@ public class DatasetController extends BaseStudyController
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
                 try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
+                    if (!def.canDeleteDefinition(getUser()))
+                        continue;
                     StudyManager.getInstance().deleteDataset(study, getUser(), def, false);
                     transaction.commit();
                     countDeleted++;
