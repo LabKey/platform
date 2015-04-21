@@ -27,7 +27,9 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromPath("Ext4"));
         resources.add(ClientDependency.fromPath("dataviews"));
+        resources.add(ClientDependency.fromPath("sqv"));
         return resources;
     }
 %>
@@ -54,228 +56,38 @@
         return (undefined == returnUrl ? "" : returnUrl);
     };
 
-    var initializeSchemaStore = function(){
-
-        if (!Ext4.ModelManager.isRegistered('LABKEY.data.Schema')) {
-            Ext4.define('LABKEY.data.Schema', {
-                extend : 'Ext.data.Model',
-                fields : [
-                    {name : 'name', type: 'string'}
-                ]
-            });
-        }
-
-        var schemaStore = Ext4.create('Ext.data.Store', {
-            model : 'LABKEY.data.Schema'
-        });
-
-        Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('query', 'getSchemas'),
-            success: function(response){
-                var data = Ext4.JSON.decode(response.responseText).schemas;
-                var schemas = [];
-
-                for(var i = 0; i < data.length; i++){
-                    schemas.push({name: data[i]});
-                }
-
-                schemaStore.loadRawData(schemas);
-                schemaStore.fireEvent('rawload', schemaStore, schemaStore.data.getRange(), true);
-            },
-            scope: this
-        });
-
-        return schemaStore;
-    };
-
-    var initializeQueryStore = function(){
-
-        if (!Ext4.ModelManager.isRegistered('LABKEY.data.Queries')) {
-            Ext4.define('LABKEY.data.Queries', {
-                extend : 'Ext.data.Model',
-                fields : [
-                    {name : 'name'},
-                    {name : 'title', convert: function(value, record){
-                        return record.data.name != value ? record.data.name + ' (' + value + ')' : value;
-                    }},
-                    {name : 'description'},
-                    {name : 'isUserDefined', type : 'boolean'},
-                    {name: 'viewDataUrl'}
-                ]
-            });
-        }
-
-        var config = {
-            model   : 'LABKEY.data.Queries',
-            proxy   : {
-                type   : 'memory',
-                reader : {
-                    type : 'json'
-                }
-            },
-            sorters : [{property: 'title', direction: 'ASC'}]
-        };
-
-        return Ext4.create('Ext.data.Store', config);
-    };
-
-    var initializeViewStore = function() {
-
-        if (!Ext4.ModelManager.isRegistered('LABKEY.data.Views')) {
-            Ext4.define('LABKEY.data.Views', {
-                extend: 'Ext.data.Model',
-                fields: [
-                    {name: 'name'},
-                    {name: 'hidden'},
-                    {name: 'shared'},
-                    {name: 'default'},
-                    {name: 'viewDataUrl'}
-                ]
-            });
-        }
-
-        return Ext4.create('Ext.data.Store', {
-            model: 'LABKEY.data.Views',
-            proxy: {
-                type: 'memory',
-                reader: {
-                    type: 'json'
-                }
-            }
-        });
-    };
-
     Ext4.onReady(function() {
-        var queryStore = initializeQueryStore();
-        var queryId = Ext4.id();
-        var viewStore = initializeViewStore();
-        var viewId = Ext4.id();
 
-        queryStore.on('rawload', function(){
-            if (queryCombo) {
-                queryCombo.setDisabled(false);
-                querySchemaPanel.getEl().unmask();
-            }
-        });
+        var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
+        var items = [];
 
-        viewStore.on('rawload', function(){
-            if (viewCombo) {
-                viewCombo.setDisabled(false);
-                querySchemaPanel.getEl().unmask();
-            }
-        });
+        items.push(sqvModel.makeSchemaComboConfig({
+            name        : 'selectedSchemaName',
+            editable    : false,
+            emptyText   : 'None'
+        }));
 
-        var schemaCombo = Ext4.create('Ext.form.field.ComboBox',{
-            fieldLabel: 'Schema',
-            name: 'selectedSchemaName',
-            store: initializeSchemaStore(),
-            editable: false,
-            queryMode: 'local',
-            displayField: 'name',
-            valueField: 'name',
-            emptyText: 'None',
-            listeners: {
-                change: function(cmp, newValue){
-                    this.schemaName = newValue;
+        items.push(sqvModel.makeQueryComboConfig({
+            name        : 'selectedQueryName',
+            editable    : false,
+            typeAhead   : 'true',
+            emptyText   : 'None'
+        }));
 
-                    if (queryCombo) {
-                        queryCombo.clearValue();
-                        queryCombo.setDisabled(true);
-                        querySchemaPanel.getEl().mask('loading...');
-                    }
-
-                    if (viewCombo) {
-                        viewCombo.setDisabled(true);
-                    }
-
-                    Ext4.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL('query', 'getQueries'),
-                        params: {
-                            schemaName  : this.schemaName
-                        },
-                        success: function(response) {
-                            var data = Ext4.JSON.decode(response.responseText).queries;
-                            queryStore.loadRawData(data);
-                            queryStore.fireEvent('rawload', queryStore, queryStore.data.getRange(), true);
-                        },
-                        scope: this
-                    });
-                },
-                scope: this
-            }
-        });
-
-        var queryCombo = Ext4.create('Ext.form.field.ComboBox',{
-            fieldLabel: 'Query',
-            id: queryId,
-            name: 'selectedQueryName',
-            queryMode: 'local',
-            store: queryStore,
-            editable: false,
-            disabled: true,
-            displayField: 'title',
-            valueField: 'name',
-            typeAhead: 'true',
-            emptyText: 'None',
-            listeners: {
-                change: function(cmp, newValue){
-                    this.queryName = newValue;
-                    var viewCombo = Ext4.getCmp(viewId);
-
-                    if(viewCombo){
-                        viewCombo.clearValue();
-                    }
-
-                    if(this.queryName != null){
-                        querySchemaPanel.getEl().mask("loading...");
-                        Ext4.Ajax.request({
-                            url: LABKEY.ActionURL.buildURL('query', 'getQueryViews'),
-                            params: {
-                                schemaName: this.schemaName,
-                                queryName: this.queryName
-                            },
-                            success: function(response){
-                                var data = Ext4.JSON.decode(response.responseText).views;
-                                viewStore.loadRawData(data);
-                                viewStore.fireEvent('rawload', viewStore, viewStore.data.getRange(), true);
-                            },
-                            scope: this
-                        });
-                    }
-                },
-                scope: this
-            }
-        });
-
-        var viewCombo  = Ext4.create('Ext.form.field.ComboBox',{
-            fieldLabel: 'View',
-            id: viewId,
-            name: 'selectedViewName',
-            allowBlank: true,
-            store: viewStore,
-            queryMode: 'local',
-            disabled: true,
-            editable: false,
-            forceSelection: false,
-            displayField: 'name',
-            valueField: 'name',
-            typeAhead: 'true',
-            emptyText: 'None',
-            listeners: {
-                change: function(cmp, newValue){
-                    this.viewName = newValue;
-                },
-                scope: this
-            }
-        });
+        items.push(sqvModel.makeViewComboConfig({
+            name        : 'selectedViewName',
+            editable    : false,
+            typeAhead   : 'true',
+            emptyText   : 'None'
+        }));
 
         var querySchemaPanel = Ext4.create('Ext.panel.Panel', {
-            frame: false,
-            border: false,
-            bodyStyle: {
+            frame       : false,
+            border      : false,
+            bodyStyle   : {
                 background: 'transparent'
             },
-            items: [schemaCombo, queryCombo, viewCombo]
+            items       : items
         });
 
         Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
@@ -313,7 +125,7 @@
                     handler : function(btn) {
                         var form = btn.up('form').getForm();
                         if (form.isValid()) {
-                            form.submit();
+                            form.submit({submitEmptyText : false});
                         }
                     },
                     scope   : this
