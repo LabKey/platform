@@ -130,4 +130,9 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     {
         return (String)get("qualitycomments");
     }
+
+    public boolean getObsolete()
+    {
+        return (boolean)get("obsolete");
+    }
 }

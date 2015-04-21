@@ -356,6 +356,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         public int compare(SpecimenEvent event1, SpecimenEvent event2)
         {
+            // Obsolete always < non-obsolete
+            if (event1.getObsolete() != event2.getObsolete())
+                if (event1.getObsolete())
+                    return -1;
+                else
+                    return 1;
+
             // we use any date in the event, since we assume that no two events can have
             // overlapping date ranges:
             Date date1 = getAnyDate(event1);
@@ -522,6 +529,14 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             return StudyManager.getInstance().getLocation(vial.getContainer(), firstLabId);
         else
             return null;
+    }
+
+    public long getMaxExternalId(Container container)
+    {
+        TableInfo tableInfo = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
+        SQLFragment sql = new SQLFragment("SELECT MAX(ExternalId) FROM ");
+        sql.append(tableInfo.getSelectName());
+        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class).get(0);
     }
 
     public List<SpecimenRequest> getRequests(Container c, User user)

@@ -331,13 +331,17 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
             rowIds.add(rowId);
         }
-        List<Vial> vials = SpecimenManager.getInstance().getVials(container, user, rowIds);
+        Map<Long, Vial> vials = new HashMap<>();
+        for (Vial vial : SpecimenManager.getInstance().getVials(container, user, rowIds))
+        {
+            vials.put(vial.getRowId(), vial);
+        }
         if (vials.size() != rows.size())
             throw new IllegalStateException("Specimens should be same size as rows.");
 
         try
         {
-            for (Vial vial : vials)
+            for (Vial vial : vials.values())
                 checkEditability(container, vial);
         }
         catch (ValidationException e)
@@ -349,15 +353,21 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
         List<Map<String, Object>> newKeys = new ArrayList<>(rows.size());
         List<Map<String, Object>> newRows = new ArrayList<>(rows.size());
+        long externalId = SpecimenManager.getInstance().getMaxExternalId(container) + 1;
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
-            Vial vial = vials.get(i);
-            Map<String, Object> rowMap = prepareRowMap(container, row, vial, importer);
+            Object rowIdObj = oldKeys.get(i).get("RowId");
+            if (null == rowIdObj)
+                throw new IllegalArgumentException("RowId not found for a row.");
+
+            long rowId = Long.class == rowIdObj.getClass() ? (Long) rowIdObj : (Integer) rowIdObj;
+            Vial vial = vials.get(rowId);
+            Map<String, Object> rowMap = prepareRowMap(container, row, vial, importer, externalId++);
             newRows.add(rowMap);
 
             Map<String,Object> keys = new HashMap<>();
-            keys.put("rowId", vial.getRowId());
+            keys.put("rowId", rowId);
             newKeys.add(keys);
         }
 
@@ -396,7 +406,8 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         checkEditability(container, vial);
 
         EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
-        Map<String, Object> rowMap = prepareRowMap(container, row, vial, importer);
+        long externalId = SpecimenManager.getInstance().getMaxExternalId(container) + 1;
+        Map<String, Object> rowMap = prepareRowMap(container, row, vial, importer, externalId);
 
         // TODO: this is a hack to best deal with Requestable being Null until a better fix can be accomplished
         if (null == oldRow || null == oldRow.get("requestable"))
@@ -450,7 +461,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     }
 
     private Map<String, Object> prepareRowMap(Container container, Map<String, Object> row, Vial vial,
-                                              EditableSpecimenImporter importer)
+                                              EditableSpecimenImporter importer, long externalId)
     {
         // Get last event so that our input considers all fields that were set;
         // Then overwrite whatever is coming from the form
@@ -462,8 +473,6 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         }
 
         rowMap.put("globaluniqueid", vial.getGlobalUniqueId());
-        Long externalId = (Long)rowMap.get("ExternalId");
-        externalId += 1;
         rowMap.put("ExternalId", externalId);
         return rowMap;
     }
@@ -513,8 +522,6 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         if (null == specimenEvent)
             throw new IllegalStateException("Expected at least one event for specimen.");
         TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
-        if (null == tableInfoSpecimenEvent)
-            throw new IllegalStateException("Expected SpecimenEvent table to already exist.");
 
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromString("RowId"), specimenEvent.getRowId());
