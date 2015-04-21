@@ -1878,6 +1878,8 @@ public class SpecimenImporter
                         // All of the additional fields (deviationCodes, Concetration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value
                         _iTimer.setPhase(ImportPhases.GetLastEvent);
                         SpecimenEvent lastEvent = SpecimenManager.getInstance().getLastEvent(dateOrderedEvents);
+                        if (null == lastEvent)
+                            throw new IllegalStateException("There should always be at least 1 event.");
 
                         _iTimer.setPhase(ImportPhases.DetermineUpdateVial);
                         boolean updateVial = false;
@@ -2847,6 +2849,22 @@ public class SpecimenImporter
             dix.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
             DataLoader tsv = loadTsv(file);
             tsvColumns = tsv.getColumns();
+
+/*          // DEBUG: Dump data
+            StringBuilder infoCol = new StringBuilder("");
+            for (ColumnDescriptor cd : tsvColumns)
+                infoCol.append(cd.getColumnName() + ", ");
+            info(infoCol.toString());
+            String[][] lines = tsv.getFirstNLines(15);
+            for (String[] line : lines)
+            {
+                StringBuilder infoRow = new StringBuilder("");
+                for (String item : line)
+                    infoRow.append(item + ", ");
+                info(infoRow.toString());
+            }
+            info("");
+*/
             // CONSIDER turn off data conversion
             //for (ColumnDescriptor cd : tsvColumns) cd.clazz = String.class;
             // CONSIDER sue AsyncDataIterator
@@ -2887,6 +2905,7 @@ public class SpecimenImporter
             rowCount = pump.getRowCount();
 
             info(tableName + ": Replaced all data with " + rowCount + " new rows.");
+
         }
         finally
         {
@@ -3565,7 +3584,10 @@ public class SpecimenImporter
         executeSQL(DbSchema.getTemp(), globalUniqueIdIndexSql);
 
         // We'll Insert Into this one with the calculated specimenHashes and then Update the temp table from there
-        TempTableInfo tti2 = new TempTableInfo("SpecimenUpload2", columns, Arrays.asList("RowId"));
+        ArrayList<ColumnInfo> columns2 = new ArrayList<>();
+        columns2.add(new ColumnInfo(GLOBAL_UNIQUE_ID.getDbColumnName(), GLOBAL_UNIQUE_ID.getJdbcType(), GLOBAL_UNIQUE_ID.getMaxSize(), true));
+        columns2.add(new ColumnInfo("SpecimenHash", JdbcType.VARCHAR, 300, true));
+        TempTableInfo tti2 = new TempTableInfo("SpecimenUpload2", columns2, Arrays.asList("RowId"));
         final String fullTableName2 = tti.getSelectName();
 
         final String rowIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_RowId ON " + fullTableName + "(RowId)";
