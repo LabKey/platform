@@ -742,6 +742,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     supportSessionLabel: 'All variables from this session',
     supportSessionDescription: 'All variables that have been selected from this session grouped by source',
 
+    loadingMsgTxt: 'loading measures...',
+
     constructor : function(config) {
 
         Ext4.apply(this, config, {
@@ -779,7 +781,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         // Show the mask after the component size has been determined, as long as the data is still loading:
         this.on('afterlayout', function() {
             if (!this.loaded)
-                this.getEl().mask("loading measures...");
+                this.getEl().mask(this.loadingMsgTxt);
         });
 
         this.callParent();
