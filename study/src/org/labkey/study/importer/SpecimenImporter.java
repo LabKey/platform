@@ -2713,6 +2713,11 @@ public class SpecimenImporter
             }
         }
 
+        for (T col : availableColumns)
+        {
+            if (col.isUnique())
+                keyColumns.add(col.getDbColumnName());
+        }
         if (hasContainerColumn)
         {
             keyColumns.add("Container");
