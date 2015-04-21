@@ -1493,6 +1493,10 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         {
             DbScope scope = DbScope.getDbScope(key);
 
+            // Another option would be to add "INNER JOIN master.dbo.sysdatabases" to the SELECT DISTINCT COALESCE query below.
+            // That might be a bit cleaner, but this code approach lets us detect these invalid synonyms and log a warning.
+            final Set<String> validDatabaseNames = new CaseInsensitiveHashSet(new SqlSelector(scope, new SQLFragment("SELECT Name FROM master.dbo.sysdatabases")).getCollection(String.class));
+
             // A synonym in this scope might target other databases. We need to construct SQL that joins each synonym definition
             // to the sys.objects table its own target database, so generate a crazy UNION query with one SELECT clause per
             // distinct database.
@@ -1518,12 +1522,19 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                 @Override
                 public void exec(String dbName) throws SQLException
                 {
-                    if (!sql.isEmpty())
-                        sql.append("\nUNION\n\n");
-                    sql.append(part1);
-                    sql.append(dbName);  // dbName is in brackets, so reasonably escaped
-                    sql.append(part2);
-                    sql.add(dbName);     // this dbName can be a parameter
+                    if (!validDatabaseNames.contains(dbName))
+                    {
+                        LOG.error("One or more synonyms are defined as targeting database \"" + dbName + "\", which doesn't exist. These synonyms will be ignored.");
+                    }
+                    else
+                    {
+                        if (!sql.isEmpty())
+                            sql.append("\nUNION\n\n");
+                        sql.append(part1);
+                        sql.append(dbName);  // dbName is in brackets, so reasonably escaped
+                        sql.append(part2);
+                        sql.add(dbName);     // this dbName can be a parameter
+                    }
                 }
             }, String.class);
 
@@ -1686,23 +1697,31 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         {
             Map<String, MultiMap<String, Synonym>> reverseMap = getReverseMap(_synonymScope, _targetScope);
 
-            MultiMap<String, Synonym> mmap = reverseMap.get(pkSchemaName);
-
-            if (null != mmap)
+            // Additional logging to track down repro for #23100
+            if (null == reverseMap)
             {
-                Collection<Synonym> synonyms = mmap.get(pkTableName);
+                LOG.error("No reverse map from " + _synonymScope + " to " + _targetScope + ", trying to resolve " + fkName + " (" + pkSchemaName + "." + pkTableName + "." + pkColumnName + " -> " + colName + ")");
+            }
+            else
+            {
+                MultiMap<String, Synonym> mmap = reverseMap.get(pkSchemaName);
 
-                if (null != synonyms)
+                if (null != mmap)
                 {
-                    for (Synonym synonym : synonyms)
-                    {
-                        if (_synonym.getSchemaName().equals(synonym.getSchemaName()))
-                        {
-                            return super.getImportedKey(fkName, synonym.getSchemaName(), synonym.getName(), pkColumnName, colName);
-                        }
-                    }
+                    Collection<Synonym> synonyms = mmap.get(pkTableName);
 
-                    // TODO: Otherwise pick the first one?
+                    if (null != synonyms)
+                    {
+                        for (Synonym synonym : synonyms)
+                        {
+                            if (_synonym.getSchemaName().equals(synonym.getSchemaName()))
+                            {
+                                return super.getImportedKey(fkName, synonym.getSchemaName(), synonym.getName(), pkColumnName, colName);
+                            }
+                        }
+
+                        // TODO: Otherwise pick the first one?
+                    }
                 }
             }
 
