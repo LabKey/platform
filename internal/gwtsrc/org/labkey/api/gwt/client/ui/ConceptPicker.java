@@ -31,7 +31,7 @@ import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.List;
 
 /**
  * User: matthewb
@@ -375,32 +375,41 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                     return;
                 }
                 XDOM.getBodyEl().mask();
-                _service.getTablesForLookup(folder, schema, new ErrorDialogAsyncCallback<Map<String,GWTPropertyDescriptor>>("Lookup retrieval failed"){
+                _service.getTablesForLookup(folder, schema, new ErrorDialogAsyncCallback<List<LookupService.LookupTable>>("Lookup retrieval failed"){
                     public void handleFailure(String message, Throwable caught)
                     {
                         XDOM.getBodyEl().unmask();
                     }
 
-                    public void onSuccess(Map<String, GWTPropertyDescriptor> result)
+                    public void onSuccess(List<LookupService.LookupTable> result)
                     {
                         XDOM.getBodyEl().unmask();
-                        GWTPropertyDescriptor key = result.get(table);  // case sensitivity???
-                        if (null == key || null == key.getRangeURI())
+                        boolean foundTableMatch = false;
+                        GWTPropertyDescriptor key = null;
+                        PropertyType currentType = null;
+                        if (null != _current.getValue())
+                            currentType = _current.getValue().getPropertyType();
+
+                        for (LookupService.LookupTable lk : result)
+                        {
+                            if (!lk.table.equalsIgnoreCase(table))
+                                continue;
+                            foundTableMatch = true;
+                            if (validateLookup(currentType,schema,table, PropertyType.fromName(lk.key.getRangeURI())))
+                                key = lk.key;
+                        }
+
+                        if (!foundTableMatch || null == key || null == key.getRangeURI())
                         {
                             Window.alert("Table not found: " + table);
                             return;
                         }
-                        String range = key.getRangeURI();
-                        PropertyType selectedType = PropertyType.fromName(range);
-                        // Allow multi-line <-> string lookups, since they're really the same underneath
-                        if (!_current.isRangeEditable && null!=_current.getValue() && selectedType != _current.getValue().getPropertyType() &&
-                                !((selectedType == PropertyType.xsdString && _current.getValue().getPropertyType() == PropertyType.expMultiLine) ||
-                                    (selectedType == PropertyType.expMultiLine && _current.getValue().getPropertyType() == PropertyType.xsdString)))
+                        if (!_current.isRangeEditable && null != _current.getValue() && null == key)
                         {
-                            Window.alert("Lookup primary key does not match: " + _current.getValue().getPropertyType().getShortName());
+                            Window.alert("Lookup primary key does not match: " + currentType.getShortName());
                             return;
                         }
-                        _current.setValue(new LookupConceptType(range, folder, schema, table));
+                        _current.setValue(new LookupConceptType(key.getRangeURI(), folder, schema, table));
                         if (hideOnSuccess)
                             hide();
                     }
@@ -642,6 +651,32 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         }
         
         return null;
+    }
+
+
+
+    public static boolean validateLookup(PropertyType fkType, String schema, String table, PropertyType pkType)
+    {
+        boolean ret = _validateLookup(fkType,schema,table,pkType);
+        _log("" + ret + "=validateLookup("+(null==fkType?"null":fkType.getShortName())+","+schema+","+table+","+pkType.getShortName()+")");
+        return ret;
+    }
+
+
+    public static boolean _validateLookup(PropertyType fkType, String schema, String table, PropertyType pkType)
+    {
+        if (null == fkType)
+            return true;
+        fkType = fkType == PropertyType.expMultiLine ? PropertyType.xsdString : fkType;
+        pkType = pkType == PropertyType.expMultiLine ? PropertyType.xsdString : pkType;
+        if (fkType == pkType)
+            return true;
+
+        // HACK for samplesets which can use Name as alternate lookup
+        if (schema.equalsIgnoreCase("samples") && fkType == PropertyType.xsdString)
+            return true;
+
+        return false;
     }
 
 

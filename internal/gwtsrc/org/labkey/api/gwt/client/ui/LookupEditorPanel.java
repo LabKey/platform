@@ -37,9 +37,8 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+import java.util.TreeSet;
 
 /**
  * User: jeckels
@@ -248,27 +247,23 @@ public class LookupEditorPanel extends LayoutContainer
         store.removeAll();
 
         _comboTableName.setEmptyText("Loading tables...");
-        _service.getTablesForLookup(folder, schema, new ErrorDialogAsyncCallback<Map<String, GWTPropertyDescriptor>>()
+        _service.getTablesForLookup(folder, schema, new ErrorDialogAsyncCallback<List<LookupService.LookupTable>>()
         {
-            public void onSuccess(Map<String, GWTPropertyDescriptor> m)
+            public void onSuccess(List<LookupService.LookupTable> list)
             {
                 if (!folder.equals(lastFolderTableStore) || !schema.equals(lastSchemaTableStore))
                     return;
                 store.removeAll();
-                String[] names = m.keySet().toArray(new String[m.size()]);
-                Arrays.sort(names, String.CASE_INSENSITIVE_ORDER);
-                for (String table : names)
+                TreeSet<LookupService.LookupTable> set = new TreeSet<LookupService.LookupTable>(list);
+                for (LookupService.LookupTable lk : set)
                 {
-                    GWTPropertyDescriptor _pd = m.get(table);
+                    String table = lk.table;
+                    GWTPropertyDescriptor _pd = lk.key;
                     PropertyType tableKeyType = PropertyType.fromName( _pd.getRangeURI());
                     // Allow it as an option if we haven't already set our field's type, or they match exactly,
                     // or it's a mix of string and multi-line strings
 
-                    // CONSIDER: how to you do disabled items in an Ext ComboBox?
-                    if (null == _keyType ||
-                            _keyType == tableKeyType ||
-                            (_keyType == PropertyType.expMultiLine && tableKeyType == PropertyType.xsdString) ||
-                            (_keyType == PropertyType.xsdString && tableKeyType == PropertyType.expMultiLine))
+                    if (ConceptPicker.validateLookup(_keyType,schema,table,tableKeyType))
                     {
                         store.add(new ComboModelData(table, table + " (" +  tableKeyType.getShortName() + ")"));
                     }
@@ -277,7 +272,7 @@ public class LookupEditorPanel extends LayoutContainer
                 checkForMissingTargetQuery();
 
                 if (store.getCount()==0)
-                    _comboTableName.setEmptyText(m.size()==0?"No tables found":"No matching tables found");
+                    _comboTableName.setEmptyText(list.isEmpty()?"No tables found":"No matching tables found");
                 else
                     updateEmptyText();
 

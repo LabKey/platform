@@ -15,11 +15,12 @@
  */
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.user.client.rpc.IsSerializable;
 import com.google.gwt.user.client.rpc.RemoteService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
+import java.io.Serializable;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: jeckels
@@ -40,8 +41,30 @@ public interface LookupService extends RemoteService
     /**
      * @param containerId container
      * @param schemaName name of schema for query module
-     * @return map table name to pk column name
+     * @return list of table name to pk column name, same table may appear more than once.
      */
-    Map<String, GWTPropertyDescriptor> getTablesForLookup(String containerId, String schemaName);
+    List<LookupTable> getTablesForLookup(String containerId, String schemaName);
 
+    public static class LookupTable implements Comparable<LookupTable>, Serializable, IsSerializable
+    {
+        public String table;
+        GWTPropertyDescriptor key;
+
+        public LookupTable()
+        {
+            /* no-arg constructor required for IsSerializable to work */
+        }
+
+        public LookupTable(String t, GWTPropertyDescriptor pd)
+        {
+            this.table = t;
+            this.key = pd;
+        }
+
+        public int compareTo(LookupTable o)
+        {
+            int c = String.CASE_INSENSITIVE_ORDER.compare(table, o.table);
+            return 0!=c ? c : String.CASE_INSENSITIVE_ORDER.compare(this.key.getName(), o.key.getName());
+        }
+    }
 }

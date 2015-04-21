@@ -16,7 +16,6 @@
 package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
 import java.util.HashMap;
 import java.util.List;
@@ -88,24 +87,24 @@ public class CachingLookupService implements LookupServiceAsync
     }
 
 
-    Map<String,Map<String, GWTPropertyDescriptor>> tables = new HashMap<String,Map<String, GWTPropertyDescriptor>>();
+    Map<String,List<LookupService.LookupTable>> tables = new HashMap<String,List<LookupService.LookupTable>>();
 
-    public void getTablesForLookup(final String containerId, final String schemaName, final AsyncCallback<Map<String, GWTPropertyDescriptor>> async)
+    public void getTablesForLookup(final String containerId, final String schemaName, final AsyncCallback<List<LookupService.LookupTable>> async)
     {
-        Map<String, GWTPropertyDescriptor> result = tables.get(containerId + "||" + schemaName);
+        List<LookupService.LookupTable> result = tables.get(containerId + "||" + schemaName);
         if (null != result)
         {
             async.onSuccess(result);
             return;
         }
-        _impl.getTablesForLookup(containerId, schemaName, new AsyncCallback<Map<String,GWTPropertyDescriptor> >()
+        _impl.getTablesForLookup(containerId, schemaName, new AsyncCallback<List<LookupService.LookupTable>>()
         {
             public void onFailure(Throwable caught)
             {
                 async.onFailure(caught);
             }
 
-            public void onSuccess(Map<String,GWTPropertyDescriptor> result)
+            public void onSuccess(List<LookupService.LookupTable> result)
             {
                 tables.put(containerId + "||" + schemaName, result);
                 async.onSuccess(result);
@@ -114,9 +113,9 @@ public class CachingLookupService implements LookupServiceAsync
     }
 
 
-    public Map<String, GWTPropertyDescriptor> getTablesForLookupCached(final String containerId, final String schemaName)
-    {                                                                
-        Map<String, GWTPropertyDescriptor> result = tables.get(containerId + "||" + schemaName);
+    public List<LookupService.LookupTable> getTablesForLookupCached(final String containerId, final String schemaName)
+    {
+        List<LookupService.LookupTable> result = tables.get(containerId + "||" + schemaName);
         return result;
     }
 }

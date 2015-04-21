@@ -29,9 +29,8 @@ import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.TreeSet;
 
 /**
  * User: jeckels
@@ -252,21 +251,20 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
             Window.alert("Please select a schema");
             return;
         }
-        _service.getTablesForLookup(container, schema, new ErrorDialogAsyncCallback<Map<String, GWTPropertyDescriptor>>()
+        _service.getTablesForLookup(container, schema, new ErrorDialogAsyncCallback<List<LookupService.LookupTable>>()
         {
-            public void onSuccess(Map<String, GWTPropertyDescriptor> m)
+            public void onSuccess(List<LookupService.LookupTable> list)
             {
                 List<String> tables = new ArrayList<String>();
-                if (m == null)
+                if (list == null || list.isEmpty())
                 {
                     Window.alert("Could not find any tables in the '" + schema + "' schema in the selected folder.");
                     return;
                 }
-                tables.addAll(m.keySet());
-                Collections.sort(tables);
+                TreeSet<LookupService.LookupTable> sorted = new TreeSet<LookupService.LookupTable>(list);
                 List<String> display = new ArrayList<String>();
-                for (String table : tables)
-                    display.add(table + " (" + m.get(table).getName() + ")");
+                for (LookupService.LookupTable lk : sorted)
+                    display.add(lk.table + " (" + lk.key.getName() + ")");
                 display.add(0,"");
                 tables.add(0,null);
                 if (_popupList != null)

@@ -26,6 +26,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.ui.LookupService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryException;
@@ -112,11 +113,13 @@ public class DomainEditorServiceBase extends BaseRemoteService
     }
 
 
-    public Map<String, GWTPropertyDescriptor> getTablesForLookup(String containerId, String schemaName)
+    public List<LookupService.LookupTable> getTablesForLookup(String containerId, String schemaName)
     {
         try
         {
-            Map<String, GWTPropertyDescriptor> availableQueries = new HashMap<>();  //  GWT: TreeMap does not work
+//            Map<String, GWTPropertyDescriptor> availableQueries = new HashMap<>();  //  GWT: TreeMap does not work
+            ArrayList<LookupService.LookupTable> availableQueries = new ArrayList<>();
+
             Container c = getContainer(containerId);
             if (c == null)
             {
@@ -125,6 +128,8 @@ public class DomainEditorServiceBase extends BaseRemoteService
             UserSchema schema = QueryService.get().getUserSchema(getUser(), c, schemaName);
             if (schema == null)
                 return availableQueries;
+
+            boolean isSampleSchema = schema.getName().equalsIgnoreCase("samples") && schema.getDbSchema().getName().equalsIgnoreCase("exp");
 
             for (String name : schema.getTableAndQueryNames(false))
             {
@@ -154,7 +159,11 @@ public class DomainEditorServiceBase extends BaseRemoteService
                 }
                 PropertyType type = PropertyType.getFromClass(pk.getJavaObjectClass());
                 GWTPropertyDescriptor pd = new GWTPropertyDescriptor(pk.getName(), type.getTypeUri());
-                availableQueries.put(name, pd);
+                availableQueries.add(new LookupService.LookupTable(name, pd));
+
+                // SampleSet hack
+                if (isSampleSchema)
+                    availableQueries.add(new LookupService.LookupTable(name, new GWTPropertyDescriptor("Name",PropertyType.STRING.getTypeUri())));
             }
             return availableQueries;
         }

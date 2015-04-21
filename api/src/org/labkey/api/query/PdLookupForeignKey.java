@@ -16,7 +16,9 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.User;
@@ -51,6 +53,8 @@ public class PdLookupForeignKey extends AbstractForeignKey
     {
         return _pd.getLookupSchema();
     }
+
+
 
     @Override
     public Container getLookupContainer()
@@ -115,6 +119,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         return _tableInfo;
     }
 
+
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         TableInfo table = getLookupTableInfo();
@@ -135,8 +140,42 @@ public class PdLookupForeignKey extends AbstractForeignKey
             if (newTable.hasDefaultContainerFilter())
                 newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable()));
         }
-        
-        return LookupColumn.create(parent, table.getPkColumns().get(0), table.getColumn(displayField), false);
+
+        return LookupColumn.create(parent, table.getColumn(getLookupColumnName()), table.getColumn(displayField), false);
+    }
+
+
+    @Override
+    protected void initTableAndColumnNames()
+    {
+        super.initTableAndColumnNames();
+
+        TableInfo table = getLookupTableInfo();
+        if (table == null)
+            return;
+
+        DbSchema s = table.getSchema();
+        boolean isSampleSchema = s.getScope()==CoreSchema.getInstance().getScope() &&
+                s.getName().equalsIgnoreCase("exp") &&
+                StringUtils.equalsIgnoreCase(table.getUserSchema().getName(), "samples");
+        if (isSampleSchema && _pd.getJdbcType().isText())
+        {
+            if (null != table.getColumn("Name"))
+                _columnName = "Name";
+        }
+    }
+
+
+    @Override
+    public String getLookupColumnName()
+    {
+        return super.getLookupColumnName();
+    }
+
+    @Override
+    public NamedObjectList getSelectList(RenderContext ctx)
+    {
+        return super.getSelectList(ctx);
     }
 
     public StringExpression getURL(ColumnInfo parent)
