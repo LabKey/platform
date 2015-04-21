@@ -128,6 +128,12 @@ public class CasManager
         {
             AttributesType attributes = response.getAuthenticationSuccess().getAttributes();
 
+            if (null == attributes)
+            {
+                errors.reject(null, "CAS server response did not include required attributes");
+                return null;
+            }
+
             return new ValidEmail(getValue(attributes, "email"));
         }
         else
