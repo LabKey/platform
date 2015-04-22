@@ -35,7 +35,8 @@ import java.util.Set;
 public class FolderWriterImpl extends BaseFolderWriter
 {
     private static final Logger LOG = Logger.getLogger(FolderWriterImpl.class);
-    private Collection<FolderWriter> _writers;
+
+    private final Collection<FolderWriter> _writers;
 
     public FolderWriterImpl()
     {

@@ -21,7 +21,6 @@ import org.labkey.api.writer.Writer;
 import org.labkey.folder.xml.FolderDocument;
 
 import java.util.Collection;
-import java.util.Set;
 
 /**
  * User: cnathe
@@ -29,11 +28,11 @@ import java.util.Set;
  */
 public interface FolderWriter extends Writer<Container, ImportContext<FolderDocument.Folder>>
 {
-    @Nullable
-    public Collection<Writer> getChildren(boolean sort);
-    public boolean show(Container c);
-    public boolean selectedByDefault(AbstractFolderContext.ExportType type);
+    @Nullable Collection<Writer> getChildren(boolean sort);
+    boolean show(Container c);
+    boolean selectedByDefault(AbstractFolderContext.ExportType type);
+    void initialize(ImportContext<FolderDocument.Folder> context);
+
     /* temporary setting until all importers support using VirtualFile */
     boolean supportsVirtualFile();
-    void initialize(ImportContext<FolderDocument.Folder> context);
 }

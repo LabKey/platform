@@ -59,7 +59,7 @@ public class BaseFolderWriter implements FolderWriter
     @Override
     public boolean supportsVirtualFile()
     {
-        return false;
+        return true;
     }
 
     @Override
