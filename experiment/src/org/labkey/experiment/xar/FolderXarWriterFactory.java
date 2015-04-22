@@ -115,5 +115,11 @@ public class FolderXarWriterFactory implements FolderWriterFactory
                 exporter.write(fOut);
             }
         }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return false;
+        }
     }
 }

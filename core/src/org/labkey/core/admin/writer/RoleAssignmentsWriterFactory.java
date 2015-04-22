@@ -111,12 +111,6 @@ public class RoleAssignmentsWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
-
-        @Override
         public boolean selectedByDefault(AbstractFolderContext.ExportType type)
         {
             return false;

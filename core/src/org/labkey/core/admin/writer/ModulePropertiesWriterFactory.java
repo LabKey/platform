@@ -83,10 +83,5 @@ public class ModulePropertiesWriterFactory implements FolderWriterFactory
             }
         }
 
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
     }
 }

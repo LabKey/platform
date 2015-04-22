@@ -145,10 +145,5 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
 
         }
 
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
     }
 }

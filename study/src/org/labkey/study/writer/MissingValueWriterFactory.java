@@ -68,10 +68,5 @@ public class MissingValueWriterFactory implements FolderWriterFactory
             }            
         }
 
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
     }
 }

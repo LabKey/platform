@@ -78,10 +78,5 @@ public class NotificationSettingsWriterFactory implements FolderWriterFactory
             }
         }
 
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
     }
 }

@@ -90,12 +90,6 @@ public class ReportWriter extends BaseFolderWriter
         }
     }
 
-    @Override
-    public boolean supportsVirtualFile()
-    {
-        return true;
-    }
-
     public static class Factory implements FolderWriterFactory
     {
         public FolderWriter create()

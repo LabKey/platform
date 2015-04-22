@@ -51,10 +51,5 @@ public class SearchSettingsWriterFactory implements FolderWriterFactory
             folderXml.setSearchable(c.isSearchable());
         }
 
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
     }
 }

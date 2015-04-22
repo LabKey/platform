@@ -61,10 +61,5 @@ public class WikiWriterFactory implements FolderWriterFactory
             wikiDir.saveWebdavTree(parent);
         }
 
-        @Override
-        public boolean supportsVirtualFile()
-        {
-            return true;
-        }
     }
 }

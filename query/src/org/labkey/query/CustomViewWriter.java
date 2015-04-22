@@ -105,12 +105,6 @@ public class CustomViewWriter extends BaseFolderWriter
         return _viewDir;
     }
 
-    @Override
-    public boolean supportsVirtualFile()
-    {
-        return true;
-    }
-
     public static class Factory implements FolderWriterFactory
     {
         public FolderWriter create()

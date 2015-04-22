@@ -145,5 +145,11 @@ public class StudyWriterFactory implements FolderWriterFactory
             }
             return children;
         }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return false;  // Not sure why...
+        }
     }
 }
