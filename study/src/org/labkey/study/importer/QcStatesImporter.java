@@ -117,6 +117,10 @@ public class QcStatesImporter implements InternalStudyImporter
             else
             {
                 qcForm.setShowPrivateDataByDefault(qcStates.getShowPrivateDataByDefault());
+                // Preserve these default settings as they may have been previously configured in the app
+                qcForm.setDefaultPipelineQCState(study.getDefaultPipelineQCState());
+                qcForm.setDefaultAssayQCState(study.getDefaultAssayQCState());
+                qcForm.setDefaultDirectEntryQCState(study.getDefaultDirectEntryQCState());
                 StudyController.updateQcState(study, ctx.getUser(), qcForm);
             }
         }
