@@ -21,7 +21,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.di.VariableMap;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.steps.StepMeta;
-import org.labkey.etl.xml.DeletedRowsSourceObjectType;
+
+import java.io.Serializable;
 
 /**
  * User: matthew
@@ -37,7 +38,7 @@ import org.labkey.etl.xml.DeletedRowsSourceObjectType;
  */
 public interface FilterStrategy
 {
-    interface Factory
+    interface Factory extends Serializable
     {
         FilterStrategy getFilterStrategy(TransformJobContext context, StepMeta stepMeta);
         boolean checkStepsSeparately();
@@ -48,7 +49,7 @@ public interface FilterStrategy
     /* Has side effect of setting parameters */
     SimpleFilter getFilter(VariableMap variables);
     SimpleFilter getFilter(VariableMap variables, boolean deleting);
-    @Nullable DeletedRowsSourceObjectType getDeletedRowsSource();
+    @Nullable DeletedRowsSource getDeletedRowsSource();
     @Nullable TableInfo getDeletedRowsTinfo();
     @Nullable String getDeletedRowsKeyCol();
     @Nullable String getTargetDeletionKeyCol();

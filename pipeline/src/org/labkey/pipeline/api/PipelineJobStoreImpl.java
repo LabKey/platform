@@ -18,6 +18,7 @@ package org.labkey.pipeline.api;
 
 import com.thoughtworks.xstream.converters.ConversionException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -39,6 +40,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class PipelineJobStoreImpl extends PipelineJobMarshaller
 {
+    private static Logger _log = Logger.getLogger(PipelineJobStoreImpl.class);
+
     public PipelineJob fromXML(String xml)
     {
         PipelineJob job = super.fromXML(xml);
@@ -87,11 +90,15 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         }
         catch (ConversionException e)
         {
-            throw new IOException("Failed to restore the checkpoint from the database.", e);
+            String msg = "Failed to restore the job checkpoint from the database: " + e.getMessage();
+            _log.warn(msg, e);
+            throw new IOException(msg, e);
         }
         catch (PipelineValidationException e)
         {
-            throw new IOException("Invalid job parameters", e);
+            String msg = "Invalid job parameters " + e.getMessage();
+            _log.warn(msg, e);
+            throw new IOException(msg, e);
         }
     }
 

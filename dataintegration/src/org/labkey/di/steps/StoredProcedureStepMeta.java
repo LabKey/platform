@@ -36,7 +36,7 @@ public class StoredProcedureStepMeta extends StepMetaImpl
 {
     private Map<String, ETLParameterInfo> xmlParamInfos = new CaseInsensitiveHashMap<>();
 
-    final class ETLParameterInfo
+    final static class ETLParameterInfo
     {
         private String value;
         private boolean override = false;

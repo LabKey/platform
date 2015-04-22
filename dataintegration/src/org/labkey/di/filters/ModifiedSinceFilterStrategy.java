@@ -16,6 +16,7 @@
 package org.labkey.di.filters;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
@@ -35,7 +36,6 @@ import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.TransformUtils;
 import org.labkey.di.steps.StepMeta;
-import org.labkey.etl.xml.DeletedRowsSourceObjectType;
 import org.labkey.etl.xml.FilterType;
 
 import java.nio.ByteBuffer;
@@ -100,7 +100,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         public abstract PropertyDescriptor getPropertyDescriptor(boolean useRowversion, boolean deleting);
     }
 
-    public ModifiedSinceFilterStrategy(TransformJobContext context, StepMeta stepMeta, String defaultTimestampColumnName, DeletedRowsSourceObjectType deletedRowsSource)
+    public ModifiedSinceFilterStrategy(TransformJobContext context, StepMeta stepMeta, String defaultTimestampColumnName, DeletedRowsSource deletedRowsSource)
     {
         super(stepMeta, context, deletedRowsSource);
         _defaultTimestampColumnName = defaultTimestampColumnName;
@@ -278,26 +278,20 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         return deleting ? _useRowversionForDelete : _useRowversionForSelect;
     }
 
-    public static class Factory implements FilterStrategy.Factory
+    public static class Factory extends FilterStrategyFactoryImpl
     {
-        private final FilterType _filterType;
+        private final String _tsColumnName;
 
-        public Factory()
+        public Factory(@Nullable FilterType ft)
         {
-            this(null);
-        }
-
-        public Factory(FilterType ft)
-        {
-            _filterType = ft;
+            super(ft);
+            _tsColumnName = null == ft ? null : ft.getTimestampColumnName();
         }
 
         @Override
         public FilterStrategy getFilterStrategy(TransformJobContext context, StepMeta stepMeta)
         {
-            if (null == _filterType)
-                return new ModifiedSinceFilterStrategy(context, stepMeta, null, null);
-            return new ModifiedSinceFilterStrategy(context, stepMeta, _filterType.getTimestampColumnName(), _filterType.getDeletedRowsSource());
+            return new ModifiedSinceFilterStrategy(context, stepMeta, _tsColumnName, _deletedRowsSource);
         }
 
         @Override

@@ -489,7 +489,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             if (jd instanceof TransformDescriptor)
                 factory = ((TransformDescriptor)jd).getDefaultFilterFactory();
             if (null == factory)
-                factory = new ModifiedSinceFilterStrategy.Factory();
+                factory = new ModifiedSinceFilterStrategy.Factory(null);
 
             _filterStrategy = factory.getFilterStrategy(_context, _meta);
         }

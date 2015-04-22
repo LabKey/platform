@@ -15,11 +15,12 @@
  */
 package org.labkey.di.filters;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.di.VariableMap;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.steps.StepMeta;
-import org.labkey.etl.xml.DeletedRowsSourceObjectType;
+import org.labkey.etl.xml.FilterType;
 
 /**
  * User: matthewb
@@ -29,7 +30,7 @@ import org.labkey.etl.xml.DeletedRowsSourceObjectType;
 public class SelectAllFilterStrategy extends FilterStrategyImpl
 {
 
-    public SelectAllFilterStrategy(StepMeta stepMeta, TransformJobContext context, DeletedRowsSourceObjectType deletedRowsSource)
+    public SelectAllFilterStrategy(StepMeta stepMeta, TransformJobContext context, DeletedRowsSource deletedRowsSource)
     {
         super(stepMeta, context, deletedRowsSource);
     }
@@ -47,18 +48,11 @@ public class SelectAllFilterStrategy extends FilterStrategyImpl
         return null;
     }
 
-    public static class Factory implements FilterStrategy.Factory
+    public static class Factory extends FilterStrategyFactoryImpl
     {
-        private final DeletedRowsSourceObjectType _deletedRowsSource;
-
-        public Factory(DeletedRowsSourceObjectType deletedKeysSource)
+        public Factory(@Nullable FilterType ft)
         {
-            _deletedRowsSource = deletedKeysSource;
-        }
-
-        public Factory()
-        {
-            this(null);
+            super(ft);
         }
 
         @Override

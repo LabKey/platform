@@ -185,7 +185,7 @@ public class TransformManager implements DataIntegrationService.Interface
             if (null != ft)
                 defaultFactory = createFilterFactory(ft);
             if (null == defaultFactory)
-                defaultFactory = new SelectAllFilterStrategy.Factory();
+                defaultFactory = new SelectAllFilterStrategy.Factory(null);
 
             // schedule
             if (null != etlXML.getSchedule())
@@ -273,7 +273,7 @@ public class TransformManager implements DataIntegrationService.Interface
         else if (className.equals(RunFilterStrategy.class.getName()))
             return new RunFilterStrategy.Factory(filterTypeXML);
         else if (className.equals(SelectAllFilterStrategy.class.getName()))
-            return new SelectAllFilterStrategy.Factory(filterTypeXML.getDeletedRowsSource());
+            return new SelectAllFilterStrategy.Factory(filterTypeXML);
         throw new IllegalArgumentException("Class is not a recognized filter strategy: " + className);
     }
 

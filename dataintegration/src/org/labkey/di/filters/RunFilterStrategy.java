@@ -36,7 +36,6 @@ import org.labkey.di.pipeline.TransformConfiguration;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.steps.StepMeta;
-import org.labkey.etl.xml.DeletedRowsSourceObjectType;
 import org.labkey.etl.xml.FilterType;
 
 import java.util.Arrays;
@@ -73,7 +72,7 @@ public class RunFilterStrategy extends FilterStrategyImpl
 
 
 
-    public RunFilterStrategy(TransformJobContext context, StepMeta stepMeta, SchemaKey runTableSchema, String runTableName, String pkRunColumnName, String fkRunColumnName, DeletedRowsSourceObjectType deletedRowsSource)
+    public RunFilterStrategy(TransformJobContext context, StepMeta stepMeta, SchemaKey runTableSchema, String runTableName, String pkRunColumnName, String fkRunColumnName, DeletedRowsSource deletedRowsSource)
     {
         super(stepMeta, context, deletedRowsSource);
         _runTableSchema = runTableSchema;
@@ -223,21 +222,20 @@ public class RunFilterStrategy extends FilterStrategyImpl
     }
 
 
-    public static class Factory implements FilterStrategy.Factory
+    public static class Factory extends FilterStrategyFactoryImpl
     {
         private final SchemaKey _runTableSchema;
         private final String _runTableName;
         private final String _pkColumnName;
         private final String _fkColumnName;
-        private final DeletedRowsSourceObjectType _deletedRowsSource;
 
         public Factory(FilterType ft)
         {
+            super(ft);
             _runTableSchema = null != ft.getRunTableSchema() ? SchemaKey.decode(ft.getRunTableSchema()) : null;
             _runTableName = ft.getRunTable();
             _pkColumnName = ft.getPkColumnName();
             _fkColumnName = ft.getFkColumnName();
-            _deletedRowsSource = ft.getDeletedRowsSource();
         }
 
         @Override

@@ -551,7 +551,9 @@ dataintegration/src/org/labkey/di/VariableMap.java -text
 dataintegration/src/org/labkey/di/VariableMapImpl.java -text
 dataintegration/src/org/labkey/di/data/TransformDataType.java -text
 dataintegration/src/org/labkey/di/data/TransformProperty.java -text
+dataintegration/src/org/labkey/di/filters/DeletedRowsSource.java -text
 dataintegration/src/org/labkey/di/filters/FilterStrategy.java -text
+dataintegration/src/org/labkey/di/filters/FilterStrategyFactoryImpl.java -text
 dataintegration/src/org/labkey/di/filters/FilterStrategyImpl.java -text
 dataintegration/src/org/labkey/di/filters/ModifiedSinceFilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/RunFilterStrategy.java -text

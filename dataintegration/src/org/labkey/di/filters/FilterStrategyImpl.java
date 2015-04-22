@@ -25,7 +25,6 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.di.VariableMap;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.steps.StepMeta;
-import org.labkey.etl.xml.DeletedRowsSourceObjectType;
 
 import java.util.List;
 
@@ -37,13 +36,13 @@ public abstract class FilterStrategyImpl implements FilterStrategy
 {
     final TransformJobContext _context;
     final CopyConfig _config;
-    final DeletedRowsSourceObjectType _deletedRowsSource;
+    final DeletedRowsSource _deletedRowsSource;
     TableInfo _deletedRowsTinfo;
     String _deletedRowsKeyCol;
     String _targetDeletionKeyCol;
     boolean _isInit = false;
 
-    public FilterStrategyImpl(StepMeta stepMeta, TransformJobContext context, DeletedRowsSourceObjectType deletedRowsSource)
+    public FilterStrategyImpl(StepMeta stepMeta, TransformJobContext context, DeletedRowsSource deletedRowsSource)
     {
         if (!(stepMeta instanceof CopyConfig))
             throw new IllegalArgumentException(this.getClass().getName() + " is not compatible with " + stepMeta.getClass().getName());
@@ -53,7 +52,7 @@ public abstract class FilterStrategyImpl implements FilterStrategy
     }
 
     @Override
-    public DeletedRowsSourceObjectType getDeletedRowsSource()
+    public DeletedRowsSource getDeletedRowsSource()
     {
         return _deletedRowsSource;
     }
