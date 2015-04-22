@@ -50,10 +50,13 @@ public class LookupEditorPanel extends LayoutContainer
 {
     private final LookupServiceAsync _service;
 
-    private PropertyType _keyType = null;
+    private PropertyType _currentType = null;
     private _ComboBox _comboContainer;
     private _ComboBox _comboSchema;
     private _ComboBox _comboTableName;
+    // _comboTableName only captures the table name
+    // as a side effect of combo change, stash property type here
+    private String _typeURI;
 
     public LookupEditorPanel(LookupServiceAsync service, GWTPropertyDescriptor initialValue, boolean showContainer)
     {
@@ -71,10 +74,11 @@ public class LookupEditorPanel extends LayoutContainer
         super.setEnabled(enabled);
     }
 
-    public void setKeyType(PropertyType type)
+    public void setCurrentType(PropertyType type)
     {
-        _keyType = type;
+        _currentType = type;
     }
+
 
     protected void initUI(boolean showContainer)
     {
@@ -169,7 +173,14 @@ public class LookupEditorPanel extends LayoutContainer
         {
             super();
             set("value", value);
+            set("text", null == text ? "" : text);
+        }
+        public ComboModelData(String value, String text, String rangeURI)
+        {
+            super();
+            set("value", value);
             set("text", null==text?"":text);
+            set("type", null==rangeURI?"":rangeURI);
         }
     }
 
@@ -232,7 +243,7 @@ public class LookupEditorPanel extends LayoutContainer
         if (null == schema) throw new IllegalArgumentException();
 
         // If it's the same target folder and schema, and the same key as last time, we don't need to requery
-        if (folder.equals(lastFolderTableStore) && schema.equals(lastSchemaTableStore) && PropertyUtil.nullSafeEquals(_keyType, lastKeyType))
+        if (folder.equals(lastFolderTableStore) && schema.equals(lastSchemaTableStore) && PropertyUtil.nullSafeEquals(_currentType, lastKeyType))
         {
             // Issue 15772: if this is called before the store loads, we clear the combo inappropriately
             //this check has been commented out, but should be revisited
@@ -242,7 +253,7 @@ public class LookupEditorPanel extends LayoutContainer
 
         lastFolderTableStore = folder;
         lastSchemaTableStore = schema;
-        lastKeyType = _keyType;
+        lastKeyType = _currentType;
 
         store.removeAll();
 
@@ -263,9 +274,9 @@ public class LookupEditorPanel extends LayoutContainer
                     // Allow it as an option if we haven't already set our field's type, or they match exactly,
                     // or it's a mix of string and multi-line strings
 
-                    if (ConceptPicker.validateLookup(_keyType,schema,table,tableKeyType))
+                    if (ConceptPicker.validateLookup(_currentType,schema,table,tableKeyType))
                     {
-                        store.add(new ComboModelData(table, table + " (" +  tableKeyType.getShortName() + ")"));
+                        store.add(new ComboModelData(table, table + " (" +  tableKeyType.getShortName() + ")", tableKeyType.getURI()));
                     }
                 }
 
@@ -281,6 +292,7 @@ public class LookupEditorPanel extends LayoutContainer
         });
     }
 
+
     private void checkForMissingTargetQuery()
     {
         boolean matchExisting = false;
@@ -291,7 +303,7 @@ public class LookupEditorPanel extends LayoutContainer
                 matchExisting = true;
             }
         }
-
+        _log("matchExisting="+matchExisting);
         if (!matchExisting)
         {
             _comboTableName.setStringValue(null);
@@ -301,6 +313,7 @@ public class LookupEditorPanel extends LayoutContainer
 
     public void init(GWTPropertyDescriptor pd)
     {
+        _log("LookupEditorPanel::init " + pd.getName() + "(" + pd.getRangeURI() + ")");
         setValue(pd);
     }
 
@@ -341,50 +354,10 @@ public class LookupEditorPanel extends LayoutContainer
         return _comboTableName.getStringValue();
     }
 
-//    void resetRangeURI()
-//    {
-//        value.setRangeURI(null);
-//        getRangeURI(null);
-//    }
-//
-//    String getRangeURI()
-//    {
-//        return value.getRangeURI();
-//    }
-//
-//    void getRangeURI(final AsyncCallback<String> async)
-//    {
-//        final String container = getContainer();
-//        final String schema = getSchemaName();
-//        String table = getTableName();
-//        if (_empty(schema) || _empty(table))
-//        {
-//            value.setRangeURI(null);
-//            return;
-//        }
-//        _service.getTablesForLookup(container, schema, new AsyncCallback<Map<String, GWTPropertyDescriptor>>()
-//        {
-//            public void onFailure(Throwable caught)
-//            {
-//                if (null != async)
-//                    async.onSuccess(null);
-//            }
-//
-//            public void onSuccess(Map<String, GWTPropertyDescriptor> result)
-//            {
-//                if (!_eq(container,getContainer()) || !_eq(schema,getSchemaName()))
-//                    return;
-//                GWTPropertyDescriptor pd = result.get(getTableName());
-//                if (null != pd)
-//                    value.setRangeURI(pd.getRangeURI());
-//                if (null != async)
-//                    async.onSuccess(value.getRangeURI());
-//                if (null != value.getRangeURI())
-//                    fireChange();
-//            }
-//        });
-//    }
-
+    public String getTypeURI()
+    {
+        return _typeURI;
+    }
 
     private class _ComboBox extends ComboBox<ComboModelData>
     {
@@ -402,12 +375,31 @@ public class LookupEditorPanel extends LayoutContainer
             addListener(Events.Change,new Listener<FieldEvent>(){
                 public void handleEvent(FieldEvent fe)
                 {
+                    _log("Change " + String.valueOf(fe.getValue()));
+                    if (null != fe.getValue())
+                    {
+                        ComboModelData cmd = (ComboModelData)fe.getValue();
+                        String type = cmd.get("type");
+                        if (null != type)
+                            _typeURI = type;
+                        _log("  value="+cmd.get("value"));
+                        _log("  text="+cmd.get("text"));
+                        _log("  type="+cmd.get("type"));
+                    }
                     _widgetChange();
                 }
             });
             addListener(Events.Select,new Listener<FieldEvent>(){
-                public void handleEvent(FieldEvent be)
+                public void handleEvent(FieldEvent fe)
                 {
+                    _log("Select " + String.valueOf(fe.getValue()));
+                    if (null != fe.getValue())
+                    {
+                        ComboModelData cmd = (ComboModelData)fe.getValue();
+                        _log("  value="+cmd.get("value"));
+                        _log("  text="+cmd.get("text"));
+                        _log("  type="+cmd.get("type"));
+                    }
                     _widgetChange();
                 }
             });
@@ -458,6 +450,7 @@ public class LookupEditorPanel extends LayoutContainer
             updateTestMarker();
         }
         
+
         String getStringValue()
         {
             return null==getValue()?null:(String)getValue().get("value");

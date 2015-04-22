@@ -331,7 +331,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                 type.apply(pd);
 
             // Be sure to set the new key type before calling setValue() so that it initializes correctly
-            _lookupEditorPanel.setKeyType(picker.isRangeEditable ? null : null==type ? null : type.getPropertyType());
+            _lookupEditorPanel.setCurrentType(picker.isRangeEditable ? null : null == type ? null : type.getPropertyType());
             _lookupEditorPanel.setValue(pd);
 
             for (int i=allradios.size()-1 ; i>=0 ; i--)
@@ -369,51 +369,29 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                 final String folder = _lookupEditorPanel.getContainer();
                 final String schema = _lookupEditorPanel.getSchemaName();
                 final String table = _lookupEditorPanel.getTableName();
+                final String typeURI = _lookupEditorPanel.getTypeURI();
+                PropertyType type = null == typeURI ? null : PropertyType.fromURI(typeURI);
+
+                _log("apply " + folder + " " + schema + " " + table + " " + typeURI);
+
                 if (_empty(schema) || _empty(table))
                 {
                     Window.alert("Schema name and table name must not be empty");
                     return;
                 }
-                XDOM.getBodyEl().mask();
-                _service.getTablesForLookup(folder, schema, new ErrorDialogAsyncCallback<List<LookupService.LookupTable>>("Lookup retrieval failed"){
-                    public void handleFailure(String message, Throwable caught)
-                    {
-                        XDOM.getBodyEl().unmask();
-                    }
 
-                    public void onSuccess(List<LookupService.LookupTable> result)
-                    {
-                        XDOM.getBodyEl().unmask();
-                        boolean foundTableMatch = false;
-                        GWTPropertyDescriptor key = null;
-                        PropertyType currentType = null;
-                        if (null != _current.getValue())
-                            currentType = _current.getValue().getPropertyType();
+                if (!_current.isRangeEditable && null != _current.getValue())
+                    type = _current.getValue().getPropertyType();
 
-                        for (LookupService.LookupTable lk : result)
-                        {
-                            if (!lk.table.equalsIgnoreCase(table))
-                                continue;
-                            foundTableMatch = true;
-                            if (validateLookup(currentType,schema,table, PropertyType.fromName(lk.key.getRangeURI())))
-                                key = lk.key;
-                        }
+                if (null == type)
+                {
+                    Window.alert("Type was not set correctly");
+                    return;
+                }
 
-                        if (!foundTableMatch || null == key || null == key.getRangeURI())
-                        {
-                            Window.alert("Table not found: " + table);
-                            return;
-                        }
-                        if (!_current.isRangeEditable && null != _current.getValue() && null == key)
-                        {
-                            Window.alert("Lookup primary key does not match: " + currentType.getShortName());
-                            return;
-                        }
-                        _current.setValue(new LookupConceptType(key.getRangeURI(), folder, schema, table));
-                        if (hideOnSuccess)
-                            hide();
-                    }
-                });
+                _current.setValue(new LookupConceptType(type, folder, schema, table));
+                if (hideOnSuccess)
+                    hide();
             }
             else // !lookup
             {
@@ -543,7 +521,14 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             _pd.setLookupSchema(schema);
             _pd.setLookupQuery(table);
         }
-        
+        LookupConceptType(PropertyType pt, String folder, String schema, String table)
+        {
+            super(pt.getURI());
+            _pd.setLookupContainer(folder);
+            _pd.setLookupSchema(schema);
+            _pd.setLookupQuery(table);
+        }
+
         LookupConceptType(GWTPropertyDescriptor pd)
         {
             super(pd, null);
@@ -592,7 +577,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     };
 
     // generic lookup (used by init)
-    private static final ConceptType genericLookup = new LookupConceptType(null, null, null, null)
+    private static final ConceptType genericLookup = new LookupConceptType((String)null, null, null, null)
     {
         @Override
         boolean matches(GWTPropertyDescriptor pd)
@@ -732,7 +717,8 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     private static boolean _empty(String s) {return null==s || s.length()==0;}
 //    private static String _string(Object o) {return null==o ? "" : o.toString();}
     private static String _default(String a, String b) {return _empty(a) ? b : a;}
-    private static native void _log(String s) /*-{
-        if ('console' in window) window.console.log(s);
-    }-*/;    
+    private static void _log(String s)
+    {
+        PropertiesEditor._log(s);
+    }
 }
