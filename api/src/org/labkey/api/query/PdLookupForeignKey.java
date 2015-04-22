@@ -155,9 +155,10 @@ public class PdLookupForeignKey extends AbstractForeignKey
             return;
 
         DbSchema s = table.getSchema();
+        UserSchema qs = table.getUserSchema();
         boolean isSampleSchema = s.getScope()==CoreSchema.getInstance().getScope() &&
                 s.getName().equalsIgnoreCase("exp") &&
-                StringUtils.equalsIgnoreCase(table.getUserSchema().getName(), "samples");
+                null != qs && StringUtils.equalsIgnoreCase(qs.getName(), "samples");
         if (isSampleSchema && _pd.getJdbcType().isText())
         {
             if (null != table.getColumn("Name"))
