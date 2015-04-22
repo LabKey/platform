@@ -87,7 +87,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
     {
         if (SAMPLE_PREPARATION_METHOD_TABLE_NAME.equalsIgnoreCase(name))
         {
-            EnumTableInfo<SampleInfo.Method> result = new EnumTableInfo<>(SampleInfo.Method.class, getDbSchema(),
+            EnumTableInfo<SampleInfo.Method> result = new EnumTableInfo<>(SampleInfo.Method.class, this,
                     "List of possible sample preparation methods for the " + getProvider().getResourceName() + " assay.", false);
             result.setPublicSchemaName(_schemaName);
             result.setPublicName(SAMPLE_PREPARATION_METHOD_TABLE_NAME);
@@ -95,7 +95,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
         }
         if (CURVE_FIT_METHOD_TABLE_NAME.equalsIgnoreCase(name))
         {
-            EnumTableInfo<StatsService.CurveFitType> result = new EnumTableInfo<>(StatsService.CurveFitType.class, getDbSchema(), new EnumTableInfo.EnumValueGetter<StatsService.CurveFitType>()
+            EnumTableInfo<StatsService.CurveFitType> result = new EnumTableInfo<>(StatsService.CurveFitType.class, this, new EnumTableInfo.EnumValueGetter<StatsService.CurveFitType>()
             {
                 public String getValue(StatsService.CurveFitType e)
                 {

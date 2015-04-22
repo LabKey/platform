@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.UserSchema;
 
 import java.util.EnumSet;
 
@@ -27,7 +28,7 @@ import java.util.EnumSet;
  * User: jeckels
  * Date: Jun 2, 2008
 */
-public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
+public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable<UserSchema>
 {
     private final Class<EnumType> _enum;
     private final EnumValueGetter<EnumType> _getter;
@@ -49,7 +50,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
      * @param schema parent DBSchema
      * @param description a description of this table and its uses for display in the schema browser
      */
-    public EnumTableInfo(Class<EnumType> e, DbSchema schema, String description, boolean ordinalPK)
+    public EnumTableInfo(Class<EnumType> e, UserSchema schema, String description, boolean ordinalPK)
     {
         this(e, schema, new EnumValueGetter<EnumType>()
         {
@@ -67,9 +68,9 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
      * @param getter callback to determine the String value of each item in the enum
      * @param description a description of this table and its uses for display in the schema browser
      */
-    public EnumTableInfo(Class<EnumType> e, DbSchema schema, EnumValueGetter<EnumType> getter, boolean ordinalPK, String description)
+    public EnumTableInfo(Class<EnumType> e, UserSchema schema, EnumValueGetter<EnumType> getter, boolean ordinalPK, String description)
     {
-        super(schema, e.getSimpleName());
+        super(schema.getDbSchema(), e.getSimpleName(), schema);
         setDescription(description);
         _enum = e;
         _getter = getter;
@@ -85,6 +86,8 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         rowIdColumn.setHidden(true);
         addColumn(rowIdColumn);
     }
+
+
 
     @Override @NotNull
     public SQLFragment getFromSQL()
