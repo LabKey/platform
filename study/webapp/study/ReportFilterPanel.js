@@ -642,7 +642,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
                     xtype     : 'templatecolumn',
                     dataIndex : 'label',
                     tdCls     : 'x4-label-column-cell',
-                    tpl       : '<div><b class="lk-filter-panel-label filter-description">{label:htmlEncode}</b></div>'
+                    tpl       : '<div style="font-weight:bold;" class="lk-filter-panel-label filter-description">{label:htmlEncode}</div>'
                 }],
                 selType     : 'checkboxmodel',
                 selModel    : {
