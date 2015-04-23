@@ -29,6 +29,7 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -443,6 +444,11 @@ public class DomainPropertyImpl implements DomainProperty
             _pd = _pdOld.clone();
         }
         return _pd;
+    }
+
+    public PropertyType getPropertyType()
+    {
+        return _pd.getPropertyType();
     }
 
     public int getSqlType()

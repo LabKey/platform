@@ -136,6 +136,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -469,7 +470,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowids);
         TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
 
-        final List<ExpMaterialImpl> materials = new ArrayList<>();
+        final List<ExpMaterialImpl> materials = new ArrayList<>(rowids.size());
         selector.forEach(new Selector.ForEachBlock<Material>()
         {
             @Override
@@ -480,6 +481,85 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }, Material.class);
 
         return materials;
+    }
+
+    @Override
+    public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleSet, boolean throwIfMissing, boolean createIfMissing)
+            throws ExperimentException
+    {
+        if (throwIfMissing && createIfMissing)
+            throw new IllegalArgumentException("Either throwIfMissing or createIfMissing can be true; not both.");
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromParts("Name"), sampleNames);
+        if (sampleSet != null)
+            filter.addCondition(FieldKey.fromParts("CpasType"), sampleSet.getLSID());
+
+        // SampleSet may live in different container
+        ContainerFilter.CurrentPlusProjectAndShared containerFilter = new ContainerFilter.CurrentPlusProjectAndShared(user);
+        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts("Container"), container);
+        filter.addClause(clause);
+
+        Set<String> selectNames = new LinkedHashSet<>();
+        selectNames.add("Name");
+        selectNames.add("RowId");
+        TableSelector sampleTableSelector = new TableSelector(ExperimentService.get().getTinfoMaterial(), selectNames, filter, null);
+        Map<String, Integer> sampleMap = sampleTableSelector.getValueMap();
+
+        List<ExpMaterialImpl> resolvedSamples = getExpMaterials(sampleMap.values());
+
+        if (sampleMap.size() < sampleNames.size())
+        {
+            Set<String> missingSamples = new HashSet<>(sampleNames);
+            missingSamples.removeAll(sampleMap.keySet());
+            if (throwIfMissing)
+                throw new ExperimentException("No samples found for: " + StringUtils.join(missingSamples, ", "));
+
+            if (createIfMissing)
+                resolvedSamples.addAll(createExpMaterials(container, user, sampleSet, missingSamples));
+        }
+
+        return resolvedSamples;
+    }
+
+    // Insert new materials into the given sample set or the active sample set.
+    private List<ExpMaterialImpl> createExpMaterials(Container container, User user, @Nullable ExpSampleSet sampleSet, Set<String> sampleNames)
+            throws ExperimentException
+    {
+        List<ExpMaterialImpl> materials = new ArrayList<>(sampleNames.size());
+
+        DbScope scope = ExperimentService.get().getSchema().getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            if (sampleSet == null)
+                sampleSet = ensureActiveSampleSet(container, user, true);
+
+            // Create materials directly using Name.
+            for (String name : sampleNames)
+            {
+                List<ExpMaterialImpl> existingMaterials = getExpMaterialsByName(name, container, user);
+                if (existingMaterials.size() > 0)
+                {
+                    ExpMaterialImpl material = existingMaterials.get(0);
+                    materials.add(material);
+                }
+                else
+                {
+                    Lsid lsid = new Lsid(sampleSet.getMaterialLSIDPrefix() + "test");
+                    lsid.setObjectId(name);
+                    String materialLsid = lsid.toString();
+
+                    ExpMaterialImpl material = createExpMaterial(container, materialLsid, name);
+                    material.setCpasType(sampleSet.getLSID());
+                    material.save(user);
+
+                    materials.add(material);
+                }
+            }
+
+            transaction.commit();
+            return materials;
+        }
     }
 
     public ExpMaterialImpl createExpMaterial(Container container, String lsid, String name)
@@ -803,6 +883,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpSampleSetImpl getSampleSet(Container container, String name)
     {
         return getSampleSet(generateLSID(container, ExpSampleSet.class, name));
+    }
+
+    public ExpSampleSetImpl getSampleSet(Container c, String name, boolean includeOtherContainers)
+    {
+        ExpSampleSetImpl ss = getSampleSet(c, name);
+        if (ss == null && !c.isProject())
+            ss = getSampleSet(c, name);
+        if (ss == null && !c.equals(ContainerManager.getSharedContainer()))
+            ss = getSampleSet(c, name);
+        return ss;
     }
 
     public ExpSampleSetImpl lookupActiveSampleSet(Container container)
@@ -1292,19 +1382,43 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new SqlSelector(getExpSchema(), new SQLFragment(sql, c.getId())).getObject(MaterialSource.class);
     }
 
-    public ExpSampleSet ensureActiveSampleSet(Container c)
+    public ExpSampleSetImpl ensureActiveSampleSet(Container c)
+    {
+        try
+        {
+            return ensureActiveSampleSet(c, null, false);
+        }
+        catch (ExperimentException e)
+        {
+            // Shouldn't happen since this exception can only be thrown if we are creating a new sample set
+            throw new RuntimeException(e);
+        }
+    }
+
+    public ExpSampleSetImpl ensureActiveSampleSet(Container c, User user, boolean createNewSet)
+            throws ExperimentException
     {
         MaterialSource result = lookupActiveMaterialSource(c);
         if (result == null)
         {
-            return ensureDefaultSampleSet();
+            if (createNewSet && user != null)
+            {
+                // Create a new SampleSet in the current container
+                List<GWTPropertyDescriptor> properties = new ArrayList<>();
+                properties.add(new GWTPropertyDescriptor("Name", "http://www.w3.org/2001/XMLSchema#string"));
+                return createSampleSet(c, user, "Samples", null, properties, 0, -1, -1, -1);
+            }
+            else
+            {
+                return ensureDefaultSampleSet();
+            }
         }
         return new ExpSampleSetImpl(result);
     }
 
-    public ExpSampleSet ensureDefaultSampleSet()
+    public ExpSampleSetImpl ensureDefaultSampleSet()
     {
-        ExpSampleSet sampleSet = getSampleSet(ExperimentService.get().getDefaultSampleSetLsid());
+        ExpSampleSetImpl sampleSet = getSampleSet(ExperimentService.get().getDefaultSampleSetLsid());
 
         if (null == sampleSet)
             return createDefaultSampleSet();
@@ -2932,7 +3046,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
     public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, int idCol1, int idCol2, int idCol3, int parentCol)
-            throws ExperimentException, SQLException
+            throws ExperimentException
     {
         ExpSampleSet existing = getSampleSet(c, name);
         if (existing != null)
