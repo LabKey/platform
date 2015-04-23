@@ -47,6 +47,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -326,7 +327,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            Set<ExpMaterial> inputMaterials = checkData(container, dataDomain, rawData, resolver);
+            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataDomain, rawData, resolver);
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
@@ -453,7 +454,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     /**
      * @return the set of materials that are inputs to this run
      */
-    private Set<ExpMaterial> checkData(Container container, Domain dataDomain, List<Map<String, Object>> rawData, ParticipantVisitResolver resolver) throws IOException, ValidationException, ExperimentException
+    private Map<ExpMaterial, String> checkData(Container container, User user, Domain dataDomain, List<Map<String, Object>> rawData, ParticipantVisitResolver resolver) throws IOException, ValidationException, ExperimentException
     {
         List<String> missing = new ArrayList<>();
         List<String> unexpected = new ArrayList<>();
@@ -496,6 +497,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty datePD = null;
         DomainProperty targetStudyPD = null;
 
+        Map<DomainProperty, ExpSampleSet> sampleNameSampleSets = new HashMap<>();
+        Map<ExpSampleSet, Set<String>> sampleNamesBySampleSet = new LinkedHashMap<>();
+
+        Map<DomainProperty, ExpSampleSet> sampleIdSampleSets = new HashMap<>();
+        Map<ExpSampleSet, Set<Integer>> sampleIdsBySampleSet = new LinkedHashMap<>();
+
         List<? extends DomainProperty> columns = dataDomain.getProperties();
 
         for (DomainProperty pd : columns)
@@ -525,6 +532,23 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 targetStudyPD = pd;
             }
+            else
+            {
+                ExpSampleSet ss = DefaultAssayRunCreator.getLookupSampleSet(pd, container);
+                if (ss != null)
+                {
+                    if (pd.getPropertyType().getJdbcType().isText())
+                    {
+                        sampleNameSampleSets.put(pd, ss);
+                        sampleNamesBySampleSet.put(ss, new HashSet<String>());
+                    }
+                    else
+                    {
+                        sampleIdSampleSets.put(pd, ss);
+                        sampleIdsBySampleSet.put(ss, new HashSet<Integer>());
+                    }
+                }
+            }
         }
 
         boolean resolveMaterials = specimenPD != null || visitPD != null || datePD != null || targetStudyPD != null;
@@ -534,7 +558,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         StringBuilder errorSB = new StringBuilder();
 
-        Set<ExpMaterial> materialInputs = new LinkedHashSet<>();
+        Map<ExpMaterial, String> materialInputs = new LinkedHashMap<>();
 
         Map<String, DomainProperty> aliasMap = dataDomain.createImportMap(true);
 
@@ -662,6 +686,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     errorSB.append(pd.getName()).append(" must be of type ");
                     errorSB.append(ColumnInfo.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType())).append(". ");
                 }
+
+                // Collect sample names or ids for each of the SampleSet lookup columns
+                ExpSampleSet byNameSS = sampleNameSampleSets.get(pd);
+                if (byNameSS != null && o instanceof String)
+                    sampleNamesBySampleSet.get(byNameSS).add((String)o);
+
+                ExpSampleSet byIdSS = sampleIdSampleSets.get(pd);
+                if (byIdSS != null && o instanceof Integer)
+                    sampleIdsBySampleSet.get(byIdSS).add((Integer)o);
             }
 
             ParticipantVisit participantVisit = resolver.resolve(specimenID, participantID, visitID, date, targetStudy);
@@ -690,9 +723,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             if (resolveMaterials)
             {
-                materialInputs.add(participantVisit.getMaterial());
+                materialInputs.put(participantVisit.getMaterial(), null);
             }
         }
+
+        // Resolve samples for each SampleSet
+        resolveSampleNames(container, user, sampleNameSampleSets, sampleNamesBySampleSet, materialInputs);
+        resolveSampleIds(sampleIdSampleSets, sampleIdsBySampleSet, materialInputs);
 
         if (errorSB.length() != 0)
         {
@@ -700,6 +737,62 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
 
         return materialInputs;
+    }
+
+    private void resolveSampleNames(Container container, User user, Map<DomainProperty, ExpSampleSet> sampleSets, Map<ExpSampleSet, Set<String>> sampleNamesBySampleSet, Map<ExpMaterial, String> materialInputs) throws ExperimentException
+    {
+        for (Map.Entry<ExpSampleSet, Set<String>> entry : sampleNamesBySampleSet.entrySet())
+        {
+            ExpSampleSet ss = entry.getKey();
+            Set<String> sampleNames = entry.getValue();
+            List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterials(container, user, sampleNames, ss, false, false);
+
+            // Find the DomainProperty and use it's name as the role
+            String role = null;
+            for (Map.Entry<DomainProperty, ExpSampleSet> pair : sampleSets.entrySet())
+            {
+                if (pair.getValue().equals(ss))
+                {
+                    role = pair.getKey().getName(); // TODO: More than one DomainProperty could be a lookup to the SampleSet
+                    break;
+                }
+            }
+
+            for (ExpMaterial material : materials)
+                if (!materialInputs.containsKey(material))
+                    materialInputs.put(material, role);
+        }
+    }
+
+    private void resolveSampleIds(Map<DomainProperty, ExpSampleSet> sampleSets, Map<ExpSampleSet, Set<Integer>> sampleIdsBySampleSet, Map<ExpMaterial, String> materialInputs)
+    {
+        for (Map.Entry<ExpSampleSet, Set<Integer>> entry : sampleIdsBySampleSet.entrySet())
+        {
+            ExpSampleSet ss = entry.getKey();
+            Set<Integer> sampleIds = entry.getValue();
+            List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterials(sampleIds);
+
+            // Find the DomainProperty and use it's name as the role
+            String role = null;
+            for (Map.Entry<DomainProperty, ExpSampleSet> pair : sampleSets.entrySet())
+            {
+                if (pair.getValue().equals(ss))
+                {
+                    role = pair.getKey().getName(); // TODO: More than one DomainProperty could be a lookup to the SampleSet
+                    break;
+                }
+            }
+
+            for (ExpMaterial material : materials)
+            {
+                // Ignore materials that aren't in the lookup sample set
+                if (!ss.getLSID().equals(material.getCpasType()))
+                    continue;
+
+                if (!materialInputs.containsKey(material))
+                    materialInputs.put(material, role);
+            }
+        }
     }
 
     /** Wraps each map in a version that can be queried based on on any of the aliases (name, property URI, import

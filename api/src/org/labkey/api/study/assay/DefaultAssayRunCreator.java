@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -40,9 +41,12 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.DataTransformer;
@@ -377,6 +381,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                         context.getContainer(),
                         targetStudy, context.getUser());
             }
+
             resolveExtraRunData(resolver, context, inputMaterials, inputDatas, outputMaterials, outputDatas);
         }
         catch (IOException e)
@@ -447,6 +452,66 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     protected void addInputMaterials(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> inputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
+        // Find lookups to a SampleSet and add the resolved material as an input sample
+        for (Map.Entry<DomainProperty, String> entry : context.getRunProperties().entrySet())
+        {
+            if (entry.getValue() == null)
+                continue;
+
+            DomainProperty dp = entry.getKey();
+            ExpSampleSet ss = getLookupSampleSet(dp, context.getContainer());
+            if (ss == null)
+                continue;
+
+            PropertyType pt = dp.getPropertyType();
+            if (pt == null)
+                continue;
+
+            // Use the DomainProperty name as the role
+            String role = dp.getName();
+
+            if (pt.getJdbcType().isText())
+            {
+                String sampleName = entry.getValue();
+                ExpMaterial material = ss.getSample(sampleName);
+                if (material != null)
+                    inputMaterials.put(material, role);
+            }
+            else if (pt.getJdbcType().isInteger())
+            {
+                try
+                {
+                    int sampleRowId = Integer.parseInt(entry.getValue());
+                    ExpMaterial material = ExperimentService.get().getExpMaterial(sampleRowId);
+                    if (material != null && ss.getLSID().equals(material.getCpasType()))
+                        inputMaterials.put(material, role);
+                }
+                catch (NumberFormatException ex)
+                {
+                    Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
+                    logger.warn("Failed to parse sample lookup '" + entry.getValue() + "' as integer.");
+                }
+            }
+        }
+    }
+
+    @Nullable
+    public static ExpSampleSet getLookupSampleSet(@NotNull DomainProperty dp, @NotNull Container container)
+    {
+        Lookup lookup = dp.getLookup();
+        if (lookup == null)
+            return null;
+
+        // TODO: Use concept URI instead of the lookup target schema to determine if the column is a sample.
+        if (!SamplesSchema.SCHEMA_NAME.equalsIgnoreCase(lookup.getSchemaName()))
+            return null;
+
+        JdbcType type = dp.getPropertyType().getJdbcType();
+        if (!(type.isText() || type.isInteger()))
+            return null;
+
+        Container c = lookup.getContainer() != null ? lookup.getContainer() : container;
+        return ExperimentService.get().getSampleSet(c, lookup.getQueryName(), true);
     }
 
     protected void addInputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> inputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException

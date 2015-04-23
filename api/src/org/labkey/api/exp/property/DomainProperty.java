@@ -21,6 +21,7 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -87,6 +88,7 @@ public interface DomainProperty extends ImportAliasable
 
     void setDefaultValueTypeEnum(DefaultValueType defaultValueType);
 
+    PropertyType getPropertyType();
     int getSqlType();
     int getScale();
     String getInputType();

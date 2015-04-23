@@ -115,7 +115,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -1077,20 +1077,28 @@ public abstract class AbstractAssayProvider implements AssayProvider
         //return ImportAction.class;
     }
 
-    /** Adds the materials as inputs to the run as a whole, plus as inputs for the "work" node for the run. */
-    public static void addInputMaterials(ExpRun expRun, User user, Set<ExpMaterial> materialInputs)
+    /**
+     * Adds the materials as inputs to the run as a whole, plus as inputs for the "work" node for the run.
+     * @param materialInputs Map of materials to roles.  If role is null, a generic role of "Sample N" will be used.
+     */
+    public static void addInputMaterials(ExpRun expRun, User user, Map<ExpMaterial, String> materialInputs)
     {
         for (ExpProtocolApplication protApp : expRun.getProtocolApplications())
         {
             if (!protApp.getApplicationType().equals(ExpProtocol.ApplicationType.ExperimentRunOutput))
             {
-                Set<ExpMaterial> newInputs = new LinkedHashSet<>();
-                newInputs.addAll(materialInputs);
-                newInputs.removeAll(protApp.getInputMaterials());
+                Map<ExpMaterial, String> newInputs = new LinkedHashMap<>();
+                newInputs.putAll(materialInputs);
+                for (ExpMaterial material : protApp.getInputMaterials())
+                    newInputs.remove(material);
                 int index = 1;
-                for (ExpMaterial newInput : newInputs)
+                for (Map.Entry<ExpMaterial, String> entry : newInputs.entrySet())
                 {
-                    protApp.addMaterialInput(user, newInput, "Sample" + (index == 1 ? "" : Integer.toString(index)));
+                    ExpMaterial newInput = entry.getKey();
+                    String role = entry.getValue();
+                    if (role == null)
+                        role = "Sample" + (index == 1 ? "" : Integer.toString(index));
+                    protApp.addMaterialInput(user, newInput, role);
                     index++;
                 }
             }

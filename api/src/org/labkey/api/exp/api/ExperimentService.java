@@ -122,6 +122,22 @@ public class ExperimentService
         ExpData createData(Container container, String name, String lsid);
         ExpData createData(URI uri, XarSource source) throws XarFormatException;
 
+        /**
+         * Get materials with the given names, optionally within the provided sample set.
+         * If the materials don't exist, throw an exception if <code>throwIfMissing</code> is true
+         * or create new materials if <code>createIfMissing</code> is true, otherwise missing samples
+         * will be ignored.
+         *
+         * @param container Samples will be found within this container, project, or shared container.
+         * @param user Samples will only be resolved within containers that the user has ReadPermission.
+         * @param sampleNames The set of samples to be resolved by name.
+         * @param sampleSet Optional sample set that the samples must live in.
+         * @param throwIfMissing Throw ExperimentException if any of the sampleNames do not exist.
+         * @param createIfMissing Create missing samples in the given <code>sampleSet</code> or the active sample set.
+         * @return Resolved samples
+         * @throws ExperimentException
+         */
+        List<? extends ExpMaterial> getExpMaterials(Container container, @Nullable User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleSet, boolean throwIfMissing, boolean createIfMissing) throws ExperimentException;
         ExpMaterial createExpMaterial(Container container, String lsid, String name);
         ExpMaterial getExpMaterial(int rowid);
         List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);
@@ -150,6 +166,11 @@ public class ExperimentService
          */
         List<? extends ExpSampleSet> getSampleSets(Container container, User user, boolean includeOtherContainers);
         ExpSampleSet getSampleSet(Container container, String name);
+
+        /**
+         * @param includeOtherContainers If true, try getting sample set from project and shared containers.
+         */
+        ExpSampleSet getSampleSet(Container container, String name, boolean includeOtherContainers);
         ExpSampleSet lookupActiveSampleSet(Container container);
         void setActiveSampleSet(Container container, ExpSampleSet sampleSet);
 

@@ -151,109 +151,14 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
         }
         LOG.debug("All samples in matrix: " + StringUtils.join(sampleNames, ", "));
 
-        SimpleFilter sampleSetFilter = new SimpleFilter();
-        sampleSetFilter.addInClause(FieldKey.fromParts("Name"), sampleNames);
-
-        // SampleSet may live in different container
-        ContainerFilter.CurrentPlusProjectAndShared containerFilter = new ContainerFilter.CurrentPlusProjectAndShared(user);
-        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts("Container"), container);
-        sampleSetFilter.addClause(clause);
-
-        Set<String> selectNames = new LinkedHashSet<>();
-        selectNames.add("Name");
-        selectNames.add("RowId");
-        TableSelector sampleTableSelector = new TableSelector(ExperimentService.get().getTinfoMaterial(), selectNames, sampleSetFilter, null);
-        if (!autoCreateSamples)
+        List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(container, user, sampleNames, null, !autoCreateSamples, autoCreateSamples);
+        Map<String, Integer> sampleMap = new HashMap<>(samples.size());
+        for (ExpMaterial sample : samples)
         {
-            Map<String, Object>[] sampleSetResults = sampleTableSelector.getMapArray();
-            if (sampleSetResults.length < 1)
-                throw new ExperimentException("No matching samples found");
-        }
-
-        Map<String, Integer> sampleMap = sampleTableSelector.getValueMap();
-        if (sampleMap.size() > 0)
-            LOG.debug("Existing samples used in matrix: " + StringUtils.join(sampleMap.keySet(), ", "));
-        else
-            LOG.debug("No existing samples used in matrix");
-
-        if (sampleMap.size() < sampleNames.size())
-        {
-            Set<String> missingSamples = new HashSet<>(sampleNames);
-            missingSamples.removeAll(sampleMap.keySet());
-            if (!autoCreateSamples)
-                throw new ExperimentException("No samples found for: " + StringUtils.join(missingSamples, ", "));
-
-            // Create missing samples in the active SampleSet
-            LOG.info("Samples to be created for matrix: " + StringUtils.join(missingSamples, ", "));
-            Map<String, Integer> createdSamples = createSamples(container, user, missingSamples);
-            sampleMap.putAll(createdSamples);
+            sampleMap.put(sample.getName(), sample.getRowId());
         }
 
         return sampleMap;
-    }
-
-    private static Map<String, Integer> createSamples(Container c, User user, Set<String> missingSamples) throws ExperimentException
-    {
-        DbScope scope = ExperimentService.get().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
-        {
-            ExpSampleSet sampleSet = ensureSampleSet(c, user);
-
-            Map<String, Integer> createdSamples = new HashMap<>();
-
-            // Create materials directly using Name.
-            // XXX: Doesn't handle idColumn concat magic.
-            for (String name : missingSamples)
-            {
-                List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterialsByName(name, c, user);
-                if (materials.size() > 0)
-                {
-                    LOG.warn("Found samples for '" + name + "' that should have been found in the query:");
-                    for (ExpMaterial m : materials)
-                    {
-                        LOG.warn("  " + m.getName() + ", container=" + m.getContainer() + ", sampleset=" + m.getSampleSet().getName());
-                    }
-                    ExpMaterial material = materials.get(0);
-                    createdSamples.put(name, material.getRowId());
-                }
-                else
-                {
-                    Lsid lsid = new Lsid(sampleSet.getMaterialLSIDPrefix() + "test");
-                    lsid.setObjectId(name);
-                    String materialLsid = lsid.toString();
-
-                    ExpMaterial material = ExperimentService.get().createExpMaterial(c, materialLsid, name);
-                    material.setCpasType(sampleSet.getLSID());
-                    material.save(user);
-
-                    createdSamples.put(name, material.getRowId());
-                }
-            }
-
-            transaction.commit();
-            return createdSamples;
-        }
-    }
-
-    private static ExpSampleSet ensureSampleSet(Container c, User user) throws ExperimentException
-    {
-        ExpSampleSet sampleSet = ExperimentService.get().ensureActiveSampleSet(c);
-        if (sampleSet.getName().equals("Unspecified") && ContainerManager.getSharedContainer().equals(sampleSet.getContainer()))
-        {
-            // Create a new SampleSet in the current container
-            List<GWTPropertyDescriptor> properties = new ArrayList<>();
-            properties.add(new GWTPropertyDescriptor("Name", "http://www.w3.org/2001/XMLSchema#string"));
-            try
-            {
-                sampleSet = ExperimentService.get().createSampleSet(c, user, "Samples", null, properties, 0, -1, -1, -1);
-                LOG.info("Created new SampleSet in " + c.getName() + ": " + sampleSet.getLSID());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-        }
-        return sampleSet;
     }
 
     public  Map<String, String> getRunPropertyValues(ExpRun run, Domain domain)
