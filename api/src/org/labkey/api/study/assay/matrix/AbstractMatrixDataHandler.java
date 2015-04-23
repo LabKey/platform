@@ -132,9 +132,9 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
             }
         }
 
-        // CONSIDER: If there is no ID_REF column, assume the first column is the ID_REF column
+        //TODO: check if idColumnName == appropriate col header (for protein expr. matrix, for example)
         if (!found)
-            throw new ExperimentException("Feature ID_REF column header must be present and cannot be blank");
+            throw new ExperimentException(idColumnName + " column header must be present and cannot be blank");
 
         return loader;
     }
