@@ -322,6 +322,9 @@ boxPlot.render();
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
                 newScale.tickHoverText = origScale.tickHoverText ? origScale.tickHoverText : null;
                 newScale.tickCls = origScale.tickCls ? origScale.tickCls : null;
+                newScale.tickRectCls = origScale.tickRectCls ? origScale.tickRectCls : null;
+                newScale.tickRectHeightOffset = origScale.tickRectHeightOffset ? origScale.tickRectHeightOffset : null;
+                newScale.tickRectWidthOffset = origScale.tickRectWidthOffset ? origScale.tickRectWidthOffset : null;
                 newScale.domain = origScale.domain ? origScale.domain : null;
                 newScale.range = origScale.range ? origScale.range : null;
 

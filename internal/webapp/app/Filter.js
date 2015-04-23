@@ -70,6 +70,7 @@ Ext.define('LABKEY.app.model.Filter', {
         {name : 'plotScales', defaultValue: []}, // array of scales
 
         {name : 'isWhereFilter', type: 'boolean', defaultValue: false},
+        {name : 'showInverseFilter', type: 'boolean', defaultValue: false},
         {name : 'filterSource', defaultValue: 'OLAP'} // OLAP or GETDATA
     ],
 

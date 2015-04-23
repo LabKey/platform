@@ -47,6 +47,8 @@ Ext.define('LABKEY.app.controller.State', {
 
     olap: undefined,
 
+    onSelectionChangeCbs: null,
+
     init : function() {
 
         if (LABKEY.devMode) {
@@ -817,6 +819,10 @@ Ext.define('LABKEY.app.controller.State', {
         this.fireEvent('filtercount', this.filters);
     },
 
+    registerSelectionChangeCb : function(callback) {
+        this.onSelectionChangeCbs = callback;
+    },
+
     requestSelectionUpdate : function(skipState, opChange) {
 
         this.onMDXReady(function(mdx) {
@@ -838,7 +844,7 @@ Ext.define('LABKEY.app.controller.State', {
             if (!skipState)
                 this.updateState();
 
-            this.fireEvent('selectionchange', this.selections, opChange);
+            this.fireEvent('selectionchange', this.selections, opChange, this.onSelectionChangeCbs);
 
         }, this);
     },
