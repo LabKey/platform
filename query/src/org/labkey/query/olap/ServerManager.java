@@ -411,17 +411,18 @@ public class ServerManager
 
         try
         {
-            result = "Starting warm of " + cubeName + " in container " + c.getName();
+            String fullContainerPath = StringUtils.substringAfter(c.getPath(), "/");
+            result = "Starting warm of " + cubeName + " in container " + fullContainerPath;
             LOG.info(result);
             long start = System.currentTimeMillis();
 
             OlapSchemaDescriptor sd  = getDescriptor(c, configId);
             if (null == sd)
-                return "Error: No cached descriptor found for " + configId + " in container " + c.getName();
+                return "Error: No cached descriptor found for " + configId + " in container " + fullContainerPath;
 
             if (!sd.shouldWarmCube(c))
             {
-                result = "Skipping warm of " + cubeName + " in container " + c.getName();
+                result = "Skipping warm of " + cubeName + " in container " +fullContainerPath;
                 LOG.info(result);
                 return result;
             }
@@ -434,7 +435,7 @@ public class ServerManager
                 warmCubeUser = user;
                 conn = sd.getConnection(c, warmCubeUser);
                 if (null == conn)
-                    return "Error: No olap connection for " + cubeName + " in container " + c.getName();
+                    return "Error: No olap connection for " + cubeName + " in container " + fullContainerPath;
             }
             else
             {
@@ -451,7 +452,7 @@ public class ServerManager
             Cube cube = getCachedCube(sd, conn, c, warmCubeUser, schemaName, cubeName, getDummyBindException());
 
             if (null == cube)
-                return "Error: No cached cube for " + cubeName + " in container " + c.getName();
+                return "Error: No cached cube for " + cubeName + " in container " + fullContainerPath;
             long e = System.currentTimeMillis();
             LOG.debug(DateUtil.formatDuration(e-s) + " CUBE DEFINITION");
 
@@ -509,12 +510,12 @@ public class ServerManager
                     catch (Exception ignore)
                     {
 
-                        LOG.warn("Error trying to warm the " + cubeName + " in container " + c.getName(), ignore);
+                        LOG.warn("Error trying to warm the " + cubeName + " in container " + fullContainerPath, ignore);
                     }
                 }
             }
             long end = System.currentTimeMillis();
-            result = "Warming the " + cubeName + " in container " + c.getName() + " took: " + DateUtil.formatDuration(end - start);
+            result = "Warming the " + cubeName + " in container " + fullContainerPath + " took: " + DateUtil.formatDuration(end - start);
             LOG.info(result);
         }
         catch(Exception e)

@@ -33,7 +33,7 @@ public abstract class TaskRefTaskImpl implements TaskRefTask
 
     protected Map<String, String> settings = new CaseInsensitiveHashMap<>();
     protected ContainerUser containerUser;
-    protected Logger logger;
+    protected transient Logger logger;
 
     @Override
     public void setSettings(Map<String, String> settings)
