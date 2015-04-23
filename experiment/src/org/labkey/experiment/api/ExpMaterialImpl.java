@@ -32,6 +32,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -151,6 +152,16 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
                         new Timestamp(ms), getRowId());
             }
         };
+        r.getMutableProperties().put(SearchService.PROPERTY.title.toString(), "Sample - " + getName());
+        ExpSampleSet ss = getSampleSet();
+        if (null != ss)
+        {
+            //ActionURL resolve = new ActionURL(ExperimentController.ResolveLSIDAction.class,getContainer()).addParameter("lsid",ss.getLSID());
+            ActionURL show = new ActionURL(ExperimentController.ShowMaterialSourceAction.class,getContainer()).addParameter("rowId",ss.getRowId());
+            NavTree t = new NavTree("SampleSet - " + ss.getName(), show);
+            String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+            r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+        }
         task.addResource(r, SearchService.PRIORITY.item);
     }
 
