@@ -3110,7 +3110,7 @@ public class ReportsController extends SpringActionController
                     }
                     else
                     {
-                        ViewCategory vc = vcm.getCategory(getContainer(), og.getRowId()); // ask the real authority
+                        ViewCategory vc = vcm.getCategory(view.getContainer(), og.getRowId()); // ask the real authority
 
                         if (null != vc)
                         {

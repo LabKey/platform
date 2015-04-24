@@ -101,7 +101,7 @@ public class DatasetViewProvider implements DataViewProvider
         {
             Study study = StudyService.get().getStudy(container);
 
-            // check if we have a shared stufy
+            // check if we have a shared study
             if (!container.isProject())
             {
                 Study sharedStudy = StudyService.get().getStudy(container.getProject());
@@ -115,7 +115,7 @@ public class DatasetViewProvider implements DataViewProvider
                 {
                     if (ds.canRead(user))
                     {
-                        DefaultViewInfo view = new DefaultViewInfo(TYPE, ds.getEntityId(), ds.getLabel(), container);
+                        DefaultViewInfo view = new DefaultViewInfo(TYPE, ds.getEntityId(), ds.getLabel(), ds.getContainer());
 
                         if (ds.getViewCategory() != null)
                         {
