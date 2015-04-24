@@ -30,11 +30,13 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
@@ -1357,6 +1359,24 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             testStudy.removeProtocolDocument("Protocol.txt", _context.getUser());
             attachedFiles = testStudy.getProtocolDocuments();
             assertEquals("Expected 0 attached documents", 0, attachedFiles.size());
+        }
+    }
+
+
+
+
+    static
+    {
+        ObjectFactory.Registry.register(StudyImpl.class, new _BeanObjectFactory());
+    }
+
+    private static class _BeanObjectFactory extends BeanObjectFactory<StudyImpl>
+    {
+        _BeanObjectFactory()
+        {
+            super(StudyImpl.class);
+            assert _readableProperties.contains("emptyStudy");
+            _readableProperties.remove("emptyStudy");
         }
     }
 }
