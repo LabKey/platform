@@ -919,6 +919,7 @@ public class StatementUtils
             fn.append(sqlfDeclare);
 
             fn.append("BEGIN\n");
+            fn.append("-- " + _operation.name() + "\n");
             for (SQLFragment f : Arrays.asList(sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty))
             {
                 if (null != f && !f.isEmpty())

@@ -728,8 +728,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     {
         public String validate(Field<?> field, String value)
         {
+            if (null != value && _domain.getReservedFieldNames().contains(value.toLowerCase()))
+                return "'" + value + "' is reserved";
             return null;
-//            return validateFieldName(value);
         }
 
         public String warning(Field<?> field, String text)
@@ -1226,7 +1227,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 continue;
             }
 
-            if (lowerCaseReservedNames.contains(name.toLowerCase()))
+            if (lowerCaseReservedNames.contains(name.toLowerCase()) && p.getPropertyId() <= 0)
             {
                 errors.add("\"" + name + "\" is a reserved field name in \"" + d.getName() + "\".");
                 continue;
@@ -1750,8 +1751,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     public static void _log(String s)
     {
-//        _logConsole(s);
-//        _logGwtDebug(s);
+        _logConsole(s);
+        _logGwtDebug(s);
     }
 
     private static native void _logConsole(String s) /*-{

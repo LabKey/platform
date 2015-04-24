@@ -120,6 +120,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
 
+    /* does user have access to cubes associated with this schema */
     public void checkCanReadSchemaOlap() throws UnauthorizedException
     {
         checkCanReadSchema();

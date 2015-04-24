@@ -143,7 +143,7 @@ Ext.define('LABKEY.app.model.Filter', {
                     visibility : group.visibility,
                     filters : m.toJSON(group.filters, group.isLive)
                 },
-                headers: {'Content-Type': 'application/json'}
+                headers: {"Content-Type": 'application/json', "X-LABKEY-CSRF":LABKEY.CSRF}
             };
 
             if (config.isArgos && group.isLive) {

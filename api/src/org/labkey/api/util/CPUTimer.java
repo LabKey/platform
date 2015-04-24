@@ -137,12 +137,12 @@ public class CPUTimer
 
     private static final double msFactor = 1.0e-6;
 
-    private static void appendString(CPUTimer cpuTimer, StringBuilder sb)
+    public static void appendString(CPUTimer cpuTimer, StringBuilder sb)
     {
         double ms = cpuTimer._cumulative * msFactor;
         sb.append(ms);
 		sb.append("\t");
-		format((cpuTimer._calls == 0 ? 0 : cpuTimer._cumulative / cpuTimer._calls), 12, sb);
+		format((cpuTimer._calls == 0 ? 0 : ms / cpuTimer._calls), 12, sb);
 		sb.append("\t");
 		format(cpuTimer._calls, 12, sb);
 		sb.append("\t");
