@@ -1020,8 +1020,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 try
                 {
                     i = _itemQueue.take();
-                        if (!preprocess(i))
-                            continue;
+                    if (!preprocess(i))
+                        continue;
                     _log.debug("_indexQueue.put(" + i._id + ")");
                     _indexQueue.put(i);
                     success = true;
@@ -1048,9 +1048,16 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
                 finally
                 {
-                    if (!success && null != i)
+                    try
                     {
-                        i.complete(success);
+                        if (!success && null != i)
+                        {
+                            i.complete(success);
+                        }
+                    }
+                    finally
+                    {
+                        DbScope.closeAllConnections();
                     }
                 }
             }
@@ -1188,8 +1195,15 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
                 finally
                 {
-                    if (null != i)
-                        i.complete(success);
+                    try
+                    {
+                        if (null != i)
+                            i.complete(success);
+                    }
+                    finally
+                    {
+                        DbScope.closeAllConnections();
+                    }
                 }
             }
             synchronized (_commitLock)

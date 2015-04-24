@@ -2885,7 +2885,13 @@ public class QueryController extends SpringActionController
                     ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(settings.getContainerFilterName(), table.getUserSchema().getUser()));
             }
 
-            Map<FieldKey, ColumnInfo> columns = service.getColumns(table, settings.getFieldKeys());
+            List<FieldKey> fieldKeys = settings.getFieldKeys();
+            if (null == fieldKeys || fieldKeys.size() != 1)
+            {
+                errors.reject(ERROR_MSG, "Select Distinct requires that only one column be requested.");
+                return null;
+            }
+            Map<FieldKey, ColumnInfo> columns = service.getColumns(table, fieldKeys);
             if (columns.size() != 1)
             {
                 errors.reject(ERROR_MSG, "Select Distinct requires that only one column be requested.");
