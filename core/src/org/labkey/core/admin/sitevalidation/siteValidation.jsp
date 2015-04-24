@@ -60,7 +60,7 @@
     <% } %>
     <% } %></ul></li>
     <% if (moduleWarnings.size() > 0) { %>
-            <li>><br/></li>
+            <li><br/></li>
             <li>Warnings:
     <ul>
     <% for (SiteValidationResult result : moduleWarnings) { %>
