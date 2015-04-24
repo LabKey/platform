@@ -63,7 +63,8 @@ class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
         }
 
         String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
-        new SqlExecutor(scope).execute(sql);
+        if (null != sql)
+            new SqlExecutor(scope).execute(sql);
 
         if (null != url)
             _log.info("Database maintenance on " + url + " complete");

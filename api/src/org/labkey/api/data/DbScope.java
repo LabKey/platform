@@ -1172,9 +1172,14 @@ public class DbScope
 
     public static void closeAllConnections()
     {
+        DbScope[] scopes;
         synchronized (_scopes)
         {
-            for (DbScope scope : _scopes.values())
+            scopes = _scopes.values().toArray(new DbScope[_scopes.size()]);
+        }
+
+        {
+            for (DbScope scope : scopes)
             {
                 TransactionImpl t = scope.getCurrentTransactionImpl();
                 if (t != null)
