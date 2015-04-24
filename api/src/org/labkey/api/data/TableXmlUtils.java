@@ -60,7 +60,7 @@ public class TableXmlUtils
         return xmlTablesDoc;
     }
 
-    public static SiteValidationResultList compareXmlToMetaData(DbSchema schema, boolean bFull, boolean bCaseSensitive)
+    public static SiteValidationResultList compareXmlToMetaData(DbSchema schema, boolean bFull, boolean bCaseSensitive, boolean errorOnXmlMiss)
     {
         SiteValidationResultList resultList = new SiteValidationResultList();
 
@@ -81,7 +81,7 @@ public class TableXmlUtils
                             TablesDocument tablesDocFromXml = TablesDocument.Factory.parse(xmlStream);
 
                             if (null != tablesDocFromXml)
-                                compareTableDocuments(tablesDocFromDatabaseMetaData, tablesDocFromXml, bFull, bCaseSensitive, null, resultList);
+                                compareTableDocuments(tablesDocFromDatabaseMetaData, tablesDocFromXml, bFull, bCaseSensitive, null, resultList, errorOnXmlMiss);
                         }
                     }
                 }
@@ -101,7 +101,7 @@ public class TableXmlUtils
                                               boolean bFull,
                                               boolean bCaseSensitive,
                                               TablesDocument mergedTablesDoc,
-                                              SiteValidationResultList rlOut)
+                                              SiteValidationResultList rlOut, boolean errorOnXmlMiss)
     {
         boolean merge = (null != mergedTablesDoc);
         boolean bCopyTargetNode;
@@ -478,7 +478,11 @@ public class TableXmlUtils
                 for (String dbCol : mDbColOrdinals.keySet())
                 {
                     idc = mDbColOrdinals.get(dbCol);
-                    rlOut.addError("ERROR: Table \"").append(tt.getTableName()).append("\", column \"").append(dbCol).append("\" missing from XML.");
+                    SiteValidationResult result;
+                    if (errorOnXmlMiss)
+                        result = rlOut.addError("ERROR: ");
+                    else result = rlOut.addWarn("WARNING: ");
+                    result.append("Table \"").append(tt.getTableName()).append("\", column \"").append(dbCol).append("\" missing from XML.");
 
                     if (merge)
                     {
@@ -496,7 +500,11 @@ public class TableXmlUtils
                     continue;
                 idt = mDbTableOrdinals.get(dbTab);
                 TableType tt = dbTables[idt];
-                rlOut.addError("ERROR: Table \"").append(dbTab).append("\" missing from XML.");
+                SiteValidationResult result;
+                if (errorOnXmlMiss)
+                    result = rlOut.addError("ERROR: ");
+                else result = rlOut.addWarn("WARNING: ");
+                result.append("Table \"").append(dbTab).append("\" missing from XML.");
                 if (merge)
                 {
                     //copy db node to end of table array

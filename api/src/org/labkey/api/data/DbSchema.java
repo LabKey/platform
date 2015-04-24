@@ -569,7 +569,7 @@ public class DbSchema
 
         private void testSchemaXml(DbSchema schema) throws Exception
         {
-            String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false).getResultsString();
+            String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false, true).getResultsString();
 
             // Not using assertNotNull, because it appends non-legal HTML text to our message
             if (null != sOut)
