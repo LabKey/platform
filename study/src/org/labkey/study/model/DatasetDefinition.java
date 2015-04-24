@@ -3142,7 +3142,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             // new row. See issue 18118
             SQLFragment resetCreatedColumnsSQL = new SQLFragment("UPDATE ");
             resetCreatedColumnsSQL.append(getStorageTableInfo(), "");
-            resetCreatedColumnsSQL.append(" SET Created = ?, CreatedBy = ? WHERE LSID = ?");
+            resetCreatedColumnsSQL.append(" SET Created = ?, CreatedBy = CAST(? AS USERID) WHERE LSID = ?");
             resetCreatedColumnsSQL.add(oldData.get(DatasetDomainKind.CREATED));
             resetCreatedColumnsSQL.add(oldData.get(DatasetDomainKind.CREATED_BY));
             resetCreatedColumnsSQL.add(newLSID);

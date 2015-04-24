@@ -170,7 +170,9 @@ public class JunitController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            root.addChild("Tests", new ActionURL(BeginAction.class,getContainer()));
+            root.addChild("Results");
+            return root;
         }
     }
 
