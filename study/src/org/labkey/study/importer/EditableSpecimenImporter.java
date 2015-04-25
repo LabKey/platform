@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: davebradlee
@@ -111,6 +113,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
     {
         List<Map<String, Object>> newRows = new ArrayList<>();
 
+        Set<String> seenFields = new CaseInsensitiveHashSet();
         for (Map<String, Object> row : rows)
         {
             Map<String, Object> newRow = new HashMap<>();
@@ -124,10 +127,19 @@ public class EditableSpecimenImporter extends SpecimenImporter
                     if (null != specCol)
                     {
                         newRow.put(specCol.getTsvColumnName(), value);
+                        seenFields.add(specCol.getTsvColumnName());
                     }
                 }
             }
             newRows.add(newRow);
+        }
+
+        // Make sure every row has each of seenFields
+        for (Map<String, Object> row : newRows)
+        {
+            for (String field : seenFields)
+                if (!row.containsKey(field))
+                    row.put(field, null);
         }
         return newRows;
     }
