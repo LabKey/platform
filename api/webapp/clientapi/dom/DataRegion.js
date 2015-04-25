@@ -1198,9 +1198,9 @@ if (!LABKEY.DataRegions)
         if (view) {
             if (view.type == 'report')
                 paramValPairs.push([".reportId", view.reportId]);
-            else if (view.type == 'view')
+            else if (view.type == 'view' && view.viewName)
                 paramValPairs.push([VIEWNAME_PREFIX, view.viewName]);
-            else
+            else if (LABKEY.Utils.isString(view))
                 paramValPairs.push([VIEWNAME_PREFIX, view]);
         }
 
@@ -1768,9 +1768,19 @@ if (!LABKEY.DataRegions)
             region.showLoadingMessage(message);
         }, 500);
 
+        var json = {
+            schemaName: region.schemaName,
+            queryName: region.queryName,
+            complete: complete
+        };
+
+        if (region.viewName) {
+            json.viewName = region.viewName;
+        }
+
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('query', 'deleteView', region.containerPath),
-            jsonData: {schemaName: region.schemaName, queryName: region.queryName, viewName: region.viewName, complete: complete},
+            jsonData: json,
             method: 'POST',
             callback: function() {
                 if (timerId > 0) { clearTimeout(timerId); }
@@ -1778,7 +1788,11 @@ if (!LABKEY.DataRegions)
             success: LABKEY.Utils.getCallbackWrapper(function(json) {
                 region.showSuccessMessage.call(region);
                 // change view to either a shadowed view or the default view
-                region.changeView.call(region, {type: 'view', viewName: json.viewName})
+                var config = { type: 'view' };
+                if (json.viewName) {
+                    config.viewName = json.viewName;
+                }
+                region.changeView.call(region, config);
             }, region),
             failure: LABKEY.Utils.getCallbackWrapper(function(json) {
                 region.showErrorMessage.call(json.exception);
@@ -1994,7 +2008,7 @@ if (!LABKEY.DataRegions)
                     },
                     success: function() {
                         region.showSuccessMessage.call(region);
-                        region.changeView({type: 'view', viewName: o.name});
+                        region.changeView.call(region, {type: 'view', viewName: o.name});
                     },
                     failure: function(json) {
                         Ext4.Msg.alert('Error saving view', json.exception);

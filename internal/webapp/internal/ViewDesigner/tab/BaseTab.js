@@ -135,7 +135,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
                 html = fieldMetaRecord.getToolTipHtml();
             }
             else {
-                html = "<table><tr><td><strong>Field not found:</strong></td></tr><tr><td>" + Ext4.util.Format.htmlEncode(fieldKey) + "</td></tr></table>";
+                html = "<table><tr><td><strong>Field not found:</strong></td></tr><tr><td>" + Ext4.htmlEncode(fieldKey) + "</td></tr></table>";
             }
             qt.update(html);
         }

@@ -7,9 +7,17 @@ Ext4.define('LABKEY.internal.ViewDesigner.QueryDetailsCache', {
 
     singleton: true,
 
+    mixins : {
+        observable: 'Ext.util.Observable'
+    },
+
     constructor : function() {
         this.cache = {};
         this.results = {};
+
+        this.mixins.observable.constructor.apply(this, arguments);
+
+        this.addEvents('beforecacheresponse');
     },
 
     callback : function(callback, scope, result) {
@@ -57,6 +65,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.QueryDetailsCache', {
     },
 
     populateCache : function(key, result) {
+
+        //console.log('# cols (start):', result.columns.length);
+        this.fireEvent('beforecacheresponse', result);
+        //console.log('# cols (end)  :', result.columns.length);
+
         this.results[key] = result;
 
         var cbs = this.cache[key];
@@ -125,6 +138,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.QueryDetailsProxy', {
 
         LABKEY.internal.ViewDesigner.QueryDetailsCache.getDetails(params, cacheCallback, this);
     },
+
     createCacheCallback : function(request, operation, callback, scope) {
         var me = this;
         return function(response) {

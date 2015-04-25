@@ -33,6 +33,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaRecord', {
         {name: 'inputType'},
         {name: 'caption'},
         {name: 'lookup'},
+        {name: 'crosstabMember', type: 'boolean', defaultValue: false},
         {name: 'crosstabColumnDimension'},
         {name: 'crosstabColumnMember'},
 
@@ -70,10 +71,18 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaRecord', {
             type: 'boolean',
             mapping: 'selectable',
             convert: function(v) { return v === false; }
-        }, {
+        },{
             name: 'iconCls',
             type: 'string',
             defaultValue: 'x4-hide-display'
+        },{
+            name: 'expanded',
+            type: 'boolean',
+            defaultValue: false
+        },{
+            name: 'loaded',
+            type: 'boolean',
+            defaultValue: false
         }
         //},{
         //    name: 'qtip',

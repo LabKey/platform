@@ -25,16 +25,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
             throw this.$className + ' requires \'schemaName\' and \'queryName\' properties to be constructed.'
         }
 
-        var params = {
-            schemaName: config.schemaName,
-            queryName: config.queryName,
-            viewName: config.viewName
-        };
-
-        if (config.fk) {
-            params.fk = config.fk;
-        }
-
         this.proxy = {
             type: 'querydetails',
             schema: config.schemaName,
@@ -71,17 +61,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
 
     model: 'LABKEY.internal.ViewDesigner.FieldMetaRecord',
 
-    proxy: {
-        type: 'memory',
-        reader: {
-            type: 'json',
-            root: 'columns',
-            idProperty: function (json) {
-                return json.fieldKey.toUpperCase()
-            }
-        }
-    },
-
     remoteSort: true,
 
     schemaName: undefined,
@@ -100,17 +79,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
             throw this.$className + ' requires \'schemaName\' and \'queryName\' properties to be constructed.'
         }
 
-        var params = {
-            schemaName: config.schemaName,
-            queryName: config.queryName,
-            viewName: config.viewName
-        };
-
-        if (config.fk) {
-            params.fk = config.fk;
-        }
-
-        this.proxy = {
+        config.proxy = {
             type: 'querydetails',
             schema: config.schemaName,
             query: config.queryName,
@@ -124,7 +93,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
             }
         };
 
-        this._loading = false;
+        config._loading = false;
 
         this.callParent([config]);
 

@@ -23,7 +23,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                     type: 'json',
                     root: 'columns',
                     idProperty: function (json) {
-                        return json.fieldKey.toUpperCase()
+                        return json.fieldKey.toUpperCase();
                     }
                 }
             }

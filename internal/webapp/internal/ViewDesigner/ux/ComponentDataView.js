@@ -52,17 +52,17 @@ Ext4.define('Ext.ux.ComponentDataView', {
 
     renderItem : function (rootNode, item, node, record, index)
     {
-        var c = item.render ?
-                c = item.cloneConfig() :
-                Ext4.ComponentManager.create(item, this.defaultType);
+        var c = item.render ? item.cloneConfig() : Ext4.ComponentManager.create(item, this.defaultType);
 
-        if(c.renderTarget){
+        if (c.renderTarget) {
             node = Ext4.DomQuery.is(node, c.renderTarget) ? node : Ext4.DomQuery.selectNode(c.renderTarget, node);
             c.render(node);
-        }else if(c.applyTarget){
+        }
+        else if (c.applyTarget) {
             node = Ext4.DomQuery.is(node, c.applyTarget) ? node : Ext4.DomQuery.selectNode(c.applyTarget, node);
             c.applyToMarkup(node);
-        }else{
+        }
+        else {
             c.render(node);
         }
 
@@ -70,9 +70,9 @@ Ext4.define('Ext.ux.ComponentDataView', {
             c.setRecord(record, index);
         }
 
-        if (index === undefined)
-        {
-            if(Ext4.isFunction(c.setValue) && c.applyValue){
+        if (!Ext4.isDefined(index)) {
+
+            if (Ext4.isFunction(c.setValue) && c.applyValue) {
                 c.setValue(record.get(c.applyValue));
                 c.on('blur', function(f){
                     var record = this.dataView.getRecord(this.node);

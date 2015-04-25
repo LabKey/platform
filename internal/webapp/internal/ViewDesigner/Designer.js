@@ -27,6 +27,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         Ext4.tip.QuickTipManager.init();
 
         this.cache = LABKEY.internal.ViewDesigner.QueryDetailsCache;
+        this.cache.on('beforecacheresponse', this.onBeforeCache, this);
+
         this.dataRegion = config.dataRegion;
 
         this.containerPath = config.containerPath;
@@ -67,13 +69,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             };
         }
 
-        // Create the FieldKey metadata store
-        this.fieldMetaStore = Ext4.create('LABKEY.internal.ViewDesigner.FieldMetaStore', {
-            containerPath: this.containerPath,
-            schemaName: this.schemaName,
-            queryName: this.queryName,
-            data: this.query
-        });
+        this.getFieldMetaStore().loadRawData(this.query, true /* append the records */);
 
         this.getColumnTree();
 
@@ -245,6 +241,69 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         this.getInnerTabPanel().on('tabchange', this.onTabChange, this);
     },
 
+    onBeforeCache : function(response) {
+        var groupedByMember = this.columnsByMember(response.columns),
+            allColumns = [];
+
+        // clear out response columns
+        response.columns = groupedByMember[null];
+
+        Ext4.iterate(groupedByMember, function(name, columns) {
+            if (name !== "null" && columns.length > 0) {
+                var crossTabMetadata = columns[0]['crosstabColumnMember'],
+                    rootCol = {
+                        fieldKeyPath: crossTabMetadata.value,
+                        caption: crossTabMetadata.caption,
+                        dimensionFieldKey: crossTabMetadata.dimensionFieldKey,
+                        leaf: false,
+                        lookup: {},
+                        selectable: false,
+                        crosstabMember: true,
+                        expanded: true,
+                        columns: columns
+                    };
+
+                response.columns.push(rootCol);
+
+                if (columns.length > 0) {
+                    allColumns = allColumns.concat(columns);
+                }
+            }
+        }, this);
+
+        this.getFieldMetaStore().loadRawData({ columns: allColumns }, true);
+    },
+
+    columnsByMember : function(responseColumns) {
+        var groupedByMember = {},
+            groupedByMemberKey = null,
+            groupedByMemberColumns,
+            crosstabColumnMember,
+            col, i=0;
+
+        for (; i < responseColumns.length; i++) {
+            col = responseColumns[i];
+            groupedByMemberKey = null;
+            crosstabColumnMember = col['crosstabColumnMember'];
+
+            if (crosstabColumnMember) {
+                groupedByMemberKey = [
+                    crosstabColumnMember.dimensionFieldKey,
+                    crosstabColumnMember.value,
+                    crosstabColumnMember.caption
+                ].join('~');
+            }
+
+            groupedByMemberColumns = groupedByMember[groupedByMemberKey];
+            if (groupedByMemberColumns === undefined) {
+                groupedByMember[groupedByMemberKey] = groupedByMemberColumns = [];
+            }
+            groupedByMemberColumns.push(col);
+        }
+
+        return groupedByMember;
+    },
+
     getColumnTree : function() {
 
         if (!this.fieldsTree) {
@@ -344,7 +403,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 items: [
                     this.getAvailableFieldsPanel(),
                     this.getInnerTabPanel(this.activeTab),
-                    this.getBottomToolbarPanel(this.getFooterItems())
+                    this.getBottomToolbarPanel()
                 ]
             })
         }
@@ -464,9 +523,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         }
     },
 
-    onTabsItemClick : function(view, record, item, index, e) {
-        if (!record.get('active'))
-        {
+    onTabsItemClick : function(view, record) {
+        if (!record.get('active')) {
             // suspend events so that we can just use the view.refresh to update at the end
             view.getStore().suspendEvents(false);
             var currentlRec = view.getStore().findRecord('active', true);
@@ -512,21 +570,14 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 border: false,
                 activeTab: activeTab,
                 tabBar: {hidden: true},
-                defaults: { border: false },
-                items: [{
-                    items: [this.columnsTab]
-                }, {
-                    items: [this.filterTab]
-                }, {
-                    items: [this.sortTab]
-                }]
+                items: this.getDesignerTabs()
             });
         }
 
         return this.tabsTabPanel;
     },
 
-    getBottomToolbarPanel : function(footerBarItems) {
+    getBottomToolbarPanel : function() {
         if (!this.bottomToolbarPanel) {
             this.bottomToolbarPanel = Ext4.create('Ext.panel.Panel', {
                 region: 'south',
@@ -549,7 +600,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                     dock: 'bottom',
                     ui: 'footer',
                     cls: 'labkey-customview-button-footer',
-                    items: footerBarItems
+                    items: this.getFooterItems()
                 }]
 
             });
@@ -575,14 +626,21 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     beforeDestroy : function () {
         this.callParent();
 
-        if (this.columnsTab)
+        if (this.columnsTab) {
             this.columnsTab.destroy();
-        if (this.filterTab)
+            delete this.columnsTab;
+        }
+        if (this.filterTab) {
             this.filterTab.destroy();
-        if (this.sortTab)
+            delete this.filterTab;
+        }
+        if (this.sortTab) {
             this.sortTab.destroy();
-        if (this.fieldMetaStore)
+            delete this.sortTab;
+        }
+        if (this.fieldMetaStore) {
             this.fieldMetaStore.destroy();
+        }
         if (this.dataRegion)
             delete this.dataRegion;
     },
@@ -617,7 +675,15 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     },
 
     getFieldMetaStore : function() {
+        if (!this.fieldMetaStore) {
+            this.fieldMetaStore = Ext4.create('LABKEY.internal.ViewDesigner.FieldMetaStore', {
+                containerPath: this.containerPath,
+                schemaName: this.schemaName,
+                queryName: this.queryName
+            });
+        }
 
+        return this.fieldMetaStore;
     },
 
     getMessageBox : function() {
@@ -625,15 +691,13 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         if (messageContainer) {
             return messageContainer;
         }
-
-        return undefined;
+        // return undefined;
     },
 
     showMessage : function (msg) {
-        // XXX: support multiple messages and [X] close box
+        // XXX: support multiple messages
         var m = this.getMessageBox();
-        if (m && m.getEl())
-        {
+        if (m && m.getEl()) {
             m.update("<span class='labkey-tool labkey-tool-close' style='float:right;vertical-align:top;'></span><span>"
                 + Ext4.htmlEncode(msg) + "</span>");
             m.show();
@@ -647,8 +711,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     hideMessage : function () {
         var m = this.getMessageBox();
-        if (m)
-        {
+        if (m) {
             m.update('');
             m.hide();
         }
@@ -659,12 +722,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     },
 
     getActiveDesignerTab : function () {
-        var tab = this.getInnerTabPanel().getActiveTab().down('panel');
+        var tab = this.getInnerTabPanel().getActiveTab();
         if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab) {
             return tab;
         }
-
-        return undefined;
+        // return undefined;
     },
 
     showHideNodes : function() {
@@ -711,36 +773,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 tab.setShowHiddenFields(showHidden);
             }
         }
-    },
-
-    // Called from FieldTreeLoader. Returns a TreeNode config for a FieldMetaRecord.
-    // This method is necessary since we need to determine checked state of the tree
-    // using the columnStore.
-    createNodeAttrs : function (fieldMetaRecord) {
-        var fieldMeta = fieldMetaRecord.data;
-        var text = fieldMeta.name;
-        if (fieldMeta.caption && fieldMeta.caption != "&nbsp;") {
-            text = fieldMeta.caption;
-        }
-
-        var attrs = {
-            // NOTE: Don't use the fieldKey as id since it will be rendered into the dom without being html escaped.
-            // NOTE: Escaping the value here breaks the TreePanel.nodeHash collection.
-            // Instead we use the LABKEY.ext.FieldTreeNodeUI to add an htmlEscaped fieldKey attribute.
-            //id: fieldMeta.fieldKey,
-            fieldKey: fieldMeta.fieldKey,
-            text: text,
-            leaf: !fieldMeta.lookup,
-            //checked: fieldMeta.selectable ? this.hasField(fieldMeta.fieldKey) : undefined,
-            checked: this.hasField(fieldMeta.fieldKey),
-            disabled: !fieldMeta.selectable,
-            hidden: fieldMeta.hidden && !this.showHiddenFields,
-            qtip: fieldMetaRecord.getToolTipHtml(),
-            iconCls: "x-hide-display",
-            uiProvider: LABKEY.ext.FieldTreeNodeUI
-        };
-
-        return attrs;
     },
 
     hasField : function (fieldKey) {
@@ -844,7 +876,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         });
     },
 
-    onApplyClick : function (btn, e) {
+    onApplyClick : function() {
         // Save a session view. Session views can't be inherited or shared.
         this.save({
             name: this.customView.name,
@@ -855,7 +887,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         });
     },
 
-    onSaveClick : function (btn, e) {
+    onSaveClick : function() {
         var config = Ext4.applyIf({
             canEditSharedViews: this.query.canEditSharedViews,
             allowableContainerFilters: this.allowableContainerFilters,
@@ -1120,7 +1152,6 @@ LABKEY.DataRegion2.saveCustomizeViewPrompt = function(config) {
             hidden: !containerFilterable,
             listeners: {
                 check: function (checkbox, checked) {
-                    console.log(Ext4.ComponentMgr.get("saveCustomView_targetContainer"));
                     Ext4.ComponentMgr.get("saveCustomView_targetContainer").setDisabled(!checked);
                 }
             }
