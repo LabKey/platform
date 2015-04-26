@@ -1577,8 +1577,16 @@ public class PostgreSql91Dialect extends SqlDialect
         // !scope.isTransactionActive() is apparently not sufficient for a few isolated cases, like DbSequenceManager test. TODO: Figure out this discrepancy
         if (Table.isSelect(sql.getSQL()) && !scope.isTransactionActive() && connection.getAutoCommit())
         {
-            connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
-            connection.setAutoCommit(false);
+            try
+            {
+                connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+                connection.setAutoCommit(false);
+            }
+            catch (SQLException e)
+            {
+                scope.logCurrentConnectionState();
+                throw e;
+            }
         }
         else
         {
