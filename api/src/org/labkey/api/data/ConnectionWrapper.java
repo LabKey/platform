@@ -771,7 +771,7 @@ public class ConnectionWrapper implements java.sql.Connection
 
     public String toString()
     {
-        return "Connection wrapper for SPID " + _spid + ", originally allocated to thread " + _allocatingThreadName + " at " + DateFormat.getInstance().format(_allocationTime);
+        return "Connection wrapper for SPID " + _spid + ", originally allocated to thread " + _allocatingThreadName + " at " + DateFormat.getInstance().format(_allocationTime) + ", real connection: " + System.identityHashCode(_connection) + " - " + _connection;
     }
 
 
