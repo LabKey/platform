@@ -171,6 +171,14 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         getConfiguredForm(policy);
     }
 
+
+    @Override
+    public void setIsOnlyWebPartOnPage(boolean b)
+    {
+        getModelBean().setAutoResize(b);
+    }
+
+
     protected List<FilesForm.actions> getConfiguredActions(SecurityPolicy policy)
     {
         List<FilesForm.actions> actions = new ArrayList<>();

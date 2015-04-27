@@ -296,8 +296,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
         // Copy all properties from the input materials on the appropriate sample wellgroups; the NAb data processing
         // code uses well-group properties internally.
-        Collection<ExpMaterial> sampleInputs = run.getMaterialInputs().keySet();
-        Map<ExpMaterial, List<WellGroup>> inputs = getMaterialWellGroupMapping(provider, plates, sampleInputs);
+        Map<ExpMaterial, List<WellGroup>> inputs = getMaterialWellGroupMapping(provider, plates, run.getMaterialInputs());
 
         List<? extends DomainProperty> sampleProperties = provider.getSampleWellGroupDomain(protocol).getProperties();
         Map<String, DomainProperty> samplePropertyMap = new HashMap<>();
@@ -390,13 +389,17 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     protected abstract void prepareWellGroups(List<WellGroup> wellgroups, ExpMaterial material, Map<String, DomainProperty> samplePropertyMap) throws ExperimentException;
 
-    protected Map<ExpMaterial, List<WellGroup>> getMaterialWellGroupMapping(DilutionAssayProvider provider, List<Plate> plates, Collection<ExpMaterial> sampleInputs)throws ExperimentException
+    protected Map<ExpMaterial, List<WellGroup>> getMaterialWellGroupMapping(DilutionAssayProvider provider, List<Plate> plates, Map<ExpMaterial,String> sampleInputs)throws ExperimentException
     {
         Plate plate = plates.get(0);
         List<? extends WellGroup> wellgroups = plate.getWellGroups(WellGroup.Type.SPECIMEN);
         Map<String, ExpMaterial> nameToMaterial = new HashMap<>();
-        for (ExpMaterial material : sampleInputs)
-            nameToMaterial.put(material.getName(), material);
+        for (Map.Entry<ExpMaterial,String> e : sampleInputs.entrySet())
+        {
+            ExpMaterial material = e.getKey();
+            String wellGroup = e.getValue();
+            nameToMaterial.put(wellGroup,material);
+        }
 
         Map<ExpMaterial, List<WellGroup>> mapping = new HashMap<>();
         for (WellGroup wellgroup : wellgroups)

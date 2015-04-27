@@ -138,6 +138,9 @@ public class ExperimentService
          * @throws ExperimentException
          */
         List<? extends ExpMaterial> getExpMaterials(Container container, @Nullable User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleSet, boolean throwIfMissing, boolean createIfMissing) throws ExperimentException;
+
+        /* This version of createExpMaterial() takes name from lsid.getObjectId() */
+        ExpMaterial createExpMaterial(Container container, Lsid lsid);
         ExpMaterial createExpMaterial(Container container, String lsid, String name);
         ExpMaterial getExpMaterial(int rowid);
         List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);

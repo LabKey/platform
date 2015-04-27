@@ -17,6 +17,7 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 
@@ -26,9 +27,16 @@ public interface ExpSampleSet extends ExpObject
 {
     public String getMaterialLSIDPrefix();
 
-    public List<? extends ExpMaterial> getSamples();
 
+    /** pass in a container to request a sample */
+    @Deprecated
+    public List<? extends ExpMaterial> getSamples();
+    public List<? extends ExpMaterial> getSamples(Container c);
+
+    /** pass in a container to request a sample */
+    @Deprecated
     public ExpMaterial getSample(String name);
+    public ExpMaterial getSample(Container c, String name);
 
     public Domain getType();
 
