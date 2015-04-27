@@ -365,14 +365,18 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     @Override
     public String getSourceCountSql(@NotNull JSONArray sources, JSONArray members, String colName)
     {
-        String selectSql = "SELECT DataSet.Label, COUNT(DISTINCT ParticipantId) AS value FROM StudyData ";
+        // always use the same column ignoring the 'colName' parameter
+        String targetColumn = "DataSet.Name";
+        String distinctColumn = "ParticipantId";
+
+        String selectSql = "SELECT " + targetColumn + " as label, COUNT(DISTINCT " + distinctColumn + ") AS value FROM StudyData ";
         String innerSql = "";
         String sep = "";
         if (members != null)
         {
             if (members.length() > 0)
             {
-                innerSql += "WHERE ParticipantId IN (";
+                innerSql += "WHERE " + distinctColumn + " IN (";
                 for (int i = 0; i < members.length(); i++)
                 {
                     innerSql += sep + toSqlString(members.getString(i));
@@ -396,7 +400,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
 
         if (sources.length() > 0)
         {
-            innerSql += "DataSet.Label IN (";
+            innerSql += targetColumn + " IN (";
             sep = "";
             for (int i = 0; i < sources.length(); i++)
             {
@@ -407,7 +411,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             selectSql += innerSql;
         }
 
-        selectSql += "GROUP BY DataSet.Label";
+        selectSql += "GROUP BY " + targetColumn;
 
         return selectSql;
     }

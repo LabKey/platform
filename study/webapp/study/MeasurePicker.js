@@ -878,11 +878,13 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 sources: this.sourceCountSourceSet
             };
 
-            if (this.sourceCountSourceSet.length == 0)
-            {
+            if (this.sourceCountSourceSet.length == 0) {
+                var name;
                 Ext4.each(sources, function(source) {
-                    var q = source.get('queryLabel') || source.get('queryName');
-                    json.sources.push(q);
+                    name = source.get('queryName');
+                    if (name) {
+                        json.sources.push(name);
+                    }
                 }, this);
             }
 
@@ -899,30 +901,26 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             }
 
             Ext4.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('visualization', 'getSourceCounts'),
+                url: LABKEY.ActionURL.buildURL('visualization', 'getSourceCounts.api'),
                 method: 'POST',
                 jsonData: json,
                 success: function(response) {
-                    var countResponse = Ext.decode(response.responseText);
+                    var countResponse = Ext.decode(response.responseText),
+                        counts,
+                        key;
+
                     if (Ext4.isObject(countResponse) && Ext4.isDefined(countResponse.counts)) {
-                        var counts = countResponse.counts;
+                        counts = countResponse.counts;
 
                         Ext.each(sources, function(source) {
 
-                            var q = source.get('queryLabel');
-                            var key;
-                            if (Ext4.isDefined(counts[q])) {
-                                key = q;
-                            }
-                            else {
-                                q = source.get('queryName');
-                                if (Ext4.isDefined(counts[q])) {
-                                    key = q;
-                                }
-                            }
+                            key = source.get('queryName');
 
                             if (Ext4.isDefined(key)) {
                                 source.set('sourceCount', counts[key]);
+                            }
+                            else {
+                                console.error('MeasurePicker.getSourceCounts: Source did not provide \'queryName\'.');
                             }
 
                         }, this);
