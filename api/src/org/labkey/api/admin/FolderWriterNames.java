@@ -37,7 +37,7 @@ public class FolderWriterNames
     public static final String WIKIS_AND_THEIR_ATTACHMENTS = "Wikis and their attachments";
     public static final String NOTIFICATIONS_SETTINGS = "Notification settings";
     public static final String MISSING_VALUE_INDICATORS = "Missing value indicators";
-    public static final String SECURITY_GROUPS = "Project-level groups and user->group and group->group assignments";
+    public static final String SECURITY_GROUPS = "Project-level groups and members";
     public static final String ROLE_ASSIGNMENTS = "Role assignments for users and groups";
     public static final String STUDY = "Study";
 }
