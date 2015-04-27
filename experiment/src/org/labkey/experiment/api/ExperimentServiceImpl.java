@@ -562,12 +562,23 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
+    public ExpMaterialImpl createExpMaterial(Container container, Lsid lsid)
+    {
+        ExpMaterialImpl result = new ExpMaterialImpl(new Material());
+        result.setContainer(container);
+        result.setLSID(lsid);
+        result.setName(lsid.getObjectId());
+        return result;
+    }
+
     public ExpMaterialImpl createExpMaterial(Container container, String lsid, String name)
     {
         ExpMaterialImpl result = new ExpMaterialImpl(new Material());
         result.setContainer(container);
         result.setLSID(lsid);
         result.setName(name);
+        if (!name.equals(new Lsid(lsid).getObjectId()))
+            throw new IllegalArgumentException("name=" + name + " lsid="+lsid);
         return result;
     }
 

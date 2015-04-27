@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -61,6 +62,31 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
     {
         super(material);
     }
+
+
+    public void setName(String name)
+    {
+        if (null != getLSID() && !name.equals(new Lsid(getLSID()).getObjectId()))
+            throw new IllegalStateException("name="+name + " lsid="+getLSID());
+        super.setName(name);
+    }
+
+    @Override
+    public void setLSID(String lsid)
+    {
+        if (null != getName() && !getName().equals(new Lsid(lsid).getObjectId()))
+            throw new IllegalStateException("name="+getName() + " lsid="+lsid);
+        super.setLSID(lsid);
+    }
+
+    @Override
+    public void setLSID(Lsid lsid)
+    {
+        if (null != getName() && !getName().equals(lsid.getObjectId()))
+            throw new IllegalStateException("name="+getName() + " lsid="+lsid.toString());
+        super.setLSID(lsid);
+    }
+
 
     public URLHelper detailsURL()
     {

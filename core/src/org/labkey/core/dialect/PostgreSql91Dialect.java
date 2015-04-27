@@ -932,7 +932,7 @@ public class PostgreSql91Dialect extends SqlDialect
     @Override
     protected String getDatabaseMaintenanceSql()
     {
-        return "VACUUM ANALYZE;";
+        return null; // "VACUUM ANALYZE;";
     }
 
     @Override
@@ -965,6 +965,7 @@ public class PostgreSql91Dialect extends SqlDialect
         ret.append(")+");
         ret.append(tmp);
         ret.append(")");
+
         return ret;
     }
 
