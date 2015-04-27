@@ -58,6 +58,7 @@ public class ColumnValidators
         add(validators, createLengthValidator(col));
         add(validators, createPropertyValidators(dp));
         add(validators, createDateValidator(col));
+        add(validators, createNumberValidator(col));
 
         if (validators.isEmpty())
             return Collections.emptyList();
@@ -129,6 +130,15 @@ public class ColumnValidators
             return null;
 
         return new DateValidator(col.getName());
+    }
+
+    @Nullable
+    public static NumberValidator createNumberValidator(@Nullable ColumnInfo col)
+    {
+        if (col == null || !col.getJdbcType().isReal())
+            return null;
+
+        return new NumberValidator(col.getName());
     }
 
     @Nullable

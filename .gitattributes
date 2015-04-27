@@ -461,6 +461,7 @@ api/src/org/labkey/api/data/validator/ColumnValidators.java -text
 api/src/org/labkey/api/data/validator/DateValidator.java -text
 api/src/org/labkey/api/data/validator/DuplicateSingleKeyValidator.java -text
 api/src/org/labkey/api/data/validator/LengthValidator.java -text
+api/src/org/labkey/api/data/validator/NumberValidator.java -text
 api/src/org/labkey/api/data/validator/PropertyValidator.java -text
 api/src/org/labkey/api/data/validator/RequiredValidator.java -text
 api/src/org/labkey/api/data/validator/RowValidator.java -text
