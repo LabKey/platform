@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
@@ -218,6 +219,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
         return _folderTypeName;
     }
 
+    @Nullable
     @Override
     public FolderType getFolderType()
     {

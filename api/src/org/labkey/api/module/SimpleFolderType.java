@@ -36,6 +36,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.data.xml.folderType.FolderTabDocument;
 import org.labkey.data.xml.folderType.FolderType;
 import org.labkey.data.xml.folderType.FolderTypeDocument;
+import org.labkey.data.xml.folderType.ModulesDocument;
 import org.labkey.data.xml.folderType.Property;
 import org.labkey.data.xml.folderType.WebPartDocument;
 
@@ -300,16 +301,21 @@ public class SimpleFolderType extends MultiPortalFolderType
             setFolderIconPath(_iconPath);
 
         Set<Module> activeModules = new HashSet<>();
-        for (String moduleName : type.getModules().getModuleNameArray())
+        ModulesDocument.Modules modules = type.getModules();
+        String[] moduleNames = modules != null ? modules.getModuleNameArray() : null;
+        if (moduleNames != null)
         {
-            if (ModuleLoader.getInstance().hasModule(moduleName))
+            for (String moduleName : moduleNames)
             {
-                Module module = getModule(moduleName);
-                activeModules.add(module);
-            }
-            else
-            {
-                LOGGER.warn("Module '" + moduleName + "' not available for folder type '" + _name + "'");
+                if (ModuleLoader.getInstance().hasModule(moduleName))
+                {
+                    Module module = getModule(moduleName);
+                    activeModules.add(module);
+                }
+                else
+                {
+                    LOGGER.warn("Module '" + moduleName + "' not available for folder type '" + _name + "'");
+                }
             }
         }
         _activeModules = activeModules;

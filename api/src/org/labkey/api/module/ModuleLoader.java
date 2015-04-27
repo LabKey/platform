@@ -1772,6 +1772,7 @@ public class ModuleLoader implements Filter
         return ModuleLoader.getInstance().getModuleForController(HttpView.getRootContext().getActionURL().getController());
     }
 
+    @Nullable
     public FolderType getFolderType(String name)
     {
         synchronized (_folderTypes)
