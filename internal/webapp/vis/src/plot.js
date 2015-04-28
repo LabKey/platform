@@ -57,6 +57,15 @@
  *          <li><strong>range:</strong> An array of values that all input values (the domain) will be mapped to. Not
  *          used for any axis scales. For continuous color scales it is an array[min, max] hex values.</li>
  *          <li><strong>sortFn:</strong> If scaleType is "discrete", the sortFn can be used to order the values of the domain</li>
+ *          <li><strong>tickFormat:</strong> Add axis label formatting.</li>
+ *          <li><strong>tickHoverText:</strong>: Adds hover text for axis labels.</li>
+ *          <li><strong>tickCls:</strong> Add class to axis label.</li>
+ *          <li><strong>tickRectCls:</strong> Add class to mouse area rectangle around axis label.</li>
+ *          <li><strong>tickRectHeightOffset:</strong> Set axis mouse area rect width. Offset beyond label text width.</li>
+ *          <li><strong>tickRectWidthOffset:</strong> Set axis mouse area rect height. Offset beyond label text height.</li>
+ *          <li><strong>tickClick:</strong> Handler for axis label click. Binds to mouse area rect around label.</li>
+ *          <li><strong>tickMouseOver:</strong> Handler for axis label mouse over. Binds to mouse area rect around label.</li>
+ *          <li><strong>tickMouseOut:</strong> Handler for axis label mouse out. Binds to mouse area rect around label.</li>
  *      </ul>
  * @param {Object} [config.labels] (Optional) An object with the following properties: main, x, y (or yLeft), yRight.
  *      Each property can have a {String} value, {Boolean} lookClickable, and {Object} listeners. The value is the text
@@ -327,6 +336,7 @@ boxPlot.render();
                 newScale.tickRectWidthOffset = origScale.tickRectWidthOffset ? origScale.tickRectWidthOffset : null;
                 newScale.domain = origScale.domain ? origScale.domain : null;
                 newScale.range = origScale.range ? origScale.range : null;
+                newScale.fontSize = origScale.fontSize ? origScale.fontSize : null;
 
                 newScale.tickClick = origScale.tickClick ? origScale.tickClick : null;
                 newScale.tickMouseOver = origScale.tickMouseOver ? origScale.tickMouseOver : null;
