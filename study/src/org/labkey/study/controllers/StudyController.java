@@ -2782,7 +2782,7 @@ public class StudyController extends BaseStudyController
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), true);
+                Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), null, true, false);
                 List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
                 for (String lsid : lsids)
                     keys.add(Collections.<String, Object>singletonMap("lsid", lsid));
@@ -2797,6 +2797,10 @@ public class StudyController extends BaseStudyController
 
                 transaction.commit();
                 return true;
+            }
+            finally
+            {
+                DataRegionSelection.clearAll(getViewContext(), null);
             }
         }
 

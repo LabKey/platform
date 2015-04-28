@@ -5238,6 +5238,18 @@ public class QueryController extends SpringActionController
             qinfo.put("snapshot", qdef.isSnapshot());
             qinfo.put("inherit", qdef.canInherit());
             qinfo.put("isUserDefined", isUserDefined);
+            boolean canEdit = qdef.canEdit(getUser());
+            qinfo.put("canEdit", canEdit);
+            qinfo.put("canEditSharedViews", getContainer().hasPermission(getUser(), EditSharedViewPermission.class));
+            qinfo.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
+
+            if (isUserDefined)
+                qinfo.put("moduleName", qdef.getModuleName());
+            boolean isInherited = qdef.canInherit() && !getContainer().equals(qdef.getDefinitionContainer());
+            qinfo.put("isInherited", isInherited);
+            if (isInherited)
+                qinfo.put("containerPath", qdef.getDefinitionContainer().getPath());
+
             if (null != qdef.getDescription())
                 qinfo.put("description", qdef.getDescription());
             if (viewDataUrl != null)
