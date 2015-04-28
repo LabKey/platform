@@ -166,7 +166,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         if (0 != discussionId)
             adjustedCurrentURL.addParameter("discussion.id", "" + discussionId);
 
-        ModelAndView discussionBox = null;
+        ThreadWrapper discussionBox = null;
         String focusId = null;
         
         if (params.get("start") != null)
@@ -228,12 +228,12 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
         if (discussionBox == null)
             discussionBox = new ThreadWrapper(currentURL, "Discussion");
-        String discussionAreaId = ((ThreadWrapper)discussionBox).getId();
 
-        ModelAndView pickerView = new PickerView(c, discussionAreaId, adjustedCurrentURL, newDiscussionTitle, announcementModels, true, allowMultipleDiscussions, objectId);
+        ModelAndView pickerView = new PickerView(c, discussionBox.getId(), adjustedCurrentURL, newDiscussionTitle, announcementModels, true, allowMultipleDiscussions, objectId);
         DiscussionService.DiscussionView view = new DiscussionService.DiscussionView(pickerView);
 
         view.addView(discussionBox);
+        view.addClientDependencies(discussionBox.getClientDependencies());
         view.setFocusId(focusId);
 
         return view;
@@ -340,6 +340,12 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             _vbox.addObject("closeURL", closeURL);
 
             _id = "discussionBox" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+
+            for (HttpView view : views)
+            {
+                if (view != null)
+                    addClientDependencies(view.getClientDependencies());
+            }
         }
 
         public ThreadWrapper()

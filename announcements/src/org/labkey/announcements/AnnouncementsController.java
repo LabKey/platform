@@ -1185,7 +1185,6 @@ public class AnnouncementsController extends SpringActionController
         {
             super("/org/labkey/announcements/insert.jsp", new InsertBean(), form, cancelURL, title, errors, null, reshow, fromDiscussion);
 
-            addClientDependency(ClientDependency.fromPath("Ext4"));
             InsertBean bean = getModelBean();
             bean.allowMultipleDiscussions = allowMultipleDiscussions;
         }

@@ -32,7 +32,8 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext3"));
+        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("announcements/discuss.js"));
         return resources;
     }
 %>
@@ -48,44 +49,7 @@
     String completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, c).getLocalURIString();
 %>
 <%=formatMissedErrors("form")%>
-<script type="text/javascript">
-function validateForm(form)
-{
-    var trimmedTitle = form.title.value.trim();
-
-    if (trimmedTitle.length == 0)
-    {
-        Ext4.MessageBox.alert("Error", "Title must not be blank.");
-        Ext4.get('submitButton').replaceCls('labkey-disabled-button', 'labkey-button');
-        return false;
-    }
-
-    var text = document.getElementById('body').value.toLowerCase();
-    // Not all message board configurations include the rendererType option
-    var rendererTypeElement = document.getElementById('rendererType');
-    if (rendererTypeElement && (text.indexOf("<a") != -1 || text.indexOf("<table") != -1 || text.indexOf("<div") != -1 || text.indexOf("<span") != -1) && rendererTypeElement.value != 'HTML')
-    {
-        var currentTypeDescription = rendererTypeElement.options[rendererTypeElement.selectedIndex].text;
-        Ext4.MessageBox.confirm("Confirm message formatting", "The content of your message may contain HTML. Are you sure that you want to submit it as " + currentTypeDescription + "?",
-                function (btn)
-                {
-                    if (btn == 'yes')
-                    {
-                        form.submit();
-                    }
-                    else
-                    {
-                        Ext4.get('submitButton').replaceCls('labkey-disabled-button', 'labkey-button');
-                    }
-                }
-        );
-        return false;
-    }
-
-    return true;
-}
-</script>
-<labkey:form method="POST" enctype="multipart/form-data" action="<%=insertUrl%>" id="insertMessageForm">
+<labkey:form method="POST" enctype="multipart/form-data" action="<%=insertUrl%>" id="insertMessageForm" onsubmit="return LABKEY.discuss.validate(this)">
 <input type=hidden name=cancelUrl value="<%=h(null != cancelURL ? cancelURL.getLocalURIString() : null)%>">
 <%=generateReturnUrlFormField(cancelURL)%>
 <input type=hidden name=fromDiscussion value="<%=bean.fromDiscussion%>">
@@ -153,24 +117,18 @@ function validateForm(form)
         }
     %>
 </table>
-<br>&nbsp;<%= button("Submit").submit(true).onClick("return validateForm(this.form)").attributes("id=submitButton").disableOnClick(true) %>&nbsp;<%
+<br>&nbsp;<%= button("Submit").id("submitButton").submit(true).disableOnClick(true) %>&nbsp;<%
 if (null != cancelURL)
 {
     %><%= button("Cancel").href(cancelURL) %><%
 }
 else
 {
-    %><%= generateBackButton("Cancel") %>
-    <%
+    %><%= generateBackButton("Cancel") %><%
 }
 %>
 <input type=hidden name="discussionSrcIdentifier" value="<%=h(form.get("discussionSrcIdentifier"))%>"><input type=hidden name="discussionSrcURL" value="<%=h(form.get("discussionSrcURL"))%>">
 </labkey:form>
 <p/>
 <% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>
-<script type="text/javascript">
-    Ext.onReady(function(){
-        new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
-    });
-</script>
 

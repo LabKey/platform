@@ -32,7 +32,8 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext3"));
+        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("announcements/discuss.js"));
         return resources;
     }
 %>
@@ -49,29 +50,7 @@
     ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, getContainer());
 
 %><%=formatMissedErrors("form")%>
-<script type="text/javascript">
-function validateForm(form)
-{
-    if(form.title){
-        var trimmedTitle = form.title.value.trim();
-
-        if (trimmedTitle.length > 0)
-            return true;
-
-        Ext.Msg.alert("Error", "Title must not be blank.");
-        Ext.get('submitButton').replaceClass('labkey-disabled-button', 'labkey-button');
-        return false;
-    } else {
-        return true;
-    }
-}
-LABKEY.requiresExt3(function() {
-    Ext.onReady(function(){
-        new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
-    });
-});
-</script>
-<labkey:form method="POST" enctype="multipart/form-data" action="<%=respondUrl%>" onsubmit="return validateForm(this)">
+<labkey:form method="POST" enctype="multipart/form-data" action="<%=respondUrl%>" onsubmit="return LABKEY.discuss.validate(this)">
 <input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>">
 <%=generateReturnUrlFormField(bean.cancelURL)%>
 <input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>">
@@ -159,7 +138,7 @@ if (settings.hasFormatPicker())
         }
     %>
 </table></div>
-<br>&nbsp;<%= button("Submit").submit(true).attributes("id=submitButton").disableOnClick(true) %>&nbsp;<%
+<br>&nbsp;<%= button("Submit").submit(true).id("submitButton").disableOnClick(true) %>&nbsp;<%
 if (null != bean.cancelURL)
 {
     %><%= button("Cancel").href(bean.cancelURL) %><%

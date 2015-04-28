@@ -33,7 +33,8 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("clientapi/ext3"));
+        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("announcements/discuss.js"));
         return resources;
     }
 %>
@@ -47,71 +48,7 @@
     ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, getContainer());
 %>
 <%=formatMissedErrors("form")%>
-<script type="text/javascript">
-
-function removeAnnouncementAttachment(eid, name, xid)
-{
-    if (Ext)
-    {
-        function remove()
-        {
-            var params = {
-                entityId : eid,
-                name: name
-            };
-
-            Ext.Ajax.request({
-                url    : LABKEY.ActionURL.buildURL('announcements', 'deleteAttachment'),
-                method : 'POST',
-                success: function() {
-                    var el = document.getElementById(xid);
-                    if (el) {
-                        el.parentNode.removeChild(el);
-                    }
-                },
-                failure: function() {
-                    alert('Failed to remove attachment.');
-                },
-                params : params
-            });
-        }
-
-        Ext.Msg.show({
-            title : 'Remove Attachment',
-            msg : 'Please confirm you would like to remove this attachment. This cannot be undone.',
-            buttons: Ext.Msg.OKCANCEL,
-            icon: Ext.Msg.QUESTION,
-            fn  : function(b) {
-                if (b == 'ok') {
-                    remove();
-                }
-            }
-        });
-    }
-}
-
-function validateForm(form)
-{
-    if(form.title){
-        var trimmedTitle = form.title.value.trim();
-
-        if (trimmedTitle.length > 0)
-            return true;
-
-        Ext.Msg.alert("Error", "Title must not be blank.");
-        Ext.get('submitButton').replaceClass('labkey-disabled-button', 'labkey-button');
-        return false;
-    } else {
-        return true;
-    }
-}
-LABKEY.requiresExt3(function() {
-    Ext.onReady(function(){
-        new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
-    });
-});
-</script>
-<labkey:form method="post" action='<%=baseUrl.setAction(AnnouncementsController.UpdateAction.class)%>' enctype="multipart/form-data" onsubmit="return validateForm(this)">
+<labkey:form method="post" action='<%=baseUrl.setAction(AnnouncementsController.UpdateAction.class)%>' enctype="multipart/form-data" onsubmit="return LABKEY.discuss.validate(this)">
 <input type="hidden" name="rowId" value="<%=ann.getRowId()%>">
 <input type="hidden" name="entityId" value="<%=h(ann.getEntityId())%>">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>">
@@ -192,7 +129,7 @@ if (settings.hasExpires())
                     x++;
                     %><tr id="attach-<%=x%>">
                         <td><img src="<%=getWebappURL(att.getFileIcon())%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
-                        <td><a onclick="removeAnnouncementAttachment(<%=PageFlowUtil.jsString(ann.getEntityId())%>, <%=PageFlowUtil.jsString(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
+                        <td><a onclick="LABKEY.discuss.removeAttachment(<%=PageFlowUtil.jsString(ann.getEntityId())%>, <%=PageFlowUtil.jsString(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
                     </tr><%
                 }
                 %>
@@ -209,7 +146,7 @@ if (settings.hasExpires())
     <td colspan=3 align=left>
       <table>
         <tr>
-          <td><%= button("Submit").submit(true).attributes("id=submitButton").disableOnClick(true) %>
+          <td><%= button("Submit").submit(true).id("submitButton").disableOnClick(true) %>
              &nbsp;<%=generateBackButton("Cancel")%></td>
         </tr>
       </table>
