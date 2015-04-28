@@ -33,6 +33,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -92,11 +93,23 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
     {
     }
 
+    public static DataLoader createLoader(File file, String idColumnName) throws IOException, ExperimentException
+    {
+        DataLoaderFactory factory = DataLoader.get().findFactory(file, null);
+        DataLoader loader = factory.createLoader(file, true);
+        ensureColumns(idColumnName, loader.getColumns());
+        return loader;
+    }
+
     public static TabLoader createTabLoader(File file, String idColumnName) throws IOException, ExperimentException
     {
         TabLoader loader = new TabLoader(file, true);
-        ColumnDescriptor[] cols = loader.getColumns();
+        ensureColumns(idColumnName, loader.getColumns());
+        return loader;
+    }
 
+    private static void ensureColumns(String idColumnName, ColumnDescriptor[] cols) throws ExperimentException
+    {
         boolean found = false;
 
         for (ColumnDescriptor col : cols)
@@ -108,7 +121,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
             }
         }
 
-        // If the 0th column is missing a name, consider it the ID_REF column
+        // If the 0th column is missing a name, consider it the column name of the corresponding expression matrix
         if (!found)
         {
             if (cols[0].name.equals("column0"))
@@ -118,11 +131,8 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
             }
         }
 
-        //TODO: check if idColumnName == appropriate col header (for protein expr. matrix, for example)
         if (!found)
             throw new ExperimentException(idColumnName + " column header must be present and cannot be blank");
-
-        return loader;
     }
 
     public static Map<String, Integer> ensureSamples(Container container, User user, Collection<String> columnNames, String columnName) throws ExperimentException
