@@ -1021,6 +1021,15 @@ LABKEY.Query = new function()
          *          <ul>
          *              <li><b>name:</b> the name of the query</li>
          *              <li><b>title:</b> this is the label used when displaying this table. If the table has no title, this will be the same as the name.</li>
+         *              <li><b>hidden:</b> true if this is a hidden query or table.
+         *              <li><b>inherit:</b> true if this query is marked as inheritable in sub-folders.
+         *              <li><b>isUserDefined:</b> true if this is a user-defined query</li>
+         *              <li><b>canEdit:</b> true if the current user can edit this query</li>
+         *              <li><b>isMetadataOverrideable:</b> true if the current user may override the query's metadata</li>
+         *              <li><b>moduleName:</b> the module that defines this query</li>
+         *              <li><b>isInherited:</b> true if this query is defined in a different container.</li>
+         *              <li><b>containerPath:</b> if <code>isInherited</code>, the container path where this query is defined.</li>
+         *              <li><b>description:</b> A description for this query (if provided)</li>
          *              <li><b>viewDataUrl:</b> the server-relative URL where this query's data can be viewed.
          *                  Available in LabKey Server version 10.2 and later.</li>
          *              <li><b>columns:</b> if config.includeColumns is not false, this will contain an array of
@@ -1030,7 +1039,7 @@ LABKEY.Query = new function()
          *                      <li><b>caption:</b> the caption of the column (may be undefined)</li>
          *                      <li><b>description:</b> the description of the column (may be undefined)</li>
          *                  </ul>
-          *             </li>
+         *              </li>
          *          </ul>
          *      </li>
          *  </ul>
@@ -1210,6 +1219,9 @@ LABKEY.Query = new function()
          *      <li><b>isUserDefined:</b> true if this is a user-defined query</li>
          *      <li><b>canEdit:</b> true if the current user can edit this query</li>
          *      <li><b>isMetadataOverrideable:</b> true if the current user may override the query's metadata</li>
+         *      <li><b>moduleName:</b> the module that defines this query</li>
+         *      <li><b>isInherited:</b> true if this query is defined in a different container.</li>
+         *      <li><b>containerPath:</b> if <code>isInherited</code>, the container path where this query is defined.</li>
          *      <li><b>viewDataUrl:</b> The URL to navigate to for viewing the data returned from this query</li>
          *      <li><b>title:</b> If a value has been set, this is the label used when displaying this table</li>
          *      <li><b>description:</b> A description for this query (if provided)</li>
