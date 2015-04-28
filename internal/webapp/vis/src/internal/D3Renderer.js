@@ -14,10 +14,10 @@ LABKEY.vis.internal.Axis = function() {
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
             tickRectCls, tickRectHeightOffset=6, tickRectWidthOffset=8, tickClick, axisSel, tickSel, textSel, gridLineSel,
             borderSel, grid;
-    var tickColor = '#000000', tickTextColor = '#000000', tickTextBkgdColor = 'white', gridLineColor = '#DDDDDD',
+    var tickColor = '#000000', tickTextColor = '#000000', tickTextBkgdColor = 'transparent', gridLineColor = '#DDDDDD',
             borderColor = '#000000';
     var tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1;
-    var fontFamily = 'verdana, arial, helvetica, sans-serif';
+    var fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10;
 
     var axis = function(selection) {
         var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i,
@@ -119,7 +119,7 @@ LABKEY.vis.internal.Axis = function() {
                 .attr('y', textYFn)
                 .attr('text-anchor', textAnchor)
                 .attr('fill', tickTextColor)
-                .style('font', '9px ' + fontFamily);
+                .style('font', fontSize + 'px ' + fontFamily);
 
         var addEvents = function(bindTo) {
             if (tickHover) {
@@ -173,7 +173,8 @@ LABKEY.vis.internal.Axis = function() {
             addEvents(anchors.select('rect.' + (tickRectCls?tickRectCls:"tick-rect")));
         };
 
-        addTickAreaRects(textAnchors);
+        if (tickHover || tickClick || tickMouseOver || tickMouseOut)
+            addTickAreaRects(textAnchors);
 
         var highlightX = function() {
             return this.nextSibling.getBBox().x - 4;
@@ -317,9 +318,9 @@ LABKEY.vis.internal.Axis = function() {
         }
         return axis;
     };
-    axis.tickTextBkgdColor = function(c) {
+    axis.fontSize = function(c) {
         if (c !== undefined && c !== null) {
-            tickTextBkgdColor = c;
+            fontSize = c;
         }
         return axis;
     };
@@ -440,7 +441,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             .borderColor(plot.borderColor)
             .borderWidth(plot.borderWidth)
             .tickTextColor(plot.tickTextColor)
-            .tickTextBkgdColor(plot.tickTextBkgdColor)
+            .fontSize(plot.fontSize)
             .tickOverlapRotation(plot.tickOverlapRotation)
             .fontFamily(plot.fontFamily)
     };
@@ -489,6 +490,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             xAxis.tickMouseOut(plot.scales.x.tickMouseOut);
         }
 
+        if (plot.scales.x.fontSize) {
+            xAxis.fontSize(plot.scales.x.fontSize);
+        }
+
         this.canvas.call(xAxis);
     };
 
@@ -513,6 +518,34 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 leftAxis.tickCls(plot.scales.yLeft.tickCls);
             }
 
+            if (plot.scales.yLeft.tickRectCls) {
+                xAxis.tickRectCls(plot.scales.yLeft.tickRectCls);
+            }
+
+            if (plot.scales.yLeft.tickRectWidthOffset) {
+                xAxis.tickRectWidthOffset(plot.scales.yLeft.tickRectWidthOffset);
+            }
+
+            if (plot.scales.yLeft.tickRectHeightOffset) {
+                xAxis.tickRectHeightOffset(plot.scales.yLeft.tickRectHeightOffset);
+            }
+
+            if (plot.scales.yLeft.tickClick) {
+                xAxis.tickClick(plot.scales.yLeft.tickClick);
+            }
+
+            if (plot.scales.yLeft.tickMouseOver) {
+                xAxis.tickMouseOver(plot.scales.yLeft.tickMouseOver);
+            }
+
+            if (plot.scales.yLeft.tickMouseOut) {
+                xAxis.tickMouseOut(plot.scales.yLeft.tickMouseOut);
+            }
+
+            if (plot.scales.yLeft.fontSize) {
+                xAxis.fontSize(plot.scales.yLeft.fontSize);
+            }
+
             this.canvas.call(leftAxis);
         }
     };
@@ -535,6 +568,34 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (plot.scales.yRight.tickCls) {
                 rightAxis.tickCls(plot.scales.yRight.tickCls);
+            }
+
+            if (plot.scales.yRight.tickRectCls) {
+                xAxis.tickRectCls(plot.scales.yRight.tickRectCls);
+            }
+
+            if (plot.scales.yRight.tickRectWidthOffset) {
+                xAxis.tickRectWidthOffset(plot.scales.yRight.tickRectWidthOffset);
+            }
+
+            if (plot.scales.yRight.tickRectHeightOffset) {
+                xAxis.tickRectHeightOffset(plot.scales.yRight.tickRectHeightOffset);
+            }
+
+            if (plot.scales.yRight.tickClick) {
+                xAxis.tickClick(plot.scales.yRight.tickClick);
+            }
+
+            if (plot.scales.yRight.tickMouseOver) {
+                xAxis.tickMouseOver(plot.scales.yRight.tickMouseOver);
+            }
+
+            if (plot.scales.yRight.tickMouseOut) {
+                xAxis.tickMouseOut(plot.scales.yRight.tickMouseOut);
+            }
+
+            if (plot.scales.yRight.fontSize) {
+                xAxis.fontSize(plot.scales.yRight.fontSize);
             }
 
             this.canvas.call(rightAxis);
@@ -1388,7 +1449,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         anchorSel = layer.selectAll('.point').data(data);
         anchorSel.exit().remove();
-        anchorSel.enter().append('a').attr('class', 'point').append('path');
+        anchorSel.enter().append('a').attr('class', 'point').append('path').append('nofill');
 
         // two different ways to add the hover title (so that it works in IE as well)
         anchorSel.attr('xlink:title', hoverTextAcc);
