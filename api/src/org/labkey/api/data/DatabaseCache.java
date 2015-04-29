@@ -16,9 +16,9 @@
 
 package org.labkey.api.data;
 
-import org.junit.Assert;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -122,16 +122,61 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 
         if (null != t)
         {
-            t.addCommitTask(new Runnable() {
-                public void run()
-                {
-                    getCache().remove(key);
-                }
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
+            t.addCommitTask(new CacheKeyRemovalCommitTask(key), DbScope.CommitTaskOption.POSTCOMMIT);
         }
 
         getCache().remove(key);
     }
+
+    private class CacheKeyRemovalCommitTask extends AbstractCacheRemovalCommitTask
+    {
+        public CacheKeyRemovalCommitTask(String key)
+        {
+            super(key);
+        }
+
+        @Override
+        public void run()
+        {
+            getCache().remove(_key);
+        }
+    }
+
+    private abstract class AbstractCacheRemovalCommitTask implements Runnable
+    {
+        protected final String _key;
+
+        public AbstractCacheRemovalCommitTask(String key)
+        {
+            _key = key;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            AbstractCacheRemovalCommitTask that = (AbstractCacheRemovalCommitTask) o;
+
+            if (!getCache().equals(that.getCache())) return false;
+            return !(_key != null ? !_key.equals(that._key) : that._key != null);
+        }
+
+        private StringKeyCache<ValueType> getCache()
+        {
+            return DatabaseCache.this.getCache();
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = getCache().hashCode();
+            result = 31 * result + (_key != null ? _key.hashCode() : 0);
+            return result;
+        }
+    }
+
 
 
     public int removeUsingPrefix(final String prefix)
@@ -140,12 +185,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 
         if (null != t)
         {
-            t.addCommitTask(new Runnable() {
-                 public void run()
-                 {
-                     getCache().removeUsingPrefix(prefix);
-                 }
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
+            t.addCommitTask(new CachePrefixRemovalCommitTask(prefix), DbScope.CommitTaskOption.POSTCOMMIT);
         }
 
         return getCache().removeUsingPrefix(prefix);
@@ -158,15 +198,40 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 
         if (null != t)
         {
-            t.addCommitTask(new Runnable() {
-                public void run()
-                {
-                    getCache().clear();
-                }
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
+            t.addCommitTask(new CacheClearingCommitTask(), DbScope.CommitTaskOption.POSTCOMMIT);
         }
 
         getCache().clear();
+    }
+
+    private class CacheClearingCommitTask implements Runnable
+    {
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CacheClearingCommitTask that = (CacheClearingCommitTask) o;
+
+            return getCache().equals(that.getCache());
+        }
+
+        private StringKeyCache<ValueType> getCache()
+        {
+            return DatabaseCache.this.getCache();
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return getCache().hashCode();
+        }
+
+        public void run()
+        {
+            getCache().clear();
+        }
     }
 
 
@@ -378,6 +443,20 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                     overrideTransaction = new TransactionImpl(null, DbScope.NORMAL_TRANSACTION_KIND);
                 }
             }
+        }
+    }
+
+    private class CachePrefixRemovalCommitTask extends AbstractCacheRemovalCommitTask
+    {
+        public CachePrefixRemovalCommitTask(String prefix)
+        {
+            super(prefix);
+        }
+
+        @Override
+        public void run()
+        {
+            getCache().removeUsingPrefix(_key);
         }
     }
 }
