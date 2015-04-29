@@ -16,8 +16,8 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.data.ColumnInfo" %>
-<%@ page import="org.labkey.api.data.DisplayColumn" %>
+<%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -32,9 +32,7 @@
     JspView<StudyController.StudySnapshotForm> me = (JspView<StudyController.StudySnapshotForm>) HttpView.currentView();
     StudyController.StudySnapshotForm bean = me.getModelBean();
 
-    Map<String, String> columnMap = new HashMap<>();
-    for (String name : bean.getSnapshotColumns())
-        columnMap.put(name, name);
+    SimpleFilter filter = new SimpleFilter(me.getViewContext().getActionURL(), QueryView.DATAREGIONNAME_DEFAULT);
 
     boolean isAutoUpdateable = QuerySnapshotService.get(bean.getSchemaName()) instanceof QuerySnapshotService.AutoUpdateable;
 
@@ -60,6 +58,12 @@
 
         <tr><td>&nbsp;</td></tr>
         <tr><td>Snapshot&nbsp;Name:</td><td><input type="text" maxlength="200" size="50" name="<%= text(bean.isEdit() ? "" : "snapshotName") %>" <%= text(bean.isEdit() ? "readonly" : "") %> value="<%=h(StringUtils.trimToEmpty(bean.getSnapshotName()))%>"></td></tr>
+        <% if (!filter.isEmpty()) { %>
+            <tr><td>Filters:</td><td><%= h(filter.getFilterText()) %></td></tr>
+        <% } %>
+        <% if (getActionURL().getParameterMap().containsKey("query.viewName")) { %>
+            <tr><td>Custom View:</td><td><%= h(getActionURL().getParameter("query.viewName") == null ? "<default>" : getActionURL().getParameter("query.viewName")) %></td></tr>
+        <% } %>
         <tr><td>&nbsp;</td></tr>
 
         <tr><th colspan="10" class="labkey-header">Snapshot Refresh</th></tr>

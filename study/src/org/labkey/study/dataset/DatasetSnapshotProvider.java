@@ -66,6 +66,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetManager;
 import org.labkey.study.model.ParticipantCategoryImpl;
@@ -157,14 +158,18 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public ActionURL getCreateWizardURL(QuerySettings settings, ViewContext context)
     {
+        SimpleFilter filter = new SimpleFilter(context.getActionURL(), settings.getDataRegionName());
+
         QuerySettings qs = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
-        return new ActionURL(StudyController.CreateSnapshotAction.class, context.getContainer()).
+        ActionURL result = new ActionURL(StudyController.CreateSnapshotAction.class, context.getContainer()).
                 addParameter("ff_snapshotName", settings.getQueryName() + " Snapshot").
                 addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
                 addParameter(qs.param(QueryParam.queryName), settings.getQueryName()).
                 addParameter(qs.param(QueryParam.viewName), settings.getViewName()).
                 addParameter(DatasetDefinition.DATASETKEY, context.getActionURL().getParameter(DatasetDefinition.DATASETKEY)).
                 addParameter(ActionURL.Param.redirectUrl, PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
+        filter.applyToURL(result, qs.getDataRegionName());
+        return result;
     }
 
     private SimpleFilter createParticipantGroupFilter(ViewContext context, QuerySnapshotDefinition qsDef)
@@ -253,6 +258,12 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     {
         TableInfo tinfo = view.getTable();
         SimpleFilter filter = createParticipantGroupFilter(context, qsDef);
+
+        // Merge in any filters the user had when creating the snapshot
+        ActionURL filterURL = new ActionURL(AssayController.BeginAction.class, context.getContainer());
+        view.getCustomView().applyFilterAndSortToURL(filterURL, QueryView.DATAREGIONNAME_DEFAULT);
+        filter.addUrlFilters(filterURL, QueryView.DATAREGIONNAME_DEFAULT);
+
         Map<FieldKey, ColumnInfo> colMap = new HashMap<>();
         Integer optionsId = qsDef.getOptionsId();
         StudySnapshot snapshot = null;
@@ -299,7 +310,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         QueryDefinition queryDef = qsDef.getQueryDefinition(context.getUser());
         if (queryDef != null)
         {
-            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), queryDef.getContainer(), queryDef.getSchemaName());
+            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), queryDef.getContainer(), queryDef.getSchemaPath());
             if (schema == null)
                 return null;
 
@@ -308,19 +319,17 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
             QueryView view = schema.createView(context, settings, errors);
 
-            //if (!qsDef.getColumns().isEmpty() || !StringUtils.isBlank(qsDef.getFilter()))
-            {
-                // create a temporary custom view to add additional display columns to the base query definition
-                CustomView custView = queryDef.createCustomView(context.getUser(), "tempCustomView");
+            // create a temporary custom view to add additional display columns to the base query definition
+            CustomView custView = queryDef.createCustomView(context.getUser(), "tempCustomView");
 
-                if (!qsDef.getColumns().isEmpty())
-                    custView.setColumns(qsDef.getColumns());
+            if (!qsDef.getColumns().isEmpty())
+                custView.setColumns(qsDef.getColumns());
 
-                if (!StringUtils.isBlank(qsDef.getFilter()))
-                    custView.setFilterAndSort(qsDef.getFilter());
+            if (!StringUtils.isBlank(qsDef.getFilter()))
+                custView.setFilterAndSort(qsDef.getFilter());
 
-                view.setCustomView(custView);
-            }
+            view.setCustomView(custView);
+
             return view;
         }
         return null;
