@@ -18,6 +18,7 @@ package org.labkey.api.view.template;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
@@ -189,18 +190,19 @@ public class ClientDependency
         return path != null && (path.startsWith("http://") || path.startsWith("https://"));
     }
 
+    @NotNull
     public static ClientDependency fromModuleName(String mn)
     {
         Module m = ModuleLoader.getInstance().getModule(mn);
         if (m == null)
         {
-            _log.error("Module '" + mn + "' not found, unable to create client resource");
-            return null;
+            throw new IllegalArgumentException("Module '" + mn + "' not found, unable to create client resource");
         }
 
         return ClientDependency.fromModule(m);
     }
 
+    @NotNull
     public static ClientDependency fromModule(Module m)
     {
         String key = getCacheKey("moduleContext|" + m.getName(), ModeTypeEnum.BOTH);

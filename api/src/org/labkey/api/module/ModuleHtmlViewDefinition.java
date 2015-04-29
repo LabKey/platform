@@ -240,10 +240,7 @@ public class ModuleHtmlViewDefinition
         for (RequiredModuleType mn : modules)
         {
             ClientDependency cr = ClientDependency.fromModuleName(mn.getName());
-            if (cr != null)
-                result.add(cr);
-            else
-                _log.error("Module '" + mn.getName() + "' not found, from view XML file: " + getName());
+            result.add(cr);
         }
         return result;
     }
