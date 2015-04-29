@@ -27,7 +27,7 @@ WITH nonunique AS (
     GROUP BY container, cpastype, name
     HAVING COUNT(*) > 1)
 UPDATE exp.material
-SET Name = Name + ' - ' + RowId
+SET Name = Name + ' - ' + CAST(RowId AS NVARCHAR(11))
 FROM exp.material M
 WHERE EXISTS (SELECT * FROM nonunique NU WHERE M.container=NU.container AND M.cpastype=NU.cpastype AND M.name=NU.name);
 
