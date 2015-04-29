@@ -34,7 +34,6 @@
 <script type="text/javascript">
 
 var testNetworkDrive;
-var testMascot;
 var submitSystemMaintenance;
 
 (function(){
@@ -62,25 +61,6 @@ var submitSystemMaintenance;
         networkDriveForm.networkDrivePassword.value = preferenceForm.networkDrivePassword.value;
 
         networkDriveForm.submit();
-    }
-
-    testMascot = function()
-    {
-        var preferenceForm = document.forms['preferences'];
-        var mascotForm = document.forms['mascottest'];
-        if (preferenceForm.mascotServer.value.length == 0)
-        {
-            alert("Please specify your mascot server before testing.");
-            try {preferenceForm.mascotServer.focus();} catch(x){}
-            return;
-        }
-        mascotForm.mascotServer.value = preferenceForm.mascotServer.value;
-        mascotForm.mascotUserAccount.value = preferenceForm.mascotUserAccount.value;
-        mascotForm.mascotUserPassword.value = preferenceForm.mascotUserPassword.value;
-        mascotForm.mascotHTTPProxy.value = preferenceForm.mascotHTTPProxy.value;
-
-        mascotForm.action = LABKEY.ActionURL.buildURL("ms2","mascotTest","/");
-        mascotForm.submit();
     }
 
     submitSystemMaintenance = function()
@@ -297,34 +277,6 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Configure Mascot settings (<%=bean.helpLink%>)</td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Mascot server</td>
-    <td><input type="text" name="mascotServer" size="64" value="<%=appProps.getMascotServer()%>"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label">User</td>
-    <td><input type="text" name="mascotUserAccount" size="50" value="<%=appProps.getMascotUserAccount()%>" autocomplete="off"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Password</td>
-    <td><input type="password" name="mascotUserPassword" size="50" value="<%=appProps.getMascotUserPassword()%>" autocomplete="off"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label">HTTP Proxy URL</td>
-    <td><input type="text" name="mascotHTTPProxy" size="64" value="<%=appProps.getMascotHTTPProxy()%>"></td>
-</tr>
-<tr>
-    <td></td>
-    <td><%=textLink("Test Mascot settings", "javascript:testMascot()")%>
-</td>
-</tr>
-
-<tr>
-    <td>&nbsp;</td>
-</tr>
-<tr>
     <td colspan=2>Ribbon Bar Message (<%=text(bean.helpLink)%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
@@ -362,17 +314,6 @@ Click the Save button at any time to accept the current settings and continue.</
 </table>
 </labkey:form>
 
-<labkey:form name="mascottest" action="mascotTest.view" enctype="multipart/form-data" method="post" target='<%=text(bean.testInPage?"":"_new")%>' >
-    <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
-    <input type="hidden" name="mascotServer" value="" />
-    <input type="hidden" name="mascotUserAccount" value="" />
-    <input type="hidden" name="mascotUserPassword" value="" />
-    <input type="hidden" name="mascotHTTPProxy" value="" />
-</labkey:form>
-<labkey:form name="sequesttest" action="sequestTest.view" enctype="multipart/form-data" method="post" target='<%=text(bean.testInPage?"":"_new")%>'>
-    <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
-    <input type="hidden" name="sequestServer" value="" />
-</labkey:form>
 <labkey:form name="networkdrivetest" action="<%=h(buildURL(AdminController.ShowNetworkDriveTestAction.class))%>" enctype="multipart/form-data" method="post" target="_new">
     <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
     <input type="hidden" name="networkDriveLetter" value="" />

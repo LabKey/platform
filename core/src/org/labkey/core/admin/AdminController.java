@@ -87,8 +87,6 @@ import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.ms2.MS2Service;
-import org.labkey.api.ms2.SearchClient;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -1197,21 +1195,6 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            if (!"".equals(form.getMascotServer()))
-            {
-                // we perform the Mascot setting test here in case user did not do so
-                SearchClient mascotClient = MS2Service.get().createSearchClient("mascot",form.getMascotServer(), Logger.getLogger("null"),
-                    form.getMascotUserAccount(), form.getMascotUserPassword());
-                mascotClient.setProxyURL(form.getMascotHTTPProxy());
-                mascotClient.findWorkableSettings(true);
-
-                if (0 != mascotClient.getErrorCode())
-                {
-                    errors.reject(ERROR_MSG, mascotClient.getErrorString());
-                    return false;
-                }
-            }
-
             String lsidAuthority = form.getDefaultLsidAuthority();
             lsidAuthority = lsidAuthority == null ? null : lsidAuthority.trim();
             if (lsidAuthority == null || "".equals(lsidAuthority))
@@ -1242,10 +1225,6 @@ public class AdminController extends SpringActionController
             props.setShowRibbonMessage(form.isShowRibbonMessage());
             props.setRibbonMessageHtml(form.getRibbonMessageHtml());
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
-            props.setMascotServer(form.getMascotServer());
-            props.setMascotUserAccount(form.getMascotUserAccount());
-            props.setMascotUserPassword(form.getMascotUserPassword());
-            props.setMascotHTTPProxy(form.getMascotHTTPProxy());
 
             try
             {
@@ -1711,10 +1690,6 @@ public class AdminController extends SpringActionController
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
         private String _administratorContactEmail;
-        private String _mascotServer;
-        private String _mascotUserAccount;
-        private String _mascotUserPassword;
-        private String _mascotHTTPProxy;
 
         private String _networkDriveLetter;
         private String _networkDrivePath;
@@ -1722,46 +1697,6 @@ public class AdminController extends SpringActionController
         private String _networkDrivePassword;
         private String _baseServerUrl;
         private String _callbackPassword;
-
-        public String getMascotServer()
-        {
-            return (null == _mascotServer) ? "" : _mascotServer;
-        }
-
-        public void setMascotServer(String mascotServer)
-        {
-            _mascotServer = mascotServer;
-        }
-
-        public String getMascotUserAccount()
-        {
-            return (null == _mascotUserAccount) ? "" : _mascotUserAccount;
-        }
-
-        public void setMascotUserAccount(String mascotUserAccount)
-        {
-            _mascotUserAccount = mascotUserAccount;
-        }
-
-        public String getMascotUserPassword()
-        {
-            return (null == _mascotUserPassword) ? "" : _mascotUserPassword;
-        }
-
-        public void setMascotUserPassword(String mascotUserPassword)
-        {
-            _mascotUserPassword = mascotUserPassword;
-        }
-
-        public String getMascotHTTPProxy()
-        {
-            return (null == _mascotHTTPProxy) ? "" : _mascotHTTPProxy;
-        }
-
-        public void setMascotHTTPProxy(String mascotHTTPProxy)
-        {
-            _mascotHTTPProxy = mascotHTTPProxy;
-        }
 
         public void setDefaultDomain(String defaultDomain)
         {
