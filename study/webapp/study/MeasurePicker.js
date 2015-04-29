@@ -905,22 +905,19 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 method: 'POST',
                 jsonData: json,
                 success: function(response) {
-                    var countResponse = Ext.decode(response.responseText),
+                    var countResponse = Ext4.decode(response.responseText),
                         counts,
                         key;
 
                     if (Ext4.isObject(countResponse) && Ext4.isDefined(countResponse.counts)) {
                         counts = countResponse.counts;
 
-                        Ext.each(sources, function(source) {
+                        Ext4.each(sources, function(source) {
 
                             key = source.get('queryName');
 
-                            if (Ext4.isDefined(key)) {
+                            if (!Ext4.isEmpty(key) && Ext4.isDefined(counts[key])) {
                                 source.set('sourceCount', counts[key]);
-                            }
-                            else {
-                                console.error('MeasurePicker.getSourceCounts: Source did not provide \'queryName\'.');
                             }
 
                         }, this);
@@ -935,7 +932,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     setCountMemberSet : function(memberSet) {
         // getSourceCounts API action will distinquish between null (no filters) vs empty array (no members that fit filters)
-        this.sourceCountMemberSet = Ext.isArray(memberSet) ? memberSet : null;
+        this.sourceCountMemberSet = Ext4.isArray(memberSet) ? memberSet : null;
         this.getSourceCounts();
     },
 
@@ -1146,7 +1143,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         // Apply the user filter here. The userFilter is a function used to further filter down the available
         // measures. Needed in CDS so the color picker only displays categorical measures.
-        if (this.hasOwnProperty('userFilter') && Ext.isFunction(this.userFilter))
+        if (this.hasOwnProperty('userFilter') && Ext4.isFunction(this.userFilter))
         {
             try
             {
