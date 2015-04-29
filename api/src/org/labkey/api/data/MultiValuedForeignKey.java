@@ -115,6 +115,10 @@ public class MultiValuedForeignKey implements ForeignKey
             throw new IllegalStateException("Could not find column '" + _junctionLookup + "' on table " + junction);
         }
         ForeignKey fk = junctionKey.getFk();                                // Wrapped foreign key to value table (elided lookup)
+        if (fk == null)
+        {
+            return null;
+        }
 
         // Default display field on the lookup table
         if (displayField == null)

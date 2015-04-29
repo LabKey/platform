@@ -219,7 +219,6 @@ public class QueryForeignKey implements ForeignKey
                     _lookupKey = pkColumnNames.get(0);
                 }
             }
-            return null;
         }
         return _lookupKey;
     }
