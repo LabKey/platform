@@ -124,8 +124,7 @@ public class AsyncQueryRequest<T>
         Thread thread = new Thread(runnable, "AsyncQueryRequest: " + Thread.currentThread().getName());
         // We want the async thread to use the same database connection, in case we have a transaction open, and
         // so that when the original thread finishes processing the results it ends up closing the right connection
-        DbScope.shareConnections(thread);
-        try
+        try (DbScope.ConnectionSharingCloseable closeable = DbScope.shareConnections(thread))
         {
             thread.start();
 
@@ -182,11 +181,6 @@ public class AsyncQueryRequest<T>
                     clientDisconnectException = checkCancelled();
                 }
             }
-        }
-        finally
-        {
-            // The async thread is finished using the connection, so stop sharing it
-            DbScope.stopSharingConnections(thread);
         }
     }
 

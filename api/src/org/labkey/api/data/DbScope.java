@@ -1203,8 +1203,9 @@ public class DbScope
      * an async thread to participate in the same transaction as the original HTTP request processing thread, for
      * example
      * @param asyncThread the thread that should use the database connections of the current thread
+     * @return an AutoCloseable that will stops sharing the database connection with the other thread
      */
-    public static void shareConnections(Thread asyncThread)
+    public static ConnectionSharingCloseable shareConnections(final Thread asyncThread)
     {
         synchronized (_sharedConnections)
         {
@@ -1214,20 +1215,9 @@ public class DbScope
             }
             _sharedConnections.put(asyncThread, Thread.currentThread());
         }
-    }
 
-    /**
-     * Stops sharing any connections associated with the current thread with the passed-in thread.
-     * @param asyncThread the thread that should stop using the database connections of the current thread
-     */
-    public static void stopSharingConnections(Thread asyncThread)
-    {
-        synchronized (_sharedConnections)
-        {
-            _sharedConnections.remove(asyncThread);
-        }
+        return new ConnectionSharingCloseable(asyncThread);
     }
-
 
     interface ConnectionMap
     {
@@ -1364,11 +1354,33 @@ public class DbScope
 
     private void popCurrentTransaction()
     {
-        List<TransactionImpl> transactions = _transaction.get(getEffectiveThread());
-        transactions.remove(transactions.size() - 1);
-        if (transactions.isEmpty())
+        synchronized (_transaction)
         {
-            _transaction.remove(getEffectiveThread());
+            List<TransactionImpl> transactions = _transaction.get(getEffectiveThread());
+            transactions.remove(transactions.size() - 1);
+            if (transactions.isEmpty())
+            {
+                _transaction.remove(getEffectiveThread());
+            }
+        }
+    }
+
+    public static class ConnectionSharingCloseable implements AutoCloseable
+    {
+        private final Thread _asyncThread;
+
+        public ConnectionSharingCloseable(Thread asyncThread)
+        {
+            _asyncThread = asyncThread;
+        }
+
+        @Override
+        public void close()
+        {
+            synchronized (_sharedConnections)
+            {
+                _sharedConnections.remove(_asyncThread);
+            }
         }
     }
 
@@ -1478,10 +1490,7 @@ public class DbScope
                 {
                     // Don't pop until locks are empty, because other closes have yet to occur
                     // and we want to use _abort to ensure no one tries to commit this transaction
-                    synchronized (_transaction)
-                    {
-                        popCurrentTransaction();
-                    }
+                    popCurrentTransaction();
                 }
             }
             else
@@ -1520,10 +1529,8 @@ public class DbScope
                         conn.setAutoCommit(true);
                     }
 
-                    synchronized (_transaction)
-                    {
-                        popCurrentTransaction();
-                    }
+                    popCurrentTransaction();
+
                     runCommitTasks(CommitTaskOption.POSTCOMMIT);
                 }
                 catch (SQLException e)
