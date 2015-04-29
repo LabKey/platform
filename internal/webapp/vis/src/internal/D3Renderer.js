@@ -353,18 +353,22 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         fontSize = plot.labels.main && plot.labels.main.fontSize != undefined ? plot.labels.main.fontSize : 18;
         mainLabel.dom = labels.append('text').attr('text-anchor', 'middle')
+                .attr("visibility", plot.labels.main && plot.labels.main.visibility ? plot.labels.main.visibility : "visible")
                 .style('font', fontSize + 'px ' + fontFamily);
 
         fontSize = plot.labels.x && plot.labels.x.fontSize != undefined ? plot.labels.x.fontSize : 14;
         xLabel.dom = labels.append('text').attr('text-anchor', 'middle')
+                .attr("visibility", plot.labels.x && plot.labels.x.visibility ? plot.labels.x.visibility : "visible")
                 .style('font', fontSize + 'px ' + fontFamily);
 
         fontSize = plot.labels.yLeft && plot.labels.yLeft.fontSize != undefined ? plot.labels.yLeft.fontSize : 14;
         yLeftLabel.dom = labels.append('text').attr('text-anchor', 'middle')
+                .attr("visibility", plot.labels.yLeft && plot.labels.yLeft.visibility ? plot.labels.yLeft.visibility : "visible")
                 .style('font', fontSize + 'px ' + fontFamily);
 
         fontSize = plot.labels.yRight && plot.labels.yRight.fontSize != undefined ? plot.labels.yRight.fontSize : 14;
         yRightLabel.dom = labels.append('text').attr('text-anchor', 'middle')
+                .attr("visibility", plot.labels.yRight && plot.labels.yRight.visibility ? plot.labels.yRight.visibility : "visible")
                 .style('font', fontSize + 'px ' + fontFamily);
 
         labelElements.main = mainLabel;

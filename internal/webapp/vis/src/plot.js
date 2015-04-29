@@ -68,9 +68,9 @@
  *          <li><strong>tickMouseOut:</strong> Handler for axis label mouse out. Binds to mouse area rect around label.</li>
  *      </ul>
  * @param {Object} [config.labels] (Optional) An object with the following properties: main, x, y (or yLeft), yRight.
- *      Each property can have a {String} value, {Boolean} lookClickable, and {Object} listeners. The value is the text
- *      that will appear on the label. lookClickable toggles if the label will appear clickable. The listeners property
- *      allows the user to specify listeners on the labels such as click, hover, etc, as well as the functions to
+ *      Each property can have a {String} value, {Boolean} lookClickable, {Object} listeners, and other properties listed below.
+ *      The value is the text that will appear on the label, lookClickable toggles if the label will appear clickable, and the
+ *      listeners property allows the user to specify listeners on the labels such as click, hover, etc, as well as the functions to
  *      execute when the events occur. Each label will be an object that has the following properties:
  *      <ul>
  *          <li>
@@ -85,6 +85,9 @@
  *          <li>
  *              <strong>lookClickable:</strong> If true it styles the label so that it appears to be clickable. Defaults
  *              to false.
+ *          </li>
+ *          <li>
+ *              <strong>visibility:</strong> The initial visibility state for the label. Defaults to normal.
  *          </li>
  *          <li>
  *              <strong>listeners:</strong> An object with properties for each listener the user wants attached
