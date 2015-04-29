@@ -16,6 +16,7 @@
 package org.labkey.core.security;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -68,6 +69,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -715,10 +717,10 @@ public class SecurityApiActions
             return new ApiSimpleResponse("success", true);
         }
 
-        protected void writeToAuditLog(SecurableResource resource, SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
+        protected void writeToAuditLog(SecurableResource resource, @Nullable SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
         {
             //if moving from inherted to not-inherited, just log the new role assignments
-            if (!(oldPolicy.getResourceId().equals(newPolicy.getResourceId())))
+            if (null == oldPolicy || !(oldPolicy.getResourceId().equals(newPolicy.getResourceId())))
             {
                 SecurableResource parent = resource.getParentResource();
                 String parentName = parent != null ? parent.getResourceName() : "root";

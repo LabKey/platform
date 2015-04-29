@@ -1967,6 +1967,11 @@ td.labkey-wp-body
     background: #FFFFFF;
 }
 
+td.labkey-wp-body.labkey-wp-nopadding
+{
+    padding: 0;
+}
+
 /* This is used for the top strip on web parts, but is also used for headers elsewhere such as the
 help pop up */
 tr.labkey-wp-header
