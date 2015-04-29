@@ -85,6 +85,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         setFileSet(null);
         setTitle(PART_NAME);
         setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c));
+        setBodyClass("labkey-wp-nopadding");
 
         if (fileSet != null)
         {
@@ -146,7 +147,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         String size = webPartDescriptor.getPropertyMap().get("size");
         if (size != null)
         {
-            getModelBean().setSize(Integer.parseInt(size));
+            getModelBean().setHeight(Integer.parseInt(size));
         }
 
         if (form.getRootOffset() != null)
@@ -170,6 +171,15 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(getSecurableResource());
         getConfiguredForm(policy);
     }
+
+
+    @Override
+    public void setIsOnlyWebPartOnPage(boolean b)
+    {
+        if (null == getModelBean().getHeight())
+            getModelBean().setAutoResize(b);
+    }
+
 
     protected List<FilesForm.actions> getConfiguredActions(SecurityPolicy policy)
     {
@@ -411,7 +421,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private File _rootDirectory;
         private boolean _expandFileUpload;
         private boolean _disableGeneralAdminSettings;
-        private int size = 350;
+        private Integer _height = null;
 
         public enum actions {
             download,
@@ -607,14 +617,14 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             _disableGeneralAdminSettings = disableGeneralAdminSettings;
         }
 
-        public int getSize()
+        public Integer getHeight()
         {
-            return size;
+            return _height;
         }
 
-        public void setSize(int size)
+        public void setHeight(int h)
         {
-            this.size = size;
+            this._height = h;
         }
 
     }

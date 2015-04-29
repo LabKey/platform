@@ -236,6 +236,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         return (String) getViewContext().get("href");
     }
 
+    public void setIsOnlyWebPartOnPage(boolean b)
+    {
+        /* by default we don't care */
+    }
+
     public int getWebPartRowId()
     {
         return _webPartRowId;

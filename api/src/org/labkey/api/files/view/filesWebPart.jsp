@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -41,7 +42,7 @@
     Container c = getContainer();
 
     ActionURL projConfig = urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
-    int height = bean.getSize();
+    int height = null == bean.getHeight() ? 350 : bean.getHeight();
 
     if (!bean.isEnabled())
     {
@@ -120,7 +121,15 @@
             if (!fb || !fb.rendered)
                 return;
 
-            LABKEY.ext4.Util.resizeToViewport(fb, w, h, 20, null);
+            //resizeToViewport: function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
+            <% if (me.getFrame() == WebPartView.FrameType.PORTAL) {%>
+                var paddingX = 26;
+                var paddingY = 95;
+            <%}else{%>
+                var paddingX = 20;
+                var paddingY = 35;
+            <%}%>
+            LABKEY.ext4.Util.resizeToViewport(fb, w, h, paddingX, paddingY);
             fb.detailCheck();
         };
 

@@ -1017,6 +1017,11 @@ public class Portal
                     }
                 }
 
+                if (parts.size() == 1 && location.equals(HttpView.BODY))
+                {
+                    view.setIsOnlyWebPartOnPage(true);
+                }
+
                 addViewToRegion(template, location, view);
                 i++;
             }
