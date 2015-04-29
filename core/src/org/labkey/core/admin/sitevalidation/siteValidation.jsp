@@ -26,12 +26,17 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Map<String, SiteValidationResultList> siteResults = SiteValidationService.get().runSiteScopeValidators(getUser());
-    Map<Container, SiteValidationResultList> containerResults = SiteValidationService.get().runContainerScopeValidators(getContainer(), getUser());
+    Map<String, Map<String, SiteValidationResultList>> containerResults = SiteValidationService.get().runContainerScopeValidators(getContainer(), getUser());
 %>
 <style type="text/css">
     ul {list-style-type: none; padding-left: 5px;}
 </style>
 <strong>Site Level Validation Results</strong>
+<% if (!SiteValidationService.get().hasSiteValidators()) { %>
+<span>No site-wide validators have been registered.</span>
+<% }
+    else {
+%>
 <ul>
     <%  List<SiteValidationResult> moduleInfos;
         List<SiteValidationResult> moduleErrors;
@@ -71,64 +76,54 @@
     <% } %></ul></li>
     <% } %>
 </ul>
+<% } %>
 
 <br/><br/>
 <strong>Folder Validation Results</strong>
-
+<% if (!SiteValidationService.get().hasContainerValidators()) { %>
+    <span>No folder validators have been registered.</span>
+<%} else { %>
 <ul>
-    <% if (containerResults.isEmpty()) { %>
-       <li>No folder validators have been registered for configured folders.</li>
-    <%}%>
-    <%
-        List<SiteValidationResult> containerInfos;
-        List<SiteValidationResult> containerErrors;
-        List<SiteValidationResult> containerWarnings;
-        Container titleProject = null;
-        Container currentProject;
-        boolean seenFirstProject = false;
-        for (Map.Entry<Container, SiteValidationResultList> containerResult : containerResults.entrySet()) {
-            Container c = containerResult.getKey();
-            currentProject = c.getProject();
-            if (null != currentProject && !currentProject.equals(titleProject))
-            {
-                if (seenFirstProject)
-                {   %>
-                    </ul></li>
-                <%}
-                    seenFirstProject = true;
-                titleProject = currentProject;
-    %>
-            <li><br/><%=h("Project: " + StringUtils.substringAfter(titleProject.getPath(), "/"))%>
+  <%
+    List<SiteValidationResult> containerInfos;
+    List<SiteValidationResult> containerErrors;
+    List<SiteValidationResult> containerWarnings;
+
+    for (Map.Entry<String, Map<String, SiteValidationResultList>> projectResult : containerResults.entrySet()) {
+  %>
+    <li><%=h("Project: " + projectResult.getKey())%>
+        <ul>
+            <% for (Map.Entry<String, SiteValidationResultList> subtreeResult : projectResult.getValue().entrySet()) { %>
+            <li><%=h("Folder: " + subtreeResult.getKey())%>
                 <ul>
-        <% } %>
-            <li><%=h("Folder: " + StringUtils.substringAfter(c.getPath(), "/"))%>
-                <ul>
-        <% if (containerResult.getValue() != null)
-        {
-            containerInfos = containerResult.getValue().getResults(Level.INFO);
-            containerErrors = containerResult.getValue().getResults(Level.ERROR);
-            containerWarnings = containerResult.getValue().getResults(Level.WARN);
-            for (SiteValidationResult result : containerInfos) { %>
-            <li><%=h(result.getMessage())%></li>
+                    <% if (subtreeResult.getValue() != null)
+                    {
+                        containerInfos = subtreeResult.getValue().getResults(Level.INFO);
+                        containerErrors = subtreeResult.getValue().getResults(Level.ERROR);
+                        containerWarnings = subtreeResult.getValue().getResults(Level.WARN);
+                        for (SiteValidationResult result : containerInfos) { %>
+                        <li><%=h(result.getMessage())%></li>
+                        <% } %>
+                        <% if (containerErrors.size() > 0) { %>
+                            <li>Errors:
+                            <ul>
+                            <% for (SiteValidationResult result : containerErrors) { %>
+                            <li><span class="labkey-error"><%=h(result.getMessage())%></span></li>
+                            <% } %></ul></li>
+                        <% } %>
+                        <% if (containerWarnings.size() > 0) { %>
+                            <li>Warnings:
+                                <ul>
+                                <% for (SiteValidationResult result : containerWarnings) { %>
+                                <li><%=h(result.getMessage())%></li>
+                            <% } %></ul></li>
+                        <% } %>
+                    <% } %>
+                </ul>
+            </li>
             <% } %>
-            <% if (containerErrors.size() > 0) { %>
-                <li>Errors:
-                <ul>
-                <% for (SiteValidationResult result : containerErrors) { %>
-                <li><span class="labkey-error"><%=h(result.getMessage())%></span></li>
-                <% } %></ul></li>
-            <% } %>
-            <% if (containerWarnings.size() > 0) { %>
-                <li>Warnings:
-                    <ul>
-                    <% for (SiteValidationResult result : containerWarnings) { %>
-                    <li><%=h(result.getMessage())%></li>
-                <% } %></ul></li>
-            <% } %>
-        <% } %></ul>
-    <% } %></li>
-    <% if (!containerResults.isEmpty()) { %>
-            </ul></li>
+        </ul><br/>
+    </li>
     <% } %>
 </ul>
-
+<% } %>
