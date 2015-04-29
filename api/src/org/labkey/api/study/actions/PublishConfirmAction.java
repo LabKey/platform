@@ -248,6 +248,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         // Show the form
         QuerySettings settings = schema.getSettings(context, AssayProtocolSchema.DATA_TABLE_NAME, AssayProtocolSchema.DATA_TABLE_NAME);
         settings.setAllowChooseView(false);
+        settings.setSelectionKey(publishConfirmForm.getDataRegionSelectionKey());
         PublishResultsQueryView queryView = new PublishResultsQueryView(provider, _protocol, schema, settings,
                 allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
 
