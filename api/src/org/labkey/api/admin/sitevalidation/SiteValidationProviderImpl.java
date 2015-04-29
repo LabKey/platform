@@ -15,6 +15,7 @@
  */
 package org.labkey.api.admin.sitevalidation;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
@@ -34,5 +35,17 @@ public abstract class SiteValidationProviderImpl implements SiteValidationProvid
     public boolean isSiteScope()
     {
         return true;
+    }
+
+    @Override
+    public int compareTo(@NotNull SiteValidationProvider p)
+    {
+        return getName().compareToIgnoreCase(p.getName());
+    }
+
+    @Override
+    public String toString()
+    {
+        return getName();
     }
 }

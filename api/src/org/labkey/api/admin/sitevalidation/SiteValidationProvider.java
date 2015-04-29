@@ -22,7 +22,7 @@ import org.labkey.api.security.User;
  * User: tgaluhn
  * Date: 4/8/2015
  */
-public interface SiteValidationProvider
+public interface SiteValidationProvider extends Comparable<SiteValidationProvider>
 {
     String getName();
     String getDescription();

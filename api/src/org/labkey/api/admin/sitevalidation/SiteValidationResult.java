@@ -36,14 +36,14 @@ public class SiteValidationResult
         public SiteValidationResult create(String message, ActionURL link) { return new SiteValidationResult(this, message, link);}
     }
 
-    final Level level;
-    final String message;
-    final ActionURL link;
+    private final Level level;
+    private final StringBuilder sb;
+    private final ActionURL link;
 
     private SiteValidationResult(@NotNull Level level, @NotNull String message, @Nullable ActionURL link)
     {
         this.level = level;
-        this.message = message;
+        this.sb = new StringBuilder(message);
         this.link = link;
     }
 
@@ -54,9 +54,7 @@ public class SiteValidationResult
 
     public String getMessage()
     {
-        if (null != sb)
-            return sb.toString();
-        return message;
+        return sb.toString();
     }
 
     public ActionURL getLink()
@@ -64,18 +62,9 @@ public class SiteValidationResult
         return link;
     }
 
-    private StringBuilder sb;
-
-    private StringBuilder getStringBuilder()
-    {
-        if (null == sb)
-            sb = new StringBuilder(message);
-        return sb;
-    }
-
     public SiteValidationResult append(Object o)
     {
-        getStringBuilder().append(o);
+        sb.append(o);
         return this;
     }
 }
