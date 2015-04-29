@@ -16,8 +16,6 @@
 package org.labkey.api.query.snapshot;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
@@ -26,14 +24,12 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
@@ -97,18 +93,30 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
             snapshot.setColumns(form.getFieldKeyColumns());
             snapshot.setUpdateDelay(form.getUpdateDelay());
 
+            ViewContext context = form.getViewContext();
+            CustomView mergedFilterTempView = queryDef.createCustomView(context.getUser(), "tempCustomView");
+
             if (form.getViewName() != null)
             {
-                ViewContext context = form.getViewContext();
-
                 CustomView customSrc = queryDef.getCustomView(context.getUser(), context.getRequest(), form.getViewName());
                 if (customSrc != null)
                 {
                     snapshot.setColumns(customSrc.getColumns());
+
                     if (customSrc.hasFilterOrSort())
-                        snapshot.setFilter(customSrc.getFilterAndSort());
+                        mergedFilterTempView.setFilterAndSort(customSrc.getFilterAndSort());
                 }
             }
+
+            // Merge the custom view and URL filters together
+            ActionURL mergedFilterURL = context.cloneActionURL();
+            mergedFilterTempView.applyFilterAndSortToURL(mergedFilterURL, QueryView.DATAREGIONNAME_DEFAULT);
+
+            // The combined filters is what we want in this custom view
+            mergedFilterTempView.setFilterAndSortFromURL(mergedFilterURL, QueryView.DATAREGIONNAME_DEFAULT);
+
+            snapshot.setFilter(mergedFilterTempView.getFilterAndSort());
+
             return snapshot;
         }
         return null;
