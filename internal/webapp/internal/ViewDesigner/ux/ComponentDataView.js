@@ -130,7 +130,7 @@ Ext4.define('Ext.ux.ComponentDataView', {
      */
     // Extends DataView.getNode to allow one of the Components in the item's view as the 'nodeInfo' parameter.
     getNode : function (nodeInfo) {
-        if (nodeInfo instanceof Ext.Component) {
+        if (nodeInfo instanceof Ext4.Component) {
             var n = nodeInfo.getEl();
             return n.findParentNode(this.itemSelector, 20);
         }

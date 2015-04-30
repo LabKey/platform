@@ -8091,10 +8091,10 @@ internal/webapp/internal/FileDrop/FileDrop.js -text
 internal/webapp/internal/MiniProfiler/miniprofiler.css -text
 internal/webapp/internal/MiniProfiler/miniprofiler.js -text
 internal/webapp/internal/MiniProfiler/miniprofiler.tmpl -text
+internal/webapp/internal/ViewDesigner.lib.xml -text
 internal/webapp/internal/ViewDesigner/Designer.js -text
 internal/webapp/internal/ViewDesigner/FieldMetaRecord.js -text
 internal/webapp/internal/ViewDesigner/FieldMetaStore.js -text
-internal/webapp/internal/ViewDesigner/FieldTreeLoader.js -text
 internal/webapp/internal/ViewDesigner/button/PaperclipButton.js -text
 internal/webapp/internal/ViewDesigner/data/Cache.js -text
 internal/webapp/internal/ViewDesigner/field/FilterOpCombo.js -text

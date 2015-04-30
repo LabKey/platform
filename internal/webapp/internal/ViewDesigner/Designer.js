@@ -991,17 +991,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
 });
 
-//// Adds a 'fieldKey' attribute to the available fields tree used by the test framework
-//LABKEY.ext.FieldTreeNodeUI = Ext.extend(Ext.tree.TreeNodeUI, {
-//    renderElements : function () {
-//        this.callParent();
-//
-//        var node = this.node;
-//        var fieldKey = node.attributes.fieldKey;
-//        this.elNode.setAttribute("fieldKey", fieldKey);
-//    }
-//});
-
 // private
 LABKEY.DataRegion2.saveCustomizeViewPrompt = function(config) {
 

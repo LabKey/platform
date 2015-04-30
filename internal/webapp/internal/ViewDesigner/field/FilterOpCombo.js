@@ -74,21 +74,22 @@ Ext4.define('LABKEY.internal.ViewDesigner.field.FilterOpCombo', {
     setOptions : function (type, mvEnabled, value) {
         var found = false;
         var options = [];
-        if (type)
+        if (type) {
             Ext4.each(LABKEY.Filter.getFilterTypesForType(type, mvEnabled), function (filterType) {
-                if (value && value == filterType.getURLSuffix())
+                if (value && value == filterType.getURLSuffix()) {
                     found = true;
+                }
                 options.push([filterType.getURLSuffix(), filterType.getDisplayText()]);
             });
+        }
 
         if (!found) {
-            for (var key in LABKEY.Filter.Types) {
-                var filterType = LABKEY.Filter.Types[key];
+            Ext4.iterate(LABKEY.Filter.Types, function(key, filterType) {
                 if (filterType.getURLSuffix() == value) {
                     options.unshift([filterType.getURLSuffix(), filterType.getDisplayText()]);
-                    break;
+                    return false;
                 }
-            }
+            });
         }
 
         var store = Ext4.create('Ext.data.ArrayStore', {
@@ -96,7 +97,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.field.FilterOpCombo', {
             data: options
         });
 
-        // Ext.form.ComboBox private method
         this.bindStore(store);
         this.fireEvent('optionsupdated', this);
     },

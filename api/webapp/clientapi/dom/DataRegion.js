@@ -2700,20 +2700,26 @@ if (!LABKEY.DataRegions)
 
     LABKEY.DataRegion2.loadViewDesigner = function(cb, scope) {
         LABKEY.requiresExt4Sandbox(function() {
-            LABKEY.requiresScript([
-                'internal/ViewDesigner/data/Cache.js',
-                'internal/ViewDesigner/ux/ComponentDataView.js',
-                'internal/ViewDesigner/button/PaperclipButton.js',
-                'internal/ViewDesigner/field/FilterOpCombo.js',
-                'internal/ViewDesigner/field/FilterTextValue.js',
-                'internal/ViewDesigner/tab/BaseTab.js',
-                'internal/ViewDesigner/tab/ColumnsTab.js',
-                'internal/ViewDesigner/tab/FilterTab.js',
-                'internal/ViewDesigner/tab/SortTab.js',
-                'internal/ViewDesigner/FieldMetaRecord.js',
-                'internal/ViewDesigner/FieldMetaStore.js',
-                'internal/ViewDesigner/Designer.js'
-            ], true, cb, scope);
+            if (LABKEY.devMode) {
+                LABKEY.requiresScript([
+                    // Should match internal/ViewDesigner.lib.xml
+                    'internal/ViewDesigner/data/Cache.js',
+                    'internal/ViewDesigner/ux/ComponentDataView.js',
+                    'internal/ViewDesigner/button/PaperclipButton.js',
+                    'internal/ViewDesigner/field/FilterOpCombo.js',
+                    'internal/ViewDesigner/field/FilterTextValue.js',
+                    'internal/ViewDesigner/tab/BaseTab.js',
+                    'internal/ViewDesigner/tab/ColumnsTab.js',
+                    'internal/ViewDesigner/tab/FilterTab.js',
+                    'internal/ViewDesigner/tab/SortTab.js',
+                    'internal/ViewDesigner/FieldMetaRecord.js',
+                    'internal/ViewDesigner/FieldMetaStore.js',
+                    'internal/ViewDesigner/Designer.js'
+                ], true, cb, scope);
+            }
+            else {
+                LABKEY.requiresScript('internal/ViewDesigner.min.js', cb, scope);
+            }
         });
     };
 
