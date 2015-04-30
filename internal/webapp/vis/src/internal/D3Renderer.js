@@ -127,7 +127,10 @@ LABKEY.vis.internal.Axis = function() {
             }
 
             if (tickClick) {
-                bindTo.on('click', tickClick);
+                bindTo.on('click', function() {
+                    var args = Array.prototype.slice.call(arguments);
+                    tickClick.apply(this, [d3.event, selection].concat(args));
+                });
             }
 
             if (tickMouseOver) {
