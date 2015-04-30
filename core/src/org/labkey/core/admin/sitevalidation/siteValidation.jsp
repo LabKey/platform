@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationResult" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationResult.Level" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationService" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationResultList" %>
