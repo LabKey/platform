@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
  * User: tgaluhn
  * Date: 4/8/2015
  */
-public class SiteValidationManager implements SiteValidationService.Interface
+public class SiteValidationServiceImpl implements SiteValidationService
 {
     private final Set<Pair<String, SiteValidationProvider>> siteValidators = new ConcurrentSkipListSet<>();
     private final Set<Pair<String, SiteValidationProvider>> containerValidators = new ConcurrentSkipListSet<>();

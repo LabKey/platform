@@ -385,7 +385,7 @@ core/src/org/labkey/core/admin/renameFolder.jsp -text
 core/src/org/labkey/core/admin/reorderFolders.jsp -text
 core/src/org/labkey/core/admin/setFolderPermissions.jsp -text
 core/src/org/labkey/core/admin/setInitialFolderSettings.jsp -text
-core/src/org/labkey/core/admin/sitevalidation/SiteValidationManager.java -text
+core/src/org/labkey/core/admin/sitevalidation/SiteValidationServiceImpl.java -text
 core/src/org/labkey/core/admin/sitevalidation/siteValidation.jsp -text
 core/src/org/labkey/core/admin/sql/ScriptReorderer.java -text
 core/src/org/labkey/core/admin/sql/SqlScriptController.java -text
