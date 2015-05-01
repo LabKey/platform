@@ -498,7 +498,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
          return _auditRowPk;
      }
 
-     void copyToXml(TableType xmlTable, boolean bFull)
+     public void copyToXml(TableType xmlTable, boolean bFull)
     {
         xmlTable.setTableName(_name);
         xmlTable.setTableDbType(_tableType.name());

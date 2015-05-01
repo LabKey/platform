@@ -33,7 +33,6 @@ import org.labkey.api.query.TableSorter;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -357,7 +356,8 @@ public class DbSchema
     }
 
     // Could return null if the requested table doesn't exist in the database
-    protected @Nullable SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
+    @Nullable
+    public SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
     {
         try (JdbcMetaDataLocator locator = getSqlDialect().getJdbcMetaDataLocator(getScope(), getName(), tableName))
         {
@@ -553,55 +553,6 @@ public class DbSchema
     public Map<String, TableType> getTableXmlMap()
     {
         return _tableXmlMap;
-    }
-
-    public static class SchemaXMLTestCase extends Assert
-    {
-        // Compare schema XML vs. meta data for all module schemas
-        @Test
-        public void testSchemaXML() throws Exception
-        {
-            Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
-
-            for (DbSchema schema : schemas)
-                testSchemaXml(schema);
-        }
-
-        private void testSchemaXml(DbSchema schema) throws Exception
-        {
-            String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false, true).getResultsString();
-
-            // Not using assertNotNull, because it appends non-legal HTML text to our message
-            if (null != sOut)
-                fail("<div>Errors in schema " + schema.getDisplayName()
-                     + ".xml.  <a href=\"" + AppProps.getInstance().getContextPath() + "/admin/getSchemaXmlDoc.view?dbSchema="
-                     + schema.getDisplayName() + "\">Click here for an XML doc with fixes</a>."
-                     + "<br>"
-                     + sOut + "</div>");
-
-/* TODO: Uncomment once we change to all generic type names in schema .xml files
-
-            StringBuilder typeErrors = new StringBuilder();
-
-            for (TableInfo ti : schema.getTables())
-            {
-                for (ColumnInfo ci : ti.getColumns())
-                {
-                    String sqlTypeName = ci.getSqlTypeName();
-
-                    if ("OTHER".equals(sqlTypeName))
-                        typeErrors.append(ti.getName()).append(".").append(ci.getColumnName()).append(": getSqlTypeName() returned 'OTHER'<br>");
-
-                    int sqlTypeInt = ci.getSqlTypeInt();
-
-                    if (Types.OTHER == sqlTypeInt)
-                        typeErrors.append(ti.getName()).append(".").append(ci.getColumnName()).append(": getSqlTypeInt() returned 'Types.OTHER'<br>");
-                }
-            }
-
-            assertTrue("<div>Type errors in schema " + schema.getName() + ":<br><br>" + typeErrors + "<div>", "".equals(typeErrors.toString()));
-*/
-        }
     }
 
     public static class TableSelectTestCase extends Assert

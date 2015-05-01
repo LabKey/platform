@@ -102,11 +102,6 @@ api/src/org/labkey/api/admin/LoggerGetter.java -text
 api/src/org/labkey/api/admin/PipelineJobLoggerGetter.java -text
 api/src/org/labkey/api/admin/StaticLoggerGetter.java -text
 api/src/org/labkey/api/admin/SubfolderWriter.java -text
-api/src/org/labkey/api/admin/sitevalidation/SiteValidationProvider.java -text
-api/src/org/labkey/api/admin/sitevalidation/SiteValidationProviderImpl.java -text
-api/src/org/labkey/api/admin/sitevalidation/SiteValidationResult.java -text
-api/src/org/labkey/api/admin/sitevalidation/SiteValidationResultList.java -text
-api/src/org/labkey/api/admin/sitevalidation/SiteValidationService.java -text
 api/src/org/labkey/api/analytics/AnalyticsService.java -text
 api/src/org/labkey/api/annotations/JavaRuntimeVersion.java -text
 api/src/org/labkey/api/annotations/RefactorIn15_1.java -text
@@ -399,7 +394,6 @@ api/src/org/labkey/api/data/TableInfoWriter.java -text
 api/src/org/labkey/api/data/TableResultSet.java -text
 api/src/org/labkey/api/data/TableSelector.java -text
 api/src/org/labkey/api/data/TableSelectorTestCase.java -text
-api/src/org/labkey/api/data/TableXmlUtils.java -text
 api/src/org/labkey/api/data/TempTableInfo.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TempTableWriter.java -text
