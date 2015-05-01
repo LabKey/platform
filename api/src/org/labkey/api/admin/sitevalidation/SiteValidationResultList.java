@@ -29,7 +29,7 @@ import java.util.List;
  */
 public class SiteValidationResultList
 {
-    List<SiteValidationResult> results = new ArrayList<>();
+    private final List<SiteValidationResult> results = new ArrayList<>();
     private String eol = "<br/>";
 
     public SiteValidationResult addResult(SiteValidationResult.Level level, String message)

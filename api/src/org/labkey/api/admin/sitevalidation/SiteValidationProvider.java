@@ -15,6 +15,7 @@
  */
 package org.labkey.api.admin.sitevalidation;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
@@ -36,5 +37,6 @@ public interface SiteValidationProvider extends Comparable<SiteValidationProvide
      */
     boolean shouldRun(Container c, User u);
     boolean isSiteScope();
+    @NotNull
     SiteValidationResultList runValidation(Container c, User u);
 }
