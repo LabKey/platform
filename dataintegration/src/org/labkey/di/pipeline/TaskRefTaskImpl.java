@@ -15,7 +15,6 @@
  */
 package org.labkey.di.pipeline;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.di.TaskRefTask;
 import org.labkey.api.exp.PropertyType;
@@ -33,7 +32,6 @@ public abstract class TaskRefTaskImpl implements TaskRefTask
 
     protected Map<String, String> settings = new CaseInsensitiveHashMap<>();
     protected ContainerUser containerUser;
-    protected transient Logger logger;
 
     @Override
     public void setSettings(Map<String, String> settings)
@@ -45,12 +43,6 @@ public abstract class TaskRefTaskImpl implements TaskRefTask
     public void setContainerUser(ContainerUser containerUser)
     {
         this.containerUser = containerUser;
-    }
-
-    @Override
-    public void setLogger(Logger logger)
-    {
-        this.logger = logger;
     }
 
     /**

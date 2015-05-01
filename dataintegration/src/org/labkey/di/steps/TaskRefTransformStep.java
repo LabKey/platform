@@ -57,9 +57,8 @@ public class TaskRefTransformStep extends TransformTask
             TaskRefTask taskInstance = _meta.getTaskInstance();
             String className = taskInstance.getClass().getName();
             taskInstance.setContainerUser(_context);
-            taskInstance.setLogger(getJob().getLogger());
             getJob().info("Running taskref task " + className);
-            Map<String, String> output = digestRecordedActionSet(taskInstance.run());
+            Map<String, String> output = digestRecordedActionSet(taskInstance.run(getJob().getLogger()));
             output.put("class", className);
 
             // Persist output and classname into dataintegration.TransformConfiguration.TransformState

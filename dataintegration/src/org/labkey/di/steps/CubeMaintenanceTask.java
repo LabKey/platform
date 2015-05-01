@@ -15,6 +15,7 @@
  */
 package org.labkey.di.steps;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
@@ -64,7 +65,7 @@ public class CubeMaintenanceTask extends TaskRefTaskImpl
     private static final String SCOPE_SITE = "site";
 
     @Override
-    public RecordedActionSet run() throws PipelineJobException
+    public RecordedActionSet run(Logger logger) throws PipelineJobException
     {
         String action = settings.get(ACTION);
         if (action == null)
@@ -72,12 +73,14 @@ public class CubeMaintenanceTask extends TaskRefTaskImpl
         String scope = settings.get(SCOPE);
         if (!SCOPE_SITE.equals(scope))
             scope = SCOPE_CONTAINER;
-        performAction(action, scope);
+        performAction(action, scope, logger);
 
         return new RecordedActionSet(makeRecordedAction());
     }
 
-    private void performAction(String action, String scope) throws PipelineJobException
+    // TODO: Convert settings and actions to enums instead of these string literals
+
+    private void performAction(String action, String scope, Logger logger) throws PipelineJobException
     {
         String cube = settings.get(CUBE);
         String schema = settings.get(SCHEMA);
@@ -93,31 +96,31 @@ public class CubeMaintenanceTask extends TaskRefTaskImpl
         {
             case ACTION_REFRESH:
                 for (Container c : containers)
-                    refreshCube(c, cube);
+                    refreshCube(c, cube, logger);
                 break;
             case ACTION_WARM:
                 for (Container c : containers)
-                    warmCube(c, cube, schema, configId);
+                    warmCube(c, cube, schema, configId, logger);
                 break;
             case ACTION_BOTH:
                 for (Container c : containers)
                 {
-                    refreshCube(c, cube);
-                    warmCube(c, cube, schema, configId);
+                    refreshCube(c, cube, logger);
+                    warmCube(c, cube, schema, configId, logger);
                 }
                 break;
             default:
                 logger.info("Unknown action specified: " + action + ". Refreshing and warming.");
                 for (Container c : containers)
                 {
-                    refreshCube(c, cube);
-                    warmCube(c, cube, schema, configId);
+                    refreshCube(c, cube, logger);
+                    warmCube(c, cube, schema, configId, logger);
                 }
             break;
         }
     }
 
-    private void warmCube(Container c, String cube, String schema, String configId) throws PipelineJobException
+    private void warmCube(Container c, String cube, String schema, String configId, Logger logger) throws PipelineJobException
     {
         logger.info("Warming cube " + cube + " in container " + c.getName());
         String warmResult = QueryService.get().warmCube(containerUser.getUser(), c, schema, configId, cube);
@@ -128,7 +131,7 @@ public class CubeMaintenanceTask extends TaskRefTaskImpl
         logger.info(warmResult);
     }
 
-    private void refreshCube(Container c, String cube)
+    private void refreshCube(Container c, String cube, Logger logger)
     {
         logger.info("Refreshing cube " + cube + " in container " + c.getName());
         QueryService.get().cubeDataChanged(c);

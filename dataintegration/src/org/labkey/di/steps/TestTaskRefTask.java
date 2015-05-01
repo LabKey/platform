@@ -15,11 +15,12 @@
  */
 package org.labkey.di.steps;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.di.pipeline.TaskRefTaskImpl;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -30,8 +31,9 @@ public class TestTaskRefTask extends TaskRefTaskImpl
 {
     private static final String SETTING_1 = "setting1";
     private static final String SLEEP = "sleep";
+
     @Override
-    public RecordedActionSet run() throws PipelineJobException
+    public RecordedActionSet run(Logger logger) throws PipelineJobException
     {
         settings.put(SETTING_1, "test");
         logger.info("Log from test task");
@@ -51,6 +53,6 @@ public class TestTaskRefTask extends TaskRefTaskImpl
     @Override
     public List<String> getRequiredSettings()
     {
-        return Arrays.asList(SETTING_1);
+        return Collections.singletonList(SETTING_1);
     }
 }
