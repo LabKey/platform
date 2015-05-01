@@ -28,10 +28,36 @@ if (!LABKEY.DataRegions)
     var _paneCache = {};
 
     LABKEY.DataRegion2 = function(config) {
+        this._init(config, true);
+    };
 
-        if (!config || !LABKEY.Utils.isString(config.name)) {
-            throw '"name" is required to contruct a LABKEY.DataRegion.';
-        }
+    var Proto = LABKEY.DataRegion2.prototype;
+
+    Proto.toJSON = function() {
+        return {
+            name: this.name,
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            viewName: this.viewName,
+            offset: this.offset,
+            maxRows: this.maxRows,
+            messages: this.msgbox.toJSON() // hmm, unsure exactly how this works
+        };
+    };
+
+    /**
+     *
+     * @param {Object} config
+     * @param {Boolean} [applyDefaults]
+     * @private
+     */
+    Proto._init = function(config, applyDefaults) {
+
+        var me = this;
+        var nameSel = '#' + me.name;
+        var baseSel = 'form' + nameSel;
+
+        this.form = $(baseSel);
 
         /**
          * Config Options
@@ -51,6 +77,12 @@ if (!LABKEY.DataRegions)
              * on this object to get the right value.
              */
             containerFilter: undefined,
+
+            /**
+             * The faceted filter pane as been loaded
+             * @private
+             */
+            facetLoaded: false,
 
             /**
              * Id of the DataRegion. Same as name property.
@@ -106,7 +138,7 @@ if (!LABKEY.DataRegions)
             viewName: null,
 
             //
-            // Asyncronous properties
+            // Asynchronous properties
             //
             async: false,
             buttonBar: undefined,
@@ -128,7 +160,18 @@ if (!LABKEY.DataRegions)
             userSort: undefined
         };
 
-        var settings = $.extend({}, defaults, config);
+        if (!config || !LABKEY.Utils.isString(config.name)) {
+            throw '"name" is required to construct a LABKEY.DataRegion.';
+        }
+
+        var settings;
+
+        if (applyDefaults) {
+            settings = $.extend({}, defaults, config);
+        }
+        else {
+            settings = $.extend({}, config);
+        }
 
         for (var s in settings) {
             if (settings.hasOwnProperty(s)) {
@@ -137,13 +180,9 @@ if (!LABKEY.DataRegions)
         }
         this._allowHeaderLock = this.allowHeaderLock === true;
 
-        if (!this.messages) {
+        if (!config.messages) {
             this.messages = {};
         }
-
-        // Only while this is an experimental feature
-        var adminLink = LABKEY.Utils.textLink({text: 'Experimental Features', href: LABKEY.ActionURL.buildURL('admin', 'experimentalFeatures', '/')});
-        this.messages['experimental'] = '<span class="labkey-strong">Warning!</span>&nbsp;<span>This is an experimental Data Region. ' + adminLink + '</span>';
 
         /**
          * Non-configurable Options
@@ -151,43 +190,6 @@ if (!LABKEY.DataRegions)
         this.selectionModified = false;
         this.panelConfigurations = {}; // formerly, panelButtonContents
 
-        if (!LABKEY.DataRegions) {
-            LABKEY.DataRegions = {};
-        }
-        else {
-            // here we can copy properties from our former self
-            var ancestor = LABKEY.DataRegions[this.name];
-            if (ancestor) {
-                this.async = ancestor.async;
-            }
-        }
-
-        LABKEY.DataRegions[this.name] = this;
-
-        this._init();
-    };
-
-    var Proto = LABKEY.DataRegion2.prototype;
-
-    Proto.toJSON = function() {
-        return {
-            name: this.name,
-            schemaName: this.schemaName,
-            queryName: this.queryName,
-            viewName: this.viewName,
-            offset: this.offset,
-            maxRows: this.maxRows,
-            messages: this.msgbox.toJSON() // hmm, unsure exactly how this works
-        };
-    };
-
-    Proto._init = function() {
-
-        var me = this;
-        var nameSel = '#' + me.name;
-        var baseSel = 'form' + nameSel;
-
-        this.form = $(baseSel);
         //this.table = $('dataregion_' + me.name);
 
         // derived DataRegion's may not include the form id
@@ -287,12 +289,14 @@ if (!LABKEY.DataRegions)
                 this.offset = 0;
 
                 if (this.userFilters) {
-                    var namePrefix = this.name + columnPrefix;
+                    var namePrefix = this.name + columnPrefix,
+                        me = this;
+
                     $.each(this.userFilters, function(name, v) {
                         if (name.indexOf(namePrefix) >= 0) {
-                            delete this.userFilters[name];
+                            delete me.userFilters[name];
                         }
-                    }, this);
+                    });
                 }
             }
 
@@ -857,9 +861,22 @@ if (!LABKEY.DataRegions)
      * @private
      */
     Proto._initMessaging = function() {
-        this.msgbox = new MessageArea(this, this.messages);
-        this.msgbox.on('rendermsg', function(evt, msgArea, parts) { _onRenderMessageArea(this, parts); }, this);
+        if (!this.msgbox) {
+            this.msgbox = new MessageArea(this);
+            this.msgbox.on('rendermsg', function(evt, msgArea, parts) { _onRenderMessageArea(this, parts); }, this);
+        }
+
+        //-- WHILE EXPERIMENTAL
+        var adminLink = LABKEY.Utils.textLink({
+            text: 'Experimental Features',
+            href: LABKEY.ActionURL.buildURL('admin', 'experimentalFeatures', '/')
+        });
+
+        this.messages['experimental'] = '<span class="labkey-strong">Warning!</span>&nbsp;<span>This is an experimental Data Region. ' + adminLink + '</span>';
+        //!-- WHILE EXPERIMENTAL
+
         if (this.messages) {
+            this.msgbox.setMessages(this.messages);
             this.msgbox.render();
         }
     };
@@ -1131,6 +1148,8 @@ if (!LABKEY.DataRegions)
         if (event.isDefaultPrevented()) {
             return;
         }
+
+        this.offset = rowOffset;
 
         _setParameter(this, OFFSET_PREFIX, rowOffset, [OFFSET_PREFIX, SHOW_ROWS_PREFIX]);
     };
@@ -1567,7 +1586,7 @@ if (!LABKEY.DataRegions)
             config.filters = filters;
         }
 
-        // NOTE: need to account for non-removeable filters and sort in a QWP
+        // NOTE: need to account for non-removable filters and sort in a QWP
         if (this.qwp) {
             if (this.qwp.sort) {
                 config.sort = config.sort + ',' + this.qwp.sort;
@@ -1606,6 +1625,41 @@ if (!LABKEY.DataRegions)
                 }
                 this.showPanel(panelId);
             }
+        }
+    };
+
+    Proto.loadFaceting = function(cb, scope) {
+
+        var region = this;
+
+        LABKEY.requiresExt4Sandbox(function() {
+            LABKEY.requiresScript([
+                '/study/ReportFilterPanel.js',
+                '/study/ParticipantFilterPanel.js',
+                '/dataregion/panel/Facet.js'
+            ], function() {
+                region.facetLoaded = true;
+                if ($.isFunction(cb)) {
+                    cb.call(scope || this);
+                }
+            });
+        });
+    };
+
+    Proto.showFaceting = function() {
+        if (this.facetLoaded) {
+            if (!this.facet) {
+                this.facet = Ext4.create('LABKEY.dataregion.panel.Facet', {
+                    dataRegion: this
+                });
+            }
+            this.facet.toggleCollapse();
+            //if (this.resizeTask) {
+            //    this.resizeTask.delay(350);
+            //}
+        }
+        else {
+            this.loadFaceting(this.showFaceting, this);
         }
     };
 
@@ -2217,6 +2271,8 @@ if (!LABKEY.DataRegions)
                 //}
 
                 var target = $('#' + renderTo);
+                var me = this;
+
                 if (target.length > 0) {
 
                     //if (dr) {
@@ -2228,6 +2284,8 @@ if (!LABKEY.DataRegions)
                         if (LABKEY.Utils.isFunction(callback)) {
                             callback.call(scope);
                         }
+
+                        $(me).trigger('success', me);
                     });
                 }
             },
@@ -2700,6 +2758,28 @@ if (!LABKEY.DataRegions)
         };
     };
 
+    //
+    // LOADER
+    //
+    LABKEY.DataRegion2.create = function(config) {
+
+        var region = LABKEY.DataRegions[config.name];
+
+        if (region) {
+            // region already exists, update properties
+            $.each(config, function(key, value) {
+                region[key] = value;
+            });
+            region._init(config);
+        }
+        else {
+            // instantiate a new region
+            region = new LABKEY.DataRegion2(config);
+            LABKEY.DataRegions[region.name] = region;
+        }
+
+        return region;
+    };
 
     LABKEY.DataRegion2.loadViewDesigner = function(cb, scope) {
         LABKEY.requiresExt4Sandbox(function() {
@@ -2718,7 +2798,7 @@ if (!LABKEY.DataRegions)
                     'internal/ViewDesigner/FieldMetaRecord.js',
                     'internal/ViewDesigner/FieldMetaStore.js',
                     'internal/ViewDesigner/Designer.js'
-                ], true, cb, scope);
+                ], cb, scope);
             }
             else {
                 LABKEY.requiresScript('internal/ViewDesigner.min.js', cb, scope);
@@ -2899,21 +2979,14 @@ if (!LABKEY.DataRegions)
     /**
      * MessageArea wraps the display of messages in a DataRegion.
      * @param dataRegion - The dataregion that the MessageArea will bind itself to.
-     * @param messages - An initial messages object containing mappings of 'part' to 'msg'
+     * @param {String[]} [messages] - An initial messages object containing mappings of 'part' to 'msg'
      * @constructor
      */
     var MessageArea = function(dataRegion, messages) {
         this.parentSel = '#dataregion_msgbox_' + dataRegion.name;
-        this.parent = $(this.parentSel);
 
-        // prepare containing div
-        this.parent.find('td.labkey-dataregion-msgbox').append('<div class="dataregion_msgbox_ct"></div>');
-
-        if (LABKEY.Utils.isObject(messages)) {
-            this.parts = messages;
-        }
-        else {
-            this.parts = {};
+        if (messages) {
+            this.setMessages(messages);
         }
     };
 
@@ -2946,8 +3019,29 @@ if (!LABKEY.DataRegions)
         }
     };
 
+    MsgProto.setMessages = function(messages) {
+        if (LABKEY.Utils.isObject(messages)) {
+            this.parts = messages;
+        }
+        else {
+            this.parts = {};
+        }
+    };
+
+    MsgProto.getParent = function() {
+        var parent = $(this.parentSel);
+
+        // ensure container div is present
+        if (parent.find('div.dataregion_msgbox_ct').length == 0) {
+            parent.find('td.labkey-dataregion-msgbox').append('<div class="dataregion_msgbox_ct"></div>');
+        }
+
+        return parent;
+    };
+
     MsgProto.render = function() {
-        var hasMsg = false,
+        var parent = this.getParent(),
+            hasMsg = false,
             html = '';
 
         $.each(this.parts, function(part, msg) {
@@ -2961,21 +3055,21 @@ if (!LABKEY.DataRegions)
         });
 
         if (hasMsg) {
-            this.parent.find('.dataregion_msgbox_ct').html(html);
+            parent.find('.dataregion_msgbox_ct').html(html);
             this.show();
             $(this).trigger('rendermsg', [this, this.parts]);
         }
         else {
             this.hide();
-            this.parent.find('.dataregion_msgbox_ct').html('');
+            parent.find('.dataregion_msgbox_ct').html('');
         }
     };
 
-    MsgProto.show = function() { this.parent.show(); };
-    MsgProto.hide = function() { this.parent.hide(); };
+    MsgProto.show = function() { this.getParent().show(); };
+    MsgProto.hide = function() { this.getParent().hide(); };
     MsgProto.isVisible = function() { return $(this.parentSel + ':visible').length > 0; };
     MsgProto.find = function(selector) {
-        return this.parent.find('.dataregion_msgbox_ct').find(selector);
+        return this.getParent().find('.dataregion_msgbox_ct').find(selector);
     };
     MsgProto.on = function(evt, callback, scope) { $(this).bind(evt, $.proxy(callback, scope)); };
 
@@ -3010,7 +3104,8 @@ if (!LABKEY.DataRegions)
             _failure: LABKEY.Utils.getOnFailure(_config),
             filters: [],
             errorType: 'html',
-            parameters: undefined
+            parameters: undefined,
+            sql: undefined
         };
 
         var settings = $.extend({}, defaults, _config);
@@ -3021,21 +3116,16 @@ if (!LABKEY.DataRegions)
             }
         }
 
-        // Get/Construct the Data Region based on the current configuration
-        var region = LABKEY.DataRegions[this.dataRegionName];
-        if (region) {
-            this.region = region;
-        }
-        else {
-            this.region = new LABKEY.DataRegion2({
-                name: this.dataRegionName,
-                schemaName: this.schemaName,
-                queryName: this.queryName
-            })
-        }
+        // TODO: Figure out strategy for changing the defaults for a region backing a QWP (e.g. frame is 'portal' not 'none')
 
-        // QWP's are setup to be "in-place"
-        this.region.async = true;
+        this.region = LABKEY.DataRegions.create({
+            name: this.dataRegionName,
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            allowHeaderLock: true,
+            frame: 'portal', // default
+            async: true
+        });
 
         if (this.renderTo) {
             this.render();
@@ -3050,11 +3140,7 @@ if (!LABKEY.DataRegions)
 
         if (this.renderTo) {
             this.region.renderTo = this.renderTo;
-            _load(this.region, function() {
-                if (LABKEY.DataRegions[this.dataRegionName]) {
-                    this.region = LABKEY.DataRegions[this.dataRegionName];
-                }
-            }, this);
+            _load(this.region, function() { }, this);
         }
         else {
             throw '"renderTo" must be specified either upon construction or when calling LABKEY.QueryWebpart2.render.';

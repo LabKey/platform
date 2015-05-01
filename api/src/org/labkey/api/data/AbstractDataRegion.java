@@ -131,7 +131,7 @@ public abstract class AbstractDataRegion extends DisplayElement
 
             StringWriter out = new StringWriter();
             out.write("<script type=\"text/javascript\">\n");
-            out.write("new LABKEY.DataRegion2(\n");
+            out.write("LABKEY.DataRegion2.create(");
             out.write(dataRegionJSON.toString(2));
             out.write(");\n");
             out.write("</script>\n");
