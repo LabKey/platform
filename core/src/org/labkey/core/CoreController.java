@@ -1674,7 +1674,7 @@ public class CoreController extends SpringActionController
             {
                 Map<String, Object> writerMap = new HashMap<>();
                 String selectionText = writer.getSelectionText();
-                if (selectionText != null)
+                if (selectionText != null && writer.show(getContainer()))
                 {
                     writerMap.put("name", selectionText);
 
