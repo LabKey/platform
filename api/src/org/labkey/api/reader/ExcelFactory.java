@@ -340,8 +340,7 @@ public class ExcelFactory
             {
                 type = cell.getCachedFormulaResultType();
             }
-
-            return type == Cell.CELL_TYPE_BLANK || type == Cell.CELL_TYPE_NUMERIC;
+            return type == Cell.CELL_TYPE_NUMERIC;
         }
         return false;
     }
