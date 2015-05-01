@@ -290,10 +290,10 @@ Ext4.define('LABKEY.query.browser.Browser', {
                     }
                     else {
                         schemaPathStr += '/' + parts[partIndex];
-                        tree.expandPath(schemaPathStr, undefined, undefined, onExpand);
+                        tree.expandPath(schemaPathStr, 'name', '/', onExpand);
                     }
                 };
-                tree.expandPath(schemaPathStr, undefined, undefined, onExpand);
+                tree.expandPath(schemaPathStr, 'name', '/', onExpand);
             }
             else {
                 Ext4.Msg.alert('Missing Schema', "The schema '" + Ext4.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");

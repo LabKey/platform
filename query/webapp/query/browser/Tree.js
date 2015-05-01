@@ -30,7 +30,6 @@ Ext4.define('LABKEY.query.browser.Tree', {
                         }
                     }
                 },
-                idProperty: 'name',
                 fields : [
                     {name: 'description'},
                     {name: 'hidden', type: 'boolean', defaultValue: false},

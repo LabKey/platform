@@ -3587,7 +3587,7 @@ public class SpecimenImporter
         ArrayList<ColumnInfo> columns2 = new ArrayList<>();
         columns2.add(new ColumnInfo(GLOBAL_UNIQUE_ID.getDbColumnName(), GLOBAL_UNIQUE_ID.getJdbcType(), GLOBAL_UNIQUE_ID.getMaxSize(), true));
         columns2.add(new ColumnInfo("SpecimenHash", JdbcType.VARCHAR, 300, true));
-        TempTableInfo tti2 = new TempTableInfo("SpecimenUpload2", columns2, Arrays.asList("RowId"));
+        TempTableInfo tti2 = new TempTableInfo("SpecimenUpload2", columns2, Collections.singletonList("RowId"));
         final String fullTableName2 = tti.getSelectName();
 
         final String rowIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_RowId ON " + fullTableName + "(RowId)";
