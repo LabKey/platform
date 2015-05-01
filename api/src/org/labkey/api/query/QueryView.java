@@ -39,6 +39,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -905,6 +906,7 @@ public class QueryView extends WebPartView<Object>
     public ActionButton createDeleteAllRowsButton()
     {
         ActionButton deleteAllRows = new ActionButton("Delete All Rows");
+        deleteAllRows.setDisplayPermission(AdminPermission.class);
         deleteAllRows.setActionType(ActionButton.Action.SCRIPT);
         deleteAllRows.setScript("Ext4.Msg.confirm('Confirm Deletion', 'Are you sure you wish to delete all rows? This action cannot be undone.', function(button){" +
                         "if (button == 'yes'){" +
