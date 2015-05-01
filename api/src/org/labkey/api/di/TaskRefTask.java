@@ -35,20 +35,21 @@ import java.util.Map;
  * definition in pipeline.xsd
  *
  * Ultimately we'd like to be able to share tasks between ETL and Pipeline; as a step in that direction
- * the signature of the run() method here intentionally matches that of PipelineJob.Task<TaskFactory>.run().
- * Also as such, implementors of this interface should ideally be decoupled from api.di and dataintegration. This is why
+ * the signature of the run() method here is similar to that of PipelineJob.Task<TaskFactory>.run(). If this is the route to take
+ * for unification, we'll need to reconcile between the logger being passed in here vs the the job member variable in the task.
+ * Also to aid in unification, implementors of this interface should ideally be decoupled from api.di and dataintegration. This is why
  * we downcast the TransformJobContext to the ContainerUser interface when passing it to the task.
  *
  */
 public interface TaskRefTask
 {
     /**
-     * The method that does the real work in the implementing class. Signature matches PipelineJob.Task<TaskFactory>.run()
+     * The method that does the real work in the implementing class.
      * @return RecordedActionSet Any parameters of any RecordedActions in the set get persisted in the job parameter set in
      *          dataintegration.TransformConfiguration.TransformState
      * @throws PipelineJobException
      */
-    public RecordedActionSet run() throws PipelineJobException;
+    public RecordedActionSet run(Logger logger) throws PipelineJobException;
 
     /**
      * For upfront validation; if any of these are missing, we won't even try to run the task
@@ -67,11 +68,4 @@ public interface TaskRefTask
      *
      */
     public void setContainerUser(ContainerUser containerUser);
-
-    /**
-     * A log4j logger. In this context it is from the ETL job so messages are logged into the ETL job log. As with the
-     * ContainerUser context, there may be a more pipeline-y way of passing this.
-     *
-     */
-    public void setLogger(Logger logger);
 }
