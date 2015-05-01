@@ -209,6 +209,13 @@ cbcassay/src/org/labkey/cbcassay/data/CBCData.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCDataDisplayColumn.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCDataProperty.java -text
 cbcassay/src/org/labkey/cbcassay/view/showDetails.jsp -text
+core/Core-API.iml -text
+core/api-src/org/labkey/api/admin/TableXmlUtils.java -text
+core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationProvider.java -text
+core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationProviderImpl.java -text
+core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResult.java -text
+core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResultList.java -text
+core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationService.java -text
 core/build.xml -text
 core/module.properties -text
 core/resources/credits/executables.txt -text
@@ -390,6 +397,7 @@ core/src/org/labkey/core/admin/sitevalidation/siteValidation.jsp -text
 core/src/org/labkey/core/admin/sql/ScriptReorderer.java -text
 core/src/org/labkey/core/admin/sql/SqlScriptController.java -text
 core/src/org/labkey/core/admin/systemMaintenance.jsp -text
+core/src/org/labkey/core/admin/test/SchemaXMLTestCase.java -text
 core/src/org/labkey/core/admin/testNetworkDrive.jsp -text
 core/src/org/labkey/core/admin/threads.jsp -text
 core/src/org/labkey/core/admin/view/filesNotifySettings.jsp -text

@@ -74,7 +74,7 @@ import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.TableXmlUtils;
+import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
