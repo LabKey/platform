@@ -2219,7 +2219,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         scope: self
                     }, self.view);
 
-                    // 22678: Need to load customzie view
+                    // 22678: Need to load customize view
                     LABKEY.initializeExt3ViewDesigner(function()
                     {
                         LABKEY.DataRegion.saveCustomizeViewPrompt(config);

@@ -21,6 +21,243 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     bodyStyle: 'background-color: transparent;',
 
+    statics: {
+        saveCustomizeViewPrompt: function(config) {
+            var success = config.success,
+                    scope = config.scope,
+                    viewName = config.name,
+                    hidden = config.hidden,
+                    session = config.session,
+                    inherit = config.inherit,
+                    shared = config.shared,
+                    containerPath = config.containerPath;
+
+            // User can save this view if it is editable and the shadowed view is editable if present.
+            var shadowedViewEditable = config.session && (!config.shadowed || config.shadowed.editable);
+            var canEdit = config.canEdit && (!config.session || shadowedViewEditable);
+            var canEditSharedViews = config.canEditSharedViews;
+
+            var targetContainers = config.targetContainers;
+            var allowableContainerFilters = config.allowableContainerFilters;
+            var containerFilterable = (allowableContainerFilters && allowableContainerFilters.length > 1);
+
+            var containerData = [];
+            if (targetContainers)
+            {
+                for (var i = 0; i < targetContainers.length; i++)
+                {
+                    var targetContainer = targetContainers[i];
+                    containerData[i] = [targetContainers[i].path];
+                }
+            }
+            else
+            {
+                // Assume view should be saved to current container
+                containerData[0] = LABKEY.ActionURL.getContainer();
+            }
+
+            var containerStore = Ext4.create('Ext.data.ArrayStore', {
+                fields: ['path'],
+                data: containerData
+            });
+
+            var disableSharedAndInherit = LABKEY.user.isGuest || hidden;
+            var newViewName = viewName || "New View";
+            if (!canEdit && viewName) {
+                newViewName = viewName + " Copy";
+            }
+
+            var warnedAboutMoving = false;
+
+            var win = Ext4.create('Ext.window.Window', {
+                title: "Save Custom View" + (viewName ? ": " + Ext4.htmlEncode(viewName) : ""),
+                cls: "labkey-customview-save",
+                border: false,
+                autoShow: true,
+                bodyStyle: "padding: 6px",
+                modal: true,
+                width: 490,
+                height: 260,
+                layout: "form",
+                defaults: { tooltipType: "title" },
+                items: [{
+                    xtype: "radio",
+                    itemId: "defaultNameField",
+                    fieldLabel: "View Name",
+                    boxLabel: "Default view for this page",
+                    inputValue: "default",
+                    name: "saveCustomView_namedView",
+                    checked: canEdit && !viewName,
+                    disabled: hidden || !canEdit
+                },{
+                    xtype: "fieldcontainer",
+                    itemId: "nameFieldContainer",
+                    layout: {
+                        type: 'hbox'
+                    },
+                    // Let the saveCustomView_name field display the error message otherwise it will render as "saveCustomView_name: error message"
+                    combineErrors: false,
+                    items: [{
+                        xtype: "radio",
+                        width: 175,
+                        fieldLabel: " ",
+                        labelSeparator: "",
+                        boxLabel: "Named",
+                        inputValue: "named",
+                        name: "saveCustomView_namedView",
+                        checked: !canEdit || viewName,
+                        handler: function (radio, value) {
+                            // nameFieldContainer.items will be populated after initComponent
+                            var nameFieldContainer = win.down('#nameFieldContainer');
+                            if (nameFieldContainer.items.get) {
+                                var nameField = nameFieldContainer.items.get(1);
+                                if (value) {
+                                    nameField.enable();
+                                }
+                                else {
+                                    nameField.disable();
+                                }
+                            }
+                        },
+                        scope: this
+                    },{
+                        xtype: "textfield",
+                        itemId: "nameTextField",
+                        fieldLabel: "",
+                        name: "saveCustomView_name",
+                        tooltip: "Name of the custom view",
+                        tooltipType: "title",
+                        msgTarget: "side",
+                        allowBlank: false,
+                        emptyText: "Name is required",
+                        maxLength: 50,
+                        width: 280,
+                        autoCreate: {tag: 'input', type: 'text', size: '50'},
+                        validator: function (value) {
+                            if ("default" === value.trim()) {
+                                return "The view name 'default' is not allowed";
+                            }
+                            return true;
+                        },
+                        selectOnFocus: true,
+                        value: newViewName,
+                        disabled: hidden || (canEdit && !viewName)
+                    }]
+                },{
+                    xtype: "box",
+                    style: "padding-left: 122px; padding-bottom: 8px; font-style: italic;",
+                    html: "The " + (!config.canEdit ? "current" : "shadowed") + " view is not editable.<br>Please enter an alternate view name.",
+                    hidden: canEdit
+                },{
+                    // spacer
+                    xtype: "box",
+                    height: 8
+                },{
+                    xtype: "checkbox",
+                    itemId: "sharedField",
+                    name: "saveCustomView_shared",
+                    fieldLabel: "Shared",
+                    boxLabel: "Make this grid view available to all users",
+                    checked: shared,
+                    disabled: disableSharedAndInherit || !canEditSharedViews
+                },{
+                    xtype: "checkbox",
+                    itemId: "inheritField",
+                    name: "saveCustomView_inherit",
+                    fieldLabel: "Inherit",
+                    boxLabel: "Make this grid view available in child folders",
+                    checked: containerFilterable && inherit,
+                    disabled: disableSharedAndInherit || !containerFilterable,
+                    hidden: !containerFilterable,
+                    listeners: {
+                        check: function (checkbox, checked) {
+                            Ext4.ComponentMgr.get("saveCustomView_targetContainer").setDisabled(!checked);
+                        }
+                    }
+                },{
+                    xtype: "combo",
+                    itemId: "targetContainer",
+                    name: "saveCustomView_targetContainer",
+                    id: "saveCustomView_targetContainer",
+                    fieldLabel: "Save in Folder",
+                    store: containerStore,
+                    value: containerPath,
+                    displayField: 'path',
+                    valueField: 'path',
+                    width: 300,
+                    triggerAction: 'all',
+                    mode: 'local',
+                    editable: false,
+                    hidden: !containerFilterable,
+                    disabled: disableSharedAndInherit || !containerFilterable || !inherit,
+                    listeners: {
+                        select: function (combobox) {
+                            if (!warnedAboutMoving && combobox.getValue() != containerPath)
+                            {
+                                warnedAboutMoving = true;
+                                Ext4.Msg.alert("Moving a Saved View", "If you save, this view will be moved from '" + containerPath + "' to " + combobox.getValue());
+                            }
+                        }
+                    }
+                }],
+                buttons: [{
+                    text: "Save",
+                    handler: function () {
+                        var nameField = win.down('#nameFieldContainer').items.get(1);
+                        if (!nameField.isValid())
+                        {
+                            Ext4.Msg.alert("Invalid view name", "The view name must be less than 50 characters long and not 'default'.");
+                            return;
+                        }
+                        if (!canEdit && viewName == nameField.getValue())
+                        {
+                            Ext4.Msg.alert("Error saving", "This view is not editable.  You must save this view with an alternate name.");
+                            return;
+                        }
+
+                        var o = {};
+                        if (hidden)
+                        {
+                            o = {
+                                name: viewName,
+                                shared: shared,
+                                hidden: true,
+                                session: session // set session=false for hidden views?
+                            };
+                        }
+                        else
+                        {
+                            o.name = "";
+                            if (!win.down('#defaultNameField').getValue()) {
+                                o.name = nameField.getValue();
+                            }
+                            o.session = false;
+                            if (!o.session && canEditSharedViews)
+                            {
+                                o.shared = win.down('#sharedField').getValue();
+                                // Issue 13594: disallow setting inherit bit if query view has no available container filters
+                                o.inherit = containerFilterable && win.down('#inheritField').getValue();
+                            }
+                        }
+
+                        if (o.inherit) {
+                            o.containerPath = win.down('#targetContainer').getValue();
+                        }
+
+                        // Callback is responsible for closing the save dialog window on success.
+                        success.call(scope, win, o);
+                    },
+                    scope: this
+                },{
+                    text: "Cancel",
+                    handler: function () {
+                        win.close();
+                    }
+                }]
+            });
+        }
+    },
+
     constructor : function(config) {
 
         // For tooltips on the fieldsTree TreePanel
@@ -902,7 +1139,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             scope: this
         }, this.customView);
 
-        LABKEY.DataRegion2.saveCustomizeViewPrompt(config);
+        LABKEY.internal.ViewDesigner.Designer.saveCustomizeViewPrompt(config);
     },
 
     revert : function () {
@@ -990,239 +1227,3 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     }
 
 });
-
-// private
-LABKEY.DataRegion2.saveCustomizeViewPrompt = function(config) {
-
-    var success = config.success,
-        scope = config.scope,
-        viewName = config.name,
-        hidden = config.hidden,
-        session = config.session,
-        inherit = config.inherit,
-        shared = config.shared,
-        containerPath = config.containerPath;
-
-    // User can save this view if it is editable and the shadowed view is editable if present.
-    var shadowedViewEditable = config.session && (!config.shadowed || config.shadowed.editable);
-    var canEdit = config.canEdit && (!config.session || shadowedViewEditable);
-    var canEditSharedViews = config.canEditSharedViews;
-
-    var targetContainers = config.targetContainers;
-    var allowableContainerFilters = config.allowableContainerFilters;
-    var containerFilterable = (allowableContainerFilters && allowableContainerFilters.length > 1);
-
-    var containerData = [];
-    if (targetContainers)
-    {
-        for (var i = 0; i < targetContainers.length; i++)
-        {
-            var targetContainer = targetContainers[i];
-            containerData[i] = [targetContainers[i].path];
-        }
-    }
-    else
-    {
-        // Assume view should be saved to current container
-        containerData[0] = LABKEY.ActionURL.getContainer();
-    }
-
-    var containerStore = Ext4.create('Ext.data.ArrayStore', {
-        fields: ['path'],
-        data: containerData
-    });
-
-    var disableSharedAndInherit = LABKEY.user.isGuest || hidden;
-    var newViewName = viewName || "New View";
-    if (!canEdit && viewName) {
-        newViewName = viewName + " Copy";
-    }
-
-    var warnedAboutMoving = false;
-
-    var win = Ext4.create('Ext.window.Window', {
-        title: "Save Custom View" + (viewName ? ": " + Ext4.htmlEncode(viewName) : ""),
-        cls: "labkey-customview-save",
-        border: false,
-        autoShow: true,
-        bodyStyle: "padding: 6px",
-        modal: true,
-        width: 490,
-        height: 260,
-        layout: "form",
-        defaults: { tooltipType: "title" },
-        items: [{
-            xtype: "radio",
-            itemId: "defaultNameField",
-            fieldLabel: "View Name",
-            boxLabel: "Default view for this page",
-            inputValue: "default",
-            name: "saveCustomView_namedView",
-            checked: canEdit && !viewName,
-            disabled: hidden || !canEdit
-        },{
-            xtype: "fieldcontainer",
-            itemId: "nameFieldContainer",
-            layout: 'hbox',
-            // Let the saveCustomView_name field display the error message otherwise it will render as "saveCustomView_name: error message"
-            combineErrors: false,
-            items: [{
-                xtype: "radio",
-                width: 175,
-                fieldLabel: " ",
-                labelSeparator: "",
-                boxLabel: "Named",
-                inputValue: "named",
-                name: "saveCustomView_namedView",
-                checked: !canEdit || viewName,
-                handler: function (radio, value) {
-                    // nameFieldContainer.items will be populated after initComponent
-                    var nameFieldContainer = win.down('#nameFieldContainer');
-                    if (nameFieldContainer.items.get)
-                    {
-                        var nameField = nameFieldContainer.items.get(1);
-                        if (value) {
-                            nameField.enable();
-                        }
-                        else {
-                            nameField.disable();
-                        }
-                    }
-                },
-                scope: this
-            },{
-                xtype: "textfield",
-                itemId: "nameTextField",
-                fieldLabel: "",
-                name: "saveCustomView_name",
-                tooltip: "Name of the custom view",
-                tooltipType: "title",
-                msgTarget: "side",
-                allowBlank: false,
-                emptyText: "Name is required",
-                maxLength: 50,
-                width: 280,
-                autoCreate: {tag: 'input', type: 'text', size: '50'},
-                validator: function (value) {
-                    if ("default" === value.trim()) {
-                        return "The view name 'default' is not allowed";
-                    }
-                    return true;
-                },
-                selectOnFocus: true,
-                value: newViewName,
-                disabled: hidden || (canEdit && !viewName)
-            }]
-        },{
-            xtype: "box",
-            style: "padding-left: 122px; padding-bottom: 8px; font-style: italic;",
-            html: "The " + (!config.canEdit ? "current" : "shadowed") + " view is not editable.<br>Please enter an alternate view name.",
-            hidden: canEdit
-        },{
-            // spacer
-            xtype: "box",
-            height: 8
-        },{
-            xtype: "checkbox",
-            itemId: "sharedField",
-            name: "saveCustomView_shared",
-            fieldLabel: "Shared",
-            boxLabel: "Make this grid view available to all users",
-            checked: shared,
-            disabled: disableSharedAndInherit || !canEditSharedViews
-        },{
-            xtype: "checkbox",
-            itemId: "inheritField",
-            name: "saveCustomView_inherit",
-            fieldLabel: "Inherit",
-            boxLabel: "Make this grid view available in child folders",
-            checked: containerFilterable && inherit,
-            disabled: disableSharedAndInherit || !containerFilterable,
-            hidden: !containerFilterable,
-            listeners: {
-                check: function (checkbox, checked) {
-                    Ext4.ComponentMgr.get("saveCustomView_targetContainer").setDisabled(!checked);
-                }
-            }
-        },{
-            xtype: "combo",
-            itemId: "targetContainer",
-            name: "saveCustomView_targetContainer",
-            id: "saveCustomView_targetContainer",
-            fieldLabel: "Save in Folder",
-            store: containerStore,
-            value: containerPath,
-            displayField: 'path',
-            valueField: 'path',
-            width: 300,
-            triggerAction: 'all',
-            mode: 'local',
-            editable: false,
-            hidden: !containerFilterable,
-            disabled: disableSharedAndInherit || !containerFilterable || !inherit,
-            listeners: {
-                select: function (combobox) {
-                    if (!warnedAboutMoving && combobox.getValue() != containerPath)
-                    {
-                        warnedAboutMoving = true;
-                        Ext4.Msg.alert("Moving a Saved View", "If you save, this view will be moved from '" + containerPath + "' to " + combobox.getValue());
-                    }
-                }
-            }
-        }],
-        buttons: [{
-            text: "Save",
-            handler: function () {
-                var nameField = win.down('#nameFieldContainer').items.get(1);
-                if (!nameField.isValid())
-                {
-                    Ext4.Msg.alert("Invalid view name", "The view name must be less than 50 characters long and not 'default'.");
-                    return;
-                }
-                if (!canEdit && viewName == nameField.getValue())
-                {
-                    Ext4.Msg.alert("Error saving", "This view is not editable.  You must save this view with an alternate name.");
-                    return;
-                }
-
-                var o = {};
-                if (hidden)
-                {
-                    o = {
-                        name: viewName,
-                        shared: shared,
-                        hidden: true,
-                        session: session // set session=false for hidden views?
-                    };
-                }
-                else
-                {
-                    o.name = "";
-                    if (!win.down('#defaultNameField').getValue()) {
-                        o.name = nameField.getValue();
-                    }
-                    o.session = false;
-                    if (!o.session && canEditSharedViews)
-                    {
-                        o.shared = win.down('#sharedField').getValue();
-                        // Issue 13594: disallow setting inherit bit if query view has no available container filters
-                        o.inherit = containerFilterable && win.down('#inheritField').getValue();
-                    }
-                }
-
-                if (o.inherit) {
-                    o.containerPath = win.down('#targetContainer').getValue();
-                }
-
-                // Callback is responsible for closing the save dialog window on success.
-                success.call(scope, win, o);
-            },
-            scope: this
-        },{
-            text: "Cancel",
-            handler: function () {
-                win.close();
-            }
-        }]
-    });
-};

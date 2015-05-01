@@ -1949,10 +1949,11 @@ if (!LABKEY.DataRegions)
         }
 
         // Get the canEditSharedViews permission and candidate targetContainers.
-        var viewName = (this.view && this.view.name) || this.viewName || '';
+        var viewName = (region.view && region.view.name) || region.viewName || '';
+
         LABKEY.Query.getQueryDetails({
-            schemaName: this.schemaName,
-            queryName: this.queryName,
+            schemaName: region.schemaName,
+            queryName: region.queryName,
             viewName: viewName,
             initializeMissingView: false,
             success: function (json) {
@@ -1976,7 +1977,7 @@ if (!LABKEY.DataRegions)
             allowableContainerFilters: region.allowableContainerFilters,
             targetContainers: queryDetails.targetContainers,
             canEditSharedViews: queryDetails.canEditSharedViews,
-            canEdit: this.getCustomViewEditableErrors(config).length == 0,
+            canEdit: LABKEY.DataRegion2.getCustomViewEditableErrors(config).length == 0,
             success: function (win, o) {
                 var timerId = setTimeout(function() {
                     timerId = 0;
@@ -2019,7 +2020,9 @@ if (!LABKEY.DataRegions)
             scope: region
         }, region.view);
 
-        LABKEY.DataRegion2.saveCustomizeViewPrompt(config);
+        LABKEY.DataRegion2.loadViewDesigner(function() {
+            LABKEY.internal.ViewDesigner.Designer.saveCustomizeViewPrompt(config);
+        });
     };
 
     var _setParameter = function(region, param, value, skipPrefixes /* optional */) {
