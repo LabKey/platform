@@ -69,6 +69,7 @@ import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
@@ -1292,6 +1293,11 @@ public class AnnouncementsController extends SpringActionController
                 AnnouncementManager.updateAnnouncement(getUser(), update, files);
             }
             catch (AttachmentService.DuplicateFilenameException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+                return false;
+            }
+            catch (RuntimeValidationException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
                 return false;
