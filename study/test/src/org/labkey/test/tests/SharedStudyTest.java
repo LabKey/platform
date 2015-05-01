@@ -202,8 +202,8 @@ public class SharedStudyTest extends BaseWebDriverTest
     public void testEditVisitDescription()
     {
         goToManageStudy();
-        click(Locator.linkWithText("manage shared visits"));
-        click(Locator.xpath("//th[text() = 'Visit 1']/../td/a[text() = 'edit']"));
+        clickAndWait(Locator.linkWithText("manage shared visits"));
+        clickAndWait(Locator.xpath("//th[text() = 'Visit 1']/../td/a[text() = 'edit']"));
         setFormElement(Locator.name("description"), "This is the first visit");
         clickButton("Save");
 
