@@ -507,7 +507,7 @@ public class SpecimenImporter
 
     private static class SpecimenLoadInfo
     {
-        TempTableInfo _tti;
+        TempTableInfo _tempTableInfo;
         private final String _tempTableName;
         private final List<SpecimenColumn> _availableColumns;
         private final int _rowCount;
@@ -515,15 +515,15 @@ public class SpecimenImporter
         private final User _user;
         private final DbSchema _schema;
 
-        public SpecimenLoadInfo(User user, Container container, DbSchema schema, List<SpecimenColumn> availableColumns, int rowCount, TempTableInfo tti)
+        public SpecimenLoadInfo(User user, Container container, DbSchema schema, List<SpecimenColumn> availableColumns, int rowCount, TempTableInfo tempTableInfo)
         {
             _user = user;
             _schema = schema;
             _container = container;
             _availableColumns = availableColumns;
             _rowCount = rowCount;
-            _tempTableName = tti.getSelectName();
-            _tti = tti;
+            _tempTableName = tempTableInfo.getSelectName();
+            _tempTableInfo = tempTableInfo;
         }
 
         // Number of rows inserted into the temp table
@@ -1359,7 +1359,7 @@ public class SpecimenImporter
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
             // where the table is no longer available.  Note that this means that the temp table will stick around
             // if an exception is thrown during loading, but this is probably okay- the DB will clean it up eventually.
-            loadInfo._tti.delete();
+            loadInfo._tempTableInfo.delete();
 
             _iTimer.setPhase(ImportPhases.UpdateAllStatistics);
             updateAllStatistics();
@@ -1396,21 +1396,17 @@ public class SpecimenImporter
 
     private SpecimenLoadInfo populateTempSpecimensTable(SpecimenImportFile file, boolean merge) throws SQLException, IOException, ValidationException
     {
-        Pair<Pair<TempTableInfo, TempTableInfo>, Runnable> p = createTempTable();
-        TempTableInfo tti = p.first.first;
-        TempTableInfo tti2 = p.first.second;        // Table not created; we'll insert into it
-        Runnable createIndexes = p.second;
+        TempTablesHolder tempTablesHolder = createTempTable();
 
-
-        Pair<List<SpecimenColumn>, Integer> pair = populateTempTable(tti, tti2, file, merge);
+        Pair<List<SpecimenColumn>, Integer> pair = populateTempTable(tempTablesHolder, file, merge);
         List<SpecimenColumn> columns = pair.first;
         Integer rowCount = pair.second;
 
-        createIndexes.run();
+        tempTablesHolder.getCreateIndexes().run();
 
-        if (tti2.isTracking())      // If no specimens we will not have created this table
-            tti2.delete();
-        return new SpecimenLoadInfo(_user, _container, DbSchema.getTemp(), columns, rowCount, tti);
+        if (tempTablesHolder.getSelectInsertTempTableInfo().isTracking())      // If no specimens we will not have created this table
+            tempTablesHolder.getSelectInsertTempTableInfo().delete();
+        return new SpecimenLoadInfo(_user, _container, DbSchema.getTemp(), columns, rowCount, tempTablesHolder.getTempTableInfo());
     }
 
 
@@ -3077,10 +3073,11 @@ public class SpecimenImporter
     }
 
 
-    private Pair<List<SpecimenColumn>, Integer> populateTempTable(TempTableInfo tti, TempTableInfo tti2, SpecimenImportFile file, boolean merge)
-        throws SQLException, IOException, ValidationException
+    private Pair<List<SpecimenColumn>, Integer> populateTempTable(TempTablesHolder tempTablesHolder, SpecimenImportFile file, boolean merge)
+            throws SQLException, IOException, ValidationException
     {
         info("Populating specimen temp table...");
+        TempTableInfo tempTableInfo = tempTablesHolder.getTempTableInfo();
         int rowCount;
         List<SpecimenColumn> loadedColumns = new ArrayList<>();
 
@@ -3201,7 +3198,7 @@ public class SpecimenImporter
         {
             try
             {
-                pair = replaceTable(tti.getSchema(), file, tti.getSelectName(), tti, true, false, drawDateCol, drawTimeCol,
+                pair = replaceTable(tempTableInfo.getSchema(), file, tempTableInfo.getSelectName(), tempTableInfo, true, false, drawDateCol, drawTimeCol,
                         lsidCol, sequencenumCol, computedParticipantIdCol);
 
                 loadedColumns = pair.first;
@@ -3213,13 +3210,13 @@ public class SpecimenImporter
                     return pair;
                 }
 
-                remapTempTableLookupIndexes(tti.getSchema(), tti.getSelectName(), loadedColumns);
+                remapTempTableLookupIndexes(tempTableInfo.getSchema(), tempTableInfo.getSelectName(), loadedColumns);
 
-                updateTempTableVisits(tti.getSchema(), tti.getSelectName());
+                updateTempTableVisits(tempTableInfo.getSchema(), tempTableInfo.getSelectName());
 
                 if (merge)
                 {
-                    checkForConflictingSpecimens(tti.getSchema(), tti.getSelectName(), loadedColumns);
+                    checkForConflictingSpecimens(tempTableInfo.getSchema(), tempTableInfo.getSelectName(), loadedColumns);
                 }
             }
             catch (Table.OptimisticConflictException e)
@@ -3233,7 +3230,7 @@ public class SpecimenImporter
                 break;
         }
 
-        updateTempTableSpecimenHash(tti, tti2, loadedColumns);
+        updateTempTableSpecimenHash(tempTablesHolder, loadedColumns);
 
         info("Specimen temp table populated.");
         return pair;
@@ -3402,12 +3399,12 @@ public class SpecimenImporter
         }
     }
 
-    private void updateTempTableSpecimenHash(TempTableInfo tti, TempTableInfo tti2, List<SpecimenColumn> loadedColumns)
+    private void updateTempTableSpecimenHash(TempTablesHolder tempTablesHolder, List<SpecimenColumn> loadedColumns)
             throws SQLException
     {
-        DbSchema schema = tti.getSchema();
-        String tempTable = tti.getSelectName();
-        String newTempTable = tti2.getSelectName();
+        DbSchema schema = tempTablesHolder.getTempTableInfo().getSchema();
+        String tempTableName = tempTablesHolder.getTempTableInfo().getSelectName();
+        String selectInsertTempTableName = tempTablesHolder.getSelectInsertTempTableInfo().getSelectName();
 
         // NOTE: In merge case, we've already checked the specimen hash columns are not in conflict.
         SQLFragment conflictResolvingSubselect = new SQLFragment("SELECT GlobalUniqueId");
@@ -3416,7 +3413,7 @@ public class SpecimenImporter
             if (col.getTargetTable().isSpecimens())
             {
                 conflictResolvingSubselect.append(",\n\t");
-                String selectCol = tempTable + "." + col.getLegalDbColumnName(_dialect);
+                String selectCol = tempTableName + "." + col.getLegalDbColumnName(_dialect);
 
                 if (col.getAggregateEventFunction() != null)
                     conflictResolvingSubselect.append(col.getAggregateEventFunction()).append("(").append(selectCol).append(")");
@@ -3441,7 +3438,7 @@ public class SpecimenImporter
                 conflictResolvingSubselect.append(" AS ").append(col.getLegalDbColumnName(_dialect));
             }
         }
-        conflictResolvingSubselect.append("\nFROM ").append(tempTable).append("\nGROUP BY GlobalUniqueId");
+        conflictResolvingSubselect.append("\nFROM ").append(tempTableName).append("\nGROUP BY GlobalUniqueId");
 
         SQLFragment updateHashSql = new SQLFragment("SELECT (");
 
@@ -3463,7 +3460,7 @@ public class SpecimenImporter
 
         updateHashSql.append(") AS SpecimenHash, ")
                 .append("InnerTable.GlobalUniqueId");
-        updateHashSql.append("\n\tINTO ").append(newTempTable)
+        updateHashSql.append("\n\tINTO ").append(selectInsertTempTableName)
                 .append("\n\tFROM (").append(conflictResolvingSubselect).append(") InnerTable");
 
         info("Calculating specimen hash values into second temp table...");
@@ -3471,12 +3468,12 @@ public class SpecimenImporter
             info(updateHashSql.toDebugString());
         executeSQL(schema, updateHashSql);
         info("Done calculating specimen hash values.");
-        tti2.track();   // We've now created the second temp table
+        tempTablesHolder.getSelectInsertTempTableInfo().track();   // We've now created the second temp table
 
         SQLFragment setSpecimenHashSql = new SQLFragment("UPDATE ");
-        setSpecimenHashSql.append(tempTable).append(" SET SpecimenHash = InnerTable.SpecimenHash\nFROM ")
-                .append(newTempTable).append(" InnerTable\nWHERE ")
-                .append(tempTable).append(".GlobalUniqueId = InnerTable.GlobalUniqueId");
+        setSpecimenHashSql.append(tempTableName).append(" SET SpecimenHash = InnerTable.SpecimenHash\nFROM ")
+                .append(selectInsertTempTableName).append(" InnerTable\nWHERE ")
+                .append(tempTableName).append(".GlobalUniqueId = InnerTable.GlobalUniqueId");
 
         info("Updating specimen hash values in temp table...");
         if (DEBUG)
@@ -3532,8 +3529,33 @@ public class SpecimenImporter
     private static final boolean DEBUG = false;
     private static final boolean VERBOSE_DEBUG = false;
 
+    private static class TempTablesHolder
+    {
+        private final TempTableInfo _tempTableInfo;             // main specimen temp table
+        private final TempTableInfo _selectInsertTempTableInfo; // temp table used to Select Insert into while populating main temp table
+        private final Runnable _createIndexes;
 
-    private Pair<Pair<TempTableInfo, TempTableInfo>, Runnable> createTempTable()
+        public TempTablesHolder(TempTableInfo tempTableInfo, TempTableInfo selectInsertTempTableInfo, Runnable createIndexes)
+        {
+            _tempTableInfo = tempTableInfo;
+            _selectInsertTempTableInfo = selectInsertTempTableInfo;
+            _createIndexes = createIndexes;
+        }
+
+        public TempTableInfo getTempTableInfo() {
+            return _tempTableInfo;
+        }
+
+        public TempTableInfo getSelectInsertTempTableInfo() {
+            return _selectInsertTempTableInfo;
+        }
+
+        public Runnable getCreateIndexes() {
+            return _createIndexes;
+        }
+    }
+
+    private TempTablesHolder createTempTable()
     {
 
         info("Creating temp table to hold archive data...");
@@ -3570,12 +3592,12 @@ public class SpecimenImporter
         }
         sql.append("\n);");
 
-        TempTableInfo tti = new TempTableInfo("SpecimenUpload", columns, Arrays.asList("RowId"));
-        final String fullTableName = tti.getSelectName();
+        TempTableInfo tempTableInfo = new TempTableInfo("SpecimenUpload", columns, Arrays.asList("RowId"));
+        final String fullTableName = tempTableInfo.getSelectName();
 
         sql.insert(0, "CREATE TABLE " + fullTableName + " ");
         executeSQL(DbSchema.getTemp(), sql);
-        tti.track();
+        tempTableInfo.track();
 
         // globalUniquId
         final String globalUniqueIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_GlobalUniqueId ON " + fullTableName + "(GlobalUniqueId)";
@@ -3587,8 +3609,7 @@ public class SpecimenImporter
         ArrayList<ColumnInfo> columns2 = new ArrayList<>();
         columns2.add(new ColumnInfo(GLOBAL_UNIQUE_ID.getDbColumnName(), GLOBAL_UNIQUE_ID.getJdbcType(), GLOBAL_UNIQUE_ID.getMaxSize(), true));
         columns2.add(new ColumnInfo("SpecimenHash", JdbcType.VARCHAR, 300, true));
-        TempTableInfo tti2 = new TempTableInfo("SpecimenUpload2", columns2, Collections.singletonList("RowId"));
-        final String fullTableName2 = tti.getSelectName();
+        TempTableInfo selectInsertTempTableInfo = new TempTableInfo("SpecimenUpload2", columns2, Collections.singletonList("RowId"));
 
         final String rowIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_RowId ON " + fullTableName + "(RowId)";
         final String lsidIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_LSID ON " + fullTableName + "(LSID)";
@@ -3614,7 +3635,7 @@ public class SpecimenImporter
         };
 
         info("Created temporary table " + fullTableName);
-        return new Pair<>(new Pair<>(tti, tti2),createIndexes);
+        return new TempTablesHolder(tempTableInfo, selectInsertTempTableInfo ,createIndexes);
     }
 
 
