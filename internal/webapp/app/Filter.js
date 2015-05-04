@@ -621,7 +621,13 @@ Ext.define('LABKEY.app.model.Filter', {
         },
 
         sorters: {
-            SORT_EMPTY_FIRST: false,
+            // 0 == 'auto / no special treatment', 1 == 'first', 2 == 'last',
+            SORT_EMPTY_TYPE: {
+                AUTO: 0,
+                FIRST: 1,
+                LAST: 2
+            },
+            SORT_EMPTY: 0,
             _reA: /[^a-zA-Z]/g,
             _reN: /[^0-9]/g,
             /**
@@ -633,13 +639,12 @@ Ext.define('LABKEY.app.model.Filter', {
              */
             alphaNum : function(a, b) {
                 a = a.toLowerCase(); b = b.toLowerCase();
-                if (LABKEY.app.model.Filter.sorters.SORT_EMPTY_FIRST && (a == 'null' || b == 'null')) {
-                    var aEmpty = a == 'null'; var bEmpty = b == 'null';
-                    if (aEmpty && bEmpty) {
-                        return 0;
-                    }
-                    return aEmpty ? -1 : 1;
+
+                var _empty = LABKEY.app.model.Filter.sorters.handleEmptySort(a, b);
+                if (_empty !== undefined) {
+                    return _empty;
                 }
+
                 var aA = a.replace(LABKEY.app.model.Filter.sorters._reA, "");
                 var bA = b.replace(LABKEY.app.model.Filter.sorters._reA, "");
                 if (aA === bA) {
@@ -649,20 +654,19 @@ Ext.define('LABKEY.app.model.Filter', {
                 }
                 return aA > bA ? 1 : -1;
             },
-            natural : function (as, bs) {
+            natural : function (aso, bso) {
                 // http://stackoverflow.com/questions/19247495/alphanumeric-sorting-an-array-in-javascript
                 var a, b, a1, b1, i= 0, n, L,
                         rx=/(\.\d+)|(\d+(\.\d+)?)|([^\d.]+)|(\.\D+)|(\.$)/g;
-                if (as === bs) return 0;
-                a = as.toLowerCase().match(rx);
-                b = bs.toLowerCase().match(rx);
-                if (LABKEY.app.model.Filter.sorters.SORT_EMPTY_FIRST && (a == 'null' || b == 'null')) {
-                    var aEmpty = a == 'null'; var bEmpty = b == 'null';
-                    if (aEmpty && bEmpty) {
-                        return 0;
-                    }
-                    return aEmpty ? -1 : 1;
+                if (aso === bso) return 0;
+                a = aso.toLowerCase().match(rx);
+                b = bso.toLowerCase().match(rx);
+
+                var _empty = LABKEY.app.model.Filter.sorters.handleEmptySort(a, b);
+                if (_empty !== undefined) {
+                    return _empty;
                 }
+
                 L = a.length;
                 while (i < L) {
                     if (!b[i]) return 1;
@@ -674,6 +678,25 @@ Ext.define('LABKEY.app.model.Filter', {
                     }
                 }
                 return b[i] ? -1 : 0;
+            },
+            handleEmptySort : function(a, b) {
+                if (LABKEY.app.model.Filter.sorters.SORT_EMPTY !== 0 && (a == 'null' || b == 'null')) {
+                    var aEmpty = a == 'null';
+                    var bEmpty = b == 'null';
+
+                    // both are empty
+                    if (aEmpty && bEmpty) {
+                        return 0;
+                    }
+
+                    if (LABKEY.app.model.Filter.sorters.SORT_EMPTY === 1 /* first */) {
+                        return aEmpty ? -1 : 1;
+                    }
+                    else if (LABKEY.app.model.Filter.sorters.SORT_EMPTY === 2 /* last */) {
+                        return aEmpty ? 1 : -1;
+                    }
+                }
+                // return undefined;
             },
             resolveSortStrategy : function(sortStrategy) {
                 switch (sortStrategy) {
