@@ -277,8 +277,8 @@ public class PipelineEmailPreferences
 
     private void _setProperty(Container c, String name, String value)
     {
-        if (c.isRoot() && "".equals(value))
-            return;
+        if ("".equals(value))
+            value = null;
         PipelineService.get().setPipelineProperty(c, name, value);
     }
 
