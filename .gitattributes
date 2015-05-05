@@ -539,6 +539,7 @@ core/webapp/printStyle.css -text
 core/webapp/stylesheet.css -text
 dataintegration/Dataintegration.iml -text
 dataintegration/module.properties -text
+dataintegration/resources/queries/dataintegration/TransformHistory/.qview.xml -text
 dataintegration/resources/schemas/dataintegration.xml -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.00-13.10.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.10-13.20.sql -text
