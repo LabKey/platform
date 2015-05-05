@@ -63,6 +63,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.test.TestTimeout;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -1213,7 +1214,14 @@ public class ContainerManager
         List<String> errors = new ArrayList<>();
         for (ContainerListener listener : getListeners())
         {
-            errors.addAll(listener.canMove(c, newParent, user));
+            try
+            {
+                errors.addAll(listener.canMove(c, newParent, user));
+            }
+            catch (Exception e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, new IllegalStateException(listener.getClass().getName() + ".canMove() threw an exception or violated @NotNull contract"));
+            }
         }
         if (!errors.isEmpty())
         {
