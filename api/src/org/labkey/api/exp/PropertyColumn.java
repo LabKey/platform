@@ -16,6 +16,7 @@
 package org.labkey.api.exp;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -321,6 +322,7 @@ public class PropertyColumn extends LookupColumn
         return _pd.getPropertyType().getJavaType();
     }
 
+    @NotNull
     @Override
     public List<? extends IPropertyValidator> getValidators()
     {

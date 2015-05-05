@@ -1937,12 +1937,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return conditionalFormats;
     }
 
-    public void setConditionalFormats(List<ConditionalFormat> formats)
+    public void setConditionalFormats(@NotNull List<ConditionalFormat> formats)
     {
         checkLocked();
         this.conditionalFormats.clear();
-        if (null != formats)
-            this.conditionalFormats.addAll(formats);
+        this.conditionalFormats.addAll(formats);
     }
 
     @NotNull
