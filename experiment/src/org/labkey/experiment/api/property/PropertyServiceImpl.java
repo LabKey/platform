@@ -177,7 +177,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
     }
 
     @Override
-    public List<IPropertyValidator> getPropertyValidators(PropertyDescriptor desc)
+    public @NotNull List<IPropertyValidator> getPropertyValidators(PropertyDescriptor desc)
     {
         List<IPropertyValidator> validators = new ArrayList<>();
 
@@ -201,7 +201,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
     }
 
     @Override
-    public List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc)
+    public @NotNull List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc)
     {
         return DomainPropertyManager.get().getConditionalFormats(desc);
     }

@@ -126,7 +126,7 @@ public class DomainPropertyManager
         return getConditionalFormats(property._pd);
     }
 
-    public List<ConditionalFormat> getConditionalFormats(PropertyDescriptor property)
+    public @NotNull List<ConditionalFormat> getConditionalFormats(PropertyDescriptor property)
     {
         List<ConditionalFormat> result = new ArrayList<>();
         if (property != null && property.getPropertyId() != 0)
