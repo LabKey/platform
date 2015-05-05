@@ -1042,12 +1042,13 @@ public class ListManager implements SearchService.DocumentProvider
             unsavedList.getDomain().addPropertyOfPropertyDescriptor(ipd.pd);
         }
 
+        // Must save the list before attempting to save conditional formats, see #23235
+        unsavedList.save(user);
+
         for (Map.Entry<String, List<ConditionalFormat>> entry : pds.formats.entrySet())
         {
             PropertyService.get().saveConditionalFormats(user, OntologyManager.getPropertyDescriptor(entry.getKey(), container), entry.getValue());
         }
-
-        unsavedList.save(user);
 
         return true;
     }
