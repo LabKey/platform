@@ -31,13 +31,13 @@ import java.util.TreeSet;
 
 public class ReportContentEmailManager
 {
-    // We always store one of these as the first "category" in the delimted category string
+    // We always store one of these as the first "category" in the delimited category string
     public enum NotifyOption
     {
         NONE
         {
             public int getSpecialCategoryId() {return -1;}
-            public  Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
+            public Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
                                                                                      SortedSet<Integer> categories, SortedSet<Integer> allCategories)
             {
                 return Collections.emptyMap();
@@ -46,7 +46,7 @@ public class ReportContentEmailManager
         ALL
         {
             public int getSpecialCategoryId() {return -2;}
-            public  Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
+            public Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
                                                                                      SortedSet<Integer> categories, SortedSet<Integer> allCategories)
             {
                 return SELECT.getReportsForUserByCategory(reportInfosByCategory, allCategories, allCategories);

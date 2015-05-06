@@ -468,9 +468,9 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         List<ViewCategoryTreeNode> viewCategoryTreeNodes = new ArrayList<>();
 
         // Add Uncategorized category
-        ViewCategory uncategoriedCategory = ReportUtil.getDefaultCategory(container, null, null);
-        uncategoriedCategory.setRowId(UNCATEGORIZED_ROWID);
-        viewCategoryTreeNodes.add(makeTreeNode(uncategoriedCategory, subscriptionSet));
+        ViewCategory uncategorizedCategory = ReportUtil.getDefaultCategory(container, null, null);
+        uncategorizedCategory.setRowId(UNCATEGORIZED_ROWID);
+        viewCategoryTreeNodes.add(makeTreeNode(uncategorizedCategory, subscriptionSet));
 
         for (ViewCategory category : categories)
         {

@@ -1892,11 +1892,6 @@ public class ModuleLoader implements Filter
         enabledStates.save();
     }
 
-    public void registerResourceLoader(ModuleResourceLoader loader)
-    {
-        registerResourceLoaders(Collections.singleton(loader));
-    }
-
     public void registerResourceLoaders(Set<? extends ModuleResourceLoader> loaders)
     {
         synchronized (_resourceLoaders)
