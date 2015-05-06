@@ -102,7 +102,7 @@ public class AnnouncementManager
     private static final CommSchema _comm = CommSchema.getInstance();
     private static final CoreSchema _core = CoreSchema.getInstance();
 
-    public static enum EmailOption
+    public enum EmailOption
     {
         NONE(0),
         ALL(1),
@@ -112,9 +112,9 @@ public class AnnouncementManager
         public static final int PREFERENCE_MASK = 255;
         public static final int NOTIFICATION_TYPE_DIGEST = 256; // If this bit is set, send daily digest instead of individual email for each post
 
-        private int value;
+        private final int value;
 
-        private static Map<Integer, EmailOption> map = new HashMap<Integer, EmailOption>();
+        private static final Map<Integer, EmailOption> map = new HashMap<>();
 
         static
         {
@@ -124,7 +124,7 @@ public class AnnouncementManager
             }
         }
 
-        private EmailOption(int value)
+        EmailOption(int value)
         {
             this.value = value;
         }
@@ -134,19 +134,10 @@ public class AnnouncementManager
             return this.value;
         }
 
-        public static EmailOption valueOf(int intValue) throws IllegalArgumentException
-        {
-            if (map.containsKey(intValue))
-                return map.get(intValue);
-            else
-                throw new IllegalArgumentException("Invalid email setting option: " + intValue);
-        }
-
         public static Boolean isValid(int intValue)
         {
             return map.containsKey(intValue);
         }
-
     }
 
     public static EmailOption EMAIL_DEFAULT_OPTION = EmailOption.MINE;

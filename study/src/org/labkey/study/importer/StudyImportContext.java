@@ -108,7 +108,7 @@ public class StudyImportContext extends AbstractContext
 
     // TODO: this should go away once study import fully supports using VirtualFile
     @Deprecated
-    public File getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
+    private File getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
     {
         File rootFile = new File(root.getLocation());
         File dirFile = new File(dir.getLocation());
