@@ -144,55 +144,20 @@ LABKEY.vis.internal.Axis = function() {
 
         addEvents(textEls);
 
-        var tickAreaX = function() {
-            return this.nextSibling.getBBox().x - tickRectWidthOffset/2;
-        };
-
-        var tickAreaY = function() {
-            return this.nextSibling.getBBox().y - tickRectHeightOffset/2;
-        };
-
-        var tickAreaWidth = function() {
-            return this.nextSibling.getBBox().width + tickRectWidthOffset;
-        };
-
-        var tickAreaHeight = function() {
-            return this.nextSibling.getBBox().height + tickRectHeightOffset;
-        };
-
         var addTickAreaRects = function (anchors)
         {
             anchors.selectAll('rect.' + (tickRectCls?tickRectCls:"tick-rect")).remove();
 
             anchors.insert("rect", "text")
                     .attr('class', (tickRectCls?tickRectCls:"tick-rect"))
-                    .attr('x', tickAreaX)
-                    .attr('y', tickAreaY)
-                    .attr('width', tickAreaWidth)
-                    .attr('height', tickAreaHeight)
+                    .attr('x', function() { return this.nextSibling.getBBox().x - tickRectWidthOffset/2; })
+                    .attr('y', function() { return this.nextSibling.getBBox().y - tickRectHeightOffset/2; })
+                    .attr('width', function() { return this.nextSibling.getBBox().width + tickRectWidthOffset; })
+                    .attr('height', function() { return this.nextSibling.getBBox().height + tickRectHeightOffset; })
                     .attr('fill', tickTextBkgdColor)
                     .attr('fill-opacity', 0);
 
             addEvents(anchors.select('rect.' + (tickRectCls?tickRectCls:"tick-rect")));
-        };
-
-        if (tickHover || tickClick || tickMouseOver || tickMouseOut)
-            addTickAreaRects(textAnchors);
-
-        var highlightX = function() {
-            return this.nextSibling.getBBox().x - 4;
-        };
-
-        var highlightY = function() {
-            return this.nextSibling.getBBox().y - 3;
-        };
-
-        var highlightWidth = function() {
-            return this.nextSibling.getBBox().width + 8;
-        };
-
-        var highlightHeight = function() {
-            return this.nextSibling.getBBox().height + 6;
         };
 
         var addHighlightRects = function (anchors)
@@ -201,16 +166,19 @@ LABKEY.vis.internal.Axis = function() {
 
             anchors.insert("rect", "text")
                     .attr('class', 'highlight')
-                    .attr('x', highlightX)
-                    .attr('y', highlightY)
-                    .attr('width', highlightWidth)
-                    .attr('height', highlightHeight)
+                    .attr('x', function() { return this.nextSibling.getBBox().x - 4; })
+                    .attr('y', function() { return this.nextSibling.getBBox().y - 3; })
+                    .attr('width', function() { return this.nextSibling.getBBox().width + 8; })
+                    .attr('height', function() { return this.nextSibling.getBBox().height + 6; })
                     .attr('fill', tickTextBkgdColor);
 
             addEvents(anchors.select('rect.highlight'));
         };
 
-        addHighlightRects(textAnchors);
+        if (tickHover || tickClick || tickMouseOver || tickMouseOut) {
+            addTickAreaRects(textAnchors);
+            addHighlightRects(textAnchors);
+        }
 
         if (orientation == 'bottom') {
             hasOverlap = false;
@@ -227,13 +195,22 @@ LABKEY.vis.internal.Axis = function() {
                 textEls.attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';})
                         .attr('text-anchor', 'start');
 
-                addTickAreaRects(textAnchors);
-                textAnchors.selectAll("rect." + (tickRectCls?tickRectCls:"tick-rect"))
-                        .attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';});
+                if (tickHover || tickClick || tickMouseOver || tickMouseOut)
+                {
+                    addTickAreaRects(textAnchors);
+                    textAnchors.selectAll("rect." + (tickRectCls ? tickRectCls : "tick-rect"))
+                            .attr('transform', function (v)
+                            {
+                                return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';
+                            });
 
-                addHighlightRects(textAnchors);
-                textAnchors.selectAll('rect.highlight')
-                        .attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';});
+                    addHighlightRects(textAnchors);
+                    textAnchors.selectAll('rect.highlight')
+                            .attr('transform', function (v)
+                            {
+                                return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';
+                            });
+                }
 
             } else {
                 textEls.attr('transform', '');
