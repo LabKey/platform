@@ -205,6 +205,12 @@ public class CustomFolderType implements FolderType
     }
 
     @Override
+    public boolean isProjectOnlyType()
+    {
+        return false;
+    }
+
+    @Override
     public boolean hasConfigurableTabs()
     {
         return false;

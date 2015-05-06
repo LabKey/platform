@@ -172,6 +172,9 @@ public interface FolderType
     /** @return whether this is intended to be used exclusively for workbooks */
     public boolean isWorkbookType();
 
+    /** @return whether this is allowed only as a project */
+    public boolean isProjectOnlyType();
+
     /** @return whether this has container tabs */
     public boolean hasContainerTabs();
 

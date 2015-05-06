@@ -428,9 +428,16 @@ public class DefaultFolderType implements FolderType
         return new AppBar(title, context.getContainer().getStartURL(context.getUser()), startPage);
     }
 
+    @Override
     public boolean isWorkbookType()
     {
         return workbookType;
+    }
+
+    @Override
+    public boolean isProjectOnlyType()
+    {
+        return false;
     }
 
     public void setWorkbookType(boolean workbookType)
