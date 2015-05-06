@@ -321,7 +321,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         assertElementPresent(Locators.labkeyError.containing("Duplicate: Panda = " + overlappingParticipant));
     }
 
-    @Test
+    @Test @Ignore("Planned feature")
     public void testMultiStudyParticipantGroup()
     {
         final String mixed_group = "Mixed Group";
