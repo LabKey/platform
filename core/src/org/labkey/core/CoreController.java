@@ -1365,6 +1365,7 @@ public class CoreController extends SpringActionController
                 folderTypeJSON.put("label", folderType.getLabel());
                 folderTypeJSON.put("workbookType", folderType.isWorkbookType());
                 folderTypeJSON.put("hasRestrictedModule", Container.hasRestrictedModule(folderType));
+                folderTypeJSON.put("isProjectOnlyType", folderType.isProjectOnlyType());
                 List<String> activeModulesJSON = new ArrayList<>();
                 for (Module module : folderType.getActiveModules())
                 {

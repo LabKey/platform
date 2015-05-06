@@ -76,7 +76,7 @@ var defaultModules = new Object();
     Module defaultModule = c.getDefaultModule(getUser());
     FolderType folderType = c.getFolderType();
     String path = c.getPath();
-    boolean includeDataspace = c.isProject();       // Only include Dataspace as an option if container is a project
+    boolean includeProjectLevelTypes = c.isProject();       // Only include Dataspace as an option if container is a project
 
     for (FolderType ft : allFolderTypes)
     {
@@ -272,7 +272,7 @@ function checkChangedType()
         int radioIndex = 0;
         for (FolderType ft : allFolderTypes)
         {
-            if (!ft.isWorkbookType() && (includeDataspace || !StudyService.DATASPACE_FOLDERTYPE_NAME.equalsIgnoreCase(ft.getName())))
+            if (!ft.isWorkbookType() && (includeProjectLevelTypes || !ft.isProjectOnlyType()))
             {
     %>
                 <tr>

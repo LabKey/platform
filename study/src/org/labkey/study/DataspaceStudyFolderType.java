@@ -54,4 +54,10 @@ public class DataspaceStudyFolderType extends StudyFolderType
             StudyManager.getInstance().createStudy(user, study);
         }
     }
+
+    @Override
+    public boolean isProjectOnlyType()
+    {
+        return true;
+    }
 }

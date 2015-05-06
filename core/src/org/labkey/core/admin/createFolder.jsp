@@ -87,14 +87,13 @@
         var selectedTemplateWriters = <%=templateWriterTypes%>;
         var userHasEnableRestrictedModulesPermission = <%=userHasEnableRestrictedModulesPermission%>;
         var isParentRoot = <%=isContainerRoot%>;
-        var dataspaceName = "<%=text(StudyService.DATASPACE_FOLDERTYPE_NAME)%>";
 
         request.add(LABKEY.Security.getFolderTypes, {
             success: function(data){
                 var keys = Ext4.Object.getKeys(data);
                 folderTypes = [];
                 Ext4.each(keys, function(k){
-                    if ((userHasEnableRestrictedModulesPermission || !data[k].hasRestrictedModule) && (isParentRoot || data[k].name != dataspaceName))
+                    if ((userHasEnableRestrictedModulesPermission || !data[k].hasRestrictedModule) && (isParentRoot || !data[k].isProjectOnlyType))
                         folderTypes.push(data[k]);
                 });
                 folderTypes = folderTypes.sort(function(a,b){
