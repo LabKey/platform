@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
@@ -290,7 +291,7 @@ public class DataColumn extends DisplayColumn
         {
             String url = renderURLorValueURL(ctx);
 
-            if (null != url)
+            if (StringUtils.isNotBlank(url))
             {
                 out.write("<a href=\"");
                 out.write(PageFlowUtil.filter(url));

@@ -92,17 +92,6 @@ public interface Module extends Comparable<Module>
     String getName();
 
     /**
-     * Description
-     */
-    @Nullable
-    public String getDescription();
-
-    /**
-     * Name to show on the tab in the UI
-     */
-    public String getTabName(ViewContext context);
-
-    /**
      * Return the version of this module. Allows us to track whether
      * module's version has changed.
      */
@@ -110,6 +99,31 @@ public interface Module extends Comparable<Module>
 
     /** @return Formatted version number for display purposes. */
     String getFormattedVersion();
+
+    /** One line description of module's purpose (capitalized and without a period at the end) */
+    @Nullable String getLabel();
+
+    /** Multi-line description of module. */
+    @Nullable String getDescription();
+
+    /** The homepage URL for additional information on the module. */
+    @Nullable String getUrl();
+
+    /** Comma separated list of names and, optionally, email addresses: e.g. "Adam Rauch &lt;adamr@labkey.com&gt;, Kevin Krouse" */
+    @Nullable String getAuthor();
+
+    /** Comma separated list of names and, optionally, email addresses: e.g. "Adam Rauch &lt;adamr@labkey.com&gt;, Kevin Krouse" */
+    @Nullable String getMaintainer();
+
+    @Nullable String getOrganization();
+
+    @Nullable String getOrganizationUrl();
+
+    /** License name: e.g. "Apache 2.0", "GPL-2.0", "MIT" */
+    @Nullable String getLicense();
+
+    /** License URL: e.g. "http://www.apache.org/licenses/LICENSE-2.0" */
+    @Nullable String getLicenseUrl();
 
     /**
      * Called on every module in REVERSE dependency order before versionUpdate() is called, as long as at least one module
@@ -166,6 +180,11 @@ public interface Module extends Comparable<Module>
     public Map<String, Class<? extends Controller>> getControllerNameToClass();
 
     public Map<Class<? extends Controller>, String> getControllerClassToName();
+
+    /**
+     * Name to show on the tab in the UI
+     */
+    public String getTabName(ViewContext context);
 
     /**
      * Returns the url that will be the target of a click on the module's tab.
@@ -229,8 +248,8 @@ public interface Module extends Comparable<Module>
 
     public String getSourcePath();
     public String getBuildPath();
-    public String getSvnRevision();
-    public String getSvnUrl();
+    public String getVcsRevision();
+    public String getVcsUrl();
     public Map<String, String> getProperties();
     public Set<String> getModuleDependenciesAsSet();
     public Set<Module> getResolvedModuleDependencies();

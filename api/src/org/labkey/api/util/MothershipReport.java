@@ -259,15 +259,15 @@ public class MothershipReport implements Runnable
     public void addServerSessionParams()
     {
         Module coreModule = ModuleLoader.getInstance().getCoreModule();
-        if (coreModule.getSvnRevision() != null)
+        if (coreModule.getVcsRevision() != null)
         {
-            addParam("svnRevision", coreModule.getSvnRevision());
+            addParam("svnRevision", coreModule.getVcsRevision());
         }
-        if (!NumberUtils.isDigits(coreModule.getSvnRevision()))
+        if (!NumberUtils.isDigits(coreModule.getVcsRevision()))
         {
             addParam("description", "Core v" + coreModule.getFormattedVersion());
         }
-        String svnURL = coreModule.getSvnUrl();
+        String svnURL = coreModule.getVcsUrl();
         if (svnURL != null)
         {
             addParam("svnURL", svnURL);

@@ -98,18 +98,6 @@ public class MockModule implements Module
     }
 
     @Override
-    public String getDescription()
-    {
-        return null;
-    }
-
-    @Override
-    public String getTabName(ViewContext context)
-    {
-        return _name;
-    }
-
-    @Override
     public double getVersion()
     {
         return _version;
@@ -119,6 +107,73 @@ public class MockModule implements Module
     public String getFormattedVersion()
     {
         return ModuleContext.formatVersion(getVersion());
+    }
+
+    @Override
+    public String getLabel()
+    {
+        return null;
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getUrl()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getAuthor()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getMaintainer()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getOrganization()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getOrganizationUrl()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getLicense()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getLicenseUrl()
+    {
+        return null;
+    }
+
+    @Override
+    public String getTabName(ViewContext context)
+    {
+        return _name;
     }
 
     @Override
@@ -256,13 +311,13 @@ public class MockModule implements Module
     }
 
     @Override
-    public String getSvnRevision()
+    public String getVcsRevision()
     {
         return null;
     }
 
     @Override
-    public String getSvnUrl()
+    public String getVcsUrl()
     {
         return null;
     }

@@ -125,12 +125,20 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private Collection<WebPartFactory> _webPartFactories;
     private ModuleResourceResolver _resolver;
     private String _name = null;
+    private String _label = null;
     private String _description = null;
     private double _version = 0.0;
     private double _requiredServerVersion = 0.0;
     private String _moduleDependenciesString = null;
-    private String _svnRevision = null;
-    private String _svnUrl = null;
+    private String _url = null;
+    private String _organization = null;
+    private String _organizationUrl = null;
+    private String _author = null;
+    private String _maintainer = null;
+    private String _license = null;
+    private String _licenseUrl = null;
+    private String _vcsRevision = null;
+    private String _vcsUrl = null;
     private String _buildUser = null;
     private String _buildTime = null;
     private String _buildOS = null;
@@ -611,16 +619,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _name = name;
     }
 
-    public String getDescription()
-    {
-        return _description;
-    }
-
-    public void setDescription(String description)
-    {
-        _description = description;
-    }
-
     public double getVersion()
     {
         return _version;
@@ -650,6 +648,115 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             _requiredServerVersion = requiredServerVersion;
     }
 
+    @Nullable
+    @Override
+    public String getLabel()
+    {
+        return _label;
+    }
+
+    public void setLabel(String label)
+    {
+        _label = label;
+    }
+
+    @Nullable
+    @Override
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        _description = description;
+    }
+
+    @Nullable
+    @Override
+    public String getUrl()
+    {
+        return _url;
+    }
+
+    public void setUrl(String url)
+    {
+        _url = url;
+    }
+
+    @Nullable
+    @Override
+    public String getAuthor()
+    {
+        return _author;
+    }
+
+    public void setAuthor(String author)
+    {
+        _author = author;
+    }
+
+    @Nullable
+    @Override
+    public String getMaintainer()
+    {
+        return _maintainer;
+    }
+
+    public void setMaintainer(String maintainer)
+    {
+        _maintainer = maintainer;
+    }
+
+    @Nullable
+    @Override
+    public String getOrganization()
+    {
+        return _organization;
+    }
+
+    public void setOrganization(String organization)
+    {
+        _organization = organization;
+    }
+
+    @Nullable
+    @Override
+    public String getOrganizationUrl()
+    {
+        return _organizationUrl;
+    }
+
+    public void setOrganizationUrl(String organizationUrl)
+    {
+        _organizationUrl = organizationUrl;
+    }
+
+    @Nullable
+    @Override
+    public String getLicense()
+    {
+        return _license;
+    }
+
+    public void setLicense(String license)
+    {
+        _license = license;
+    }
+
+    @Nullable
+    @Override
+    public String getLicenseUrl()
+    {
+        return _licenseUrl;
+    }
+
+    public void setLicenseUrl(String licenseUrl)
+    {
+        _licenseUrl = licenseUrl;
+    }
+
+
     public Set<String> getModuleDependenciesAsSet()
     {
         return _moduleDependencies;
@@ -677,26 +784,58 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _moduleDependenciesString;
     }
 
-    public String getSvnRevision()
+    @Nullable
+    @Override
+    public String getVcsRevision()
     {
-        return _svnRevision;
+        return _vcsRevision;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setVcsRevision(String svnRevision)
+    {
+        _vcsRevision = svnRevision;
+    }
+
+    @Nullable
+    @Override
+    public String getVcsUrl()
+    {
+        return _vcsUrl;
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setVcsUrl(String svnUrl)
+    {
+        _vcsUrl = svnUrl;
+    }
+
+    @Deprecated
+    public String getSvnRevision()
+    {
+        return _vcsRevision;
+    }
+
+    /** @deprecated Available only for initializing from module.properties and config/module.xml file. */
+    @Deprecated
     @SuppressWarnings({"UnusedDeclaration"})
     public void setSvnRevision(String svnRevision)
     {
-        _svnRevision = svnRevision;
+        _vcsRevision = svnRevision;
     }
 
+    @Deprecated
     public String getSvnUrl()
     {
-        return _svnUrl;
+        return _vcsUrl;
     }
 
+    /** @deprecated Available only for initializing from module.properties and config/module.xml file. */
+    @Deprecated
     @SuppressWarnings({"UnusedDeclaration"})
     public void setSvnUrl(String svnUrl)
     {
-        _svnUrl = svnUrl;
+        _vcsUrl = svnUrl;
     }
 
     public String getBuildUser()
@@ -781,10 +920,22 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         props.put("Module Class", getClass().getName());
         props.put("Version", getFormattedVersion());
+        if (StringUtils.isNotBlank(getAuthor()))
+            props.put("Author", getAuthor());
+        if (StringUtils.isNotBlank(getMaintainer()))
+            props.put("Maintainer", getMaintainer());
+        if (StringUtils.isNotBlank(getOrganization()))
+            props.put("Organization", getOrganization());
+        if (StringUtils.isNotBlank(getOrganizationUrl()))
+            props.put("OrganizationURL", getOrganizationUrl());
+        if (StringUtils.isNotBlank(getLicense()))
+            props.put("License", getLicense());
+        if (StringUtils.isNotBlank(getLicenseUrl()))
+            props.put("LicenseURL", getLicenseUrl());
         props.put("Extracted Path", getExplodedPath().getAbsolutePath());
         props.put("Build Path", getBuildPath());
-        props.put("SVN URL", getSvnUrl());
-        props.put("SVN Revision", getSvnRevision());
+        props.put("VCS URL", getVcsUrl());
+        props.put("VCS Revision", getVcsRevision());
         props.put("Build OS", getBuildOS());
         props.put("Build Time", getBuildTime());
         props.put("Build User", getBuildUser());

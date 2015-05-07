@@ -113,39 +113,32 @@ public class StringExpressionFactory
         if (null != expr)
             return expr.copy();
 
-        try
+        if (str.startsWith("mailto:"))
+            expr = new FieldKeyStringExpression(str);
+        else if (StringUtilsLabKey.startsWithURL(str))
         {
-            if (str.startsWith("mailto:"))
-                expr = new FieldKeyStringExpression(str);
-            else if (StringUtilsLabKey.startsWithURL(str))
-            {
-                expr = new URLStringExpression(str);
-            }
-            else if (null == DetailsURL.validateURL(str))
-            {
-                expr = DetailsURL.fromString(str);
-            }
-            else
-            {
-                // improve compatibility with old URLs
-                // UNDONE: remove these, or make a new createHelper()
-                try
-                {
-                    ActionURL url = new ActionURL(str);
-                    if (StringUtils.isEmpty(url.getExtraPath()))
-                        expr = new DetailsURL(url);
-                }
-                catch (IllegalArgumentException x)
-                {
-                    //
-                }
-                if (null == expr)
-                    expr = new URLStringExpression(str);
-            }
+            expr = new URLStringExpression(str);
         }
-        catch (URISyntaxException x)
+        else if (null == DetailsURL.validateURL(str))
         {
-            return null;
+            expr = DetailsURL.fromString(str);
+        }
+        else
+        {
+            // improve compatibility with old URLs
+            // UNDONE: remove these, or make a new createHelper()
+            try
+            {
+                ActionURL url = new ActionURL(str);
+                if (StringUtils.isEmpty(url.getExtraPath()))
+                    expr = new DetailsURL(url);
+            }
+            catch (IllegalArgumentException x)
+            {
+                //
+            }
+            if (null == expr)
+                expr = new URLStringExpression(str);
         }
 
         templatesUrl.put(key, expr);
@@ -804,7 +797,7 @@ public class StringExpressionFactory
      */
     public static class URLStringExpression extends FieldKeyStringExpression
     {
-        public URLStringExpression(String source) throws URISyntaxException
+        public URLStringExpression(String source)
         {
             super("");
             _source = source.trim();

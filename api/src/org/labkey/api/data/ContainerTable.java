@@ -17,7 +17,9 @@
 package org.labkey.api.data;
 
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -26,6 +28,8 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -166,6 +170,21 @@ public class ContainerTable extends FilteredTable<UserSchema>
         ColumnInfo title = getColumn("Title");
         title.setURL(detailsURL);
 
+        ColumnInfo activeModules = new AliasedColumn("ActiveModules", getColumn("RowId"));
+        activeModules.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo rowIdCol)
+            {
+                return new ActiveModulesDisplayColumn(rowIdCol);
+            }
+        });
+        activeModules.setReadOnly(true);
+        activeModules.setHidden(true);
+        addColumn(activeModules);
+
+        setTitleColumn("DisplayName");
+        
         setImportURL(LINK_DISABLER);
     }
 
@@ -183,4 +202,42 @@ public class ContainerTable extends FilteredTable<UserSchema>
         }
     }
 
+    private static class ActiveModulesDisplayColumn extends DataColumn
+    {
+        public ActiveModulesDisplayColumn(ColumnInfo rowIdCol)
+        {
+            super(rowIdCol);
+        }
+
+        @Override
+        public boolean isSortable()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isFilterable()
+        {
+            return false;
+        }
+
+        @Override
+        public String getFormattedValue(RenderContext ctx)
+        {
+            int rowId = (Integer)super.getValue(ctx);
+            Container c = ContainerManager.getForRowId(rowId);
+            if (c == null)
+                return null;
+
+            Set<Module> modules = c.getActiveModules();
+            StringBuilder sb = new StringBuilder();
+            String sep = "";
+            for (Module module : modules)
+            {
+                sb.append(sep).append(module.getName());
+                sep = ", ";
+            }
+            return sb.toString();
+        }
+    }
 }
