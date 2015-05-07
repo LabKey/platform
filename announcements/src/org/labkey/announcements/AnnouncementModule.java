@@ -87,7 +87,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
     public AnnouncementModule()
     {
-        setDescription("Message Board and Discussion Service");
+        setLabel("Message Board and Discussion Service");
 
         RSSServiceImpl i = new RSSServiceImpl();
         RSSService.set(i);

@@ -111,7 +111,9 @@
                 </a>
             </td>
             <td>
-                <span onclick="return LABKEY.Utils.toggleLink(document.getElementById('<%= h(guid) %>'), false);"><%=h(module.getName())%> <%=h(module.getFormattedVersion())%></span>
+                <span onclick="return LABKEY.Utils.toggleLink(document.getElementById('<%= h(guid) %>'), false);">
+                    <%=h(module.getName())%> <%=h(module.getFormattedVersion())%> <%=h(StringUtils.isEmpty(module.getLabel()) ? "" : "- " + module.getLabel())%>
+                </span>
             </td>
         </tr>
         <tr style="display:none">
@@ -125,7 +127,8 @@
                     {
                         %><tr><td colspan="2" style="padding-left:6px;"><%=h(module.getDescription())%></td></tr><%
                     }
-                    for (Map.Entry<String, String> entry : new TreeMap<>(module.getProperties()).entrySet())
+                    Map<String, String> properties = module.getProperties();
+                    for (Map.Entry<String, String> entry : new TreeMap<>(properties).entrySet())
                     {
                         if (StringUtils.equals("Source Path", entry.getKey()))
                         {
@@ -140,6 +143,22 @@
                             %><tr>
                                 <td nowrap="true" class="labkey-form-label"><%=h(entry.getKey())%><%=(devMode && sourcePathMatched && !enlistmentIdMatched) ? helpPopup("enlistment id does not match") : new _HtmlString("")%></td>
                                 <td nowrap="true" style="color:<%=h( (!devMode||!sourcePathMatched)?"":enlistmentIdMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
+                            </tr><%
+                        }
+                        else if (StringUtils.equals("OrganizationURL", entry.getKey()) || StringUtils.equals("LicenseURL", entry.getKey()))
+                        {
+                            continue;
+                        }
+                        else if (StringUtils.equals("Organization", entry.getKey()) || StringUtils.equals("License", entry.getKey()))
+                        {
+                            String url = properties.get(entry.getKey() + "URL");
+                            %><tr>
+                                <td nowrap="true" class="labkey-form-label"><%=h(entry.getKey())%></td>
+                                <% if (url != null) { %>
+                                <td nowrap="true"><%=textLink(entry.getValue(), url)%></td>
+                                <% } else { %>
+                                <td nowrap="true"><%=h(entry.getValue())%></td>
+                                <% } %>
                             </tr><%
                         }
                         else

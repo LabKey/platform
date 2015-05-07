@@ -459,6 +459,7 @@ core/src/org/labkey/core/query/CoreQuerySchema.java -text
 core/src/org/labkey/core/query/FileListTableInfo.java -text
 core/src/org/labkey/core/query/GroupAuditProvider.java -text
 core/src/org/labkey/core/query/GroupAuditViewFactory.java -text
+core/src/org/labkey/core/query/ModulesTableInfo.java -text
 core/src/org/labkey/core/query/UserAuditProvider.java -text
 core/src/org/labkey/core/query/UserAuditViewFactory.java -text
 core/src/org/labkey/core/query/UsersDomainKind.java -text

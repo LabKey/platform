@@ -78,6 +78,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String SITE_USERS_TABLE_NAME = "SiteUsers";
     public static final String PRINCIPALS_TABLE_NAME = "Principals";
     public static final String MEMBERS_TABLE_NAME = "Members";
+    public static final String MODULES_TABLE_NAME = "Modules";
     public static final String CONTAINERS_TABLE_NAME = "Containers";
     public static final String WORKBOOKS_TABLE_NAME = "Workbooks";
     public static final String FILES_TABLE_NAME = "Files";
@@ -97,8 +98,11 @@ public class CoreQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        return PageFlowUtil.set(USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME,
-                MEMBERS_TABLE_NAME, GROUPS_TABLE_NAME, USERS_AND_GROUPS_TABLE_NAME, CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME);
+        return PageFlowUtil.set(
+                USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME,
+                MODULES_TABLE_NAME,
+                MEMBERS_TABLE_NAME, GROUPS_TABLE_NAME, USERS_AND_GROUPS_TABLE_NAME,
+                CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME);
     }
 
 
@@ -110,6 +114,8 @@ public class CoreQuerySchema extends UserSchema
             return getSiteUsers();
         if (PRINCIPALS_TABLE_NAME.equalsIgnoreCase(name))
             return getPrincipals();
+        if (MODULES_TABLE_NAME.equalsIgnoreCase(name))
+            return getModules();
         if (MEMBERS_TABLE_NAME.equalsIgnoreCase(name))
             return getMembers();
         if (GROUPS_TABLE_NAME.equalsIgnoreCase(name))
@@ -435,6 +441,11 @@ public class CoreQuerySchema extends UserSchema
         table.init();
         table.setMustCheckPermissions(_mustCheckPermissions);
         return table;
+    }
+
+    protected ModulesTableInfo getModules()
+    {
+        return new ModulesTableInfo(this).init();
     }
 
     protected TableInfo getUsersAndGroupsTable()
