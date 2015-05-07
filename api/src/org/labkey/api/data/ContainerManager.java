@@ -61,7 +61,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -76,6 +75,7 @@ import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.wiki.WikiService;
 import org.springframework.validation.BindException;
 
 import java.beans.PropertyChangeEvent;
@@ -335,15 +335,18 @@ public class ContainerManager
                     }
                 }
 
-                if (!childTabFoldersNonMatchingTypes.isEmpty())
+                // Check these and change type unless they were overridden explicitly
+                for (Container container : childTabFoldersNonMatchingTypes)
                 {
-                    // Check these and change type unless they were overridden explicitly
-                    for (Container container : childTabFoldersNonMatchingTypes)
-                        if (!isContainerTabTypeOverridden(container))
-                        {
-                            FolderType newType = folderType.findTab(container.getName()).getFolderType();    // Can't throw null because already checked
-                            setFolderType(container, newType, user, errors);
-                        }
+                    if (!isContainerTabTypeOverridden(container))
+                    {
+                        FolderTab newTab = folderType.findTab(container.getName());
+                        assert null != newTab;          // There must be a tab because it caused the container to get into childTabFoldersNonMatchingTypes
+                        FolderType newType = newTab.getFolderType();
+                        if (null == newType)
+                            newType = ModuleLoader.getInstance().getFolderType(WikiService.COLLABORATION_FOLDERTYPE_NAME);      // default to Collaboration
+                        setFolderType(container, newType, user, errors);
+                    }
                 }
             }
         }
