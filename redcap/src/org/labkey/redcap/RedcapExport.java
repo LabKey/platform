@@ -92,7 +92,8 @@ public class RedcapExport
     private Set<String> _mergedDatasets = new HashSet<>();
     private PipelineJob _job;
 
-    public enum LogLevel {
+    public enum LogLevel
+    {
         INFO,
         DEBUG,
         WARN,

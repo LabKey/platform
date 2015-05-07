@@ -31,9 +31,9 @@ public class RedcapManager
     {
         PropertyManager.PropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(containerUser.getContainer(), RedcapManager.REDCAP_PROPERTIES, true);
 
-        map.put(RedcapManager.RedcapSettings.Options.projectname.name(), form.encode(form.getProjectname()));
-        map.put(RedcapManager.RedcapSettings.Options.token.name(), form.encode(form.getToken()));
-        map.put(RedcapManager.RedcapSettings.Options.metadata.name(), form.getMetadata());
+        map.put(RedcapSettings.Options.projectname.name(), form.encode(form.getProjectname()));
+        map.put(RedcapSettings.Options.token.name(), form.encode(form.getToken()));
+        map.put(RedcapSettings.Options.metadata.name(), form.getMetadata());
 
         map.save();
     }
@@ -48,12 +48,12 @@ public class RedcapManager
         RedcapSettings form = new RedcapSettings();
         Map<String, String> map = PropertyManager.getEncryptedStore().getProperties(containerUser.getContainer(), RedcapManager.REDCAP_PROPERTIES);
 
-        if (map.containsKey(RedcapManager.RedcapSettings.Options.projectname.name()))
-            form.setProjectname(form.decode(map.get(RedcapManager.RedcapSettings.Options.projectname.name())));
-        if (map.containsKey(RedcapManager.RedcapSettings.Options.token.name()))
-            form.setToken(form.decode(map.get(RedcapManager.RedcapSettings.Options.token.name())));
-        if (map.containsKey(RedcapManager.RedcapSettings.Options.metadata.name()))
-            form.setMetadata(map.get(RedcapManager.RedcapSettings.Options.metadata.name()));
+        if (map.containsKey(RedcapSettings.Options.projectname.name()))
+            form.setProjectname(form.decode(map.get(RedcapSettings.Options.projectname.name())));
+        if (map.containsKey(RedcapSettings.Options.token.name()))
+            form.setToken(form.decode(map.get(RedcapSettings.Options.token.name())));
+        if (map.containsKey(RedcapSettings.Options.metadata.name()))
+            form.setMetadata(map.get(RedcapSettings.Options.metadata.name()));
 
         return form;
     }

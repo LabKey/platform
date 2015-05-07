@@ -36,7 +36,8 @@ import java.util.regex.Pattern;
  */
 public class RedcapConfiguration
 {
-    public enum Params {
+    public enum Params
+    {
         serverUrl,
         projectName,
         subjectId,
@@ -45,13 +46,12 @@ public class RedcapConfiguration
         configFile,
     }
 
-    public enum DuplicateNamePolicy {
+    public enum DuplicateNamePolicy
+    {
         fail,
         merge,
     }
 
-    private File _archiveFile;
-    private boolean _unzipContents;
     private DuplicateNamePolicy _duplicateNamePolicy = DuplicateNamePolicy.fail;
     private TimepointType.Enum _timepointType = TimepointType.DATE;
     private List<RedcapProject> _projects = new ArrayList<>();
@@ -91,7 +91,7 @@ public class RedcapConfiguration
     RedcapConfiguration(String serverUrl, String projectName, String subjectId, File archiveFile, TimepointType.Enum timepointType)
     {
         _projects.add(new RedcapProject(projectName, subjectId, serverUrl, false));
-        _archiveFile = archiveFile;
+
         _timepointType = timepointType;
     }
 
@@ -109,7 +109,6 @@ public class RedcapConfiguration
         StringBuffer summary = new StringBuffer();
 
         summary.append("Command Options").append("\n");
-        summary.append("archive path:").append("\t").append(getArchiveFile().getAbsolutePath()).append("\n");
         summary.append("timepoint type:").append("\t").append(getTimepointType().toString()).append("\n");
 
         for (RedcapProject project : getProjects())
@@ -120,11 +119,6 @@ public class RedcapConfiguration
             summary.append("\t").append("match subject ID by label :").append("\t").append(project.isMatchSubjectIdByLabel()).append("\n");
         }
         return summary.toString();
-    }
-
-    public File getArchiveFile()
-    {
-        return _archiveFile;
     }
 
     public TimepointType.Enum getTimepointType()
@@ -163,13 +157,8 @@ public class RedcapConfiguration
         {
             RedcapConfigDocument.RedcapConfig rc = doc.getRedcapConfig();
 
-            String archivePath = rc.getExportLocation();
             String timepointType = rc.getTimepointType();
-            File archiveFile = new File(archivePath);
-
             Set<String> projectNames = new HashSet<>();
-            _archiveFile = archiveFile;
-            _unzipContents = rc.getUnzipContents();
 
             if (rc.isSetDuplicateNamePolicy())
             {
@@ -177,22 +166,6 @@ public class RedcapConfiguration
                 if (duplicateNamePolicy != null)
                     _duplicateNamePolicy = DuplicateNamePolicy.valueOf(duplicateNamePolicy);
             }
-
-            // the directory must exist if the option is to unzip
-/*
-            if (config.isUnzipContents() && !archiveFile.isDirectory())
-            {
-                String msg = "Invalid configuration, export location must be an existing folder if the contents are not zipped up.";
-                job.error(msg);
-                throw new IllegalArgumentException(msg);
-            }
-            else if (!config.isUnzipContents() && (!archiveFile.isFile() && archiveFile.exists()))
-            {
-                String msg = "Invalid configuration, export location must be a file if the contents are zipped up.";
-                job.error(msg);
-                throw new IllegalArgumentException(msg);
-            }
-*/
 
             if (timepointType.equalsIgnoreCase("visit"))
                 _timepointType = TimepointType.VISIT;
