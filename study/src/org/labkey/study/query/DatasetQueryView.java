@@ -313,9 +313,8 @@ public class DatasetQueryView extends StudyQueryView
         if (!(report instanceof QueryReport))
         {
             MenuButton button = createViewButton(getViewItemFilter());
-            button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
-
             bar.add(button);
+
             MenuButton chartButton = createChartButton();
             if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
             {
