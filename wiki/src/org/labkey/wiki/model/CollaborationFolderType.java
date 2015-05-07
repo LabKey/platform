@@ -23,6 +23,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.wiki.WikiService;
 import org.labkey.wiki.WikiTOCFactory;
 import org.labkey.wiki.WikiWebPartFactory;
 
@@ -35,7 +36,7 @@ import java.util.Arrays;
  */
 public class CollaborationFolderType extends MultiPortalFolderType
 {
-    public static final String TYPE_NAME = "Collaboration";
+    public static final String TYPE_NAME = WikiService.COLLABORATION_FOLDERTYPE_NAME;
 
     public CollaborationFolderType()
     {
