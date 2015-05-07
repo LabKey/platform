@@ -84,62 +84,6 @@
         <ns:isReadOnly>true</ns:isReadOnly>
         <ns:isHidden>true</ns:isHidden>
       </ns:column>
-      <ns:column columnName="Label">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:datatype>varchar</ns:datatype>
-        <ns:scale>255</ns:scale>
-      </ns:column>
-      <ns:column columnName="Description">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:datatype>varchar</ns:datatype>
-        <ns:scale>4000</ns:scale>
-      </ns:column>
-      <ns:column columnName="URL">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Author">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Maintainer">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Organization">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <!--<ns:url>${OrganizationURL}</ns:url>-->
-      </ns:column>
-      <ns:column columnName="OrganizationURL">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="License">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <!--<ns:url>${LicenseURL}</ns:url>-->
-      </ns:column>
-      <ns:column columnName="LicenseURL">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="VcsRevision">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="VcsURL">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
-      <ns:column columnName="Dependencies">
-        <!-- NOTE: Added in ModulesTableInfo -->
-        <ns:isReadOnly>true</ns:isReadOnly>
-      </ns:column>
       <ns:column columnName="Enabled">
         <ns:isReadOnly>true</ns:isReadOnly>
         <ns:isHidden>true</ns:isHidden>

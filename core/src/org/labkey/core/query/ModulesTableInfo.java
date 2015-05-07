@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.module.Module;
@@ -54,23 +55,24 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         addWrapColumn(getRealTable().getColumn("InstalledVersion"));
         addWrapColumn(getRealTable().getColumn("ClassName"));
 
-        addCopyWrapColumn("Label");
-        addCopyWrapColumn("Description");
-        addCopyWrapColumn("URL");
-        addCopyWrapColumn("Author");
-        addCopyWrapColumn("Maintainer");
-        ColumnInfo orgCol = addCopyWrapColumn("Organization");
+        addTextColumn("Label").setScale(255);
+        addTextColumn("Description").setScale(4000);
+        addTextColumn("URL").setURLTargetWindow("_blank");
+        addTextColumn("Author");
+        addTextColumn("Maintainer");
+
+        ColumnInfo orgCol = addTextColumn("Organization");
         orgCol.setURL(StringExpressionFactory.createURL("${OrganizationURL}"));
         orgCol.setURLTargetWindow("_blank");
-        addCopyWrapColumn("OrganizationURL");
+        addTextColumn("OrganizationURL").setHidden(true);
 
-        ColumnInfo licenseCol = addCopyWrapColumn("License");
+        ColumnInfo licenseCol = addTextColumn("License");
         licenseCol.setURL(StringExpressionFactory.createURL("${LicenseURL}"));
         licenseCol.setURLTargetWindow("_blank");
-        addCopyWrapColumn("LicenseURL");
-        addCopyWrapColumn("VcsRevision");
-        addCopyWrapColumn("VcsURL");
-        addCopyWrapColumn("Dependencies");
+        addTextColumn("LicenseURL").setHidden(true);
+        addTextColumn("VcsRevision");
+        addTextColumn("VcsURL");
+        addTextColumn("Dependencies");
 
         addWrapColumn(getRealTable().getColumn("Schemas"));
 
@@ -83,13 +85,10 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         ));
     }
 
-    // NOTE: We can't just wrap the real table's ColumnInfo since it doesn't exist in the underlying
-    // core.modules table.  The "missing" columns will be constructed as a VirtualColumnInfo and will
-    // always select NULL when queried.  Luckily the metadata xml will still be applied.
-    private ColumnInfo addCopyWrapColumn(String name)
+    private ColumnInfo addTextColumn(String name)
     {
-        ColumnInfo col = new ColumnInfo(getRealTable().getColumn(name), this);
-        col.setIsUnselectable(false); // Undo VirtualColumnInfo setting
+        ColumnInfo col = new ColumnInfo(FieldKey.fromParts(name), this, JdbcType.VARCHAR);
+        col.setReadOnly(true);
         addColumn(col);
         return col;
     }
