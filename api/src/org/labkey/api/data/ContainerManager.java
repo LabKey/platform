@@ -75,7 +75,6 @@ import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.wiki.WikiService;
 import org.springframework.validation.BindException;
 
 import java.beans.PropertyChangeEvent;
@@ -344,7 +343,7 @@ public class ContainerManager
                         assert null != newTab;          // There must be a tab because it caused the container to get into childTabFoldersNonMatchingTypes
                         FolderType newType = newTab.getFolderType();
                         if (null == newType)
-                            newType = ModuleLoader.getInstance().getFolderType(WikiService.COLLABORATION_FOLDERTYPE_NAME);      // default to Collaboration
+                            newType = FolderType.NONE;      // default to NONE
                         setFolderType(container, newType, user, errors);
                     }
                 }

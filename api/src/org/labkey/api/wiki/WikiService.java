@@ -39,8 +39,6 @@ public interface WikiService
     public static final String WIKI_PREFIX = "<div class=\"labkey-wiki\">";
     public static final String WIKI_SUFFIX = "</div>";
 
-    String COLLABORATION_FOLDERTYPE_NAME = "Collaboration";
-
     public WebPartView getView(Container c, String name, boolean renderContentOnly);
     public WebPartView getHistoryView(Container c, String name);
 
