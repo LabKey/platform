@@ -16,6 +16,8 @@
 package org.labkey.core.admin.miniprofiler;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.Marshal;
@@ -35,6 +37,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -126,6 +129,34 @@ public class MiniProfilerController extends SpringActionController
         {
             MiniProfiler.resetSettings();
             return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+        }
+    }
+
+    @RequiresSiteAdmin
+    @CSRF
+    public class SetEnabledAction extends SimpleRedirectAction<EnabledForm>
+    {
+        public URLHelper getRedirectURL(EnabledForm form) throws Exception
+        {
+            MiniProfiler.Settings settings = MiniProfiler.getSettings();
+            settings.setEnabled(form.isEnabled());
+            MiniProfiler.saveSettings(settings);
+            return new ActionURL(ManageAction.class, null);
+        }
+    }
+
+    public static class EnabledForm
+    {
+        private boolean _enabled;
+
+        public boolean isEnabled()
+        {
+            return _enabled;
+        }
+
+        public void setEnabled(boolean enabled)
+        {
+            _enabled = enabled;
         }
     }
 
