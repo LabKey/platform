@@ -753,7 +753,11 @@ public class RenderContext implements Map<String, Object>, Serializable
     {
         String errors = getErrors(getForm().getFormFieldName(column));
         if ("".equals(errors))
+        {
             errors = getErrors(column.getName());
+            if ("".equals(errors))
+                errors = getErrors(column.getName().toLowerCase());  // error may be mapped from lowercase name because of provisioning
+        }
         return errors;
     }
 
