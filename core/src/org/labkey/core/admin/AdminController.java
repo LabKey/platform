@@ -777,7 +777,7 @@ public class AdminController extends SpringActionController
             }
 
             views.addView(new CreditsView("/core/resources/credits/tomcat_jars.txt", getCreditsFile(core, "tomcat_jars.txt"), getTomcatJars(), "Tomcat JAR", "/external/lib/tomcat directory", null, jarRegEx));
-            views.addView(new CreditsView("/core/resources/credits/scripts.txt", getCreditsFile(core, "scripts.txt"), null, "JavaScript and Icons", null, null, null));
+            views.addView(new CreditsView("/core/resources/credits/scripts.txt", getCreditsFile(core, "scripts.txt"), null, "JavaScript, Icons and Font", null, null, null));
 
             for (Module module : modules)
             {
@@ -787,7 +787,7 @@ public class AdminController extends SpringActionController
 
                     if (null != wikiSource)
                     {
-                        HttpView moduleJS = new CreditsView("scripts.txt", wikiSource, null, "JavaScript and Icons", null, "the " + module.getName() + " Module", null);
+                        HttpView moduleJS = new CreditsView("scripts.txt", wikiSource, null, "JavaScript, Icons and Font", null, "the " + module.getName() + " Module", null);
                         views.addView(moduleJS);
                     }
                 }
