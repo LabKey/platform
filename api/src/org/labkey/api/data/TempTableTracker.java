@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ShutdownListener;
 
 import javax.servlet.ServletContextEvent;
@@ -30,9 +29,6 @@ import java.io.RandomAccessFile;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -45,36 +41,38 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class TempTableTracker extends WeakReference<Object>
 {
-    static Logger _log = Logger.getLogger(TempTableTracker.class);
-    static final String LOGFILE = "CPAS_sqlTempTables.log";
-    static final Map<String, TempTableTracker> createdTableNames = new TreeMap<>();
-    static final ReferenceQueue<Object> cleanupQueue = new ReferenceQueue<>();
-    static RandomAccessFile tempTableLog = null;
+    private static final Logger _log = Logger.getLogger(TempTableTracker.class);
+    private static final String LOGFILE = "CPAS_sqlTempTables.log";
+    private static final Map<String, TempTableTracker> createdTableNames = new TreeMap<>();
+    private static final ReferenceQueue<Object> cleanupQueue = new ReferenceQueue<>();
 
-    DbSchema schema;
-    String schemaName;
-    String tableName;
-    String qualifiedName;
-    boolean deleted = false;
+    private static RandomAccessFile tempTableLog = null;
+
+    private final DbSchema schema;
+    private final String schemaName;
+    private final String tableName;
+    private final String qualifiedName;
+
+    private boolean deleted = false;
 
 
-    private TempTableTracker(DbSchema schema, String name, Object ref)
+    private TempTableTracker(DbSchema schema, String tableName, Object ref)
     {
-        this(schema.getName(), name, ref);
+        super(ref, cleanupQueue);
         this.schema = schema;
+        this.schemaName = schema.getName();
+        this.tableName = tableName;
+        this.qualifiedName = this.schemaName + "." + this.tableName;
     }
 
 
-    private TempTableTracker(String schema, String name, Object ref)
+    private TempTableTracker(String schemaName, String tableName, Object ref)
     {
-        super(ref, cleanupQueue);
-        this.schemaName = schema;
-        this.tableName = name;
-        this.qualifiedName = schema + "." + tableName;
+        this(DbSchema.get(schemaName), tableName, ref);  // TODO: Treat as provisioned?
     } 
 
-    static final Object initlock = new Object();
-    static boolean initialized=false;
+    private static final Object initlock = new Object();
+    private static boolean initialized = false;
 
     // make sure temp table tracker is initialized
     public static void init()
@@ -125,8 +123,6 @@ public class TempTableTracker extends WeakReference<Object>
 
     private DbSchema getSchema()
     {
-        if (null == schema)
-            schema = DbSchema.get(schemaName);
         return schema;
     }
 

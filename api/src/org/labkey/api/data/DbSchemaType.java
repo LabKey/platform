@@ -57,7 +57,7 @@ public enum DbSchemaType
             if ("labkey".equals(requestedSchemaName))
                 return ModuleLoader.getInstance().getCoreModule();
 
-            org.labkey.api.module.Module module = ModuleLoader.getInstance().getModuleForSchemaName(requestedSchemaName);
+            Module module = ModuleLoader.getInstance().getModuleForSchemaName(requestedSchemaName);
 
             // For now, throw if no module claims this schema. We could relax this to an assert (and fall back to core)
             // to provide backward compatibility for external modules that don't register their schemas.

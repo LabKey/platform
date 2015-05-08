@@ -35,6 +35,7 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -1164,7 +1165,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         @Test
         public void builtinColumns()
         {
-            TableInfo t = DbSchema.get("test").getTable("testtable");
+            TableInfo t = TestSchema.getInstance().getTableInfoTestTable();
         }
     }
 }

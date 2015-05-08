@@ -3444,7 +3444,7 @@ public class OntologyManager
     }
 
     public static DbSchema getExpSchema() {
-        return DbSchema.get("exp");
+        return DbSchema.get("exp", DbSchemaType.Module);
     }
 
     public static SqlDialect getSqlDialect() {

@@ -78,7 +78,10 @@ public class DbSchema
     }
 
 
-    /** Use only for module schemas (not provisioned or external) */
+    /**
+     *  Use get(String fullyQualifiedSchemaName, DbSchemaType type) instead
+     */
+    @Deprecated
     public static @NotNull DbSchema get(String fullyQualifiedSchemaName)
     {
         return get(fullyQualifiedSchemaName, DbSchemaType.Module);
@@ -797,10 +800,10 @@ public class DbSchema
             // If schema cache is case-sensitive then this should clear all capitalizations
             DbScope.getLabkeyScope().invalidateSchema("core", DbSchemaType.Module);
 
-            DbSchema core1 = DbSchema.get("Core");
-            DbSchema core2 = DbSchema.get("CORE");
-            DbSchema core3 = DbSchema.get("cOrE");
-            DbSchema canonical = DbSchema.get("core");
+            DbSchema core1 = DbSchema.get("Core", DbSchemaType.Module);
+            DbSchema core2 = DbSchema.get("CORE", DbSchemaType.Module);
+            DbSchema core3 = DbSchema.get("cOrE", DbSchemaType.Module);
+            DbSchema canonical = DbSchema.get("core", DbSchemaType.Module);
 
             verify("Core", canonical, core1);
             verify("CORE", canonical, core2);
@@ -818,7 +821,7 @@ public class DbSchema
     private static Integer checkContainerColumns(String dbSchemaName, SQLFragment sbSqlCmd, String tempTableName, String moduleName, Integer rowId) throws SQLException
     {
         int row = rowId;
-        DbSchema curSchema = DbSchema.get(dbSchemaName);
+        DbSchema curSchema = DbSchema.get(dbSchemaName, DbSchemaType.Module);
         SQLFragment sbSql = new SQLFragment();
 
         for (String tableName : curSchema.getTableNames())

@@ -40,6 +40,7 @@ import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -1129,7 +1130,7 @@ public class Table
         public void testParameter()
                 throws Exception
         {
-            DbSchema core = DbSchema.get("core");
+            DbSchema core = CoreSchema.getInstance().getSchema();
             SqlDialect dialect = core.getScope().getSqlDialect();
             
             String name = dialect.getTempTablePrefix() + "_" + GUID.makeHash();

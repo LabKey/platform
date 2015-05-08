@@ -27,26 +27,8 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DatabaseTableType;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.DbScope;
+import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.*;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MVDisplayColumnFactory;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.Selector;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableChange;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -847,7 +829,7 @@ public class StorageProvisioner
 
     public static boolean repairDomain(Container c, String domainUri, BindException errors)
     {
-        DbScope scope = DbSchema.get("core").getScope();
+        DbScope scope = CoreSchema.getInstance().getScope();
 
         try (Transaction transaction = scope.ensureTransaction())
         {
