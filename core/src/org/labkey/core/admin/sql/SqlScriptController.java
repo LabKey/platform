@@ -33,6 +33,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
@@ -780,7 +781,7 @@ public class SqlScriptController extends SpringActionController
         {
             Module module = ModuleLoader.getInstance().getModule(form.getModule());
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
-            return getConsolidator(provider, DbSchema.get(form.getSchema()), form.getFromVersion(), form.getToVersion());
+            return getConsolidator(provider, DbSchema.get(form.getSchema(), DbSchemaType.Module), form.getFromVersion(), form.getToVersion());
         }
 
         protected ScriptConsolidator getConsolidator(FileSqlScriptProvider provider, DbSchema schema, double fromVersion, double toVersion)  throws SqlScriptException

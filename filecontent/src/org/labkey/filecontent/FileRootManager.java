@@ -22,6 +22,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -57,7 +58,7 @@ public class FileRootManager
 
     public static DbSchema getFileContentSchema()
     {
-        return DbSchema.get(FILECONTENT_SCHEMA_NAME);
+        return DbSchema.get(FILECONTENT_SCHEMA_NAME, DbSchemaType.Module);
     }
 
     public static TableInfo getTinfoFileRoots()

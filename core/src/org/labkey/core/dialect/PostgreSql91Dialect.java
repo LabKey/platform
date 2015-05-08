@@ -25,6 +25,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcType;
@@ -1103,7 +1104,7 @@ public class PostgreSql91Dialect extends SqlDialect
         for (PropertyStorageSpec.ForeignKey foreignKey : change.getForeignKeys())
         {
             StringBuilder fkString = new StringBuilder("CONSTRAINT ");
-            DbSchema schema = DbSchema.get(foreignKey.getSchemaName());
+            DbSchema schema = DbSchema.get(foreignKey.getSchemaName(), DbSchemaType.Module);
             TableInfo tableInfo = foreignKey.isProvisioned() ?
                     foreignKey.getTableInfoProvisioned() :
                     schema.getTable(foreignKey.getTableName());

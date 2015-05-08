@@ -17,6 +17,7 @@
 package org.labkey.demo;
 
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
 
@@ -49,7 +50,7 @@ public class DemoSchema
 
     public DbSchema getSchema()
     {
-        return DbSchema.get(SCHEMA_NAME);
+        return DbSchema.get(SCHEMA_NAME, DbSchemaType.Module);
     }
 
     public SqlDialect getSqlDialect()

@@ -52,7 +52,7 @@ public class AnnouncementUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            DbScope scope = DbSchema.get(comm.getSchemaName()).getScope();
+            DbScope scope = comm.getSchema().getScope();
             Map<Integer, Set<String>> emailLists = getEmailListsForMessages(scope);
             if (!emailLists.isEmpty())
             {
