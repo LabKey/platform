@@ -62,7 +62,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -85,8 +84,6 @@ public class AuthenticationManager
     private static final List<AuthenticationProvider> _activeProviders = new CopyOnWriteArrayList<>();
     // Map of user id to login provider.  This is needed to handle clean up on logout.
     private static final Map<Integer, AuthenticationProvider> _userProviders = new ConcurrentHashMap<>();
-
-    private static volatile Map<String, LinkFactory> _ssoLogoLinkFactories = new HashMap<>();
 
     public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";
     public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_";
@@ -114,12 +111,6 @@ public class AuthenticationManager
     }
 
 
-    public static LinkFactory getLinkFactory(String providerName)
-    {
-        return _ssoLogoLinkFactories.get(providerName);
-    }
-
-
     public static @Nullable String getHeaderLogoHtml(ActionURL currentURL)
     {
         return getAuthLogoHtml(currentURL, HEADER_LOGO_PREFIX);
@@ -134,21 +125,22 @@ public class AuthenticationManager
 
     private static @Nullable String getAuthLogoHtml(ActionURL currentURL, String prefix)
     {
-        if (_ssoLogoLinkFactories.isEmpty())
-            return null;
-
         StringBuilder html = new StringBuilder();
 
-        for (LinkFactory factory : _ssoLogoLinkFactories.values())
+        for (AuthenticationProvider provider : getActiveProviders())
         {
-            String link = factory.getLink(currentURL, prefix);
-
-            if (null != link)
+            if (provider instanceof SSOAuthenticationProvider)
             {
-                if (html.length() > 0)
-                    html.append("&nbsp;");
+                LinkFactory factory = ((SSOAuthenticationProvider) provider).getLinkFactory();
+                String link = factory.getLink(currentURL, prefix);
 
-                html.append(link);
+                if (null != link)
+                {
+                    if (html.length() > 0)
+                        html.append("&nbsp;");
+
+                    html.append(link);
+                }
             }
         }
 
@@ -341,15 +333,8 @@ public class AuthenticationManager
             if (provider.isPermanent() || activeNames.contains(provider.getName()))
                 addProvider(activeProviders, provider);
 
-        Map<String, LinkFactory> factories = new HashMap<>();
-
-        for (AuthenticationProvider provider : activeProviders)
-            if (provider instanceof SSOAuthenticationProvider)
-                factories.put(provider.getName(), new LinkFactory((SSOAuthenticationProvider)provider));
-
         _activeProviders.clear();
         _activeProviders.addAll(activeProviders);
-        _ssoLogoLinkFactories = factories;
     }
 
 
@@ -955,14 +940,8 @@ public class AuthenticationManager
 
     public static class LinkFactory
     {
-        private final static String NO_LOGO = "NO_LOGO";
-        private final static LoginUrls URLS = PageFlowUtil.urlProvider(LoginUrls.class);
-
         private final SSOAuthenticationProvider _provider;
         private final String _providerName;
-
-        // Need to check the attachments service to see if logo exists... use map to check this once and cache result
-        private Map<String, String> _imgMap = new HashMap<>();
 
         public LinkFactory(SSOAuthenticationProvider provider)
         {
@@ -987,43 +966,37 @@ public class AuthenticationManager
 
         public ActionURL getURL(URLHelper returnURL)
         {
-            return URLS.getSSORedirectURL(_provider, returnURL);
+            //noinspection ConstantConditions
+            return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_provider, returnURL);
         }
 
         public String getImg(String prefix)
         {
-            String img = _imgMap.get(prefix);
-
-            if (null == img)
+            try
             {
-                img = NO_LOGO;
+                Attachment logo = AttachmentService.get().getAttachment(ContainerManager.RootContainer.get(), prefix + _providerName);
 
-                try
+                if (null != logo)
                 {
-                    Attachment logo = AttachmentService.get().getAttachment(ContainerManager.RootContainer.get(), prefix + _providerName);
+                    String img = "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + prefix + _providerName + ".image?revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\" alt=\"Sign in using " + _providerName + "\"";
 
-                    if (null != logo)
-                    {
-                        img = "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + prefix + _providerName + ".image?revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\" alt=\"Sign in using " + _providerName + "\"";
+                    if(HEADER_LOGO_PREFIX.equals(prefix))
+                        img += " height=\"16px\"";
 
-                        if(HEADER_LOGO_PREFIX.equals(prefix))
-                            img += " height=\"16px\"";
+                    else if(LOGIN_PAGE_LOGO_PREFIX.equals(prefix))
+                        img += " height=\"32px\"";
 
-                        else if(LOGIN_PAGE_LOGO_PREFIX.equals(prefix))
-                            img += " height=\"32px\"";
+                    img += ">";
 
-                        img += ">";
-                    }
+                    return img;
                 }
-                catch (RuntimeSQLException e)
-                {
-                    ExceptionUtil.logExceptionToMothership(null, e);
-                }
-
-                _imgMap.put(prefix, img);
+            }
+            catch (RuntimeSQLException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
             }
 
-            return (NO_LOGO.equals(img) ? null : img);
+            return null;
         }
     }
 

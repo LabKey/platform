@@ -19,12 +19,12 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * User: adam
@@ -48,6 +48,7 @@ public interface AuthenticationProvider
          * @return The redirect URL
          */
         URLHelper getURL(String secret);
+        LinkFactory getLinkFactory();
     }
 
     interface LoginFormAuthenticationProvider extends AuthenticationProvider
