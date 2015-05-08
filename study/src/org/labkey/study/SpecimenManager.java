@@ -1713,6 +1713,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
+/*       --- this has been unused for some time. Used to be called from SpecimenBean, but that's been commented out since I don't know when (Dave 5/7/15)
+         --- if resurrected, need to deal with DbCache
     public List<String> getDistinctColumnValues(Container container, User user, ColumnInfo col, boolean forceDistinctQuery,
                                                 String orderBy, TableInfo forcedTable) throws SQLException
     {
@@ -1785,7 +1787,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         return newDistinctValues;
     }
-
+*/
     public void deleteMissingSpecimens(SpecimenRequest specimenRequest) throws SQLException
     {
         List<String> missingSpecimens = getMissingSpecimens(specimenRequest);
@@ -2079,9 +2081,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         _requestEventHelper.clearCache(c);
         _requestHelper.clearCache(c);
         _requestStatusHelper.clearCache(c);
-        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVialIfExists(c);
-        if (null != tableInfoVial)
-            DbCache.clear(tableInfoVial);
         for (StudyImpl study : StudyManager.getInstance().getAncillaryStudies(c))
             clearCaches(study.getContainer());
 
