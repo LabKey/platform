@@ -808,7 +808,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
 
         if (yHandleBrush) {
-            yD = yHandleBrush.y().domain()
+            yD = yHandleBrush.y().domain();
         }
 
         if (xHandleBrush) {
@@ -902,11 +902,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (plot.brushing.dimension == 'y') {
                 // Manually set width of brush.
-                brushSel.selectAll('rect').attr('width', plot.grid.rightEdge - plot.grid.leftEdge)
-                        .attr('x', plot.grid.leftEdge);
+                brushSel.selectAll('rect')
+                    .attr('x', plot.grid.leftEdge)
+                    .attr('width', plot.grid.rightEdge - plot.grid.leftEdge);
             } else if(plot.brushing.dimension == 'x') {
                 // Manually set height of brush.
-                brushSel.selectAll('rect').attr('height', plot.grid.bottomEdge - plot.grid.topEdge);
+                brushSel.selectAll('rect')
+                    .attr('y', plot.grid.topEdge)
+                    .attr('height', plot.grid.bottomEdge - plot.grid.topEdge);
             }
 
             brushSel.selectAll('.extent').attr('opacity', .75).attr('fill', '#EBF7F8').attr('stroke', '#14C9CC')
