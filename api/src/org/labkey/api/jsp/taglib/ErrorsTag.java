@@ -26,6 +26,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
 import org.apache.log4j.Logger;
+import org.springframework.validation.ObjectError;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.PageContext;
@@ -60,7 +61,7 @@ public class ErrorsTag extends TagSupport
                         continue;
                     BindingResult errors = (BindingResult)o;
                     if (null != errors.getAllErrors())
-                        for (MessageSourceResolvable m : (List<MessageSourceResolvable>)errors.getAllErrors())
+                        for (ObjectError m : (List<ObjectError>)errors.getAllErrors())
                         {
                             count++;
                             if (count == 1)

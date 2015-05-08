@@ -28,25 +28,59 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.security.*;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.ContextualRoles;
+import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.SecurityLogger;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ForbiddenProjectException;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
-import org.springframework.beans.*;
+import org.springframework.beans.AbstractPropertyAccessor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.InvalidPropertyException;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.NotReadablePropertyException;
+import org.springframework.beans.NotWritablePropertyException;
+import org.springframework.beans.PropertyAccessException;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
-import org.springframework.validation.*;
+import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingErrorProcessor;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.validation.Validator;
 import org.springframework.web.bind.ServletRequestDataBinder;
 import org.springframework.web.bind.ServletRequestParameterPropertyValues;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.BaseCommandController;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
@@ -54,15 +88,21 @@ import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: matthewb
  * Date: May 16, 2007
  * Time: 1:48:01 PM
  */
-public abstract class BaseViewAction<FORM> extends BaseCommandController implements Controller, HasViewContext, HasPageConfig, Validator, PermissionCheckable
+public abstract class BaseViewAction<FORM> implements Controller, HasViewContext, Validator,  HasPageConfig, PermissionCheckable
 {
+    protected static final Logger logger = Logger.getLogger(BaseViewAction.class);
     private ViewContext _context = null;
     private PageConfig _pageConfig = null;
     private PropertyValues _pvs;
@@ -71,20 +111,12 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     protected boolean _useBasicAuthentication = false;
     protected boolean _print = false;
-
-    // shared construction code
-    private void _BaseViewAction()
-    {
-        setValidator(this);
-        setCommandName("form");
-        setCacheSeconds(0);
-    }
-
+    protected Class _commandClass;
+    protected String _commandName = "form";
+    protected String[] _supportedMethods = {"GET", "HEAD", "POST"};
 
     protected BaseViewAction()
     {
-        _BaseViewAction();
-
         String methodName = getCommandClassMethodName();
 
         if (null == methodName)
@@ -121,7 +153,6 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     protected BaseViewAction(Class<? extends FORM> commandClass)
     {
-        _BaseViewAction();
         setCommandClass(commandClass);
     }
 
@@ -161,7 +192,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         PropertyValue pv = _pvs.getPropertyValue(key);
         return pv == null ? null : pv.getValue();
     }
-    
+
 
     public PropertyValues getPropertyValues()
     {
@@ -169,7 +200,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     }
 
 
-    protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception
+    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         if (null == getPropertyValues())
             setProperties(new ServletRequestParameterPropertyValues(request));
@@ -212,7 +243,6 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     {
         _context = context;
     }
-
 
     public void setPageConfig(PageConfig page)
     {
@@ -280,7 +310,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         {
             return (FORM)new Object();
         }
-        FORM command = (FORM)super.createCommand();
+        FORM command = (FORM) createCommand();
 
         if (command instanceof HasViewContext)
             ((HasViewContext)command).setViewContext(getViewContext());
@@ -495,6 +525,8 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     static public class BeanUtilsWrapperImpl extends AbstractPropertyAccessor implements BeanWrapper
     {
         private Object object;
+        private boolean autoGrowNestedPaths = false;
+        private int autoGrowCollectionLimit = 0;
 
         public BeanUtilsWrapperImpl()
         {
@@ -541,6 +573,12 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             return true;
         }
 
+        @Override
+        public TypeDescriptor getPropertyTypeDescriptor(String s) throws BeansException
+        {
+            return null;
+        }
+
         public void setWrappedInstance(Object obj)
         {
             object = obj;
@@ -564,6 +602,30 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         public PropertyDescriptor getPropertyDescriptor(String propertyName) throws BeansException
         {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setAutoGrowNestedPaths(boolean b)
+        {
+            this.autoGrowNestedPaths = b;
+        }
+
+        @Override
+        public boolean isAutoGrowNestedPaths()
+        {
+            return this.autoGrowNestedPaths;
+        }
+
+        @Override
+        public void setAutoGrowCollectionLimit(int i)
+        {
+            this.autoGrowCollectionLimit = i;
+        }
+
+        @Override
+        public int getAutoGrowCollectionLimit()
+        {
+            return this.autoGrowCollectionLimit;
         }
 
         public Object convertIfNecessary(Object value, Class requiredType) throws TypeMismatchException
@@ -760,5 +822,45 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     public boolean isDebug()
     {
         return _debug;
+    }
+
+    public Class getCommandClass()
+    {
+        return _commandClass;
+    }
+
+    public void setCommandClass(Class commandClass)
+    {
+        _commandClass = commandClass;
+    }
+
+    protected final Object createCommand() throws Exception
+    {
+        return BeanUtils.instantiateClass(getCommandClass());
+    }
+
+    public void setCommandName(String commandName)
+    {
+        _commandName = commandName;
+    }
+
+    public String getCommandName()
+    {
+        return _commandName;
+    }
+
+    /**
+     * Set the HTTP methods that this content generator should support.
+     * Default is GET, HEAD and POST
+     * @param methods
+     */
+    public void setSupportedMethods(String[] methods)
+    {
+        _supportedMethods = methods;
+    }
+
+    public String[] getSupportedMethods()
+    {
+        return _supportedMethods;
     }
 }
