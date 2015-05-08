@@ -38,6 +38,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HttpView;
@@ -54,11 +55,9 @@ import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
-import org.springframework.validation.Validator;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.AbstractController;
-import org.springframework.web.servlet.mvc.SimpleFormController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -111,51 +110,52 @@ public class DemoController extends SpringActionController
     }
 
 
-    /**
-     * Here is another Spring controller using a Spring base class
-     */
-
     @RequiresPermissionClass(InsertPermission.class)
-    public class InsertAction extends SimpleFormController implements NavTrailAction, Validator
+    public class InsertAction extends FormViewAction<Person>
     {
+        @SuppressWarnings("UnusedDeclaration")
         public InsertAction()
         {
-            setCommandClass(Person.class);
-            setValidator(this);
         }
 
-        public boolean supports(Class clazz)
+        public InsertAction(ViewContext ctx)
         {
-            return Person.class.isAssignableFrom(clazz);
+            setViewContext(ctx);
         }
 
-        public void validate(Object target, Errors errors)
+        @Override
+        public void validateCommand(Person target, Errors errors)
         {
-            DemoManager.validate((Person)target, errors);
+            DemoManager.validate(target, errors);
         }
 
-        protected ModelAndView showForm(HttpServletRequest request, HttpServletResponse response, BindException errors, Map controlModel) throws Exception
+        @Override
+        public ModelAndView getView(Person person, boolean reshow, BindException errors) throws Exception
         {
             return new InsertView(getDataRegion(), errors);
         }
 
-        protected ModelAndView onSubmit(HttpServletRequest request, HttpServletResponse response, Object command, BindException errors) throws Exception
+        @Override
+        public boolean handlePost(Person person, BindException errors) throws Exception
         {
-            Person person = (Person)command;
-
             try
             {
                 DemoManager.getInstance().insertPerson(getContainer(), getUser(), person);
-                return HttpView.redirect(new BeginAction().getURL());
+                return true;
             }
             catch (SQLException x)
             {
                 errors.addError(new ObjectError("main", null, null, "Insert failed: " + x.getMessage()));
+                return false;
             }
 
-            return showForm(request, response, errors, null);
         }
 
+        @Override
+        public URLHelper getSuccessURL(Person person)
+        {
+            return new ActionURL(BeginAction.class, getContainer());
+        }
 
         public NavTree appendNavTrail(NavTree root)
         {
@@ -167,6 +167,7 @@ public class DemoController extends SpringActionController
         {
             return new ActionURL(InsertAction.class, getContainer());
         }
+
     }
 
 
@@ -372,8 +373,7 @@ public class DemoController extends SpringActionController
         delete.setRequiresSelection(true, "Are you sure you want to delete this person?", "Are you sure you want to delete these people?");
         gridButtonBar.add(delete);
 
-        ActionButton insert = new ActionButton(InsertAction.class, "Add Person");
-        insert.setURL(new InsertAction().getURL().getLocalURIString());
+        ActionButton insert = new ActionButton("Add Person", new InsertAction(getViewContext()).getURL());
         insert.setDisplayPermission(InsertPermission.class);
         gridButtonBar.add(insert);
 
