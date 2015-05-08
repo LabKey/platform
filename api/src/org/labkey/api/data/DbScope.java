@@ -491,7 +491,7 @@ public class DbScope
 
     public boolean isTransactionActive()
     {
-        DbScope.Transaction tx = getCurrentTransaction();
+        Transaction tx = getCurrentTransaction();
         return null != tx;
     }
 
@@ -662,30 +662,23 @@ public class DbScope
             }
             else
             {
-                if (_transaction.size() == 1)
+                LOG.info("There is/are " + _transaction.size() + " thread(s) holding a transaction for the data source '" + toString() + "':");
+                for (Map.Entry<Thread, List<TransactionImpl>> entry : _transaction.entrySet())
                 {
-                    LOG.info("There is one thread holding a database connections for the data source '" + toString() + "':");
-                }
-                else
-                {
-                    LOG.info("There are " + _transaction.size() + " threads holding a database connections for the data source '" + toString() + "':");
-                    for (Map.Entry<Thread, List<TransactionImpl>> entry : _transaction.entrySet())
+                    Thread thread = entry.getKey();
+                    LOG.info("\t'" + thread.getName() + "', State = " + thread.getState());
+                    if (thread.getState() == Thread.State.TERMINATED || thread.getState() == Thread.State.NEW)
                     {
-                        Thread thread = entry.getKey();
-                        LOG.info("\t'" + thread.getName() + "', State = " + thread.getState());
-                        if (thread.getState() == Thread.State.TERMINATED || thread.getState() == Thread.State.NEW)
+                        for (TransactionImpl transaction : entry.getValue())
                         {
-                            for (TransactionImpl transaction : entry.getValue())
+                            for (StackTraceElement stackTraceElement : transaction._creation.getStackTrace())
                             {
-                                for (StackTraceElement stackTraceElement : transaction._creation.getStackTrace())
-                                {
-                                    LOG.info("\t\t" + stackTraceElement.toString());
-                                }
-                                LOG.info("");
+                                LOG.info("\t\t" + stackTraceElement.toString());
                             }
+                            LOG.info("");
                         }
-                        LOG.info("");
                     }
+                    LOG.info("");
                 }
             }
         }

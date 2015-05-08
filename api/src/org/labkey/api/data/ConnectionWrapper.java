@@ -51,6 +51,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Executor;
 
 /**
@@ -64,6 +65,7 @@ public class ConnectionWrapper implements java.sql.Connection
     private final Integer _spid;
     private final java.util.Date _allocationTime = new java.util.Date();
     private final String _allocatingThreadName;
+    private final Set<String> _referencingThreadNames = Collections.synchronizedSet(new TreeSet<String>());
 
     private final static Logger LOG = Logger.getLogger(ConnectionWrapper.class);
 
@@ -113,6 +115,7 @@ public class ConnectionWrapper implements java.sql.Connection
 
         MemTracker.getInstance().put(this);
         _allocatingThreadName = Thread.currentThread().getName();
+        _referencingThreadNames.add(_allocatingThreadName);
 
         _openConnections.put(this,  new Pair<>(Thread.currentThread(), new Throwable()));
 
@@ -771,7 +774,7 @@ public class ConnectionWrapper implements java.sql.Connection
 
     public String toString()
     {
-        return "Connection wrapper for SPID " + _spid + ", originally allocated to thread " + _allocatingThreadName + " at " + DateFormat.getInstance().format(_allocationTime) + ", real connection: " + System.identityHashCode(_connection) + " - " + _connection;
+        return "Connection wrapper for SPID " + _spid + ", originally allocated to thread " + _allocatingThreadName + " at " + DateFormat.getInstance().format(_allocationTime) + ", real connection: " + System.identityHashCode(_connection) + " - " + _connection + (_referencingThreadNames.size() > 1 ? (", accessed by threads: " + _referencingThreadNames) : "");
     }
 
 
@@ -888,6 +891,7 @@ public class ConnectionWrapper implements java.sql.Connection
 
     private void checkForSuspiciousClose() throws SQLException
     {
+        _referencingThreadNames.add(Thread.currentThread().getName());
         if (_suspiciousCloseStackTrace != null && isClosed())
         {
             throw new SQLException("This connection has already been closed, and may have been left in a bad state. See nested exception for potentially suspect code.", _suspiciousCloseStackTrace);
