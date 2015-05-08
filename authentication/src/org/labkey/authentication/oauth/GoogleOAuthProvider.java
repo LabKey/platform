@@ -37,6 +37,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
+import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
@@ -61,6 +62,7 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
 {
     public static final String NAME = "Google";
 
+    private final LinkFactory _linkFactory = new LinkFactory(this);
 
     // TODO AppProps()
     private static String getClientId()
@@ -260,6 +262,13 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
         {
             throw new ConfigurationException("Could not parse SSO provider URL", x);
         }
+    }
+
+
+    @Override
+    public LinkFactory getLinkFactory()
+    {
+        return _linkFactory;
     }
 
 

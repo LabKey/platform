@@ -17,7 +17,7 @@ package org.labkey.authentication.saml;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
@@ -34,6 +34,8 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class SamlProvider implements SSOAuthenticationProvider
 {
+    private final LinkFactory _linkFactory = new LinkFactory(this);
+
     // TODO: Fix this... authenticate() is no longer called
     public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response) throws ValidEmail.InvalidEmailException
     {
@@ -68,6 +70,12 @@ public class SamlProvider implements SSOAuthenticationProvider
     public URLHelper getURL(String secret)
     {
         return null;  // TODO!!
+    }
+
+    @Override
+    public LinkFactory getLinkFactory()
+    {
+        return _linkFactory;
     }
 
     @Override

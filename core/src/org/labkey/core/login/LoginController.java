@@ -2007,8 +2007,6 @@ public class LoginController extends SpringActionController
                 WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             }
 
-            AuthenticationManager.loadProperties();
-
             return false;  // Always reshow the page so user can view updates.  After post, second button will change to "Done".
         }
 
@@ -2073,7 +2071,7 @@ public class LoginController extends SpringActionController
 
         public String getAuthLogoHtml(String prefix)
         {
-            LinkFactory factory = new LinkFactory(provider);
+            LinkFactory factory = provider.getLinkFactory();
             String logo = factory.getImg(prefix);
 
             if (null == logo)

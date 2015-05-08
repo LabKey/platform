@@ -17,6 +17,7 @@
 package org.labkey.authentication.opensso;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
@@ -102,6 +103,12 @@ public class OpenSSOProvider implements AuthenticationProvider.SSOAuthentication
         return null;
     }
 
+
+    @Override
+    public AuthenticationManager.LinkFactory getLinkFactory()
+    {
+        return null;
+    }
 
     public void logout(HttpServletRequest request)
     {

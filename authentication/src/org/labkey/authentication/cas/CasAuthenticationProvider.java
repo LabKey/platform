@@ -16,13 +16,12 @@
 package org.labkey.authentication.cas;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * Created by adam on 3/29/2015.
@@ -30,8 +29,9 @@ import javax.servlet.http.HttpServletResponse;
 public class CasAuthenticationProvider implements SSOAuthenticationProvider
 {
     private static final CasAuthenticationProvider INSTANCE = new CasAuthenticationProvider();
-
     static final String NAME = "CAS";
+
+    private final LinkFactory _linkFactory = new LinkFactory(this);
 
     private CasAuthenticationProvider()
     {
@@ -46,6 +46,12 @@ public class CasAuthenticationProvider implements SSOAuthenticationProvider
     public URLHelper getURL(String secret)
     {
         return CasManager.getInstance().getLoginURL();
+    }
+
+    @Override
+    public LinkFactory getLinkFactory()
+    {
+        return _linkFactory;
     }
 
     @Nullable
