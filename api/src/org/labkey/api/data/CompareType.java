@@ -443,7 +443,7 @@ public enum CompareType
                     throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
                 }
             },
-    BETWEEEN("Between", "between", "BETWEEN", true, " BETWEEN ? AND ?", OperatorType.BETWEEN)
+    BETWEEN("Between", "between", "BETWEEN", true, " BETWEEN ? AND ?", OperatorType.BETWEEN)
         {
             @Override
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -477,7 +477,7 @@ public enum CompareType
                 return clause.meetsCriteria(value);
             }
         },
-    NOT_BETWEEEN("Not Between", "notbetween", "NOT_BETWEEN", true, " NOT BETWEEN ? AND ?", OperatorType.NOTBETWEEN)
+    NOT_BETWEEN("Not Between", "notbetween", "NOT_BETWEEN", true, " NOT BETWEEN ? AND ?", OperatorType.NOTBETWEEN)
         {
             @Override
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -1298,7 +1298,7 @@ public enum CompareType
 
         public BetweenClause(@NotNull FieldKey fieldKey, Object beginValue, Object endValue, boolean negated)
         {
-            super(fieldKey, negated ? NOT_BETWEEEN : BETWEEEN, null);
+            super(fieldKey, negated ? NOT_BETWEEN : BETWEEN, null);
 
             beginValue = validateValue(beginValue);
             endValue = validateValue(endValue);
