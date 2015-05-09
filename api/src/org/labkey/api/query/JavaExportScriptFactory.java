@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 LabKey Corporation
+ * Copyright (c) 2009-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,25 @@
  */
 package org.labkey.api.query;
 
-/**
- * User: bbimber
- * Date: 2/5/12
- * Time: 8:37 PM
- */
-public class PerlExportScriptFactory implements ExportScriptFactory
+/*
+* User: Dave
+* Date: Apr 2, 2009
+* Time: 12:42:49 PM
+*/
+public class JavaExportScriptFactory implements ExportScriptFactory
 {
     public String getScriptType()
     {
-        return "pl";
+        return "java";
     }
 
     public String getMenuText()
     {
-        return "Perl";
+        return "Java";
     }
 
     public ExportScriptModel getModel(QueryView queryView)
     {
-        return new PerlExportScriptModel(queryView);
+        return new JavaExportScriptModel(queryView);
     }
 }

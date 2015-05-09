@@ -98,6 +98,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 public class QueryView extends WebPartView<Object>
 {
@@ -107,7 +108,7 @@ public class QueryView extends WebPartView<Object>
     public static final String DATAREGIONNAME_DEFAULT = "query";
 
     private static final Logger _log = Logger.getLogger(QueryView.class);
-    private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<>();
+    private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentSkipListMap<>();
 
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.TOP;
     private ButtonBarConfig _buttonBarConfig = null;

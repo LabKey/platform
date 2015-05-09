@@ -29,11 +29,11 @@ import java.util.List;
  * Date: 2/5/12
  * Time: 8:39 PM
  */
-public class CreatePerlScriptModel extends ExportScriptModel
+public class PerlExportScriptModel extends ExportScriptModel
 {
     private int _indentSpaces = 0;
 
-    public CreatePerlScriptModel(QueryView view)
+    public PerlExportScriptModel(QueryView view)
     {
         super(view);
     }
@@ -82,7 +82,7 @@ public class CreatePerlScriptModel extends ExportScriptModel
         return ret.toString();
     }
 
-    // Produce javascript code block containing all the standard query parameters.  Callers need to wrap this block in
+    // Produce Perl code block containing all the standard query parameters.  Callers need to wrap this block in
     // curly braces (at a minimum) and modify/add parameters as appropriate.
     public String getStandardScriptParameters(int indentSpaces)
     {

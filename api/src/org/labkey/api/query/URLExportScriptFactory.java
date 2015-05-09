@@ -34,6 +34,6 @@ public class URLExportScriptFactory implements ExportScriptFactory
 
     public ExportScriptModel getModel(QueryView queryView)
     {
-        return new CreateURLScriptModel(queryView);
+        return new URLExportScriptModel(queryView);
     }
 }

@@ -16,7 +16,7 @@
 
 package org.labkey.api.reports.report;
 
-import org.labkey.api.query.CreateJavaScriptModel;
+import org.labkey.api.query.JavaScriptExportScriptModel;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.ClientDependency;
@@ -114,7 +114,7 @@ public class JavaScriptReport extends ScriptReport
 
     public class JavaScriptReportBean
     {
-        public final CreateJavaScriptModel model;
+        public final JavaScriptExportScriptModel model;
         public final String script;
         public final boolean useGetDataApi;
         private LinkedHashSet<ClientDependency> _dependencies;
@@ -122,7 +122,7 @@ public class JavaScriptReport extends ScriptReport
         private JavaScriptReportBean(ViewContext context) throws Exception
         {
             QueryView qv = createQueryView(context, getDescriptor());
-            model = new CreateJavaScriptModel(qv);
+            model = new JavaScriptExportScriptModel(qv);
             script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
             if (getDescriptor().getProperty(ScriptReportDescriptor.Prop.useGetDataApi) != null)
             {

@@ -19,8 +19,8 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="java.util.Iterator" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Map<String, ActionURL>> me = (JspView<Map<String, ActionURL>>) HttpView.currentView();
@@ -72,7 +72,7 @@
         out.print("</tr>");
     } %>
     <tr>
-        <td colspan="2">
+        <td colspan="6">
             <br>
             <%= button("Create Script").onClick("var _scriptUrl = getRadioButtonValue(document.getElementById(\"" + guid + "\")); window.open(_scriptUrl, \"_blank\"); return false;") %>
         </td>

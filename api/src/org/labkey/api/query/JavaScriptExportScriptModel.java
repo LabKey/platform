@@ -31,9 +31,9 @@ import java.util.List;
 * Date: Apr 2, 2009
 * Time: 12:44:51 PM
 */
-public class CreateJavaScriptModel extends ExportScriptModel
+public class JavaScriptExportScriptModel extends ExportScriptModel
 {
-    public CreateJavaScriptModel(QueryView view)
+    public JavaScriptExportScriptModel(QueryView view)
     {
         super(view);
     }

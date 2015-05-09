@@ -986,9 +986,6 @@ api/src/org/labkey/api/query/AliasedColumn.java -text
 api/src/org/labkey/api/query/BatchValidationException.java -text
 api/src/org/labkey/api/query/CacheClearingQueryUpdateService.java -text
 api/src/org/labkey/api/query/ChooseQueryView.java -text
-api/src/org/labkey/api/query/CreateJavaScriptModel.java -text
-api/src/org/labkey/api/query/CreatePerlScriptModel.java -text
-api/src/org/labkey/api/query/CreateURLScriptModel.java -text
 api/src/org/labkey/api/query/CrosstabExcelWriter.java -text
 api/src/org/labkey/api/query/CrosstabView.java -text
 api/src/org/labkey/api/query/CustomView.java -text
@@ -1006,7 +1003,10 @@ api/src/org/labkey/api/query/FilteredTable.java -text
 api/src/org/labkey/api/query/FolderSchemaProvider.java -text
 api/src/org/labkey/api/query/InvalidKeyException.java -text
 api/src/org/labkey/api/query/InvalidNamedSetException.java -text
+api/src/org/labkey/api/query/JavaExportScriptFactory.java -text
+api/src/org/labkey/api/query/JavaExportScriptModel.java -text
 api/src/org/labkey/api/query/JavaScriptExportScriptFactory.java -text
+api/src/org/labkey/api/query/JavaScriptExportScriptModel.java -text
 api/src/org/labkey/api/query/LookupForeignKey.java -text
 api/src/org/labkey/api/query/MetadataException.java -text
 api/src/org/labkey/api/query/MetadataParseException.java -text
@@ -1015,6 +1015,7 @@ api/src/org/labkey/api/query/NotificationInfoProvider.java -text
 api/src/org/labkey/api/query/OlapSchemaInfo.java -text
 api/src/org/labkey/api/query/PdLookupForeignKey.java -text
 api/src/org/labkey/api/query/PerlExportScriptFactory.java -text
+api/src/org/labkey/api/query/PerlExportScriptModel.java -text
 api/src/org/labkey/api/query/PropertyColumnDecorator.java -text
 api/src/org/labkey/api/query/PropertyForeignKey.java -text
 api/src/org/labkey/api/query/PropertyValidationError.java -text
@@ -1060,6 +1061,7 @@ api/src/org/labkey/api/query/SimpleValidationError.java -text
 api/src/org/labkey/api/query/TableSorter.java -text
 api/src/org/labkey/api/query/TitleForeignKey.java -text
 api/src/org/labkey/api/query/URLExportScriptFactory.java -text
+api/src/org/labkey/api/query/URLExportScriptModel.java -text
 api/src/org/labkey/api/query/UserIdForeignKey.java -text
 api/src/org/labkey/api/query/UserIdQueryForeignKey.java -text
 api/src/org/labkey/api/query/UserIdRenderer.java -text

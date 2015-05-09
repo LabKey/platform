@@ -31,11 +31,11 @@ import java.util.Map;
  * Date: 2/5/12
  * Time: 8:39 PM
  */
-public class CreateURLScriptModel extends ExportScriptModel
+public class URLExportScriptModel extends ExportScriptModel
 {
     private QueryView _view;
 
-    public CreateURLScriptModel(QueryView view)
+    public URLExportScriptModel(QueryView view)
     {
         super(view);
         _view = view;

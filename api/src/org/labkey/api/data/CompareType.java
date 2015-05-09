@@ -558,7 +558,7 @@ public enum CompareType
             }
         },
 
-    HAS_MV_INDICATOR("Has An MV Indicator", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
+    MV_INDICATOR("Has An MV Indicator", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
         {
             @Override
             MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -585,7 +585,7 @@ public enum CompareType
             {
                 throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
             }
-        },
+        }
 
     ;
 
@@ -1565,7 +1565,7 @@ public enum CompareType
 
         MvClause(FieldKey fieldKey, boolean isNull)
         {
-            super(fieldKey, isNull ? CompareType.NO_MV_INDICATOR : CompareType.HAS_MV_INDICATOR, null);
+            super(fieldKey, isNull ? CompareType.NO_MV_INDICATOR : CompareType.MV_INDICATOR, null);
             this.isNull = isNull;
         }
 
