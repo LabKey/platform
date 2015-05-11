@@ -789,6 +789,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ResultSetSelectorTestCase.class,
                 NestedGroupsTest.class,
                 ModulePropertiesTestCase.class,
+                ModuleInfoTestCase.class,
                 PortalJUnitTest.class,
                 ContainerDisplayColumn.TestCase.class,
                 AliasManager.TestCase.class,
