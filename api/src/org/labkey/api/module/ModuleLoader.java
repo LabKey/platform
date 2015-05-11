@@ -607,7 +607,7 @@ public class ModuleLoader implements Filter
 
                 if (null != module)
                 {
-                    module.lo();
+                    module.lock();
 
                     //don't load if we've already loaded a module of the same name
                     if (moduleNameToFile.containsKey(module.getName()))
