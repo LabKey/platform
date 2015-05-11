@@ -50,6 +50,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.PipeRoot;
@@ -4930,7 +4931,7 @@ public class StudyController extends BaseStudyController
                 throw new IllegalStateException("Study already exists in folder");
 
             SecurityManager.setInheritPermissions(studyFolder);
-            studyFolder.setFolderType(ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME), getUser());
+            studyFolder.setFolderType(FolderTypeManager.get().getFolderType(StudyFolderType.NAME), getUser());
 
             StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
             study.setTimepointType(TimepointType.DATE);

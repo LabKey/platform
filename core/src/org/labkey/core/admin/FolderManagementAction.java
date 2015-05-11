@@ -40,6 +40,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -227,7 +228,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         }
         else
         {
-            FolderType folderType = ModuleLoader.getInstance().getFolderType(form.getFolderType());
+            FolderType folderType = FolderTypeManager.get().getFolderType(form.getFolderType());
             if (container.isContainerTab() && folderType.hasContainerTabs())
                 errors.reject(null, "You cannot set a tab folder to a folder type that also has tab folders");
             else

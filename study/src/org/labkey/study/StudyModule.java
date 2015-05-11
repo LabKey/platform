@@ -42,6 +42,7 @@ import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.DefaultFolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -516,9 +517,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     private void registerFolderTypes()
     {
-        ModuleLoader.getInstance().registerFolderType(this, new StudyFolderType(this, getActiveModulesForStudyFolder()));
-        ModuleLoader.getInstance().registerFolderType(this, new AssayFolderType(this));
-        ModuleLoader.getInstance().registerFolderType(this, new DataspaceStudyFolderType(this, getActiveModulesForDataspaceFolder()));
+        FolderTypeManager.get().registerFolderType(this, new StudyFolderType(this, getActiveModulesForStudyFolder()));
+        FolderTypeManager.get().registerFolderType(this, new AssayFolderType(this));
+        FolderTypeManager.get().registerFolderType(this, new DataspaceStudyFolderType(this, getActiveModulesForDataspaceFolder()));
     }
 
     private Set<Module> getActiveModulesForStudyFolder()

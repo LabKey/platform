@@ -34,6 +34,7 @@
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.module.FolderTypeManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -55,7 +56,7 @@ var defaultModules = new Object();
     final ViewContext context = getViewContext();
     Container c = getContainer();
     boolean userHasEnableRestrictedModulesPermission = c.hasEnableRestrictedModules(getUser());
-    Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes(userHasEnableRestrictedModulesPermission);
+    Collection<FolderType> allFolderTypes = FolderTypeManager.get().getFolderTypes(userHasEnableRestrictedModulesPermission);
     List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules(userHasEnableRestrictedModulesPermission));
     Collections.sort(allModules, new Comparator<Module>()
     {

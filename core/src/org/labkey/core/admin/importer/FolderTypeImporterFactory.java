@@ -21,6 +21,7 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
@@ -98,7 +99,7 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 ctx.getLogger().info("Loading " + getDescription());
 
                 org.labkey.folder.xml.FolderType folderTypeXml = folderXml.getFolderType();
-                FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeXml.getName());
+                FolderType folderType = FolderTypeManager.get().getFolderType(folderTypeXml.getName());
 
                 org.labkey.folder.xml.FolderType.Modules modulesXml = folderTypeXml.getModules();
                 Set<Module> activeModules = new HashSet<>();

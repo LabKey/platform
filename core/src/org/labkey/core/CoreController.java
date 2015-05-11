@@ -60,6 +60,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
@@ -744,7 +745,7 @@ public class CoreController extends SpringActionController
                 FolderType folderType = null;
                 if (folderTypeName != null)
                 {
-                    folderType = ModuleLoader.getInstance().getFolderType(folderTypeName);
+                    folderType = FolderTypeManager.get().getFolderType(folderTypeName);
                 }
 
                 if (null != folderType && Container.hasRestrictedModule(folderType) && !getContainer().hasEnableRestrictedModules(getUser()))
@@ -1356,7 +1357,7 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             Map<String, Object> folderTypes = new HashMap<>();
-            for (FolderType folderType : ModuleLoader.getInstance().getEnabledFolderTypes())
+            for (FolderType folderType : FolderTypeManager.get().getEnabledFolderTypes())
             {
                 Map<String, Object> folderTypeJSON = new HashMap<>();
                 folderTypeJSON.put("name", folderType.getName());

@@ -22,8 +22,8 @@ import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.FolderSerializationRegistry;
-import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.admin.SubfolderWriter;
+import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
@@ -50,12 +50,11 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.FolderType;
-import org.labkey.api.module.FolderTypeResourceLoader;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AliasManager;
@@ -142,9 +141,9 @@ import org.labkey.core.admin.importer.SecurityGroupImporterFactory;
 import org.labkey.core.admin.importer.SubfolderImporterFactory;
 import org.labkey.core.admin.logger.LoggerController;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
-import org.labkey.core.admin.test.SchemaXMLTestCase;
 import org.labkey.core.admin.sitevalidation.SiteValidationServiceImpl;
 import org.labkey.core.admin.sql.SqlScriptController;
+import org.labkey.core.admin.test.SchemaXMLTestCase;
 import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
 import org.labkey.core.admin.writer.FolderTypeWriterFactory;
 import org.labkey.core.admin.writer.ModulePropertiesWriterFactory;
@@ -316,13 +315,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_JSDOC, "Javascript Documentation", "Displays LabKey javascript API's from the Developer Links menu.", false);
         AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
                 "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
-    }
-
-    @NotNull
-    @Override
-    public Set<? extends ModuleResourceLoader> getResourceLoaders()
-    {
-        return PageFlowUtil.set(new FolderTypeResourceLoader());
     }
 
     @NotNull
@@ -585,7 +577,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
         ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
         SecurityManager.init();
-        ModuleLoader.getInstance().registerFolderType(this, FolderType.NONE);
+        FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
         SystemMaintenance.setTimer();
 
@@ -661,7 +653,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         LoggerController.registerAdminConsoleLinks();
 
         WebdavService.get().setResolver(WebdavResolverImpl.get());
-        ModuleLoader.getInstance().registerFolderType(this, new WorkbookFolderType());
+        FolderTypeManager.get().registerFolderType(this, new WorkbookFolderType());
 
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)

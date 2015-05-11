@@ -40,7 +40,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
@@ -384,7 +384,7 @@ public class StudyDesignManager
             throw new IllegalStateException("Study already exists in folder");
         
         SecurityManager.setInheritPermissions(studyFolder);
-        studyFolder.setFolderType(ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME), user);
+        studyFolder.setFolderType(FolderTypeManager.get().getFolderType(StudyFolderType.NAME), user);
 
         //Grab study info from XML and use it here
         StudyDesignVersion version = StudyDesignManager.get().getStudyDesignVersion(info.getContainer(), info.getStudyId());

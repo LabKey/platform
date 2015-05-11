@@ -24,8 +24,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.DeveloperRole;
@@ -109,7 +109,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         RoleManager.getRole(DeveloperRole.class).addPermission(IncludeScriptPermission.class);
         
         ContainerManager.addContainerListener(new WikiContainerListener());
-        ModuleLoader.getInstance().registerFolderType(this, new CollaborationFolderType());
+        FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
         WebdavService.get().addProvider(new WikiWebdavProvider());
 
         // Ideally, this would be in afterUpdate(), but announcements runs the wiki sql scripts and is dependent on
@@ -135,7 +135,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         Container supportContainer = ContainerManager.createDefaultSupportContainer();
         Container homeContainer = ContainerManager.getHomeContainer();
 
-        FolderType collaborationType = ModuleLoader.getInstance().getFolderType(CollaborationFolderType.TYPE_NAME);
+        FolderType collaborationType = FolderTypeManager.get().getFolderType(CollaborationFolderType.TYPE_NAME);
 
         supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
         homeContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());

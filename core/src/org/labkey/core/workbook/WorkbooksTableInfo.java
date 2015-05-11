@@ -19,6 +19,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerTable;
+import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -27,9 +41,18 @@ import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.module.FolderType;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.*;
-import org.labkey.api.data.*;
+import org.labkey.api.module.FolderTypeManager;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -45,7 +68,11 @@ import org.labkey.core.query.CoreQuerySchema;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -466,7 +493,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
                 if (folderTypeName == null)
                     folderTypeName = WorkbookFolderType.NAME;
 
-                FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeName);
+                FolderType folderType = FolderTypeManager.get().getFolderType(folderTypeName);
                 if (folderType != null)
                     _currentContainer.setFolderType(folderType, user);
             }

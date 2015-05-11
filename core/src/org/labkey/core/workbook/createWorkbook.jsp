@@ -17,8 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.module.FolderTypeManager" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.workbook.CreateWorkbookBean" %>
@@ -32,7 +31,7 @@
     Container container = getContainer();
 
     Set<FolderType> folderTypes = new LinkedHashSet<>();
-    for (FolderType folderType : ModuleLoader.getInstance().getEnabledFolderTypes())
+    for (FolderType folderType : FolderTypeManager.get().getEnabledFolderTypes())
     {
         if (folderType.isWorkbookType())
         {

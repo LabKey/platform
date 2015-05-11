@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.module.FolderTypeManager" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -38,7 +38,7 @@
     {
         out.print(text("No Studies found in " + (c.equals(c.getProject()) ? "project " : "folder ") + h(c.getName()) + " or child folders."));
     }
-    FolderType studyFolderType = ModuleLoader.getInstance().getFolderType("Study");
+    FolderType studyFolderType = FolderTypeManager.get().getFolderType("Study");
 %>
 <div class="labkey-study-list"><%
     for (Study study: studies)

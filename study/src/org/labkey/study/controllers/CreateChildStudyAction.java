@@ -24,6 +24,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -226,7 +227,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
 
         StudyManager.getInstance().createStudy(getUser(), study);
 
-        FolderType folderType = ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME);
+        FolderType folderType = FolderTypeManager.get().getFolderType(StudyFolderType.NAME);
         _dstContainer.setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser());
 
         return study;

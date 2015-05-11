@@ -84,6 +84,7 @@ import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -4456,7 +4457,7 @@ public class AdminController extends SpringActionController
                     }
                     else
                     {
-                        FolderType type = ModuleLoader.getInstance().getFolderType(folderType);
+                        FolderType type = FolderTypeManager.get().getFolderType(folderType);
 
                         if (type == null)
                         {
@@ -5833,14 +5834,14 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/core/admin/enabledFolderTypes.jsp", new FolderTypesBean(ModuleLoader.getInstance().getAllFolderTypes(), ModuleLoader.getInstance().getEnabledFolderTypes()));
+            return new JspView<>("/org/labkey/core/admin/enabledFolderTypes.jsp", new FolderTypesBean(FolderTypeManager.get().getAllFolderTypes(), FolderTypeManager.get().getEnabledFolderTypes()));
         }
 
         @Override
         public boolean handlePost(Object form, BindException errors) throws Exception
         {
             List<FolderType> enabledFolderTypes = new ArrayList<>();
-            for (FolderType folderType : ModuleLoader.getInstance().getAllFolderTypes())
+            for (FolderType folderType : FolderTypeManager.get().getAllFolderTypes())
             {
                 boolean enabled = Boolean.TRUE.toString().equalsIgnoreCase(getViewContext().getRequest().getParameter(folderType.getName()));
                 if (enabled)
@@ -5848,7 +5849,7 @@ public class AdminController extends SpringActionController
                     enabledFolderTypes.add(folderType);
                 }
             }
-            ModuleLoader.getInstance().setEnabledFolderTypes(enabledFolderTypes);
+            FolderTypeManager.get().setEnabledFolderTypes(enabledFolderTypes);
             return true;
         }
 
