@@ -473,4 +473,9 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      */
     @Nullable
     public FieldKey getAuditRowPk();
+
+    /**
+     * @return set of all columns involved in the query
+     */
+    Set<ColumnInfo> getAllInvolvedColumns(Collection<ColumnInfo> selectColumns);
 }

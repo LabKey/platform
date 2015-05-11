@@ -1549,4 +1549,13 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     {
         return getClass().getName() + ": " + getSchema().getName() + "." + getName();
     }
+
+    @Override
+    public Set<ColumnInfo> getAllInvolvedColumns(Collection<ColumnInfo> selectColumns)
+    {
+        Set<ColumnInfo> allInvolvedColumns = new HashSet<>();
+        for (ColumnInfo column : selectColumns)
+            allInvolvedColumns.add(column);
+        return allInvolvedColumns;
+    }
 }
