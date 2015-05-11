@@ -3052,6 +3052,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 }
             }
             selectColumns.add(col.getName());
+            if (col.isMvEnabled())
+            {
+                // include the indicator column for MV enabled fields
+                selectColumns.add(col.getMvColumnName().getName());
+            }
         }
 
         List<Map<String, Object>> datas = new ArrayList<>(new TableSelector(tInfo, selectColumns, filter, null).getMapCollection());

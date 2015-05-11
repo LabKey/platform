@@ -327,6 +327,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
+            assert null != oldKeys;
             Map<String, Object> oldRow = oldKeys.get(i);
             long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
             rowIds.add(rowId);
@@ -357,11 +358,9 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
-            Object rowIdObj = oldKeys.get(i).get("RowId");
-            if (null == rowIdObj)
-                throw new IllegalArgumentException("RowId not found for a row.");
-
-            long rowId = Long.class == rowIdObj.getClass() ? (Long) rowIdObj : (Integer) rowIdObj;
+            assert null != oldKeys;
+            Map<String, Object> oldRow = oldKeys.get(i);
+            long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
             Vial vial = vials.get(rowId);
             Map<String, Object> rowMap = prepareRowMap(container, row, vial, importer, externalId++);
             newRows.add(rowMap);
