@@ -483,7 +483,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         boolean found = false;
 
         // support focus on a starting material that is not part of the run
-        if (type.equals(DotGraph.TYPECODE_MATERIAL))
+        if (type == null || DotGraph.TYPECODE_MATERIAL.equalsIgnoreCase(type))
         {
             for (ExpMaterial m : getMaterialInputs().keySet())
                 if (m.getRowId() == id.intValue())
@@ -495,7 +495,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                     break;
                 }
         }
-        if (type.equals(DotGraph.TYPECODE_DATA))
+        if (type == null || DotGraph.TYPECODE_DATA.equalsIgnoreCase(type))
         {
             for (ExpData d : getDataInputs().keySet())
                 if (d.getRowId() == id.intValue())
@@ -511,7 +511,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             for (ExpProtocolApplication app : apps)
             {
-                if (type.equals(DotGraph.TYPECODE_MATERIAL))
+                if (type == null || DotGraph.TYPECODE_MATERIAL.equalsIgnoreCase(type))
                 {
                     for (ExpMaterial m : app.getOutputMaterials())
                         if (m.getRowId() == id.intValue())
@@ -528,7 +528,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                             break;
                         }
                 }
-                if (type.equals(DotGraph.TYPECODE_DATA))
+                if (type == null || DotGraph.TYPECODE_DATA.equalsIgnoreCase(type))
                 {
                     for (ExpData d : app.getOutputDatas())
                     {
@@ -547,7 +547,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                         }
                     }
                 }
-                if (type.equals(DotGraph.TYPECODE_PROT_APP))
+                if (type == null || DotGraph.TYPECODE_PROT_APP.equalsIgnoreCase(type))
                 {
                     if (app.getRowId() == id.intValue())
                     {

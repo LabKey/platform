@@ -131,7 +131,7 @@ public class DotGraph
     {
         DotNode node = new MNode(m);
         node.setLinkURL(ExperimentController.getResolveLsidURL(_c, "material", m.getLSID()));
-        if (null != _focusId && _objectType.equals(TYPECODE_MATERIAL) && _focusId == m.getRowId())
+        if (null != _focusId && TYPECODE_MATERIAL.equalsIgnoreCase(_objectType) && _focusId == m.getRowId())
             node.setFocus(true);
         if (null != groupId)
         {
@@ -146,7 +146,7 @@ public class DotGraph
         DotNode node = new DNode(d);
         node.setLinkURL(ExperimentController.getResolveLsidURL(_c, "data", d.getLSID()));
 
-        if (null != _focusId && _objectType.equals(TYPECODE_DATA) && _focusId == d.getRowId())
+        if (null != _focusId && TYPECODE_DATA.equalsIgnoreCase(_objectType) && _focusId == d.getRowId())
             node.setFocus(true);
         if (null != groupId)
         {
@@ -182,7 +182,7 @@ public class DotGraph
         {
             node.setBold(true);
         }
-        if (null != _focusId && _objectType.equals(TYPECODE_MATERIAL) && _focusId == m.getRowId())
+        if (null != _focusId && TYPECODE_MATERIAL.equalsIgnoreCase(_objectType) && _focusId == m.getRowId())
             node.setFocus(true);
         if (null != groupId)
             node = addNodeToGroup(node, groupId, actionseq, _groupMNodes);
@@ -198,7 +198,7 @@ public class DotGraph
         {
             node.setBold(true);
         }
-        if (null != _focusId && _objectType.equals(TYPECODE_DATA) && _focusId == d.getRowId())
+        if (null != _focusId && TYPECODE_DATA.equalsIgnoreCase(_objectType) && _focusId == d.getRowId())
             node.setFocus(true);
         if (null != groupId)
             node = addNodeToGroup(node, groupId, actionseq, _groupDNodes);
@@ -210,7 +210,7 @@ public class DotGraph
         if (_writtenProcNodes.containsKey(rowId) || _pendingProcNodes.containsKey(rowId))
             return;
         DotNode node = new PANode(rowId, name);
-        if (null != _focusId && _objectType.equals(TYPECODE_PROT_APP) && _focusId == rowId)
+        if (null != _focusId && TYPECODE_PROT_APP.equalsIgnoreCase(_objectType) && _focusId == rowId)
             node.setFocus(true);
         if (null != groupId)
             node = addNodeToGroup(node, groupId, actionseq, _groupPANodes);
