@@ -1129,15 +1129,19 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns)
+    public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns,
+                                                        @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns)
     {
         HashMap<FieldKey,ColumnInfo> hm = new HashMap<>();
-        return ensureRequiredColumns(table,columns,filter,sort,unresolvedColumns,hm);
+        Set<ColumnInfo> involvedColumns = new HashSet<>();
+        return ensureRequiredColumns(table, columns, filter, sort, unresolvedColumns, hm, involvedColumns);
     }
 
 
     // mapping may include multiple fieldkeys pointing at same columninfo (see ColumnInfo.resolveColumn());
-    public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns, Map<FieldKey,ColumnInfo> columnMap /* IN/OUT */)
+    private Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter,
+                                                         @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns,
+                                                         Map<FieldKey,ColumnInfo> columnMap /* IN/OUT */, Set<ColumnInfo> allInvolvedColumns /* IN/OUT */)
     {
         AliasManager manager = new AliasManager(table, columns);
 
@@ -1160,7 +1164,10 @@ public class QueryServiceImpl extends QueryService
             {
                 ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
                 if (col != null)
+                {
                     ret.add(col);
+                    allInvolvedColumns.add(col);
+                }
             }
         }
 
@@ -1171,12 +1178,12 @@ public class QueryServiceImpl extends QueryService
                 ColumnInfo col = resolveFieldKey(field.getFieldKey(), table, columnMap, unresolvedColumns, manager);
                 if (col != null)
                 {
-                    ret = resolveSortColumns(col, table, columnMap, unresolvedColumns, manager, columns, ret, false);
+                    ret = resolveSortColumns(col, columnMap, manager, ret, allInvolvedColumns, false);
                 }
                 //the column might be displayed, but also used as a sort.  if so, we need to ensure we include sortFieldKeys
                 else if (columnMap.containsKey(field.getFieldKey()))
                 {
-                    ret = resolveSortColumns(columnMap.get(field.getFieldKey()), table, columnMap, unresolvedColumns, manager, columns, ret, true);
+                    ret = resolveSortColumns(columnMap.get(field.getFieldKey()), columnMap, manager, ret, allInvolvedColumns, true);
                 }
             }
         }
@@ -1201,7 +1208,8 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    private ArrayList<ColumnInfo> resolveSortColumns(ColumnInfo col, TableInfo table, Map<FieldKey,ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager, Collection<ColumnInfo> columns, ArrayList<ColumnInfo> ret, boolean addSortKeysOnly)
+    private ArrayList<ColumnInfo> resolveSortColumns(ColumnInfo col, Map<FieldKey,ColumnInfo> columnMap, AliasManager manager,
+                                                     ArrayList<ColumnInfo> ret, Set<ColumnInfo> allInvolvedColumns, boolean addSortKeysOnly)
     {
         if (col.getSortFieldKeys() != null || null != col.getMvColumnName())
         {
@@ -1232,11 +1240,15 @@ public class QueryServiceImpl extends QueryService
             }
 
             ret.addAll(toAdd);
+            allInvolvedColumns.addAll(toAdd);
         }
         else
         {
             if (!addSortKeysOnly)
+            {
                 ret.add(col);
+                allInvolvedColumns.add(col);
+            }
         }
 
         return ret;
@@ -1888,6 +1900,7 @@ public class QueryServiceImpl extends QueryService
 
         if (null == selectColumns)
             selectColumns = table.getColumns();
+        Set<ColumnInfo> allInvolvedColumns = table.getAllInvolvedColumns(selectColumns);
 
         // Check incoming columns to ensure they come from table
         assert Table.checkAllColumns(table, selectColumns, "getSelectSQL() selectColumns", true);
@@ -1905,13 +1918,13 @@ public class QueryServiceImpl extends QueryService
         Map<String, SQLFragment> joins = new LinkedHashMap<>();
         List<ColumnInfo> allColumns = new ArrayList<>(selectColumns);
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<>();
-        allColumns = (List<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null, columnMap);
+        allColumns = (List<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null, columnMap, allInvolvedColumns);
 
         // Check for extra columns needed for logging
         Set<FieldKey> dataLoggingFieldKeys = new HashSet<>();
         Set<ColumnLogging> shouldLogNameLoggings = new HashSet<>();
         String columnLoggingComment = null;
-        for (ColumnInfo column : allColumns)
+        for (ColumnInfo column : allInvolvedColumns)
         {
             if (!(column instanceof LookupColumn))
             {

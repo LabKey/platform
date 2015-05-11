@@ -29,7 +29,9 @@ import org.labkey.api.util.MemTracker;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 public class QueryTableInfo extends AbstractTableInfo implements ContainerFilterable
@@ -156,5 +158,14 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     public UserSchema getUserSchema()
     {
         return _relation.getSchema() instanceof UserSchema ? (UserSchema)_relation.getSchema() : null;
+    }
+
+    @Override
+    public Set<ColumnInfo> getAllInvolvedColumns(Collection<ColumnInfo> selectColumns)
+    {
+        Set<ColumnInfo> allInvolvedColumns = new HashSet<>();
+        for (QueryTable.TableColumn tableColumn : _relation._query.getInvolvedTableColumns())
+            allInvolvedColumns.add(tableColumn._col);
+        return allInvolvedColumns;
     }
 }

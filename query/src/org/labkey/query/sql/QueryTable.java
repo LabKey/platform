@@ -128,7 +128,7 @@ public class QueryTable extends QueryRelation
         if (ci == null)
             return null;
         ret = new TableColumn(k, ci);
-        _selectedColumns.put(k,ret);
+        addSelectedColumn(k, ret);
         return ret;
     }
 
@@ -173,7 +173,7 @@ public class QueryTable extends QueryRelation
         if (lk == null)
             return null;
         ret = new TableColumn(k, lk);
-        _selectedColumns.put(k,ret);
+        addSelectedColumn(k, ret);
         return ret;
     }
 
@@ -200,7 +200,7 @@ public class QueryTable extends QueryRelation
             return null;
         ColumnInfo lk = qfk.createLookupColumn(parent._col, name);
         ret = new TableColumn(k, lk);
-        _selectedColumns.put(k,ret);
+        addSelectedColumn(k,ret);
         return ret;
     }
 
@@ -577,5 +577,11 @@ public class QueryTable extends QueryRelation
         }
         suggested.removeAll(selected);
         return suggested;
+    }
+
+    private void addSelectedColumn(FieldKey key, TableColumn column)
+    {
+        _selectedColumns.put(key, column);
+        _query.addInvolvedTableColumn(column);
     }
 }

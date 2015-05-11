@@ -91,6 +91,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,6 +136,8 @@ public class Query
     private int _aliasCounter = 0;
 
     IdentityHashMap<QueryTable, Map<FieldKey,QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
+
+    private final Set<QueryTable.TableColumn> _involvedTableColumns = new HashSet<>();
 
     public Query(@NotNull QuerySchema schema)
     {
@@ -569,6 +572,16 @@ public class Query
         if (ex instanceof QueryInternalException)
             return ex;
         return new QueryInternalException(ex, sql);
+    }
+
+    public void addInvolvedTableColumn(QueryTable.TableColumn column)
+    {
+        _involvedTableColumns.add(column);
+    }
+
+    public Set<QueryTable.TableColumn> getInvolvedTableColumns()
+    {
+        return _involvedTableColumns;
     }
 
 
@@ -1082,6 +1095,7 @@ public class Query
         new SqlTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S", 2, 14),
         new SqlTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R", 2, 26),
         new SqlTest("(SELECT 'R' as x, R.seven FROM R) UNION (SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R)", 2, 26),
+        new SqlTest("(SELECT x, y FROM (SELECT 'S' as x, S.seven as y FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve as y FROM R) UNION (SELECT 'R' as x, R.seven as y FROM R))", 2, 26),
 
         // mixed UNION, UNION ALL
         new SqlTest("SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R", 1, 12),
