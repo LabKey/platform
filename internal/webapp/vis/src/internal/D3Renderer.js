@@ -322,7 +322,8 @@ LABKEY.vis.internal.Axis = function() {
 
 LABKEY.vis.internal.D3Renderer = function(plot) {
     var errorMsg, labelElements = null, xAxis = null, leftAxis = null, rightAxis = null, brush = null, brushSel = null,
-        brushSelectionType = null, xHandleBrush = null, xHandleSel = null, yHandleBrush = null, yHandleSel = null;
+        brushSelectionType = null, xHandleBrush = null, xHandleSel = null, yHandleBrush = null, yHandleSel = null,
+        defaultBrushFillColor = '#EBF7F8', defaultBrushFillOpacity = .75, defaultBrushStrokeColor = '#14C9CC';
 
     var initLabelElements = function() {
         labelElements = {};
@@ -610,7 +611,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var addXBrush = function(brush, brushSel) {
-        var xBrushStart, xBrush, xBrushEnd;
+        var xBrushStart, xBrush, xBrushEnd,
+            brushStrokeColor = plot.brushing.strokeColor || defaultBrushStrokeColor;
 
         if (!xHandleSel) {
             xHandleSel = this.canvas.insert('g', '.brush').attr('class', 'x-axis-handle');
@@ -674,15 +676,16 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         xHandleSel.attr('transform', 'translate(0,' + plot.grid.bottomEdge + ')');
         xHandleSel.selectAll('rect').attr('height', 30);
         xHandleSel.selectAll('.extent').attr('opacity', 0);
-        xHandleSel.select('.resize.e rect').attr('fill', '#14C9CC').attr('style', null);
-        xHandleSel.select('.resize.w rect').attr('fill', '#14C9CC').attr('style', null);
+        xHandleSel.select('.resize.e rect').attr('fill', brushStrokeColor).attr('style', null);
+        xHandleSel.select('.resize.w rect').attr('fill', brushStrokeColor).attr('style', null);
         xHandleBrush.on('brushstart', xBrushStart);
         xHandleBrush.on('brush', xBrush);
         xHandleBrush.on('brushend', xBrushEnd);
     };
 
     var addYBrush = function(brush, brushSel) {
-        var yBrushStart, yBrush, yBrushEnd;
+        var yBrushStart, yBrush, yBrushEnd,
+            brushStrokeColor = plot.brushing.strokeColor || defaultBrushStrokeColor;
 
         if (!yHandleSel) {
             yHandleSel = this.canvas.insert('g', '.brush').attr('class', 'y-axis-handle');
@@ -746,8 +749,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         yHandleSel.attr('transform', 'translate(' + (plot.grid.leftEdge - 30) + ',0)');
         yHandleSel.selectAll('rect').attr('width', 30);
         yHandleSel.selectAll('.extent').attr('opacity', 0);
-        yHandleSel.select('.resize.n rect').attr('fill-opacity', 1).attr('fill', '#14C9CC').attr('style', null);
-        yHandleSel.select('.resize.s rect').attr('fill-opacity', 1).attr('fill', '#14C9CC').attr('style', null);
+        yHandleSel.select('.resize.n rect').attr('fill-opacity', 1).attr('fill', brushStrokeColor).attr('style', null);
+        yHandleSel.select('.resize.s rect').attr('fill-opacity', 1).attr('fill', brushStrokeColor).attr('style', null);
         yHandleBrush.on('brushstart', yBrushStart);
         yHandleBrush.on('brush', yBrush);
         yHandleBrush.on('brushend', yBrushEnd);
@@ -912,7 +915,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .attr('height', plot.grid.bottomEdge - plot.grid.topEdge);
             }
 
-            brushSel.selectAll('.extent').attr('opacity', .75).attr('fill', '#EBF7F8').attr('stroke', '#14C9CC')
+            brushSel.selectAll('.extent')
+                    .attr('opacity', plot.brushing.fillOpacity || defaultBrushFillOpacity)
+                    .attr('fill', plot.brushing.fillColor || defaultBrushFillColor)
+                    .attr('stroke', plot.brushing.strokeColor || defaultBrushStrokeColor)
                     .attr('stroke-width', 1.5);
 
             // The brush handles require the main brush is initialized first, because they use the same scales.
