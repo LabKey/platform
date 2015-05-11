@@ -631,7 +631,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
      * @param installPath File system location where tool is installed. {@value null} to search pipelineToolsDirectory and PATH
      * @param rel Path to tool relative to the installPath or pipelinToolsDirectory/PATH
      * @param expectExecutable Tool canExecute and may have an unspecified file extension
-     * @return Full path to the spicified tool
+     * @return Full path to the specified tool
      */
     private String getPathToTool(@Nullable String installPath, String rel, boolean expectExecutable)
             throws FileNotFoundException
