@@ -92,14 +92,18 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
 
     public List<Map<String, Object>> importRunData(ExpProtocol protocol, File runData) throws Exception
     {
+        return _importRunData(protocol, runData, true);
+    }
+
+    protected List<Map<String, Object>> _importRunData(ExpProtocol protocol, File runData, boolean shouldInferTypes) throws Exception
+    {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         Domain dataDomain = provider.getResultsDomain(protocol);
         DataLoaderSettings loaderSettings = new DataLoaderSettings();
         loaderSettings.setAllowUnexpectedColumns(true);
 
-        try (DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(runData, dataDomain, loaderSettings))
+        try (DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(runData, dataDomain, loaderSettings, shouldInferTypes))
         {
-            loader.setInferTypes(false);
             return loader.load();
         }
         catch (IOException ioe)

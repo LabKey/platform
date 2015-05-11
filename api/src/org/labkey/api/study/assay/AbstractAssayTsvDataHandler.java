@@ -132,7 +132,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         Domain dataDomain = provider.getResultsDomain(protocol);
 
-        try (DataLoader loader = createLoaderForImport(dataFile, dataDomain, settings))
+        try (DataLoader loader = createLoaderForImport(dataFile, dataDomain, settings, true))
         {
             Map<DataType, List<Map<String, Object>>> datas = new HashMap<>();
             List<Map<String, Object>> dataRows = loader.load();
@@ -158,7 +158,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      *
      * @throws ExperimentException
      */
-    public static DataLoader createLoaderForImport(File dataFile, @Nullable Domain dataDomain, DataLoaderSettings settings) throws ExperimentException
+    public static DataLoader createLoaderForImport(File dataFile, @Nullable Domain dataDomain, DataLoaderSettings settings, boolean shouldInferTypes) throws ExperimentException
     {
         Map<String, DomainProperty> aliases = new HashMap<>();
         Set<String> mvEnabledColumns = Sets.newCaseInsensitiveHashSet();
@@ -185,6 +185,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, null, TabLoader.TSV_FILE_TYPE);
             loader.setThrowOnErrors(settings.isThrowOnErrors());
+            loader.setInferTypes(shouldInferTypes);
 
             for (ColumnDescriptor column : loader.getColumns())
             {

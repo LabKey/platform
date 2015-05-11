@@ -203,6 +203,7 @@ public class AsyncQueryRequest<T>
         {
             try
             {
+                _log.debug("Aborting async statement on connection " + _statement.getConnection());
                 _statement.cancel();
             }
             catch (SQLException e)
