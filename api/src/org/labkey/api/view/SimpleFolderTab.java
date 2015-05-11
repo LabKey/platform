@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleFolderType;
 import org.labkey.api.security.SecurityManager;
@@ -225,9 +226,8 @@ public class SimpleFolderTab extends FolderTab.PortalPage
     {
         if (null == _folderType && null != getFolderTypeName())
         {
-            return ModuleLoader.getInstance().getFolderType(getFolderTypeName());
+            return FolderTypeManager.get().getFolderType(getFolderTypeName());
         }
         return _folderType;
     }
-
 }

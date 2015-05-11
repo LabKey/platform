@@ -38,6 +38,7 @@ import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.event.PropertyChange;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -453,7 +454,7 @@ public class ContainerManager
 
         if (null != name)
         {
-            folderType = ModuleLoader.getInstance().getFolderType(name);
+            folderType = FolderTypeManager.get().getFolderType(name);
 
             if (null == folderType)
             {
@@ -2262,7 +2263,7 @@ public class ContainerManager
         public void testFolderType()
         {
             // Test all folder types
-            List<FolderType> folderTypes = new ArrayList<>(ModuleLoader.getInstance().getAllFolderTypes());
+            List<FolderType> folderTypes = new ArrayList<>(FolderTypeManager.get().getAllFolderTypes());
             for (FolderType folderType : folderTypes)
             {
                 if (!folderType.isProjectOnlyType())     // Dataspace can't be subfolder

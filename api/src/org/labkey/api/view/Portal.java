@@ -1145,7 +1145,6 @@ public class Portal
                 }
             }
         }
-
     }
 
     private static boolean validateFactoryName(String name, Module module)
@@ -1400,9 +1399,9 @@ public class Portal
         private String action;       // detailsurl (type==action)
         private GUID targetFolder;   // continerId (type==folder)
         private boolean permanent;   // may not rename,hide,delete
-        Map<String, String> propertyMap = new HashMap<>();
-        private String properties;
-        private LinkedHashMap<Integer,WebPart> webparts = new LinkedHashMap<>();
+
+        private final Map<String, String> propertyMap = new HashMap<>();
+        private final LinkedHashMap<Integer, WebPart> webparts = new LinkedHashMap<>();
 
         public GUID getEntityId()
         {
@@ -1536,7 +1535,7 @@ public class Portal
         }
 
         @Transient
-        public LinkedHashMap<Integer,WebPart> getWebParts()
+        public LinkedHashMap<Integer, WebPart> getWebParts()
         {
             return webparts;
         }

@@ -23,6 +23,7 @@ import org.json.JSONArray;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -1336,7 +1337,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public List<FolderTab> getDeletedTabFolders(String newFolderType)
     {
         // Get container tabs whose containers have been deleted
-        FolderType folderType = ModuleLoader.getInstance().getFolderType(newFolderType);
+        FolderType folderType = FolderTypeManager.get().getFolderType(newFolderType);
         if (null == folderType)
             throw new IllegalStateException("Folder type not found.");
         List<FolderTab> folderTabs = new ArrayList<>();

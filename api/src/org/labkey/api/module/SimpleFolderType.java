@@ -59,15 +59,13 @@ public class SimpleFolderType extends MultiPortalFolderType
     private static final Logger LOGGER = Logger.getLogger(SimpleFolderType.class);
 
     private Resource _folderTypeFile;
-    private long _lastModified = 0;
     private String _name;
     private String _description;
     private Set<Module> _activeModules;
     private Module _defaultModule;
     protected boolean _hasContainerTabs = false;
-    public static final String FILE_EXTENSION = ".foldertype.xml";
 
-    public SimpleFolderType(Resource folderTypeFile, FolderType folderType)
+    private SimpleFolderType(Resource folderTypeFile, FolderType folderType)
     {
         super(folderType.getName(), folderType.getDescription(), null, null, null, null);
         _folderTypeFile = folderTypeFile;
@@ -78,20 +76,6 @@ public class SimpleFolderType extends MultiPortalFolderType
     {
         FolderType type = parseFile(folderTypeFile);
         return new SimpleFolderType(folderTypeFile, type);
-    }
-
-    public static List<SimpleFolderType> createFromDirectory(Resource directory)
-    {
-        List<SimpleFolderType> folderTypes = new ArrayList<>();
-        if (directory.exists() && directory.isCollection())
-        {
-            for (Resource file : directory.list())
-            {
-                if (file.isFile() && file.getName().toLowerCase().endsWith(FILE_EXTENSION))
-                    folderTypes.add(create(file));
-            }
-        }
-        return folderTypes;
     }
 
     private static FolderType parseFile(Resource folderTypeFile)
@@ -239,7 +223,7 @@ public class SimpleFolderType extends MultiPortalFolderType
             if (_name != null)
             {
                 // Remove this folder from the master list
-                ModuleLoader.getInstance().unregisterFolderType(_name);
+                FolderTypeManager.get().unregisterFolderType(_name);
             }
             // Don't try to reload it
             return;
@@ -321,61 +305,29 @@ public class SimpleFolderType extends MultiPortalFolderType
         _activeModules = activeModules;
         if (type.getDefaultModule() != null)
             _defaultModule = getModule(type.getDefaultModule());
-        _lastModified = _folderTypeFile.getLastModified();
-    }
-
-    private void reloadIfStale()
-    {
-        if (_folderTypeFile.getLastModified() != _lastModified)
-            reload();
     }
 
     @Override
     public Module getDefaultModule()
     {
-        reloadIfStale();
         return _defaultModule;
-    }
-
-    @Override
-    public List<Portal.WebPart> getRequiredWebParts()
-    {
-        reloadIfStale();
-        return super.getRequiredWebParts();
-    }
-
-    @Override
-    public List<Portal.WebPart> getPreferredWebParts()
-    {
-        reloadIfStale();
-        return super.getPreferredWebParts();
     }
 
     @Override
     public String getName()
     {
-        reloadIfStale();
         return _name;
     }
 
     @Override
     public String getDescription()
     {
-        reloadIfStale();
         return _description;
-    }
-
-    @Override
-    public boolean isWorkbookType()
-    {
-        reloadIfStale();
-        return super.isWorkbookType();
     }
 
     @Override
     public Set<Module> getActiveModules()
     {
-        reloadIfStale();
         return _activeModules;
     }
 

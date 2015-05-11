@@ -30,7 +30,6 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
@@ -38,7 +37,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -110,7 +108,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -137,8 +134,6 @@ public class ModuleLoader implements Filter
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
     private static boolean _newInstall = false;
-    /** PropertyManager category name for folder type enabled state properties */
-    private static final String FOLDER_TYPE_ENABLED_STATE = "FolderTypeEnabledState";
     public static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
 
     private static final String BANNER = "\n" +
@@ -212,30 +207,6 @@ public class ModuleLoader implements Filter
     private Map<Class<? extends Module>, Module> moduleClassMap = new HashMap<>();
 
     private List<Module> _modules;
-    private final SortedMap<String, FolderType> _folderTypes = new TreeMap<>(new FolderTypeComparator());
-    private static class FolderTypeComparator implements Comparator<String>
-    {
-        //Sort NONE to the bottom and Collaboration to the top
-        static final String noneStr = FolderType.NONE.getName();
-        static final String collabStr = "Collaboration"; //Cheating
-
-        public int compare(String s, String s1)
-        {
-            if (s.equals(s1))
-                return 0;
-
-            if (noneStr.equals(s))
-                return 1;
-            if (noneStr.equals(s1))
-                return -1;
-            if (collabStr.equals(s))
-                return -1;
-            if (collabStr.equals(s1))
-                return 1;
-
-            return s.compareTo(s1);
-        }
-    }
 
     public ModuleLoader()
     {
@@ -1770,126 +1741,6 @@ public class ModuleLoader implements Filter
     public Module getCurrentModule()
     {
         return ModuleLoader.getInstance().getModuleForController(HttpView.getRootContext().getActionURL().getController());
-    }
-
-    @Nullable
-    public FolderType getFolderType(String name)
-    {
-        synchronized (_folderTypes)
-        {
-            FolderType result = _folderTypes.get(name);
-            if (result != null)
-            {
-                return result;
-            }
-
-            // Check if it's a legacy name for an existing folder type
-            for (FolderType folderType : _folderTypes.values())
-            {
-                if (folderType.getLegacyNames().contains(name))
-                {
-                    return folderType;
-                }
-            }
-            return null;
-        }
-    }
-
-    /** Remove the named folder type from the list of known options */
-    public void unregisterFolderType(String name)
-    {
-        synchronized (_folderTypes)
-        {
-            _folderTypes.remove(name);
-        }
-    }
-
-    public void registerFolderType(Module sourceModule, FolderType folderType)
-    {
-        synchronized (_folderTypes)
-        {
-            if (_folderTypes.containsKey(folderType.getName()))
-            {
-                String msg = "Unable to register folder type " + folderType.getName() + " from module " + sourceModule.getName() +
-                ".  A folder type with this name has already been registered ";
-                Throwable ex = new IllegalStateException(msg);
-                _log.error(msg, ex);
-                addModuleFailure(sourceModule.getName(), ex);
-            }
-            else
-                _folderTypes.put(folderType.getName(), folderType);
-        }
-    }
-
-    /** @return an unmodifiable collection of ALL registered folder types, even those that have been disabled on this
-     * server by an administrator */
-    public Collection<FolderType> getAllFolderTypes()
-    {
-        synchronized (_folderTypes)
-        {
-            return Collections.unmodifiableCollection(new ArrayList<>(_folderTypes.values()));
-        }
-    }
-
-    /** @return an unmodifiable collection of ALL registered folder types, even those that have been disabled on this
-     * server by an administrator, except if the user does not have EnableRestrictedModules permission then folder types
-     * that have restricted modules are excluded */
-    public Collection<FolderType> getFolderTypes(boolean userHasEnableRestrictedModules)
-    {
-        if (userHasEnableRestrictedModules)
-        {
-            return getAllFolderTypes();
-        }
-
-        ArrayList<FolderType> allFolderTypes;
-        synchronized (_folderTypes)
-        {
-            allFolderTypes = new ArrayList<>(_folderTypes.values());
-        }
-
-        ArrayList<FolderType> folderTypes = new ArrayList<>();
-        for (FolderType folderType : allFolderTypes)
-        {
-            if (!Container.hasRestrictedModule(folderType))
-                folderTypes.add(folderType);
-        }
-        return folderTypes;
-    }
-
-    /** @return all of the folder types that have not been explicitly disabled by an administrator. New folder types
-     * that lack specific enabled/disabled state will be considered enabled.
-     */
-    public Collection<FolderType> getEnabledFolderTypes()
-    {
-        ArrayList<FolderType> result = new ArrayList<>();
-        synchronized (_folderTypes)
-        {
-            Map<String, String> enabledStates = PropertyManager.getProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE);
-            for (FolderType folderType : _folderTypes.values())
-            {
-                // Unless we have specific saved config setting it to disabled, treat it as enabled
-                if (!enabledStates.containsKey(folderType.getName()) || !enabledStates.get(folderType.getName()).equalsIgnoreCase(Boolean.FALSE.toString()))
-                {
-                    result.add(folderType);
-                }
-            }
-        }
-        return Collections.unmodifiableCollection(result);
-    }
-
-    /**
-     * @param enabledFolderTypes the new set of enabled folder types. This overwrites any previous enabled/disabled state.
-     */
-    public void setEnabledFolderTypes(Collection<FolderType> enabledFolderTypes)
-    {
-        PropertyManager.PropertyMap enabledStates = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE, true);
-        // Reset completely based on the supplied config
-        enabledStates.clear();
-        for (FolderType folderType : getAllFolderTypes())
-        {
-            enabledStates.put(folderType.getName(), Boolean.toString(enabledFolderTypes.contains(folderType)));
-        }
-        enabledStates.save();
     }
 
     public void registerResourceLoaders(Set<? extends ModuleResourceLoader> loaders)

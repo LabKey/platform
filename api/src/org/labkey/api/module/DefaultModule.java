@@ -368,7 +368,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 SqlScript script = SchemaUpdateType.After.getScript(provider, schema);
 
                 if (null != script)
-                    SqlScriptRunner.runScripts(this, null, Arrays.asList(script));
+                    SqlScriptRunner.runScripts(this, null, Collections.singletonList(script));
             }
         }
     }

@@ -84,7 +84,7 @@ public final class ModuleResourceCache<T>
     }
 
     /**
-     *  Return a collection of all resources manqaged by this cache that are defined by the specified Module.
+     *  Return a collection of all resources managed by this cache that are defined by the specified Module.
      */
     public @NotNull Collection<T> getResources(Module module)
     {
