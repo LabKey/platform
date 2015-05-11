@@ -24,7 +24,6 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -40,31 +39,30 @@
     String tsvId = "tsv" + getRequestScopedUID();
     String errorDivId = "errorDiv" + getRequestScopedUID();
 
-%>
-<% if (bean.importMessage != null) {
+    if (bean.importMessage != null)
+    {
         %><div><%=h(bean.importMessage)%></div><p></p><%
-
-   }
-%>
-<% if (bean.urlExcelTemplates != null && bean.urlExcelTemplates.size() > 0) {
-    if (bean.urlExcelTemplates.size() == 1)
-    {
-        Pair<String, String> p = bean.urlExcelTemplates.get(0);
-        %><%= button(p.first).href(p.second) %><br>&nbsp;<br><%
     }
-    else
+
+    if (bean.urlExcelTemplates != null && bean.urlExcelTemplates.size() > 0)
     {
-        %>Choose Template: <select id="importTemplate"><%
-        for (Pair<String, String> p : bean.urlExcelTemplates)
+        if (bean.urlExcelTemplates.size() == 1)
         {
-            %><option value="<%=h(p.second)%>"><%=h(p.first)%></option><%
+            Pair<String, String> p = bean.urlExcelTemplates.get(0);
+            %><%= button(p.first).href(p.second) %><br>&nbsp;<br><%
         }
-        %></select>
-        <%= button("Download").href("javascript:void(0);").onClick("window.location = document.getElementById('importTemplate').value;") %><br>&nbsp;<br>
-        <%
-
-    }
-}%>
+        else
+        {
+            %>Choose Template: <select id="importTemplate"><%
+            for (Pair<String, String> p : bean.urlExcelTemplates)
+            {
+                %><option value="<%=h(p.second)%>"><%=h(p.first)%></option><%
+            }
+            %></select>
+            <%= button("Download").href("javascript:void(0);").onClick("window.location = document.getElementById('importTemplate').value;") %><br>&nbsp;<br>
+            <%
+        }
+    }%>
 <div id="<%=text(errorDivId)%>" class="labkey-error">
 <labkey:errors></labkey:errors>&nbsp;
 </div>
