@@ -60,14 +60,9 @@ public class DuoController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    public static ActionURL getConfigureURL(boolean reshow)
+    public static ActionURL getConfigureURL()
     {
-        ActionURL url = new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
-
-        if (reshow)
-            url.addParameter("reshow", "1");
-
-        return url;
+        return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
     }
 
     @AdminConsoleAction
@@ -132,7 +127,7 @@ public class DuoController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(Config config)
         {
-            return getConfigureURL(true);  // Redirect to same action -- reload props from database
+            return getConfigureURL();  // Redirect to same action -- reload props from database
         }
     }
 

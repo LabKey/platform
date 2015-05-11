@@ -51,7 +51,7 @@ public class DuoProvider implements SecondaryAuthenticationProvider
     @Override
     public ActionURL getConfigurationLink()
     {
-        return DuoController.getConfigureURL(false);
+        return DuoController.getConfigureURL();
     }
 
     @Override

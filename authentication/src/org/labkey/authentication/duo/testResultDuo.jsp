@@ -44,7 +44,7 @@
             }
         %>
         <tr><td>&nbsp;</td></tr>
-        <tr><td> <%= button("Back to Configuring Duo").href(DuoController.getConfigureURL(false))%></td></tr>
+        <tr><td> <%= button("Back to Configuring Duo").href(DuoController.getConfigureURL())%></td></tr>
 
   </table>
 </labkey:form>
