@@ -301,6 +301,7 @@ public class PipelineStatusManager
                 List<PipelineStatusFileImpl> children = getSplitStatusFiles(sfExist.getJobId(), ContainerManager.getForId(sfExist.getContainerId()));
                 for (PipelineStatusFileImpl child : children)
                 {
+                    LOG.debug("Resetting parent job ID for child job " + child.getRowId() + " - " + child.getFilePath());
                     child.setJobParent(null);
                     child.beforeUpdate(null, child);
                     enforceLockOrder(child.getJobId(), active);
