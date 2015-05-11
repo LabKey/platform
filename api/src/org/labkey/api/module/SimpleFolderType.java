@@ -58,18 +58,93 @@ public class SimpleFolderType extends MultiPortalFolderType
 {
     private static final Logger LOGGER = Logger.getLogger(SimpleFolderType.class);
 
-    private Resource _folderTypeFile;
-    private String _name;
-    private String _description;
-    private Set<Module> _activeModules;
+    private final String _name;
+    private final String _description;
+    private final Set<Module> _activeModules;
     private Module _defaultModule;
     protected boolean _hasContainerTabs = false;
 
     private SimpleFolderType(Resource folderTypeFile, FolderType folderType)
     {
         super(folderType.getName(), folderType.getDescription(), null, null, null, null);
-        _folderTypeFile = folderTypeFile;
-        reload();
+
+        FolderType type = parseFile(folderTypeFile);
+        _name = type.getName();
+        _description = type.getDescription();
+
+        if (type.isSetMenubarEnabled())
+            menubarEnabled = type.getMenubarEnabled();
+
+        if (type.getPreferredWebParts() != null)
+            preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray());
+        if (type.getRequiredWebParts() != null)
+            requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray());
+
+        if (type.getFolderTabs() != null)
+        {
+            //if folderTabs are provided, only allow other webparts if they are in the menu
+            if (preferredParts != null || requiredParts != null)
+            {
+                boolean hasError = false;
+                if (preferredParts != null)
+                {
+                    for (Portal.WebPart wp : preferredParts)
+                    {
+                        if (!wp.getLocation().equals(WebPartFactory.LOCATION_MENUBAR))
+                            hasError = true;
+                    }
+                }
+                if (requiredParts != null)
+                {
+                    for (Portal.WebPart wp : requiredParts)
+                    {
+                        if (!wp.getLocation().equals(WebPartFactory.LOCATION_MENUBAR))
+                            hasError = true;
+                    }
+                }
+                if (hasError)
+                    LOGGER.error("Error in " + folderTypeFile.getName() + ".  A folderType that contains folderTabs cannot also provide preferredWebparts or requiredWebparts with locations outside the menubar.");
+            }
+            _folderTabs = createFolderTabs(type.getFolderTabs().getFolderTabArray());
+        }
+        else
+        {
+            _folderTabs = createDefaultTab(type);
+        }
+
+        if (_folderTabs.size() > 0)
+        {
+            _defaultTab = _folderTabs.get(0);
+            _folderTabs.get(0).setIsDefaultTab(true);
+        }
+
+        setWorkbookType(type.isSetWorkbookType() && type.getWorkbookType());
+        setForceAssayUploadIntoWorkbooks(type.getForceAssayUploadIntoWorkbooks());
+        String _iconPath = type.getFolderIconPath();
+        if(_iconPath != null)
+            setFolderIconPath(_iconPath);
+
+        Set<Module> activeModules = new HashSet<>();
+        ModulesDocument.Modules modules = type.getModules();
+        String[] moduleNames = modules != null ? modules.getModuleNameArray() : null;
+        if (moduleNames != null)
+        {
+            for (String moduleName : moduleNames)
+            {
+                if (ModuleLoader.getInstance().hasModule(moduleName))
+                {
+                    Module module = getModule(moduleName);
+                    activeModules.add(module);
+                }
+                else
+                {
+                    LOGGER.warn("Module '" + moduleName + "' not available for folder type '" + _name + "'");
+                }
+            }
+        }
+        _activeModules = activeModules;
+        if (type.getDefaultModule() != null)
+            _defaultModule = getModule(type.getDefaultModule());
     }
 
     public static SimpleFolderType create(Resource folderTypeFile)
@@ -213,98 +288,6 @@ public class SimpleFolderType extends MultiPortalFolderType
                 LOGGER.error("Unable to register folder type web parts: web part " + reference.getName() + " does not exist.");
         }
         return parts;
-    }
-
-    private void reload()
-    {
-        if (!_folderTypeFile.isFile())
-        {
-            // The file has been deleted.
-            if (_name != null)
-            {
-                // Remove this folder from the master list
-                FolderTypeManager.get().unregisterFolderType(_name);
-            }
-            // Don't try to reload it
-            return;
-        }
-        FolderType type = parseFile(_folderTypeFile);
-        _name = type.getName();
-        _description = type.getDescription();
-
-        if (type.isSetMenubarEnabled())
-            menubarEnabled = type.getMenubarEnabled();
-
-        if (type.getPreferredWebParts() != null)
-            preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray());
-        if (type.getRequiredWebParts() != null)
-            requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray());
-
-        if (type.getFolderTabs() != null)
-        {
-            //if folderTabs are provided, only allow other webparts if they are in the menu
-            if (preferredParts != null || requiredParts != null)
-            {
-                boolean hasError = false;
-                if (preferredParts != null)
-                {
-                    for (Portal.WebPart wp : preferredParts)
-                    {
-                        if (!wp.getLocation().equals(WebPartFactory.LOCATION_MENUBAR))
-                            hasError = true;
-                    }
-                }
-                if (requiredParts != null)
-                {
-                    for (Portal.WebPart wp : requiredParts)
-                    {
-                        if (!wp.getLocation().equals(WebPartFactory.LOCATION_MENUBAR))
-                            hasError = true;
-                    }
-                }
-                if (hasError)
-                    LOGGER.error("Error in " + _folderTypeFile.getName() + ".  A folderType that contains folderTabs cannot also provide preferredWebparts or requiredWebparts with locations outside the menubar.");
-            }
-            _folderTabs = createFolderTabs(type.getFolderTabs().getFolderTabArray());
-        }
-        else
-        {
-            _folderTabs = createDefaultTab(type);
-        }
-
-        if (_folderTabs.size() > 0)
-        {
-            _defaultTab = _folderTabs.get(0);
-            _folderTabs.get(0).setIsDefaultTab(true);
-        }
-
-        setWorkbookType(type.isSetWorkbookType() && type.getWorkbookType());
-        setForceAssayUploadIntoWorkbooks(type.getForceAssayUploadIntoWorkbooks());
-        String _iconPath = type.getFolderIconPath();
-        if(_iconPath != null)
-            setFolderIconPath(_iconPath);
-
-        Set<Module> activeModules = new HashSet<>();
-        ModulesDocument.Modules modules = type.getModules();
-        String[] moduleNames = modules != null ? modules.getModuleNameArray() : null;
-        if (moduleNames != null)
-        {
-            for (String moduleName : moduleNames)
-            {
-                if (ModuleLoader.getInstance().hasModule(moduleName))
-                {
-                    Module module = getModule(moduleName);
-                    activeModules.add(module);
-                }
-                else
-                {
-                    LOGGER.warn("Module '" + moduleName + "' not available for folder type '" + _name + "'");
-                }
-            }
-        }
-        _activeModules = activeModules;
-        if (type.getDefaultModule() != null)
-            _defaultModule = getModule(type.getDefaultModule());
     }
 
     @Override
