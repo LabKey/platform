@@ -56,7 +56,7 @@ import java.util.Set;
  */
 public interface Module extends Comparable<Module>
 {
-    public enum TabDisplayMode
+    enum TabDisplayMode
     {
         DISPLAY_NEVER,
         DISPLAY_USER_PREFERENCE,
@@ -64,7 +64,7 @@ public interface Module extends Comparable<Module>
         DISPLAY_FOLDER_TYPE
     }
 
-    public enum SupportedDatabase
+    enum SupportedDatabase
     {
         mssql, pgsql;
 
@@ -84,7 +84,7 @@ public interface Module extends Comparable<Module>
     /**
      * Perform any post-constructor initialization
      */
-    public void initialize();
+    void initialize();
 
     /**
      * Name of this module
@@ -129,7 +129,7 @@ public interface Module extends Comparable<Module>
      * Called on every module in REVERSE dependency order before versionUpdate() is called, as long as at least one module
      * requires updating.  This is a fine place to drop views and other dependent objects.
      */
-    public void beforeUpdate(ModuleContext moduleContext);
+    void beforeUpdate(ModuleContext moduleContext);
 
     /**
      * Do any version updating module needs to do.
@@ -137,15 +137,15 @@ public interface Module extends Comparable<Module>
      * At installation time, ModuleContext.getInstalledVersion() will be 0.0
      * <p/>
      */
-    public void versionUpdate(ModuleContext moduleContext) throws Exception;
+    void versionUpdate(ModuleContext moduleContext) throws Exception;
 
     /** Called on each module in dependency order after versionUpdate(), as long as at least one module requires updating. */
-    public void afterUpdate(ModuleContext moduleContext);
+    void afterUpdate(ModuleContext moduleContext);
 
     /**
      * The application is starting. Version updating is complete. startup() has been called on all dependencies.
      */
-    public void startup(ModuleContext moduleContext);
+    void startup(ModuleContext moduleContext);
 
     /**
      * The application is shutting down "gracefully". Module
@@ -153,7 +153,7 @@ public interface Module extends Comparable<Module>
      * Note: There is no guarantee that this will run if the server
      * process is without a nice shutdown.
      */
-    public void destroy();
+    void destroy();
 
     /**
      * Return Collection of WebPartFactory objects for this module.
@@ -162,13 +162,13 @@ public interface Module extends Comparable<Module>
      *
      * @return Collection of WebPartFactory (empty collection if none)
      */
-    public @NotNull Collection<WebPartFactory> getWebPartFactories();
+    @NotNull Collection<WebPartFactory> getWebPartFactories();
 
     /**
      * @param c container in which the items would be stored
      * @return description of the objects that this module has stored in the container
      */
-    public @NotNull Collection<String> getSummary(Container c);
+    @NotNull Collection<String> getSummary(Container c);
 
     /**
      * Returns a map of pageflow to controller class (for example, "wiki" -> WikiController) whose
@@ -177,24 +177,24 @@ public interface Module extends Comparable<Module>
      *
      * @return A map of pageflow name to controller class
      */
-    public Map<String, Class<? extends Controller>> getControllerNameToClass();
+    Map<String, Class<? extends Controller>> getControllerNameToClass();
 
-    public Map<Class<? extends Controller>, String> getControllerClassToName();
+    Map<Class<? extends Controller>, String> getControllerClassToName();
 
     /**
      * Name to show on the tab in the UI
      */
-    public String getTabName(ViewContext context);
+    String getTabName(ViewContext context);
 
     /**
      * Returns the url that will be the target of a click on the module's tab.
      */
-    public ActionURL getTabURL(Container c, User user);
+    ActionURL getTabURL(Container c, User user);
 
     /**
      * @return under what conditions this module's tab should be shown in the UI
      */
-    public TabDisplayMode getTabDisplayMode();
+    TabDisplayMode getTabDisplayMode();
 
     /**
      * Modules can provide JUnit tests that must be run inside the server
@@ -203,7 +203,7 @@ public interface Module extends Comparable<Module>
      * @return the integration tests that this module provides
      */
     @NotNull
-    public Set<Class> getIntegrationTests();
+    Set<Class> getIntegrationTests();
 
     /**
      * Modules can provide JUnit tests that can be run independent of the server VM. Satisfies the requirements for a
@@ -211,7 +211,7 @@ public interface Module extends Comparable<Module>
      * @return the unit tests that this module provides
      */
     @NotNull
-    public Set<Class> getUnitTests();
+    Set<Class> getUnitTests();
 
     /**
      * Returns a set of schemas that the module wants tested.
@@ -221,7 +221,7 @@ public interface Module extends Comparable<Module>
      * @return the schemas associated with this module that should be tested
      */
     @NotNull
-    public Set<DbSchema> getSchemasToTest();
+    Set<DbSchema> getSchemasToTest();
 
     /**
      * Returns the names of all schemas that this module owns, both module and provisioned. Used to determine which module
@@ -229,7 +229,7 @@ public interface Module extends Comparable<Module>
      * @return the schema names owned by this module
      */
     @NotNull
-    public Collection<String> getSchemaNames();
+    Collection<String> getSchemaNames();
 
     /**
      * Returns the names of the provisioned schemas that this module owns. Used to distinguish module vs. provisioned
@@ -237,35 +237,35 @@ public interface Module extends Comparable<Module>
      * @return the provisioned schema names owned by this module
      */
     @NotNull
-    public Collection<String> getProvisionedSchemaNames();
+    Collection<String> getProvisionedSchemaNames();
 
-    public @NotNull Set<SupportedDatabase> getSupportedDatabasesSet();
+    @NotNull Set<SupportedDatabase> getSupportedDatabasesSet();
 
-    public Resolver getModuleResolver();
-    public Resource getModuleResource(String path);
-    public Resource getModuleResource(Path path);
-    public InputStream getResourceStream(String filename) throws IOException;
+    Resolver getModuleResolver();
+    Resource getModuleResource(String path);
+    Resource getModuleResource(Path path);
+    InputStream getResourceStream(String filename) throws IOException;
 
-    public String getSourcePath();
-    public String getBuildPath();
-    public String getVcsRevision();
-    public String getVcsUrl();
-    public Map<String, String> getProperties();
-    public Set<String> getModuleDependenciesAsSet();
-    public Set<Module> getResolvedModuleDependencies();
+    String getSourcePath();
+    String getBuildPath();
+    String getVcsRevision();
+    String getVcsUrl();
+    Map<String, String> getProperties();
+    Set<String> getModuleDependenciesAsSet();
+    Set<Module> getResolvedModuleDependencies();
 
     /**
      * Returns the exploded path for the module.
      * @return The path to the exploded module directory
      */
-    public File getExplodedPath();
+    File getExplodedPath();
 
     /**
      * This is called by the module loader to let the module know where it's exploded path is
      * so that the module can later load resources.
      * @param path The path to the module's exploded directory
      */
-    public void setExplodedPath(File path);
+    void setExplodedPath(File path);
 
     /**
      * Returns a list of sql script file names for a given schema
@@ -273,21 +273,21 @@ public interface Module extends Comparable<Module>
      * @param schema The schema
      * @return The list of sql script names
      */
-    public Set<String> getSqlScripts(@NotNull DbSchema schema);
+    Set<String> getSqlScripts(@NotNull DbSchema schema);
 
     /**
      * Returns the file path for this modules sql scripts
      * @param dialect The sql dialect for the scripts
      * @return The script file path
      */
-    public String getSqlScriptsPath(@NotNull SqlDialect dialect);
+    String getSqlScriptsPath(@NotNull SqlDialect dialect);
 
     @Nullable
-    public ReportDescriptor getCachedReport(Path path);
+    ReportDescriptor getCachedReport(Path path);
 
-    public void cacheReport(Path path, ReportDescriptor descriptor);
+    void cacheReport(Path path, ReportDescriptor descriptor);
 
-    public Set<Resource> getReportFiles();
+    Set<Resource> getReportFiles();
 
     /**
      * Modules can provide a set of ModuleResourceLoaders which will be used
@@ -295,7 +295,7 @@ public interface Module extends Comparable<Module>
      * @return The set of ModuleResourceLoaders this module provides.
      */
     @NotNull
-    public Set<? extends ModuleResourceLoader> getResourceLoaders();
+    Set<? extends ModuleResourceLoader> getResourceLoaders();
 
     /**
      * handle a http request
@@ -304,36 +304,36 @@ public interface Module extends Comparable<Module>
      * @param response as provided by Servlet.service
      * @param url parsed ActionURL for a .view/.post requests
      */
-    public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url) throws ServletException, IOException;
+    void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url) throws ServletException, IOException;
 
-    public Controller getController(HttpServletRequest request, String name);
+    Controller getController(HttpServletRequest request, String name);
 
     /**
      * return a list of locations to look for static website files.  Files in these directories have no security.
      * @return
      */
     @NotNull
-    public List<File> getStaticFileDirectories();
+    List<File> getStaticFileDirectories();
 
     /**
      * Used in dev mode to verify that the module credits pages is complete.  Called only if jars.txt is present in
      * <module>/META-INF/<module> directory.
      * @return Jar filenames used by this module
      */
-    public @Nullable Collection<String> getJarFilenames();
+    @Nullable Collection<String> getJarFilenames();
 
     // Should LabKey should automatically uninstall this module (drop its schemas, delete SqlScripts rows, delete Modules rows)
     // if the module no longer exists?  This setting gets saved to the Modules table.
-    public boolean isAutoUninstall();
+    boolean isAutoUninstall();
 
     /**
      * Methods used by the module loader to add and execute upgrade tasks that need to be invoked after
      * a module is initialized. 
      */
-    public void addDeferredUpgradeTask(Method task);
-    public void runDeferredUpgradeTasks(ModuleContext context);
+    void addDeferredUpgradeTask(Method task);
+    void runDeferredUpgradeTasks(ModuleContext context);
 
-    public Map<String, ModuleProperty> getModuleProperties();
+    Map<String, ModuleProperty> getModuleProperties();
 
     /**
      * This will return a JSONObject that will be written to the page automatically.  By default, it will include any
@@ -341,24 +341,24 @@ public interface Module extends Comparable<Module>
      * Note: this is written as plain text.
      * @param context Current ViewContext for the page
      */
-    public @NotNull JSONObject getPageContextJson(ViewContext context);
+    @NotNull JSONObject getPageContextJson(ViewContext context);
 
-    public @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c);
+    @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c);
 
-    public @Nullable UpgradeCode getUpgradeCode();
+    @Nullable UpgradeCode getUpgradeCode();
 
     @Nullable
-    public String getResourcePath();
+    String getResourcePath();
 
-    public boolean getRequireSitePermission();
+    boolean getRequireSitePermission();
 
     /**
      * Enables modules to publish schema information for Olap queries.
      */
     @Nullable
-    public OlapSchemaInfo getOlapSchemaInfo();
+    OlapSchemaInfo getOlapSchemaInfo();
 
-    public DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, String> metaDataTableNames);
+    DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, String> metaDataTableNames);
 
     /**
      * Lets a Module map a schema name used in code to a different schema name in the database. For example, Argos uses this to provide
@@ -368,5 +368,11 @@ public interface Module extends Comparable<Module>
      * @param requestedSchemaName The name passed into DbSchema.get()
      * @return The actual schema name in the database
      */
-    public String getDatabaseSchemaName(String requestedSchemaName);
+    String getDatabaseSchemaName(String requestedSchemaName);
+
+    /**
+     * Called by ModuleLoader to lock module info after construction.
+     */
+    void lock();
+
 }

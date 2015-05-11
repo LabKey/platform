@@ -566,7 +566,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     @NotNull
     @Override
-    public Set<SupportedDatabase> getSupportedDatabasesSet()
+    public final Set<SupportedDatabase> getSupportedDatabasesSet()
     {
         return _supportedDatabases;
     }
@@ -574,7 +574,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     // Used by Spring configuration reflection
     @SuppressWarnings("UnusedDeclaration")
-    public String getSupportedDatabases()
+    public final String getSupportedDatabases()
     {
         Set<SupportedDatabase> set = getSupportedDatabasesSet();
         return StringUtils.join(set, ",");
@@ -583,7 +583,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     // Used by Spring configuration reflection
     @SuppressWarnings("UnusedDeclaration")
-    public void setSupportedDatabases(String list)
+    public final void setSupportedDatabases(String list)
     {
         Set<SupportedDatabase> supported = new HashSet<>();
         String[] dbs = StringUtils.split(list, ',');
@@ -600,14 +600,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
+    // TODO: Mark getter as final and call setter in subclass constructors instead of overriding
     @Override
     public String getName()
     {
         return _name;
     }
 
-    public void setName(String name)
+    public final void setName(String name)
     {
+        checkLocked();
         if (StringUtils.isEmpty(name))
             return;
         if (!StringUtils.isEmpty(_name))
@@ -619,13 +621,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _name = name;
     }
 
+    // TODO: Mark getter as final and call setter in subclass constructors instead of overriding
+    @Override
     public double getVersion()
     {
         return _version;
     }
 
-    public void setVersion(double version)
+    public final void setVersion(double version)
     {
+        checkLocked();
         if (0.0 == version)
             return;
         if (0.0 != _version)
@@ -637,134 +642,145 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _version = version;
     }
 
-    public double getRequiredServerVersion()
+    public final double getRequiredServerVersion()
     {
         return _requiredServerVersion;
     }
 
-    public void setRequiredServerVersion(double requiredServerVersion)
+    public final void setRequiredServerVersion(double requiredServerVersion)
     {
+        checkLocked();
         if (0.0 != requiredServerVersion)
             _requiredServerVersion = requiredServerVersion;
     }
 
     @Nullable
     @Override
-    public String getLabel()
+    public final String getLabel()
     {
         return _label;
     }
 
-    public void setLabel(String label)
+    public final void setLabel(String label)
     {
+        checkLocked();
         _label = label;
     }
 
     @Nullable
     @Override
-    public String getDescription()
+    public final String getDescription()
     {
         return _description;
     }
 
-    public void setDescription(String description)
+    public final void setDescription(String description)
     {
+        checkLocked();
         _description = description;
     }
 
     @Nullable
     @Override
-    public String getUrl()
+    public final String getUrl()
     {
         return _url;
     }
 
-    public void setUrl(String url)
+    public final void setUrl(String url)
     {
+        checkLocked();
         _url = url;
     }
 
     @Nullable
     @Override
-    public String getAuthor()
+    public final String getAuthor()
     {
         return _author;
     }
 
-    public void setAuthor(String author)
+    public final void setAuthor(String author)
     {
+        checkLocked();
         _author = author;
     }
 
     @Nullable
     @Override
-    public String getMaintainer()
+    public final String getMaintainer()
     {
         return _maintainer;
     }
 
-    public void setMaintainer(String maintainer)
+    public final void setMaintainer(String maintainer)
     {
+        checkLocked();
         _maintainer = maintainer;
     }
 
     @Nullable
     @Override
-    public String getOrganization()
+    public final String getOrganization()
     {
         return _organization;
     }
 
-    public void setOrganization(String organization)
+    public final void setOrganization(String organization)
     {
+        checkLocked();
         _organization = organization;
     }
 
     @Nullable
     @Override
-    public String getOrganizationUrl()
+    public final String getOrganizationUrl()
     {
         return _organizationUrl;
     }
 
-    public void setOrganizationUrl(String organizationUrl)
+    public final void setOrganizationUrl(String organizationUrl)
     {
+        checkLocked();
         _organizationUrl = organizationUrl;
     }
 
     @Nullable
     @Override
-    public String getLicense()
+    public final String getLicense()
     {
         return _license;
     }
 
-    public void setLicense(String license)
+    public final void setLicense(String license)
     {
+        checkLocked();
         _license = license;
     }
 
     @Nullable
     @Override
-    public String getLicenseUrl()
+    public final String getLicenseUrl()
     {
         return _licenseUrl;
     }
 
-    public void setLicenseUrl(String licenseUrl)
+    public final void setLicenseUrl(String licenseUrl)
     {
+        checkLocked();
         _licenseUrl = licenseUrl;
     }
 
 
-    public Set<String> getModuleDependenciesAsSet()
+    public final Set<String> getModuleDependenciesAsSet()
     {
         return _moduleDependencies;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setModuleDependencies(String dependencies)
+    public final void setModuleDependencies(String dependencies)
     {
+        checkLocked();
         _moduleDependenciesString = dependencies;
 
         if (null == dependencies || dependencies.isEmpty())
@@ -779,142 +795,148 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         }
     }
 
-    public String getModuleDependencies()
+    public final String getModuleDependencies()
     {
         return _moduleDependenciesString;
     }
 
     @Nullable
     @Override
-    public String getVcsRevision()
+    public final String getVcsRevision()
     {
         return _vcsRevision;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setVcsRevision(String svnRevision)
+    public final void setVcsRevision(String svnRevision)
     {
+        checkLocked();
         _vcsRevision = svnRevision;
     }
 
     @Nullable
     @Override
-    public String getVcsUrl()
+    public final String getVcsUrl()
     {
         return _vcsUrl;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setVcsUrl(String svnUrl)
+    public final void setVcsUrl(String svnUrl)
     {
+        checkLocked();
         _vcsUrl = svnUrl;
     }
 
+    /** @deprecated Use getVcsRevision() instead. */
     @Deprecated
-    public String getSvnRevision()
+    public final String getSvnRevision()
     {
         return _vcsRevision;
     }
 
-    /** @deprecated Available only for initializing from module.properties and config/module.xml file. */
+    /** @deprecated Use setVcsRevision() instead. Available only for initializing from module.properties and config/module.xml file. */
     @Deprecated
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setSvnRevision(String svnRevision)
+    public final void setSvnRevision(String svnRevision)
     {
+        checkLocked();
         _vcsRevision = svnRevision;
     }
 
+    /** @deprecated  Use getVcsUrl() instead. */
     @Deprecated
-    public String getSvnUrl()
+    public final String getSvnUrl()
     {
         return _vcsUrl;
     }
 
-    /** @deprecated Available only for initializing from module.properties and config/module.xml file. */
+    /** @deprecated Use setVcsUrl() instead. Available only for initializing from module.properties and config/module.xml file. */
     @Deprecated
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setSvnUrl(String svnUrl)
+    public final void setSvnUrl(String svnUrl)
     {
+        checkLocked();
         _vcsUrl = svnUrl;
     }
 
-    public String getBuildUser()
+    public final String getBuildUser()
     {
         return _buildUser;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setBuildUser(String buildUser)
+    public final void setBuildUser(String buildUser)
     {
         _buildUser = buildUser;
     }
 
-    public String getBuildTime()
+    public final String getBuildTime()
     {
         return _buildTime;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setBuildTime(String buildTime)
+    public final void setBuildTime(String buildTime)
     {
         _buildTime = buildTime;
     }
 
-    public String getBuildOS()
+    public final String getBuildOS()
     {
         return _buildOS;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setBuildOS(String buildOS)
+    public final void setBuildOS(String buildOS)
     {
         _buildOS = buildOS;
     }
 
-    public String getSourcePath()
+    public final String getSourcePath()
     {
         return _sourcePath;
     }
 
-    public void setSourcePath(String sourcePath)
+    public final void setSourcePath(String sourcePath)
     {
         _sourcePath = sourcePath;
     }
 
-    public String getBuildPath()
+    public final String getBuildPath()
     {
         return _buildPath;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setBuildPath(String buildPath)
+    public final void setBuildPath(String buildPath)
     {
         _buildPath = buildPath;
     }
 
-    public String getBuildNumber()
+    public final String getBuildNumber()
     {
         return _buildNumber;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public void setBuildNumber(String buildNumber)
+    public final void setBuildNumber(String buildNumber)
     {
         _buildNumber = buildNumber;
     }
 
-    public String getEnlistmentId()
+    public final String getEnlistmentId()
     {
         return _enlistmentId;
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    public void setEnlistmentId(String enlistmentId)
+    public final void setEnlistmentId(String enlistmentId)
     {
         _enlistmentId = enlistmentId;
     }
 
-    public Map<String, String> getProperties()
+    public final Map<String, String> getProperties()
     {
         Map<String, String> props = new LinkedHashMap<>();
 
@@ -948,17 +970,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return props;
     }
 
-    public File getExplodedPath()
+    public final File getExplodedPath()
     {
         return _explodedPath;
     }
 
-    public void setExplodedPath(File path)
+    public final void setExplodedPath(File path)
     {
         _explodedPath = path.getAbsoluteFile();
     }
 
-    public Set<String> getSqlScripts(@NotNull DbSchema schema)
+    public final Set<String> getSqlScripts(@NotNull DbSchema schema)
     {
         SqlDialect dialect = schema.getSqlDialect();
 
@@ -979,23 +1001,23 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return fileNames;
     }
 
-    public String getSqlScriptsPath(@NotNull SqlDialect dialect)
+    public final String getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
         return "schemas/dbscripts/" + dialect.getSQLScriptPath() + "/";
     }
 
     @Nullable
-    public ReportDescriptor getCachedReport(Path path)
+    public final ReportDescriptor getCachedReport(Path path)
     {
         return REPORT_DESCRIPTOR_CACHE.get(new Path("{"+getName()+"}").append(path));
     }
 
-    public void cacheReport(Path path, ReportDescriptor descriptor)
+    public final void cacheReport(Path path, ReportDescriptor descriptor)
     {
         REPORT_DESCRIPTOR_CACHE.put(new Path("{"+getName()+"}").append(path), descriptor);
     }
 
-    protected void loadXmlFile(Resource r)
+    protected final void loadXmlFile(Resource r)
     {
         if (r.exists())
         {
@@ -1104,7 +1126,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public Resolver getModuleResolver()
+    public final Resolver getModuleResolver()
     {
         if (_resolver == null)
             _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
@@ -1113,17 +1135,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public Resource getModuleResource(Path path)
+    public final Resource getModuleResource(Path path)
     {
         return getModuleResolver().lookup(path);
     }
 
-    public Resource getModuleResource(String path)
+    public final Resource getModuleResource(String path)
     {
         return getModuleResource(Path.parse(path));
     }
 
-    public InputStream getResourceStream(String path) throws IOException
+    public final InputStream getResourceStream(String path) throws IOException
     {
         Resource r = getModuleResource(path);
         if (r != null && r.isFile())
@@ -1491,13 +1513,29 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     // for development mode info only
-    public boolean isSourcePathMatched()
+    public final boolean isSourcePathMatched()
     {
         return _sourcePathMatched;
     }
 
-    public boolean isSourceEnlistmentIdMatched()
+    // for development mode info only
+    public final boolean isSourceEnlistmentIdMatched()
     {
         return _sourceEnlistmentIdMatched;
     }
+
+    private boolean _locked = false;
+
+    public void lock()
+    {
+        checkLocked();
+        _locked = true;
+    }
+
+    void checkLocked()
+    {
+        if (_locked)
+            throw new IllegalStateException("Module info setters can only be called in constructor.");
+    }
+
 }

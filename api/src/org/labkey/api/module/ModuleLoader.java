@@ -607,6 +607,8 @@ public class ModuleLoader implements Filter
 
                 if (null != module)
                 {
+                    module.lo();
+
                     //don't load if we've already loaded a module of the same name
                     if (moduleNameToFile.containsKey(module.getName()))
                     {
@@ -625,6 +627,14 @@ public class ModuleLoader implements Filter
                         module.setExplodedPath(moduleDir);
                         modules.add(module);
                         moduleNameToFile.put(module.getName(), moduleDir);
+                    }
+
+                    // Check for LabKey module info. Missing info is only a warning for now, but may be an error later.
+                    if ("LabKey Software".equals(module.getOrganization()))
+                    {
+                        List<String> report = checkLabKeyModuleInfo(module);
+                        if (report != null)
+                            _log.warn("Missing expected info on module '" + module.getName() + "': " + StringUtils.join(report, ", "));
                     }
                 }
                 else
@@ -722,6 +732,34 @@ public class ModuleLoader implements Filter
             _log.error("error reading module configuration: " + moduleXml.getPath(), x);
         }
         return null;
+    }
+
+    public @Nullable List<String> checkLabKeyModuleInfo(Module m)
+    {
+        List<String> missing = new ArrayList<>(5);
+
+        if (StringUtils.isBlank(m.getLabel()))
+            missing.add("Label");
+
+//        if (StringUtils.isBlank(m.getDescription()))
+//            missing.add("Description");
+//
+//        if (StringUtils.isBlank(m.getUrl()))
+//            missing.add("URL");
+
+        if (!"https://www.labkey.com/".equals(m.getOrganizationUrl()))
+            missing.add("OrganizationURL");
+
+//        if (StringUtils.isBlank(m.getMaintainer()))
+//            missing.add("Maintainer");
+
+        if (StringUtils.isBlank(m.getLicense()))
+            missing.add("License");
+
+        if (StringUtils.isBlank(m.getLicenseUrl()))
+            missing.add("LicenseURL");
+
+        return missing.isEmpty() ? null : missing;
     }
 
     public void setWebappDir(File webappDir)

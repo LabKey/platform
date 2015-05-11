@@ -500,4 +500,9 @@ public class MockModule implements Module
     {
         return null;
     }
+
+    @Override
+    public void lock()
+    {
+    }
 }
