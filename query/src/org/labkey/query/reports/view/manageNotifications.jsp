@@ -51,7 +51,11 @@
         var notifyOption = <%=q(me.getModelBean().getNotifyOption())%>
 
         var manager = Ext4.create('LABKEY.ext4.ManageReportNotifications');
-        var panel = manager.getManageReportPanel({renderTo : 'manageNotificationsDiv'}, categories, returnUrl, notifyOption);
+        var panel = manager.getManageReportPanel({
+                    renderTo : 'manageNotificationsDiv',
+                    minWidth : 750
+                },
+                categories, returnUrl, notifyOption);
     });
 
 </script>
