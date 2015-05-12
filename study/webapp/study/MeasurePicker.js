@@ -943,7 +943,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     createMeasurePanel : function() {
         // Using a new MeasureStore, but we will only display filtered sets of measures
         this.measuresStore = Ext4.create('LABKEY.ext4.MeasuresStore', {
-            groupField: 'keyVariableGrouper',
+            groupField: 'recommendedVariableGrouper',
             listeners : {
                 measureStoreSorted : function(store) {
                     this.loaded = true;
@@ -1052,10 +1052,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     selectedItemCls: 'itemselected',
                     tpl: new Ext4.XTemplate(
                         '<tpl for=".">',
-                            '<tpl if="isKeyVariable && xindex == 1">',
+                            '<tpl if="isRecommendedVariable && xindex == 1">',
                                 '<div class="groupheader" style="padding: 3px 6px 4px 6px; color: #808080">Recommended</div>',
                             '</tpl>',
-                            '<tpl if="!isKeyVariable && parent[xindex - 2] && parent[xindex - 2].isKeyVariable">',
+                            '<tpl if="!isRecommendedVariable && parent[xindex - 2] && parent[xindex - 2].isRecommendedVariable">',
                                 '<div class="groupheader groupheaderline" style="padding: 8px 6px 4px 6px; color: #808080">Additional</div>',
                             '</tpl>',
                             '<div class="itemrow" style="padding: 3px 6px 4px 6px; cursor: pointer;">{label:htmlEncode}</div>',
@@ -1307,12 +1307,12 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 this.measuresStore.group();
             }
             else {
-                // enable or disable the measure grid grouping feature based on the presence of a key variable
-                if (this.measuresStore.find('isKeyVariable', true) > -1) {
+                // enable or disable the measure grid grouping feature based on the presence of a recommended variable
+                if (this.measuresStore.find('isRecommendedVariable', true) > -1) {
                     this.groupingFeature.enable();
-                    this.measuresStore.groupers.first().property = "keyVariableGrouper";
+                    this.measuresStore.groupers.first().property = "recommendedVariableGrouper";
                     this.measuresStore.group();
-                    this.measuresStore.sort('keyVariableGrouper', 'ASC');
+                    this.measuresStore.sort('recommendedVariableGrouper', 'ASC');
                 }
                 else {
                     this.groupingFeature.disable();
@@ -1439,8 +1439,8 @@ Ext4.define('LABKEY.ext4.Measure', {
         {name : 'schemaName'},
         {name : 'lookup', defaultValue: {}},
         {name : 'type'},
-        {name : 'isKeyVariable', type: 'boolean', defaultValue: false},
-        {name : 'keyVariableGrouper', convert: function(val, rec){ return rec.data.isKeyVariable ? '0' : '1'; }},
+        {name : 'isRecommendedVariable', type: 'boolean', defaultValue: false},
+        {name : 'recommendedVariableGrouper', convert: function(val, rec){ return rec.data.isRecommendedVariable ? '0' : '1'; }},
         {name : 'defaultScale'},
         {name : 'sortOrder', defaultValue: 0},
         {name : 'variableType', defaultValue: null}, // i.e. TIME, USER_GROUPS (default to null for query based variables)
@@ -1478,7 +1478,7 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                 {property: 'sortOrder'},
                 {property: 'schemaName'},
                 {property: 'queryLabel'},
-                {property: 'isKeyVariable', direction: 'DESC'},
+                {property: 'isRecommendedVariable', direction: 'DESC'},
                 {property: 'label'}
             ];
 

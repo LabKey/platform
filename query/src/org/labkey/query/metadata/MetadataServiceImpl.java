@@ -109,7 +109,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             gwtColumnInfo.setShownInUpdateView(columnInfo.isShownInUpdateView());
             gwtColumnInfo.setDimension(columnInfo.isDimension());
             gwtColumnInfo.setMeasure(columnInfo.isMeasure());
-            gwtColumnInfo.setKeyVariable(columnInfo.isKeyVariable());
+            gwtColumnInfo.setRecommendedVariable(columnInfo.isRecommendedVariable());
             gwtColumnInfo.setDefaultScale(columnInfo.getDefaultScale().name());
             gwtColumnInfo.setProtected(columnInfo.isProtected());
             gwtColumnInfo.setExcludeFromShifting(columnInfo.isExcludeFromShifting());
@@ -215,9 +215,13 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         {
                             gwtColumnInfo.setMeasure(column.getMeasure());
                         }
-                        if (column.isSetKeyVariable())
+                        if (column.isSetRecommendedVariable())
                         {
-                            gwtColumnInfo.setKeyVariable(column.getKeyVariable());
+                            gwtColumnInfo.setRecommendedVariable(column.getRecommendedVariable());
+                        }
+                        else if (column.isSetKeyVariable())
+                        {
+                            gwtColumnInfo.setRecommendedVariable(column.getKeyVariable());
                         }
                         if (column.isSetDefaultScale())
                         {
@@ -502,13 +506,13 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                 xmlColumn.unsetDimension();
             }
 
-            if (gwtColumnInfo.isKeyVariable() != rawColumnInfo.isKeyVariable())
+            if (gwtColumnInfo.isRecommendedVariable() != rawColumnInfo.isRecommendedVariable())
             {
-                xmlColumn.setKeyVariable(gwtColumnInfo.isKeyVariable());
+                xmlColumn.setRecommendedVariable(gwtColumnInfo.isRecommendedVariable());
             }
-            else if (xmlColumn.isSetKeyVariable())
+            else if (xmlColumn.isSetRecommendedVariable())
             {
-                xmlColumn.unsetKeyVariable();
+                xmlColumn.unsetRecommendedVariable();
             }
 
             if (!StringUtils.equals(gwtColumnInfo.getDefaultScale(), rawColumnInfo.getDefaultScale().name()))

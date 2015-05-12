@@ -379,7 +379,7 @@
       <ns:column columnName="ShownInDetailsView"/>
       <ns:column columnName="Dimension"/>
       <ns:column columnName="Measure"/>
-      <ns:column columnName="KeyVariable"/>
+      <ns:column columnName="RecommendedVariable"/>
       <ns:column columnName="DefaultScale"/>
       <ns:column columnName="FacetingBehaviorType"/>
       <ns:column columnName="Protected"/>

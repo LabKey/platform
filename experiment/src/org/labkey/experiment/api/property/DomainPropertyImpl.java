@@ -163,9 +163,9 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
-    public boolean isKeyVariable()
+    public boolean isRecommendedVariable()
     {
-        return _pd.isKeyVariable();
+        return _pd.isRecommendedVariable();
     }
 
     @Override
@@ -322,11 +322,11 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
-    public void setKeyVariable(boolean isKeyVariable)
+    public void setRecommendedVariable(boolean isRecommendedVariable)
     {
-        if (!isEdited() && isKeyVariable == isKeyVariable())
+        if (!isEdited() && isRecommendedVariable == isRecommendedVariable())
             return;
-        edit().setKeyVariable(isKeyVariable);
+        edit().setRecommendedVariable(isRecommendedVariable);
     }
 
     @Override
@@ -684,7 +684,7 @@ public class DomainPropertyImpl implements DomainProperty
         setType(propSrc.getType());
         setDimension(propSrc.isDimension());
         setMeasure(propSrc.isMeasure());
-        setKeyVariable(propSrc.isKeyVariable());
+        setRecommendedVariable(propSrc.isRecommendedVariable());
         setDefaultScale(propSrc.getDefaultScale());
         setRequired(propSrc.isRequired());
         setExcludeFromShifting(propSrc.isExcludeFromShifting());
@@ -925,7 +925,7 @@ public class DomainPropertyImpl implements DomainProperty
             pd.setShownInDetailsView(true);
             pd.setDimension(false);
             pd.setMeasure(true);
-            pd.setKeyVariable(false);
+            pd.setRecommendedVariable(false);
             pd.setDefaultScale(DefaultScaleType.LINEAR);
             pd.setFormat(null);
             pd.setMvEnabled(false);

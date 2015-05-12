@@ -27,7 +27,7 @@ import org.labkey.api.gwt.client.ui.property.DescriptionItem;
 import org.labkey.api.gwt.client.ui.property.DimensionItem;
 import org.labkey.api.gwt.client.ui.property.ExcludeFromShiftingItem;
 import org.labkey.api.gwt.client.ui.property.FormatItem;
-import org.labkey.api.gwt.client.ui.property.KeyVariableItem;
+import org.labkey.api.gwt.client.ui.property.RecommendedVariableItem;
 import org.labkey.api.gwt.client.ui.property.MeasureItem;
 import org.labkey.api.gwt.client.ui.property.ProtectedItem;
 import org.labkey.api.gwt.client.ui.property.URLItem;
@@ -174,7 +174,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         PropertyPane<GWTTableInfo, GWTColumnInfo> reportingPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Reporting");
         reportingPane.addItem(new MeasureItem<GWTTableInfo, GWTColumnInfo>(reportingPane));
         reportingPane.addItem(new DimensionItem<GWTTableInfo, GWTColumnInfo>(reportingPane));
-        reportingPane.addItem(new KeyVariableItem<GWTTableInfo, GWTColumnInfo>(reportingPane));
+        reportingPane.addItem(new RecommendedVariableItem<GWTTableInfo, GWTColumnInfo>(reportingPane));
         reportingPane.addItem(new DefaultScaleItem<GWTTableInfo, GWTColumnInfo>(reportingPane));
         addChangeHandler(reportingPane.getChangeListener());
 
