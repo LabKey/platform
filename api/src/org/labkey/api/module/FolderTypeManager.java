@@ -118,6 +118,10 @@ public class FolderTypeManager
 
         if (null == _allFolderTypes)
         {
+            if (!ModuleLoader.getInstance().isStartupComplete())
+            {
+                Collections.emptyMap(); // Don't expose folder types until startup is complete
+            }
             _allFolderTypes = new TreeMap<>(new FolderTypeComparator());
             _allFolderTypes.putAll(_javaFolderTypes);
 
