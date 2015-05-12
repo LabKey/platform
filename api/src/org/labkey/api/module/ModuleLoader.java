@@ -282,7 +282,6 @@ public class ModuleLoader implements Filter
 
         _servletContext = servletCtx;
 
-        verifyProductionModeResources();
         verifyTomcatVersion();
 
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath(".")));
@@ -311,6 +310,9 @@ public class ModuleLoader implements Filter
         if (coreModule == null || !DefaultModule.CORE_MODULE_NAME.equals(coreModule.getName()))
             throw new IllegalStateException("Core module was not first or could not find the Core module. Ensure that Tomcat user can create directories under the <LABKEY_HOME>/modules directory.");
         setProjectRoot(coreModule);
+
+        // Do this after we've checked to see if we can find the core module. See issue 22797.
+        verifyProductionModeResources();
 
         // Initialize data sources before initializing modules; modules will fail to initialize if the appropriate data sources aren't available
         initializeDataSources();

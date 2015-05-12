@@ -200,7 +200,7 @@ public class ExceptionUtil
         return !installing && AppProps.getInstance().isSelfReportExceptions();
     }
 
-    // request may be null if this is coming from a background thread or init
+    /** @param request may be null if this is coming from a background thread or init */
     public static void logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex)
     {
         if (ViewServlet.isShuttingDown())
