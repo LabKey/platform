@@ -68,7 +68,7 @@ public class ImportTypesHelper
         _standardKeys.add("ShownInDetailsView");
         _standardKeys.add("Measure");
         _standardKeys.add("Dimension");
-        _standardKeys.add("KeyVariable");
+        _standardKeys.add("RecommendedVariable");
         _standardKeys.add("DefaultScale");
         _standardKeys.add("ConditionalFormats");
         _standardKeys.add("FacetingBehaviorType");
@@ -153,7 +153,11 @@ public class ImportTypesHelper
             else
                 dimension = ColumnRenderProperties.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden());
 
-            boolean keyVariable = columnXml.isSetKeyVariable() && columnXml.getKeyVariable();
+            boolean recommendedVariable = false;
+            if (columnXml.isSetRecommendedVariable())
+                recommendedVariable = columnXml.getRecommendedVariable();
+            else if (columnXml.isSetKeyVariable())
+                recommendedVariable = columnXml.getKeyVariable();
 
             DefaultScaleType.Enum scaleType = columnXml.getDefaultScale();
             String defaultScale = scaleType != null ? scaleType.toString() : DefaultScaleType.LINEAR.toString();
@@ -197,7 +201,7 @@ public class ImportTypesHelper
                     shownInDetailsView,
                     measure,
                     dimension,
-                    keyVariable,
+                    recommendedVariable,
                     defaultScale,
                     ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
                     facetingBehaviorType,

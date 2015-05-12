@@ -380,7 +380,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         measure = col.measure;
         dimension = col.dimension;
 
-        setKeyVariable(col.isKeyVariable());
+        setRecommendedVariable(col.isRecommendedVariable());
         setDefaultScale(col.getDefaultScale());
         setMvColumnName(col.getMvColumnName());
         setRawValueColumn(col.isRawValueColumn());
@@ -1028,8 +1028,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             dimension = xmlCol.getDimension();
         if (xmlCol.isSetMeasure())
             measure = xmlCol.getMeasure();
-        if (xmlCol.isSetKeyVariable())
-            keyVariable = xmlCol.getKeyVariable();
+        if (xmlCol.isSetRecommendedVariable())
+            recommendedVariable = xmlCol.getRecommendedVariable();
+        else if (xmlCol.isSetKeyVariable())
+            recommendedVariable = xmlCol.getKeyVariable();
         if (xmlCol.isSetDefaultScale())
             defaultScale = DefaultScaleType.valueOf(xmlCol.getDefaultScale().toString());
         if (xmlCol.isSetIsUnselectable())

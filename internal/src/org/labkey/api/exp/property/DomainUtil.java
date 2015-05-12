@@ -222,7 +222,7 @@ public class DomainUtil
         gwtProp.setShownInDetailsView(prop.isShownInDetailsView());
         gwtProp.setDimension(prop.isDimension());
         gwtProp.setMeasure(prop.isMeasure());
-        gwtProp.setKeyVariable(prop.isKeyVariable());
+        gwtProp.setRecommendedVariable(prop.isRecommendedVariable());
         gwtProp.setDefaultScale(prop.getDefaultScale().name());
         gwtProp.setMvEnabled(prop.isMvEnabled());
         gwtProp.setFacetingBehaviorType(prop.getFacetingBehavior().name());
@@ -578,8 +578,8 @@ public class DomainUtil
                                                                 false, from.getLookupQuery() != null, from.isHidden()));
         }
 
-        if (from.isKeyVariable())
-            to.setKeyVariable(from.isKeyVariable());
+        if (from.isRecommendedVariable())
+            to.setRecommendedVariable(from.isRecommendedVariable());
 
         if (from.getDefaultScale() != null)
             to.setDefaultScale(DefaultScaleType.valueOf(from.getDefaultScale()));

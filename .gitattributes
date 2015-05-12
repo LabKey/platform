@@ -7144,12 +7144,12 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ExcludeFromShiftingItem.ja
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FacetingBehaviorItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FormatItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ImportAliasesItem.java -text
-internal/gwtsrc/org/labkey/api/gwt/client/ui/property/KeyVariableItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MeasureItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MvEnabledItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/PropertyPaneItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ProtectedItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RangeValidatorDialog.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RecommendedVariableItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RegexValidatorDialog.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RequiredItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/URLItem.java -text

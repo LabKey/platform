@@ -1378,7 +1378,7 @@ public class OntologyManager
                 "propertyuri, ontologyuri, name, storagecolumnname, description, rangeuri, concepturi, label, searchterms, semantictype, " +
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
-                "measure, scale, keyvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
+                "measure, scale, recommendedvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
                 "protected, excludefromshifting)\n");
         sql.append("SELECT " +
                 "? as propertyuri, " +
@@ -1408,7 +1408,7 @@ public class OntologyManager
                 "? as dimension, " +
                 "? as measure, " +
                 "? as scale, " +
-                "? as keyvariable, " +
+                "? as recommendedvariable, " +
                 "? as defaultscale, " +
                 "cast(? as int)  as createdby, " +
                 "{fn now()} as created, " +
@@ -1446,7 +1446,7 @@ public class OntologyManager
         sql.add(pd.isDimension());
         sql.add(pd.isMeasure());
         sql.add(pd.getScale());
-        sql.add(pd.isKeyVariable());
+        sql.add(pd.isRecommendedVariable());
         sql.add(pd.getDefaultScale());
         sql.add(user); // createdby
         // created
@@ -2165,7 +2165,7 @@ public class OntologyManager
 
     static final String parameters = "propertyuri,ontologyuri,name,description,rangeuri,concepturi,label,searchterms," +
             "semantictype,format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
-            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale,keyvariable";
+            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale,recommendedvariable";
     static final String[] parametersArray = parameters.split(",");
     static final String insertSql;
     static final String updateSql;
@@ -2616,7 +2616,7 @@ public class OntologyManager
         p.setShownInDetailsView(pd.isShownInDetailsView());
         p.setDimension(pd.isDimension());
         p.setMeasure(pd.isMeasure());
-        p.setKeyVariable(pd.isKeyVariable());
+        p.setRecommendedVariable(pd.isRecommendedVariable());
         p.setDefaultScale(pd.getDefaultScale());
         p.setFormat(pd.getFormat());
         p.setMvEnabled(pd.isMvEnabled());
@@ -2684,7 +2684,7 @@ public class OntologyManager
             boolean dimension = m.get("Dimension") != null && ((Boolean)m.get("Dimension")).booleanValue();
             boolean measure = m.get("Measure") != null && ((Boolean)m.get("Measure")).booleanValue();
 
-            boolean keyVariable = m.get("KeyVariable") != null && ((Boolean)m.get("KeyVariable")).booleanValue();
+            boolean recommendedVariable = m.get("RecommendedVariable") != null && ((Boolean)m.get("RecommendedVariable")).booleanValue();
             DefaultScaleType defaultScale = DefaultScaleType.LINEAR;
             if (m.get("DefaultScale") != null)
             {
@@ -2770,7 +2770,7 @@ public class OntologyManager
             pd.setDimension(dimension);
             pd.setMeasure(measure);
             pd.setScale(scale);
-            pd.setKeyVariable(keyVariable);
+            pd.setRecommendedVariable(recommendedVariable);
             pd.setDefaultScale(defaultScale);
             pd.setFormat(format);
             pd.setMvEnabled(mvEnabled);

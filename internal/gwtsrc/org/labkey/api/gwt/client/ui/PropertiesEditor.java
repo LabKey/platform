@@ -365,7 +365,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         PropertyPane<DomainType, FieldType> reportingPane = new PropertyPane<DomainType, FieldType>(this, "Reporting");
         reportingPane.addItem(new MeasureItem<DomainType, FieldType>(reportingPane));
         reportingPane.addItem(new DimensionItem<DomainType, FieldType>(reportingPane));
-        reportingPane.addItem(new KeyVariableItem<DomainType, FieldType>(reportingPane));
+        reportingPane.addItem(new RecommendedVariableItem<DomainType, FieldType>(reportingPane));
         reportingPane.addItem(new DefaultScaleItem<DomainType, FieldType>(reportingPane));
         addChangeHandler(reportingPane.getChangeListener());
 

@@ -50,7 +50,7 @@ import org.labkey.api.gwt.client.ui.property.DescriptionItem;
 import org.labkey.api.gwt.client.ui.property.DimensionItem;
 import org.labkey.api.gwt.client.ui.property.FormatItem;
 import org.labkey.api.gwt.client.ui.property.ImportAliasesItem;
-import org.labkey.api.gwt.client.ui.property.KeyVariableItem;
+import org.labkey.api.gwt.client.ui.property.RecommendedVariableItem;
 import org.labkey.api.gwt.client.ui.property.MeasureItem;
 import org.labkey.api.gwt.client.ui.property.MvEnabledItem;
 import org.labkey.api.gwt.client.ui.property.RequiredItem;
@@ -310,7 +310,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         PropertyPane<DomainType, FieldType> reportingPane = new PropertyPane<DomainType, FieldType>(this, "Reporting");
         reportingPane.addItem(new MeasureItem<DomainType, FieldType>(reportingPane));
         reportingPane.addItem(new DimensionItem<DomainType, FieldType>(reportingPane));
-        reportingPane.addItem(new KeyVariableItem<DomainType, FieldType>(reportingPane));
+        reportingPane.addItem(new RecommendedVariableItem<DomainType, FieldType>(reportingPane));
         reportingPane.addItem(new DefaultScaleItem<DomainType, FieldType>(reportingPane));
 
         PropertyPane<DomainType, FieldType> advancedPane = new PropertyPane<DomainType, FieldType>(this, "Advanced");

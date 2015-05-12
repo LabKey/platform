@@ -147,7 +147,7 @@ public class JsonWriter
         props.put("shownInDetailsView", cinfo == null || cinfo.isShownInDetailsView());
         props.put("dimension", cinfo != null && cinfo.isDimension());
         props.put("measure", cinfo != null && cinfo.isMeasure());
-        props.put("keyVariable", cinfo != null && cinfo.isKeyVariable());
+        props.put("recommendedVariable", cinfo != null && cinfo.isRecommendedVariable());
         props.put("defaultScale", cinfo != null ? cinfo.getDefaultScale().name() : DefaultScaleType.LINEAR.name());
         props.put("protected", cinfo != null && cinfo.isProtected());
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());

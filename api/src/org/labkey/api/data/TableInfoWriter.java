@@ -115,8 +115,8 @@ public class TableInfoWriter
         if (column.isMeasure() != ColumnRenderProperties.inferIsMeasure(column))
             columnXml.setMeasure(column.isMeasure());
 
-        if (column.isKeyVariable())
-            columnXml.setKeyVariable(true);
+        if (column.isRecommendedVariable())
+            columnXml.setRecommendedVariable(true);
 
         if (column.getDefaultScale() != null)
         {

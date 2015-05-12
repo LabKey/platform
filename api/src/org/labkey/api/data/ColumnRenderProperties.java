@@ -60,7 +60,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected boolean hidden;
     protected Boolean measure;
     protected Boolean dimension;
-    protected Boolean keyVariable = false;
+    protected Boolean recommendedVariable = false;
     protected DefaultScaleType defaultScale = DefaultScaleType.LINEAR;
     protected boolean shownInInsertView = true;
     protected boolean shownInUpdateView = true;
@@ -97,7 +97,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.shownInDetailsView = shownInDetailsView;
         to.measure = measure;
         to.dimension = dimension;
-        to.keyVariable = keyVariable;
+        to.recommendedVariable = recommendedVariable;
         to.defaultScale = defaultScale;
         to.url = url;
         to.importAliases = new LinkedHashSet<>(importAliases);
@@ -278,14 +278,14 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         this.urlTargetWindow = urlTargetWindow;
     }
 
-    public boolean isKeyVariable()
+    public boolean isRecommendedVariable()
     {
-        return keyVariable;
+        return recommendedVariable;
     }
 
-    public void setKeyVariable(boolean keyVariable)
+    public void setRecommendedVariable(boolean recommendedVariable)
     {
-        this.keyVariable = keyVariable;
+        this.recommendedVariable = recommendedVariable;
     }
 
     public DefaultScaleType getDefaultScale()
