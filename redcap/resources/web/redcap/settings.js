@@ -25,10 +25,10 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
             buttonAlign : 'left',
             bodyStyle   : 'background-color: transparent;',
             defaults : {
-                height: 400,
-                border: false,
-                frame: false,
-                cls: 'iScroll', // webkit custom scroll bars
+                height  : 400,
+                border  : false,
+                frame   : false,
+                cls     : 'iScroll', // webkit custom scroll bars
                 bodyStyle: 'background-color: transparent;'
             }
         });
@@ -71,9 +71,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
             autoScroll : true,
 
             fieldDefaults  : {
-                //labelWidth : 200,
-                //width : 450,
-                height : 22,
+                height      : 22,
                 labelSeparator : ''
             },
             items : [{
@@ -81,9 +79,9 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
                 value       : '<span>Add API authentication information required to communicate with a remote REDCap server. REDCap requires an API token for each ' +
                     'project that is to be accessed through the API, the tokens are configured through the REDCap web interface. For each REDCap project ' +
                     'that you wish to import data into LabKey, there must be a separate row of connection information consisting of:</span>' +
-                    '<ul><li><strong>project</strong> - the name of the REDCap project the token is associated with.</li>' +
+                    '<ul><li><strong>project</strong> - the name of the REDCap project the token is associated with. This should match the project name in the configuration XML specified in the other tab.</li>' +
                     '<li><strong>token</strong> - the hexadecimal REDCap token for the project (can be located through the REDCap API settings page of the project you are exporting from)</li></ul>'
-    },{
+                },{
                 xtype       : 'fieldset',
                 layout      : {
                     type    : 'table',
@@ -113,7 +111,12 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
                 name        : 'metadata',
                 height      : 300,
                 allowBlank  : false,
-                value       : this.bean.metadata
+                value       : this.bean.metadata,
+                listeners   : {
+                    change : {fn : function(cmp){
+                        this.markDirty(true);
+                    }, scope : this}
+                }
             }]
         });
 
@@ -124,8 +127,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
             handler : function(btn) {
                 var form = formPanel.getForm();
                 var formAdvanced = metadata.getForm();
-                if (form.isValid() && formAdvanced.isValid())
-                {
+                if (form.isValid() && formAdvanced.isValid()) {
                     this.getEl().mask("Saving...");
                     var params = form.getValues();
 
@@ -150,11 +152,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
                                 msgbox.show();
                                 msgbox.getEl().fadeOut({duration : 3000, callback : function(){ msgbox.close(); }});
 
-                                form.setValues(form.getValues());
-                                form.reset();
-
-                                formAdvanced.setValues(formAdvanced.getValues());
-                                formAdvanced.reset();
+                                this.resetDirty();
                             }
                         },
                         failure : function(response){
@@ -164,6 +162,8 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
                         scope : this
                     });
                 }
+                else
+                    Ext4.Msg.alert('Failure', 'Unable to save, the form is invalid. Please fill out all required fields before saving.');
             },
             scope   : this
         },{
@@ -171,8 +171,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
             handler : function(btn) {
                 var form = formPanel.getForm();
                 var formAdvanced = metadata.getForm();
-                if (!form.isDirty() && !formAdvanced.isDirty())
-                {
+                if (!this.isDirty()) {
                     this.getEl().mask("Reloading REDCap...");
                     var params = form.getValues();
 
@@ -203,6 +202,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
         }];
 
         this.callParent();
+        window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this);
     },
 
     deleteRow : function(cmp){
@@ -220,6 +220,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
                 parent.remove(item);
 
             }, this);
+            this.markDirty(true);
         }
     },
 
@@ -240,14 +241,26 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
             row         : this.currentRow,
             name        : 'projectname',
             emptyText   : 'CaseReportForms',
-            value       : initValues ? this.bean.projectname[this.currentRow] : null
+            width       : 250,
+            value       : initValues ? this.bean.projectname[this.currentRow] : null,
+            listeners   : {
+                change : {fn : function(cmp){
+                    this.markDirty(true);
+                }, scope : this}
+            }
         },{
             xtype       : 'textfield',
             allowBlank  : false,
             row         : this.currentRow,
+            width       : 250,
             name        : 'token',
             inputType   : 'password',
-            value       : initValues ? this.bean.token[this.currentRow] : null
+            value       : initValues ? this.bean.token[this.currentRow] : null,
+            listeners   : {
+                change : {fn : function(cmp){
+                    this.markDirty(true);
+                }, scope : this}
+            }
         },{
             xtype       : 'button',
             text        : 'delete',
@@ -257,5 +270,23 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
             disabled    : this.currentRow === 0,
             scope       : this
         }];
+    },
+
+    markDirty : function(dirty) {
+        this.dirty = dirty;
+    },
+
+    resetDirty : function() {
+        this.dirty = false;
+    },
+
+    isDirty : function() {
+        return this.dirty;
+    },
+
+    beforeUnload : function() {
+        if (this.isDirty()) {
+            return 'please save your changes';
+        }
     }
 });
