@@ -1139,7 +1139,7 @@ public class QueryServiceImpl extends QueryService
 
 
     // mapping may include multiple fieldkeys pointing at same columninfo (see ColumnInfo.resolveColumn());
-    private Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter,
+    private List<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter,
                                                          @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns,
                                                          Map<FieldKey,ColumnInfo> columnMap /* IN/OUT */, Set<ColumnInfo> allInvolvedColumns /* IN/OUT */)
     {
@@ -1918,10 +1918,13 @@ public class QueryServiceImpl extends QueryService
         Map<String, SQLFragment> joins = new LinkedHashMap<>();
         List<ColumnInfo> allColumns = new ArrayList<>(selectColumns);
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<>();
-        allColumns = (List<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null, columnMap, allInvolvedColumns);
+        allColumns = ensureRequiredColumns(table, allColumns, filter, sort, null, columnMap, allInvolvedColumns);
 
-        // Check for extra columns needed for logging
-        Set<FieldKey> dataLoggingFieldKeys = new HashSet<>();
+        // Check allInvolved columns for which need to be logged
+        // Logged columns may also require data logging (e.g. a patientId)
+        // If a data loggin column cannot be found, we will only disallow this query (throw an exception)
+        //      if the logged column that requires data logging is in allColumns (which is selected columns plus ones needed for sort/filter)
+        Map<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMap = new HashMap<>();
         Set<ColumnLogging> shouldLogNameLoggings = new HashSet<>();
         String columnLoggingComment = null;
         for (ColumnInfo column : allInvolvedColumns)
@@ -1932,7 +1935,9 @@ public class QueryServiceImpl extends QueryService
                 if (columnLogging.shouldLogName())
                 {
                     shouldLogNameLoggings.add(columnLogging);
-                    dataLoggingFieldKeys.addAll(columnLogging.getDataLoggingColumns());
+                    if (!shouldLogNameToDataLoggingMap.containsKey(column))
+                        shouldLogNameToDataLoggingMap.put(column, new HashSet<FieldKey>());
+                    shouldLogNameToDataLoggingMap.get(column).addAll(columnLogging.getDataLoggingColumns());
                     if (null == columnLoggingComment)
                         columnLoggingComment = columnLogging.getLoggingComment();
                 }
@@ -1941,23 +1946,29 @@ public class QueryServiceImpl extends QueryService
 
         Set<ColumnInfo> dataLoggingColumns = new HashSet<>();
         Set<ColumnInfo> extraSelectDataLoggingColumns = new HashSet<>();
-        for (FieldKey fieldKey : dataLoggingFieldKeys)
+        for (Map.Entry<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMapEntry : shouldLogNameToDataLoggingMap.entrySet())
         {
-            ColumnInfo loggingColumn = getColumnForDataLogging(table, fieldKey);
-            if (null != loggingColumn)
+            for (FieldKey fieldKey : shouldLogNameToDataLoggingMapEntry.getValue())
             {
-                // For the case where we had to add the MRN column in Visualization, that columm is in the table.columnMap, but not the local columnMap.
-                // This is because it's marked as hidden in the queryDef, so not to display, but isn't a normal "extra" column that DataRegion deems to add.
-                if (!allColumns.contains(loggingColumn))
+                ColumnInfo loggingColumn = getColumnForDataLogging(table, fieldKey);
+                if (null != loggingColumn)
                 {
-                    allColumns.add(loggingColumn);
-                    extraSelectDataLoggingColumns.add(loggingColumn);
+                    // For the case where we had to add the MRN column in Visualization, that columm is in the table.columnMap, but not the local columnMap.
+                    // This is because it's marked as hidden in the queryDef, so not to display, but isn't a normal "extra" column that DataRegion deems to add.
+                    if (!allColumns.contains(loggingColumn))
+                    {
+                        allColumns.add(loggingColumn);
+                        extraSelectDataLoggingColumns.add(loggingColumn);
+                    }
+                    dataLoggingColumns.add(loggingColumn);
                 }
-                dataLoggingColumns.add(loggingColumn);
-            }
-            else
-            {
-                throw new UnauthorizedException("Unable to locate required logging column '" + fieldKey.toString() + "'.");
+                else
+                {
+                    // Looking for matching column in allColumns; must match by ColumnLogging object, which gets propagated up sql parse tree
+                    for (ColumnInfo column : allColumns)
+                        if (shouldLogNameToDataLoggingMapEntry.getKey().getColumnLogging().equals(column.getColumnLogging()))
+                            throw new UnauthorizedException("Unable to locate required logging column '" + fieldKey.toString() + "'.");
+                }
             }
         }
 
