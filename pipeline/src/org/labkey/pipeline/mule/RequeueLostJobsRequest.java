@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.Collection;
 
 /**
+ * Used to requeue jobs that might have been actively running on a particular remote server when it shut down.
+ *
  * User: jeckels
  * Date: Aug 29, 2008
  */
