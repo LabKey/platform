@@ -44,6 +44,7 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
 
     public abstract List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>>
             getJoinColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery first, IVisualizationSourceQuery second, boolean isGroupByQuery);
+
     public abstract void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query);
 
     public abstract void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery);
@@ -52,6 +53,8 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
     public abstract boolean isJoinColumn(VisualizationSourceColumn column, Container container);
 
     public abstract void addExtraResponseProperties(Map<String, Object> extraProperties);
+
+    public abstract void addExtraColumnProperties(ColumnInfo column, QueryDefinition query, Map<String, Object> props);
 
     public abstract String getSourceCountSql(@NotNull JSONArray sources, JSONArray members, String colName);
 
