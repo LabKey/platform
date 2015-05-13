@@ -207,6 +207,7 @@ public class VisualizationServiceImpl implements VisualizationService
     {
         List<Map<String, Object>> measuresJSON = new ArrayList<>();
         Map<QueryDefinition, TableInfo> _tableInfoMap = new HashMap<>();
+        Map<String, VisualizationProvider> _schemaVisualizationProviderMap = new HashMap<>();
         int count = 1;
 
         for (Map.Entry<Pair<FieldKey, ColumnInfo>, QueryDefinition> entry : cols.entrySet())
@@ -217,6 +218,9 @@ public class VisualizationServiceImpl implements VisualizationService
             TableInfo tableInfo = query.getTable(errors, false);
             if (errors.isEmpty() && !_tableInfoMap.containsKey(query))
                 _tableInfoMap.put(query, tableInfo);
+
+            if (!_schemaVisualizationProviderMap.containsKey(query.getSchema().getName()))
+                _schemaVisualizationProviderMap.put(query.getSchema().getName(), query.getSchema().createVisualizationProvider());
 
             // add measure properties
             FieldKey fieldKey = entry.getKey().first;
@@ -232,13 +236,16 @@ public class VisualizationServiceImpl implements VisualizationService
             props.put("queryType", getQueryType(query, _tableInfoMap));
             props.put("id", count++);
 
+            // allow for the VisualizationProvider to annotate the response with other metadata properties
+            _schemaVisualizationProviderMap.get(query.getSchema().getName()).addExtraColumnProperties(column, query, props);
+
             measuresJSON.add(props);
         }
         return measuresJSON;
     }
 
 
-    protected Map<String, Object> getColumnProps(FieldKey fieldKey, ColumnInfo col, QueryDefinition query, Map<QueryDefinition, TableInfo> _tableInfoMap)
+    private Map<String, Object> getColumnProps(FieldKey fieldKey, ColumnInfo col, QueryDefinition query, Map<QueryDefinition, TableInfo> _tableInfoMap)
     {
         Map<String, Object> props = new HashMap<>();
 

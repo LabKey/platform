@@ -100,6 +100,12 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     }
 
     @Override
+    public void addExtraColumnProperties(ColumnInfo column, QueryDefinition query, Map<String, Object> props)
+    {
+        // Nothing needed so far
+    }
+
+    @Override
     public void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery)
     {
         for (Map.Entry<String, VisualizationIntervalColumn> entry : intervals.entrySet())
