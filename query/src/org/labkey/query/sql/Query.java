@@ -1083,6 +1083,31 @@ public class Query
         }
     }
 
+    static class InvolvedColumnsTest extends SqlTest
+    {
+        protected final List<String> _expectedInvolvedColumns;
+        InvolvedColumnsTest(String sql, List<String> expectedInvolvedColumns)
+        {
+            super(sql);
+            _expectedInvolvedColumns = expectedInvolvedColumns;
+        }
+
+        @Override
+        public void validate(QueryTestCase test, @Nullable Container container)
+        {
+            if (null == container)
+                container = JunitUtil.getTestContainer();
+
+            try
+            {
+                test.validateInvolvedColumns(sql, container == JunitUtil.getTestContainer() ? null : container, _expectedInvolvedColumns);
+            }
+            catch (Exception x)
+            {
+                QueryTestCase.fail(x.toString() + "\n" + sql);
+            }
+        }
+    }
 
     private static final int Rcolumns = TestDataLoader.COLUMNS.length + 8; // rowid, entityid, created, createdby, modified, modifiedby, lastindexed, container
 	private static final int Rsize = 84;
@@ -1346,7 +1371,37 @@ public class Query
         new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6)"),
 	};
 
+    static InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]
+    {
+        new InvolvedColumnsTest("SELECT R.seven FROM R UNION SELECT S.seven FROM Folder.qtest.lists.S S",
+                                Arrays.asList("R/seven", "S/seven")),
+        new InvolvedColumnsTest("SELECT R.seven FROM R UNION ALL SELECT S.seven FROM Folder.qtest.lists.S S",
+                                Arrays.asList("R/seven", "S/seven")),
+        new InvolvedColumnsTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S",
+                Arrays.asList("R/seven", "S/seven")),
+        new InvolvedColumnsTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R",
+                                Arrays.asList("R/seven", "S/seven", "R/twelve")),
+        new InvolvedColumnsTest("(SELECT 'R' as x, R.seven FROM R) UNION (SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R)",
+                                Arrays.asList("R/seven", "S/seven", "R/twelve")),
+        new InvolvedColumnsTest("(SELECT x, y FROM (SELECT 'S' as x, S.seven as y FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve as y FROM R) UNION (SELECT 'R' as x, R.seven as y FROM R))",
+                                Arrays.asList("R/seven", "S/seven", "R/twelve")),
 
+        new InvolvedColumnsTest("SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R",
+                                Arrays.asList("R/seven", "R/twelve")),
+        new InvolvedColumnsTest("(SELECT R.seven FROM R UNION SELECT R.seven FROM R) UNION ALL SELECT R.twelve FROM R",
+                                Arrays.asList("R/seven", "R/twelve")),
+        new InvolvedColumnsTest("(SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R) UNION SELECT R.twelve FROM R",
+                                Arrays.asList("R/seven", "R/twelve")),
+        new InvolvedColumnsTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R",
+                                Arrays.asList("R/seven", "R/twelve")),
+        new InvolvedColumnsTest("SELECT u.seven FROM (SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R) u WHERE u.seven > 5",
+                                Arrays.asList("R/seven", "R/twelve")),
+
+        new InvolvedColumnsTest("SELECT R.seven FROM R ORDER BY twelve",
+                                Arrays.asList("R/seven", "R/twelve")),
+        new InvolvedColumnsTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6) ORDER BY twelve LIMIT 4",
+                                Arrays.asList("R/seven", "R/twelve")),
+    };
 
     public static class QueryTestCase extends Assert
     {
@@ -1565,6 +1620,11 @@ public class Query
 //                    q.delete(user);
                 }
             }
+
+            for (InvolvedColumnsTest test : involvedColumnsTests)
+            {
+                test.validate(this, null);
+            }
         }
 
         @Test
@@ -1672,5 +1732,43 @@ public class Query
             Assert.assertEquals("Expected to find " + Rsize + " rows in lists.R table", Rsize, count);
         }
 
+        public void validateInvolvedColumns(String sql, @Nullable Container container, List<String> expectedInvolvedColumns) throws Exception
+        {
+            QuerySchema schema = lists;
+            if (null != container)
+                schema = schema.getSchema("Folder").getSchema(container.getPath()).getSchema("lists");
+            assert null != schema;
+
+            try
+            {
+                mockSelect(schema, sql, null, true, expectedInvolvedColumns);
+            }
+            catch (QueryParseException | SQLException x)
+            {
+                fail(x.getMessage() + "\n" + sql);
+            }
+        }
+
+        protected void mockSelect(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap,
+                                  boolean strictColumnList, List<String> expectedColumns) throws SQLException
+        {
+            Query q = new Query(schema);
+            q.setStrictColumnList(strictColumnList);
+            q.setTableMap(tableMap);
+            q.parse(sql);
+
+            if (q.getParseErrors().size() > 0)
+                throw q.getParseErrors().get(0);
+
+            Map<String, QueryTable.TableColumn> involvedColumnMap = new CaseInsensitiveHashMap<>();
+            for (QueryTable.TableColumn column : q.getInvolvedTableColumns())
+                involvedColumnMap.put(column.getTable().getTableInfo().getName() + "/" + column.getFieldKey().toString(), column);
+
+            for (String expectedColumn : expectedColumns)
+            {
+                if (!involvedColumnMap.containsKey(expectedColumn))
+                    fail("Involved column '" + expectedColumn + "' not found for sql:\n" + sql);
+            }
+        }
     }
 }
