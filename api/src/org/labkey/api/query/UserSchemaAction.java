@@ -239,7 +239,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
                     BatchValidationException batchErrors = new BatchValidationException();
                     qus.insertRows(form.getUser(), form.getContainer(), rows, batchErrors, null, null);
                     if (batchErrors.hasErrors())
-                        throw batchErrors;
+                        batchErrors.addToErrors(errors);
                 }
                 else
                 {
