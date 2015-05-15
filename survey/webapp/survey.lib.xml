@@ -1,0 +1,17 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="false">
+        <script path="survey/SurveyGridQuestion.js"/>
+        <script path="survey/AttachmentField.js"/>
+        <script path="survey/UsersCombo.js"/>
+        <script path="survey/DateCombo.js"/>
+        <script path="survey/BaseSurveyPanel.js"/>
+        <script path="survey/SurveyPanel.js"/>
+        <script path="survey/Survey.css"/>
+        <script path="survey/surveyDesignPanel.js"/>
+        <script path="survey/SurveyDesign.css"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4"/>
+        <dependency path="Ext4ClientApi"/>
+    </dependencies>
+</libraries>

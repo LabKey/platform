@@ -29,8 +29,8 @@
       resources.add(ClientDependency.fromPath("Ext4"));
       resources.add(ClientDependency.fromPath("codemirror"));
       resources.add(ClientDependency.fromPath("sqv"));
-      resources.add(ClientDependency.fromPath("/survey/surveyDesignPanel.js"));
-      resources.add(ClientDependency.fromPath("/survey/SurveyDesign.css"));
+      resources.add(ClientDependency.fromPath("survey"));
+
       return resources;
   }
 %>
