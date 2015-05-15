@@ -61,16 +61,22 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
                 try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
+                    boolean isDataspaceProject = ctx.isDataspaceProject();
+
                     // import any custom study design table properties
                     importTableinfo(ctx, vf, StudyPropertiesWriter.SCHEMA_FILENAME);
 
                     // import the objective and personnel tables
                     StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudy(), ctx.getUser(), true);
-                    StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
+                    StudyQuerySchema projectSchema = isDataspaceProject ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
 
-                    StudyQuerySchema.TablePackage objectiveTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.OBJECTIVE_TABLE_NAME);
-                    importTableData(ctx, vf, objectiveTablePackage, _objectiveTableMapBuilder,
-                            new PreserveExistingProjectData(ctx.getUser(), objectiveTablePackage.getTableInfo(), "Label", "RowId", _objectiveIdMap));
+                    if (!isDataspaceProject)
+                    {
+                        // objective is cross-container and thus not supported for dataspace import
+                        StudyQuerySchema.TablePackage objectiveTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.OBJECTIVE_TABLE_NAME);
+                        importTableData(ctx, vf, objectiveTablePackage, _objectiveTableMapBuilder,
+                                new PreserveExistingProjectData(ctx.getUser(), objectiveTablePackage.getTableInfo(), "Label", "RowId", _objectiveIdMap));
+                    }
 
                     StudyQuerySchema.TablePackage propertiesTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PROPERTIES_TABLE_NAME);
                     importTableData(ctx, vf, propertiesTablePackage, null, null);

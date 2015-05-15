@@ -66,13 +66,15 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
     public static void doImport(PipelineJob job, StudyImportContext ctx, BindException errors, String originalFileName) throws PipelineJobException
     {
-        if (ctx.getContainer().isDataspace())
-            throw new PipelineJobException("Can't import study into a Dataspace folder.");
-
         SpecimenTablesTemplate previousTablesTemplate = null;
         try
         {
             StudyDocument.Study studyXml = ctx.getXml();
+
+            if (ctx.getContainer().isDataspace() && !studyXml.getAllowDataspace())
+            {
+                throw new PipelineJobException("Can't import study into a Dataspace folder.");
+            }
 
             // verify the archiveVersion
             double currVersion = ModuleLoader.getInstance().getCoreModule().getVersion();
@@ -99,7 +101,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             if (hasSpecimenSchemasToImport)
             {
                 // if specimen schemas will be imported, don't create optional specimen table fields
-                previousTablesTemplate = StudySchema.getInstance().setSpecimenTablesTemplats(new SpecimenSchemaImporter.ImportTemplate());
+                previousTablesTemplate = StudySchema.getInstance().setSpecimenTablesTemplates(new SpecimenSchemaImporter.ImportTemplate());
             }
 
             StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
@@ -124,7 +126,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (studyXml.isSetSecurityType())
                     studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
 
-                study = StudyController.createStudy(study, ctx.getContainer(), ctx.getUser(), studyForm);
+                study = StudyController.createStudy(null, ctx.getContainer(), ctx.getUser(), studyForm);
             }
             else
             {
@@ -141,10 +143,50 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             }
 
             ctx.getLogger().info("Loading top-level study properties");
-            // TODO: This set of study property imports should be moved to its own importer process method so that it can be reused (see CreateChildStudyAction.createNewStudy)
-            // TODO: Change these props and save only if values have changed
-            study = study.createMutable();
 
+            study = study.createMutable();
+            study = configureStudyFromXml(study, studyXml);
+            StudyManager.getInstance().updateStudy(ctx.getUser(), study);
+
+            runImporters(ctx, job, errors);
+
+            if (errors.hasErrors())
+                throwFirstErrorAsPipelineJobException(errors);
+
+            if (hasSpecimenSchemasToImport)
+            {
+                VirtualFile specimenDir = SpecimenSchemaImporter.getSpecimenFolder(ctx);
+                if (null != specimenDir)
+                {
+                    new SpecimenSchemaImporter().process(ctx, specimenDir, errors);
+                    if (errors.hasErrors())
+                        throwFirstErrorAsPipelineJobException(errors);
+                }
+            }
+        }
+        catch (CancelledException e)
+        {
+            // Let this through without wrapping
+            throw e;
+        }
+        catch (Throwable t)
+        {
+            throw new PipelineJobException(t) {};
+        }
+        finally
+        {
+            if (previousTablesTemplate != null)
+                StudySchema.getInstance().setSpecimenTablesTemplates(previousTablesTemplate);
+        }
+    }
+
+
+    private static StudyImpl configureStudyFromXml(StudyImpl study, StudyDocument.Study studyXml)
+    {
+        // TODO: This set of study property imports should be moved to its own importer process method so that it can be reused (see CreateChildStudyAction.createNewStudy)
+        // TODO: Change these props and save only if values have changed
+        if (study.isMutable())
+        {
             if (studyXml.isSetLabel())
                 study.setLabel(studyXml.getLabel());
 
@@ -183,7 +225,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
             if (studyXml.isSetDescription())
                 study.setDescription(studyXml.getDescription());
-            // Issue 15789: Carriage returns in protocol description are not round-tripped
+                // Issue 15789: Carriage returns in protocol description are not round-tripped
             else if (studyXml.isSetStudyDescription() && studyXml.getStudyDescription().isSetDescription())
                 study.setDescription(studyXml.getStudyDescription().getDescription());
 
@@ -197,7 +239,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
             if (studyXml.isSetDescriptionRendererType())
                 study.setDescriptionRendererType(studyXml.getDescriptionRendererType());
-            // Issue 15789: Carriage returns in protocol description are not round-tripped
+                // Issue 15789: Carriage returns in protocol description are not round-tripped
             else if (studyXml.isSetStudyDescription() && studyXml.getStudyDescription().isSetRendererType())
                 study.setDescriptionRendererType(studyXml.getStudyDescription().getRendererType());
 
@@ -206,58 +248,35 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
             if (studyXml.isSetAlternateIdDigits())
                 study.setAlternateIdDigits(studyXml.getAlternateIdDigits());
-
-            StudyManager.getInstance().updateStudy(ctx.getUser(), study);
-
-            VirtualFile vf = ctx.getRoot();
-
-            // study.objective, study.personnel, and study.studyproperties tables
-            new StudyPropertiesImporter().process(ctx, vf, errors);
-
-            new MissingValueImporterFactory().create().process(job, ctx, vf);
-            new QcStatesImporter().process(ctx, vf, errors);
-
-            new VisitImporter().process(ctx, vf, errors);
-            if (errors.hasErrors())
-                throwFirstErrorAsPipelineJobException(errors);
-
-            new TreatmentDataImporter().process(ctx, vf, errors);
-            new AssayScheduleImporter().process(ctx, vf, errors);
-
-            new DatasetDefinitionImporter().process(ctx, vf, errors);
-            if (errors.hasErrors())
-                throwFirstErrorAsPipelineJobException(errors);
-
-            if (hasSpecimenSchemasToImport)
-            {
-                VirtualFile specimenDir = SpecimenSchemaImporter.getSpecimenFolder(ctx);
-                if (null != specimenDir)
-                {
-                    new SpecimenSchemaImporter().process(ctx, specimenDir, errors);
-                    if (errors.hasErrors())
-                        throwFirstErrorAsPipelineJobException(errors);
-                }
-            }
         }
-        catch (CancelledException e)
-        {
-            // Let this through without wrapping
-            throw e;
-        }
-        catch (Throwable t)
-        {
-            throw new PipelineJobException(t) {};
-        }
-        finally
-        {
-            if (previousTablesTemplate != null)
-                StudySchema.getInstance().setSpecimenTablesTemplats(previousTablesTemplate);
-        }
+
+        return study;
+    }
+
+
+    private static void runImporters(StudyImportContext ctx, PipelineJob job, BindException errors) throws Exception
+    {
+        VirtualFile vf = ctx.getRoot();
+
+        // study.objective, study.personnel, and study.studyproperties tables
+        new StudyPropertiesImporter().process(ctx, vf, errors);
+
+        new MissingValueImporterFactory().create().process(job, ctx, vf);
+        new QcStatesImporter().process(ctx, vf, errors);
+
+        new VisitImporter().process(ctx, vf, errors);
+        if (errors.hasErrors())
+            throwFirstErrorAsPipelineJobException(errors);
+
+        new TreatmentDataImporter().process(ctx, vf, errors);
+        new AssayScheduleImporter().process(ctx, vf, errors);
+
+        new DatasetDefinitionImporter().process(ctx, vf, errors);
     }
 
     private static void throwFirstErrorAsPipelineJobException(BindException errors) throws PipelineJobException
     {
-        ObjectError firstError = (ObjectError)errors.getAllErrors().get(0);
+        ObjectError firstError = errors.getAllErrors().get(0);
         throw new PipelineJobException("ERROR: " + firstError.getDefaultMessage());
     }
 

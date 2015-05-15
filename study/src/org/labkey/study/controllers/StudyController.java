@@ -27,6 +27,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
@@ -1359,7 +1360,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static StudyImpl createStudy(StudyImpl study, Container c, User user, StudyPropertiesForm form) throws SQLException, ServletException
+    public static StudyImpl createStudy(@Nullable StudyImpl study, Container c, User user, StudyPropertiesForm form) throws SQLException, ServletException
     {
         if (null == study)
         {
@@ -1374,7 +1375,7 @@ public class StudyController extends BaseStudyController
             study.setAssayPlan(form.getAssayPlan());
             study.setDescription(form.getDescription());
             study.setDefaultTimepointDuration(form.getDefaultTimepointDuration() < 1 ? 1 : form.getDefaultTimepointDuration());
-            if(form.getDescriptionRendererType() != null)
+            if (form.getDescriptionRendererType() != null)
                 study.setDescriptionRendererType(form.getDescriptionRendererType());
             study.setGrant(form.getGrant());
             study.setInvestigator(form.getInvestigator());
@@ -2312,7 +2313,8 @@ public class StudyController extends BaseStudyController
             _form = form;
             _study = getStudyRedirectIfNull();
 
-            if((_study.getParticipantAliasDatasetId() != null) && (_study.getParticipantAliasDatasetId() == form.getDatasetId())){
+            if ((_study.getParticipantAliasDatasetId() != null) && (_study.getParticipantAliasDatasetId() == form.getDatasetId()))
+            {
                 super.setImportMessage("This is the Alias Dataset.  You do not need to include information for the date column.");
             }
 
@@ -5407,7 +5409,7 @@ public class StudyController extends BaseStudyController
 
         public String[] getStatuses()
         {
-            if(null == _statuses)
+            if (null == _statuses)
             {
                 return new String[1];
             }
@@ -7522,7 +7524,8 @@ public class StudyController extends BaseStudyController
         ChangeAlternateIdsForm changeAlternateIdsForm = new ChangeAlternateIdsForm();
         changeAlternateIdsForm.setPrefix(study.getAlternateIdPrefix());
         changeAlternateIdsForm.setNumDigits(study.getAlternateIdDigits());
-        if(study.getParticipantAliasDatasetId() != null){
+        if (study.getParticipantAliasDatasetId() != null)
+        {
             changeAlternateIdsForm.setAliasDatasetId(study.getParticipantAliasDatasetId());
             changeAlternateIdsForm.setAliasColumn(study.getParticipantAliasProperty());
             changeAlternateIdsForm.setSourceColumn(study.getParticipantAliasSourceProperty());

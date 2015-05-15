@@ -208,7 +208,7 @@ public class StudySchema
         return getTableInfoVial(container, null);
     }
 
-    public SpecimenTablesTemplate setSpecimenTablesTemplats(SpecimenTablesTemplate template)
+    public SpecimenTablesTemplate setSpecimenTablesTemplates(SpecimenTablesTemplate template)
     {
         if (template != null)
         {

@@ -105,4 +105,10 @@ public class StudyObjectiveTable extends BaseStudyTable
     {
         return new DefaultQueryUpdateService(this, this.getRealTable());
     }
+
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return true;
+    }
 }
