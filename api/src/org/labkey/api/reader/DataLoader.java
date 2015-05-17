@@ -884,7 +884,16 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             boolean hasNext = _it.hasNext();
             if (hasNext)
             {
-                _row = (ArrayListMap)_it.next();
+                Map<String, Object> nextRow = _it.next();
+                if (nextRow instanceof ArrayListMap)
+                {
+                    _row = (ArrayListMap)nextRow;
+                }
+                else
+                {
+                    _row = new ArrayListMap<>();
+                    _row.putAll(nextRow);
+                }
                 _rowNumber++;
             }
             return hasNext;
