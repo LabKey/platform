@@ -238,11 +238,22 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                     if (o.success)
                     {
                         var metadata = Ext4.JSON.decode(o.survey.metadata);
-                        this.setLabelCaption(metadata);
-                        this.setStartOptions(metadata);
-                        this.setShowCounts(metadata);
-                        this.setSurveyLayout(metadata);
-                        this.generateSurveySections(metadata);
+                        var successFn = function(){
+                            this.setLabelCaption(metadata);
+                            this.setStartOptions(metadata);
+                            this.setShowCounts(metadata);
+                            this.setSurveyLayout(metadata);
+                            this.generateSurveySections(metadata);
+                        };
+
+                        if (metadata.survey.beforeLoad && metadata.survey.beforeLoad.fn){
+                            var beforeLoad = new Function('', 'return ' + metadata.survey.beforeLoad.fn);
+
+                            beforeLoad().call(this, successFn, this);
+                        }
+                        else {
+                            successFn.call(this);
+                        }
                     }
                     else
                         this.onFailure(resp);

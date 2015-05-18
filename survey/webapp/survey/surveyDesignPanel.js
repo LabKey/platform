@@ -318,6 +318,11 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                 + '<tr><td class="spacer"></td><td>The container path for the wiki. Defaults to current container.</td></tr>'
                 + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">footerWiki.name</span></td></tr>'
                 + '<tr><td class="spacer"></td><td>The name of the wiki</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{String}</span> <span class="varname">beforeLoad.fn</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>A javascript function to run prior to creating the survey panel. Useful for loading custom scripts, the specified function '
+                +   'is called with two parameters : callback & scope which should be invoked after the furnished function has run, for example '
+                +   '<i>"fn": "function(callback, scope){ LABKEY.requiresScript(\'myscript.js\', callback, scope); }"</i>'
+                +   '</td></tr>'
                 + '</table>'
         });
 
