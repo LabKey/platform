@@ -23,8 +23,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.StudyImpl;
 
-import java.io.File;
-
 /*
 * User: adam
 * Date: Sep 1, 2009
