@@ -32,8 +32,7 @@ import java.nio.file.Path;
  */
 
 /**
- * Creates and caches the file-based webparts defined by modules. In dev mode, file changes result in dynamic reloading
- * and re-initization of webpart-related maps.
+ * Creates and caches the file-based webparts defined by modules. File changes result in dynamic reloading and re-initization of webpart-related maps.
  */
 public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHandler<String, SimpleWebPartFactory>
 {
