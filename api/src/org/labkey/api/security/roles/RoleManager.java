@@ -38,8 +38,8 @@ import java.lang.reflect.Constructor;
 public class RoleManager
 {
     public static final Role siteAdminRole = new SiteAdminRole();
-
     public static final Set<Class<? extends Permission>> BasicPermissions = new HashSet<>();
+
     static
     {
         BasicPermissions.add(ReadPermission.class);
@@ -133,8 +133,10 @@ public class RoleManager
                 _nameToRoleMap.put(perm.getUniqueName(), perm);
                 _classToRoleMap.put(perm.getClass(), perm);
             }
-            catch(InstantiationException e) {}
-            catch (IllegalAccessException e) {}
+            catch(InstantiationException | IllegalAccessException e)
+            {
+                Logger.getLogger(RoleManager.class).error("Exception while instantiating permission " + permClass, e);
+            }
         }
 
         // It's possible that a security policy refers to this role but it wasn't available when it was loaded.

@@ -39,9 +39,9 @@ import java.util.Set;
  */
 public abstract class AbstractPermission implements Permission
 {
-    private String _name;
-    private String _description;
-    private Module _sourceModule;
+    private final String _name;
+    private final String _description;
+    private final Module _sourceModule;
 
     protected AbstractPermission(@NotNull String name, @NotNull String description)
     {
