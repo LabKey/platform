@@ -1744,7 +1744,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             for (Collection<String> rowLSIDs : rowLSIDSlices)
             {
                 SimpleFilter filter = new SimpleFilter();
-                filter.addWhereClause("Container=?", new Object[]{getContainer()});
+                Container rowsContainer = getContainer();
+                if (getDataSharingEnum() != DataSharing.NONE)
+                    rowsContainer = getDefinitionContainer();
+                filter.addWhereClause("Container=?", new Object[]{rowsContainer});
                 filter.addInClause(FieldKey.fromParts("LSID"), rowLSIDs);
                 Table.delete(data, filter);
                 StudyManager.datasetModified(this, user, true);
