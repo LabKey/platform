@@ -23,7 +23,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SQLFragment;
@@ -298,7 +297,7 @@ public class PipelineStatusManager
             PipelineStatusFileImpl sfExist = getStatusFile(path);
             if (!jobId.equals(sfExist.getJob()))
             {
-                List<PipelineStatusFileImpl> children = getSplitStatusFiles(sfExist.getJobId(), ContainerManager.getForId(sfExist.getContainerId()));
+                List<PipelineStatusFileImpl> children = getSplitStatusFiles(sfExist.getJobId());
                 for (PipelineStatusFileImpl child : children)
                 {
                     LOG.debug("Resetting parent job ID for child job " + child.getRowId() + " - " + child.getFilePath());
@@ -388,7 +387,7 @@ public class PipelineStatusManager
         return sfExist.getJobStore();
     }
 
-    public static List<PipelineStatusFileImpl> getSplitStatusFiles(String parentId, @Nullable Container container)
+    public static List<PipelineStatusFileImpl> getSplitStatusFiles(String parentId)
     {
         if (parentId == null)
         {
@@ -396,8 +395,6 @@ public class PipelineStatusManager
         }
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("JobParent"), parentId, CompareType.EQUAL);
-        if (null != container)
-            filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.EQUAL);
 
         return getStatusFiles(filter);
     }
@@ -589,7 +586,7 @@ public class PipelineStatusManager
                     throw new UnauthorizedException();
                 }
                 // Check if the job has any children
-                List<PipelineStatusFileImpl> children = PipelineStatusManager.getSplitStatusFiles(sf.getJobId(), sf.lookupContainer());
+                List<PipelineStatusFileImpl> children = PipelineStatusManager.getSplitStatusFiles(sf.getJobId());
                 boolean hasActiveChildren = false;
                 for (PipelineStatusFileImpl child : children)
                 {
@@ -632,6 +629,11 @@ public class PipelineStatusManager
             List<Object> statusFileIds = new ArrayList<>();
             for (PipelineStatusFile pipelineStatusFile : deleteable)
             {
+                Container container = pipelineStatusFile.lookupContainer();
+                if (container == null || !container.hasPermission(info.getUser(), DeletePermission.class))
+                {
+                    throw new UnauthorizedException("No permission to delete job from " + container);
+                }
                 // Allow the provider to do any necessary clean-up
                 PipelineProvider provider = PipelineService.get().getPipelineProvider(pipelineStatusFile.getProvider());
                 if (provider != null)
@@ -730,7 +732,7 @@ public class PipelineStatusManager
         }
         if (statusFile.isCancellable())
         {
-            for (PipelineStatusFileImpl child : PipelineStatusManager.getSplitStatusFiles(statusFile.getJobId(), statusFile.lookupContainer()))
+            for (PipelineStatusFileImpl child : PipelineStatusManager.getSplitStatusFiles(statusFile.getJobId()))
             {
                 if (child.isCancellable())
                 {

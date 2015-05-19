@@ -110,7 +110,7 @@
         */
 
         // Recurse into child jobs
-        List<PipelineStatusFileImpl> children = PipelineStatusManager.getSplitStatusFiles(file.getJobId(), null);
+        List<PipelineStatusFileImpl> children = PipelineStatusManager.getSplitStatusFiles(file.getJobId());
         if (children.size() > 0)
         {
             sb.append("<ul>");

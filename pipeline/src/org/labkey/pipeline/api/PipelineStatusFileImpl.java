@@ -17,7 +17,6 @@
 package org.labkey.pipeline.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -180,7 +179,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         // Check if child jobs still reference the job by an older job ID
         if (curSF.getJob() != null && !curSF.getJob().equals(getJob()))
         {
-            List<PipelineStatusFileImpl> childrenOfOldId = PipelineStatusManager.getSplitStatusFiles(curSF.getJobId(), ContainerManager.getForId(curSF.getContainerId()));
+            List<PipelineStatusFileImpl> childrenOfOldId = PipelineStatusManager.getSplitStatusFiles(curSF.getJobId());
             if (!childrenOfOldId.isEmpty())
             {
                 // Children still reference old job ID, so don't reset it (or let it revert to some older value)

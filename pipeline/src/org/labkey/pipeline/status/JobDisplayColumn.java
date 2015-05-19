@@ -103,7 +103,7 @@ public class JobDisplayColumn extends SimpleDisplayColumn
                 {
                     // If we're being rendered from the Admin Console, we won't be in the right container,
                     // so don't specify one
-                    _jobStatus = getSplitStatusFiles(jobId, null);
+                    _jobStatus = getSplitStatusFiles(jobId);
                 }
             }
             else if (ctx.get("JobParent") != null)
