@@ -414,7 +414,10 @@ public class DatasetQueryView extends StudyQueryView
                     if (deleteRowsURL != null)
                     {
                         ActionButton deleteRows = new ActionButton(deleteRowsURL, "Delete");
-                        deleteRows.setRequiresSelection(true, "Delete selected row from this dataset?", "Delete selected rows from this dataset?");
+                        if (_dataset.getDataSharingEnum() == DatasetDefinition.DataSharing.NONE)
+                            deleteRows.setRequiresSelection(true, "Delete selected row from this dataset?", "Delete selected rows from this dataset?");
+                        else
+                            deleteRows.setRequiresSelection(true, "Delete selected shared row from this dataset?  This operation may affect other studies in this project.", "Delete selected shared rows from this dataset?  This operation may affect other studies in this project.");
                         deleteRows.setActionType(ActionButton.Action.POST);
                         deleteRows.setDisplayPermission(DeletePermission.class);
                         bar.add(deleteRows);
