@@ -1340,6 +1340,14 @@ public class SpecimenImporter
             else
                 info("Specimens: 0 rows found in input");
 
+            if (merge)
+            {
+                // Delete any orphaned specimen rows without vials
+                _iTimer.setPhase(ImportPhases.DeleteOldData);
+                executeSQL(StudySchema.getInstance().getSchema(), "DELETE FROM " + getTableInfoSpecimen().getSelectName() +
+                                  " WHERE RowId NOT IN (SELECT SpecimenId FROM " + getTableInfoVial().getSelectName() + ")");
+            }
+
             // No need to setPhase() here... method sets timer phases immediately
             updateCalculatedSpecimenData(merge);
 
@@ -1456,14 +1464,6 @@ public class SpecimenImporter
         ensureNotCanceled();
         _iTimer.setPhase(ImportPhases.PopulateSpecimenEvents);
         populateSpecimenEvents(info, merge);
-
-        if (merge)
-        {
-            // Delete any orphaned specimen rows without vials
-            _iTimer.setPhase(ImportPhases.DeleteOldData);
-            executeSQL(StudySchema.getInstance().getSchema(), "DELETE FROM " + getTableInfoSpecimen().getSelectName() +
-                    " WHERE RowId NOT IN (SELECT SpecimenId FROM " + getTableInfoVial().getSelectName() + ")");
-        }
     }
 
     private Set<String> getConflictingEventColumns(List<SpecimenEvent> events)
