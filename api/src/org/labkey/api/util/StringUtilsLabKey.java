@@ -148,6 +148,19 @@ public class StringUtilsLabKey
         return Formats.commaf0.format(count) + " " + (1 == count ? singular : plural);
     }
 
+    // splits strings at camel case boundaries
+    // copied from http://stackoverflow.com/questions/2559759/how-do-i-convert-camelcase-into-human-readable-names-in-java
+    public static String splitCamelCase(String s)
+    {
+        return s.replaceAll(
+                String.format("%s|%s|%s",
+                        "(?<=[A-Z])(?=[A-Z][a-z])",
+                        "(?<=[^A-Z])(?=[A-Z])",
+                        "(?<=[A-Za-z])(?=[^A-Za-z])"
+                ),
+                " "
+        );
+    }
 
     public static class TestCase extends Assert
     {
@@ -205,6 +218,22 @@ public class StringUtilsLabKey
             assertEquals("1 octopus", pluralize(1, "octopus", "octopi"));
             assertEquals("2 octopi", pluralize(2, "octopus", "octopi"));
             assertEquals("27 octopi", pluralize(27, "octopus", "octopi"));
+        }
+
+        @Test
+        public void testSplitCamelCase()
+        {
+            assertEquals("lowercase", splitCamelCase("lowercase"));
+            assertEquals("Class", splitCamelCase("Class"));
+            assertEquals("My Class", splitCamelCase("MyClass"));
+            assertEquals("HTML", splitCamelCase("HTML"));
+            assertEquals("PDF Loader", splitCamelCase("PDFLoader"));
+            assertEquals("A String", splitCamelCase("AString"));
+            assertEquals("Simple XML Parser", splitCamelCase("SimpleXMLParser"));
+            assertEquals("GL 11 Version", splitCamelCase("GL11Version"));
+            assertEquals("99 Bottles", splitCamelCase("99Bottles"));
+            assertEquals("May 5", splitCamelCase("May5"));
+            assertEquals("BFG 9000", splitCamelCase("BFG9000"));
         }
     }
 }
