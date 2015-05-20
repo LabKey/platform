@@ -1012,7 +1012,7 @@ public class AnnouncementsController extends SpringActionController
                 select.append(" selected");
 
             select.append(">");
-            select.append(user.getDisplayName(currentUser));
+            select.append(PageFlowUtil.filter(user.getDisplayName(currentUser)));
             select.append("</option>\n");
         }
 
