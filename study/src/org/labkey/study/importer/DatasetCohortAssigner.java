@@ -67,7 +67,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
                 // Props will be null if a dataset is referenced in the visit map but not in the datasets_manifest
                 if (null == props)
                 {
-                    ctx.getLogger().warn("WARNING: Dataset \"" + def.getName() + "\" should be defined in datasets_manfest.xml");
+                    ctx.getLogger().info("INFORMATION: Dataset \"" + def.getName() + "\" found in the study that is not defined in datasets_manifest.xml");
                 }
                 else
                 {

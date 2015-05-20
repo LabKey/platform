@@ -406,7 +406,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         if (_categoryId != null)
         {
-            ViewCategory category = ViewCategoryManager.getInstance().getCategory(getContainer(), _categoryId);
+            ViewCategory category = ViewCategoryManager.getInstance().getCategory(getDefinitionContainer(), _categoryId);
             if (category != null)
                 _category = category.getLabel();
         }
@@ -416,7 +416,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     public ViewCategory getViewCategory()
     {
         if (_categoryId != null)
-            return ViewCategoryManager.getInstance().getCategory(getContainer(), _categoryId);
+            return ViewCategoryManager.getInstance().getCategory(getDefinitionContainer(), _categoryId);
 
         return null;
     }

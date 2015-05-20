@@ -140,6 +140,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                     }
                 }
                 transaction.commit();
+                ParticipantGroupManager.getInstance().clearCache(ctx.getContainer());
             }
         }
     }
