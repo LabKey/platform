@@ -1030,6 +1030,7 @@ api/src/org/labkey/api/query/QueryHelper.java -text
 api/src/org/labkey/api/query/QueryKey.java -text
 api/src/org/labkey/api/query/QueryMethod.java -text
 api/src/org/labkey/api/query/QueryNestingOption.java -text
+api/src/org/labkey/api/query/QueryNotFoundException.java -text
 api/src/org/labkey/api/query/QueryParam.java -text
 api/src/org/labkey/api/query/QueryParseException.java -text
 api/src/org/labkey/api/query/QueryParseExceptionUnresolvedField.java -text
