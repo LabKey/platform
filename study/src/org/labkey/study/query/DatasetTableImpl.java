@@ -635,7 +635,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             else
             {
                 // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
-                if (!StringUtils.startsWithIgnoreCase(sqlCF.getSQL(),"container"))
+                if (!StringUtils.startsWithIgnoreCase(sqlCF.getRawSQL(),"container"))
                     throw new IllegalStateException("problem generating dataset SQL");
                 sqlf.append(" WHERE ").append(innerAlias).append(".").append(sqlCF);
             }

@@ -49,6 +49,12 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     }
 
     @Override
+    public boolean includeWorkbooks()
+    {
+        return false;
+    }
+
+    @Override
     public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
     {
         if (_containerIds != null && !_containerIds.isEmpty())
@@ -67,5 +73,4 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
             return super.getIds(currentContainer, perm, roles);
         }
     }
-
 }
