@@ -49,6 +49,11 @@ public abstract class ContainerFilter
     @Nullable
     public abstract Collection<GUID> getIds(Container currentContainer);
 
+    public boolean includeWorkbooks()
+    {
+        return true;
+    }
+
     /**
      * May return null if the ContainerFilter has no corresponding ContainerFilter.Type.
      */
@@ -137,11 +142,11 @@ public abstract class ContainerFilter
         SecurityLogger.indent("ContainerFilter");
         Collection<GUID> ids = getIds(container);
         SecurityLogger.outdent();
-        return getSQLFragment(schema, container, containerColumnSQL, ids, useJDBCParameters, allowNulls);
+        return getSQLFragment(schema, container, containerColumnSQL, ids, useJDBCParameters, allowNulls,includeWorkbooks());
     }
 
     // instances of ContainerFilterWithUser will call this getSQLFragment after GetIds with a specific permission to check against the user
-    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean useJDBCParameters, boolean allowNulls)
+    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean useJDBCParameters, boolean allowNulls, boolean includeWorkbooks)
     {
         if (ids == null)
         {
@@ -167,7 +172,7 @@ public abstract class ContainerFilter
             Container first = ContainerManager.getForId(ids.iterator().next());
             if (null == first)
                 return new SQLFragment("1 = 0");
-            if (!first.hasWorkbookChildren())
+            if (!first.hasWorkbookChildren() || !includeWorkbooks)
                 return new SQLFragment(containerColumnSQL).append("=").append(first);
         }
 
@@ -175,35 +180,51 @@ public abstract class ContainerFilter
         // for SQLServer
         useJDBCParameters = useJDBCParameters && ids.size() < 10;
 
-        SQLFragment select = new SQLFragment("SELECT c.EntityId FROM ");
-        select.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
-        // Need to add cast to make Postgres happy
-        select.append(" INNER JOIN (SELECT CAST(x.Id AS ");
-        select.append(schema.getSqlDialect().getGuidType());
-        select.append(") AS Id FROM (");
-        String separator = "";
-        for (GUID containerId : ids)
+        SQLFragment select = new SQLFragment();
+
+        if (includeWorkbooks)
         {
-            select.append(separator);
-            separator = " UNION\n\t\t";
-            select.append("SELECT ");
-            if (useJDBCParameters)
+            select.append("SELECT c.EntityId FROM ");
+            select.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
+            // Need to add cast to make Postgres happy
+            select.append(" INNER JOIN (SELECT CAST(x.Id AS ");
+            select.append(schema.getSqlDialect().getGuidType());
+            select.append(") AS Id FROM (");
+            String separator = "";
+            for (GUID containerId : ids)
             {
-                select.append("?");
-                select.add(containerId);
+                select.append(separator);
+                separator = " UNION\n\t\t";
+                select.append("SELECT ");
+                if (useJDBCParameters)
+                {
+                    select.append("?");
+                    select.add(containerId);
+                }
+                else
+                {
+                    select.append("'");
+                    select.append(containerId);
+                    select.append("'");
+                }
+                select.append(" AS Id");
             }
-            else
-            {
-                select.append("'");
-                select.append(containerId);
-                select.append("'");
-            }
-            select.append(" AS Id");
+            // Filter based on the container's ID, or the container is a child of the ID and of type workbook
+            select.append(") x) x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type = '");
+            select.append(Container.TYPE.workbook.toString());
+            select.append("')");
         }
-        // Filter based on the container's ID, or the container is a child of the ID and of type workbook
-        select.append(") x) x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type = '");
-        select.append(Container.TYPE.workbook.toString());
-        select.append("')");
+        else
+        {
+            String comma = "";
+            select.append ("SELECT EntityId FROM (VALUES ");
+            for (GUID containerId : ids)
+            {
+                select.append(comma); comma = ",";
+                select.append("('").append(containerId.toString()).append("')");
+            }
+            select.append(") AS _ids(EntityId)");
+        }
 
 
         boolean useCTE = false;
@@ -404,7 +425,7 @@ public abstract class ContainerFilter
             SecurityLogger.indent("ContainerFilter");
             Collection<GUID> ids = getIds(container, permission, roles);
             SecurityLogger.outdent();
-            return getSQLFragment(schema, container, containerColumnSQL, ids, useJDBCParameters, allowNulls);
+            return getSQLFragment(schema, container, containerColumnSQL, ids, useJDBCParameters, allowNulls,includeWorkbooks());
         }
 
         // each ContainerFilterWithUser subclass should override
