@@ -50,6 +50,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryNotFoundException;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
@@ -413,7 +414,13 @@ public class Query
 
     public String getQueryText()
     {
-        return _queryRoot == null ? null : _queryRoot.getQueryText();
+        if (_queryRoot != null)
+            return _queryRoot.getQueryText();
+        else
+        {
+            // TableQueryDefinition case, but why is _queryRoot null?
+            return _querySource;
+        }
     }
 
 
@@ -626,13 +633,22 @@ public class Query
 	/**
 	 * Resolve a particular table name.  The table name may have schema names (folder.schema.table etc.) prepended to it.
 	 */
-    QueryRelation resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias)
+    QueryRelation resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias) throws QueryNotFoundException
     {
         // to simplify the logic a bit, break out the error translation from the _resolveTable()
         List<QueryException> resolveExceptions = new ArrayList<>();
         QueryDefinition[] queryDefOUT = new QueryDefinition[1];
+        QueryRelation ret;
 
-        QueryRelation ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT);
+        try
+        {
+            ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT);
+        }
+        catch (QueryNotFoundException qnfe)
+        {
+            _parseErrors.add(qnfe);
+            return null;
+        }
 
         QueryDefinition def = queryDefOUT[0];
         ActionURL source = (null == def) ? null :  def.urlFor(QueryAction.sourceQuery);
@@ -659,7 +675,7 @@ public class Query
             }
             else
             {
-                qpe = new QueryParseException("Query '" + key.getName() + "' has errors", null, null == node ? 0 : node.getLine(), null == node ? 0 : node.getColumn());
+                qpe = new QueryParseException("Query '" + key.getName() + "' has errors", firstError, null == node ? 0 : node.getLine(), null == node ? 0 : node.getColumn());
                 _parseErrors.add(qpe);
             }
             if (null != source)
@@ -678,6 +694,7 @@ public class Query
             // OUT parameters
             List<QueryException> resolveExceptions,
             QueryDefinition[] queryDefOUT)
+        throws QueryNotFoundException
 	{
         ++_countResolvedTables;
         if (getTotalCountResolved() > 200 || _depth > 20)
@@ -710,8 +727,7 @@ public class Query
             resolvedSchema = resolvedSchema.getSchema(name);
 			if (resolvedSchema == null)
 			{
-				parseError(resolveExceptions, "Table " + StringUtils.join(names,".") + " not found.", node);
-				return null;
+                throw new QueryNotFoundException(StringUtils.join(names,"."), null==node?0:node.getLine(), null==node?0:node.getColumn());
 			}
 		}
 
@@ -748,8 +764,7 @@ public class Query
 
 		if (t == null)
 		{
-			parseError(resolveExceptions, "Table " + StringUtils.join(names,".") + " not found.", node);
-			return null;
+            throw new QueryNotFoundException(StringUtils.join(names,"."), null==node?0:node.getLine(), null==node?0:node.getColumn());
 		}
 
         if (t instanceof TableInfo)
