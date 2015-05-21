@@ -99,7 +99,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
             valueField      : 'value',
             displayField    : 'name',
             editable        : false,
-            flex            : 1,
+            width           : 60,
             scope           : this,
             listeners       : {
                 change : {
