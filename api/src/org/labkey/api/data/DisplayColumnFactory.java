@@ -17,10 +17,13 @@
 package org.labkey.api.data;
 
 /**
+ * Factory class for creating DisplayColumn instances. Can be referenced by schema/query XML metadata.
+ *
  * User: jeckels
  * Date: Apr 6, 2007
  */
 public interface DisplayColumnFactory
 {
+    /** Create a DisplayColumn instance for the underlying ColumnInfo */
     public DisplayColumn createRenderer(ColumnInfo colInfo);
 }
