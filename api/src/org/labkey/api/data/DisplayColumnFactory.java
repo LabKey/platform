@@ -17,7 +17,8 @@
 package org.labkey.api.data;
 
 /**
- * Factory class for creating DisplayColumn instances. Can be referenced by schema/query XML metadata.
+ * Factory class for creating DisplayColumn instances. Can be referenced by schema/query XML metadata, in which case
+ * the class needs to have a no-argument public constructor.
  *
  * User: jeckels
  * Date: Apr 6, 2007
