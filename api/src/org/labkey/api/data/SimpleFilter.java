@@ -1235,7 +1235,22 @@ public class SimpleFilter implements Filter
         {
             ret.append(sAND);
             ret.append("(");
-            ret.append(fc.toSQLFragment(columnMap, dialect));
+            try
+            {
+                ret.append(fc.toSQLFragment(columnMap, dialect));
+            }
+            catch (RuntimeSQLException e)
+            {
+                // Deal with unparseable filter values - see issue 23321
+                if (e.getSQLException() instanceof SQLGenerationException)
+                {
+                    ret.append("0 = 1");
+                }
+                else
+                {
+                    throw e;
+                }
+            }
             ret.append(")");
             sAND = " AND ";
         }
