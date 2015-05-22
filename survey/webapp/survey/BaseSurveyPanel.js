@@ -431,9 +431,10 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
         if (this.startSectionDescription) {
             items.push({
-                xtype: 'displayfield',
+                xtype   : 'label',
                 hideLabel: true,
-                value: this.startSectionDescription
+                data    : {},
+                tpl     : [this.startSectionDescription]
             });
         }
 
