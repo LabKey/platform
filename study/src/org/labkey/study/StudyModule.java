@@ -660,7 +660,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
                 return new HtmlView("Subject List", "This folder does not contain a study.");
-            return new SubjectsWebPart(HttpView.BODY.equals(webPart.getLocation()), webPart.getIndex());
+            return new SubjectsWebPart(portalCtx, HttpView.BODY.equals(webPart.getLocation()), webPart.getIndex());
         }
     }
 

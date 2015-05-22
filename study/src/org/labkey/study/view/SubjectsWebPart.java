@@ -15,9 +15,14 @@
  */
 package org.labkey.study.view;
 
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudyModule;
+import org.labkey.study.controllers.CohortController;
+import org.labkey.study.controllers.StudyController;
 
 /**
  * User: brittp
@@ -84,7 +89,7 @@ public class SubjectsWebPart extends JspView<SubjectsWebPart.SubjectsBean>
         }
     }
 
-    public SubjectsWebPart(boolean wide, int index)
+    public SubjectsWebPart(ViewContext context, boolean wide, int index)
     {
         super("/org/labkey/study/view/subjects.jsp", new SubjectsWebPart.SubjectsBean());
         getModelBean().setViewContext(getViewContext());
@@ -94,5 +99,13 @@ public class SubjectsWebPart extends JspView<SubjectsWebPart.SubjectsBean>
         getModelBean().setWide(wide);
         String title = StudyModule.getWebPartSubjectNoun(getContextContainer()) + " List";
         setTitle(title);
+
+        if (context.hasPermission(AdminPermission.class))
+        {
+            NavTree menu = new NavTree();
+            menu.addChild("Manage Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class,context.getContainer()));
+            menu.addChild("Manage Cohorts", new ActionURL(CohortController.ManageCohortsAction.class,context.getContainer()));
+            setNavMenu(menu);
+        }
     }
 }
