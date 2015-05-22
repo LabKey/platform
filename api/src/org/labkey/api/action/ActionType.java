@@ -20,10 +20,11 @@ package org.labkey.api.action;
  * Date: 2/12/14
  * Time: 5:47 PM
  */
-public enum ActionType
+public interface ActionType
 {
-    Configure,
-    Export,
-    SelectData,
-    SelectMetaData,
+    // Standard ActionType classes. Modules are free to use these or define and respect custom ActionType classes.
+    class Configure implements ActionType {}
+    class Export implements ActionType {}
+    class SelectData implements ActionType {}
+    class SelectMetaData implements ActionType {}
 }

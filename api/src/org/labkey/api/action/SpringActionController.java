@@ -175,7 +175,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public interface ActionStats
     {
-        ActionType getActionType();
+        Class<? extends ActionType> getActionType();
         long getCount();
         long getElapsedTime();
         long getMaxTime();
@@ -691,7 +691,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             @Override
             @Nullable
-            public ActionType getActionType()
+            public Class<? extends ActionType> getActionType()
             {
                 ActionDescriptor desc = BaseActionDescriptor.this;
                 Class<? extends Controller> actionClass = desc.getActionClass();
