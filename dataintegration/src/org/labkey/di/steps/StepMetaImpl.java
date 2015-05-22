@@ -87,6 +87,10 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
         {
             setSourceSchema(SchemaKey.fromString(source.getSchemaName()));
             setSourceQuery(source.getQueryName());
+
+            if (null != source.getContainerFilter())
+                setSourceContainerFilter(source.getContainerFilter().toString());
+
             if (null != source.getTimestampColumnName())
                 setSourceTimestampColumnName(source.getTimestampColumnName());
             else if (null != source.getRunColumnName())

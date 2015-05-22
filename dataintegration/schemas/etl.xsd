@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schema xmlns="http://www.w3.org/2001/XMLSchema"
         xmlns:etl="http://labkey.org/etl/xml"
+        xmlns:cv="http://labkey.org/data/xml/queryCustomView"
         targetNamespace="http://labkey.org/etl/xml"
         elementFormDefault="qualified"
         attributeFormDefault="unqualified">
 
     <import namespace="http://labkey.org/pipeline/xml" schemaLocation="../../../../schemas/pipelineTasks.xsd"/>
+    <import namespace="http://labkey.org/data/xml/queryCustomView" schemaLocation="../../../../schemas/queryCustomView.xsd"/>
 
     <element name="etl" type="etl:EtlType"/>
 
@@ -40,6 +42,11 @@
         <attribute name="useTransaction" type="boolean" use="optional" default="true">
             <annotation>
                 <documentation>Wrap selecting from source query in a transaction. Only used for simple query transform types.</documentation>
+            </annotation>
+        </attribute>
+        <attribute name="containerFilter" type="cv:containerFilterType" use="optional">
+            <annotation>
+                <documentation>Specify the type of container filter to use on the source query.</documentation>
             </annotation>
         </attribute>
     </complexType>

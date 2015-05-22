@@ -198,6 +198,11 @@ public class SimpleQueryTransformStep extends TransformTask
             DataIteratorBuilder source = new QueryDataIteratorBuilder(sourceSchema, meta.getSourceQuery(), null, f);
             ((QueryDataIteratorBuilder)source).setParameters(parameters);
 
+            if (null != meta.getSourceContainerFilter())
+            {
+                ((QueryDataIteratorBuilder)source).setContainerFilter(meta.getSourceContainerFilter());
+            }
+
             if (_useAsynchrousQuery)
                 source = new AsyncDataIterator.Builder(source);
             return source;
