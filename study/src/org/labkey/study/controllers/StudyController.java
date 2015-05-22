@@ -6957,7 +6957,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new SubjectsWebPart(true, 0);
+            return new SubjectsWebPart(getViewContext(), true, 0);
         }
 
         @Override
