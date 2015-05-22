@@ -17,6 +17,8 @@ package org.labkey.api.etl;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
@@ -46,6 +48,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
     final User _user;
     final SchemaKey _schemaKey;
     final QuerySchema _schema;
+    ContainerFilter _containerFilter;
 
     final Map<String,Object> _parameters = new CaseInsensitiveHashMap<>();
     final String _queryName;
@@ -90,7 +93,10 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         _parameters.putAll(p);
     }
 
-
+    public void setContainerFilter(String containerFilterName)
+    {
+        _containerFilter = ContainerFilter.getContainerFilterByName(containerFilterName, _user);
+    }
 
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
@@ -123,6 +129,11 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         {
             context.getErrors().addRowError(new ValidationException(qerrors.get(0).getMessage()));
             return null;
+        }
+
+        if (null != _containerFilter && t instanceof ContainerFilterable && t.supportsContainerFilter())
+        {
+            ((ContainerFilterable) t).setContainerFilter(_containerFilter);
         }
 
         try

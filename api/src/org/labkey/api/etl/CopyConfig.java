@@ -43,6 +43,7 @@ public class CopyConfig
     protected SourceOptions _sourceOptions = null;
     protected boolean _useSource = true;
     protected boolean _useFilterStrategy = true;
+    protected String _sourceContainerFilter = null;
 
     protected SchemaKey _targetSchema;
     protected String _targetQuery;
@@ -177,6 +178,16 @@ public class CopyConfig
     public void setTargetQuery(String targetQuery)
     {
         this._targetQuery = targetQuery;
+    }
+
+    public String getSourceContainerFilter()
+    {
+        return _sourceContainerFilter;
+    }
+
+    public void setSourceContainerFilter(String sourceContainerFilter)
+    {
+        _sourceContainerFilter = sourceContainerFilter;
     }
 
     public boolean isBulkLoad()
