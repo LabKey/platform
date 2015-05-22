@@ -1885,7 +1885,7 @@ public class WikiController extends SpringActionController
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            out.write(getValue(ctx).toString());
+            out.write(PageFlowUtil.filter(getValue(ctx).toString()));
         }
     }
 
