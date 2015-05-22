@@ -39,7 +39,7 @@ import org.springframework.validation.Errors;
  */
 
 @RequiresPermissionClass(ReadPermission.class)
-@Action(ActionType.SelectMetaData)
+@Action(ActionType.SelectMetaData.class)
 public class ValidateQueryAction extends ApiAction<ValidateQueryAction.ValidateQueryForm>
 {
     UserSchema schema;

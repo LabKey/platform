@@ -65,7 +65,7 @@ import java.util.Map;
  * Time: 3:36:07 PM
  */
 @RequiresPermissionClass(ReadPermission.class)
-@Action(ActionType.SelectMetaData)
+@Action(ActionType.SelectMetaData.class)
 public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 {
     public ApiResponse execute(Form form, BindException errors) throws Exception

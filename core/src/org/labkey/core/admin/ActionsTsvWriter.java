@@ -63,9 +63,9 @@ public class ActionsTsvWriter extends TSVWriter
                         _pw.print('\t');
 
                         SpringActionController.ActionStats stats = action.getValue();
-                        ActionType type = stats.getActionType();
+                        Class<? extends ActionType> type = stats.getActionType();
                         if (null != type)
-                            _pw.print(type.name());
+                            _pw.print(type.getSimpleName());
                         _pw.print('\t');
                         _pw.print(stats.getCount());
                         _pw.print('\t');

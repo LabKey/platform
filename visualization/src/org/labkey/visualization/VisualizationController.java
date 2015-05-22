@@ -267,7 +267,7 @@ public class VisualizationController extends SpringActionController
     }
 
 
-    @Action(ActionType.SelectMetaData)
+    @Action(ActionType.SelectMetaData.class)
     @RequiresPermissionClass(ReadPermission.class)
     public class GetMeasuresAction<Form extends MeasureSetRequest> extends ApiAction<Form>
     {
@@ -283,7 +283,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @Action(ActionType.SelectMetaData)
+    @Action(ActionType.SelectMetaData.class)
     @RequiresPermissionClass(ReadPermission.class)
     public class GetDimensionsAction extends GetMeasuresAction<MeasureSetRequest>
     {
@@ -310,7 +310,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class GetDimensionValues extends GetMeasuresAction<DimensionValuesForm>
     {
         public ApiResponse execute(DimensionValuesForm form, BindException errors) throws Exception
@@ -372,7 +372,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @Action(ActionType.SelectMetaData)
+    @Action(ActionType.SelectMetaData.class)
     @RequiresPermissionClass(ReadPermission.class)
     public class GetZeroDateAction extends GetMeasuresAction<MeasureSetRequest>
     {
@@ -459,7 +459,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class GetDataAction extends ApiAction<VisualizationSQLGenerator>
     {
         @Override
@@ -1054,7 +1054,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class GenericChartWizardAction extends SimpleViewAction<GenericReportForm>
     {
         private GenericChartReport.RenderType _renderType;
@@ -1234,7 +1234,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectMetaData)
+    @Action(ActionType.SelectMetaData.class)
     public class GetGenericReportColumnsAction extends ApiAction<ColumnListForm>
     {
         @Override
@@ -1489,7 +1489,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class GetSourceCountsAction extends ApiAction<SourceCountForm>
     {
         @Override

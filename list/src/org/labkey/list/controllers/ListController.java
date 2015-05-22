@@ -306,7 +306,7 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    @Action(ActionType.SelectMetaData)
+    @Action(ActionType.SelectMetaData.class)
     public class ListEditorServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()

@@ -342,7 +342,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>
     {
         public ModelAndView getView(ChartDesignerBean form, BindException errors) throws Exception
@@ -365,7 +365,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class ChartServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -375,7 +375,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class PlotChartAction extends SimpleViewAction<ChartDesignerBean>
     {
         public ModelAndView getView(ChartDesignerBean form, BindException errors) throws Exception
@@ -830,7 +830,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class ExecuteAction extends MutatingApiAction<ExecuteScriptForm>
     {
         //
@@ -1104,7 +1104,7 @@ public class ReportsController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class ViewScriptReportAction extends ApiAction<ScriptReportBean>
     {
         @Override
@@ -2636,7 +2636,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class RenderQueryReport extends SimpleViewAction<ReportDesignBean>
     {
         String _reportName;
@@ -2986,7 +2986,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectMetaData)
+    @Action(ActionType.SelectMetaData.class)
     public class BrowseDataTreeAction extends ApiAction<BrowseDataForm>
     {
         @Override

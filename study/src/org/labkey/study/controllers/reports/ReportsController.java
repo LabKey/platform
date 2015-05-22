@@ -641,7 +641,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class ParticipantCrosstabAction extends FormViewAction<CrosstabDesignBean>
     {
         public ModelAndView getView(CrosstabDesignBean form, boolean reshow, BindException errors) throws Exception

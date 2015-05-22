@@ -36,7 +36,7 @@ import org.springframework.validation.BindException;
  * Validates all queries.
  */
 @RequiresPermissionClass(ReadPermission.class)
-@Action(ActionType.SelectMetaData)
+@Action(ActionType.SelectMetaData.class)
 public class ValidateQueriesAction extends ApiAction
 {
     @Override

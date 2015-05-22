@@ -44,7 +44,7 @@ import java.util.*;
  */
 
 @RequiresPermissionClass(ReadPermission.class)
-@Action(ActionType.SelectMetaData)
+@Action(ActionType.SelectMetaData.class)
 public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction.Form>
 {
     // the schema browser behaves very badly if the table list gets too long, so we stop after a reasonable number

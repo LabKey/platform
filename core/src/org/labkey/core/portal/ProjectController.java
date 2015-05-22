@@ -279,7 +279,7 @@ public class ProjectController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class BeginAction extends SimpleViewAction<PageForm>
     {
         public ModelAndView getView(PageForm form, BindException errors) throws Exception
@@ -1218,7 +1218,7 @@ public class ProjectController extends SpringActionController
     // being served up to be readable in the current container. Might be worth delegating permissions to the
     // webparts and defaulting to a state of ReadPermission.
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class GetWebPartAction extends ApiAction<GetWebPartForm>
     {
         public static final String PARAM_WEBPART = "webpart.name";

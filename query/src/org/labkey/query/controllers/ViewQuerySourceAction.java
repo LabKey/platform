@@ -37,7 +37,7 @@ import org.springframework.web.servlet.ModelAndView;
 */
 
 @RequiresPermissionClass(ReadPermission.class)
-@Action(ActionType.Configure)
+@Action(ActionType.Configure.class)
 public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
 {
     private QueryForm _form = null;

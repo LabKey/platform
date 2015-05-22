@@ -84,9 +84,9 @@ class ActionsView extends HttpView
                         out.print(action.getKey());
                         out.print("</td>");
 
-                        ActionType type = action.getValue().getActionType();
+                        Class<? extends ActionType> type = action.getValue().getActionType();
                         out.print("<td>");
-                        out.print(null != type ? type.name() : "&nbsp;");
+                        out.print(null != type ? type.getSimpleName() : "&nbsp;");
                         out.print("</td>");
                     }
 

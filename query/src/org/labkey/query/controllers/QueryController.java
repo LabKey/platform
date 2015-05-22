@@ -751,7 +751,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class NewQueryAction extends FormViewAction<NewQueryForm>
     {
         NewQueryForm _form;
@@ -880,7 +880,7 @@ public class QueryController extends SpringActionController
     // CONSIDER : deleting this action after the SQL editor UI changes are finalized, keep in mind that built-in views
     // use this view as well via the edit metadata page.
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectMetaData)  // Note: This action deals with just meta data; it AJAXes data into place using GetWebPartAction
+    @Action(ActionType.SelectMetaData.class)  // Note: This action deals with just meta data; it AJAXes data into place using GetWebPartAction
     public class SourceQueryAction extends SimpleViewAction<SourceForm>
     {
         public SourceForm _form;
@@ -963,7 +963,7 @@ public class QueryController extends SpringActionController
      * JSON serialized error information.
      */
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.Configure)
+    @Action(ActionType.Configure.class)
     public class SaveSourceQueryAction extends MutatingApiAction<SourceForm>
     {
         SourceForm _form;
@@ -1076,7 +1076,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(DeletePermission.class)
-    @Action(ActionType.Configure)
+    @Action(ActionType.Configure.class)
     public class DeleteQueryAction extends ConfirmAction<SourceForm>
     {
         public SourceForm _form;
@@ -1137,7 +1137,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class ExecuteQueryAction extends QueryViewAction
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -1428,7 +1428,7 @@ public class QueryController extends SpringActionController
 
     // for backwards compat same as _executeQuery.view ?_print=1
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.Export)
+    @Action(ActionType.Export.class)
     public class PrintRowsAction extends ExecuteQueryAction
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -1491,7 +1491,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectMetaData)    // This is called "export" but it doesn't export any data
+    @Action(ActionType.SelectMetaData.class)    // This is called "export" but it doesn't export any data
     public class ExportScriptAction extends SimpleViewAction<ExportScriptForm>
     {
         public ModelAndView getView(ExportScriptForm form, BindException errors) throws Exception
@@ -1509,7 +1509,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.Export)
+    @Action(ActionType.Export.class)
     public class ExportRowsExcelAction extends _ExportQuery
     {
         void _export(ExportQueryForm form, QueryView view) throws Exception
@@ -1519,7 +1519,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.Export)
+    @Action(ActionType.Export.class)
     public class ExportRowsXLSXAction extends _ExportQuery
     {
         void _export(ExportQueryForm form, QueryView view) throws Exception
@@ -1571,7 +1571,7 @@ public class QueryController extends SpringActionController
      *
      */
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.Export)
+    @Action(ActionType.Export.class)
     public class ExportExcelTemplateAction extends _ExportQuery<TemplateForm>
     {
         public ExportExcelTemplateAction()
@@ -1628,7 +1628,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.Export)
+    @Action(ActionType.Export.class)
     public class ExportRowsTsvAction extends _ExportQuery<ExportRowsTsvForm>
     {
         public ExportRowsTsvAction()
@@ -1645,7 +1645,7 @@ public class QueryController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
-    @Action(ActionType.Export)
+    @Action(ActionType.Export.class)
     public class ExcelWebQueryAction extends ExportRowsTsvAction
     {
         public ModelAndView getView(ExportRowsTsvForm form, BindException errors) throws Exception
@@ -1678,7 +1678,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.Export)
+    @Action(ActionType.Export.class)
     public class ExcelWebQueryDefinitionAction extends SimpleViewAction<QueryForm>
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -1715,7 +1715,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectMetaData)
+    @Action(ActionType.SelectMetaData.class)
     public class MetadataServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -1725,7 +1725,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    @Action(ActionType.SelectMetaData)
+    @Action(ActionType.SelectMetaData.class)
     public class MetadataQueryAction extends FormViewAction<QueryForm>
     {
         QueryDefinition _query = null;
@@ -1938,7 +1938,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.Configure)
+    @Action(ActionType.Configure.class)
     public class SaveQueryViewsAction extends ApiAction<SimpleApiJsonForm>
     {
         @Override
@@ -2021,7 +2021,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.Configure)
+    @Action(ActionType.Configure.class)
     public class PropertiesQueryAction extends FormViewAction<PropertiesForm>
     {
         PropertiesForm _form = null;
@@ -2537,7 +2537,7 @@ public class QueryController extends SpringActionController
     @ActionNames("selectRows, getQuery")
     @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.1)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class SelectRowsAction extends ApiAction<APIQueryForm>
     {
         public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
@@ -2610,7 +2610,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class GetDataAction extends ApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
@@ -2715,7 +2715,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.1)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class ExecuteSqlAction extends ApiAction<ExecuteSqlForm>
     {
         public ApiResponse execute(ExecuteSqlForm form, BindException errors) throws Exception
@@ -2825,7 +2825,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public class SelectDistinctAction extends ApiAction<SelectDistinctForm>
     {
         @Override
@@ -3058,7 +3058,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.2)
-    @Action(ActionType.Export)
+    @Action(ActionType.Export.class)
     public class ExportSqlAction extends ExportAction<ExportSqlForm>
     {
         public void export(ExportSqlForm form, HttpServletResponse response, BindException errors) throws IOException, ExportException
@@ -4462,7 +4462,7 @@ public class QueryController extends SpringActionController
     // Issue 18870: Guest user can't revert unsaved custom view changes
     // Permission will be checked inline (guests are allowed to delete their session custom views)
     @RequiresNoPermission
-    @Action(ActionType.Configure)
+    @Action(ActionType.Configure.class)
     public class DeleteViewAction extends ApiAction<DeleteViewForm>
     {
         @Override
@@ -4908,7 +4908,7 @@ public class QueryController extends SpringActionController
 
     @ActionNames("clearSelected, selectNone")
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public static class SelectNoneAction extends ApiAction<SelectForm>
     {
         public SelectNoneAction()
@@ -4939,7 +4939,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectData)
+    @Action(ActionType.SelectData.class)
     public static class SelectAllAction extends MutatingApiAction<QueryForm>
     {
         public void validateForm(QueryForm form, Errors errors)
@@ -5177,7 +5177,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectMetaData)
+    @Action(ActionType.SelectMetaData.class)
     public class GetQueriesAction extends ApiAction<GetQueriesForm>
     {
         public ApiResponse execute(GetQueriesForm form, BindException errors) throws Exception
@@ -5346,7 +5346,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectMetaData)
+    @Action(ActionType.SelectMetaData.class)
     public class GetQueryViewsAction extends ApiAction<GetQueryViewsForm>
     {
         public ApiResponse execute(GetQueryViewsForm form, BindException errors) throws Exception
@@ -5632,7 +5632,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    @Action(ActionType.SelectMetaData)
+    @Action(ActionType.SelectMetaData.class)
     public class ValidateQueryMetadataAction extends ApiAction<QueryForm>
     {
         public ApiResponse execute(QueryForm form, BindException errors) throws Exception
@@ -5885,7 +5885,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    @Action(ActionType.Export)
+    @Action(ActionType.Export.class)
     public class ExportTablesAction extends FormViewAction<ExportTablesForm>
     {
         private ActionURL _successUrl;
