@@ -132,26 +132,26 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang3-3.3.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang3-3.4.jar!/" />
         </CLASSES>
         <JAVADOC>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang3-3.3.2-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang3-3.4-javadoc.jar!/" />
         </JAVADOC>
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang3-3.3.2-src.zip!/commons-lang3-3.3.2-src/src/main/java" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang3-3.4-src.zip!/commons-lang3-3.4-src/src/main/java" />
         </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-logging-1.1.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-logging-1.2.jar!/" />
         </CLASSES>
         <JAVADOC>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-logging-1.1.1-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-logging-1.2-javadoc.jar!/" />
         </JAVADOC>
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-logging-1.1.1-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-logging-1.2-src.zip!/commons-logging-1.2-src/src/main/java" />
         </SOURCES>
       </library>
     </orderEntry>
@@ -398,7 +398,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$TOMCAT_HOME$/lib/jasper.jar!/" />
+          <root url="jar://$CATALINA_HOME$/lib/jasper.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -407,7 +407,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$TOMCAT_HOME$/lib/el-api.jar!/" />
+          <root url="jar://$CATALINA_HOME$/lib/el-api.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -416,7 +416,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$TOMCAT_HOME$/lib/jsp-api.jar!/" />
+          <root url="jar://$CATALINA_HOME$/lib/jsp-api.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -425,7 +425,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$TOMCAT_HOME$/bin/bootstrap.jar!/" />
+          <root url="jar://$CATALINA_HOME$/bin/bootstrap.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
