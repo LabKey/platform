@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.WebPartView;
@@ -85,7 +86,7 @@ public class ModuleHtmlViewDefinition
         {
             if (is != null)
             {
-                _html = IOUtils.toString(is);
+                _html = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
                 char ch = _html.length() > 0 ? _html.charAt(0) : 0;
                 if (ch == 0xfffe || ch == 0xfeff)
                     _html = _html.substring(1);
