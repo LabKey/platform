@@ -421,3 +421,34 @@ Ext4.override(Ext4.view.NodeCache, {
         me.count = me.endIndex - me.startIndex + 1;
     }
 });
+
+/**
+ * Chrome only issue where a submenu appear when the parent selector is highlighted, but disappear soon
+ * after hovering over the submenu making it nearly impossible to use/click on a submenu item.
+ * Issue 23352: Chrome 43 breaks submenus
+ * Sencha issue: https://www.sencha.com/forum/showthread.php?301116-Submenus-disappear-in-Chrome-43-beta
+ * Version: 4.2.1
+ */
+if (Ext4.isChrome) {
+    Ext4.override(Ext4.menu.Menu, {
+        onMouseLeave: function(e) {
+            var me = this,
+                    item;
+
+            for (var i=0; i < me.items.length; i++) {
+                item = me.items.get(i);
+                if (item.menu && item.menu.isVisible()) {
+                    return;
+                }
+            }
+
+            me.deactivateActiveItem();
+
+            if (me.disabled) {
+                return;
+            }
+
+            me.fireEvent('mouseleave', me, e);
+        }
+    });
+}
