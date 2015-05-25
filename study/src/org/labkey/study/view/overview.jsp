@@ -241,7 +241,7 @@
         String datasetLabel = (dataset.getLabel() != null ? dataset.getLabel() : "" + dataset.getDatasetId());
     %>
     <tr class="<%=getShadeRowClass(row % 2 == 0)%>">
-        <td align="center" class="labkey-row-header"><%= h(datasetLabel) %><%
+        <td align="center" class="labkey-row-header" category="<%= h(dataset.getCategory()) %>"><%= h(datasetLabel) %><%
             if (null != StringUtils.trimToNull(dataset.getDescription()))
             {
         %><%=PageFlowUtil.helpPopup(datasetLabel, dataset.getDescription())%><%
