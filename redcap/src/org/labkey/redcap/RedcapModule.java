@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 
 import java.util.Collection;
@@ -66,6 +67,9 @@ public class RedcapModule extends DefaultModule
     public void doStartup(ModuleContext moduleContext)
     {
         StudyService.get().registerStudyReloadSource(new RedcapReloadSource());
+
+        //add the REDCap import task to the list of system maintenance tasks
+        SystemMaintenance.addTask(new RedcapMaintenanceTask());
     }
 
     @Override

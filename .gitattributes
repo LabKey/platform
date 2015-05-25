@@ -1876,6 +1876,7 @@ redcap/src/org/labkey/redcap/RedcapCommandResponse.java -text
 redcap/src/org/labkey/redcap/RedcapConfiguration.java -text
 redcap/src/org/labkey/redcap/RedcapController.java -text
 redcap/src/org/labkey/redcap/RedcapExport.java -text
+redcap/src/org/labkey/redcap/RedcapMaintenanceTask.java -text
 redcap/src/org/labkey/redcap/RedcapManager.java -text
 redcap/src/org/labkey/redcap/RedcapModule.java -text
 redcap/src/org/labkey/redcap/RedcapReloadSource.java -text

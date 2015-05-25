@@ -35,6 +35,18 @@ public class RedcapManager
         map.put(RedcapSettings.Options.token.name(), form.encode(form.getToken()));
         map.put(RedcapSettings.Options.metadata.name(), form.getMetadata());
 
+        map.put(RedcapSettings.Options.enableReload.name(), String.valueOf(form.isEnableReload()));
+        if (form.getReloadInterval() > 0)
+            map.put(RedcapSettings.Options.reloadInterval.name(), String.valueOf(form.getReloadInterval()));
+        map.put(RedcapSettings.Options.reloadUser.name(), String.valueOf(containerUser.getUser().getUserId()));
+        if (form.getReloadDate() != null)
+            map.put(RedcapSettings.Options.reloadDate.name(), form.getReloadDate());
+
+        if (form.isEnableReload())
+            RedcapMaintenanceTask.addContainer(containerUser.getContainer().getId());
+        else
+            RedcapMaintenanceTask.removeContainer(containerUser.getContainer().getId());
+
         map.save();
     }
 
@@ -54,6 +66,12 @@ public class RedcapManager
             form.setToken(form.decode(map.get(RedcapSettings.Options.token.name())));
         if (map.containsKey(RedcapSettings.Options.metadata.name()))
             form.setMetadata(map.get(RedcapSettings.Options.metadata.name()));
+        if (map.containsKey(RedcapSettings.Options.enableReload.name()))
+            form.setEnableReload(Boolean.parseBoolean(map.get(RedcapSettings.Options.enableReload.name())));
+        if (map.containsKey(RedcapSettings.Options.reloadInterval.name()))
+            form.setReloadInterval(Integer.parseInt(map.get(RedcapSettings.Options.reloadInterval.name())));
+        if (map.containsKey(RedcapSettings.Options.reloadDate.name()))
+            form.setReloadDate(map.get(RedcapSettings.Options.reloadDate.name()));
 
         return form;
     }
@@ -66,6 +84,10 @@ public class RedcapManager
         private String[] _projectname;
         private String[] _token;
         private String _metadata;
+        private boolean _enableReload;
+        private String _reloadDate;
+        private int _reloadUser;
+        private int _reloadInterval;
 
         public static final String SEPARATOR_CHAR = "|";
         public static final String REGX_SEPARATOR_CHAR = "\\|";
@@ -75,6 +97,10 @@ public class RedcapManager
             projectname,
             token,
             metadata,
+            reloadInterval,
+            enableReload,
+            reloadDate,
+            reloadUser
         }
 
         public String[] getProjectname()
@@ -105,6 +131,46 @@ public class RedcapManager
         public void setMetadata(String metadata)
         {
             _metadata = metadata;
+        }
+
+        public boolean isEnableReload()
+        {
+            return _enableReload;
+        }
+
+        public void setEnableReload(boolean enableReload)
+        {
+            _enableReload = enableReload;
+        }
+
+        public String getReloadDate()
+        {
+            return _reloadDate;
+        }
+
+        public void setReloadDate(String reloadDate)
+        {
+            _reloadDate = reloadDate;
+        }
+
+        public int getReloadUser()
+        {
+            return _reloadUser;
+        }
+
+        public void setReloadUser(int reloadUser)
+        {
+            _reloadUser = reloadUser;
+        }
+
+        public int getReloadInterval()
+        {
+            return _reloadInterval;
+        }
+
+        public void setReloadInterval(int reloadInterval)
+        {
+            _reloadInterval = reloadInterval;
         }
 
         public String encode(String[] values)

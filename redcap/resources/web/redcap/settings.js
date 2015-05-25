@@ -65,72 +65,125 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
             this.currentRow++;
         }
 
-        var formPanel = Ext4.create('Ext.form.Panel', {
-            title   : 'Authentication',
-            trackResetOnLoad : true,
-            autoScroll : true,
-
-            fieldDefaults  : {
-                height      : 22,
-                labelSeparator : ''
-            },
-            items : [{
-                xtype       : 'displayfield',
-                value       : '<span>Add API authentication information required to communicate with a remote REDCap server. REDCap requires an API token for each ' +
-                    'project that is to be accessed through the API, the tokens are configured through the REDCap web interface. For each REDCap project ' +
-                    'that you wish to import data into LabKey, there must be a separate row of connection information consisting of:</span>' +
-                    '<ul><li><strong>project</strong> - the name of the REDCap project the token is associated with. This should match the project name in the configuration XML specified in the other tab.</li>' +
-                    '<li><strong>token</strong> - the hexadecimal REDCap token for the project (can be located through the REDCap API settings page of the project you are exporting from)</li></ul>'
-                },{
-                xtype       : 'fieldset',
-                layout      : {
-                    type    : 'table',
-                    columns : 3
+        this.items = [
+            {
+                xtype   : 'form',
+                itemId  : 'auth-form',
+                title   : 'Authentication',
+                trackResetOnLoad : true,
+                autoScroll : true,
+                fieldDefaults  : {
+                    height      : 22,
+                    labelSeparator : ''
                 },
-                border      : false,
-                labelWidth  : 75,
-                items : items
-            }]
-        });
-
-        var metadata = Ext4.create('Ext.form.Panel', {
-            title   : 'Configuration Setting',
-            trackResetOnLoad : true,
-            fieldDefaults  : {
-                labelWidth : 200,
-                width : 550,
-                height : 22,
-                labelSeparator : ''
-            },
-            items : [{
-                xtype       : 'displayfield',
-                value       : '<span>Add XML metadata to control how REDCap projects are mapped to LabKey studies. ' +
-                    'Click on this <%=helpLink("freezerpro", "link")%> for documentation on XML schema.</span><p>'
+                items : [{
+                    xtype       : 'displayfield',
+                    value       : '<span>Add API authentication information required to communicate with a remote REDCap server. REDCap requires an API token for each ' +
+                        'project that is to be accessed through the API, the tokens are configured through the REDCap web interface. For each REDCap project ' +
+                        'that you wish to import data into LabKey, there must be a separate row of connection information consisting of:</span>' +
+                        '<ul><li><strong>project</strong> - the name of the REDCap project the token is associated with. This should match the project name in the configuration XML specified in the other tab.</li>' +
+                        '<li><strong>token</strong> - the hexadecimal REDCap token for the project (can be located through the REDCap API settings page of the project you are exporting from)</li></ul>'
+                    },{
+                    xtype       : 'fieldset',
+                    layout      : {
+                        type    : 'table',
+                        columns : 3
+                    },
+                    border      : false,
+                    labelWidth  : 75,
+                    items : items
+                }]
             },{
-                xtype       : 'textarea',
-                name        : 'metadata',
-                height      : 300,
-                allowBlank  : false,
-                value       : this.bean.metadata,
-                listeners   : {
-                    change : {fn : function(cmp){
-                        this.markDirty(true);
-                    }, scope : this}
-                }
-            }]
-        });
+                xtype   : 'form',
+                itemId  : 'reload-form',
+                title   : 'Reloading',
+                trackResetOnLoad : true,
+                fieldDefaults  : {
+                    labelWidth : 200,
+                    width : 550,
+                    height : 22,
+                    labelSeparator : ''
+                },
+                items : [
+                    {
+                        xtype       : 'displayfield',
+                        value       : '<p><span>Automatic reloading can be configured to run at a specific frequency and start date. The specific ' +
+                        'time that the reload is run can be configured from the <a href="' + LABKEY.ActionURL.buildURL('admin', 'configureSystemMaintenance.view', '/') + '">system maintenance page</a>.</span><p>'
+                    },{
+                        xtype       : 'checkbox',
+                        fieldLabel  : 'Enable Reloading',
+                        name        : 'enableReload',
+                        checked     : this.bean.enableReload,
+                        uncheckedValue : 'false',
+                        listeners : {
+                            scope: this,
+                            'change': function (cb, value)
+                            {
+                                cb.up('panel').down('numberfield[name=reloadInterval]').setDisabled(!value);
+                                cb.up('panel').down('datefield[name=reloadDate]').setDisabled(!value);
+                            }
+                        }
+                    },{
+                        xtype       : 'datefield',
+                        fieldLabel  : 'Load on',
+                        disabled    : !this.bean.enableReload,
+                        allowBlank  : false,
+                        name        : 'reloadDate',
+                        format      : 'Y-m-d',
+                        altFormats  : '',
+                        value       : this.bean.reloadDate
+                    },{
+                        xtype       : 'numberfield',
+                        fieldLabel  : 'Repeat (days)',
+                        disabled    : !this.bean.enableReload,
+                        name        : 'reloadInterval',
+                        value       : this.bean.reloadInterval,
+                        minValue    : 1
+                    }
+                ]
+            },{
+                xtype   : 'form',
+                itemId  : 'config-form',
+                title   : 'Configuration Setting',
+                trackResetOnLoad : true,
+                fieldDefaults  : {
+                    labelWidth : 200,
+                    width : 550,
+                    height : 22,
+                    labelSeparator : ''
+                },
+                items : [{
+                    xtype       : 'displayfield',
+                    value       : '<span>Add XML metadata to control how REDCap projects are mapped to LabKey studies. ' +
+                        'Click on this ' + this.helpLink + ' for documentation on XML schema.</span><p>'
+                },{
+                    xtype       : 'textarea',
+                    name        : 'metadata',
+                    height      : 300,
+                    allowBlank  : false,
+                    value       : this.bean.metadata,
+                    listeners   : {
+                        change : {fn : function(cmp){
+                            this.markDirty(true);
+                        }, scope : this}
+                    }
+                }]
+            }
+        ];
 
-        this.items = [formPanel, metadata];
+        //this.items = [formPanel, metadata];
 
         this.buttons = [{
             text    : 'Save',
             handler : function(btn) {
-                var form = formPanel.getForm();
-                var formAdvanced = metadata.getForm();
-                if (form.isValid() && formAdvanced.isValid()) {
+                var form = this.getComponent('auth-form').getForm();
+                var formReload = this.getComponent('reload-form').getForm();
+                var formAdvanced = this.getComponent('config-form').getForm();
+                if (form.isValid() && formReload && formAdvanced.isValid()) {
                     this.getEl().mask("Saving...");
                     var params = form.getValues();
 
+                    Ext4.apply(params, formReload.getValues());
                     Ext4.apply(params, formAdvanced.getValues());
                     Ext4.Ajax.request({
                         url    : LABKEY.ActionURL.buildURL('redcap', 'saveRedcapConfig.api'),
@@ -169,12 +222,15 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
         },{
             text    : 'Reload Now',
             handler : function(btn) {
-                var form = formPanel.getForm();
-                var formAdvanced = metadata.getForm();
+                var form = this.getComponent('auth-form').getForm();
+                var formReload = this.getComponent('reload-form').getForm();
+                var formAdvanced = this.getComponent('config-form').getForm();
+
                 if (!this.isDirty()) {
                     this.getEl().mask("Reloading REDCap...");
                     var params = form.getValues();
 
+                    Ext4.apply(params, formReload.getValues());
                     Ext4.apply(params, formAdvanced.getValues());
                     Ext4.Ajax.request({
                         url    : LABKEY.ActionURL.buildURL('redcap', 'reloadRedcap.api'),

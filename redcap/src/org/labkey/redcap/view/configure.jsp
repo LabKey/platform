@@ -19,9 +19,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.redcap.RedcapController" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.redcap.RedcapManager" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -48,7 +47,8 @@
 
         new LABKEY.ext4.RedcapSettings({
             renderTo    : 'rc-config-div',
-            bean        : <%=text(jsonMapper.writeValueAsString(bean))%>
+            bean        : <%=text(jsonMapper.writeValueAsString(bean))%>,
+            helpLink    : <%=q(helpLink("redcap", "link"))%>
         });
     });
 
