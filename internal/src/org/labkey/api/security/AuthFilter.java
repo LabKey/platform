@@ -160,7 +160,9 @@ public class AuthFilter implements Filter
                 e = uie;
             }
 
-            if (null != user)
+            if (null == user)
+                user = User.guest;
+            else
                 UserManager.updateActiveUser(user);
 
             req = new AuthenticatedRequest(req, user);

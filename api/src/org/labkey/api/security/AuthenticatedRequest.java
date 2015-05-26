@@ -65,7 +65,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     public AuthenticatedRequest(@NotNull HttpServletRequest request, @NotNull User user)
     {
         super(request instanceof AuthenticatedRequest ? (HttpServletRequest)((AuthenticatedRequest)request).getRequest() : request);
-        _user = null == user ? User.guest : user;
+        _user = user;
         _loggedIn = !_user.isGuest();
     }
 
