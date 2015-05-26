@@ -54,7 +54,7 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
 
     public abstract void addExtraResponseProperties(Map<String, Object> extraProperties);
 
-    public abstract void addExtraColumnProperties(ColumnInfo column, QueryDefinition query, Map<String, Object> props);
+    public abstract void addExtraColumnProperties(ColumnInfo column, TableInfo table, Map<String, Object> props);
 
     public abstract String getSourceCountSql(@NotNull JSONArray sources, JSONArray members, String colName);
 
