@@ -237,7 +237,7 @@ public class VisualizationServiceImpl implements VisualizationService
             props.put("id", count++);
 
             // allow for the VisualizationProvider to annotate the response with other metadata properties
-            _schemaVisualizationProviderMap.get(query.getSchema().getName()).addExtraColumnProperties(column, query, props);
+            _schemaVisualizationProviderMap.get(query.getSchema().getName()).addExtraColumnProperties(column, tableInfo, props);
 
             measuresJSON.add(props);
         }

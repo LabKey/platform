@@ -32,6 +32,7 @@ import org.labkey.api.visualization.IVisualizationSourceQuery;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationSourceColumn;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.*;
@@ -100,9 +101,21 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     }
 
     @Override
-    public void addExtraColumnProperties(ColumnInfo column, QueryDefinition query, Map<String, Object> props)
+    public void addExtraColumnProperties(ColumnInfo column, TableInfo table, Map<String, Object> props)
     {
-        // Nothing needed so far
+        if (table instanceof DatasetTable)
+        {
+            Dataset dataset = ((DatasetTable)table).getDataset();
+
+            List<String> keys = new ArrayList<>();
+            keys.add(DatasetDefinition.getParticipantIdURI());
+            if (!dataset.isDemographicData())
+                keys.add(DatasetDefinition.getSequenceNumURI());
+            if (dataset.getKeyPropertyName() != null)
+                keys.add(DatasetDefinition.getStudyBaseURI() + dataset.getName() + "/" + dataset.getKeyPropertyName());
+
+            props.put("uniqueKeys", keys);
+        }
     }
 
     @Override

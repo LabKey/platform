@@ -1626,10 +1626,14 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
     }
 
+    public static String getStudyBaseURI()
+    {
+        return "http://cpas.labkey.com/Study#";
+    }
 
     private static String uriForName(String name)
     {
-        final String StudyURI = "http://cpas.labkey.com/Study#";
+        final String StudyURI = getStudyBaseURI();
         assert "container".equalsIgnoreCase(name)  || getStandardPropertiesMap().get(name).getPropertyURI().equalsIgnoreCase(StudyURI + name);
         return getStandardPropertiesMap().get(name).getPropertyURI();
     }
