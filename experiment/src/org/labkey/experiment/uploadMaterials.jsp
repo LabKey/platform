@@ -313,22 +313,36 @@ function runner() {
         updateIds(textbox.value.trim());
     };
 
-    var updateIds = function(txt) {
+
+    var updateIds = function(txt)
+    {
         var rows = txt.trim().split("\n");
         header = [];
         fields = [];
-        if (rows.length >= 2)
+        for (var i = 0; i < rows.length; i++)
         {
-            for (var i = 0; i < rows.length; i++)
+            var array = rows[i].split("\t");
+            var hasRowData = false;
+            for (var j=0 ; j<array.length ; j++)
             {
-                fields[i] = rows[i].split("\t");
+                if (array[j])
+                {
+                    hasRowData = true;
+                    break;
+                }
             }
-            header = fields[0];
+            if (hasRowData)
+                fields.push(array);
+            else
+                console.log("empty rows[" + i + "]: " + rows[i]);
         }
+        if (fields.length > 0)
+            header = fields[0];
 
         getNameColIndex();
         updateIdSelects();
     };
+
 
     var updateIdSelect = function(select, header, allowBlank) {
         if (!select) {
@@ -385,12 +399,25 @@ function runner() {
     var updateIdsWithData = function(data) {
         header = [];
         fields = [];
-        if (data.length >= 2) // why?
+        for (var i = 0; i < data.length; i++)
         {
-            for (var i = 0; i < data.length; i++)
+            var array = data[i];
+            var hasRowData = false;
+            for (var j = 0; j < array.length; j++)
             {
-                fields[i] = data[i];
+                if (array[j])
+                {
+                    hasRowData = true;
+                    break;
+                }
             }
+            if (hasRowData)
+                fields.push(array);
+            else
+                console.log("empty data[" + i + "]");
+        }
+        if (fields.length > 0)
+        {
             header = fields[0];
         }
 
@@ -598,7 +625,8 @@ function runner() {
                         submitBtn.removeClass('labkey-disabled-button');
                         submitBtn.update('<span>Submit</span>');
 
-                        if (action.response.responseText.indexOf('<pre') === 0) {
+                        if (action.response.responseText.indexOf('<pre') === 0)
+                        {
                             var fileContents = Ext.decode($(action.response.responseText).html());
                             var data = fileContents.sheets[0].data;
 
@@ -606,13 +634,15 @@ function runner() {
                             updateIdsWithData(data);
 
                             // convert data back into the tsv format (which is expected by this action)
-                            var textData = '';
-                            for (var i=0; i < fields.length; i++) {
-                                textData += fields[i].join('\t') + '\n';
+                            var textData = [];
+                            for (var i=0; i < fields.length; i++)
+                            {
+                                textData.push(fields[i].join('\t') + '\n');
                             }
 
-                            document.forms['sampleSetUploadForm'].elements['data'].value = textData;
-                            document.forms['sampleSetUploadForm'].elements['tsvData'].value = textData;
+                            var t = textData.join('');
+                            document.forms['sampleSetUploadForm'].elements['data'].value = t;
+                            document.forms['sampleSetUploadForm'].elements['tsvData'].value = t;
                         }
                     };
 
