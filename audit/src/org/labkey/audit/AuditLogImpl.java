@@ -37,6 +37,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.InClause;
@@ -86,6 +87,8 @@ import java.beans.XMLEncoder;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -824,41 +827,49 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
         _log.debug(insertInto);
 
-        // SQLServer will automatically reset the identity column sequence when IDENTITY_INSERT is on
-        if (dialect.isSqlServer())
+        try (Connection conn = dbSchema.getScope().getConnection(_log))
         {
-            new SqlExecutor(dbSchema).execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" ON;")));
-            _log.info(String.format("SQLServer, SET IDENTITY_INSERT %s ON", targetTable));
+            SqlExecutor exec = new SqlExecutor(dbSchema.getScope(), conn);
+
+            // SQLServer will automatically reset the identity column sequence when IDENTITY_INSERT is on
+            if (dialect.isSqlServer())
+            {
+                exec.execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" ON;")));
+                _log.info(String.format("SQLServer, SET IDENTITY_INSERT %s ON", targetTable));
+            }
+
+            _log.info(String.format("Migrating audit log for audit type %s... please be patient", provider.getEventName()));
+
+            // perform the copy
+            int count = exec.execute(insertInto);
+
+            _log.info(String.format("Migrated %d rows for audit type %s", count, provider.getEventName()));
+
+            // reset the sequence
+            if (dialect.isSqlServer())
+            {
+                exec.execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" OFF;")));
+                _log.info(String.format("SQLServer, SET IDENTITY_INSERT %s OFF", targetTable));
+            }
+            else if (dialect.isPostgreSQL())
+            {
+                String pkCol = targetTable.getPkColumnNames().get(0);
+                ColumnInfo c = targetTable.getColumn(pkCol);
+                pkCol = c.getMetaDataName();
+                _log.info(String.format("Updating sequence for %s.%s", targetTable, pkCol));
+
+                SQLFragment resetSeq = new SQLFragment();
+                resetSeq.append("SELECT setval(\n");
+                resetSeq.append("  pg_get_serial_sequence('").append(targetTable).append("', '").append(pkCol).append("'),\n");
+                resetSeq.append("  (SELECT MAX(").append(pkCol).append(") FROM ").append(targetTable).append(") + 1");
+                resetSeq.append(");\n");
+                exec.execute(resetSeq);
+                _log.info(String.format("Updated sequence for %s.%s", targetTable, pkCol));
+            }
         }
-
-        _log.info(String.format("Migrating audit log for audit type %s... please be patient", provider.getEventName()));
-
-        // perform the copy
-        SqlExecutor exec = new SqlExecutor(dbSchema);
-        int count = exec.execute(insertInto);
-
-        _log.info(String.format("Migrated %d rows for audit type %s", count, provider.getEventName()));
-
-        // reset the sequence
-        if (dialect.isSqlServer())
+        catch (SQLException ex)
         {
-            new SqlExecutor(dbSchema).execute(new SQLFragment().append(new SQLFragment("SET IDENTITY_INSERT ").append(targetTable).append(" OFF;")));
-            _log.info(String.format("SQLServer, SET IDENTITY_INSERT %s OFF", targetTable));
-        }
-        else if (dialect.isPostgreSQL())
-        {
-            String pkCol = targetTable.getPkColumnNames().get(0);
-            ColumnInfo c = targetTable.getColumn(pkCol);
-            pkCol = c.getMetaDataName();
-            _log.info(String.format("Updating sequence for %s.%s", targetTable, pkCol));
-
-            SQLFragment resetSeq = new SQLFragment();
-            resetSeq.append("SELECT setval(\n");
-            resetSeq.append("  pg_get_serial_sequence('").append(targetTable).append("', '").append(pkCol).append("'),\n");
-            resetSeq.append("  (SELECT MAX(").append(pkCol).append(") FROM ").append(targetTable).append(") + 1");
-            resetSeq.append(");\n");
-            new SqlExecutor(dbSchema).execute(resetSeq);
-            _log.info(String.format("Updated sequence for %s.%s", targetTable, pkCol));
+            throw new RuntimeSQLException(ex);
         }
 
         // mark this provider as migrated
