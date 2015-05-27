@@ -15,7 +15,7 @@ LABKEY.vis.internal.Axis = function() {
             tickRectCls, tickRectHeightOffset=6, tickRectWidthOffset=8, tickClick, axisSel, tickSel, textSel, gridLineSel,
             borderSel, grid;
     var tickColor = '#000000', tickTextColor = '#000000', tickTextBkgdColor = 'transparent', gridLineColor = '#DDDDDD',
-            borderColor = '#000000';
+            borderColor = '#000000', tickDigits;
     var tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1;
     var fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10;
 
@@ -38,6 +38,21 @@ LABKEY.vis.internal.Axis = function() {
 
         gridLineData = data;
 
+        if(tickDigits) {
+            var convert = false;
+            for(var i=0; i<gridLineData.length; i++) {
+                if(gridLineData[i].toString().length >= tickDigits)
+                    convert = true;
+            }
+
+            if(convert) {
+                gridLineData.forEach(function (d, i) {
+                    gridLineData[i] = d.toExponential();
+                    //gridLineData[i] = gridLineData[i].replace("e", "R");
+                });
+            }
+        }
+
         if (orientation == 'left') {
             textAnchor = 'end';
             textYFn = function(v) {return Math.floor(scale(v)) + .5;};
@@ -58,6 +73,18 @@ LABKEY.vis.internal.Axis = function() {
             border = 'M' + (Math.floor(grid.rightEdge) + .5) + ',' + (grid.bottomEdge + 1) + 'L' + (Math.floor(grid.rightEdge) + .5) + ',' + grid.topEdge + 'Z';
             // Don't overlap gridlines with x axis border.
             if (Math.floor(scale(data[0])) == Math.floor(grid.bottomEdge)) {
+                gridLineData = gridLineData.slice(1);
+            }
+        }else if(orientation == 'top') {
+            orientation = 'top';
+            textAnchor = 'middle';
+            textXFn = function(v) {return (Math.floor(scale(v)) +.5);};
+            textYFn = function() {return grid.topEdge - tickPadding};
+            tickFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.topEdge + 'L' + v + ',' + (grid.topEdge + tickLength) + 'Z';};
+            gridLineFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + grid.topEdge + 'Z';};
+            border = 'M' + grid.leftEdge + ',' + (Math.floor(grid.topEdge) + .5) + 'L' + grid.rightEdge + ',' + (Math.floor(grid.topEdge) + .5) + 'Z';
+            // Don't overlap gridlines with y-left axis border.
+            if (scale(data[0]) == grid.leftEdge) {
                 gridLineData = gridLineData.slice(1);
             }
         } else {
@@ -235,6 +262,7 @@ LABKEY.vis.internal.Axis = function() {
     axis.orient = function(o) {orientation = o; return axis;};
     axis.ticks = function(t) {ticks = t; return axis;};
     axis.tickFormat = function(f) {tickFormat = f; return axis;};
+    axis.tickDigits = function(h) {tickDigits = h; return axis;};
     axis.tickHover = function(h) {tickHover = h; return axis;};
     axis.tickCls = function(c) {tickCls = c; return axis;};
     axis.tickRectCls = function(c) {tickRectCls = c; return axis;};
@@ -315,7 +343,7 @@ LABKEY.vis.internal.Axis = function() {
             fontFamily = f;
         }
         return axis;
-    }
+    };
 
     return axis;
 };
@@ -323,7 +351,8 @@ LABKEY.vis.internal.Axis = function() {
 LABKEY.vis.internal.D3Renderer = function(plot) {
     var errorMsg, labelElements = null, xAxis = null, leftAxis = null, rightAxis = null, brush = null, brushSel = null,
         brushSelectionType = null, xHandleBrush = null, xHandleSel = null, yHandleBrush = null, yHandleSel = null,
-        defaultBrushFillColor = '#EBF7F8', defaultBrushFillOpacity = .75, defaultBrushStrokeColor = '#14C9CC';
+        defaultBrushFillColor = '#EBF7F8', defaultBrushFillOpacity = .75, defaultBrushStrokeColor = '#14C9CC',
+        xTopAxis = null;
 
     var initLabelElements = function() {
         labelElements = {};
@@ -336,21 +365,33 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         mainLabel.dom = labels.append('text').attr('text-anchor', 'middle')
                 .attr("visibility", plot.labels.main && plot.labels.main.visibility ? plot.labels.main.visibility : "visible")
                 .style('font', fontSize + 'px ' + fontFamily);
+        if(plot.labels.main && plot.labels.main.cls) {
+            mainLabel.dom.attr("class", plot.labels.main.cls)
+        }
 
         fontSize = plot.labels.x && plot.labels.x.fontSize != undefined ? plot.labels.x.fontSize : 14;
         xLabel.dom = labels.append('text').attr('text-anchor', 'middle')
                 .attr("visibility", plot.labels.x && plot.labels.x.visibility ? plot.labels.x.visibility : "visible")
                 .style('font', fontSize + 'px ' + fontFamily);
+        if(plot.labels.x && plot.labels.x.cls) {
+            xLabel.dom.attr("class", plot.labels.x.cls)
+        }
 
         fontSize = plot.labels.yLeft && plot.labels.yLeft.fontSize != undefined ? plot.labels.yLeft.fontSize : 14;
         yLeftLabel.dom = labels.append('text').attr('text-anchor', 'middle')
                 .attr("visibility", plot.labels.yLeft && plot.labels.yLeft.visibility ? plot.labels.yLeft.visibility : "visible")
                 .style('font', fontSize + 'px ' + fontFamily);
+        if(plot.labels.yLeft && plot.labels.yLeft.cls) {
+            yLeftLabel.dom.attr("class", plot.labels.yLeft.cls)
+        }
 
         fontSize = plot.labels.yRight && plot.labels.yRight.fontSize != undefined ? plot.labels.yRight.fontSize : 14;
         yRightLabel.dom = labels.append('text').attr('text-anchor', 'middle')
                 .attr("visibility", plot.labels.yRight && plot.labels.yRight.visibility ? plot.labels.yRight.visibility : "visible")
                 .style('font', fontSize + 'px ' + fontFamily);
+        if(plot.labels.yRight && plot.labels.yRight.cls) {
+            yRightLabel.dom.attr("class", plot.labels.yRight.cls)
+        }
 
         labelElements.main = mainLabel;
         labelElements.y = yLeftLabel;
@@ -436,50 +477,137 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             xAxis = LABKEY.vis.internal.Axis().orient('bottom');
         }
 
-        xAxis.scale(plot.scales.x.scale).tickPadding(10).ticks(7);
-        configureAxis(xAxis);
+        if (plot.scales.x && plot.scales.x.scale)
+        {
+            xAxis.scale(plot.scales.x.scale).tickPadding(10).ticks(7);
+            configureAxis(xAxis);
 
-        if (plot.scales.x.tickFormat) {
-            xAxis.tickFormat(plot.scales.x.tickFormat);
+            if (plot.scales.x.tickFormat)
+            {
+                xAxis.tickFormat(plot.scales.x.tickFormat);
+            }
+
+            if (plot.scales.x.tickDigits)
+            {
+                xAxis.tickDigits(plot.scales.x.tickDigits);
+            }
+
+            if (plot.scales.x.tickHoverText)
+            {
+                xAxis.tickHover(plot.scales.x.tickHoverText);
+            }
+
+            if (plot.scales.x.tickCls)
+            {
+                xAxis.tickCls(plot.scales.x.tickCls);
+            }
+
+            if (plot.scales.x.tickRectCls)
+            {
+                xAxis.tickRectCls(plot.scales.x.tickRectCls);
+            }
+
+            if (plot.scales.x.tickRectWidthOffset)
+            {
+                xAxis.tickRectWidthOffset(plot.scales.x.tickRectWidthOffset);
+            }
+
+            if (plot.scales.x.tickRectHeightOffset)
+            {
+                xAxis.tickRectHeightOffset(plot.scales.x.tickRectHeightOffset);
+            }
+
+            if (plot.scales.x.tickClick)
+            {
+                xAxis.tickClick(plot.scales.x.tickClick);
+            }
+
+            if (plot.scales.x.tickMouseOver)
+            {
+                xAxis.tickMouseOver(plot.scales.x.tickMouseOver);
+            }
+
+            if (plot.scales.x.tickMouseOut)
+            {
+                xAxis.tickMouseOut(plot.scales.x.tickMouseOut);
+            }
+
+            if (plot.scales.x.fontSize)
+            {
+                xAxis.fontSize(plot.scales.x.fontSize);
+            }
+
+            this.canvas.call(xAxis);
+        }
+    };
+
+    var renderXTopAxis = function() {
+        if (!xTopAxis) {
+            xTopAxis = LABKEY.vis.internal.Axis().orient('top');
         }
 
-        if (plot.scales.x.tickHoverText) {
-            xAxis.tickHover(plot.scales.x.tickHoverText);
-        }
+        if (plot.scales.xTop && plot.scales.xTop.scale)
+        {
+            xTopAxis.scale(plot.scales.xTop.scale).tickPadding(10).ticks(7);
+            configureAxis(xTopAxis);
 
-        if (plot.scales.x.tickCls) {
-            xAxis.tickCls(plot.scales.x.tickCls);
-        }
+            if (plot.scales.xTop.tickFormat)
+            {
+                xTopAxis.tickFormat(plot.scales.xTop.tickFormat);
+            }
 
-        if (plot.scales.x.tickRectCls) {
-            xAxis.tickRectCls(plot.scales.x.tickRectCls);
-        }
+            if (plot.scales.xTop.tickDigits)
+            {
+                xTopAxis.tickDigits(plot.scales.xTop.tickDigits);
+            }
 
-        if (plot.scales.x.tickRectWidthOffset) {
-            xAxis.tickRectWidthOffset(plot.scales.x.tickRectWidthOffset);
-        }
+            if (plot.scales.xTop.tickHoverText)
+            {
+                xTopAxis.tickHover(plot.scales.xTop.tickHoverText);
+            }
 
-        if (plot.scales.x.tickRectHeightOffset) {
-            xAxis.tickRectHeightOffset(plot.scales.x.tickRectHeightOffset);
-        }
+            if (plot.scales.xTop.tickCls)
+            {
+                xTopAxis.tickCls(plot.scales.xTop.tickCls);
+            }
 
-        if (plot.scales.x.tickClick) {
-            xAxis.tickClick(plot.scales.x.tickClick);
-        }
+            if (plot.scales.xTop.tickRectCls)
+            {
+                xTopAxis.tickRectCls(plot.scales.xTop.tickRectCls);
+            }
 
-        if (plot.scales.x.tickMouseOver) {
-            xAxis.tickMouseOver(plot.scales.x.tickMouseOver);
-        }
+            if (plot.scales.xTop.tickRectWidthOffset)
+            {
+                xTopAxis.tickRectWidthOffset(plot.scales.xTop.tickRectWidthOffset);
+            }
 
-        if (plot.scales.x.tickMouseOut) {
-            xAxis.tickMouseOut(plot.scales.x.tickMouseOut);
-        }
+            if (plot.scales.xTop.tickRectHeightOffset)
+            {
+                xTopAxis.tickRectHeightOffset(plot.scales.xTop.tickRectHeightOffset);
+            }
 
-        if (plot.scales.x.fontSize) {
-            xAxis.fontSize(plot.scales.x.fontSize);
-        }
+            if (plot.scales.xTop.tickClick)
+            {
+                xTopAxis.tickClick(plot.scales.xTop.tickClick);
+            }
 
-        this.canvas.call(xAxis);
+            if (plot.scales.xTop.tickMouseOver)
+            {
+                xTopAxis.tickMouseOver(plot.scales.xTop.tickMouseOver);
+            }
+
+            if (plot.scales.xTop.tickMouseOut)
+            {
+                xTopAxis.tickMouseOut(plot.scales.xTop.tickMouseOut);
+            }
+
+            if (plot.scales.xTop.fontSize)
+            {
+                xTopAxis.fontSize(plot.scales.xTop.fontSize);
+            }
+
+            this.canvas.call(xTopAxis);
+        }
     };
 
     var renderYLeftAxis = function() {
@@ -493,6 +621,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (plot.scales.yLeft.tickFormat) {
                 leftAxis.tickFormat(plot.scales.yLeft.tickFormat);
+            }
+
+            if (plot.scales.yLeft.tickDigits) {
+                leftAxis.tickDigits(plot.scales.yLeft.tickDigits);
             }
 
             if (plot.scales.yLeft.tickHoverText) {
@@ -545,6 +677,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (plot.scales.yRight.tickFormat) {
                 rightAxis.tickFormat(plot.scales.yRight.tickFormat);
+            }
+
+            if (plot.scales.yRight.tickDigits) {
+                rightAxis.tickDigits(plot.scales.yRight.tickDigits);
             }
 
             if (plot.scales.yRight.tickHoverText) {
@@ -604,7 +740,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         var allSels = [];
 
         for (var i = 0; i < plot.layers.length; i++) {
-            allSels.push(d3.select('#' + plot.renderTo + '-' + plot.layers[i].geom.index));
+            allSels.push(d3.selectAll('#' + plot.renderTo + '-' + plot.layers[i].geom.index));
         }
 
         return allSels;
@@ -1102,6 +1238,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
 
         renderXAxis.call(this);
+        renderXTopAxis.call(this);
         renderYLeftAxis.call(this);
         renderYRightAxis.call(this);
         addBrush.call(this);

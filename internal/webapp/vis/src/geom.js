@@ -29,8 +29,21 @@ LABKEY.vis.Geom.XY = function(){
 LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentAes, layerName, index){
     this.layerName = layerName;
     this.index = index;
-    this.xAes = layerAes.x ? layerAes.x : parentAes.x;
-    this.xScale = scales.x;
+
+    if(layerAes.x){
+        this.xAes = layerAes.x;
+        this.xScale = scales.x;
+    } else if(layerAes.xTop){
+        this.xAes = layerAes.xTop;
+        this.xScale = scales.xTop;
+    } else if(parentAes.x){
+        this.xAes = parentAes.x;
+        this.xScale = scales.x;
+    } else if(parentAes.xTop){
+        this.xAes = parentAes.xTop;
+        this.xScale = scales.xTop;
+    }
+
     if(!this.xAes){
         console.error('x aesthetic is required for ' + this.type + ' geom to render.');
         return false;

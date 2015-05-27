@@ -58,6 +58,7 @@
  *          used for any axis scales. For continuous color scales it is an array[min, max] hex values.</li>
  *          <li><strong>sortFn:</strong> If scaleType is "discrete", the sortFn can be used to order the values of the domain</li>
  *          <li><strong>tickFormat:</strong> Add axis label formatting.</li>
+ *          <li><strong>tickDigits:</strong> Convert axis tick to exponential form if equal or greater than number of digits</li>
  *          <li><strong>tickHoverText:</strong>: Adds hover text for axis labels.</li>
  *          <li><strong>tickCls:</strong> Add class to axis label.</li>
  *          <li><strong>tickRectCls:</strong> Add class to mouse area rectangle around axis label.</li>
@@ -88,6 +89,9 @@
  *          </li>
  *          <li>
  *              <strong>visibility:</strong> The initial visibility state for the label. Defaults to normal.
+ *          </li>
+ *          <li>
+ *              <strong>cls:</strong> Class added to label element.
  *          </li>
  *          <li>
  *              <strong>listeners:</strong> An object with properties for each listener the user wants attached
@@ -332,6 +336,7 @@ boxPlot.render();
                 newScale.sortFn = origScale.sortFn ? origScale.sortFn : null;
                 newScale.trans = origScale.trans ? origScale.trans : 'linear';
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
+                newScale.tickDigits = origScale.tickDigits ? origScale.tickDigits : null;
                 newScale.tickHoverText = origScale.tickHoverText ? origScale.tickHoverText : null;
                 newScale.tickCls = origScale.tickCls ? origScale.tickCls : null;
                 newScale.tickRectCls = origScale.tickRectCls ? origScale.tickRectCls : null;
@@ -367,7 +372,8 @@ boxPlot.render();
             if (aes.hasOwnProperty(aesthetic)) {
                 if(!scales[aesthetic]){
                     // Not all aesthetics get a scale (like hoverText), so we have to be pretty specific.
-                    if(aesthetic === 'x' || aesthetic === 'yLeft' || aesthetic === 'yRight' || aesthetic === 'size'){
+                    if(aesthetic === 'x' || aesthetic === 'xTop' || aesthetic === 'yLeft' || aesthetic === 'yRight'
+                            || aesthetic === 'size'){
                         scales[aesthetic] = {scaleType: 'continuous', trans: 'linear'};
                     } else if (aesthetic == 'color' || aesthetic == 'outlierColor' || aesthetic == 'pathColor') {
                         scales['color'] = {scaleType: 'discrete'};
@@ -553,11 +559,30 @@ boxPlot.render();
             scales.yLeft.range = yRange;
         }
 
-        if (scales.x.scaleType == 'continuous') {
-            scales.x.range = [margins.left, grid.width - margins.right];
-        } else {
-            // We don't need extra padding in the discrete case because we use rangeBands which take care of that.
-            scales.x.range = [grid.leftEdge, grid.rightEdge];
+        if (scales.x)
+        {
+            if (scales.x.scaleType == 'continuous')
+            {
+                scales.x.range = [margins.left, grid.width - margins.right];
+            }
+            else
+            {
+                // We don't need extra padding in the discrete case because we use rangeBands which take care of that.
+                scales.x.range = [grid.leftEdge, grid.rightEdge];
+            }
+        }
+
+        if (scales.xTop)
+        {
+            if (scales.xTop.scaleType == 'continuous')
+            {
+                scales.xTop.range = [margins.left, grid.width - margins.right];
+            }
+            else
+            {
+                // We don't need extra padding in the discrete case because we use rangeBands which take care of that.
+                scales.xTop.range = [grid.leftEdge, grid.rightEdge];
+            }
         }
     };
 
@@ -624,7 +649,7 @@ boxPlot.render();
                 userScale = userScales[scaleName];
 
                 if (scale.scaleType == 'discrete') {
-                    if (scaleName == 'x' || scaleName == 'yLeft' || scaleName == 'yRight'){
+                    if (scaleName == 'x' || scaleName == 'xTop' || scaleName == 'yLeft' || scaleName == 'yRight'){
                         // Setup scale with domain (user provided or calculated) and compute range based off grid dimensions.
                         scale.scale = d3.scale.ordinal().domain(scale.domain).rangeBands(scale.range, 1);
                     } else {
@@ -689,7 +714,7 @@ boxPlot.render();
         calculateDomains(userScales, scales, allAes, allData);
         instantiateScales(userScales, scales, grid, margins);
 
-        if (!scales.x.scale) {
+        if ((scales.x && !scales.x.scale) || (scales.xTop && !scales.xTop.scale)) {
             errorFn('Unable to create an x scale, rendering aborted.');
             return false;
         }
