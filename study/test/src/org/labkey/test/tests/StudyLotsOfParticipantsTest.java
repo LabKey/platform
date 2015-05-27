@@ -22,7 +22,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.InDevelopment;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.util.Crawler;
@@ -33,7 +33,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-@Category({DailyB.class, Study.class})
+@Category({InDevelopment.class, Study.class})
 public class StudyLotsOfParticipantsTest extends BaseWebDriverTest implements SqlserverOnlyTest
 {
     // Study folder archive with > 130,000 participants, 2 datasets, 11 visits, 3 cohorts, and 3 participants groups
