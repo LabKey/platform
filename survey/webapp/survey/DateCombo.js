@@ -97,6 +97,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
                 data    : this.createDayStore('January')
             },
             valueField      : 'value',
+            value           : 1,
             displayField    : 'name',
             editable        : false,
             width           : 60,
