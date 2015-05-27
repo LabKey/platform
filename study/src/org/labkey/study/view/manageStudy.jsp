@@ -18,14 +18,19 @@
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyReloadSource" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -50,13 +55,10 @@
 <%@ page import="org.labkey.study.model.StudySnapshot" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.study.Dataset" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.StudyReloadSource" %>
-<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -242,8 +244,8 @@
     <tr>
         <th align="left">Security</th>
         <td>Manage access to study datasets and samples</td>
-        <% ActionURL url = new ActionURL(SecurityController.BeginAction.class, c);%>
-        <td><%= textLink("Manage Security", url) %></td>
+        <% ActionURL securityUrl = new ActionURL(SecurityController.BeginAction.class, c);%>
+        <td><%= textLink("Manage Security", securityUrl) %></td>
     </tr>
     <tr>
         <th align="left">Reports/Views</th>
@@ -274,7 +276,11 @@
     <tr>
         <th align="left">Assay Schedule</th>
         <td>This study defines <%= getAssaySpecimenConfigs().size() %> assay configurations</td>
-        <td><%= textLink("Manage Assay Schedule", StudyDesignController.ManageAssayScheduleAction.class) %></td>
+        <%
+            boolean hasRhoModule = getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule("rho"));
+            ActionURL assayScheduleURL = PageFlowUtil.urlProvider(StudyUrls.class).getManageAssayScheduleURL(getContainer(), hasRhoModule);
+        %>
+        <td><%= textLink("Manage Assay Schedule", assayScheduleURL) %></td>
     </tr>
     <tr>
         <th align="left">Demo Mode</th>
