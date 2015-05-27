@@ -1098,10 +1098,10 @@ public class Query
         }
     }
 
-    static class InvolvedColumnsTest extends SqlTest
+    private static class InvolvedColumnsTest extends SqlTest
     {
-        protected final List<String> _expectedInvolvedColumns;
-        InvolvedColumnsTest(String sql, List<String> expectedInvolvedColumns)
+        private  final List<String> _expectedInvolvedColumns;
+        private InvolvedColumnsTest(String sql, List<String> expectedInvolvedColumns)
         {
             super(sql);
             _expectedInvolvedColumns = expectedInvolvedColumns;
@@ -1386,7 +1386,7 @@ public class Query
         new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6)"),
 	};
 
-    static InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]
+    private static final InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]
     {
         new InvolvedColumnsTest("SELECT R.seven FROM R UNION SELECT S.seven FROM Folder.qtest.lists.S S",
                                 Arrays.asList("R/seven", "S/seven")),
@@ -1416,6 +1416,10 @@ public class Query
                                 Arrays.asList("R/seven", "R/twelve")),
         new InvolvedColumnsTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6) ORDER BY twelve LIMIT 4",
                                 Arrays.asList("R/seven", "R/twelve")),
+        new InvolvedColumnsTest("SELECT MAX(R.seven) FROM R GROUP BY twelve",
+                                   Arrays.asList("R/seven", "R/twelve")),
+        new InvolvedColumnsTest("SELECT MAX(seven) As MaxSeven, twelve FROM R GROUP BY twelve PIVOT MaxSeven BY twelve",
+                                   Arrays.asList("R/seven", "R/twelve")),
     };
 
     public static class QueryTestCase extends Assert
@@ -1747,7 +1751,7 @@ public class Query
             Assert.assertEquals("Expected to find " + Rsize + " rows in lists.R table", Rsize, count);
         }
 
-        public void validateInvolvedColumns(String sql, @Nullable Container container, List<String> expectedInvolvedColumns) throws Exception
+        private void validateInvolvedColumns(String sql, @Nullable Container container, List<String> expectedInvolvedColumns) throws Exception
         {
             QuerySchema schema = lists;
             if (null != container)
@@ -1764,7 +1768,7 @@ public class Query
             }
         }
 
-        protected void mockSelect(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap,
+        private void mockSelect(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap,
                                   boolean strictColumnList, List<String> expectedColumns) throws SQLException
         {
             Query q = new Query(schema);
