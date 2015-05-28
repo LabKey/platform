@@ -86,7 +86,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                     existingGroups.put(group.getLabel(), group);
 
                 Map<String, String> existingParticipants = new HashMap<>();
-                for (String id : StudyManager.getInstance().getParticipantIds(study))
+                for (String id : StudyManager.getInstance().getParticipantIds(study,ctx.getUser()))
                     existingParticipants.put(id, id);
 
                 // create the imported participant groups

@@ -5633,14 +5633,14 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static List<AjaxCompletion> getAjaxCompletions(Study study) throws SQLException
+    private List<AjaxCompletion> getAjaxCompletions(Study study) throws SQLException
     {
         List<AjaxCompletion> completions = new ArrayList<>();
         String allString = "All " + PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(study.getContainer())) +  " (Large Report)";
 
         completions.add(new AjaxCompletion(allString, allString));
 
-        for (String ptid : StudyManager.getInstance().getParticipantIds(study))
+        for (String ptid : StudyManager.getInstance().getParticipantIds(study, getViewContext().getUser()))
             completions.add(new AjaxCompletion(ptid, ptid));
 
         return completions;

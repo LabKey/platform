@@ -52,6 +52,8 @@ import java.util.Collection;
  */
 public abstract class BaseStudyController extends SpringActionController
 {
+    StudyImpl _study = null;
+
     public enum SharedFormParameters
     {
         QCState
@@ -129,7 +131,9 @@ public abstract class BaseStudyController extends SpringActionController
     @Nullable
     public StudyImpl getStudy()
     {
-        return getStudy(getContainer());
+        if (null == _study)
+            _study = getStudy(getContainer());
+        return _study;
     }
 
     protected BaseViewAction initAction(BaseViewAction parent, BaseViewAction action)

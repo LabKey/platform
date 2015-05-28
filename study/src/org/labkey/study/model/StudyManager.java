@@ -137,6 +137,7 @@ import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.query.DatasetTableImpl;
+import org.labkey.study.query.DataspaceContainerFilter;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
@@ -201,7 +202,7 @@ public class StudyManager
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
 
-    private StudyManager()
+    protected StudyManager()
     {
         // prevent external construction with a private default constructor
         _studyHelper = new QueryHelper<StudyImpl>(new TableInfoGetter()
@@ -1204,9 +1205,7 @@ public class StudyManager
         Container container = study.getContainer();
         if (null == container.getProject())
             throw new IllegalStateException("Study Import/Export must happen within a project.");
-        if (container.getProject().isDataspace())
-            container = container.getProject();
-        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(container);
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(getStudyForVisitTag(study).getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTag();
         if (null == tinfo)
             throw new IllegalStateException("Study Import/Export expected TableInfo.");
@@ -3067,6 +3066,7 @@ public class StudyManager
     }
 
 
+    /** study container only (not dataspace!) */
     public long getParticipantCount(Study study)
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(ParticipantId) FROM ");
@@ -3076,25 +3076,33 @@ public class StudyManager
         return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getObject(Long.class);
     }
 
-    public String[] getParticipantIds(Study study)
+    public String[] getParticipantIds(Study study, User user)
     {
-        return getParticipantIds(study, -1);
+        return getParticipantIds(study, user, -1);
     }
 
-    public String[] getParticipantIdsForGroup(Study study, int groupId)
+    /** study container only (not dataspace!) */
+    public String[] getParticipantIdsForGroup(Study study, User user, int groupId)
     {
-        return getParticipantIds(study, groupId, -1);
+        return getParticipantIds(study, user, null, groupId, -1);
     }
 
-    public String[] getParticipantIds(Study study, int rowLimit)
+    /** study container only (not dataspace!) */
+    public String[] getParticipantIds(Study study, User user, int rowLimit)
     {
-        return getParticipantIds(study, -1, rowLimit);
+        return getParticipantIds(study, user, null, -1, rowLimit);
     }
 
-    private String[] getParticipantIds(Study study, int participantGroupId, int rowLimit)
+    public String[] getParticipantIds(Study study, User user, ContainerFilter cf, int rowLimit)
+    {
+        return getParticipantIds(study, user, cf, -1, rowLimit);
+    }
+
+    /** study container only (not dataspace!) */
+    private String[] getParticipantIds(Study study, User user, ContainerFilter cf, int participantGroupId, int rowLimit)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        SQLFragment sql = getSQLFragmentForParticipantIds(study, participantGroupId, rowLimit, schema, "ParticipantId");
+        SQLFragment sql = getSQLFragmentForParticipantIds(study, user, cf, participantGroupId, rowLimit, schema, "ParticipantId");
         return new SqlSelector(schema, sql).getArray(String.class);
     }
 
@@ -3121,10 +3129,10 @@ public class StudyManager
         }
     }
 
-    public Map<String, ParticipantInfo> getParticipantInfos(Study study, final boolean isShiftDates, final boolean isAlternateIds)
+    public Map<String, ParticipantInfo> getParticipantInfos(Study study, User user, final boolean isShiftDates, final boolean isAlternateIds)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        SQLFragment sql = getSQLFragmentForParticipantIds(study, -1, -1, schema, PTID_COLUMN_NAME + ", " + ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME);
+        SQLFragment sql = getSQLFragmentForParticipantIds(study, user, null, -1, -1, schema, PTID_COLUMN_NAME + ", " + ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME);
         final Map<String, ParticipantInfo> alternateIdMap = new HashMap<>();
 
         new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<ResultSet>(){
@@ -3141,20 +3149,45 @@ public class StudyManager
         return alternateIdMap;
     }
 
-    private SQLFragment getSQLFragmentForParticipantIds(Study study, int participantGroupId, int rowLimit, DbSchema schema, String columns)
+
+    private SQLFragment getSQLFragmentForParticipantIds(Study study, User user, @Nullable ContainerFilter cf, int participantGroupId, int rowLimit, DbSchema schema, String columns)
     {
+        SQLFragment filter = getParticipantFilter(study, user, cf);
+
         SQLFragment sql;
         if (participantGroupId == -1)
-            sql = new SQLFragment("SELECT " + columns + " FROM " + SCHEMA.getTableInfoParticipant() + " WHERE Container = ? ORDER BY ParticipantId", study.getContainer().getId());
+        {
+            sql = new SQLFragment("SELECT " + columns + " FROM " + SCHEMA.getTableInfoParticipant()).append(" WHERE ").append(filter).append(" ORDER BY ParticipantId");
+        }
         else
         {
             TableInfo table = StudySchema.getInstance().getTableInfoParticipantGroupMap();
-            sql = new SQLFragment("SELECT " + columns + " FROM " + table + " WHERE Container = ? AND GroupId = ? ORDER BY ParticipantId", study.getContainer().getId(), participantGroupId);
+            sql = new SQLFragment("SELECT " + columns + " FROM " + table + " WHERE ").append(filter).append(" AND GroupId = ? ORDER BY ParticipantId").add(participantGroupId);
         }
         if (rowLimit > 0)
             sql = schema.getSqlDialect().limitRows(sql, rowLimit);
         return sql;
     }
+
+
+    private SQLFragment getParticipantFilter(Study study, User user, @Nullable ContainerFilter cf)
+    {
+        SQLFragment filter = new SQLFragment();
+        if (!study.getShareDatasetDefinitions())
+        {
+            filter.append("Container=").append(study.getContainer());
+        }
+        else
+        {
+            if (null == user)
+                throw new IllegalStateException("provide a user to query the participants table");
+            if (null == cf)
+                cf = new DataspaceContainerFilter(user);
+            filter = cf.getSQLFragment(SCHEMA.getSchema(), new SQLFragment("Container"), study.getContainer());
+        }
+        return filter;
+    }
+
 
     public String[] getParticipantIdsForCohort(Study study, int currentCohortId, int rowLimit)
     {
@@ -3176,16 +3209,25 @@ public class StudyManager
         return new SqlSelector(schema, sql).getArray(String.class);
     }
 
-    public String[] getParticipantIdsNotInGroupCategory(Study study, int categoryId)
+    public String[] getParticipantIdsNotInGroupCategory(Study study, User user, int categoryId)
+    {
+        return getParticipantIdsNotInGroupCategory(study, user, null, categoryId);
+    }
+
+    public String[] getParticipantIdsNotInGroupCategory(Study study, User user, @Nullable ContainerFilter cf, int categoryId)
     {
         TableInfo groupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
         TableInfo tableInfoParticipantGroup = StudySchema.getInstance().getTableInfoParticipantGroup();
-
         DbSchema schema = StudySchema.getInstance().getSchema();
-        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + SCHEMA.getTableInfoParticipant() + " WHERE Container = ? " +
-                "AND ParticipantId NOT IN (SELECT DISTINCT ParticipantId FROM " + groupMapTable + " WHERE Container = ? AND " +
-                "GroupId IN (SELECT RowId FROM " + tableInfoParticipantGroup + " WHERE CategoryId = ?))",
-                study.getContainer().getId(), study.getContainer().getId(), categoryId);
+
+        SQLFragment filter = getParticipantFilter(study,user,cf);
+
+        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM ").append(SCHEMA.getTableInfoParticipant().getFromSQL("P"))
+                .append(" WHERE ").append(filter)
+                .append(" AND ParticipantId NOT IN (SELECT DISTINCT ParticipantId FROM ").append(groupMapTable.getFromSQL("PGM"))
+                .append(" WHERE GroupId IN (SELECT PG.RowId FROM ").append(tableInfoParticipantGroup.getFromSQL("PG")).append(" WHERE Container = ? AND CategoryId = ?))")
+                .add(study.getContainer().getId())
+                .add(categoryId);
 
         return new SqlSelector(schema.getScope(), sql).getArray(String.class);
     }
@@ -3194,7 +3236,9 @@ public class StudyManager
 
     public void clearAlternateParticipantIds(Study study)
     {
-        String [] participantIds = getParticipantIds(study);
+        if (study.isDataspaceStudy())
+            return;
+        String [] participantIds = getParticipantIds(study,null);
 
         for (String participantId : participantIds)
             setAlternateId(study, participantId, null);
@@ -3202,7 +3246,7 @@ public class StudyManager
 
     public void generateNeededAlternateParticipantIds(Study study)
     {
-        Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, false, true);
+        Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, null, false, true);
 
         StudyController.ChangeAlternateIdsForm changeAlternateIdsForm = StudyController.getChangeAlternateIdForm((StudyImpl) study);
         String prefix = changeAlternateIdsForm.getPrefix();
@@ -3310,7 +3354,7 @@ public class StudyManager
             dl.setInferTypes(false);
 
             // Note alternateIds that are already used
-            Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, true, true);
+            Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, null, true, true);
             CaseInsensitiveHashSet usedIds = new CaseInsensitiveHashSet();
             for (ParticipantInfo participantInfo : participantInfos.values())
             {

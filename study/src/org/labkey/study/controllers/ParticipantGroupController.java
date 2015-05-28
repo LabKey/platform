@@ -17,6 +17,7 @@ package org.labkey.study.controllers;
 
 import org.apache.commons.collections15.CollectionUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -26,6 +27,7 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Table;
@@ -53,6 +55,7 @@ import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.DataspaceQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -512,14 +515,12 @@ public class ParticipantGroupController extends BaseStudyController
     @RequiresPermissionClass(ReadPermission.class)
     public class BrowseParticipantGroups extends ApiAction<BrowseGroupsForm>
     {
-        private StudyImpl _study;
-        private String[] _allParticipants;
+        private Collection<String> _allParticipants;
 
         @Override
         public void validateForm(BrowseGroupsForm form, Errors errors)
         {
-            _study = getStudy(getContainer());
-            if (_study == null)
+            if (null == getStudy())
                 errors.reject(ERROR_MSG, "A study does not exist in this folder");
         }
 
@@ -558,22 +559,25 @@ public class ParticipantGroupController extends BaseStudyController
                         }
                         break;
                     case cohort:
-                        for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
+                        if (!_study.isDataspaceStudy())
                         {
-                            selectedParticipants.addAll(cohort.getParticipantSet());
-                            JSONGroup jsonGroup = new JSONGroup(cohort);
-                            if (form.includeParticipantIds())
-                                jsonGroup.setParticipantIds(cohort.getParticipantSet());
+                            for (CohortImpl cohort : getCohorts())
+                            {
+                                selectedParticipants.addAll(cohort.getParticipantSet());
+                                JSONGroup jsonGroup = new JSONGroup(cohort);
+                                if (form.includeParticipantIds())
+                                    jsonGroup.setParticipantIds(cohort.getParticipantSet());
 
-                            groups.add(jsonGroup.toJSON(getViewContext()));
-                        }
+                                groups.add(jsonGroup.toJSON(getViewContext()));
+                            }
 
-                        if (form.isIncludeUnassigned() && hasUnassignedParticipants(selectedParticipants))
-                        {
-                            JSONGroup notInCohortGroup = new JSONGroup(-1, -1, "Not in any cohort", GroupType.cohort, null);
-                            // Issue 18435: treat "Not in any cohort" as an unenrolled cohort when selecting initial state for subjects webpart
-                            notInCohortGroup._enrolled = false;
-                            groups.add(notInCohortGroup.toJSON(getViewContext()));
+                            if (form.isIncludeUnassigned() && hasUnassignedParticipants(selectedParticipants))
+                            {
+                                JSONGroup notInCohortGroup = new JSONGroup(-1, -1, "Not in any cohort", GroupType.cohort, null);
+                                // Issue 18435: treat "Not in any cohort" as an unenrolled cohort when selecting initial state for subjects webpart
+                                notInCohortGroup._enrolled = false;
+                                groups.add(notInCohortGroup.toJSON(getViewContext()));
+                            }
                         }
                         break;
                 }
@@ -602,8 +606,8 @@ public class ParticipantGroupController extends BaseStudyController
 
                 if (category.getGroups().length > 0)
                 {
-                    String[] unassigned = StudyManager.getInstance().getParticipantIdsNotInGroupCategory(_study, category.getRowId());
-                    if (form.isIncludeUnassigned() && (unassigned.length > 0))
+                    Collection<String> unassigned = getParticipantIdsNotInGroupCategory(category);
+                    if (form.isIncludeUnassigned() && (unassigned.size() > 0))
                         groups.add(new JSONGroup(-1, category.getRowId(), "Not in any group", GroupType.participantGroup, category).toJSON(getViewContext()));
                 }
             }
@@ -617,14 +621,15 @@ public class ParticipantGroupController extends BaseStudyController
         private boolean hasUnassignedParticipants(Set<String> selectedParticipants)
         {
             if (_allParticipants == null)
-                _allParticipants = StudyManager.getInstance().getParticipantIds(_study);
+                _allParticipants = getParticipantIds();
 
             Set<String> participants = new HashSet<>();
-            participants.addAll(Arrays.asList(_allParticipants));
+            participants.addAll(_allParticipants);
 
-            return !CollectionUtils.isEqualCollection(selectedParticipants, Arrays.asList(_allParticipants));
+            return !CollectionUtils.isEqualCollection(selectedParticipants, _allParticipants);
         }
     }
+
 
     static class JSONGroup
     {
@@ -868,7 +873,7 @@ public class ParticipantGroupController extends BaseStudyController
                 {
                     case participantGroup:
                         if (group.id == -1)
-                            participants.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInGroupCategory(_study, group.categoryId)));
+                            participants.addAll(getParticipantIdsNotInGroupCategory(group.categoryId));
                         else
                         {
                             ParticipantGroup pg = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), group.id);
@@ -879,9 +884,9 @@ public class ParticipantGroupController extends BaseStudyController
 
                     case cohort:
                         if (group.id == -1)
-                            participants.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInCohorts(_study)));
+                            participants.addAll(getParticipantIdsNotInCohorts());
                         else
-                            participants.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsForCohort(_study, group.id, -1)));
+                            participants.addAll(getParticipantIdsForCohort(group.id));
                         break;
                 }
             }
@@ -942,7 +947,7 @@ public class ParticipantGroupController extends BaseStudyController
             {
                 ParticipantGroup[] participantGroups = ParticipantGroupManager.getInstance().getParticipantGroups(getContainer(), getUser(), form.getParticipantCategorySpecification());
                 Set<String> formParticipants = new HashSet<>(Arrays.asList(form.getParticipantIds()));
-                
+
                 for(ParticipantGroup group : participantGroups)
                 {
                     if (group.getRowId() != form.getRowId())
@@ -1353,5 +1358,53 @@ public class ParticipantGroupController extends BaseStudyController
 
             return category;
         }
+    }
+
+
+    //// Study manager wrappers
+
+
+    @Nullable
+    ContainerFilter getDefaultContainerFilter()
+    {
+        if (!getStudy().isDataspaceStudy())
+            return null;
+        DataspaceQuerySchema dqs = new DataspaceQuerySchema(getStudy(), getUser(), true);
+        return dqs.getDefaultContainerFilter();
+    }
+
+
+    List<CohortImpl> getCohorts()
+    {
+        return StudyManager.getInstance().getCohorts(getContainer(), getUser());
+    }
+
+    Collection<String> getParticipantIds()
+    {
+        return  Arrays.asList(StudyManager.getInstance().getParticipantIds(getStudy(), getUser(), getDefaultContainerFilter(), -1));
+    }
+
+    Collection<String> getParticipantIdsNotInGroupCategory(ParticipantCategoryImpl category)
+    {
+        return Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInGroupCategory(getStudy(), getUser(), getDefaultContainerFilter(), category.getRowId()));
+    }
+
+    Collection<String> getParticipantIdsNotInGroupCategory(int categoryId)
+    {
+        return Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInGroupCategory(getStudy(), getUser(),  getDefaultContainerFilter(), categoryId));
+    }
+
+    Collection<String> getParticipantIdsNotInCohorts()
+    {
+        if (getStudy().isDataspaceStudy())
+            return Collections.emptyList();
+        return Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInCohorts(_study));
+    }
+
+    Collection<String> getParticipantIdsForCohort(int cohortid)
+    {
+        if (getStudy().isDataspaceStudy())
+            return Collections.emptyList();
+        return Arrays.asList(StudyManager.getInstance().getParticipantIdsForCohort(getStudy(), cohortid, -1));
     }
 }

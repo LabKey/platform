@@ -43,7 +43,7 @@ public class ParticipantMapper
             if (isAlternateIds)
                 StudyManager.getInstance().generateNeededAlternateParticipantIds(study);
 
-            _participantInfoMap = StudyManager.getInstance().getParticipantInfos(study, isShiftDates, isAlternateIds);
+            _participantInfoMap = StudyManager.getInstance().getParticipantInfos(study, null, isShiftDates, isAlternateIds);
         }
     }
 

@@ -192,46 +192,51 @@
     var _groups = [<%
         commas[0] = "\n";
         int index = 0;
-
-        // cohorts
-        final HashMap<Integer,Integer> cohortIndexMap = new HashMap<>();
-        final List<CohortImpl> cohorts = new ArrayList<>();
-        if (StudyManager.getInstance().showCohorts(container, user))
-            cohorts.addAll(StudyManager.getInstance().getCohorts(container, user));
-        boolean hasCohorts = cohorts.size() > 0;
+        boolean hasCohorts = false;
         boolean hasUnenrolledCohorts = false;
         int nocohortIndex = -1;
         int unenrolledIndex = -1;
-        if (hasCohorts)
+        final List<CohortImpl> cohorts = new ArrayList<>();
+        final HashMap<Integer,Integer> cohortIndexMap = new HashMap<>();
+
+        // cohorts
+        if (!study.isDataspaceStudy())
         {
-            if (study != null && StudyManager.getInstance().getParticipantIdsNotInCohorts(study).length > 0)
-                hasUnenrolledCohorts = true;
-
-            for (Cohort co : cohorts)
+            if (StudyManager.getInstance().showCohorts(container, user))
+                cohorts.addAll(StudyManager.getInstance().getCohorts(container, user));
+            hasCohorts = cohorts.size() > 0;
+            if (hasCohorts)
             {
-                cohortIndexMap.put(((CohortImpl)co).getRowId(), index);
-                %><%=commas[0]%>{id:<%=((CohortImpl)co).getRowId()%>, index:<%=index%>, type:'cohort', label:<%=q(co.getLabel())%>, enrolled:<%=co.isEnrolled()%>}<%
-                commas[0]=",\n";
-                index++;
-                if (!co.isEnrolled())
-                {
+                if (study != null && StudyManager.getInstance().getParticipantIdsNotInCohorts(study).length > 0)
                     hasUnenrolledCohorts = true;
-                }
-            }
 
-            unenrolledIndex = index;
-            cohortIndexMap.put(-2, index);
-            %><%=commas[0]%>{id:-2, index:<%=index%>, type:'cohort', label:'{unenrolled}', enrolled:false}<%
+                for (Cohort co : cohorts)
+                {
+                    cohortIndexMap.put(((CohortImpl)co).getRowId(), index);
+                    %><%=commas[0]%>{id:<%=((CohortImpl)co).getRowId()%>, index:<%=index%>, type:'cohort', label:<%=q(co.getLabel())%>, enrolled:<%=co.isEnrolled()%>}<%
+                    commas[0]=",\n";
+                    index++;
+                    if (!co.isEnrolled())
+                    {
+                        hasUnenrolledCohorts = true;
+                    }
+                }
+
+                unenrolledIndex = index;
+                cohortIndexMap.put(-2, index);
+                %><%=commas[0]%>{id:-2, index:<%=index%>, type:'cohort', label:'{unenrolled}', enrolled:false}<%
+                index++;
+            }
+            // 'no cohort place holder
+            nocohortIndex = index;
+            cohortIndexMap.put(-1, index);
+            %><%=commas[0]%>{id:-1, index:<%=index%>, type:'cohort', label:'{no cohort}', enrolled:false}<%
+            commas[0]=",\n";
             index++;
         }
-        // 'no cohort place holder
-        nocohortIndex = index;
-        cohortIndexMap.put(-1, index);
-        %><%=commas[0]%>{id:-1, index:<%=index%>, type:'cohort', label:'{no cohort}', enrolled:false}<%
-        commas[0]=",\n";
-        index++;
+        %>
 
-
+        <%
         // groups/categories
         final HashMap<Integer,Integer> groupMap = new HashMap<>();
         ParticipantGroupManager m = ParticipantGroupManager.getInstance();
@@ -266,6 +271,9 @@
             index++;
         }
         %>];
+
+        var hasCohorts = <%=text(hasCohorts?"true":"false")%>;
+
 <%
         int size = index;
         final BitSet[] memberSets = new BitSet[size];
@@ -304,7 +312,8 @@
         }
         if (hasGroups)
         {
-            (new SqlSelector(dbschema, "SELECT groupid, participantid FROM study.participantgroupmap WHERE container=?", container)).forEach(new Selector.ForEachBlock<ResultSet>()
+            SQLFragment sqlGroups = new SQLFragment("SELECT groupid, participantid FROM study.participantgroupmap WHERE groupid IN (select PG.rowid from study.participantgroup PG where PG.container=").append(container).append(")");
+            (new SqlSelector(dbschema, sqlGroups)).forEach(new Selector.ForEachBlock<ResultSet>()
             {
                 public void exec(ResultSet rs) throws SQLException
                 {

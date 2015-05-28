@@ -85,9 +85,9 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
             if (getParticipantGroupFilter() >= 0)
-                participantIds = StudyManager.getInstance().getParticipantIdsForGroup(study, getParticipantGroupFilter());
+                participantIds = StudyManager.getInstance().getParticipantIdsForGroup(study, getUser(), getParticipantGroupFilter());
             else
-                participantIds = StudyManager.getInstance().getParticipantIds(study);
+                participantIds = StudyManager.getInstance().getParticipantIds(study, getUser());
             if (participantIds == null)
                 return Collections.<SpecimenVisitReport>emptyList();
         }

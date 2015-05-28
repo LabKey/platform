@@ -664,7 +664,7 @@ public class StudyServiceImpl implements StudyService.Service
     public Map<String, String> getAlternateIdMap(Container container)
     {
         Map<String, String> alternateIdMap = new HashMap<>();
-        Map<String, StudyManager.ParticipantInfo> pairMap = StudyManager.getInstance().getParticipantInfos(StudyManager.getInstance().getStudy(container), false, true);
+        Map<String, StudyManager.ParticipantInfo> pairMap = StudyManager.getInstance().getParticipantInfos(StudyManager.getInstance().getStudy(container), null, false, true);
 
         for(String ptid : pairMap.keySet())
             alternateIdMap.put(ptid, pairMap.get(ptid).getAlternateId());
