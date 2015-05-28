@@ -225,6 +225,7 @@ api/src/org/labkey/api/data/Aggregate.java -text
 api/src/org/labkey/api/data/AggregateColumnInfo.java -text
 api/src/org/labkey/api/data/AsyncQueryRequest.java -text
 api/src/org/labkey/api/data/AtomicDatabaseInteger.java -text
+api/src/org/labkey/api/data/AttachmentDisplayColumn.java -text
 api/src/org/labkey/api/data/AttachmentParentEntity.java -text
 api/src/org/labkey/api/data/BaseSelector.java -text
 api/src/org/labkey/api/data/BaseSqlFactory.java -text
