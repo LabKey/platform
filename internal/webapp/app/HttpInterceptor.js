@@ -70,12 +70,28 @@ Ext.define('LABKEY.app.controller.HttpInterceptor', {
         }
         else if (response.status === 401) {
             /* UNAUTHORIZED */
+            // first check if the caller would like to handle this type of response itself.  Return false
+            // from callback to prevent other handlers from being invoked.
+            if (Ext.isFunction(options.unauthorized)) {
+                if (options.unauthorized.call(options._failScope, response, options) === false) {
+                    return;
+                }
+            }
+
             if (this.application.fireEvent('httpunauthorized', response.status, response.statusText) === false) {
                 return;
             }
         }
         else if (status === 403) {
             /* FORBIDDEN */
+            // first check if the caller would like to handle this type of response itself.  Return false
+            // from callback to prevent other handlers from being invoked.
+            if (Ext.isFunction(options.forbidden)) {
+                if (options.forbidden.call(options._failScope, response, options) === false) {
+                    return;
+                }
+            }
+
             if (this.application.fireEvent('httpforbidden', response.status, response.statusText) === false) {
                 return;
             }
