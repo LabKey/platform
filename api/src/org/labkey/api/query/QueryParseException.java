@@ -106,10 +106,10 @@ public class QueryParseException extends QueryException
             error.put("col", getColumn());
         }
         error.put("type", "sql");
-        if (lines != null && getLine() <= lines.length && getLine() >= 1 && getColumn() >= 0)
+        if (lines != null && getLine() <= lines.length && getLine() >= 1)
         {
             String errorStr = lines[getLine() - 1];
-            error.put("errorStr", errorStr.substring(getColumn()));
+            error.put("errorStr", errorStr);
         }
         Map<Enum,String> decorations = ExceptionUtil.getExceptionDecorations(this);
         if (!decorations.isEmpty())
