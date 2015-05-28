@@ -634,6 +634,11 @@ public class SpecimenUtils
         {
             _includeSpecimensInBody = includeSpecimensInBody;
         }
+
+        public SpecimenRequestEvent getEvent()
+        {
+            return _notification.getEvent();
+        }
     }
 
     @NotNull
@@ -918,7 +923,7 @@ public class SpecimenUtils
             {
                 for (Attachment attachment : attachments)
                 {
-                    out.write("<a href=\"" + PageFlowUtil.filter(attachment.getDownloadUrl(SpecimenController.DownloadAction.class)) + "\">");
+                    out.write("<a href=\"" + PageFlowUtil.filter(attachment.getDownloadUrl(SpecimenController.DownloadAction.class).addParameter("eventId", event.getRowId())) + "\">");
                     out.write("<img src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">&nbsp;");
                     out.write(PageFlowUtil.filter(attachment.getName()));
                     out.write("</a><br>");

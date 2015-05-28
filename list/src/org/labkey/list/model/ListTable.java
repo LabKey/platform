@@ -57,9 +57,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.list.controllers.ListController;
-import org.labkey.list.view.AttachmentDisplayColumn;
+import org.labkey.api.data.AttachmentDisplayColumn;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -254,6 +255,12 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                         }
                         else if (pd.getPropertyType() == PropertyType.ATTACHMENT)
                         {
+                            col.setURL(StringExpressionFactory.createURL(
+                                    new ActionURL(ListController.DownloadAction.class, getContainer())
+                                    .addParameter("listId", listDef.getListId())
+                                    .addParameter("entityId", "${EntityId}")
+                                    .addParameter("name", "${" + col.getName() + "}")
+                            ));
                             col.setDisplayColumnFactory(new DisplayColumnFactory()
                             {
                                 @Override

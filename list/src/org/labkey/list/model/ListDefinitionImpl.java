@@ -490,6 +490,21 @@ public class ListDefinitionImpl implements ListDefinition
         return impl;
     }
 
+    public boolean hasListItemForEntityId(String entityId, User user)
+    {
+        return hasListItem(new SimpleFilter(FieldKey.fromParts("EntityId"), entityId), user, getContainer());
+    }
+
+    private boolean hasListItem(SimpleFilter filter, User user, Container c)
+    {
+        TableInfo tbl = getTable(user, c);
+
+        if (null == tbl)
+            return false;
+
+        return new TableSelector(tbl, filter, null).exists();
+    }
+
     public void delete(User user) throws DomainNotFoundException
     {
         TableInfo table = getTable(user);

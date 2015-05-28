@@ -59,7 +59,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.list.controllers.ListController;
-import org.labkey.list.view.AttachmentDisplayColumn;
+import org.labkey.api.data.AttachmentDisplayColumn;
 
 import java.sql.Connection;
 import java.sql.SQLException;

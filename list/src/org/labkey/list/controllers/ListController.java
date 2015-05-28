@@ -112,6 +112,7 @@ import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListAuditViewFactory;
+import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListImporter;
 import org.labkey.list.model.ListManager;
@@ -1087,12 +1088,35 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class DownloadAction extends SimpleViewAction<AttachmentForm>
+    public static class ListAttachmentForm extends AttachmentForm
     {
-        public ModelAndView getView(final AttachmentForm form, BindException errors) throws Exception
+        private int _listId;
+
+        public int getListId()
         {
+            return _listId;
+        }
+
+        public void setListId(int listId)
+        {
+            _listId = listId;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DownloadAction extends SimpleViewAction<ListAttachmentForm>
+    {
+        public ModelAndView getView(final ListAttachmentForm form, BindException errors) throws Exception
+        {
+            ListDefinitionImpl listDef = (ListDefinitionImpl)ListService.get().getList(getContainer(), form.getListId());
+            if (listDef == null)
+                throw new NotFoundException("List does not exist in this container");
+
+            if (!listDef.hasListItemForEntityId(form.getEntityId(), getUser()))
+                throw new NotFoundException("List does not have an item for the entityid");
+
             getPageConfig().setTemplate(PageConfig.Template.None);
+
             final AttachmentParent parent = new ListItemAttachmentParent(form.getEntityId(), getContainer());
 
             return new HttpView()

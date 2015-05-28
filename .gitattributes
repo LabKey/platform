@@ -1029,7 +1029,6 @@ list/src/org/labkey/list/model/ListTable.java -text
 list/src/org/labkey/list/model/ListWriter.java -text
 list/src/org/labkey/list/model/OntologyListTable.java -text
 list/src/org/labkey/list/model/VarcharListDomainKind.java -text
-list/src/org/labkey/list/view/AttachmentDisplayColumn.java -text
 list/src/org/labkey/list/view/ListDefinitionForm.java -text
 list/src/org/labkey/list/view/ListImportServiceImpl.java -text
 list/src/org/labkey/list/view/ListItemAttachmentParent.java -text

@@ -105,6 +105,11 @@ public class DefaultRequestNotification
         return _request.getVials();
     }
 
+    public SpecimenRequestEvent getEvent()
+    {
+        return _event;
+    }
+
     public @NotNull List<Attachment> getAttachments()
     {
         return AttachmentService.get().getAttachments(_event);

@@ -139,7 +139,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
                 {
                     sb.append("<a href=\"");
                     sb.append(PageFlowUtil.filter(_notification.getBaseServerURI()));
-                    sb.append(att.getDownloadUrl(SpecimenController.DownloadAction.class));
+                    sb.append(att.getDownloadUrl(SpecimenController.DownloadAction.class).addParameter("eventId", _notification.getEvent().getRowId()));
                     sb.append("\">");
                     sb.append(PageFlowUtil.filter(att.getName()));
                     sb.append("</a><br>");

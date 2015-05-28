@@ -440,7 +440,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             {
                 sb.append("<tr><td>");
                 sb.append("<a href=\"");
-                sb.append(PageFlowUtil.filter(a.getDownloadUrl(DownloadAction.class)));
+                sb.append(PageFlowUtil.filter(a.getDownloadUrl(DownloadAction.class).addParameter("issueId", _issue.getIssueId())));
                 sb.append("\" target=\"_blank\"><img src=\"");
                 sb.append(context.getRequest().getContextPath());
                 sb.append(PageFlowUtil.filter(a.getFileIcon()));

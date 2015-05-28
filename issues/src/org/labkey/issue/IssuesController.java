@@ -883,26 +883,50 @@ public class IssuesController extends SpringActionController
         }
     }
 
+    public static class IssueAttachmentForm extends _AttachmentForm
+    {
+        private Integer _issueId;
+
+        public Integer getIssueId()
+        {
+            return _issueId;
+        }
+
+        public void setIssueId(Integer issueId)
+        {
+            _issueId = issueId;
+        }
+    }
+
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class DownloadAction extends SimpleViewAction<_AttachmentForm>
+    public class DownloadAction extends SimpleViewAction<IssueAttachmentForm>
     {
-        public ModelAndView getView(final _AttachmentForm form, BindException errors) throws Exception
+        public ModelAndView getView(final IssueAttachmentForm form, BindException errors) throws Exception
         {
-            if (form.getEntityId() != null && form.getName() != null)
-            {
-                getPageConfig().setTemplate(PageConfig.Template.None);
-                final AttachmentParent parent = new IssueAttachmentParent(getContainer(), form.getEntityId());
+            if (form.getIssueId() == null || form.getEntityId() == null)
+                throw new NotFoundException();
 
-                return new HttpView()
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition(FieldKey.fromParts("issueId"), form.getIssueId());
+            filter.addCondition(FieldKey.fromParts("entityid"), form.getEntityId());
+
+            TableInfo table = IssuesSchema.getInstance().getTableInfoComments();
+            TableSelector ts = new TableSelector(table, filter, null);
+
+            final Issue.Comment comment = ts.getObject(Issue.Comment.class);
+            if (comment == null)
+                throw new NotFoundException("Issue comment not found");
+
+            getPageConfig().setTemplate(PageConfig.Template.None);
+
+            return new HttpView()
+            {
+                protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
                 {
-                    protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
-                    {
-                        AttachmentService.get().download(response, parent, form.getName());
-                    }
-                };
-            }
-            return null;
+                    AttachmentService.get().download(response, comment, form.getName());
+                }
+            };
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -4065,15 +4065,29 @@ public class SpecimenController extends BaseStudyController
     }
 
 
+    public static class SpecimentEventAttachmentForm extends AttachmentForm
+    {
+        private int _eventId;
+
+        public int getEventId()
+        {
+            return _eventId;
+        }
+
+        public void setEventId(int eventId)
+        {
+            _eventId = eventId;
+        }
+    }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class DownloadAction extends SimpleViewAction<AttachmentForm>
+    public class DownloadAction extends SimpleViewAction<SpecimentEventAttachmentForm>
     {
-        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
+        public ModelAndView getView(SpecimentEventAttachmentForm form, BindException errors) throws Exception
         {
-            SpecimenRequestEvent event = new SpecimenRequestEvent();  // TODO: Need to verify that entityId represents a valid SampleRequestEvent
-            event.setContainer(getContainer());
-            event.setEntityId(form.getEntityId());
+            SpecimenRequestEvent event = SpecimenManager.getInstance().getRequestEvent(getContainer(), form.getEventId());
+            if (event == null)
+                throw new NotFoundException("Specimen event not found");
 
             AttachmentService.get().download(getViewContext().getResponse(), event, form.getName());
             return null;
