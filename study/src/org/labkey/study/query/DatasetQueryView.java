@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.QueryViewAction;
@@ -26,6 +27,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
@@ -54,6 +56,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -80,7 +83,10 @@ import org.springframework.validation.BindException;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -598,5 +604,73 @@ public class DatasetQueryView extends StudyQueryView
         {
             _visitRowId = visitRowId;
         }
+    }
+
+
+
+    @Override
+    protected DataRegion createDataRegion()
+    {
+        DataRegion rgn = new DatasetDataRegion();
+        configureDataRegion(rgn);
+        return rgn;
+    }
+
+
+    public static class DatasetDataRegion extends DataRegion
+    {
+        @Override
+        protected void addHeaderMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
+        {
+            super.addHeaderMessage(headerMessage, ctx);
+
+            UserSchema s = getTable().getUserSchema();
+            if (!(s instanceof DataspaceQuerySchema))
+                return;
+            DataspaceQuerySchema dqs = (DataspaceQuerySchema)s;
+            ContainerFilter cf = dqs.getDefaultContainerFilter();
+            if (!(cf instanceof DataspaceContainerFilter))
+                return;
+            DataspaceContainerFilter dcf = (DataspaceContainerFilter)cf;
+            if (!dcf.isSubsetOfStudies())
+                return;
+
+            // DISPLAY the current subset
+            Collection<GUID> ids = dcf.getIds(dqs.getContainer(),ReadPermission.class,null);
+            ArrayList<String> labels = new ArrayList<>(ids.size());
+            for (GUID id : ids)
+            {
+                Container c = ContainerManager.getForId(id);
+                if (null == c)
+                    continue;
+                labels.add(c.getName());
+            }
+            sortLabels(labels);
+
+            StringBuilder msg = new StringBuilder();
+            msg.append("<div><span class=\"labkey-strong\">Selected Studies:</span>&nbsp;");
+            for (String label : labels)
+                msg.append(PageFlowUtil.filter(label)).append(" ");
+            msg.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Edit... (NYI)").href("#"));
+            msg.append("</div>");
+
+            headerMessage.append(msg);
+        }
+    }
+
+    static void sortLabels(List<String> labels)
+    {
+        labels.sort(new Comparator<String>(){
+            @Override
+            public int compare(String o1, String o2)
+            {
+                // Immunespace hack
+                if (o1.startsWith("SDY"))
+                    o1 = o1.substring(3);
+                if (o2.startsWith("SDY"))
+                    o2 = o1.substring(3);
+                return o1.compareTo(o2);
+            }
+        });
     }
 }

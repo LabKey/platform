@@ -44,8 +44,12 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     public DataspaceContainerFilter(User user, List<GUID> containerIds)
     {
         super(user);
-
         _containerIds = containerIds;
+    }
+
+    public boolean isSubsetOfStudies()
+    {
+        return _containerIds != null && !_containerIds.isEmpty();
     }
 
     @Override
