@@ -105,6 +105,7 @@ import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.CreateChildStudyAction;
 import org.labkey.study.controllers.DatasetController;
+import org.labkey.study.controllers.SharedStudyController;
 import org.labkey.study.controllers.ParticipantGroupController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
@@ -240,6 +241,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     protected void init()
     {
         addController("study", StudyController.class);
+        addController("study-shared", SharedStudyController.class);
         addController("study-reports", ReportsController.class);
         addController("study-samples", SpecimenController.class);
         addController("study-samples-api", SpecimenApiController.class);

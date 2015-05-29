@@ -2157,6 +2157,7 @@ study/src/org/labkey/study/controllers/DatasetImportServiceImpl.java -text
 study/src/org/labkey/study/controllers/DatasetServiceImpl.java -text
 study/src/org/labkey/study/controllers/InsertUpdateAction.java -text
 study/src/org/labkey/study/controllers/ParticipantGroupController.java -text
+study/src/org/labkey/study/controllers/SharedStudyController.java -text
 study/src/org/labkey/study/controllers/StudyController.java -text
 study/src/org/labkey/study/controllers/StudyDefinitionController.java -text
 study/src/org/labkey/study/controllers/StudyDesignController.java -text
@@ -2603,6 +2604,7 @@ study/src/org/labkey/study/view/datasetDisplayOrder.jsp -text
 study/src/org/labkey/study/view/datasetInfo.jsp -text
 study/src/org/labkey/study/view/datasetVisibility.jsp -text
 study/src/org/labkey/study/view/datasets.jsp -text
+study/src/org/labkey/study/view/dataspace_studyfilter.jsp -text
 study/src/org/labkey/study/view/demoMode.jsp -text
 study/src/org/labkey/study/view/editSnapshot.jsp -text
 study/src/org/labkey/study/view/editVisit.jsp -text
