@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.AttachmentParent;
@@ -24,7 +25,10 @@ import org.labkey.api.data.Results;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptOutput;
+import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -85,6 +89,8 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      */
     boolean canDelete(User user, Container container);
     boolean canDelete(User user, Container container, List<ValidationError> errors);
+
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container container, @NotNull Class<? extends Permission> perm);
 
     /**
      * Called before the report is saved to allow any additional save tasks by

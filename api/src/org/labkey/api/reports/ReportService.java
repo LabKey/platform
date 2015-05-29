@@ -101,7 +101,6 @@ public class ReportService
         public Report getReport(int reportId);
         public Report getReportByEntityId(Container c, String entityId);
         public ReportIdentifier getReportIdentifier(String reportId);
-        public Report[] getReports(User user);
         public Report[] getReports(User user, Container c);
         public Report[] getReports(User user, Container c, String key);
         public Report[] getReports(User user, Container c, String key, int flagMask, int flagValue);

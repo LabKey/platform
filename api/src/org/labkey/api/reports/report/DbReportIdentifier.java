@@ -18,6 +18,7 @@ package org.labkey.api.reports.report;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.writer.ContainerUser;
 
 /*
@@ -86,9 +87,6 @@ public class DbReportIdentifier extends AbstractReportIdentifier
             return null;
 
         Report report = ReportService.get().getReport(getRowId());
-        if (report != null && ReportUtil.isReportViewable(cu.getContainer(), report))
-            return report;
-
-        return null;
+        return (report != null && report.hasPermission(cu.getUser(), cu.getContainer(), ReadPermission.class)) ? report : null;
     }
 }

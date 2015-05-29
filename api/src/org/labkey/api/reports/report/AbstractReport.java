@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports.report;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.Attachment;
@@ -37,8 +38,12 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.permissions.EditSharedReportPermission;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.ExceptionUtil;
@@ -536,7 +541,12 @@ public abstract class AbstractReport implements Report
      */
     protected boolean isOwner(User user)
     {
-        return isNew() || (getDescriptor().getCreatedBy() != 0 && (getDescriptor().getCreatedBy() == user.getUserId()));
+        return isOwner(user.getUserId());
+    }
+
+    private boolean isOwner(int userId)
+    {
+        return isNew() || (getDescriptor().getCreatedBy() != 0 && (getDescriptor().getCreatedBy() == userId));
     }
 
     /**
@@ -571,5 +581,30 @@ public abstract class AbstractReport implements Report
             else
                 throw new ValidationException("Unable to get a query definition from table or query: " + view.getSettings().getQueryName());
         }
+    }
+
+    @Override
+    public final boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container c, @NotNull Class<? extends Permission> perm)
+    {
+        // only inherited reports can be viewed outside of it's original folder
+        if (!c.getId().equals(getDescriptor().getContainerId()))
+        {
+            if (!ReportUtil.isReportInherited(c, this))
+                return false;
+        }
+
+        if (c.hasPermission(user, perm))
+        {
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(getDescriptor(), false);
+            if (!policy.isEmpty())
+            {
+                return policy.hasPermission(user, perm);
+            }
+            else
+            {
+                return !isPrivate() || isOwner(user.getUserId());
+            }
+        }
+        return false;
     }
 }

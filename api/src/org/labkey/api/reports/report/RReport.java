@@ -520,7 +520,7 @@ public class RReport extends ExternalScriptEngineReport
     {
         if (report != null)
         {
-            if (ReportUtil.canReadReport(report, context.getUser()))
+            if (canReadReport(context.getUser()))
             {
                 // if it's not in this container, check that it was shared
                 if (!context.getContainer().getId().equals(report.getDescriptor().getContainerId()))
@@ -535,6 +535,17 @@ public class RReport extends ExternalScriptEngineReport
         }
 
         return false;
+    }
+
+    /**
+     * Moved from ReportUtil
+     */
+    private boolean canReadReport(User user)
+    {
+        if (getDescriptor().isShared())
+            return true;
+
+        return (getDescriptor().getOwner().equals(user.getUserId()));
     }
 
     private Container getOwningContainer(ViewContext context)

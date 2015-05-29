@@ -341,18 +341,6 @@ public class ReportUtil
         return reports;
     }
 
-    public static boolean canReadReport(Report report, User user)
-    {
-        if (report != null)
-        {
-            if (report.getDescriptor().isShared())
-                return true;
-
-            return (report.getDescriptor().getOwner().equals(user.getUserId()));
-        }
-        return false;
-    }
-
     /**
      * Reports are inherited when they are viewed from a folder different from the folder it was created in.
      * The report must also be either configured as shared from a parent folder or reside in the shared folder.
@@ -370,24 +358,6 @@ public class ReportUtil
             {
                 return !c.getId().equals(report.getDescriptor().getContainerId());
             }
-        }
-        return false;
-    }
-
-    /**
-     * If a report was not created in the specified folder then it must have been
-     * shared to be viewable.
-     */
-    public static boolean isReportViewable(Container c, Report report)
-    {
-        if (c != null && report != null)
-        {
-            if (!c.getId().equals(report.getDescriptor().getContainerId()))
-            {
-                return isReportInherited(c, report);
-            }
-            else
-                return true;
         }
         return false;
     }
@@ -445,13 +415,7 @@ public class ReportUtil
     {
         public boolean accept(Report report, Container c, User user)
         {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor(), false);
-            if (policy.isEmpty())
-            {
-                return c.hasPermission(user, ReadPermission.class);
-            }
-            else
-                return policy.hasPermission(user, ReadPermission.class);
+            return report.hasPermission(user, c, ReadPermission.class);
         }
 
         public ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
