@@ -7696,9 +7696,6 @@ internal/webapp/dataregion/filter/Value.js -text
 internal/webapp/dataregion/panel/Facet.js -text
 internal/webapp/designer/designer2.js -text
 internal/webapp/designer/wand.gif -text
-internal/webapp/dropzone-3.8.4/README.txt -text
-internal/webapp/dropzone-3.8.4/css/basic.css -text
-internal/webapp/dropzone-3.8.4/dropzone.js -text
 internal/webapp/extWidgets/DetailsPanel.js -text
 internal/webapp/extWidgets/ExcelUploadPanel.js -text
 internal/webapp/extWidgets/Ext4DefaultFilterPanel.js -text
