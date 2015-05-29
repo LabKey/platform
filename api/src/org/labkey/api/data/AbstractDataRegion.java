@@ -235,6 +235,12 @@ public abstract class AbstractDataRegion extends DisplayElement
         return buf.toString();
     }
 
+
+    protected void addHeaderMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
+    {
+    }
+
+
     protected void addViewMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
     {
         headerMessage.append("<span class='labkey-strong'>View:</span>&nbsp;");

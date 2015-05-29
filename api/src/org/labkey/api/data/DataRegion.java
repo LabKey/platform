@@ -861,6 +861,8 @@ public class DataRegion extends AbstractDataRegion
         StringBuilder filterMsg = new StringBuilder();
         Map<String, String> messages = new LinkedHashMap<>();
 
+        addHeaderMessage(headerMessage, ctx);
+
         if (errorCreatingResults)
         {
             _showPagination = false;
@@ -934,6 +936,7 @@ public class DataRegion extends AbstractDataRegion
             out.write(" labkey-show-surrounding-border");
 
         if (_aggregateResults != null && !_aggregateResults.isEmpty())
+            out.write(" labkey-has-col-totals");
             out.write(" labkey-has-col-totals");
         if (_fixedWidthColumns)
             out.write(" labkey-fixed-width-columns");
