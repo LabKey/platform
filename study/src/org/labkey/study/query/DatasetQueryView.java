@@ -660,7 +660,7 @@ public class DatasetQueryView extends StudyQueryView
 
     static void sortLabels(List<String> labels)
     {
-        labels.sort(new Comparator<String>(){
+        Collections.sort(labels,new Comparator<String>(){
             @Override
             public int compare(String o1, String o2)
             {
