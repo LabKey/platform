@@ -90,6 +90,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: brittp
@@ -658,17 +660,35 @@ public class DatasetQueryView extends StudyQueryView
         }
     }
 
+
     static void sortLabels(List<String> labels)
     {
+        final Pattern alphaNumPattern = Pattern.compile("(\\D*)(\\d+)?(.*)");
+
         Collections.sort(labels,new Comparator<String>(){
             @Override
             public int compare(String o1, String o2)
             {
-                // Immunespace hack
-                if (o1.startsWith("SDY"))
-                    o1 = o1.substring(3);
-                if (o2.startsWith("SDY"))
-                    o2 = o1.substring(3);
+                Matcher m = alphaNumPattern.matcher(o1);
+                assert m.matches();
+                String prefix1 = m.groupCount()>0 ? m.group(1) : "";
+                String number1 = m.groupCount()>1 ? m.group(2) : "";
+                String suffix1 = m.groupCount()>2 ? m.group(3) : "";
+
+                m = alphaNumPattern.matcher(o2);
+                assert m.matches();
+                String prefix2 = m.groupCount()>0 ? m.group(1) : "";
+                String number2 = m.groupCount()>1 ? m.group(2) : "";
+                String suffix2 = m.groupCount()>2 ? m.group(3) : "";
+
+                if (0 == prefix1.compareTo(prefix2) && StringUtils.isNotEmpty(number1) && StringUtils.isNotEmpty(number2))
+                {
+                    long i1 = Long.parseLong(number1);
+                    long i2 = Long.parseLong(number2);
+                    if (i1 != i2)
+                        return i1 > i2 ? 1 : -1;
+                    return suffix1.compareTo(suffix2);
+                }
                 return o1.compareTo(o2);
             }
         });
