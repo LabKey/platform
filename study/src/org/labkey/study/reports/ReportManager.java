@@ -368,12 +368,10 @@ public class ReportManager implements DatasetManager.DatasetListener
                 }
                 return true;
             }
-            else
-                return c.hasPermission(user, ReadPermission.class);
         }
-        else
-            // explicit permissions
-            return policy.hasPermission(user, ReadPermission.class);
+
+        // fall through
+        return report.hasPermission(user, c, ReadPermission.class);
     }
 
     /**

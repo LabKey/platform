@@ -107,13 +107,13 @@ public class ReportQueryViewFactory
      * false if no permission checking is required.  and throws if
      * user does not have permission.
      */
-    private static boolean mustCheckDatasetPermissions(User user, ReportDescriptor descriptor) throws ServletException
+    private static boolean mustCheckDatasetPermissions(User user, @NotNull Class<? extends Permission> perm, ReportDescriptor descriptor) throws ServletException
     {
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(descriptor, false);
         if (policy.isEmpty())
             return true;    // normal permission checking
 
-        if (!policy.hasPermission(user, ReadPermission.class))
+        if (!policy.hasPermission(user, perm))
             throw new UnauthorizedException();
 
         return false;   // user is OK, don't check permissions
@@ -124,7 +124,7 @@ public class ReportQueryViewFactory
         if (perm != ReadPermission.class)
             throw new IllegalArgumentException("only PERM_READ supported");
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
-        boolean mustCheckUserPermissions = mustCheckDatasetPermissions(context.getUser(), descriptor);
+        boolean mustCheckUserPermissions = mustCheckDatasetPermissions(context.getUser(), perm, descriptor);
 
         if (study != null)
             return StudyQuerySchema.createSchema(study, context.getUser(), mustCheckUserPermissions);

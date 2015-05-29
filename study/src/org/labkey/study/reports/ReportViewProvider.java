@@ -204,7 +204,7 @@ public class ReportViewProvider implements DataViewProvider
                 info.setReadOnly(!r.canEdit(user, c));
 
                 String access = descriptor.getAccess();
-                info.setShared(ReportDescriptor.REPORT_ACCESS_PUBLIC.equals(access));
+                info.setShared(!ReportDescriptor.REPORT_ACCESS_PRIVATE.equals(access));
 
                 // studies support dataset level report permissions
                 if (studyFolder)
