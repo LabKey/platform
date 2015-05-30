@@ -1528,7 +1528,6 @@ table.labkey-main
     vertical-align: top;
 }
 
-
 /* The icon (logo) in the header panel */
 td.labkey-main-icon
 {
@@ -1548,9 +1547,8 @@ td.labkey-main-icon img
 td.labkey-main-title-area
 {
     vertical-align: bottom;
-    padding: 5px;
     width: 100%;
-    padding:10px 0;
+    padding: 10px 0;
 }
 
 .labkey-main-title-area span
@@ -1558,32 +1556,7 @@ td.labkey-main-title-area
     vertical-align: bottom;
 }
 
-.labkey-webpart-menu
-{
-    display: none;
-    position: absolute;
-	top: 5;
-    border-top: none;
-    border-right: 1px solid #aaa;
-    border-bottom: 1px solid #aaa;
-    border-left: 1px solid #aaa;
-    margin: 3px;
-    background-color:#FFFFFF;
-    padding: 5px 10px;
-    z-index:1000;
-
-	box-shadow: 0 2px 4px rgba(0,0,0,.3);
-	-moz-box-shadow: 0 2px 4px rgba(0,0,0,.3);
-	-webkit-box-shadow: 0 2px 4px rgba(0,0,0,.3);
-}
-
-/* The site title */
-#labkey-main-title
-{
-    color: #676767;
-}
-
-a.labkey-main-title
+.labkey-main-title-area a.labkey-main-title
 {
     font-family: arial, helvetica, sans-serif;
     font-size:14pt;
@@ -1592,7 +1565,7 @@ a.labkey-main-title
     text-decoration: none;
 }
 
-.labkey-main-title:hover {
+.labkey-main-title-area .labkey-main-title:hover {
     text-decoration: underline;
 }
 
@@ -1984,10 +1957,7 @@ tr.labkey-wp-header
 .labkey-wp-header th.labkey-wp-title-left, .labkey-wp-header td.labkey-wp-title-left
 {
     font-weight: bold;
-    padding-left: 4px;
-    padding-right: 0;
-    padding-top: 0;
-	padding-bottom: 4px;
+    padding: 0 0 4px 4px;
     text-align: left;
     white-space:nowrap;
     color:#000000;
@@ -2347,6 +2317,23 @@ div.labkey-wiki h1
     border: 1px solid #CCC;
     color: #2020BE;
     font-family: "Bitstream Vera Sans Mono", "Courier New", monospace;
+}
+
+.labkey-webpart-menu {
+    display: none;
+    position: absolute;
+    border-top: none;
+    border-right: 1px solid #aaa;
+    border-bottom: 1px solid #aaa;
+    border-left: 1px solid #aaa;
+    margin: 3px;
+    background-color:#FFFFFF;
+    padding: 5px 10px;
+    z-index:1000;
+
+    box-shadow: 0 2px 4px rgba(0,0,0,.3);
+    -moz-box-shadow: 0 2px 4px rgba(0,0,0,.3);
+    -webkit-box-shadow: 0 2px 4px rgba(0,0,0,.3);
 }
 
 /* for wikis in custom menus */
