@@ -110,7 +110,7 @@
       </td>
       <td class="labkey-main-title-area">
           <span>
-              <a id="labkey-main-title" class="labkey-main-title" href="<%= AppProps.getInstance().getHomePageUrl() %>"><%=h(laf.getShortName())%></a>
+              <a class="labkey-main-title" href="<%=h(laf.getLogoHref())%>"><%=h(laf.getShortName())%></a>
           </span>
       </td>
 
