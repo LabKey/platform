@@ -311,7 +311,7 @@ Ext4.define('File.panel.Browser', {
         // Check for required configurations
         //
         if (!config.fileSystem) {
-            console.error('File.panel.Browser requires a \'fileSystem\' for initialization.');
+            console.error(this.$className, ' requires a \'fileSystem\' for initialization.');
         }
 
         Ext4.QuickTips.init();
@@ -391,7 +391,7 @@ Ext4.define('File.panel.Browser', {
 
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
-        //Ext4.Ajax.timeout = 60000;
+
         File.panel.Browser._toggleActions(this.fileSystem, this.actions, []);
         this.callParent();
 
@@ -651,20 +651,29 @@ Ext4.define('File.panel.Browser', {
         this.isWebDav ? this.configureWebDavActions() : this.configureActions();
     },
 
-    configureActions : function() {
+    /**
+     * Configure all actions according the current pipeline configuration.
+     * @param boolean [clearCache=false] Clear the pipeline configuration cache for the current containerPath.
+     * This should be done any time the configuration is modified.
+     */
+    configureActions : function(clearCache) {
         if (!this.isWebDav) {
             var configure = function(response) {
-                var json = Ext4.JSON.decode(response.responseText);
+                var json = Ext4.decode(response.responseText);
                 if (json.config) {
                     this.initializeActions();
                     this.updateActions();
-                    // First intialize all the actions prepping them to be shown
-
                     // Configure the actions on the toolbar based on whether they should be shown
-                    this.configureTbarActions({tbarActions: json.config.tbarActions, actions: json.config.actions});
+                    this.configureTbarActions({
+                        tbarActions: json.config.tbarActions,
+                        actions: json.config.actions
+                    });
                 }
             };
-            File.panel.Browser._clearPipelineConfiguration(this.containerPath);
+
+            if (clearCache === true) {
+                File.panel.Browser._clearPipelineConfiguration(this.containerPath);
+            }
             File.panel.Browser._getPipelineConfiguration(configure, this.containerPath, this);
         }
     },
@@ -705,7 +714,7 @@ Ext4.define('File.panel.Browser', {
         var buttons = [], i, action;
 
         if (toolbar) {
-            // Remove the current toolbar incase we just customized it.
+            // Remove the current toolbar in case we just customized it.
             this.removeDocked(toolbar);
         }
 
@@ -866,7 +875,7 @@ Ext4.define('File.panel.Browser', {
 
     _onExtraColumns : function(response) {
         var finalColumns = [];
-        var json = Ext4.JSON.decode(response.responseText);
+        var json = Ext4.decode(response.responseText);
 
         // initially populate the finalColumns array with the defaults
         var defaultColumns = this.getDefaultColumns();
@@ -960,16 +969,16 @@ Ext4.define('File.panel.Browser', {
     getItems : function() {
         var items = [this.getGridCfg()];
 
-        if (this.showFolderTree) {
+        if (this.showFolderTree === true) {
             items.push(this.getFolderTreeCfg());
             this.on('folderchange', this.expandPath, this);
         }
 
-        if (this.showUpload) {
+        if (this.showUpload === true) {
             items.push(this.getUploadPanel());
         }
 
-        if (this.showDetails) {
+        if (this.showDetails === true) {
             items.push(this.getDetailPanel());
         }
 
@@ -1975,12 +1984,6 @@ Ext4.define('File.panel.Browser', {
             fileSystem : this.fileSystem,
             style: 'border-bottom: 1px solid #b4b4b4;',
             listeners : {
-                closeUploadPanel : function() {
-                    this.onUpload();
-                    Ext4.each(this.actions.upload.items, function(action){
-                        action.toggle(false);
-                    });
-                },
                 transfercomplete : function(options) {
                     this.reload({
                         callback: function() {
@@ -1995,7 +1998,7 @@ Ext4.define('File.panel.Browser', {
                                     this.onCustomFileProperties(options);
                                 }
                             }, this, {single: true});
-                            this.configureActions();
+                            this.configureActions(true);
                         },
                         scope: this
                     });
@@ -2006,6 +2009,22 @@ Ext4.define('File.panel.Browser', {
                         up.changeWorkingDirectory(this.getFolderOffset(), store.tree.root, this.getCurrentDirectory());
                     },
                     single: true
+                },
+                show : function() {
+                    Ext4.defer(function() {
+                        var btn = this.actions.upload.items[0];
+                        if (!btn.pressed) {
+                            btn.toggle(true);
+                        }
+                    }, 100, this);
+                },
+                hide : function() {
+                    Ext4.defer(function() {
+                        var btn = this.actions.upload.items[0];
+                        if (btn.pressed) {
+                            btn.toggle(false);
+                        }
+                    }, 100, this);
                 },
                 scope : this
             }
@@ -2220,10 +2239,10 @@ Ext4.define('File.panel.Browser', {
                                             this.clearGridSelection();
 
                                         }, this, {single: true});
-                                        this.configureActions();
+                                        this.configureActions(true);
 
                                         // Delete is a bit of a special case -- we want to reset the store
-                                        // completly so there are no longer any cached records
+                                        // completely so there are no longer any cached records
 
                                         var grid = this.getGrid();
                                         if (grid) {
@@ -2431,7 +2450,7 @@ Ext4.define('File.panel.Browser', {
                             this.refreshTreePath(dest);
                         }
                     }, this, {single: true});
-                    this.configureActions();
+                    this.configureActions(true);
                 },
                 failure: function(response) {
                     var extraErrorInfo = response.errors && response.errors.length ? response.errors[0] : null;
@@ -2606,31 +2625,7 @@ Ext4.define('File.panel.Browser', {
 
     onUpload : function() {
         var up = this.getUploadPanel();
-        up.isVisible() ? up.hide() : up.show();
-    },
-
-    getAdminPanelCfg : function(pipelineFileProperties) {
-        return {
-            xtype : 'fileadmin',
-            width : 750,
-            height: 562,
-            plain : true,
-            border: false,
-            pipelineFileProperties: pipelineFileProperties.config,
-            fileProperties : pipelineFileProperties.fileProperties,
-            isPipelineRoot : this.isPipelineRoot,
-            containerPath : this.containerPath,
-            listeners: {
-                success: function(gridUpdated) {
-                    this.configureActions();
-                    if (gridUpdated) {
-                        this.initGridColumns();
-                    }
-                },
-                close: function() { this.adminWindow.close(); },
-                scope: this
-            }
-        };
+        up.setVisible(!up.isVisible());
     },
 
     showAdminWindow : function() {
@@ -2640,15 +2635,58 @@ Ext4.define('File.panel.Browser', {
             }
             else {
                 File.panel.Browser._getPipelineConfiguration(function(response) {
-                    var json = Ext4.JSON.decode(response.responseText);
+                    var pipeConfig = Ext4.decode(response.responseText);
                     this.adminWindow = Ext4.create('Ext.window.Window', {
                         cls: 'data-window',
                         title: 'Manage File Browser Configuration',
                         closeAction: 'destroy',
                         layout: 'fit',
                         modal: true,
-                        items: [this.getAdminPanelCfg(json)]
-                    }).show();
+                        autoShow: true,
+                        items: [{
+                            xtype : 'fileadmin',
+                            width : 750,
+                            height: 562,
+                            plain : true,
+                            border: false,
+                            pipelineFileProperties: pipeConfig.config,
+                            fileProperties : pipeConfig.fileProperties,
+                            isPipelineRoot : this.isPipelineRoot,
+                            containerPath : this.containerPath,
+                            listeners: {
+                                success: function(fileAdmin, updates) {
+
+                                    this.configureActions(true);
+
+                                    if (updates.gridChanged) {
+                                        this.initGridColumns();
+                                    }
+
+                                    if (updates.expandUploadChanged) {
+                                        // probably a better way, for now just set it here
+                                        this.expandUpload = !this.expandUpload;
+
+                                        if (this.showUpload === true) {
+                                            // only update the panel if necessary
+                                            var upload = this.getUploadPanel(),
+                                                upVisible = upload.isVisible();
+
+                                            if (this.expandUpload && !upVisible) {
+                                                upload.show();
+                                            }
+                                            else if (!this.expandUpload && upVisible) {
+                                                upload.hide();
+                                            }
+                                        }
+                                    }
+
+                                    this.adminWindow.close();
+                                },
+                                cancel: function() { this.adminWindow.close(); },
+                                scope: this
+                            }
+                        }]
+                    });
                 }, this.containerPath, this);
             }
         }
@@ -2834,7 +2872,7 @@ Ext4.define('File.panel.Browser', {
             ];
         }
 
-        this.contextMenu = Ext4.create('File.data.panel.ContextMenu', {
+        this.contextMenu = Ext4.create('File.panel.ContextMenu', {
             items: items
         });
 

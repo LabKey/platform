@@ -29,7 +29,7 @@ Ext4.define('File.panel.Upload', {
 
         this.callParent([config]);
 
-        this.addEvents('cwd', 'transferstarted', 'transfercomplete', 'closeUploadPanel');
+        this.addEvents('cwd', 'transferstarted', 'transfercomplete');
     },
 
     initComponent : function() {
@@ -406,7 +406,7 @@ Ext4.define('File.panel.Upload', {
             scope: this,
             border : false,
             handler: function() {
-                this.fireEvent('closeUploadPanel');
+                this.hide();
             }
         });
 

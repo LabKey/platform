@@ -11,10 +11,50 @@
 Ext4.define('File.panel.Toolbar', {
     extend : 'Ext.panel.Panel',
 
-    constructor : function(config){
+    title: 'Toolbar and Grid Settings',
+
+    border: false,
+
+    padding: 10,
+
+    autoScroll: true,
+
+    useCustomProps: false,
+
+    constructor : function(config) {
+
+        //
+        // Define Models
+        //
+        if (!Ext4.ModelManager.isRegistered('columnsModel')) {
+            Ext4.define('columnsModel', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    { name: 'hidden', type: 'boolean' },
+                    { name: 'sortable', type: 'boolean' },
+                    { name: 'sortDisabled', type: 'boolean' },
+                    { name: 'text' },
+                    { name: 'id', type: 'int' }
+                ]
+            });
+        }
+
+        if (!Ext4.ModelManager.isRegistered('optionsModel')) {
+            Ext4.define('optionsModel', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    { name: 'shown', type: 'boolean' },
+                    { name: 'hideText', type: 'boolean' },
+                    { name: 'hideIcon', type: 'boolean' },
+                    { name: 'icon'},
+                    { name: 'text'}
+                ]
+            });
+        }
+
         Ext4.QuickTips.init();
+
         Ext4.applyIf(config, {
-            title : 'Toolbar and Grid Settings',
             tbarActions : [
                 {id : 'folderTreeToggle', hideText : true, hideIcon : false},
                 {id : 'parentFolder', hideText : true, hideIcon : false},
@@ -47,42 +87,10 @@ Ext4.define('File.panel.Toolbar', {
             }
         });
 
-        Ext4.apply(config, {
-            border : false,
-            padding : '10px',
-            autoScroll : true
-        });
-
         this.callParent([config]);
     },
 
     initComponent : function() {
-
-        if (!Ext4.ModelManager.isRegistered('columnsModel')) {
-            Ext4.define('columnsModel', {
-                extend : 'Ext.data.Model',
-                fields : [
-                    {name : 'hidden', type : 'boolean'},
-                    {name : 'sortable', type : 'boolean'},
-                    {name : 'sortDisabled', type : 'boolean'},
-                    {name : 'text', type : 'string'},
-                    {name : 'id', type : 'int'}
-                ]
-            });
-        }
-
-        if (!Ext4.ModelManager.isRegistered('optionsModel')) {
-            Ext4.define('optionsModel', {
-                extend : 'Ext.data.Model',
-                fields : [
-                    {name : 'shown', type : 'boolean'},
-                    {name : 'hideText', type : 'boolean'},
-                    {name : 'hideIcon', type : 'boolean'},
-                    {name : 'icon', type : 'string'},
-                    {name : 'text', type : 'string'}
-                ]
-            });
-        }
 
         var baseData = {
             auditLog         : {icon : 'audit_log.png',   text : 'Audit Log', used : false},
@@ -112,30 +120,26 @@ Ext4.define('File.panel.Toolbar', {
             processedData.push(tbarAction);
         }
 
-        for (i in baseData) {
-            if (baseData.hasOwnProperty(i)) {
-                if(baseData[i].used != true && baseData[i].used != null){
-                    baseData[i].hideIcon = false;
-                    baseData[i].hideText = false;
-                    baseData[i].shown = false;
-                    baseData[i].id = i;
-                    processedData.push(baseData[i]);
-                }
+        Ext4.iterate(baseData, function(id, data) {
+            if (data.used != true && data.used != null) {
+                data.hideIcon = false;
+                data.hideText = false;
+                data.shown = false;
+                data.id = id;
+                processedData.push(data);
             }
-        }
+        });
 
         this.optionsStore = Ext4.create('Ext.data.Store', {
-             model : 'optionsModel',
-             data : processedData
+             model: 'optionsModel',
+             data: processedData
         });
 
         var columnData = [];
         var baseColumnNames = ['Row Checker', 'File Icon', 'Name', 'Last Modified', 'Size', 'Created By', 'Description',
                 'Usages', 'Download Link', 'File Extension'];
-        if (this.useCustomProps)
-        {
-            for (var i = 0; i < this.fileProperties.length; i++)
-            {
+        if (this.useCustomProps) {
+            for (var i = 0; i < this.fileProperties.length; i++) {
                 if (this.fileProperties[i].label)
                     baseColumnNames.push(this.fileProperties[i].label);
                 else
@@ -175,11 +179,6 @@ Ext4.define('File.panel.Toolbar', {
                 });
             }
         }
-
-        this.columnsStore = Ext4.create('Ext.data.Store', {
-            model : 'columnsModel',
-            data : columnData
-        });
 
         var optionsPanel = {
             xtype : 'grid',
@@ -267,64 +266,84 @@ Ext4.define('File.panel.Toolbar', {
             ]
         };
 
-        var gridSettingsPanel = {
-            xtype : 'grid',
-            id : 'gridSettingsPanel',
-            width : 700,
-            maxHeight : 250,
-            store : this.columnsStore,
+        this.items = [{
+            xtype: 'label',
+            tpl: new Ext4.XTemplate(
+                '<span class="labkey-strong">Configure Toolbar Options</span>',
+                '<p>',
+                    'Toolbar buttons are in display order, from top to bottom. ',
+                    'You can adjust their position by clicking and dragging them, ',
+                    'and can set their visibility by toggling the checkboxes in the appropriate fields.',
+                '</p>'
+            ),
+            data: {}
+        }, optionsPanel, {
+            xtype: 'label',
+            tpl: new Ext4.XTemplate(
+                '<span class="labkey-strong">Configure Grid Column Settings</span>',
+                '<p>',
+                    'Grid columns are in display order from top to bottom, but ',
+                    'hidden columns do not appear in the grid. The columns can be reorganized ',
+                    'by clicking and dragging their respective rows, and can be hidden by checking ',
+                    'the appropriate box. You may also set whether or not the column is sortable.',
+                '</p>'
+            ),
+            data: {}
+        },{
+            xtype: 'grid',
+            itemId: 'columnsGrid',
+            width: 700,
+            maxHeight: 250,
+            store: Ext4.create('Ext.data.Store', {
+                model: 'columnsModel',
+                data: columnData
+            }),
             viewConfig: {
                 plugins: {
                     ptype: 'gridviewdragdrop',
                     dragText: 'Drag and drop to reorganize'
                 }
             },
-            columns :  [
-                {header : 'Hidden', dataIndex : 'hidden', xtype : 'checkcolumn', flex : 1},
-                {header : 'Sortable', dataIndex : 'sortable', xtype : 'checkcolumn', flex : 1, renderer : function(value, meta, rec){
-                    return (new Ext4.grid.column.CheckColumn({disabled : rec.data.sortDisabled})).renderer(value, meta);
-                }, scope : this},
-                {header : 'Text', dataIndex : 'text', flex : 1}
+            columns:  [
+                { header: 'Hidden', dataIndex: 'hidden', xtype: 'checkcolumn', flex: 1 },
+                {
+                    xtype : 'checkcolumn',
+                    header: 'Sortable',
+                    dataIndex: 'sortable',
+                    flex: 1,
+                    renderer : function(value, meta, rec) {
+                        var checkColumn = new Ext4.grid.column.CheckColumn({
+                            disabled: rec.get('sortDisabled') === true
+                        });
+                        return checkColumn.renderer(value, meta);
+                    },
+                    scope: this
+                },
+                { header: 'Text', dataIndex: 'text', flex: 1 }
             ]
-        };
-
-        var optionsText = {
-            xtype : 'label',
-            html: '<span class="labkey-strong">Configure Toolbar Options</span>' +
-                    '<p>Toolbar buttons are in display order, from top to bottom. ' +
-                    'You can adjust their position by clicking and dragging them, and can set their visibility by toggling '+
-                    'the checkboxes in the appropriate fields.</p>'
-        };
-
-        var gridColumnsText = {
-            xtype : 'label',
-            html: '<span class="labkey-strong">Configure Grid Column Settings</span>' +
-                    '<p>Grid columns are in display order from top to bottom, but hidden columns do not appear in the grid. ' +
-                    'The columns can be reorganized by clicking and dragging their respective rows, and can be hidden by checking ' +
-                    'the appropriate box.  You may also set whether or not the column is sortable.</p>'
-        };
-
-        this.items = [optionsText, optionsPanel, gridColumnsText, gridSettingsPanel];
+        }];
 
         this.callParent();
     },
 
-    getGridConfigs : function(){
-        var item;
-        var gridConfigsRet = {};
-        gridConfigsRet.columns = [this.gridConfigs.columns[0]];
-        gridConfigsRet.importDataEnabled = this.gridConfigs.importDataEnabled;
-        for(var i = 0; i < this.columnsStore.getCount(); i++){
-            item = this.columnsStore.getAt(i).data;
-            var gridConfigsRetcol = {
-                id : item.id,
-                hidden : item.hidden,
-                sortable : item.sortable,
-                width : this.gridConfigs.columns[i+1] ? this.gridConfigs.columns[i+1].width : 80
+    getGridConfigs : function() {
+        var columnsGrid = this.getComponent('columnsGrid'),
+            gridConfigs = {
+                columns: [this.gridConfigs.columns[0]], // TODO: This should be removed or made more clear
+                importDataEnabled: this.gridConfigs.importDataEnabled
             };
-            gridConfigsRet.columns.push(gridConfigsRetcol);
-        }
-        return gridConfigsRet;
+
+        Ext4.each(columnsGrid.getStore().getRange(), function(item, i) {
+            gridConfigs.columns.push({
+                id: item.get('id'),
+                hidden: item.get('hidden'),
+                sortable: item.get('sortable'),
+                // TODO: Setting ourselves up for failure with these i+1's
+                width: this.gridConfigs.columns[i+1] ? this.gridConfigs.columns[i+1].width : 80
+            });
+        }, this);
+
+        return gridConfigs;
     },
 
     gridConfigsChanged : function()
@@ -334,34 +353,27 @@ Ext4.define('File.panel.Toolbar', {
         return true;
     },
 
-    getTbarActions : function()
-    {
-        var item;
-        var tBarRet = [];
-        var position = 0;
-        for(var i = 0; i < this.optionsStore.getCount(); i++)
-        {
-            item = this.optionsStore.getAt(i).data;
-            if(item.id === 'customize')
-            {
-                item.shown = true;
+    getActions : function() {
+        var actions = [];
+
+        Ext4.each(this.optionsStore.getRange(), function(option, idx) {
+            if (option.get('id') === 'customize') {
+                options.set('shown', true);
             }
 
-            tBarRet[position] = {
-                position : position,
-                id : item.id,
-                hideIcon : !item.shown || item.hideIcon,
-                hideText : !item.shown || item.hideText
-            };
-            position++;
-        }
+            actions.push({
+                id: option.get('id'),
+                position: idx,
+                hideIcon: !option.get('shown') || option.get('hideIcon'),
+                hideText: !option.get('shown') || option.get('hideText')
+            });
+        });
 
-        return tBarRet;
+        return actions;
     },
 
-    tbarChanged : function()
-    {
-        return (this.optionsStore.getUpdatedRecords().length > 0);
+    tbarChanged : function() {
+        return this.optionsStore.getUpdatedRecords().length > 0;
     }
 });
 
