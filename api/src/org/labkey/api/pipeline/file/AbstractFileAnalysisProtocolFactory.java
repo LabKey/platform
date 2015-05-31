@@ -228,7 +228,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
 
     protected class FileDefaultsReader extends DefaultsReader
     {
-        private File _fileDefaults;
+        private final File _fileDefaults;
 
         public FileDefaultsReader(File fileDefaults)
         {

@@ -72,7 +72,7 @@ import java.util.regex.Pattern;
 public class TabLoader extends DataLoader
 {
     public static final FileType TSV_FILE_TYPE = new TabFileType(Arrays.asList(".tsv", ".txt"), ".tsv");
-    public static final FileType CSV_FILE_TYPE = new TabFileType(Arrays.asList(".csv"), ".csv");
+    public static final FileType CSV_FILE_TYPE = new TabFileType(Collections.singletonList(".csv"), ".csv");
 
     private static final Logger _log = Logger.getLogger(TabLoader.class);
 
@@ -272,7 +272,7 @@ public class TabLoader extends DataLoader
         _readerFactory = factory;
 
         if (null != hasColumnHeaders)
-            setHasColumnHeaders(hasColumnHeaders.booleanValue());
+            setHasColumnHeaders(hasColumnHeaders);
     }
 
 
@@ -448,7 +448,7 @@ public class TabLoader extends DataLoader
                 }
 
                 field = buf.substring(start + 1, end);
-                if (hasQuotes && -1 != field.indexOf(_strQuoteQuote))
+                if (hasQuotes && field.contains(_strQuoteQuote))
                     field = _replaceDoubleQuotes.matcher(field).replaceAll("\"");
 
                 // eat final "
