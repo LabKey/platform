@@ -358,7 +358,7 @@ Ext4.define('File.panel.Toolbar', {
 
         Ext4.each(this.optionsStore.getRange(), function(option, idx) {
             if (option.get('id') === 'customize') {
-                options.set('shown', true);
+                option.set('shown', true);
             }
 
             actions.push({
