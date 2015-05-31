@@ -19,7 +19,7 @@ package org.labkey.experiment.controllers.exp;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.reader.UTF8Reader;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -71,7 +71,7 @@ public class ExperimentRunGraphView extends WebPartView
             {
                 out.println("<map name=\"graphmap\">");
 
-                try (Reader reader = new UTF8Reader(files.getMapFile()))
+                try (Reader reader = Readers.getReader(files.getMapFile()))
                 {
                     IOUtils.copy(reader, out);
                 }
