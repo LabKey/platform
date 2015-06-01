@@ -52,47 +52,48 @@ import java.util.List;
 public class AttachmentService
 {
     public static final String ATTACHMENT_AUDIT_EVENT = "AttachmentAuditEvent";
+
     private static Service _serviceImpl = null;
 
     public interface Service
     {
-        public void download(HttpServletResponse response, AttachmentParent parent, String name) throws ServletException, IOException;
+        void download(HttpServletResponse response, AttachmentParent parent, String name) throws ServletException, IOException;
 
         // Use the void-returning methods addAttachments and deleteAttachments instead
         @Deprecated
-        public HttpView add(AttachmentParent parent, List<AttachmentFile> files, User auditUser);
+        HttpView add(AttachmentParent parent, List<AttachmentFile> files, User auditUser);
         @Deprecated
-        public HttpView delete(AttachmentParent parent, String name, User auditUser) throws SQLException;
+        HttpView delete(AttachmentParent parent, String name, User auditUser) throws SQLException;
 
-        public HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors);
-        public HttpView getHistoryView(ViewContext context, AttachmentParent parent);
-        public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
+        HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors);
+        HttpView getHistoryView(ViewContext context, AttachmentParent parent);
+        HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
 
-        public void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
-        public void deleteAttachments(AttachmentParent... parent);
-        public void deleteAttachments(Collection<AttachmentParent> parents);
+        void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
+        void deleteAttachments(AttachmentParent parent);
+        void deleteAttachments(Collection<AttachmentParent> parents);
 
         /**
          * @param auditUser set to null to skip audit
          */
-        public void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser);
-        public void renameAttachment(AttachmentParent parent, String oldName, String newName, User auditUser) throws IOException;
-        public void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException;
+        void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser);
+        void renameAttachment(AttachmentParent parent, String oldName, String newName, User auditUser) throws IOException;
+        void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException;
 
-        public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
+        void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
 
-        public @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
+        @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
         // Returns an unmodifiable list of attachments for this parent
-        public @NotNull List<Attachment> getAttachments(AttachmentParent parent);
-        public List<Pair<String, String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince);
+        @NotNull List<Attachment> getAttachments(AttachmentParent parent);
+        List<Pair<String, String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince);
 
-        public WebdavResource getAttachmentResource(Path path, AttachmentParent parent);
-        public WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat);
-        public @Nullable Attachment getAttachment(AttachmentParent parent, String name);
-        public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
-        public @NotNull InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException;
+        WebdavResource getAttachmentResource(Path path, AttachmentParent parent);
+        WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat);
+        @Nullable Attachment getAttachment(AttachmentParent parent, String name);
+        void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
+        @NotNull InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException;
 
-        public void addAuditEvent(User user, AttachmentParent parent, String filename, String comment);
+        void addAuditEvent(User user, AttachmentParent parent, String filename, String comment);
     }
 
     public static void register(Service serviceImpl)
