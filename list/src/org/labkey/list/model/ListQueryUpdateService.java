@@ -753,14 +753,4 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return _att;
     }
 
-    @Override
-    protected boolean isFileLinkColumn(@NotNull ColumnInfo dbColumnInfo)
-    {
-        PropertyDescriptor pd = null;
-        DomainProperty dp = _list.getDomain().getPropertyByURI(dbColumnInfo.getPropertyURI());
-        if (dp != null)
-            pd = dp.getPropertyDescriptor();
-
-        return pd != null && pd.getPropertyType() == PropertyType.FILE_LINK;
-    }
 }

@@ -19,9 +19,10 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 
 /**
-* User: matthewb
-* Date: Jan 3, 2011
-* Time: 5:23:15 PM
+ * User: matthewb
+ * Date: Jan 3, 2011
+ *
+ * Used in query parameter parsing.
 */
 public enum ParameterType
 {

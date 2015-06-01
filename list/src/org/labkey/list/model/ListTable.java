@@ -22,10 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.StatementUtils;
@@ -39,6 +36,7 @@ import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.etl.ValidatorIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
@@ -60,7 +58,6 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.list.controllers.ListController;
-import org.labkey.api.data.AttachmentDisplayColumn;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -208,10 +205,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     if (null != pd)
                     {
                         col.setName(pd.getName());
-                        col.setLabel(pd.getLabel());
-
-                        if (null != pd.getLookupQuery())
-                            col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+                        PropertyColumn.copyAttributes(schema.getUser(), col, pd, schema.getContainer(), FieldKey.fromParts("EntityId"));
 
                         if (pd.isMvEnabled())
                         {
@@ -242,34 +236,14 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                             col.setMvColumnName(FieldKey.fromParts(col.getName() + MvColumn.MV_INDICATOR_SUFFIX));
                         }
 
-                        if (pd.getPropertyType() == PropertyType.MULTI_LINE)
-                        {
-                            col.setDisplayColumnFactory(new DisplayColumnFactory() {
-                                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                                {
-                                    DataColumn dc = new DataColumn(colInfo);
-                                    dc.setPreserveNewlines(true);
-                                    return dc;
-                                }
-                            });
-                        }
-                        else if (pd.getPropertyType() == PropertyType.ATTACHMENT)
+                        if (pd.getPropertyType() == PropertyType.ATTACHMENT)
                         {
                             col.setURL(StringExpressionFactory.createURL(
-                                    new ActionURL(ListController.DownloadAction.class, getContainer())
-                                    .addParameter("listId", listDef.getListId())
-                                    .addParameter("entityId", "${EntityId}")
-                                    .addParameter("name", "${" + col.getName() + "}")
-                            ));
-                            col.setDisplayColumnFactory(new DisplayColumnFactory()
-                            {
-                                @Override
-                                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                                {
-                                    return new AttachmentDisplayColumn(colInfo);
-                                }
-                            });
-                            col.setInputType("file");
+                                            new ActionURL(ListController.DownloadAction.class, schema.getContainer())
+                                                    .addParameter("listId", listDef.getListId())
+                                                    .addParameter("entityId", "${EntityId}")
+                                                    .addParameter("name", "${" + col.getName() + "}"))
+                            );
                         }
                     }
                 }

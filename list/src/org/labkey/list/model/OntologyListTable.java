@@ -138,16 +138,6 @@ import java.util.Set;
                 MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, listDef.getContainer(), _userSchema.getUser());
             }
 
-            // UNDONE: Move AttachmentDisplayColumn to API and attach in PropertyColumn.copyAttributes()
-            if (property.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
-            {
-                column.setDisplayColumnFactory(new DisplayColumnFactory() {
-                    public DisplayColumn createRenderer(final ColumnInfo colInfo)
-                    {
-                        return new AttachmentDisplayColumn(colInfo);
-                    }
-                });
-            }
         }
 
         boolean auto = (null == listDef.getTitleColumn());

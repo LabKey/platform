@@ -364,10 +364,6 @@ public class ListWriter
             else
             {
                 PropertyDescriptor propertyDescriptor =_properties.get(columnName).getPropertyDescriptor();
-                PropertyType propType = propertyDescriptor.getPropertyType();
-
-                if (propType == PropertyType.ATTACHMENT)
-                    columnXml.setDatatype(propType.getXmlName());
 
                 // Write URL, if exists, from property descriptor
                 if (null != propertyDescriptor.getURL())
