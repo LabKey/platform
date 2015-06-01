@@ -610,7 +610,7 @@ LABKEY.Utils = new function()
          * takes any property value pair and places them on the anchor.
          * @param {Object} config a configuration object that models html anchor properties:
          * @param {String} config.href (required if config.onClick not specified) the reference the anchor will use.
-         * @param {String} config.onClick (requried if config.href not specified) script called when the onClick event is fired by
+         * @param {String} config.onClick (required if config.href not specified) script called when the onClick event is fired by
          * the anchor.
          * @param {String} config.text text that is rendered inside the anchor element.
          */
@@ -685,7 +685,7 @@ LABKEY.Utils = new function()
 
 
         /**
-         * Apply properites from b, c, ... to a.  Properties are not overwritten.
+         * Apply properties from b, c, ... to a.  Properties are not overwritten.
          *
          * The first object is modified.
          */
@@ -698,7 +698,7 @@ LABKEY.Utils = new function()
         },
 
         onError : function(error){
-            console.warn('onError: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implemntation');
+            console.warn('onError: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implementation');
         },
 
         /**
