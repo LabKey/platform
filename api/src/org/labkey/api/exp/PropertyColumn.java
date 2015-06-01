@@ -65,7 +65,6 @@ public class PropertyColumn extends LookupColumn
         _container = container;
         
         copyAttributes(user, this, pd, _container, lsidColumn.getFieldKey());
-        setSqlTypeName(getPropertySqlType(pd,OntologyManager.getSqlDialect()));
     }
 
 
@@ -97,19 +96,8 @@ public class PropertyColumn extends LookupColumn
         to.setDescription(description);
         to.setLabel(pd.getLabel() == null ? ColumnInfo.labelFromName(pd.getName()) : pd.getLabel());
 
-        // UNDONE: Move AttachmentDisplayColumn to API and wire it up here.
-        if (pd.getPropertyType() == PropertyType.MULTI_LINE)
-        {
-            to.setDisplayColumnFactory(new DisplayColumnFactory() {
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    DataColumn dc = new DataColumn(colInfo);
-                    dc.setPreserveNewlines(true);
-                    return dc;
-                }
-            });
-        }
-        else if (pd.getPropertyType() == PropertyType.FILE_LINK)
+        // TODO: Move FILE_LINK display column factory to ColumnInfo.DEFAULT_FACTORY
+        if (pd.getPropertyType() == PropertyType.FILE_LINK)
         {
             if ((schemaKey != null && queryName != null && pkFieldKey != null) || lsidColumnFieldKey != null)
             {
@@ -126,14 +114,6 @@ public class PropertyColumn extends LookupColumn
 
         to.setDefaultValueType(pd.getDefaultValueTypeEnum());
         to.setConditionalFormats(PropertyService.get().getConditionalFormats(pd));
-
-        to.setPropertyURI(pd.getPropertyURI());
-        to.setConceptURI(pd.getConceptURI());
-
-        if (PropertyType.STRING.equals(pd.getPropertyType()))
-            to.setInputType("text");
-        else if (PropertyType.MULTI_LINE.equals(pd.getPropertyType()))
-            to.setInputType("textarea");
     }
 
 
@@ -296,20 +276,6 @@ public class PropertyColumn extends LookupColumn
         if (_container == null)
             return super.getTableAlias(baseAlias);
         return super.getTableAlias(baseAlias) + "_C";
-    }
-
-    public String getInputType()
-    {
-        if (_pd.getPropertyType() == PropertyType.FILE_LINK || _pd.getPropertyType() == PropertyType.ATTACHMENT)
-            return "file";
-        else
-            return super.getInputType();
-    }
-
-    @Override
-    public StringExpression getURL()
-    {
-        return super.getURL();
     }
 
     @Override

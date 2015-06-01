@@ -97,6 +97,10 @@ public class TableInfoWriter
         if (conceptURI != null)
             columnXml.setConceptURI(conceptURI);
 
+        String rangeURI = getRangeURI(column);
+        if (rangeURI != null)
+            columnXml.setRangeURI(rangeURI);
+
         if (!column.isNullable())
             columnXml.setNullable(false);
 
@@ -215,5 +219,10 @@ public class TableInfoWriter
             return propertyURI;
 
         return null;
+    }
+
+    protected String getRangeURI(ColumnInfo column)
+    {
+        return column.getRangeURI();
     }
 }

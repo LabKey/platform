@@ -92,7 +92,7 @@ public class JsonWriter
 
         if (includeDomainFormat)
         {
-            PropertyType propertyType = PropertyType.getFromClass(dc.getValueClass());
+            PropertyType propertyType = cinfo != null ? cinfo.getPropertyType() : PropertyType.getFromClass(dc.getValueClass());
             if (propertyType != null)
             {
                 props.put("typeName", propertyType.getXmlName());
@@ -153,6 +153,7 @@ public class JsonWriter
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
 
         props.put("conceptURI", cinfo == null ? null : cinfo.getConceptURI());
+        props.put("rangeURI", cinfo == null ? null : cinfo.getRangeURI());
 
         ColumnInfo displayField = dc.getDisplayColumnInfo();
         if (displayField != null && displayField != cinfo)

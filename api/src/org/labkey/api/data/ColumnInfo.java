@@ -31,6 +31,7 @@ import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.ForeignKeyResolver;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -76,7 +77,17 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             {
                 return new UserIdRenderer(colInfo);
             }
+            // TODO: PropertyType.FILE_LINK
+            else if (colInfo.getPropertyType() == PropertyType.ATTACHMENT)
+            {
+                return new AttachmentDisplayColumn(colInfo);
+            }
+
+
             DataColumn dataColumn = new DataColumn(colInfo);
+            if (colInfo.getPropertyType() == PropertyType.MULTI_LINE)
+                dataColumn.setPreserveNewlines(true);
+
             if (colInfo.getFk() instanceof MultiValuedForeignKey)
             {
                 return new MultiValuedDisplayColumn(dataColumn, true);
@@ -136,8 +147,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     protected String metaDataName = null;
     protected String selectName = null;
     protected ColumnInfo displayField;
-    private String propertyURI = null;
-    private String conceptURI = null;
     private List<FieldKey> sortFieldKeys = null;
     private Map<FieldKey, ColumnInfo> cachedSortColumns = new HashMap<>();
     private List<ConditionalFormat> conditionalFormats = new ArrayList<>();
@@ -319,6 +328,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setScale(col.getScale());
         this.sqlTypeName = col.sqlTypeName;
         this.jdbcType = col.jdbcType;
+        this.propertyType = col.propertyType;
 
         // We intentionally do not copy "isHidden", since it is usually not applicable.
         // URL copy/rewrite is handled separately
@@ -366,6 +376,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setSortFieldKeys(col.getSortFieldKeys());
         if (col.getConceptURI() != null)
             setConceptURI(col.getConceptURI());
+        if (col.getRangeURI() != null)
+            setRangeURI(col.getRangeURI());
         setIsUnselectable(col.isUnselectable());
         setDefaultValueType(col.getDefaultValueType());
         setImportAliasesSet(col.getImportAliasSet());
@@ -488,15 +500,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         this.propertyURI = propertyURI;
     }
 
-    public String getConceptURI()
-    {
-        return conceptURI;
-    }
-
     public void setConceptURI(String conceptURI)
     {
         checkLocked();
         this.conceptURI = conceptURI;
+    }
+
+    public void setRangeURI(String rangeURI)
+    {
+        checkLocked();
+        this.rangeURI = rangeURI;
     }
 
     public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
@@ -794,7 +807,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if (null == inputType)
         {
-            if (isStringType() && scale > 300) // lsidtype is 255 characters
+            if (getPropertyType() != null && getPropertyType().getInputType() != null)
+                inputType = getPropertyType().getInputType();
+            else if (isStringType() && scale > 300) // lsidtype is 255 characters
                 inputType = "textarea";
             else if ("image".equalsIgnoreCase(getSqlTypeName()))
                 inputType = "file";
@@ -940,11 +955,35 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public void loadFromXml(ColumnType xmlCol, boolean merge)
     {
         checkLocked();
+
+        if (xmlCol.isSetConceptURI())
+            conceptURI = xmlCol.getConceptURI();
+        if (xmlCol.isSetRangeURI())
+            rangeURI = xmlCol.getRangeURI();
+
         //Following things would exist from meta data...
         if (! merge)
         {
-            sqlTypeName = xmlCol.getDatatype();
+            PropertyType pt = null;
+            if (conceptURI != null || rangeURI != null)
+                pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
+
+            // Initialize properties based on rangeURI PropertyType
+            if (pt != null)
+            {
+                propertyType = pt;
+                jdbcType = propertyType.getJdbcType();
+                sqlTypeName = getSqlDialect().sqlTypeNameFromJdbcType(jdbcType);
+                inputType = propertyType.getInputType();
+                scale = propertyType.getScale();
+            }
+
+            if (xmlCol.isSetDatatype())
+            {
+                sqlTypeName = xmlCol.getDatatype();
+            }
         }
+
         if ((!merge || null == fk) && xmlCol.getFk() != null)
         {
             ColumnType.Fk xfk = xmlCol.getFk();
@@ -1046,8 +1085,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             isProtected = xmlCol.getProtected();
         if (xmlCol.isSetExcludeFromShifting())
             isExcludeFromShifting = xmlCol.getExcludeFromShifting();
-        if (xmlCol.isSetConceptURI())
-            conceptURI = xmlCol.getConceptURI();
 
         if (xmlCol.isSetImportAliases())
             importAliases.addAll(Arrays.asList(xmlCol.getImportAliases().getImportAliasArray()));
@@ -1716,14 +1753,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public String getSqlTypeName()
     {
-        if (null == sqlTypeName && null != jdbcType)
+        if (null == sqlTypeName && (propertyType != null || jdbcType != null))
         {
             SqlDialect d;
             if (getParentTable() == null)
                 d = CoreSchema.getInstance().getSqlDialect();
             else
                 d = getParentTable().getSqlDialect();
-            sqlTypeName = d.sqlTypeNameFromJdbcType(jdbcType);
+
+            JdbcType jt = propertyType != null ? propertyType.getJdbcType() : jdbcType;
+            sqlTypeName = d.sqlTypeNameFromJdbcType(jt);
         }
         return sqlTypeName;
     }
@@ -1757,15 +1796,22 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public @NotNull JdbcType getJdbcType()
     {
-        if (null == jdbcType && null != sqlTypeName)
+        if (jdbcType == null && (propertyType != null || sqlTypeName != null))
         {
-            SqlDialect d;
-            if (getParentTable() == null)
-                d = CoreSchema.getInstance().getSqlDialect();
-            else
-                d = getParentTable().getSqlDialect();
-            int type = d.sqlTypeIntFromSqlTypeName(getSqlTypeName());
-            jdbcType = JdbcType.valueOf(type);
+            if (propertyType != null)
+            {
+                jdbcType = propertyType.getJdbcType();
+            }
+            else if (sqlTypeName != null)
+            {
+                SqlDialect d;
+                if (getParentTable() == null)
+                    d = CoreSchema.getInstance().getSqlDialect();
+                else
+                    d = getParentTable().getSqlDialect();
+                int type = d.sqlTypeIntFromSqlTypeName(getSqlTypeName());
+                jdbcType = JdbcType.valueOf(type);
+            }
         }
         return jdbcType == null ? JdbcType.OTHER : jdbcType;
     }

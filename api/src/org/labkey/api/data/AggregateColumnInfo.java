@@ -158,6 +158,7 @@ public class AggregateColumnInfo extends ColumnInfo
         return fk;
     }
 
+    @NotNull
     @Override
     public JdbcType getJdbcType()
     {

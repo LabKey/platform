@@ -26,6 +26,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -553,7 +554,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                             row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
                             break;
                         default:
-                            if (isFileLinkColumn(col) && (value instanceof MultipartFile || value instanceof AttachmentFile))
+                            if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
                             {
                                 value = saveFile(c, col.getName(), value, null);
                             }
@@ -567,16 +568,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 }
             }
         }
-    }
-
-    /**
-     * Check if this column is a PropertyType.FILE_LINK type (and not a PropertyType.ATTACHMENT type).
-     *
-     * NOTE: REMOVE THIS AFTER FIXING Issue 22505
-     */
-    protected boolean isFileLinkColumn(@NotNull ColumnInfo dbColumnInfo)
-    {
-        return "file".equals(dbColumnInfo.getInputType());
     }
 
 

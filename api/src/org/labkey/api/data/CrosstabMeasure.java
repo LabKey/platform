@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -91,6 +92,7 @@ public class CrosstabMeasure
             return this.name();
         }
 
+        @NotNull
         public JdbcType getAggregateSqlType(ColumnInfo sourceCol)
         {
             switch(this)
@@ -201,6 +203,7 @@ public class CrosstabMeasure
         return _aggregateFunction.getSqlExpression(_sourceColumn.getSqlDialect(), new SQLFragment(tableAlias + "." + _sourceColumn.getAlias()));
     }
 
+    @NotNull
     public JdbcType getAggregateSqlType()
     {
         return _aggregateFunction.getAggregateSqlType(_sourceColumn);

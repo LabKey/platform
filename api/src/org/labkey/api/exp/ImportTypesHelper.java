@@ -19,7 +19,6 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
-import org.labkey.api.exp.property.Type;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.FacetingBehaviorType;
@@ -117,18 +116,21 @@ public class ImportTypesHelper
                 continue;
 
             String dataType = columnXml.getDatatype();
-            Type t = Type.getTypeBySqlTypeName(dataType);
-
-            if (t == null)
-                t = Type.getTypeByLabel(dataType);
+            PropertyType pt = PropertyType.getFromURI(columnXml.getConceptURI(), columnXml.getRangeURI(), null);
+            if (pt == null && dataType != null)
+            {
+                pt = PropertyType.getFromJdbcTypeName(dataType);
+                if (pt == null)
+                    pt = PropertyType.getFromXarName(dataType, null);
+            }
 
             if ("entityid".equalsIgnoreCase(dataType))
             {
                 // Special case handling for GUID keys
-                t = Type.StringType;
+                pt = PropertyType.STRING;
             }
 
-            if (t == null)
+            if (pt == null)
                 throw new ImportException("Unknown property type \"" + dataType + "\" for property \"" + columnXml.getColumnName() + "\".");
 
             // Assume nullable if not specified
@@ -145,7 +147,7 @@ public class ImportTypesHelper
             if (columnXml.isSetMeasure())
                 measure = columnXml.getMeasure();
             else
-                measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), t.isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
+                measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), pt.getJdbcType().isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
 
             boolean dimension;
             if (columnXml.isSetDimension())
@@ -184,7 +186,7 @@ public class ImportTypesHelper
                     columnXml.getPropertyURI(),
                     columnXml.getColumnTitle(),
                     columnXml.getDescription(),
-                    t.getXsdType(),
+                    pt.getTypeUri(),
                     notNull,
                     columnXml.getConceptURI(),
                     columnXml.getFormatString(),

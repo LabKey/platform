@@ -22,7 +22,8 @@ import java.util.Map;
 /**
 * User: matthewb
 * Date: Apr 22, 2010
-* Time: 11:33:56 AM
+ *
+ * TODO: Merge or replace with exp/PropertyType
 */
 public enum PropertyType
 {

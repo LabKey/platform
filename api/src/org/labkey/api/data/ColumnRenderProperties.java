@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -48,6 +50,11 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected String excelFormatString;
     protected String tsvFormatString;
     protected int scale = 0;
+
+    protected String propertyURI;
+    protected String conceptURI;
+    protected String rangeURI;
+    protected PropertyType propertyType;
 
     // property descriptors default to nullable, while columninfos do not; PropertyDescriptor overrides this initializer
     // in its constructor:
@@ -106,6 +113,10 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.isProtected = isProtected;
         to.isExcludeFromShifting = isExcludeFromShifting;
         to.scale = scale;
+        to.propertyURI = propertyURI;
+        to.conceptURI = conceptURI;
+        to.rangeURI = rangeURI;
+        to.propertyType = propertyType;
     }
 
     public Sort.SortDirection getSortDirection()
@@ -438,6 +449,30 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         return sb.toString();
     }
 
+    public PropertyType getPropertyType()
+    {
+        if (propertyType == null && getRangeURI() != null)
+            propertyType = PropertyType.getFromURI(getConceptURI(), getRangeURI(), null);
+
+        return propertyType;
+    }
+
+    @Override
+    public String getPropertyURI()
+    {
+        return propertyURI;
+    }
+
+    public String getConceptURI()
+    {
+        return conceptURI;
+    }
+
+    public String getRangeURI()
+    {
+        return rangeURI;
+    }
+
     @Deprecated
     public int getSqlTypeInt()
     {
@@ -454,6 +489,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         return getJdbcType().sqlType;
     }
 
+    @NotNull
     public abstract JdbcType getJdbcType();
 
     public abstract boolean isLookup();

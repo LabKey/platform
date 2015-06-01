@@ -39,11 +39,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     private String name;
     private String storageColumnName;
     private int propertyId;
-    private String propertyURI;
     private String ontologyURI;
-    private String rangeURI;
-    private String conceptURI;
-    private PropertyType propertyType;
     private String searchTerms;
     private String semanticType;
     private Container container;
@@ -135,11 +131,6 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         this.propertyId = rowId;
     }
 
-    public String getPropertyURI()
-    {
-        return propertyURI;
-    }
-
     public void setPropertyURI(String propertyURI)
     {
         this.propertyURI = propertyURI;
@@ -203,22 +194,9 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         this.ontologyURI = ontologyURI;
     }
 
-    public String getRangeURI()
-    {
-        return rangeURI;
-    }
-
     public void setRangeURI(String dataTypeURI)
     {
         this.rangeURI = dataTypeURI;
-    }
-
-    public PropertyType getPropertyType()
-    {
-        if (null == propertyType)
-            propertyType = PropertyType.getFromURI(getConceptURI(), rangeURI);
-
-        return propertyType;
     }
 
     public void clearPropertyType()
@@ -233,11 +211,6 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
             return super.getInputType();
 
         return getPropertyType().getInputType();
-    }
-
-    public String getConceptURI()
-    {
-        return conceptURI;
     }
 
     public void setConceptURI(String conceptURI)
@@ -330,6 +303,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         return getPropertyType().getSqlType();
     }
 
+    @NotNull
     @Override
     public JdbcType getJdbcType()
     {
@@ -420,13 +394,9 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         if (to instanceof PropertyDescriptor)
         {
             PropertyDescriptor toPD = (PropertyDescriptor)to;
-            toPD.propertyURI = propertyURI; // ?
             toPD.container = container; // ?
             toPD.project = project; // ?
             toPD.ontologyURI = ontologyURI;
-            toPD.rangeURI = rangeURI;
-            toPD.conceptURI = conceptURI;
-            toPD.propertyType = propertyType;
             toPD.searchTerms = searchTerms;
             toPD.semanticType = semanticType;
             toPD.lookupContainer = lookupContainer;

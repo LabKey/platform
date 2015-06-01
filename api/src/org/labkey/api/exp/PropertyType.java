@@ -20,6 +20,8 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.DateUtil;
@@ -38,7 +40,8 @@ import java.util.TimeZone;
 /**
  * User: migra
  * Date: Oct 25, 2005
- * Time: 2:10:08 PM
+ *
+ * TODO: Add more types? Entity, Lsid, User, ...
  */
 public enum PropertyType
 {
@@ -404,7 +407,7 @@ public enum PropertyType
     private String xarName;
     private char storageType;
     private int excelCellType;
-    private JdbcType jdbcType;
+    @NotNull private JdbcType jdbcType;
     private int scale;
     private String inputType;
     private Class javaType;
@@ -416,7 +419,7 @@ public enum PropertyType
     PropertyType(String typeURI,
                  String xarName,
                  char storageType,
-                 JdbcType jdbcType,
+                 @NotNull JdbcType jdbcType,
                  int scale,
                  String inputType,
                  int excelCellType,
@@ -454,6 +457,7 @@ public enum PropertyType
         return jdbcType.sqlType;
     }
 
+    @NotNull
     public JdbcType getJdbcType()
     {
         return jdbcType;
@@ -464,6 +468,7 @@ public enum PropertyType
         return scale;
     }
 
+    @Nullable
     public String getInputType()
     {
         return inputType;
@@ -479,6 +484,7 @@ public enum PropertyType
         return xarName;
     }
 
+    @NotNull
     public static PropertyType getFromURI(String concept, String datatype)
     {
         return getFromURI(concept, datatype, RESOURCE);
@@ -521,7 +527,13 @@ public enum PropertyType
     }
 
 
+    @NotNull
     public static PropertyType getFromXarName(String xarName)
+    {
+        return getFromXarName(xarName, RESOURCE);
+    }
+
+    public static PropertyType getFromXarName(String xarName, PropertyType def)
     {
         if (null == xarToProperty)
         {
@@ -535,7 +547,7 @@ public enum PropertyType
 
         PropertyType p = xarToProperty.get(xarName);
 
-        return null == p ? RESOURCE : p;
+        return null == p ? def : p;
     }
 
 
@@ -566,6 +578,7 @@ public enum PropertyType
         throw new IllegalArgumentException("No such class mapping: " + clazz.getName());
     }
 
+    @NotNull
     public static PropertyType getFromJdbcType(JdbcType jdbcType)
     {
         for (PropertyType t : values())
@@ -576,6 +589,18 @@ public enum PropertyType
                 return t;
         }
         throw new IllegalArgumentException("No such JdbcType mapping: " + (null != jdbcType ? jdbcType.getClass().toString() : "null"));
+    }
+
+    public static PropertyType getFromJdbcTypeName(String typeName)
+    {
+        for (PropertyType t : values())
+        {
+            if (t.jdbcType == null)
+                continue;
+            if (typeName.equalsIgnoreCase(t.jdbcType.name()))
+                return t;
+        }
+        throw new IllegalArgumentException("No such JdbcType mapping: " + typeName);
     }
 
     public abstract SimpleTypeNames.Enum getXmlBeanType();
