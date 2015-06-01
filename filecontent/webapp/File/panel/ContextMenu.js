@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-Ext4.define('File.data.panel.ContextMenu', {
+Ext4.define('File.panel.ContextMenu', {
 
     extend: 'Ext.menu.Menu',
 

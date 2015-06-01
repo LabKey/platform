@@ -93,7 +93,7 @@ Ext4.define('File.panel.Browser', {
             {
                 result += ", ";
             }
-            result += Ext4.util.Format.htmlEncode(value[i].message);
+            result += Ext4.htmlEncode(value[i].message);
         }
         result += "'>";
         for (i = 0; i < value.length; i++)
@@ -106,7 +106,7 @@ Ext4.define('File.panel.Browser', {
             {
                 result += "<a href=\'" + value[i].href + "'>";
             }
-            result += Ext4.util.Format.htmlEncode(value[i].message);
+            result += Ext4.htmlEncode(value[i].message);
             if (value[i].href)
             {
                 result += "</a>";
@@ -280,8 +280,6 @@ Ext4.define('File.panel.Browser', {
                         for (var c=0; c < callbacks.length; c++) {
                             Ext4.isFunction(callbacks[c].fn) ? callbacks[c].fn.call(callbacks[c].fn.scope || this, response) : undefined;
                         }
-
-                        Ext4.isFunction(cb) ? cb.call(scope, response) : undefined;
                     },
                     failure: LABKEY.Utils.displayAjaxErrorResponse,
                     scope: scope
@@ -327,6 +325,7 @@ Ext4.define('File.panel.Browser', {
         this.callParent([_config]);
 
         this.eventsConfigured = true;
+
         this.addEvents('folderchange', 'pipelineconfigured');
     },
 
@@ -393,8 +392,8 @@ Ext4.define('File.panel.Browser', {
         this.on('folderchange', this.onFolderChange, this);
 
         File.panel.Browser._toggleActions(this.fileSystem, this.actions, []);
-        this.callParent();
 
+        this.callParent();
     },
 
     createActions : function() {
@@ -653,7 +652,7 @@ Ext4.define('File.panel.Browser', {
 
     /**
      * Configure all actions according the current pipeline configuration.
-     * @param boolean [clearCache=false] Clear the pipeline configuration cache for the current containerPath.
+     * @param {boolean} [clearCache=false] Clear the pipeline configuration cache for the current containerPath.
      * This should be done any time the configuration is modified.
      */
     configureActions : function(clearCache) {
@@ -686,12 +685,12 @@ Ext4.define('File.panel.Browser', {
         }
 
         baseItems.push(
-                this.actions.parentFolder,
-                this.actions.refresh,
-                this.actions.createDirectory,
-                this.actions.download,
-                this.actions.deletePath,
-                this.actions.upload
+            this.actions.parentFolder,
+            this.actions.refresh,
+            this.actions.createDirectory,
+            this.actions.download,
+            this.actions.deletePath,
+            this.actions.upload
         );
 
         if (Ext4.isArray(this.tbarItems)) {
@@ -860,12 +859,14 @@ Ext4.define('File.panel.Browser', {
         {header: "Last Modified",  flex: 1, dataIndex: 'lastmodified', sortable: true,  hidden: false, height : 20, renderer: this.dateRenderer},
         {header: "Size",           flex: 1, dataIndex: 'size',         sortable: true,  hidden: false, height : 20, renderer: this.gridSizeRenderer, align : 'right'},
         {header: "Created By",     flex: 1, dataIndex: 'createdby',    sortable: true,  hidden: false, height : 20},
-        {header: "Description",    flex: 1, dataIndex: 'description',  sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
+        {header: "Description",    flex: 1, dataIndex: 'description',  sortable: true,  hidden: false, height : 20, renderer: Ext4.htmlEncode},
         {header: "Usages",         flex: 1, dataIndex: 'actions',      sortable: !this.bufferFiles,  hidden: false, height : 20, renderer: this.usageRenderer, showContextMenu: false},
         {header: "Download Link",  flex: 1, dataIndex: 'fileLink',     sortable: !this.bufferFiles,  hidden: true, height : 20, showContextMenu: false},
-        {header: "File Extension", flex: 1, dataIndex: 'fileExt',      sortable: !this.bufferFiles,  hidden: true, height : 20, renderer:Ext4.util.Format.htmlEncode}
+        {header: "File Extension", flex: 1, dataIndex: 'fileExt',      sortable: !this.bufferFiles,  hidden: true, height : 20, renderer: Ext4.htmlEncode}
         ];
+
         this.setDefaultColumns(columns);
+
         if (!this.isWebDav) {
             File.panel.Browser._getPipelineConfiguration(this._onExtraColumns, this.containerPath, this);
         }
@@ -877,7 +878,7 @@ Ext4.define('File.panel.Browser', {
         var finalColumns = [];
         var json = Ext4.decode(response.responseText);
 
-        // initially populate the finalColumns array with the defaults
+            // initially populate the finalColumns array with the defaults
         var defaultColumns = this.getDefaultColumns();
         var customColumns = json.fileProperties, i;
 
@@ -888,9 +889,9 @@ Ext4.define('File.panel.Browser', {
         for (i = 0; i < customColumns.length; i++) {
             var customCol = {
                 header : customColumns[i].label || customColumns[i].name,
-                flex : 1,
+                flex: 1,
                 dataIndex : customColumns[i].name,
-                height : 20,
+                height: 20,
                 hidden : customColumns[i].hidden
             };
             finalColumns.push(customCol);
@@ -929,24 +930,14 @@ Ext4.define('File.panel.Browser', {
     },
 
     getExtraColumns : function() {
-        if(this.extraColumns)
+        if (this.extraColumns) {
             return this.extraColumns.slice(0);
-        else
-            return [];
+        }
+        return [];
     },
 
-    getExtraColumnNames : function()
-    {
-        var columns = this.getExtraColumns();
-        var retCols = [];
-        if(columns)
-        {
-            for(var i = 0; i < columns.length; i++)
-            {
-                retCols.push(columns[i].name);
-            }
-        }
-        return retCols;
+    getExtraColumnNames : function() {
+        return Ext4.Array.pluck(this.getExtraColumns(), 'name');
     },
 
     setDefaultColumns : function(defaultColumns) {
@@ -1077,13 +1068,7 @@ Ext4.define('File.panel.Browser', {
                 Ext4.each(extraColumnNames, function(columnName) {
 
                     cell = row[columnName];
-
-                    if (cell.displayValue) {
-                        value = Ext4.htmlEncode(cell.displayValue);
-                    }
-                    else {
-                        value = Ext4.htmlEncode(cell.value);
-                    }
+                    value = Ext4.htmlEncode(cell.displayValue ? cell.displayValue : cell.value);
 
                     if (cell.url) {
                         value = "<a href='" + cell.url + "'>" + value + "</a>";
@@ -1108,8 +1093,9 @@ Ext4.define('File.panel.Browser', {
                 if (this.getGrid()) {
                     this.getGrid().getSelectionModel().select([]);
                 }
-                this.fileStore.getProxy().url = LABKEY.ActionURL.encodePath(this.getFolderURL());
-                this.fileStore.load();
+                var fileStore = this.getFileStore();
+                fileStore.getProxy().url = LABKEY.ActionURL.encodePath(this.getFolderURL());
+                fileStore.load();
             }, this);
         }
         this.gridTask.delay(50);
@@ -1152,10 +1138,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFolderTreeStoreCfg : function(configs) {
-
-        var storeCfg = {};
-
-        Ext4.apply(storeCfg, configs, {
+        return Ext4.apply({}, configs, {
             model : this.fileSystem.getModel('xml'),
             proxy : this.fileSystem.getProxyCfg('xml'),
             root : {
@@ -1170,8 +1153,6 @@ Ext4.define('File.panel.Browser', {
                 icon : LABKEY.contextPath + '/_images/labkey.png'
             }
         });
-
-        return storeCfg;
     },
 
     onShowHidden : function(s, node) {
@@ -2326,7 +2307,7 @@ Ext4.define('File.panel.Browser', {
         }
 
         //
-        // Setup a custom tree to diplay for move selection
+        // Setup a custom tree to display for move selection
         //
         var tp = Ext4.create('Ext.tree.Panel', this.getFolderTreeCfg({
             itemId: Ext4.id(),
@@ -2390,7 +2371,7 @@ Ext4.define('File.panel.Browser', {
             origName: name,
             fileRecords: selections,
             draggable : false,
-            // XXX: Setting defualt focus to the treepanel doesn't seem to actual set focus to it
+            // XXX: Setting default focus to the treepanel doesn't seem to actual set focus to it
             defaultFocus: tp,
             items: [{
                 bodyStyle: 'padding: 10px;',
@@ -2510,7 +2491,7 @@ Ext4.define('File.panel.Browser', {
             win.close();
         };
 
-        var name = this.selectedRecord.data.name;
+        var name = this.selectedRecord.get('name');
 
         var win = Ext4.create('Ext.window.Window', {
             title: "Rename",
@@ -2543,14 +2524,13 @@ Ext4.define('File.panel.Browser', {
             buttons: [{
                 text: 'Rename',
                 handler: function(btn) {
-                    var win = btn.findParentByType('window');
                     okHandler.call(this, win);
                 },
                 scope: this
             },{
                 text: 'Cancel',
-                handler: function(btn) {
-                    btn.findParentByType('window').close();
+                handler: function() {
+                    win.close();
                 }
             }],
             listeners: {
@@ -2839,6 +2819,7 @@ Ext4.define('File.panel.Browser', {
         if (this.contextMenu)
             return this.contextMenu;
 
+        // TODO: This should respect the visibility/availability as specified by the pipeline configuration
         var items;
         if (this.isWebDav) {
             items = [
@@ -2854,7 +2835,8 @@ Ext4.define('File.panel.Browser', {
                 '-',
                 this.actions.refresh
             ];
-        } else {
+        }
+        else {
             items = [
                 this.actions.upload,
                 this.actions.download,

@@ -107,25 +107,30 @@ Ext4.define('File.panel.Actions', {
 
     isPipelineRoot: false,
 
+    importDataEnabled: false,
+
     constructor : function(config) {
 
+        // Define models
+        if (!Ext4.ModelManager.isRegistered('File.Model.ActionModel')) {
+            Ext4.define('File.Model.ActionModel', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    { name: 'action' },
+                    { name: 'actionId' },
+                    { name: 'enabled', type: 'boolean' },
+                    { name: 'id' },
+                    { name: 'showOnToolbar', type: 'boolean' },
+                    { name: 'type' }
+                ]
+            });
+        }
+
+        if (Ext4.isEmpty(config.containerPath)) {
+            throw this.$className + ' requires a containerPath be specified.';
+        }
+
         this.actionConfig = {};
-
-        Ext4.apply(this, {
-            actionsURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', this.containerPath, {allActions:true}),
-            actionsUpdateURL : LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig', this.containerPath),
-            actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', this.containerPath)
-        });
-
-        Ext4.Ajax.request({
-            autoAbort:true,
-            url:this.actionsConfigURL,
-            method:'GET',
-            disableCaching:false,
-            success : this.getActionConfiguration,
-            failure: LABKEY.Utils.displayAjaxErrorResponse,
-            scope: this
-        });
 
         this.callParent([config]);
     },
@@ -133,82 +138,112 @@ Ext4.define('File.panel.Actions', {
     initComponent : function() {
 
         this.items = [{
-            html: '<span class="labkey-strong">Configure Actions</span>',
+            xtype: 'box',
+            tpl: new Ext4.XTemplate('<span class="labkey-strong">Configure Actions</span>'),
+            data: {},
             border: false
         }];
 
-        if (this.isPipelineRoot)
-        {
-            this.items.push({
-                xtype : 'checkbox',
-                itemId: 'showImportCheckbox',
-                id : 'importAction',
-                checked: this.importDataEnabled,
-                border: false, frame: false,
-                labelSeparator: '',
-                boxLabel: "Show 'Import Data' toolbar button<br/>(<i>Administrators will always see this button</i>)",
-                width : 500,
-                height : 50,
-                padding : '10 0 0 0'
-            });
-        }
-        else {
-            var descriptionText = 'File Actions are only available for files in the pipeline directory. An administrator has defined ' +
-                    'a "pipeline override" for this folder, so actions are not available in the default file location.<br/><br/>';
-            if (LABKEY.ActionURL.getController() != 'filecontent')
-            {
-                descriptionText += 'Customize this web part to use the pipeline directory by clicking on the ' +
+        this.callParent();
+
+        var hasConfig = false,
+            pipeActions = false;
+
+        // onReady will be called on the pipeline config and actions have been received
+        var onReady = function() {
+            if (hasConfig && pipeActions) {
+
+                if (this.isPipelineRoot) {
+                    this.add({
+                        xtype: 'checkbox',
+                        itemId: 'showImportCheckbox',
+                        id: 'importAction',
+                        checked: this.importDataEnabled,
+                        border: false,
+                        frame: false,
+                        labelSeparator: '',
+                        boxLabel: 'Show "Import Data" toolbar button<br/>(<i>Administrators will always see this button</i>)',
+                        width: 500,
+                        height: 50,
+                        padding: '10 0 0 0'
+                    });
+                }
+                else {
+                    var descriptionText = 'File Actions are only available for files in the pipeline directory. An administrator has defined ' +
+                            'a "pipeline override" for this folder, so actions are not available in the default file location.<br/><br/>';
+                    if (LABKEY.ActionURL.getController() != 'filecontent') {
+                        descriptionText += 'Customize this web part to use the pipeline directory by clicking on the ' +
                         '"more" button in the web part title area and selecting the "customize" option. You can then set this ' +
                         'web part to show files from the pipeline directory.<br>' +
                         '<img src="' + LABKEY.contextPath + '/_images/customize-example.png"/>';
-            }
-            else
-            {
-                descriptionText += LABKEY.Utils.textLink({text: "Go To Pipeline Directory", href: LABKEY.ActionURL.buildURL('pipeline', 'browse')});
-            }
+                    }
+                    else {
+                        descriptionText += LABKEY.Utils.textLink({text: "Go To Pipeline Directory", href: LABKEY.ActionURL.buildURL('pipeline', 'browse')});
+                    }
 
-            this.items.push({
-                border: false,
-                height: 300,
-                padding : '10 0 0 0',
-                html: descriptionText
+                    this.add({
+                        border: false,
+                        height: 300,
+                        padding : '10 0 0 0',
+                        html: descriptionText
+                    });
+                }
+
+                if (Ext4.isObject(pipeActions)) {
+                    this.add(this.getActionGrid(pipeActions));
+                }
+            }
+        };
+
+        // request configuration
+        File.panel.Browser._getPipelineConfiguration(function(response) {
+            this.parseActionConfiguration(response);
+            hasConfig = true;
+            onReady.call(this);
+        }, this.containerPath, this);
+
+        // request actions
+        if (this.isPipelineRoot) {
+            Ext4.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('pipeline', 'actions', this.containerPath, { allActions: true }),
+                method: 'GET',
+                disableCaching: false,
+                success: function(response) {
+                    pipeActions = this.getPipelineActions(response);
+                    if (!Ext4.isDefined(pipeActions)) {
+                        pipeActions = true;
+                    }
+                    onReady.call(this);
+                },
+                failure: LABKEY.Utils.displayAjaxErrorResponse,
+                scope: this
             });
         }
-
-        this.callParent(arguments);
+        else {
+            pipeActions = true;
+            onReady();
+        }
     },
 
-    // parse the configuration information
-    getActionConfiguration : function(response) {
+    parseActionConfiguration : function(response) {
 
         var o = Ext4.decode(response.responseText);
         var config = o.success ? o.config : {};
 
         // check whether the import data button is enabled
-        this.importDataEnabled = config.importDataEnabled ? config.importDataEnabled : false;
-        this.fileConfig = config.fileConfig ? config.fileConfig : 'useDefault';
-        this.expandFileUpload = config.expandFileUpload != undefined ? config.expandFileUpload : false;
-        this.showFolderTree = config.showFolderTree;
-        this.inheritedTbarConfig = config.inheritedTbarConfig;
+        Ext4.apply(this, {
+            importDataEnabled: config.importDataEnabled === true,
+            fileConfig: config.fileConfig ? config.fileConfig : 'useDefault',
+            expandFileUpload: config.expandFileUpload === true,
+            showFolderTree: config.showFolderTree,
+            inheritedTbarConfig: config.inheritedTbarConfig
+        });
 
-        if(config.actions)
-        {
-            for (var i=0; i < config.actions.length; i++)
-            {
+        if (config.actions) {
+            for (var i=0; i < config.actions.length; i++) {
                 var action = config.actions[i];
                 this.actionConfig[action.id] = action;
             }
-        }
-
-        if (this.isPipelineRoot) {
-            Ext4.Ajax.request({
-                url:this.actionsURL,
-                method:'GET',
-                disableCaching:false,
-                success : this.getPipelineActions,
-                failure: this.isPipelineRoot ? LABKEY.Utils.displayAjaxErrorResponse : undefined,
-                scope: this
-            });
         }
     },
 
@@ -218,7 +253,7 @@ Ext4.define('File.panel.Actions', {
         var o = Ext4.decode(response.responseText);
         var actions = o.success ? o.actions : [];
 
-        // parse the reponse and create the data object
+        // parse the response and create the data object
         var data = {actions: []};
         if (actions && actions.length)
         {
@@ -260,35 +295,22 @@ Ext4.define('File.panel.Actions', {
                 }
             }
         }
-        this.getActionGrid(data);
+
+        return data;
     },
 
     getActionGrid : function(data) {
-        if (!Ext4.ModelManager.isRegistered('File.Model.ActionModel')) {
-            Ext4.define('File.Model.ActionModel', {
-                extend: 'Ext.data.Model',
-                fields: [
-                    {name : 'action'},
-                    {name : 'actionId'},
-                    {name : 'enabled', type : 'boolean'},
-                    {name : 'id'},
-                    {name : 'showOnToolbar', type : 'boolean'},
-                    {name : 'type'}
-                ]
-            });
-        }
 
         if (!this.actionGrid) {
             this.actionGrid = Ext4.create('Ext.grid.Panel', {
                 store: {
-                    xtype: 'store',
                     storeId: 'actionStore',
                     model: 'File.Model.ActionModel',
                     groupField: 'type',
                     data: data.actions
                 },
                 columns: [
-                    { text: 'Action',     dataIndex: 'action', flex : 1 },
+                    { text: 'Action', dataIndex: 'action', flex: 1 },
                     { text: 'Enabled', dataIndex: 'enabled', xtype : 'checkcolumn', width : 100 },
                     { text: 'Show on Toolbar', dataIndex: 'showOnToolbar', xtype : 'checkcolumn', width : 150 }
                 ],
@@ -297,16 +319,8 @@ Ext4.define('File.panel.Actions', {
                     groupHeaderTpl: '{name}', //print the number of items in the group
                     startCollapsed: false // start all groups collapsed
                 }],
-                algin : 'bottom',
-                height : 400
+                height: 400
             });
-
-            this.add(this.actionGrid);
-
-            var showImport = this.getShowImportCheckbox();
-            if (showImport) {
-                showImport.setValue(this.importDataEnabled);
-            }
         }
 
         return this.actionGrid;
@@ -327,52 +341,55 @@ Ext4.define('File.panel.Actions', {
         var records = grid.getStore() ? grid.getStore().getModifiedRecords() : undefined;
 
         // pipeline action configuration
-        if (records && records.length)
+        if (!Ext4.isEmpty(records))
         {
             var actionConfig = {},
+                actionId,
                 config,
                 display,
-                i = 0,
                 record;
 
-            for (; i < records.length; i++)
+            for (var i=0; i < records.length; i++)
             {
                 record = records[i];
+                actionId = record.get('actionId');
 
-                if (record.data.showOnToolbar)
+                if (record.get('showOnToolbar'))
                     display = 'toolbar';
-                else if (record.data.enabled)
+                else if (record.get('enabled'))
                     display = 'enabled';
                 else
                     display = 'disabled';
 
-                config = actionConfig[record.data.actionId];
+                config = actionConfig[actionId];
                 if (!config)
                 {
-                    config = {id: record.data.actionId, display: 'enabled', label: record.data.type};
-                    actionConfig[record.data.actionId] = config;
+                    config = {
+                        id: actionId,
+                        display: 'enabled',
+                        label: record.get('type')
+                    };
+                    actionConfig[actionId] = config;
                 }
                 if (!config.links)
                     config.links = [];
-                config.links.push({id: record.data.id, display: display, label: record.data.action});
+                config.links.push({
+                    id: record.get('id'),
+                    display: display,
+                    label: record.get('action')
+                });
             }
 
-            for (config in actionConfig)
-            {
-                if (actionConfig.hasOwnProperty(config))
-                {
-                    i = actionConfig[config];
-                    if (Ext4.isObject(i))
-                    {
-                        adminOptions.push({
-                            id: i.id,
-                            display: i.display,
-                            label: i.label,
-                            links: i.links
-                        });
-                    }
+            Ext4.iterate(actionConfig, function(id, config) {
+                if (Ext4.isObject(config)) {
+                    adminOptions.push({
+                        id: i.id,
+                        display: i.display,
+                        label: i.label,
+                        links: i.links
+                    });
                 }
-            }
+            });
         }
 
         return adminOptions;
