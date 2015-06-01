@@ -891,7 +891,7 @@ public class Portal
     {
         Set<String> regionNames = new HashSet<>();
 
-        for (WebPartFactory webPartFactory : _viewMap.values())
+        for (WebPartFactory webPartFactory : getViewMap().values())
         {
             regionNames.addAll(webPartFactory.getAllowableLocations());
         }
@@ -1149,7 +1149,7 @@ public class Portal
 
     private static boolean validateFactoryName(String name, Module module)
     {
-        WebPartFactory existingFactory = _viewMap.get(name);
+        WebPartFactory existingFactory = getViewMap().get(name);
         if (existingFactory != null)
         {
             ModuleLoader.getInstance().addModuleFailure(module.getName(), new IllegalStateException("A webpart named '" + name + "' was already registered by the module '" + existingFactory.getModule().getName() + "'"));
