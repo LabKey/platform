@@ -16,12 +16,14 @@
 
 package org.labkey.api.study.assay;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.exp.ExperimentException;
@@ -308,7 +310,14 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
 
         if (jsonObject.has(ExperimentJSONConverter.PROPERTIES))
         {
-            handleProperties(context, object, dps, jsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES));
+            try
+            {
+                handleProperties(context, object, dps, jsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES));
+            }
+            catch (ConversionException e)
+            {
+                throw new ApiUsageException(e);
+            }
         }
     }
 
