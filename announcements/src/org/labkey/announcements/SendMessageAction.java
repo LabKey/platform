@@ -33,7 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
+import org.labkey.api.security.roles.EmailNonUsersPermission;
 import org.labkey.api.util.MailHelper;
 import org.springframework.validation.BindException;
 
@@ -143,8 +143,8 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
     private boolean canEmailNonUsers(User user)
     {
-        return getContainer().hasPermission(user, SeeUserEmailAddressesPermission.class) ||
-            ContainerManager.getRoot().hasPermission(user, SeeUserEmailAddressesPermission.class);
+        return getContainer().hasPermission(user, EmailNonUsersPermission.class) ||
+            ContainerManager.getRoot().hasPermission(user, EmailNonUsersPermission.class);
     }
 
     private String[] resolveEmailAddress(JSONObject recipient)
