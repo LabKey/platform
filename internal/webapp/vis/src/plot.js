@@ -559,30 +559,22 @@ boxPlot.render();
             scales.yLeft.range = yRange;
         }
 
-        if (scales.x)
-        {
-            if (scales.x.scaleType == 'continuous')
-            {
-                scales.x.range = [margins.left, grid.width - margins.right];
+        var setXAxisRange = function(scale) {
+            if (scale.scaleType == 'continuous') {
+                scale.range = [margins.left, grid.width - margins.right];
             }
-            else
-            {
+            else {
                 // We don't need extra padding in the discrete case because we use rangeBands which take care of that.
-                scales.x.range = [grid.leftEdge, grid.rightEdge];
+                scale.range = [grid.leftEdge, grid.rightEdge];
             }
+        };
+
+        if (scales.x) {
+            setXAxisRange(scales.x);
         }
 
-        if (scales.xTop)
-        {
-            if (scales.xTop.scaleType == 'continuous')
-            {
-                scales.xTop.range = [margins.left, grid.width - margins.right];
-            }
-            else
-            {
-                // We don't need extra padding in the discrete case because we use rangeBands which take care of that.
-                scales.xTop.range = [grid.leftEdge, grid.rightEdge];
-            }
+        if (scales.xTop) {
+            setXAxisRange(scales.xTop);
         }
     };
 

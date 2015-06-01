@@ -38,17 +38,22 @@ LABKEY.vis.internal.Axis = function() {
 
         gridLineData = data;
 
-        if(tickDigits) {
+        if (tickDigits)
+        {
             var convert = false;
-            for(var i=0; i<gridLineData.length; i++) {
-                if(gridLineData[i].toString().length >= tickDigits)
+            for (var i=0; i<gridLineData.length; i++)
+            {
+                if (gridLineData[i].toString().length >= tickDigits)
+                {
                     convert = true;
+                    break;
+                }
             }
 
-            if(convert) {
+            if (convert)
+            {
                 gridLineData.forEach(function (d, i) {
                     gridLineData[i] = d.toExponential();
-                    //gridLineData[i] = gridLineData[i].replace("e", "R");
                 });
             }
         }
@@ -349,55 +354,37 @@ LABKEY.vis.internal.Axis = function() {
 };
 
 LABKEY.vis.internal.D3Renderer = function(plot) {
-    var errorMsg, labelElements = null, xAxis = null, leftAxis = null, rightAxis = null, brush = null, brushSel = null,
-        brushSelectionType = null, xHandleBrush = null, xHandleSel = null, yHandleBrush = null, yHandleSel = null,
-        defaultBrushFillColor = '#EBF7F8', defaultBrushFillOpacity = .75, defaultBrushStrokeColor = '#14C9CC',
-        xTopAxis = null;
+    var errorMsg, labelElements = null,
+        xAxis = null, xTopAxis = null, leftAxis = null, rightAxis = null,
+        brush = null, brushSel = null, brushSelectionType = null,
+        xHandleBrush = null, xHandleSel = null, yHandleBrush = null, yHandleSel = null,
+        defaultBrushFillColor = '#EBF7F8', defaultBrushFillOpacity = .75, defaultBrushStrokeColor = '#14C9CC';
 
     var initLabelElements = function() {
         labelElements = {};
-        var labels, fontSize, mainLabel = {}, yLeftLabel = {}, yRightLabel = {}, xLabel = {};
         var fontFamily = plot.fontFamily ? plot.fontFamily : 'verdana, arial, helvetica, sans-serif';
+        var labels = this.canvas.append('g').attr('class', plot.renderTo + '-labels');
 
-        labels = this.canvas.append('g').attr('class', plot.renderTo + '-labels');
+        var appendLabelElement = function(name, defaultFontSize) {
+            var labelEl = {};
+            var fontSize = plot.labels[name] && plot.labels[name].fontSize != undefined ? plot.labels[name].fontSize : defaultFontSize;
 
-        fontSize = plot.labels.main && plot.labels.main.fontSize != undefined ? plot.labels.main.fontSize : 18;
-        mainLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .attr("visibility", plot.labels.main && plot.labels.main.visibility ? plot.labels.main.visibility : "visible")
-                .style('font', fontSize + 'px ' + fontFamily);
-        if(plot.labels.main && plot.labels.main.cls) {
-            mainLabel.dom.attr("class", plot.labels.main.cls)
-        }
+            labelEl.dom = labels.append('text').attr('text-anchor', 'middle')
+                    .attr("visibility", plot.labels[name] && plot.labels[name].visibility ? plot.labels[name].visibility : "visible")
+                    .style('font', fontSize + 'px ' + fontFamily);
 
-        fontSize = plot.labels.x && plot.labels.x.fontSize != undefined ? plot.labels.x.fontSize : 14;
-        xLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .attr("visibility", plot.labels.x && plot.labels.x.visibility ? plot.labels.x.visibility : "visible")
-                .style('font', fontSize + 'px ' + fontFamily);
-        if(plot.labels.x && plot.labels.x.cls) {
-            xLabel.dom.attr("class", plot.labels.x.cls)
-        }
+            if(plot.labels[name] && plot.labels[name].cls) {
+                labelEl.dom.attr("class", plot.labels[name].cls)
+            }
 
-        fontSize = plot.labels.yLeft && plot.labels.yLeft.fontSize != undefined ? plot.labels.yLeft.fontSize : 14;
-        yLeftLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .attr("visibility", plot.labels.yLeft && plot.labels.yLeft.visibility ? plot.labels.yLeft.visibility : "visible")
-                .style('font', fontSize + 'px ' + fontFamily);
-        if(plot.labels.yLeft && plot.labels.yLeft.cls) {
-            yLeftLabel.dom.attr("class", plot.labels.yLeft.cls)
-        }
+            return labelEl;
+        };
 
-        fontSize = plot.labels.yRight && plot.labels.yRight.fontSize != undefined ? plot.labels.yRight.fontSize : 14;
-        yRightLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .attr("visibility", plot.labels.yRight && plot.labels.yRight.visibility ? plot.labels.yRight.visibility : "visible")
-                .style('font', fontSize + 'px ' + fontFamily);
-        if(plot.labels.yRight && plot.labels.yRight.cls) {
-            yRightLabel.dom.attr("class", plot.labels.yRight.cls)
-        }
-
-        labelElements.main = mainLabel;
-        labelElements.y = yLeftLabel;
-        labelElements.yLeft = yLeftLabel;
-        labelElements.yRight = yRightLabel;
-        labelElements.x = xLabel;
+        labelElements.main = appendLabelElement('main', 18);
+        labelElements.y = appendLabelElement('yLeft', 14);
+        labelElements.yLeft = labelElements.y;
+        labelElements.yRight = appendLabelElement('yRight', 14);
+        labelElements.x = appendLabelElement('x', 14);
     };
 
     var initClipRect = function() {
@@ -472,254 +459,60 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             .fontFamily(plot.fontFamily)
     };
 
-    var renderXAxis = function() {
-        if (!xAxis) {
-            xAxis = LABKEY.vis.internal.Axis().orient('bottom');
+    var renderIndividualAxis = function(indAxis, name, orientation, tickPadding, numTicks) {
+        if (!indAxis) {
+            indAxis = LABKEY.vis.internal.Axis().orient(orientation);
         }
 
-        if (plot.scales.x && plot.scales.x.scale)
-        {
-            xAxis.scale(plot.scales.x.scale).tickPadding(10).ticks(7);
-            configureAxis(xAxis);
+        if (plot.scales[name] && plot.scales[name].scale) {
+            indAxis.scale(plot.scales[name].scale).tickPadding(tickPadding).ticks(numTicks);
+            configureAxis(indAxis);
 
-            if (plot.scales.x.tickFormat)
-            {
-                xAxis.tickFormat(plot.scales.x.tickFormat);
+            if (plot.scales[name].tickFormat) {
+                indAxis.tickFormat(plot.scales[name].tickFormat);
             }
 
-            if (plot.scales.x.tickDigits)
-            {
-                xAxis.tickDigits(plot.scales.x.tickDigits);
+            if (plot.scales[name].tickDigits) {
+                indAxis.tickDigits(plot.scales[name].tickDigits);
             }
 
-            if (plot.scales.x.tickHoverText)
-            {
-                xAxis.tickHover(plot.scales.x.tickHoverText);
+            if (plot.scales[name].tickHoverText) {
+                indAxis.tickHover(plot.scales[name].tickHoverText);
             }
 
-            if (plot.scales.x.tickCls)
-            {
-                xAxis.tickCls(plot.scales.x.tickCls);
+            if (plot.scales[name].tickCls) {
+                indAxis.tickCls(plot.scales[name].tickCls);
             }
 
-            if (plot.scales.x.tickRectCls)
-            {
-                xAxis.tickRectCls(plot.scales.x.tickRectCls);
+            if (plot.scales[name].tickRectCls) {
+                indAxis.tickRectCls(plot.scales[name].tickRectCls);
             }
 
-            if (plot.scales.x.tickRectWidthOffset)
-            {
-                xAxis.tickRectWidthOffset(plot.scales.x.tickRectWidthOffset);
+            if (plot.scales[name].tickRectWidthOffset) {
+                indAxis.tickRectWidthOffset(plot.scales[name].tickRectWidthOffset);
             }
 
-            if (plot.scales.x.tickRectHeightOffset)
-            {
-                xAxis.tickRectHeightOffset(plot.scales.x.tickRectHeightOffset);
+            if (plot.scales[name].tickRectHeightOffset) {
+                indAxis.tickRectHeightOffset(plot.scales[name].tickRectHeightOffset);
             }
 
-            if (plot.scales.x.tickClick)
-            {
-                xAxis.tickClick(plot.scales.x.tickClick);
+            if (plot.scales[name].tickClick) {
+                indAxis.tickClick(plot.scales[name].tickClick);
             }
 
-            if (plot.scales.x.tickMouseOver)
-            {
-                xAxis.tickMouseOver(plot.scales.x.tickMouseOver);
+            if (plot.scales[name].tickMouseOver) {
+                indAxis.tickMouseOver(plot.scales[name].tickMouseOver);
             }
 
-            if (plot.scales.x.tickMouseOut)
-            {
-                xAxis.tickMouseOut(plot.scales.x.tickMouseOut);
+            if (plot.scales[name].tickMouseOut) {
+                indAxis.tickMouseOut(plot.scales[name].tickMouseOut);
             }
 
-            if (plot.scales.x.fontSize)
-            {
-                xAxis.fontSize(plot.scales.x.fontSize);
+            if (plot.scales[name].fontSize) {
+                indAxis.fontSize(plot.scales[name].fontSize);
             }
 
-            this.canvas.call(xAxis);
-        }
-    };
-
-    var renderXTopAxis = function() {
-        if (!xTopAxis) {
-            xTopAxis = LABKEY.vis.internal.Axis().orient('top');
-        }
-
-        if (plot.scales.xTop && plot.scales.xTop.scale)
-        {
-            xTopAxis.scale(plot.scales.xTop.scale).tickPadding(10).ticks(7);
-            configureAxis(xTopAxis);
-
-            if (plot.scales.xTop.tickFormat)
-            {
-                xTopAxis.tickFormat(plot.scales.xTop.tickFormat);
-            }
-
-            if (plot.scales.xTop.tickDigits)
-            {
-                xTopAxis.tickDigits(plot.scales.xTop.tickDigits);
-            }
-
-            if (plot.scales.xTop.tickHoverText)
-            {
-                xTopAxis.tickHover(plot.scales.xTop.tickHoverText);
-            }
-
-            if (plot.scales.xTop.tickCls)
-            {
-                xTopAxis.tickCls(plot.scales.xTop.tickCls);
-            }
-
-            if (plot.scales.xTop.tickRectCls)
-            {
-                xTopAxis.tickRectCls(plot.scales.xTop.tickRectCls);
-            }
-
-            if (plot.scales.xTop.tickRectWidthOffset)
-            {
-                xTopAxis.tickRectWidthOffset(plot.scales.xTop.tickRectWidthOffset);
-            }
-
-            if (plot.scales.xTop.tickRectHeightOffset)
-            {
-                xTopAxis.tickRectHeightOffset(plot.scales.xTop.tickRectHeightOffset);
-            }
-
-            if (plot.scales.xTop.tickClick)
-            {
-                xTopAxis.tickClick(plot.scales.xTop.tickClick);
-            }
-
-            if (plot.scales.xTop.tickMouseOver)
-            {
-                xTopAxis.tickMouseOver(plot.scales.xTop.tickMouseOver);
-            }
-
-            if (plot.scales.xTop.tickMouseOut)
-            {
-                xTopAxis.tickMouseOut(plot.scales.xTop.tickMouseOut);
-            }
-
-            if (plot.scales.xTop.fontSize)
-            {
-                xTopAxis.fontSize(plot.scales.xTop.fontSize);
-            }
-
-            this.canvas.call(xTopAxis);
-        }
-    };
-
-    var renderYLeftAxis = function() {
-        if (!leftAxis) {
-            leftAxis = LABKEY.vis.internal.Axis().orient('left');
-        }
-
-        if (plot.scales.yLeft && plot.scales.yLeft.scale) {
-            leftAxis.scale(plot.scales.yLeft.scale).ticks(10);
-            configureAxis(leftAxis);
-
-            if (plot.scales.yLeft.tickFormat) {
-                leftAxis.tickFormat(plot.scales.yLeft.tickFormat);
-            }
-
-            if (plot.scales.yLeft.tickDigits) {
-                leftAxis.tickDigits(plot.scales.yLeft.tickDigits);
-            }
-
-            if (plot.scales.yLeft.tickHoverText) {
-                leftAxis.tickHover(plot.scales.yLeft.tickHoverText);
-            }
-
-            if (plot.scales.yLeft.tickCls) {
-                leftAxis.tickCls(plot.scales.yLeft.tickCls);
-            }
-
-            if (plot.scales.yLeft.tickRectCls) {
-                xAxis.tickRectCls(plot.scales.yLeft.tickRectCls);
-            }
-
-            if (plot.scales.yLeft.tickRectWidthOffset) {
-                xAxis.tickRectWidthOffset(plot.scales.yLeft.tickRectWidthOffset);
-            }
-
-            if (plot.scales.yLeft.tickRectHeightOffset) {
-                xAxis.tickRectHeightOffset(plot.scales.yLeft.tickRectHeightOffset);
-            }
-
-            if (plot.scales.yLeft.tickClick) {
-                xAxis.tickClick(plot.scales.yLeft.tickClick);
-            }
-
-            if (plot.scales.yLeft.tickMouseOver) {
-                xAxis.tickMouseOver(plot.scales.yLeft.tickMouseOver);
-            }
-
-            if (plot.scales.yLeft.tickMouseOut) {
-                xAxis.tickMouseOut(plot.scales.yLeft.tickMouseOut);
-            }
-
-            if (plot.scales.yLeft.fontSize) {
-                xAxis.fontSize(plot.scales.yLeft.fontSize);
-            }
-
-            this.canvas.call(leftAxis);
-        }
-    };
-
-    var renderYRightAxis = function() {
-        if (!rightAxis) {
-            rightAxis = LABKEY.vis.internal.Axis().orient('right');
-        }
-        if (plot.scales.yRight && plot.scales.yRight.scale) {
-            rightAxis.scale(plot.scales.yRight.scale).ticks(10);
-            configureAxis(rightAxis);
-
-            if (plot.scales.yRight.tickFormat) {
-                rightAxis.tickFormat(plot.scales.yRight.tickFormat);
-            }
-
-            if (plot.scales.yRight.tickDigits) {
-                rightAxis.tickDigits(plot.scales.yRight.tickDigits);
-            }
-
-            if (plot.scales.yRight.tickHoverText) {
-                rightAxis.tickHover(plot.scales.yRight.tickHoverText);
-            }
-
-            if (plot.scales.yRight.tickCls) {
-                rightAxis.tickCls(plot.scales.yRight.tickCls);
-            }
-
-            if (plot.scales.yRight.tickRectCls) {
-                xAxis.tickRectCls(plot.scales.yRight.tickRectCls);
-            }
-
-            if (plot.scales.yRight.tickRectWidthOffset) {
-                xAxis.tickRectWidthOffset(plot.scales.yRight.tickRectWidthOffset);
-            }
-
-            if (plot.scales.yRight.tickRectHeightOffset) {
-                xAxis.tickRectHeightOffset(plot.scales.yRight.tickRectHeightOffset);
-            }
-
-            if (plot.scales.yRight.tickClick) {
-                xAxis.tickClick(plot.scales.yRight.tickClick);
-            }
-
-            if (plot.scales.yRight.tickMouseOver) {
-                xAxis.tickMouseOver(plot.scales.yRight.tickMouseOver);
-            }
-
-            if (plot.scales.yRight.tickMouseOut) {
-                xAxis.tickMouseOut(plot.scales.yRight.tickMouseOut);
-            }
-
-            if (plot.scales.yRight.fontSize) {
-                xAxis.fontSize(plot.scales.yRight.fontSize);
-            }
-
-            this.canvas.call(rightAxis);
+            this.canvas.call(indAxis);
         }
     };
 
@@ -1237,10 +1030,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .attr('fill', plot.gridColor);
         }
 
-        renderXAxis.call(this);
-        renderXTopAxis.call(this);
-        renderYLeftAxis.call(this);
-        renderYRightAxis.call(this);
+        renderIndividualAxis.call(this, xAxis, 'x', 'bottom', 10, 7);
+        renderIndividualAxis.call(this, xTopAxis, 'xTop', 'top', 10, 7);
+        renderIndividualAxis.call(this, leftAxis, 'yLeft', 'left', 0, 10);
+        renderIndividualAxis.call(this, rightAxis, 'yRight', 'right', 0, 10);
+
         addBrush.call(this);
     };
 
