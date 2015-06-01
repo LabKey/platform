@@ -20,7 +20,6 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
 
 /*
 * User: adam
@@ -32,7 +31,7 @@ public class EmailNonUsersRole extends AbstractRole
     public EmailNonUsersRole()
     {
         super("Email Non-Users", "Allows users to send emails to addresses that are not associated with LabKey Server accounts.",
-                SeeUserEmailAddressesPermission.class);
+                EmailNonUsersPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
     }
