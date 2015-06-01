@@ -1192,6 +1192,7 @@ public class StudyManager
         }
     }
 
+
     public Map<String, VisitTag> importVisitTags(Study study, User user, List<VisitTag> visitTags) throws ValidationException
     {
         // Import, don't overwrite existing
@@ -1202,10 +1203,8 @@ public class StudyManager
             newVisitTagMap.put(visitTag.getName(), visitTag);
         }
 
-        Container container = study.getContainer();
-        if (null == container.getProject())
-            throw new IllegalStateException("Study Import/Export must happen within a project.");
-        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(getStudyForVisitTag(study).getContainer());
+        Container container = getStudyForVisitTag(study).getContainer();
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(container);
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTag();
         if (null == tinfo)
             throw new IllegalStateException("Study Import/Export expected TableInfo.");
@@ -1245,6 +1244,7 @@ public class StudyManager
         allVisitTagMap.putAll(newVisitTagMap);
         return allVisitTagMap;
     }
+
 
     public Integer createVisitTagMapEntry(User user, Container container, String visitTagName, @NotNull Integer visitId, @Nullable Integer cohortId) throws SQLException
     {
