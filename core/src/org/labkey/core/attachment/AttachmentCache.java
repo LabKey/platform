@@ -22,6 +22,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
@@ -33,6 +34,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /*
  * User: adam
@@ -41,6 +43,7 @@ import java.util.Map;
  */
 public class AttachmentCache
 {
+    private static final Set<String> ATTACHMENT_COLUMNS = new CsvSet("Parent, Container, DocumentName, DocumentSize, DocumentType, Created, CreatedBy, LastIndexed");
     private static final StringKeyCache<Map<String, Attachment>> _cache = CacheManager.getStringKeyCache(20000, CacheManager.DAY, "Attachments");
 
     private static final CacheLoader<String, Map<String, Attachment>> LOADER = new CacheLoader<String, Map<String, Attachment>>() {
@@ -50,7 +53,7 @@ public class AttachmentCache
             AttachmentParent parent = (AttachmentParent)attachmentParent;
 
             Collection<Attachment> attachments = new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
-                    AttachmentServiceImpl.ATTACHMENT_COLUMNS,
+                    ATTACHMENT_COLUMNS,
                     new SimpleFilter(FieldKey.fromParts("Parent"), parent.getEntityId()),
                     new Sort("+RowId")).getCollection(Attachment.class);
 

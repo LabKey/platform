@@ -17,7 +17,6 @@
 package org.labkey.core.attachment;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -33,7 +32,6 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -122,11 +120,8 @@ import java.util.TreeSet;
  */
 public class AttachmentServiceImpl implements AttachmentService.Service, ContainerManager.ContainerListener
 {
-    private static Logger _log = Logger.getLogger(AttachmentServiceImpl.class);
-    private static MimeMap _mimeMap = new MimeMap();
+    private static final MimeMap _mimeMap = new MimeMap();
     private static final String UPLOAD_LOG = ".upload.log";
-
-    static final Set<String> ATTACHMENT_COLUMNS = new CsvSet("Parent, Container, DocumentName, DocumentSize, DocumentType, Created, CreatedBy, LastIndexed");
 
     public AttachmentServiceImpl()
     {
@@ -146,10 +141,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             {
                 addAttachments(parent, files, auditUser);
                 message = getErrorHtml(files);
-            }
-            catch (AttachmentService.DuplicateFilenameException e)
-            {
-                message = e.getMessage() + "<br><br>";
             }
             catch (IOException ioe)
             {
@@ -425,37 +416,29 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
 
     @Override
-    public void deleteAttachments(AttachmentParent... parents)
+    public void deleteAttachments(AttachmentParent parent)
     {
-        for(AttachmentParent parent : parents)
-        {
-            List<Attachment> atts = getAttachments(parent);
-            SearchService ss = ServiceRegistry.get(SearchService.class);
-
-            if (ss != null)
-                for (Attachment att : atts)
-                    ss.deleteResource(makeDocId(parent, att.getName()));
-
-            new SqlExecutor(coreTables().getSchema()).execute(sqlCascadeDelete(), parent.getEntityId());
-            if (parent instanceof AttachmentDirectory)
-                ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
-            AttachmentCache.removeAttachments(parent);
-        }
+        deleteAttachments(Collections.singleton(parent));
     }
 
     @Override
     public void deleteAttachments(Collection<AttachmentParent> parents)
     {
-        for(AttachmentParent parent : parents)
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+
+        for (AttachmentParent parent : parents)
         {
             List<Attachment> atts = getAttachments(parent);
-            SearchService ss = ServiceRegistry.get(SearchService.class);
+
+            // No attachments, or perhaps container doesn't match entityid
+            if (atts.isEmpty())
+                continue;
 
             if (ss != null)
                 for (Attachment att : atts)
                     ss.deleteResource(makeDocId(parent, att.getName()));
 
-            new SqlExecutor(coreTables().getSchema()).execute(sqlCascadeDelete(), parent.getEntityId());
+            new SqlExecutor(coreTables().getSchema()).execute(sqlCascadeDelete(parent));
             if (parent instanceof AttachmentDirectory)
                 ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
             AttachmentCache.removeAttachments(parent);
@@ -465,23 +448,23 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser)
     {
-        Attachment att = getAttachment(parent,name);
+        Attachment att = getAttachment(parent, name);
 
         if (null != att)
         {
             SearchService ss = ServiceRegistry.get(SearchService.class);
             if (ss != null)
                 ss.deleteResource(makeDocId(parent, att.getName()));
+
+            new SqlExecutor(coreTables().getSchema()).execute(sqlDelete(parent, name));
+            if (parent instanceof AttachmentDirectory)
+                ((AttachmentDirectory)parent).deleteAttachment(auditUser, name);
+
+            AttachmentCache.removeAttachments(parent);
+
+            if (null != auditUser)
+                addAuditEvent(auditUser, parent, name, "The attachment " + name + " was deleted");
         }
-
-        new SqlExecutor(coreTables().getSchema()).execute(sqlDelete(), parent.getEntityId(), name);
-        if (parent instanceof AttachmentDirectory)
-            ((AttachmentDirectory)parent).deleteAttachment(auditUser, name);
-
-        AttachmentCache.removeAttachments(parent);
-
-        if (null != auditUser)
-            addAuditEvent(auditUser, parent, name, "The attachment " + name + " was deleted");
     }
 
 
@@ -589,11 +572,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     private List<String> findDuplicates(List<AttachmentFile> files)
     {
-        Set fileNames = new HashSet<String>();
+        Set<String> fileNames = new HashSet<>();
         List<String> duplicates = new ArrayList<>();
         for (AttachmentFile file : files)
         {
-            if(fileNames.add(file.getFilename()) == false)
+            if (!fileNames.add(file.getFilename()))
             {
                 duplicates.add(file.getFilename());
             }
@@ -775,9 +758,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             // we don't want a RowSet, so execute directly (not Table.executeQuery())
             conn = schema.getScope().getConnection();
             if (null == parent.getEntityId())
-                stmt = Table.prepareStatement(conn, sqlRootDocument(), Arrays.asList(name), jdbcParameters);
+                stmt = Table.prepareStatement(conn, sqlRootDocument(), Collections.singletonList(name), jdbcParameters);
             else
-                stmt = Table.prepareStatement(conn, sqlDocument(), Arrays.asList(parent.getEntityId(), name), jdbcParameters);
+                stmt = Table.prepareStatement(conn, sqlDocument(), Arrays.asList(parent.getContainerId(), parent.getEntityId(), name), jdbcParameters);
+
             rs = stmt.executeQuery();
 
             OutputStream out;
@@ -853,9 +837,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             // we don't want a RowSet, so execute directly (not Table.executeQuery())
             conn = schema.getScope().getConnection();
             if (null == parent.getEntityId())
-                stmt = Table.prepareStatement(conn, sqlRootDocument(), Arrays.asList(name), jdbcParameters);
+                stmt = Table.prepareStatement(conn, sqlRootDocument(), Collections.singletonList(name), jdbcParameters);
             else
-                stmt = Table.prepareStatement(conn, sqlDocument(), Arrays.asList(parent.getEntityId(), name), jdbcParameters);
+                stmt = Table.prepareStatement(conn, sqlDocument(), Arrays.asList(parent.getContainerId(), parent.getEntityId(), name), jdbcParameters);
+
             rs = stmt.executeQuery();
 
             if (parent instanceof AttachmentDirectory)
@@ -922,7 +907,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     private String sqlDocument()
     {
-        return "SELECT DocumentType, DocumentSize, Document FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
+        return "SELECT DocumentType, DocumentSize, Document FROM " + coreTables().getTableInfoDocuments() + " WHERE Container = ? AND Parent = ? AND DocumentName = ?";
     }
 
     private String sqlRootDocument()
@@ -930,14 +915,14 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         return "SELECT DocumentType, DocumentSize, Document FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent IS NULL AND DocumentName = ?";
     }
 
-    private String sqlCascadeDelete()
+    private SQLFragment sqlCascadeDelete(AttachmentParent parent)
     {
-        return "DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent = ?";
+        return new SQLFragment("DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Container = ? AND Parent = ?", parent.getContainerId(), parent.getEntityId());
     }
 
-    private String sqlDelete()
+    private SQLFragment sqlDelete(AttachmentParent parent, String name)
     {
-        return "DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
+        return new SQLFragment("DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Container = ? AND Parent = ? AND DocumentName = ?", parent.getContainerId(), parent.getEntityId(), name);
     }
 
     private SQLFragment sqlRename(AttachmentParent parent, String oldName, String newName)
@@ -989,7 +974,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
      */
     private class AttachmentCollection extends AbstractWebdavResourceCollection
     {
-        AttachmentParent _parent;
+        private final AttachmentParent _parent;
 
         AttachmentCollection(Path path, AttachmentParent parent, SecurityPolicy policy)
         {
