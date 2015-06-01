@@ -459,15 +459,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             .fontFamily(plot.fontFamily)
     };
 
-    var renderIndividualAxis = function(indAxis, name, orientation, tickPadding, numTicks) {
-        if (!indAxis) {
-            indAxis = LABKEY.vis.internal.Axis().orient(orientation);
-        }
-
-        if (plot.scales[name] && plot.scales[name].scale) {
-            indAxis.scale(plot.scales[name].scale).tickPadding(tickPadding).ticks(numTicks);
-            configureAxis(indAxis);
-
+    var updateIndividualAxisConfig = function(indAxis, name) {
+        if (indAxis && plot.scales[name])
+        {
             if (plot.scales[name].tickFormat) {
                 indAxis.tickFormat(plot.scales[name].tickFormat);
             }
@@ -511,8 +505,59 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             if (plot.scales[name].fontSize) {
                 indAxis.fontSize(plot.scales[name].fontSize);
             }
+        }
+    };
 
-            this.canvas.call(indAxis);
+    var renderXAxis = function() {
+        if (!xAxis) {
+            xAxis = LABKEY.vis.internal.Axis().orient('bottom');
+        }
+
+        if (plot.scales.x && plot.scales.x.scale)
+        {
+            xAxis.scale(plot.scales.x.scale).tickPadding(10).ticks(7);
+            configureAxis(xAxis);
+            updateIndividualAxisConfig(xAxis, 'x');
+            this.canvas.call(xAxis);
+        }
+    };
+
+    var renderXTopAxis = function() {
+        if (!xTopAxis) {
+            xTopAxis = LABKEY.vis.internal.Axis().orient('top');
+        }
+
+        if (plot.scales.xTop && plot.scales.xTop.scale)
+        {
+            xTopAxis.scale(plot.scales.xTop.scale).tickPadding(10).ticks(7);
+            configureAxis(xTopAxis);
+            updateIndividualAxisConfig(xTopAxis, 'xTop');
+            this.canvas.call(xTopAxis);
+        }
+    };
+
+    var renderYLeftAxis = function() {
+        if (!leftAxis) {
+            leftAxis = LABKEY.vis.internal.Axis().orient('left');
+        }
+
+        if (plot.scales.yLeft && plot.scales.yLeft.scale) {
+            leftAxis.scale(plot.scales.yLeft.scale).ticks(10);
+            configureAxis(leftAxis);
+            updateIndividualAxisConfig(leftAxis, 'yLeft');
+            this.canvas.call(leftAxis);
+        }
+    };
+
+    var renderYRightAxis = function() {
+        if (!rightAxis) {
+            rightAxis = LABKEY.vis.internal.Axis().orient('right');
+        }
+        if (plot.scales.yRight && plot.scales.yRight.scale) {
+            rightAxis.scale(plot.scales.yRight.scale).ticks(10);
+            configureAxis(rightAxis);
+            updateIndividualAxisConfig(rightAxis, 'yRight');
+            this.canvas.call(rightAxis);
         }
     };
 
@@ -1030,10 +1075,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .attr('fill', plot.gridColor);
         }
 
-        renderIndividualAxis.call(this, xAxis, 'x', 'bottom', 10, 7);
-        renderIndividualAxis.call(this, xTopAxis, 'xTop', 'top', 10, 7);
-        renderIndividualAxis.call(this, leftAxis, 'yLeft', 'left', 0, 10);
-        renderIndividualAxis.call(this, rightAxis, 'yRight', 'right', 0, 10);
+        renderXAxis.call(this);
+        renderXTopAxis.call(this);
+        renderYLeftAxis.call(this);
+        renderYRightAxis.call(this);
 
         addBrush.call(this);
     };
