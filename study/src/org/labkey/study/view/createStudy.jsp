@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -119,6 +120,8 @@
 
     if (isProject)
     {
+        // Issue 22690: Disallow creating a shared study if child studies already exist
+        boolean allowCreateSharedStudy = StudyManager.getInstance().getAllStudies(getContainer(), getUser()).isEmpty();
 %>
         <tr>
             <td colspan="2" class="labkey-announcement-title"><span>Experimental Features</span></td>
@@ -127,26 +130,30 @@
         <tr>
             <th style="text-align:left;width:18em">Shared Datasets</th>
             <td align="left">
-                <input type="radio" name="shareDatasets" value="false" checked> disabled
-                <input type="radio" name="shareDatasets" value="true"> enabled
+                <input type="radio" name="shareDatasets" value="false" checked <%=disabled(!allowCreateSharedStudy)%>> disabled
+                <input type="radio" name="shareDatasets" value="true" <%=disabled(!allowCreateSharedStudy)%>> enabled
             </td>
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td align="left"><p><br>Enable sharing of dataset definitions created in this project-level study.
+            <td align="left">
+                <% if (!allowCreateSharedStudy) { %><span class="labkey-error">Shared datasets can't be enabled if child studies already exist.</span><%}%>
+                <br>Enable sharing of dataset definitions created in this project-level study.
                 If this option is enabled, all studies in this project will see the datasets defined in the root folder of the project.</p></td>
         </tr>
         <tr><td>&nbsp;</td></tr>
         <tr>
             <th style="text-align:left;width:18em">Shared Timepoints</th>
             <td align="left">
-                <input type="radio" name="shareVisits" value="false" checked> disabled
-                <input type="radio" name="shareVisits" value="true"> enabled
+                <input type="radio" name="shareVisits" value="false" checked <%=disabled(!allowCreateSharedStudy)%>> disabled
+                <input type="radio" name="shareVisits" value="true" <%=disabled(!allowCreateSharedStudy)%>> enabled
             </td>
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td align="left"><p><br>Enable sharing of visits created in this project-level study.
+            <td align="left">
+                <% if (!allowCreateSharedStudy) { %><span class="labkey-error">Shared timepoints can't be enabled if child studies already exist.</span><%}%>
+                <br>Enable sharing of visits created in this project-level study.
                 If this option is enabled, all studies in this project will see the visits defined in the root folder of the project.</p></td>
         </tr>
 <%}%>

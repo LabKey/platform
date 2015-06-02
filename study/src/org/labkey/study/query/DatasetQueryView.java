@@ -153,8 +153,8 @@ public class DatasetQueryView extends StudyQueryView
             _provider = AssayService.get().getProvider(_protocol);
 
         setViewItemFilter(StudyReportUIProvider.getItemFilter());
-        if (!_dataset.isShared())
-            disableContainerFilterSelection();
+        // Issue 23076: hide container filter option in dataset view menu even if dataset is shared
+        disableContainerFilterSelection();
     }
 
     @Override

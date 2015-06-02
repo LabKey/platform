@@ -131,17 +131,17 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
             sep = ",\n";
             cte.append("(");
             cte.append("?").add(module.getName());
-            cte.append(",?").add(module.getLabel());
-            cte.append(",?").add(module.getDescription());
-            cte.append(",?").add(module.getUrl());
-            cte.append(",?").add(module.getAuthor());
-            cte.append(",?").add(module.getMaintainer());
-            cte.append(",?").add(module.getOrganization());
-            cte.append(",?").add(module.getOrganizationUrl());
-            cte.append(",?").add(module.getLicense());
-            cte.append(",?").add(module.getLicenseUrl());
-            cte.append(",?").add(module.getVcsRevision());
-            cte.append(",?").add(module.getVcsUrl());
+            cte.append(",?").add(StringUtils.trimToNull(module.getLabel()));
+            cte.append(",?").add(StringUtils.trimToNull(module.getDescription()));
+            cte.append(",?").add(StringUtils.trimToNull(module.getUrl()));
+            cte.append(",?").add(StringUtils.trimToNull(module.getAuthor()));
+            cte.append(",?").add(StringUtils.trimToNull(module.getMaintainer()));
+            cte.append(",?").add(StringUtils.trimToNull(module.getOrganization()));
+            cte.append(",?").add(StringUtils.trimToNull(module.getOrganizationUrl()));
+            cte.append(",?").add(StringUtils.trimToNull(module.getLicense()));
+            cte.append(",?").add(StringUtils.trimToNull(module.getLicenseUrl()));
+            cte.append(",?").add(StringUtils.trimToNull(module.getVcsRevision()));
+            cte.append(",?").add(StringUtils.trimToNull(module.getVcsUrl()));
             cte.append(",?").add(StringUtils.join(module.getModuleDependenciesAsSet(), ", "));
             cte.append(")");
         }

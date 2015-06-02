@@ -566,6 +566,7 @@ function createPage()
         schemaName: 'study',
         queryName: 'StudyProperties',
         columns: '*',
+        containerFilter: LABKEY.Query.containerFilter.current,
         success: onQuerySuccess,
         failure: onQueryFailure
     });
