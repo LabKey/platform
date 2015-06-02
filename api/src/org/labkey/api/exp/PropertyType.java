@@ -22,6 +22,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.DateUtil;
@@ -68,7 +69,7 @@ public enum PropertyType
                     return SimpleTypeNames.BOOLEAN;
                 }
             },
-    STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 100, null, Cell.CELL_TYPE_STRING, String.class)
+    STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 100, "text", Cell.CELL_TYPE_STRING, String.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -537,7 +538,7 @@ public enum PropertyType
     {
         if (null == xarToProperty)
         {
-            Map<String, PropertyType> m = new HashMap<>();
+            Map<String, PropertyType> m = new CaseInsensitiveHashMap<>();
             for (PropertyType t : values())
             {
                 m.put(t.getXmlName(), t);
@@ -591,6 +592,7 @@ public enum PropertyType
         throw new IllegalArgumentException("No such JdbcType mapping: " + (null != jdbcType ? jdbcType.getClass().toString() : "null"));
     }
 
+    @Nullable
     public static PropertyType getFromJdbcTypeName(String typeName)
     {
         for (PropertyType t : values())
@@ -600,7 +602,7 @@ public enum PropertyType
             if (typeName.equalsIgnoreCase(t.jdbcType.name()))
                 return t;
         }
-        throw new IllegalArgumentException("No such JdbcType mapping: " + typeName);
+        return null;
     }
 
     public abstract SimpleTypeNames.Enum getXmlBeanType();
