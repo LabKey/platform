@@ -381,10 +381,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         };
 
         labelElements.main = appendLabelElement('main', 18);
+        labelElements.x = appendLabelElement('x', 14);
         labelElements.y = appendLabelElement('yLeft', 14);
         labelElements.yLeft = labelElements.y;
         labelElements.yRight = appendLabelElement('yRight', 14);
-        labelElements.x = appendLabelElement('x', 14);
     };
 
     var initClipRect = function() {
