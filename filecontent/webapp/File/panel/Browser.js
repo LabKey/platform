@@ -381,7 +381,7 @@ Ext4.define('File.panel.Browser', {
         //
         // Initialize the actions that are available to the current user
         //
-        this.createActions();
+        this.getActions();
 
         this.items = this.getItems();
 
@@ -396,253 +396,281 @@ Ext4.define('File.panel.Browser', {
         this.callParent();
     },
 
-    createActions : function() {
-        this.actions = {};
+    getActions : function() {
+        if (!this.actions) {
+            this.actions = {};
 
-        this.actions.parentFolder = Ext4.create('File.panel.Action', {
-            text: 'Parent Folder',
-            hardText: 'Parent Folder',
-            itemId: 'parentFolder',
-            tooltip: 'Navigate to parent folder',
-            iconCls: 'iconUp',
-            hardIconCls: 'iconUp',
-            disabledClass:'x-button-disabled',
-            handler : this.onNavigateParent,
-            actionType : File.panel.Action.Type.NOMIN,
-            scope: this,
-            hideText: true
-        });
+            this.actions.parentFolder = Ext4.create('File.panel.Action', {
+                text: 'Parent Folder',
+                hardText: 'Parent Folder',
+                itemId: 'parentFolder',
+                tooltip: 'Navigate to parent folder',
+                iconCls: 'iconUp',
+                hardIconCls: 'iconUp',
+                disabledClass: 'x-button-disabled',
+                handler: this.onNavigateParent,
+                actionType: File.panel.Action.Type.NOMIN,
+                scope: this,
+                hideText: true
+            });
 
-        this.actions.refresh = Ext4.create('File.panel.Action', {
-            text: 'Refresh',
-            hardText: 'Refresh',
-            itemId: 'refresh',
-            tooltip: 'Refresh the contents of the current folder',
-            iconCls: 'iconReload',
-            hardIconCls: 'iconReload',
-            disabledClass: 'x-button-disabled',
-            handler : this.onRefresh,
-            actionType : File.panel.Action.Type.NOMIN,
-            scope: this,
-            hideText: true
-        });
+            this.actions.refresh = Ext4.create('File.panel.Action', {
+                text: 'Refresh',
+                hardText: 'Refresh',
+                itemId: 'refresh',
+                tooltip: 'Refresh the contents of the current folder',
+                iconCls: 'iconReload',
+                hardIconCls: 'iconReload',
+                disabledClass: 'x-button-disabled',
+                handler : this.onRefresh,
+                actionType : File.panel.Action.Type.NOMIN,
+                scope: this,
+                hideText: true
+            });
 
-        this.actions.createDirectory = Ext4.create('File.panel.Action', {
-            text: 'Create Folder',
-            hardText: 'Create Folder',
-            itemId: 'createDirectory',
-            iconCls:'iconFolderNew',
-            hardIconCls: 'iconFolderNew',
-            tooltip: 'Create a new folder on the server',
-            disabledClass: 'x-button-disabled',
-            handler : this.onCreateDirectory,
-            actionType : File.panel.Action.Type.NOMIN,
-            scope: this,
-            hideText: true
-        });
+            this.actions.createDirectory = Ext4.create('File.panel.Action', {
+                text: 'Create Folder',
+                hardText: 'Create Folder',
+                itemId: 'createDirectory',
+                iconCls:'iconFolderNew',
+                hardIconCls: 'iconFolderNew',
+                tooltip: 'Create a new folder on the server',
+                disabledClass: 'x-button-disabled',
+                handler : this.onCreateDirectory,
+                actionType : File.panel.Action.Type.NOMIN,
+                scope: this,
+                hideText: true
+            });
 
-        this.actions.download = Ext4.create('File.panel.Action', {
-            text: 'Download',
-            hardText: 'Download',
-            itemId: 'download',
-            tooltip: 'Download the selected files or folders',
-            iconCls: 'iconDownload',
-            hardIconCls: 'iconDownload',
-            disabledClass: 'x-button-disabled',
-            disabled: true,
-            handler: this.onDownload,
-            actionType : File.panel.Action.Type.ATLEASTONE,
-            scope: this,
-            hideText: true
-        });
+            this.actions.download = Ext4.create('File.panel.Action', {
+                text: 'Download',
+                hardText: 'Download',
+                itemId: 'download',
+                tooltip: 'Download the selected files or folders',
+                iconCls: 'iconDownload',
+                hardIconCls: 'iconDownload',
+                disabledClass: 'x-button-disabled',
+                disabled: true,
+                handler: this.onDownload,
+                actionType : File.panel.Action.Type.ATLEASTONE,
+                scope: this,
+                hideText: true
+            });
 
-        this.actions.viewFile = Ext4.create('File.panel.Action', {
-            text: 'View File',
-            hardText: 'View File',
-            itemId: 'viewFile',
-            tooltip: 'View file in new window',
-            disabledClass: 'x-button-disabled',
-            disabled: true,
-            handler: this.onViewFile,
-            actionType : File.panel.Action.Type.ONLYONE,
-            actionItemType : File.panel.Action.ItemType.ONLY_FILE,
-            scope: this
-        });
+            this.actions.viewFile = Ext4.create('File.panel.Action', {
+                text: 'View File',
+                hardText: 'View File',
+                itemId: 'viewFile',
+                tooltip: 'View file in new window',
+                disabledClass: 'x-button-disabled',
+                disabled: true,
+                handler: this.onViewFile,
+                actionType : File.panel.Action.Type.ONLYONE,
+                actionItemType : File.panel.Action.ItemType.ONLY_FILE,
+                scope: this
+            });
 
-        this.actions.deletePath = Ext4.create('File.panel.Action', {
-            text: 'Delete',
-            hardText: 'Delete',
-            itemId: 'deletePath',
-            tooltip: 'Delete the selected files or folders',
-            iconCls: 'iconDelete',
-            hardIconCls: 'iconDelete',
-            disabledClass: 'x-button-disabled',
-            handler: this.onDelete,
-            actionType : File.panel.Action.Type.ATLEASTONE,
-            scope: this,
-            disabled: true,
-            hideText: true,
-            shouldDisable : function (fileSystem, record) {
-                return !fileSystem.canDelete(record);
-            }
-        });
+            this.actions.deletePath = Ext4.create('File.panel.Action', {
+                text: 'Delete',
+                hardText: 'Delete',
+                itemId: 'deletePath',
+                tooltip: 'Delete the selected files or folders',
+                iconCls: 'iconDelete',
+                hardIconCls: 'iconDelete',
+                disabledClass: 'x-button-disabled',
+                handler: this.onDelete,
+                actionType : File.panel.Action.Type.ATLEASTONE,
+                scope: this,
+                disabled: true,
+                hideText: true,
+                shouldDisable : function (fileSystem, record) {
+                    return !fileSystem.canDelete(record);
+                }
+            });
 
-        this.actions.renamePath = Ext4.create('File.panel.Action', {
-            text: 'Rename',
-            hardText: 'Rename',
-            itemId: 'renamePath',
-            tooltip: 'Rename the selected file or folder',
-            iconCls: 'iconRename',
-            hardIconCls: 'iconRename',
-            disabledClass: 'x-button-disabled',
-            handler : this.onRename,
-            actionType : File.panel.Action.Type.ONLYONE,
-            scope: this,
-            disabled: true,
-            hideText: true,
-            shouldDisable : function (fileSystem, record) {
-                return !fileSystem.canMove(record);
-            }
-        });
+            this.actions.renamePath = Ext4.create('File.panel.Action', {
+                text: 'Rename',
+                hardText: 'Rename',
+                itemId: 'renamePath',
+                tooltip: 'Rename the selected file or folder',
+                iconCls: 'iconRename',
+                hardIconCls: 'iconRename',
+                disabledClass: 'x-button-disabled',
+                handler : this.onRename,
+                actionType : File.panel.Action.Type.ONLYONE,
+                scope: this,
+                disabled: true,
+                hideText: true,
+                shouldDisable : function (fileSystem, record) {
+                    return !fileSystem.canMove(record);
+                }
+            });
 
-        this.actions.movePath = Ext4.create('File.panel.Action', {
-            text: 'Move',
-            hardText: 'Move',
-            itemId: 'movePath',
-            tooltip: 'Move the selected file or folder',
-            iconCls: 'iconMove',
-            hardIconCls: 'iconMove',
-            disabledClass: 'x-button-disabled',
-            handler : this.onMovePath,
-            actionType : File.panel.Action.Type.ATLEASTONE,
-            scope: this,
-            disabled: true,
-            hideText: true
-        });
+            this.actions.movePath = Ext4.create('File.panel.Action', {
+                text: 'Move',
+                hardText: 'Move',
+                itemId: 'movePath',
+                tooltip: 'Move the selected file or folder',
+                iconCls: 'iconMove',
+                hardIconCls: 'iconMove',
+                disabledClass: 'x-button-disabled',
+                handler : this.onMovePath,
+                actionType : File.panel.Action.Type.ATLEASTONE,
+                scope: this,
+                disabled: true,
+                hideText: true
+            });
 
-        this.actions.help = Ext4.create('File.panel.Action', {
-            text: 'Help',
-            hardText: 'Help',
-            itemId: 'help',
-            scope: this
-        });
+            this.actions.help = Ext4.create('File.panel.Action', {
+                text: 'Help',
+                hardText: 'Help',
+                itemId: 'help',
+                scope: this
+            });
 
-        this.actions.showHistory = Ext4.create('File.panel.Action', {
-            text: 'Show History',
-            hardText: 'Show History',
-            itemId: 'showHistory',
-            scope: this
-        });
+            this.actions.showHistory = Ext4.create('File.panel.Action', {
+                text: 'Show History',
+                hardText: 'Show History',
+                itemId: 'showHistory',
+                scope: this
+            });
 
-        this.actions.upload = Ext4.create('File.panel.Action', {
-            text: 'Upload Files',
-            hardText: 'Upload Files',
-            itemId: 'upload',
-            enableToggle: true,
-            pressed: this.showUpload && this.expandUpload,
-            iconCls: 'iconUpload',
-            hardIconCls: 'iconUpload',
-            handler : this.onUpload,
-            scope: this,
-            disabledClass:'x-button-disabled',
-            tooltip: 'Upload files or folders from your local machine to the server'
-        });
+            this.actions.upload = Ext4.create('File.panel.Action', {
+                text: 'Upload Files',
+                hardText: 'Upload Files',
+                itemId: 'upload',
+                enableToggle: true,
+                pressed: this.showUpload && this.expandUpload,
+                iconCls: 'iconUpload',
+                hardIconCls: 'iconUpload',
+                handler : this.onUpload,
+                scope: this,
+                disabledClass:'x-button-disabled',
+                tooltip: 'Upload files or folders from your local machine to the server'
+            });
 
-        this.actions.folderTreeToggle = Ext4.create('File.panel.Action', {
-            text: 'Toggle Folder Tree',
-            hardText: 'Toggle Folder Tree',
-            itemId: 'folderTreeToggle',
-            enableToggle: true,
-            iconCls: 'iconFolderTree',
-            hardIconCls: 'iconFolderTree',
-            disabledClass:'x-button-disabled',
-            tooltip: 'Show or hide the folder tree',
-            hideText: true,
-            handler : function() { this.tree.toggleCollapse(); },
-            actionType : File.panel.Action.Type.NOMIN,
-            scope: this
-        });
+            this.actions.folderTreeToggle = Ext4.create('File.panel.Action', {
+                text: 'Toggle Folder Tree',
+                hardText: 'Toggle Folder Tree',
+                itemId: 'folderTreeToggle',
+                enableToggle: true,
+                iconCls: 'iconFolderTree',
+                hardIconCls: 'iconFolderTree',
+                disabledClass:'x-button-disabled',
+                tooltip: 'Show or hide the folder tree',
+                hideText: true,
+                handler : function() { this.tree.toggleCollapse(); },
+                actionType : File.panel.Action.Type.NOMIN,
+                scope: this
+            });
 
-        this.actions.importData = Ext4.create('File.panel.Action', {
-            text: 'Import Data',
-            hardText: 'Import Data',
-            itemId: 'importData',
-            handler: this.onImportData,
-            iconCls: 'iconDBCommit',
-            hardIconCls: 'iconDBCommit',
-            disabledClass:'x-button-disabled',
-            tooltip: 'Import data from files into the database, or analyze data files',
-            actionType : File.panel.Action.Type.NOMIN,
-            scope: this
-        });
+            this.actions.importData = Ext4.create('File.panel.Action', {
+                text: 'Import Data',
+                hardText: 'Import Data',
+                itemId: 'importData',
+                handler: this.onImportData,
+                iconCls: 'iconDBCommit',
+                hardIconCls: 'iconDBCommit',
+                disabledClass:'x-button-disabled',
+                tooltip: 'Import data from files into the database, or analyze data files',
+                actionType : File.panel.Action.Type.NOMIN,
+                scope: this
+            });
 
-        this.actions.customize = Ext4.create('File.panel.Action', {
-            text: 'Admin',
-            hardText: 'Admin',
-            itemId: 'customize',
-            iconCls: 'iconConfigure',
-            hardIconCls: 'iconConfigure',
-            disabledClass:'x-button-disabled',
-            tooltip: 'Configure the buttons shown on the toolbar',
-            actionType : File.panel.Action.Type.NOMIN,
-            handler: this.showAdminWindow,
-            scope: this
-        });
+            this.actions.customize = Ext4.create('File.panel.Action', {
+                text: 'Admin',
+                hardText: 'Admin',
+                itemId: 'customize',
+                iconCls: 'iconConfigure',
+                hardIconCls: 'iconConfigure',
+                disabledClass:'x-button-disabled',
+                tooltip: 'Configure the buttons shown on the toolbar',
+                actionType : File.panel.Action.Type.NOMIN,
+                handler: this.showAdminWindow,
+                scope: this
+            });
 
-        this.actions.editFileProps = Ext4.create('File.panel.Action', {
-            text: 'Edit Properties',
-            hardText: 'Edit Properties',
-            itemId: 'editFileProps',
-            iconCls: 'iconEditFileProps',
-            hardIconCls: 'iconEditFileProps',
-            disabledClass:'x-button-disabled',
-            tooltip: 'Edit properties on the selected file(s)',
-            actionType : File.panel.Action.Type.ATLEASTONE,
-            handler : this.onEditFileProps,
-            disabled : true,
-            hideText: true,
-            scope: this
-        });
+            this.actions.editFileProps = Ext4.create('File.panel.Action', {
+                text: 'Edit Properties',
+                hardText: 'Edit Properties',
+                itemId: 'editFileProps',
+                iconCls: 'iconEditFileProps',
+                hardIconCls: 'iconEditFileProps',
+                disabledClass:'x-button-disabled',
+                tooltip: 'Edit properties on the selected file(s)',
+                actionType : File.panel.Action.Type.ATLEASTONE,
+                handler : this.onEditFileProps,
+                disabled : true,
+                hideText: true,
+                scope: this
+            });
 
-        this.actions.emailPreferences = Ext4.create('File.panel.Action', {
-            text: 'Email Preferences',
-            hardText: 'Email Preferences',
-            itemId: 'emailPreferences',
-            iconCls: 'iconEmailSettings',
-            hardIconCls: 'iconEmailSettings',
-            disabledClass:'x-button-disabled',
-            tooltip: 'Configure email notifications on file actions.',
-            hideText: true,
-            actionType : File.panel.Action.Type.NOMIN,
-            handler : this.onEmailPreferences,
-            scope: this
-        });
+            this.actions.emailPreferences = Ext4.create('File.panel.Action', {
+                text: 'Email Preferences',
+                hardText: 'Email Preferences',
+                itemId: 'emailPreferences',
+                iconCls: 'iconEmailSettings',
+                hardIconCls: 'iconEmailSettings',
+                disabledClass:'x-button-disabled',
+                tooltip: 'Configure email notifications on file actions.',
+                hideText: true,
+                actionType : File.panel.Action.Type.NOMIN,
+                handler : this.onEmailPreferences,
+                scope: this
+            });
 
-        this.actions.auditLog = Ext4.create('File.panel.Action', {
-            text: 'Audit History',
-            hardText: 'Audit History',
-            itemId: 'auditLog',
-            iconCls: 'iconAuditLog',
-            hardIconCls: 'iconAuditLog',
-            disabledClass:'x-button-disabled',
-            tooltip: 'View the files audit log for this folder.',
-            actionType : File.panel.Action.Type.NOMIN,
-            handler : function() {
-                window.location = LABKEY.ActionURL.buildURL('filecontent', 'showFilesHistory', this.containerPath);
-            },
-            scope: this
-        });
+            this.actions.auditLog = Ext4.create('File.panel.Action', {
+                text: 'Audit History',
+                hardText: 'Audit History',
+                itemId: 'auditLog',
+                iconCls: 'iconAuditLog',
+                hardIconCls: 'iconAuditLog',
+                disabledClass:'x-button-disabled',
+                tooltip: 'View the files audit log for this folder.',
+                actionType : File.panel.Action.Type.NOMIN,
+                handler : function() {
+                    window.location = LABKEY.ActionURL.buildURL('filecontent', 'showFilesHistory', this.containerPath);
+                },
+                scope: this
+            });
+        }
+
+        return this.actions;
     },
 
-    initializeActions : function() {
-        Ext4.iterate(this.actions, function(key, action) {
-            if (action && action.isAction) {
-                action.initialConfig.prevText = action.initialConfig.text;
-                action.initialConfig.prevIconCls = action.initialConfig.iconCls;
+    /**
+     * Initialze the set of actions to set their text/icon state.
+     * @param {Object} [actionConfigs] Optionally specify a set of actions to update their initialConfig.
+     */
+    initializeActions : function(actionConfigs) {
+        var actions = this.getActions(),
+            reset = false;
 
-                action.setText(action.initialConfig.hideText ? undefined : action.initialConfig.hardText);
-                action.setIconCls(action.initialConfig.hideIcon ? undefined : action.initialConfig.hardIconCls);
+        if (Ext4.isArray(actionConfigs)) {
+            // initialize only actions specified in these configs
+            Ext4.each(actionConfigs, function(config) {
+                var action = actions[config.id];
+                if (action) {
+                    action.hideText = config.hideText;
+                    action.hideIcon = config.hideIcon;
+                }
+                else {
+                    console.warn('Unable to find action for: ', config.id + '. Skipping configuration.');
+                }
+            });
+        }
+        else {
+            reset = true;
+        }
+
+        // initialize all actions
+        Ext4.iterate(actions, function(key, action) {
+            if (reset) {
+                action.hideText = action.resetProps.hideText;
+                action.hideIcon = action.resetProps.hideIcon;
             }
+            action.setText(action.hideText ? undefined : action.hardText);
+            action.setIconCls(action.hideIcon ? undefined : action.hardIconCls);
         });
     },
 
@@ -660,7 +688,7 @@ Ext4.define('File.panel.Browser', {
             var configure = function(response) {
                 var json = Ext4.decode(response.responseText);
                 if (json.config) {
-                    this.initializeActions();
+                    this.initializeActions(json.config.tbarActions);
                     this.updateActions();
                     // Configure the actions on the toolbar based on whether they should be shown
                     this.configureTbarActions({
@@ -678,19 +706,20 @@ Ext4.define('File.panel.Browser', {
     },
 
     configureWebDavActions : function() {
-        var baseItems = [];
+        var baseItems = [],
+            actions = this.getActions();
 
         if (this.showFolderTree) {
-            baseItems.push(this.actions.folderTreeToggle);
+            baseItems.push(actions.folderTreeToggle);
         }
 
         baseItems.push(
-            this.actions.parentFolder,
-            this.actions.refresh,
-            this.actions.createDirectory,
-            this.actions.download,
-            this.actions.deletePath,
-            this.actions.upload
+            actions.parentFolder,
+            actions.refresh,
+            actions.createDirectory,
+            actions.download,
+            actions.deletePath,
+            actions.upload
         );
 
         if (Ext4.isArray(this.tbarItems)) {
@@ -705,20 +734,21 @@ Ext4.define('File.panel.Browser', {
     },
 
     configureTbarActions : function(config) {
-        if(Ext4.isArray(config))
+        if (Ext4.isArray(config)) {
             config = config[0];
-        var tbarConfig = config.tbarActions;
-        var actionButtons = config.actions;
-        var toolbar = this.getDockedItems()[0];
-        var buttons = [], i, action;
+        }
+
+        var tbarConfig = config.tbarActions,
+            actionButtons = config.actions,
+            toolbar = this.getDockedItems()[0],
+            buttons = [], i, action,
+            // Use as a lookup
+            mapTbarItems = {};
 
         if (toolbar) {
             // Remove the current toolbar in case we just customized it.
             this.removeDocked(toolbar);
         }
-
-        // Use as a lookup
-        var mapTbarItems = {};
 
         if (this.tbarItems) {
             for (i=0; i < this.tbarItems.length; i++) {
@@ -727,7 +757,8 @@ Ext4.define('File.panel.Browser', {
         }
 
         if (tbarConfig) {
-            var actionConfig;
+            var actionConfig,
+                actions = this.getActions();
 
             // Iterate across tbarConfig as button ordering is determined by array order
             for (i=0; i < tbarConfig.length; i++) {
@@ -737,28 +768,30 @@ Ext4.define('File.panel.Browser', {
                     actionConfig = tbarConfig[i];
 
                     // issue 19166
-                    if (actionConfig.hideText && actionConfig.hideIcon)
-                        continue;
-
-                    buttons.push(this.adjustAction(actionConfig));
+                    if (!(actionConfig.hideText && actionConfig.hideIcon)) {
+                        // get the real action
+                        action = actions[actionConfig.id];
+                        if (action) {
+                            buttons.push(action);
+                        }
+                        else {
+                            console.warn('Unable to find action:', actionConfig.id);
+                        }
+                    }
                 }
             }
         }
-        else if (this.tbarItems) {
-
-            for (i=0; i < this.tbarItems.length; i++) {
-                action = this.actions[this.tbarItems[i]];
-                if (action)
-                    buttons.push(action);
-                else
-                    buttons.push(this.tbarItems[i]);
-            }
+        else if (!Ext4.isEmpty(this.tbarItems)) {
+            Ext4.each(this.tbarItems, function(item) {
+                action = this.actions[item];
+                buttons.push(action ? action : item);
+            }, this);
         }
 
         this.linkIdMap = {};
 
         if (Ext4.isArray(actionButtons)) {
-            var link;
+            var link, id;
             Ext4.each(actionButtons, function(button) {
                 link = button.links[0];
 
@@ -768,7 +801,7 @@ Ext4.define('File.panel.Browser', {
                     // Store an id lookup for the component id of this button
                     // based on it's provider id
                     //
-                    var id = Ext4.id();
+                    id = Ext4.id();
                     this.linkIdMap[link.id] = id;
 
                     action = Ext4.create('File.panel.Action', {
@@ -784,35 +817,13 @@ Ext4.define('File.panel.Browser', {
             }, this);
         }
 
-        this.addDocked({xtype: 'toolbar', itemId: 'actionToolbar', dock: 'top', items: buttons, enableOverflow : true});
-    },
-
-    adjustAction : function (actionConfig) {
-        var action = this.actions[actionConfig.id];
-
-        action.initialConfig.hideText = actionConfig.hideText;
-        if(action.initialConfig.hideText && action.initialConfig.text != undefined)
-        {
-            action.initialConfig.prevText = action.initialConfig.text;
-            action.initialConfig.text = undefined;
-        }
-        else if(!action.initialConfig.hideText && action.initialConfig.text == undefined)
-        {
-            action.initialConfig.text = action.initialConfig.prevText;
-        }
-
-        action.initialConfig.hideIcon = actionConfig.hideIcon;
-        if(action.initialConfig.hideIcon && action.initialConfig.iconCls != undefined)
-        {
-            action.initialConfig.prevIconCls = action.initialConfig.iconCls;
-            action.initialConfig.iconCls = undefined;
-        }
-        else if(!action.initialConfig.hideIcon && action.initialConfig.iconCls == undefined)
-        {
-            action.initialConfig.iconCls = action.initialConfig.prevIconCls;
-        }
-
-        return action;
+        this.addDocked({
+            xtype: 'toolbar',
+            itemId: 'actionToolbar',
+            dock: 'top',
+            items: buttons,
+            enableOverflow: true
+        });
     },
 
     getToolbar : function() {
@@ -1371,11 +1382,10 @@ Ext4.define('File.panel.Browser', {
      */
     updateActions : function() {
         if (this.isPipelineRoot && !this.isWebDav) {
-            var actionsReady = false;
-            var pipelineReady = false;
-
-            var actions;
-            var me = this;
+            var actionsReady = false,
+                pipelineReady = false,
+                actions,
+                me = this;
 
             var check = function() {
                 if (actionsReady && pipelineReady) {
@@ -1426,7 +1436,7 @@ Ext4.define('File.panel.Browser', {
         this.actionMap = {};
         this.actionProviders = {};
 
-        if ((this.importDataEnabled || this.adminUser) && actions && actions.length) {
+        if ((this.importDataEnabled || this.adminUser) && !Ext4.isEmpty(actions)) {
             var pipelineActions = File.data.Pipeline.parseActions(actions);
             var pa, config, providerId, link, enabled;
 
@@ -1678,17 +1688,19 @@ Ext4.define('File.panel.Browser', {
      * are used to help with automated tests.
      */
     enableImportData : function(enabled) {
-        if (this.actions && this.actions.importData && this.showToolbar) {
-            var el = this.getToolbar().getEl();
-            var cls = 'labkey-import-enabled';
+        var actions = this.getActions();
+
+        if (this.showToolbar && actions.importData) {
+            var el = this.getToolbar().getEl(),
+                cls = 'labkey-import-enabled';
 
             if (enabled) {
                 el.addCls(cls);
-                this.actions.importData.enable();
+                actions.importData.enable();
             }
             else {
                 el.removeCls(cls);
-                this.actions.importData.disable();
+                actions.importData.disable();
             }
         }
     },
@@ -1701,19 +1713,21 @@ Ext4.define('File.panel.Browser', {
 
         if (this.pipelineActions.length > 0) {
 
-            var selections = selectedRecords;
-            var emptySelection = false;
-
-            var store = grid.getStore();
-            var count = store.getCount();
+            var selections = selectedRecords,
+                emptySelection = false,
+                action,
+                files,
+                selectionCount,
+                selectedFiles,
+                selectionMap = {},
+                currentDir = this.fileSystem.getDirectoryName(this.getCurrentDirectory()),
+                store = grid.getStore(),
+                count = store.getCount();
 
             if (!selections.length && count > 0) {
                 emptySelection = true;
                 selections = store.getRange(0, count-1); // get all the available records
             }
-
-            var action, files, selectionCount, selectedFiles, selectionMap = {};
-            var currentDir = this.fileSystem.getDirectoryName(this.getCurrentDirectory());
 
             for (var i=0; i < selections.length; i++) {
                 selectionMap[selections[i].data.name] = true;
@@ -2816,47 +2830,48 @@ Ext4.define('File.panel.Browser', {
     },
 
     getContextMenu : function () {
-        if (this.contextMenu)
-            return this.contextMenu;
+        if (!this.contextMenu) {
+            // TODO: This should respect the visibility/availability as specified by the pipeline configuration
+            var actions = this.getActions(),
+                items;
 
-        // TODO: This should respect the visibility/availability as specified by the pipeline configuration
-        var items;
-        if (this.isWebDav) {
-            items = [
-                this.actions.upload,
-                this.actions.download,
-                '-',
-                this.actions.viewFile,
-                this.actions.createDirectory,
-                '-',
-                this.actions.movePath,
-                this.actions.deletePath,
-                this.actions.renamePath,
-                '-',
-                this.actions.refresh
-            ];
-        }
-        else {
-            items = [
-                this.actions.upload,
-                this.actions.download,
-                this.actions.importData,
-                '-',
-                this.actions.viewFile,
-                this.actions.createDirectory,
-                '-',
-                this.actions.movePath,
-                this.actions.deletePath,
-                this.actions.renamePath,
-                this.actions.editFileProps,
-                '-',
-                this.actions.refresh
-            ];
-        }
+            if (this.isWebDav) {
+                items = [
+                    actions.upload,
+                    actions.download,
+                    '-',
+                    actions.viewFile,
+                    actions.createDirectory,
+                    '-',
+                    actions.movePath,
+                    actions.deletePath,
+                    actions.renamePath,
+                    '-',
+                    actions.refresh
+                ];
+            }
+            else {
+                items = [
+                    actions.upload,
+                    actions.download,
+                    actions.importData,
+                    '-',
+                    actions.viewFile,
+                    actions.createDirectory,
+                    '-',
+                    actions.movePath,
+                    actions.deletePath,
+                    actions.renamePath,
+                    actions.editFileProps,
+                    '-',
+                    actions.refresh
+                ];
+            }
 
-        this.contextMenu = Ext4.create('File.panel.ContextMenu', {
-            items: items
-        });
+            this.contextMenu = Ext4.create('File.panel.ContextMenu', {
+                items: items
+            });
+        }
 
         return this.contextMenu;
     },

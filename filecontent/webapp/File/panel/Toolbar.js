@@ -87,6 +87,11 @@ Ext4.define('File.panel.Toolbar', {
             }
         });
 
+        Ext4.apply(config, {
+            columnsStoreModified: false,
+            optionsStoreModified: false
+        });
+
         this.callParent([config]);
     },
 
@@ -131,9 +136,14 @@ Ext4.define('File.panel.Toolbar', {
         });
 
         this.optionsStore = Ext4.create('Ext.data.Store', {
-             model: 'optionsModel',
-             data: processedData
+            model: 'optionsModel',
+            data: processedData
         });
+
+        // This is to catch re-order of columns
+        this.optionsStore.on('datachanged', function() {
+            this.optionsStoreModified = true;
+        }, this);
 
         var columnData = [];
         var baseColumnNames = ['Row Checker', 'File Icon', 'Name', 'Last Modified', 'Size', 'Created By', 'Description',
@@ -179,6 +189,16 @@ Ext4.define('File.panel.Toolbar', {
                 });
             }
         }
+
+        this.columnsStore = Ext4.create('Ext.data.Store', {
+            model: 'columnsModel',
+            data: columnData
+        });
+
+        // This is to catch re-order of columns
+        this.columnsStore.on('datachanged', function() {
+            this.columnsStoreModified = true;
+        }, this);
 
         var optionsPanel = {
             xtype : 'grid',
@@ -294,10 +314,7 @@ Ext4.define('File.panel.Toolbar', {
             itemId: 'columnsGrid',
             width: 700,
             maxHeight: 250,
-            store: Ext4.create('Ext.data.Store', {
-                model: 'columnsModel',
-                data: columnData
-            }),
+            store: this.columnsStore,
             viewConfig: {
                 plugins: {
                     ptype: 'gridviewdragdrop',
@@ -346,13 +363,6 @@ Ext4.define('File.panel.Toolbar', {
         return gridConfigs;
     },
 
-    gridConfigsChanged : function()
-    {
-        //TODO Get this to work (need to find a way to see if the rows were reordered)
-        //return (this.columnsStore.getUpdatedRecords().length > 0);
-        return true;
-    },
-
     getActions : function() {
         var actions = [];
 
@@ -372,8 +382,12 @@ Ext4.define('File.panel.Toolbar', {
         return actions;
     },
 
-    tbarChanged : function() {
-        return this.optionsStore.getUpdatedRecords().length > 0;
+    isGridColumnsChanged : function() {
+        return this.columnsStoreModified || this.columnsStore.getUpdatedRecords().length > 0;
+    },
+
+    isToolbarChanged : function() {
+        return this.optionsStoreModified || this.optionsStore.getUpdatedRecords().length > 0;
     }
 });
 

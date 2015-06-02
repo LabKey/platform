@@ -166,8 +166,8 @@ Ext4.define('File.panel.Admin', {
         };
 
         var toolbar = this.getToolBarPanel(),
-            gridChanged = toolbar.gridConfigsChanged(),
-            toolbarChanged = toolbar.tbarChanged();
+            gridChanged = toolbar.isGridColumnsChanged(),
+            toolbarChanged = toolbar.isToolbarChanged();
 
         if (gridChanged) {
             postData.gridConfig = toolbar.getGridConfigs();

@@ -25,10 +25,24 @@ Ext4.define('File.panel.Action', {
         }
     },
 
+    hideIcon: false,
+
+    hideText: false,
+
     constructor : function(config) {
 
         if (config.itemId)
             config.cls = config.itemId + "Btn";
+
+        Ext4.apply(this, {
+            hardText: config.hardText,
+            hardIconCls: config.hardIconCls
+        });
+
+        this.resetProps = {
+            hideIcon: config.hideIcon === true,
+            hideText: config.hideText === true
+        };
 
         this.callParent([config]);
     },
