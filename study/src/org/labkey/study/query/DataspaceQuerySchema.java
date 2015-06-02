@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;

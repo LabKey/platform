@@ -2393,7 +2393,6 @@ study/src/org/labkey/study/query/DatasetQueryView.java -text
 study/src/org/labkey/study/query/DatasetTableImpl.java -text
 study/src/org/labkey/study/query/DatasetUpdateService.java -text
 study/src/org/labkey/study/query/DatasetsTable.java -text
-study/src/org/labkey/study/query/DataspaceContainerFilter.java -text
 study/src/org/labkey/study/query/DataspaceQuerySchema.java -text
 study/src/org/labkey/study/query/DerivativeTypeTable.java -text
 study/src/org/labkey/study/query/ExtensibleObjectQueryView.java -text

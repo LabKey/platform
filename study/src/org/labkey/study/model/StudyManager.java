@@ -137,7 +137,7 @@ import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.query.DatasetTableImpl;
-import org.labkey.study.query.DataspaceContainerFilter;
+import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;

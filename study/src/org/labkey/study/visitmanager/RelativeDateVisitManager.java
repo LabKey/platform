@@ -35,7 +35,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.DatasetTableImpl;
-import org.labkey.study.query.DataspaceContainerFilter;
+import org.labkey.api.study.DataspaceContainerFilter;
 
 import java.sql.SQLException;
 import java.util.Calendar;
