@@ -257,6 +257,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
+    @NotNull
+    @Override
+    public List<ColumnInfo> getAlternateKeyColumns()
+    {
+        return getPkColumns();
+    }
+
+
     @Override
     public ColumnInfo getVersionColumn()
     {

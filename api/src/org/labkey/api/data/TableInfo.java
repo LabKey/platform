@@ -109,6 +109,19 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     @NotNull List<ColumnInfo> getPkColumns();
 
+
+    /** Get a list of columns that specifies a unique key, may return the same result as getPKColumns()
+     * However, whereas getPkColumns() will usually return a 'short' pk, such as "rowid" or "lsid", this
+     * should return a more verbose AK that is most semantically useful.
+     *
+     * For instance for a flow result it might return (container, run, sample, stim, populationName) rather
+     * than (container, analysisId)
+     *
+     * NOTE: unlike PK, this does not guaranttee that columns are NON-NULL
+     * NOTE: Postgres does not consider rows with NULL values to be "equal" so NULLs may be repeated!
+     */
+    @NotNull List<ColumnInfo> getAlternateKeyColumns();
+
     ColumnInfo getVersionColumn();
 
     String getVersionColumnName();

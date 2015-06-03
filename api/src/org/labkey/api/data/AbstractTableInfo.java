@@ -145,6 +145,12 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         return Collections.unmodifiableList(ret);
     }
 
+    @NotNull
+    @Override
+    public List<ColumnInfo> getAlternateKeyColumns()
+    {
+        return getPkColumns();
+    }
 
     public AbstractTableInfo(DbSchema schema, String name)
     {
