@@ -235,4 +235,9 @@ public class WriteableAppProps extends AppPropsImpl
     {
         storeBooleanValue(EXPERIMENTAL_FEATURE_PREFIX + feature, enabled);
     }
+
+    public void setUseContainerRelativeURL(boolean b)
+    {
+        storeBooleanValue(USE_CONTAINER_RELATIVE_URL, b);
+    }
 }
