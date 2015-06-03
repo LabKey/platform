@@ -274,11 +274,14 @@ Ext4.define('File.panel.Browser', {
                     disableCaching: false,
                     success : function(response) {
 
-                        var callbacks = File.panel.Browser._pipelineConfigurationCache[containerPath];
+                        var callbacks = File.panel.Browser._pipelineConfigurationCache[containerPath], cb;
                         File.panel.Browser._pipelineConfigurationCache[containerPath] = response;
 
                         for (var c=0; c < callbacks.length; c++) {
-                            Ext4.isFunction(callbacks[c].fn) ? callbacks[c].fn.call(callbacks[c].fn.scope || this, response) : undefined;
+                            cb = callbacks[c];
+                            if (Ext4.isFunction(cb.fn)) {
+                                cb.fn.call(cb.scope || window, response);
+                            }
                         }
                     },
                     failure: LABKEY.Utils.displayAjaxErrorResponse,
@@ -729,7 +732,11 @@ Ext4.define('File.panel.Browser', {
         }
 
         this.dockedItems = [{
-            xtype: 'toolbar', itemId: 'actionToolbar', dock: 'top', items: baseItems, enableOverflow : true
+            xtype: 'toolbar',
+            itemId: 'actionToolbar',
+            dock: 'top',
+            items: baseItems,
+            enableOverflow: true
         }];
     },
 
