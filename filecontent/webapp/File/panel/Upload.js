@@ -675,10 +675,15 @@ Ext4.define('File.panel.Upload', {
 
     changeWorkingDirectory : function(path, model, cwd) {
         this.workingDirectory = {path: path, model: model, cwd: cwd};
+        this.updateDropzoneEnabled();
         this.fireEvent('cwd', model, path);
     },
 
     onLoad : function() {
+        this.updateDropzoneEnabled();
+    },
+
+    updateDropzoneEnabled : function () {
         var record = this.dropzone.uploadPanel.getWorkingDirectory('model');
         var canWrite = this.dropzone.uploadPanel.fileSystem.canWrite(record);
         this.dropzone.setEnabled(canWrite);
