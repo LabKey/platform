@@ -184,7 +184,7 @@
             int pageCount = (int)Math.ceil((double)primaryHits / hitsPerPage);
 
             %>
-            <table cellspacing=0 cellpadding=0 width=100%><%
+            <table class="labkey-search-results-counts" cellspacing=0 cellpadding=0 width=100%><%
                boolean includesSecondarySearch = false;
 
                if (searchConfig.hasSecondaryPermissions(user))
@@ -228,7 +228,7 @@
                 String href = normalizeHref(documentContainer, contextPath, hit.url);
                 String summary = StringUtils.trimToNull(hit.summary);
                 %>
-
+                <div class="labkey-search-result">
                 <a class="labkey-search-title" href="<%=h(href)%>"><%=h(hit.title)%></a><div style='margin-left:10px; width:600px;'><%
 
                 if (null != summary)
@@ -254,7 +254,7 @@
                 {
                     %>&nbsp;<%=formatNavTrail(getActions(hit))%><%
                 }
-                %></div><br><%
+                %></div></div><br><%
             }
 
             if (pageCount > 1)
