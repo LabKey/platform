@@ -493,6 +493,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (moduleContext.isNewInstall())
             bootstrap();
 
+        // explicitly set use setUseContainerRelativeURL(false)
+        // this may be helpful later to distinguish new vs existing servers
+        WriteableAppProps app = AppProps.getWriteableInstance();
+        app.setUseContainerRelativeURL(false);
+        app.save();
+
         // Increment on every core module upgrade to defeat browser caching of static resources.
         WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
