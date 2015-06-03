@@ -100,6 +100,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         }
     }
 
+
     @Override
     public void addExtraColumnProperties(ColumnInfo column, TableInfo table, Map<String, Object> props)
     {
@@ -107,16 +108,18 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         {
             Dataset dataset = ((DatasetTable)table).getDataset();
 
-            List<String> keys = new ArrayList<>();
-            keys.add(DatasetDefinition.getParticipantIdURI());
-            if (!dataset.isDemographicData())
-                keys.add(DatasetDefinition.getSequenceNumURI());
-            if (dataset.getKeyPropertyName() != null)
-                keys.add(DatasetDefinition.getStudyBaseURI() + dataset.getName() + "/" + dataset.getKeyPropertyName());
+            List<String> alternateKeys = new ArrayList<>();
+            List<ColumnInfo> cols = table.getAlternateKeyColumns();
+            for (ColumnInfo col: cols)
+            {
+                String uri = StringUtils.defaultString(col.getConceptURI(), col.getPropertyURI());
+                alternateKeys.add(uri);
+            }
 
-            props.put("uniqueKeys", keys);
+            props.put("uniqueKeys", alternateKeys);
         }
     }
+
 
     @Override
     public void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery)
@@ -146,6 +149,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             }
         }
     }
+
 
     @Override
     public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery first, IVisualizationSourceQuery second, boolean isGroupByQuery)

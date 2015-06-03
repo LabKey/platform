@@ -965,4 +965,41 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             return new ParticipantVisitTable(_userSchema, true);
         }
     }
+
+
+
+
+    @NotNull
+    @Override
+    public List<ColumnInfo> getAlternateKeyColumns()
+    {
+        ColumnInfo c;
+        List<ColumnInfo> cols = new ArrayList<>();
+
+        FieldKey fk = getContainerFieldKey();
+        if (null != fk)
+        {
+            c = getColumn(fk);
+            if (null != c)
+                cols.add(getColumn(getContainerFieldKey()));
+        }
+
+        c = getColumn(getDataset().getStudy().getSubjectColumnName());
+        assert null != c;
+        cols.add(c);
+        if (Dataset.KeyType.SUBJECT != getDataset().getKeyType())
+        {
+            c = getColumn("sequencenum");
+            assert null != c;
+            cols.add(c);
+
+            if (getDataset().getKeyType() != Dataset.KeyType.SUBJECT_VISIT)
+            {
+                c = getColumn(getDataset().getKeyPropertyName());
+                if (null != c)
+                    cols.add(c);
+            }
+        }
+        return cols;
+    }
 }
