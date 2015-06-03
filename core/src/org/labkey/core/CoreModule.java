@@ -863,7 +863,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 InlineInClauseGenerator.TestCase.class,
                 CollectionUtils.TestCase.class,
                 MarkableIterator.TestCase.class,
-                Sampler.TestCase.class
+                Sampler.TestCase.class,
+                BuilderObjectFactory.TestCase.class
         ));
     }
 
