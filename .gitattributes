@@ -230,6 +230,7 @@ api/src/org/labkey/api/data/AttachmentParentEntity.java -text
 api/src/org/labkey/api/data/BaseSelector.java -text
 api/src/org/labkey/api/data/BaseSqlFactory.java -text
 api/src/org/labkey/api/data/BooleanFormat.java -text
+api/src/org/labkey/api/data/Builder.java -text
 api/src/org/labkey/api/data/BuiltInButtonConfig.java -text
 api/src/org/labkey/api/data/ButtonBarConfig.java -text
 api/src/org/labkey/api/data/ButtonConfig.java -text
@@ -314,7 +315,6 @@ api/src/org/labkey/api/data/LoggingResultSetWrapper.java -text
 api/src/org/labkey/api/data/LookupColumn.java -text
 api/src/org/labkey/api/data/MVDisplayColumn.java -text
 api/src/org/labkey/api/data/MVDisplayColumnFactory.java -text
-api/src/org/labkey/api/data/MapConstructorObjectFactory.java -text
 api/src/org/labkey/api/data/MenuButton.java -text
 api/src/org/labkey/api/data/MethodInfo.java -text
 api/src/org/labkey/api/data/MultiValuedDisplayColumn.java -text

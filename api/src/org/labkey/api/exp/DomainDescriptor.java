@@ -16,9 +16,9 @@
 package org.labkey.api.exp;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.MapConstructorObjectFactory;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -30,7 +30,7 @@ public final class DomainDescriptor
 {
     static
     {
-        ObjectFactory.Registry.register(DomainDescriptor.class, new MapConstructorObjectFactory<>(DomainDescriptor.class));
+        ObjectFactory.Registry.register(DomainDescriptor.class, new BuilderObjectFactory<>(DomainDescriptor.class,Builder.class));
     }
 
     private final Object _ts;     // for optimistic concurrency
@@ -220,16 +220,17 @@ public final class DomainDescriptor
         return ((DomainDescriptor) obj).getDomainId() == getDomainId();
     }
 
-    public static class Builder
+
+    public static class Builder implements org.labkey.api.data.Builder<DomainDescriptor>
     {
         private Object _ts;
-        private int domainId;
+        private int domainId=0;
         private String name;
         private String domainURI;
         private String description;
         private Container container;
         private Container project;
-        private int titlePropertyId;
+        private int titlePropertyId=0;
         private String storageTableName;
         private String storageSchemaName;
 
@@ -330,5 +331,11 @@ public final class DomainDescriptor
             this._ts = ts;
             return this;
         }
+        public Builder set_Ts(Object ts)
+        {
+            this._ts = ts;
+            return this;
+        }
+
     }
 }
