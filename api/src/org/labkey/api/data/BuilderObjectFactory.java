@@ -90,7 +90,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
             String name = m.getName();
             if ("getClass".equals(name))
                 continue;
-            if (m.getParameterCount() != 0 || null != m.getAnnotation(Transient.class))
+            if (m.getParameters().length != 0 || null != m.getAnnotation(Transient.class))
                 continue;
             if (!Modifier.isPublic(m.getModifiers()))
                 continue;
@@ -110,7 +110,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
 
         for (Method m : _classBuilder.getMethods())
         {
-            if (m.getParameterCount() != 1)
+            if (m.getParameters().length != 1)
                 continue;
             if (!Modifier.isPublic(m.getModifiers()))
                 continue;
