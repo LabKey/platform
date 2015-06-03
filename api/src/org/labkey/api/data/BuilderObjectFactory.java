@@ -90,7 +90,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
             String name = m.getName();
             if ("getClass".equals(name))
                 continue;
-            if (m.getParameters().length != 0 || null != m.getAnnotation(Transient.class))
+            if (m.getParameterTypes().length != 0 || null != m.getAnnotation(Transient.class))
                 continue;
             if (!Modifier.isPublic(m.getModifiers()))
                 continue;
@@ -110,14 +110,14 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
 
         for (Method m : _classBuilder.getMethods())
         {
-            if (m.getParameters().length != 1)
+            if (m.getParameterTypes().length != 1)
                 continue;
             if (!Modifier.isPublic(m.getModifiers()))
                 continue;
             Class retCls = m.getReturnType();
             if (retCls != Void.TYPE && retCls != _classBuilder)
                 continue;
-            // check for setField() or has same name as a readble property
+            // check for setField() or has same name as a readable property
             // e.g. setContainer() or container()
             String name = m.getName();
             if (name.startsWith("set"))
