@@ -1483,14 +1483,14 @@ public class ExperimentController extends SpringActionController
                 boolean inline = _data.isInlineImage() || form.isInline() || "inlineImage".equalsIgnoreCase(form.getFormat());
                 if (_data.isInlineImage() && form.getMaxDimension() != null && _data.isFileOnDisk())
                 {
-                    ByteArrayOutputStream bOut = new ByteArrayOutputStream();
                     BufferedImage image = ImageIO.read(_data.getFile());
                     int imageMax = Math.max(image.getHeight(), image.getWidth());
                     if (imageMax > form.getMaxDimension().intValue())
                     {
                         double scale = (double)form.getMaxDimension().intValue() / (double)imageMax;
+                        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
                         ImageUtil.resizeImage(image, bOut, scale, 1);
-                        PageFlowUtil.streamFileBytes(getViewContext().getResponse(), realContent.getName(), bOut.toByteArray(), !inline);
+                        PageFlowUtil.streamFileBytes(getViewContext().getResponse(), realContent.getName() + ".png", bOut.toByteArray(), !inline);
                         return null;
                     }
                 }

@@ -90,6 +90,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.ViewFileLink);
         addColumn(Column.ContentLink);
         addColumn(Column.Thumbnail);
+        addColumn(Column.InlineThumbnail);
         addColumn(Column.Flag);
         addColumn(Column.SourceProtocolApplication).setHidden(true);
         addColumn(Column.Protocol).setHidden(true);
@@ -230,6 +231,19 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                     }
                 });
                 result.setDescription("A popup thumbnail of the file if it is an image");
+                return result;
+            }
+            case InlineThumbnail:
+            {
+                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new InlineThumbnailDataLinkColumn(colInfo);
+                    }
+                });
+                result.setDescription("An inline thumbnail of the file if it is an image");
                 return result;
             }
             case FileSize:
@@ -478,6 +492,20 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         protected void renderData(Writer out, ExpData data) throws IOException
         {
             renderThumbnailPopup(out, data, getURL(data));
+        }
+    }
+
+    private class InlineThumbnailDataLinkColumn extends ViewFileDataLinkColumn
+    {
+        public InlineThumbnailDataLinkColumn(ColumnInfo colInfo)
+        {
+            super(colInfo);
+        }
+
+        @Override
+        protected void renderData(Writer out, ExpData data) throws IOException
+        {
+            out.write(renderThumbnailImg(data, getURL(data)));
         }
     }
 

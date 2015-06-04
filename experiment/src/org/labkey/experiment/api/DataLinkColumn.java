@@ -78,9 +78,19 @@ abstract class DataLinkColumn extends DataColumn
     {
         if (data.isInlineImage() && data.isFileOnDisk())
         {
+            out.write("&nbsp;");
+            String icon = "<img src=\"" + AppProps.getInstance().getContextPath() + "/_icons/image.png\" />";
+            out.write(PageFlowUtil.helpPopup(data.getFile().getName(), renderThumbnailImg(data, url), true, icon, 310, url == null ? null : "window.location = '" + url.toString() + "'"));
+        }
+    }
+
+    protected String renderThumbnailImg(ExpData data, ActionURL url)
+    {
+        StringBuilder html = new StringBuilder();
+        if (data.isInlineImage() && data.isFileOnDisk())
+        {
             ActionURL thumbnailURL = ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true);
             thumbnailURL.addParameter("maxDimension", 300);
-            StringBuilder html = new StringBuilder();
             if (url != null)
             {
                 html.append("<a href=\"");
@@ -96,11 +106,8 @@ abstract class DataLinkColumn extends DataColumn
             {
                 html.append("</a>");
             }
-
-            out.write("&nbsp;");
-            String icon = "<img src=\"" + AppProps.getInstance().getContextPath() + "/_icons/image.png\" />";
-            out.write(PageFlowUtil.helpPopup(data.getFile().getName(), html.toString(), true, icon, 310, url == null ? null : "window.location = '" + url.toString() + "'"));
         }
+        return html.toString();
     }
 
     protected ExpData getData(RenderContext ctx)
