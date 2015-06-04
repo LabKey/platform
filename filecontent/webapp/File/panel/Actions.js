@@ -235,7 +235,7 @@ Ext4.define('File.panel.Actions', {
         }
         else {
             pipeActions = true;
-            onReady();
+            onReady.call(this);
         }
     },
 
