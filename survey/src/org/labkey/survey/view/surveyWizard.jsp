@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.survey.model.Survey" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -64,7 +64,7 @@
     // we allow editing for 1) non-submitted surveys 2) submitted surveys (that are not locked) if the user is a project or site admin
     Container project = getContainer().getProject();
     boolean isAdmin = (project != null && project.hasPermission(getUser(), AdminPermission.class)) || getUser().isSiteAdmin();
-    boolean canEdit = !locked && ((!submitted && getContainer().hasPermission(getUser(), UpdatePermission.class)) || isAdmin);
+    boolean canEdit = !locked && ((!submitted && getContainer().hasPermission(getUser(), InsertPermission.class)) || isAdmin);
 
     String headerRenderId = "survey-header-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
     String formRenderId = "survey-form-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
