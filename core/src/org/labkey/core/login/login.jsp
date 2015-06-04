@@ -17,14 +17,11 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
-<%@ page import="org.labkey.api.security.AuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
