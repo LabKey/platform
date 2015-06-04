@@ -40,6 +40,7 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         ContentLink,
         ViewFileLink,
         Thumbnail,
+        InlineThumbnail,
         FileSize,
         FileExists,
         FileExtension,
