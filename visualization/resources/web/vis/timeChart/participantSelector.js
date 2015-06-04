@@ -43,7 +43,7 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
             items: [{
                 xtype: 'label',
                 style: 'font-size:90%;',
-                text: 'There is a large number of ' + LABKEY.moduleContext.study.subject.nounPlural.toLowerCase()
+                text: 'There are a large number of ' + LABKEY.moduleContext.study.subject.nounPlural.toLowerCase()
                     + ' in this study. Would you like to switch to plot by '
                     + LABKEY.moduleContext.study.subject.nounSingular.toLowerCase() + ' groups?'
             }],
