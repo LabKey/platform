@@ -19,10 +19,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Simple success/fail response message with optional message and optional data.
+ *
  * User: kevink
  * Date: 3/30/14
- *
- * Simple success/fail response message with optional message and optional data.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL) // Don't serialize null values
 public class SimpleResponse<T>

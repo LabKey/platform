@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 
 import javax.servlet.http.HttpServletResponse;
@@ -31,6 +30,7 @@ import java.util.Date;
 import java.util.Map;
 
 /**
+ * Writer that knows how to generate a JSON version of the content back to the client.
  * User: tgaluhn
  * Date: 5/13/13
  */
@@ -41,7 +41,6 @@ public class ApiJsonWriter extends ApiResponseWriter
     public static final String CONTENT_TYPE_JSON = "application/json";
 
     private JsonGenerator jg = new JsonFactory().createGenerator(getWriter());
-    private boolean devMode = AppProps.getInstance().isDevMode();
 
     public ApiJsonWriter(Writer out) throws IOException
     {

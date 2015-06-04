@@ -16,9 +16,9 @@
 package org.labkey.api.action;
 
 /**
- * <code>UrlProvider</code> is a marker interface for providing URLs. Any interface
- * that extends UrlProvider and is implemented by a controller can be obtained using
- * <code>PageFlowUtil.urlFrom()</code>.
+ * A marker interface for providing URLs. Any interface
+ * that extends UrlProvider and is implemented by a controller can be obtained using urlProvider() in
+ * {@link org.labkey.api.util.PageFlowUtil}.
  */
 public interface UrlProvider
 {

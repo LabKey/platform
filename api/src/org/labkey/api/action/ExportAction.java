@@ -23,10 +23,12 @@ import org.labkey.api.view.NavTree;
 import javax.servlet.http.HttpServletResponse;
 
 /**
-* User: adam
-* Date: Jan 10, 2008
-* Time: 1:32:35 PM
-*/
+ * Base class for actions that want to stream some sort of file (typically dynamically generated) back to the user
+ * instead of returning a HTML page to be displayed in the browser.
+ *
+ * User: adam
+ * Date: Jan 10, 2008
+ */
 public abstract class ExportAction<FORM> extends SimpleViewAction<FORM>
 {
     public ExportAction()
@@ -62,5 +64,6 @@ public abstract class ExportAction<FORM> extends SimpleViewAction<FORM>
         return null;
     }
 
+    /** Do the real work of streaming the file back to the browser */
     public abstract void export(FORM form, HttpServletResponse response, BindException errors) throws Exception;
 }

@@ -22,9 +22,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
- * <code>SimpleForwardAction</code>
- *
- * Simliar to SimpleRedirectAction, but forwards to the URL instead of redirecting.  This preserves post data, etc.
+ * Similar to {@link org.labkey.api.action.SimpleRedirectAction}, but forwards to the URL instead of redirecting.  This preserves post data, etc.
  */
 public abstract class SimpleForwardAction<FORM> extends SimpleViewAction<FORM>
 {

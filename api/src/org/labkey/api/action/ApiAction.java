@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.log4j.Logger;
-import org.apache.poi.ss.formula.functions.T;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -50,7 +49,7 @@ import java.net.SocketTimeoutException;
 import java.util.Map;
 
 /**
- * Base class for API actions.
+ * Base class for API actions, which typically consume/produce JSON instead of HTML.
  *
  * User: Dave
  * Date: Feb 8, 2008

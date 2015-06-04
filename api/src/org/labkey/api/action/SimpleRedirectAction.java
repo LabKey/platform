@@ -22,7 +22,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
- * <code>SimpleRedirectAction</code>
+ * Base class for actions that don't want to render their own page, but instead just bounce the user to another URL.
  */
 public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
 {
