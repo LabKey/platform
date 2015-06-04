@@ -22,9 +22,11 @@ import org.labkey.api.view.ThemeFont;
 import org.labkey.api.view.WebTheme;
 
 /**
+ * Stores configuration to control basic rendering of the overall page template. May be associated with the full install
+ * or scoped to a specific project.
+ *
  * User: adam
  * Date: Aug 1, 2008
- * Time: 9:35:40 PM
  */
 public class LookAndFeelProperties extends LookAndFeelFolderProperties
 {

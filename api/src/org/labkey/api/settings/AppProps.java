@@ -28,9 +28,11 @@ import java.io.File;
 import java.net.URISyntaxException;
 
 /**
+ * Stores basic site-wide configuration.
+ * @see org.labkey.api.settings.WriteableAppProps
+ *
  * User: arauch
  * Date: Apr 11, 2005
- * Time: 1:10:18 PM
  */
 public class AppProps
 {

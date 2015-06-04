@@ -24,6 +24,7 @@ import org.labkey.api.util.UsageReportingLevel;
 import java.net.URISyntaxException;
 
 /**
+ * A mutable version of {@link AppProps}.
  * User: jeckels
  * Date: Dec 6, 2006
  */
@@ -49,7 +50,8 @@ public class WriteableAppProps extends AppPropsImpl
         }
     }
 
-    // Make public
+    /** Override to make public */
+    @Override
     public void save()
     {
         super.save();
