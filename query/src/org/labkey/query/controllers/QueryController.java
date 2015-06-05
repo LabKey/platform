@@ -76,6 +76,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
@@ -5917,13 +5918,14 @@ public class QueryController extends SpringActionController
             }
             catch (Exception e)
             {
-                errors.reject(ERROR_MSG, e.getMessage());
+                errors.reject(ERROR_MSG, e.getMessage() != null ? e.getMessage() : e.getClass().getName());
+                LOG.error("Errror exporting tables", e);
             }
             finally
             {
                 IOUtils.closeQuietly(outputStream);
             }
-            
+
             if (errors.hasErrors())
             {
                 _successUrl = new ActionURL(ExportTablesAction.class, getContainer());
@@ -5958,38 +5960,57 @@ public class QueryController extends SpringActionController
 
     public static class ExportTablesForm implements HasBindParameters
     {
-        HashMap<String, ArrayList<String>> _schemas;
+        ColumnHeaderType _headerType = ColumnHeaderType.DisplayFieldKey;
+        Map<String, List<Map<String, String>>> _schemas = new HashMap<>();
 
-        public HashMap<String, ArrayList<String>> getSchemas()
+        public ColumnHeaderType getHeaderType()
+        {
+            return _headerType;
+        }
+
+        public void setHeaderType(ColumnHeaderType headerType)
+        {
+            _headerType = headerType;
+        }
+
+        public Map<String, List<Map<String, String>>> getSchemas()
         {
             return _schemas;
         }
 
-        public void setSchemas(HashMap<String, ArrayList<String>> schemas)
+        public void setSchemas(Map<String, List<Map<String, String>>> schemas)
         {
             _schemas = schemas;
         }
 
-
         public BindException bindParameters(PropertyValues values)
         {
-            BindException errors;
-            errors = new NullSafeBindException(this, "form");
-            _schemas = new HashMap<>();
+            BindException errors = new NullSafeBindException(this, "form");
 
-            for (PropertyValue value : values.getPropertyValues())
+            PropertyValue schemasProperty = values.getPropertyValue("schemas");
+            if (schemasProperty != null && schemasProperty.getValue() != null)
             {
-                // ignore the CSRF token
-                if (!CSRFUtil.csrfName.equals(value.getName()))
+                ObjectMapper om = new ObjectMapper();
+                try
                 {
-                    String[] queries = ((String)value.getValue()).split(";");
+                    _schemas = om.readValue((String)schemasProperty.getValue(), _schemas.getClass());
+                }
+                catch (IOException e)
+                {
+                    errors.rejectValue("schemas", ERROR_MSG, e.getMessage());
+                }
+            }
 
-                    if(queries == null || queries.length == 0)
-                    {
-                        errors.reject(ERROR_MSG, "At least one query must be specified for each schema.");
-                    }
-
-                    _schemas.put(value.getName(), new ArrayList<>(Arrays.asList(queries)));
+            PropertyValue headerTypeProperty = values.getPropertyValue("headerType");
+            if (headerTypeProperty != null && headerTypeProperty.getValue() != null)
+            {
+                try
+                {
+                    _headerType = ColumnHeaderType.valueOf(String.valueOf(headerTypeProperty.getValue()));
+                }
+                catch (IllegalArgumentException ex)
+                {
+                    // ignore
                 }
             }
 

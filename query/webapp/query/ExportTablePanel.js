@@ -38,6 +38,7 @@ Ext4.define('HIPC.tree.ExportTablePanel', {
         // add the CSRF token
         formPanel.add({xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF });
 
+        var schemas = {};
         this.getRootNode().eachChild(function(node){
             var schemaName = node.get('text');
             var queryNames = [];
@@ -49,9 +50,15 @@ Ext4.define('HIPC.tree.ExportTablePanel', {
             }, this);
 
             if(queryNames.length > 0){
-                formPanel.add({xtype: 'hidden', name: schemaName, value: queryNames.join(';')});
+                var a = [];
+                for (var i = 0; i < queryNames.length; i++) {
+                    a.push({queryName: queryNames[i]});
+                }
+                schemas[schemaName] = a;
             }
         }, this);
+
+        formPanel.add({xtype: 'hidden', name: 'schemas', value: JSON.stringify(schemas)});
     },
 
     getQueriesCallback: function(data){

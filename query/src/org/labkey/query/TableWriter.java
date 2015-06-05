@@ -26,17 +26,24 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
@@ -49,9 +56,9 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -74,16 +81,16 @@ public class TableWriter
     public boolean write(Container c, User user, VirtualFile dir, ExportTablesForm form) throws Exception
     {
         QueryService queryService = QueryService.get();
-        List<QueryDefinition> queries;
+        List<Pair<QueryDefinition, CustomView>> queries = new ArrayList<>();
         if (null == form || null == form.getSchemas() || form.getSchemas().size() == 0)
         {
             // If no form, get all user queries in container
-            queries = queryService.getQueryDefs(user, c);
+            for (QueryDefinition queryDef : queryService.getQueryDefs(user, c))
+                queries.add(Pair.<QueryDefinition, CustomView>of(queryDef, null));
         }
         else
         {
-            queries = new ArrayList<>();
-            HashMap<String, ArrayList<String>> schemaMap = form.getSchemas();
+            Map<String, List<Map<String, String>>> schemaMap = form.getSchemas();
 
             for (String schemaName : schemaMap.keySet())
             {
@@ -91,15 +98,31 @@ public class TableWriter
                 if (null == schema)
                     continue;
                 Map<String, QueryDefinition> schemaQueries = schema.getQueryDefs();
-                ArrayList<String> queryNames = schemaMap.get(schemaName);
-                for (String queryName : queryNames)
+                List<Map<String, String>> queryMaps = schemaMap.get(schemaName);
+                if (queryMaps == null)
                 {
-                    QueryDefinition queryDef = schemaQueries.get(queryName);    // user defined queries
-                    if (null == queryDef)
-                        queryDef = schema.getQueryDefForTable(queryName);       // builtins
+                    // Export all queries in schema
+                    for (Map.Entry<String, QueryDefinition> entry : schemaQueries.entrySet())
+                        queries.add(Pair.<QueryDefinition, CustomView>of(entry.getValue(), null));
+                }
+                else
+                {
+                    for (Map<String, String> queryMap : queryMaps)
+                    {
+                        String queryName = queryMap.get(QueryParam.queryName.name());
+                        String viewName = queryMap.get(QueryParam.viewName.name());
 
-                    if (null != queryDef)
-                        queries.add(queryDef);
+                        QueryDefinition queryDef = schemaQueries.get(queryName);    // user defined queries
+                        if (null == queryDef)
+                            queryDef = schema.getQueryDefForTable(queryName);       // builtins
+
+                        if (null != queryDef)
+                        {
+                            CustomView view = queryDef.getCustomView(user, null, viewName);
+
+                            queries.add(Pair.of(queryDef, view));
+                        }
+                    }
                 }
             }
         }
@@ -113,18 +136,24 @@ public class TableWriter
             // Insert standard comment explaining where the data lives, who exported it, and when
             XmlBeansUtil.addStandardExportComment(tablesXml, c, user);
 
-            for (QueryDefinition queryDef : queries)
+            for (Pair<QueryDefinition, CustomView> pair : queries)
             {
+                QueryDefinition queryDef = pair.first;
+                CustomView view = pair.second;
+
                 UserSchema schema =  queryDef.getSchema();
                 TableInfo tableInfo = schema.getTable(queryDef.getName());
 
+                // Get list of all columns to export
+                Collection<ColumnInfo> allColumns = getColumns(tableInfo, view);
+
                 // Write meta data
                 TableType tableXml = tablesXml.addNewTable();
-                TableTableInfoWriter xmlWriter = new TableTableInfoWriter(tableInfo, queryDef, getColumnsToExport(tableInfo, true, false));
+                TableTableInfoWriter xmlWriter = new TableTableInfoWriter(tableInfo, queryDef, getColumnsToExport(tableInfo, allColumns, true, false));
                 xmlWriter.writeTable(tableXml);
 
                 // Write data
-                Collection<ColumnInfo> columns = getColumnsToExport(tableInfo, false, false);
+                Collection<ColumnInfo> columns = getColumnsToExport(tableInfo, allColumns, false, false);
 
                 if (!columns.isEmpty())
                 {
@@ -133,13 +162,26 @@ public class TableWriter
                     for (ColumnInfo col : columns)
                         displayColumns.add(new ExportDataColumn(col));
 
-                    // Sort the data rows by PK, #11261
-                    Sort sort = tableInfo.getPkColumnNames().size() == 0 ? null : new Sort(tableInfo.getPkColumnNames().get(0));
+                    ActionURL url = new ActionURL();
+                    SimpleFilter filter = new SimpleFilter();
+                    Sort sort = new Sort();
+                    if (view != null && view.hasFilterOrSort())
+                    {
+                        view.applyFilterAndSortToURL(url, QueryView.DATAREGIONNAME_DEFAULT);
+                        filter.addUrlFilters(url, QueryView.DATAREGIONNAME_DEFAULT);
+                        sort.addURLSort(url, QueryView.DATAREGIONNAME_DEFAULT);
+                    }
+                    else if (tableInfo != null && tableInfo.getPkColumnNames().size() > 0)
+                    {
+                        // Sort the data rows by PK, #11261
+                        sort = new Sort(tableInfo.getPkColumnNames().get(0));
+                    }
 
-                    Results rs = QueryService.get().select(tableInfo, columns, null, sort);
+                    Results rs = QueryService.get().select(tableInfo, columns, filter, sort);
                     TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns);
                     tsvWriter.setApplyFormats(false);
-                    tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+                    if (form != null && form.getHeaderType() != null)
+                        tsvWriter.setColumnHeaderType(form.getHeaderType());
                     PrintWriter out = dir.getPrintWriter(queryDef.getName() + ".tsv");
                     tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
                 }
@@ -155,12 +197,22 @@ public class TableWriter
         }
     }
 
-    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metaData, boolean removeProtected)
+    private Collection<ColumnInfo> getColumns(TableInfo tinfo, CustomView view)
     {
-        Collection<ColumnInfo> columns = new LinkedHashSet<>();
+        if (view == null)
+            return tinfo.getColumns();
+
+        List<FieldKey> fields = view.getColumns();
+        Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, fields);
+        return Collections.unmodifiableCollection(colMap.values());
+    }
+
+    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, Collection<ColumnInfo> columns, boolean metaData, boolean removeProtected)
+    {
         Set<ColumnInfo> pks = new HashSet<>(tinfo.getPkColumns());
 
-        for (ColumnInfo column : tinfo.getColumns())
+        List<ColumnInfo> ret = new ArrayList<>(columns.size());
+        for (ColumnInfo column : columns)
         {
             /*
                 We export:
@@ -175,15 +227,15 @@ public class TableWriter
                 if (removeProtected && column.isProtected() && !pks.contains(column) && !column.isKeyField())
                     continue;
 
-                columns.add(column);
+                ret.add(column);
 
                 // If the column is MV enabled, export the data in the indicator column as well
                 if (!metaData && column.isMvEnabled())
-                    columns.add(tinfo.getColumn(column.getMvColumnName()));
+                    ret.add(tinfo.getColumn(column.getMvColumnName()));
             }
         }
 
-        return columns;
+        return ret;
     }
 
 
@@ -262,10 +314,10 @@ public class TableWriter
         {
             TestContext testContext = TestContext.get();
             ExportTablesForm form = new ExportTablesForm();
-            ArrayList<String> queries = new ArrayList<>();
-            queries.add("Containers");
-            queries.add("Users");
-            HashMap<String, ArrayList<String>> schemas = new HashMap<String, ArrayList<String>>();
+            List<Map<String, String>> queries = new ArrayList<>();
+            queries.add(Collections.singletonMap(QueryParam.queryName.name(), "Containers"));
+            queries.add(Collections.singletonMap(QueryParam.queryName.name(), "Users"));
+            Map<String, List<Map<String, String>>> schemas = new HashMap<>();
             schemas.put("core", queries);
             form.setSchemas(schemas);
 
@@ -278,7 +330,7 @@ public class TableWriter
                 {
                     TableWriter tableWriter = new TableWriter();
                     tableWriter.write(container, testContext.getUser(), zip, form);
-                };
+                }
             }
             catch (Exception e)
             {
