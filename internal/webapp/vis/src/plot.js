@@ -1312,6 +1312,7 @@ boxPlot.render();
  * @param {Array} [config.properties.yAxisDomain] (Optional) Y-axis min/max values. Example: [0,20].
  * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
  * @param {Array} [config.properties.colorRange] (Optional) The array of color values to use for the data points.
+ * @param {String} [config.groupBy] (optional) The data property name used to group plot lines and points.
  * @param {Function} [config.properties.hoverTextFn] (Optional) The hover text to display for each data point. The parameter
  *                  to that function will be a row of data with access to all values for that row.
  * @param {Function} [config.properties.pointClickFn] (Optional) The function to call on data point click. The parameters to
@@ -1321,19 +1322,17 @@ boxPlot.render();
 
     LABKEY.vis.LeveyJenningsPlot = function(config){
 
-        if(config.renderTo == null){
+        if(config.renderTo == null) {
             throw new Error("Unable to create Levey-Jennings plot, renderTo not specified");
         }
 
-        if(config.data == null){
+        if(config.data == null) {
             throw new Error("Unable to create Levey-Jennings plot, data array not specified");
         }
 
-        if (config.properties == null || config.properties.value == null || config.properties.mean == null
-                || config.properties.stdDev == null || config.properties.xTickLabel == null)
-        {
+        if (config.properties == null || config.properties.value == null || config.properties.xTickLabel == null) {
             throw new Error("Unable to create Levey-Jennings plot, properties object not specified. "
-                    + "Required: value, mean, stdDev, xTickLabel. Optional: topMargin, color, colorRange, hoverTextFn, "
+                    + "Required: value, xTickLabel. Optional: mean, stdDev, topMargin, color, colorRange, hoverTextFn, "
                     + "pointClickFn, showTrendLine, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
         }
 
@@ -1357,7 +1356,7 @@ boxPlot.render();
             {
                 var xTickValue = row[config.properties.xTick];
                 if (xTickIndex[xTickValue] == undefined) {
-                    xTickIndex[row[config.properties.xTick]] = ++index;
+                    xTickIndex[xTickValue] = ++index;
                     groupedTrendlineData.push({seqValue: index, sum: 0, count: 0});
                 }
 
@@ -1376,7 +1375,7 @@ boxPlot.render();
             tickLabelMap[index] = row[config.properties.xTickLabel];
             row.seqValue = index;
 
-            if (!meanStdDevData[index]) {
+            if (config.properties.mean && config.properties.stdDev && !meanStdDevData[index]) {
                 meanStdDevData[index] = row;
             }
         }
@@ -1490,13 +1489,21 @@ boxPlot.render();
                     size: 2 }),
                 data: config.properties.xTick ? groupedTrendlineData : undefined // default to using the data for the plot
             };
+
+            if (config.properties.groupBy) {
+                pathLayerConfig.aes = {
+                    pathColor: config.properties.groupBy,
+                    group: config.properties.groupBy
+                };
+            }
+
             config.layers.push(new LABKEY.vis.Layer(pathLayerConfig));
         }
 
         // points based on the data value, color and hover text can be added via params to config
         var pointLayerConfig = {
             geom: new LABKEY.vis.Geom.Point({
-                position: 'jitter',
+                position: config.properties.xTick ? 'jitter' : undefined,
                 size: 3
             }),
             aes: {}
