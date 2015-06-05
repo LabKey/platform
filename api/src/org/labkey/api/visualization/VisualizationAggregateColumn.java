@@ -17,7 +17,6 @@ package org.labkey.api.visualization;
 
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.view.ViewContext;
-
 import java.util.Map;
 
 /**
@@ -28,10 +27,10 @@ public class VisualizationAggregateColumn extends VisualizationSourceColumn
 {
     private Aggregate.Type _aggregate;
 
-    public VisualizationAggregateColumn(ViewContext context, Map<String, Object> properties)
+    public VisualizationAggregateColumn(ViewContext context, VisDataRequest.Measure measure)
     {
-        super(context, properties);
-        String aggregate = (String) properties.get("aggregate");
+        super(context, measure);
+        String aggregate = measure.getAggregate();
         if (aggregate == null)
             aggregate = "MAX";
         _aggregate = Aggregate.Type.valueOf(aggregate);

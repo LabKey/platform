@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import htsjdk.samtools.util.IOUtil;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -83,6 +84,12 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     protected final Marshaller findMarshaller()
     {
         Marshal marshal = getClass().getAnnotation(Marshal.class);
+        if (marshal == null)
+        {
+            Class superClass = getClass().getSuperclass();
+            if (null != superClass)
+                marshal = (Marshal) superClass.getAnnotation(Marshal.class);
+        }
         if (marshal == null)
         {
             Class declaringClass = getClass().getDeclaringClass();
@@ -298,11 +305,10 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
         try
         {
-            ObjectMapper mapper = new ObjectMapper();
             Class c = getCommandClass();
             if (c != null)
             {
-                ObjectReader reader = mapper.reader(getCommandClass());
+                ObjectReader reader = getObjectReader(c);
                 form = reader.readValue(getViewContext().getRequest().getInputStream());
             }
             errors = new NullSafeBindException(form, "form");
@@ -326,6 +332,12 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
         saveRequestedApiVersion(getViewContext().getRequest(), form);
         return Pair.of(form, errors);
+    }
+
+
+    protected ObjectReader getObjectReader(Class c)
+    {
+        return new ObjectMapper().reader(c);
     }
 
 

@@ -733,7 +733,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
     
 
-    private List<ExpData> getExpData()
+    protected List<ExpData> getExpData()
     {
         if (!_dataQueried)
         {

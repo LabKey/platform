@@ -53,6 +53,7 @@ public class VisualizationSourceColumn
     private boolean _hidden = false;
     private Set<Object> _values = new LinkedHashSet<>();
 
+
     public Map<String, String> toJSON(String measureName)
     {
         Map<String, String> info = new HashMap<>();
@@ -114,9 +115,9 @@ public class VisualizationSourceColumn
             return findOrAdd(col);
         }
 
-        public VisualizationSourceColumn create(ViewContext context, Map<String, Object> properties)
+        public VisualizationSourceColumn create(ViewContext context, VisDataRequest.Measure measure)
         {
-            VisualizationSourceColumn col = new VisualizationSourceColumn(context, properties);
+            VisualizationSourceColumn col = new VisualizationSourceColumn(context, measure);
             return findOrAdd(col);
         }
 
@@ -148,20 +149,23 @@ public class VisualizationSourceColumn
         _inNotNullSet = false;
     }
 
-    protected VisualizationSourceColumn(ViewContext context, Map<String, Object> properties)
+    protected VisualizationSourceColumn(ViewContext context, VisDataRequest.Measure measure)
     {
-        this(getUserSchema(context, (String) properties.get("schemaName")), (String) properties.get("queryName"),
-             (String) properties.get("name"), (Boolean) properties.get("allowNullResults"), (Boolean) properties.get("requireLeftJoin"));
-        _inNotNullSet = BooleanUtils.toBooleanDefaultIfNull((Boolean) properties.get("inNotNullSet"), false);
+        this(getUserSchema(context, measure.getSchemaName()),
+                measure.getQueryName(),
+                measure.getName(),
+                measure.getAllowNullResults(),
+                measure.getRequireLeftJoin());
+        _inNotNullSet = BooleanUtils.toBooleanDefaultIfNull(measure.getInNotNullSet(), false);
 
-        JSONArray values = (JSONArray) properties.get("values");
-        _clientAlias = (String)properties.get("alias");
+        List<Object> values = measure.getValues();
+        _clientAlias = measure.getAlias();
         if (values != null)
         {
-            for (int i = 0; i < values.length(); i++)
+            for (int i = 0; i < values.size(); i++)
                 _values.add(values.get(i));
         }
-        String namedSetValue = (String) properties.get("nsvalues");
+        String namedSetValue = measure.getNsvalues();
         if (namedSetValue != null)
         {
             List<String> namedSet = QueryService.get().getNamedSet(namedSetValue);

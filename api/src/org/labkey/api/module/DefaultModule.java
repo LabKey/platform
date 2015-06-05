@@ -1288,7 +1288,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @NotNull
-    protected List<File> getResourceDirectories()
+    public List<File> getResourceDirectories()
     {
         // We load resources from the module's source directory if all of the following conditions are true:
         //
