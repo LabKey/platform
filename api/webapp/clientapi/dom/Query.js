@@ -18,6 +18,34 @@
  */
 LABKEY.Query = new function(impl, $) {
 
+    // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
+    // will make the browser pop up a dialog
+    function submitForm(url, formData) {
+        if (!formData['X-LABKEY-CSRF'])
+            formData['X-LABKEY-CSRF'] = LABKEY.CSRF;
+
+        var formId = LABKEY.Utils.generateUUID();
+
+        var html = '<form method="POST" id="' + formId + '"action="' + url + '">';
+        for (var name in formData)
+        {
+            if (!formData.hasOwnProperty(name))
+                continue;
+
+            var value = formData[name];
+            if (value == undefined)
+                continue;
+
+            html += '<input type="hidden"' +
+                    ' name="' + LABKEY.Utils.encodeHtml(name) + '"' +
+                    ' value="' + LABKEY.Utils.encodeHtml(value) + '" />';
+        }
+        html += "</form>";
+
+        $('body').append(html);
+        $('form#' + formId).submit();
+    }
+
     /**
      * Execute arbitrary LabKey SQL and export the results to Excel or TSV. After this method is
      * called, the user will be prompted to accept a file from the server, and most browsers will allow
@@ -37,21 +65,46 @@ LABKEY.Query = new function(impl, $) {
      */
     impl.exportSql = function(config) {
 
-        // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
-        // will make the browser pop up a dialog
-        var formId = LABKEY.Utils.generateUUID();
-        var html = '<form method="POST" id="' + formId + '"action="' + LABKEY.ActionURL.buildURL("query", "exportSql", config.containerPath) + '">';
-        if (undefined != config.sql)
-            html += '<input type="hidden" name="sql" value="' + LABKEY.Utils.encodeHtml(config.sql) + '" />';
-        if (undefined != config.schemaName)
-            html += '<input type="hidden" name="schemaName" value="' + LABKEY.Utils.encodeHtml(config.schemaName) + '" />';
-        if (undefined != config.format)
-            html += '<input type="hidden" name="format" value="' + LABKEY.Utils.encodeHtml(config.format) + '" />';
-        if (undefined != config.containerFilter)
-            html += '<input type="hidden" name="containerFilter" value="' + LABKEY.Utils.encodeHtml(config.containerFilter) + '" />';
-        html += "</form>";
-        $('body').append(html);
-        $('form#' + formId).submit();
+        var url = LABKEY.ActionURL.buildURL("query", "exportSql", config.containerPath);
+        var formData = {
+            sql: config.sql,
+            schemaName: config.schemaName,
+            format: config.format,
+            containerFilter: config.containerFilter
+        };
+
+        submitForm(url, formData);
+    };
+
+    /**
+     * @private Not yet official API
+     * Export a set of tables
+     * @param config An object which contains the following:
+     * @param {String} config.schemas An object with the following structure:
+     * <pre>
+     * {
+     *    schemas: {
+     *
+     *      // export the named queries from schema "A" using the default view or the named view
+     *      "A": [ {queryName: "a"}, {queryName: "b", viewName: "b-view"}, ... ]
+     *
+     *    }
+     * }
+     * </pre>
+     * @param {String} [config.headerType] Column header type
+     *
+     */
+    impl.exportTables = function (config) {
+
+        var formData = {};
+
+        if (config.headerType)
+            formData.headerType = config.headerType;
+
+        formData.schemas = JSON.stringify(config.schemas);
+
+        var url = LABKEY.ActionURL.buildURL("query", "exportTables.view");
+        submitForm(url, formData);
     };
 
     return impl;
