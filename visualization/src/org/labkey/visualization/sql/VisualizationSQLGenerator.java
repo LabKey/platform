@@ -21,6 +21,8 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -31,8 +33,11 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -43,6 +48,7 @@ import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.labkey.visualization.VisualizationController;
+import org.labkey.api.visualization.VisDataRequest;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,7 +64,7 @@ import java.util.Set;
  * User: brittp
  * Date: Jan 25, 2011 4:27:46 PM
  */
-public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
+public class VisualizationSQLGenerator implements HasViewContext
 {
 
     private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<>();
@@ -124,12 +130,12 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return provider;
     }
 
-    @Override
-    public void bindProperties(Map<String, Object> properties)
+
+    public void fromVisDataRequest(VisDataRequest visreq)
     {
         try
         {
-            _bindProperties(properties);
+            _fromVisDataRequest(visreq);
         }
         catch (IllegalArgumentException x)
         {
@@ -138,48 +144,48 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         }
     }
 
-    private void _bindProperties(Map<String, Object> properties)
+    private void _fromVisDataRequest(VisDataRequest visreq)
     {
-        _metaDataOnly = BooleanUtils.toBooleanDefaultIfNull((Boolean)properties.get("metaDataOnly"), false);
-        _joinToFirst = BooleanUtils.toBooleanDefaultIfNull((Boolean)properties.get("joinToFirst"), false);
+        _metaDataOnly = visreq.isMetaDataOnly();
+        _joinToFirst = visreq.isJoinToFirst();
 
-        Object measuresProp = properties.get("measures");
-        if (measuresProp != null)
+        List<VisDataRequest.MeasureInfo> measureInfos = visreq.getMeasures();
+        if (measureInfos != null && !measureInfos.isEmpty())
         {
             VisualizationSourceQuery previous = null;
-            for (Map<String, Object> measureInfo : ((JSONArray) measuresProp).toJSONObjectArray())
+            for (VisDataRequest.MeasureInfo measureInfo : measureInfos)
             {
-                Map<String, Object> measureProperties = (Map<String, Object>) measureInfo.get("measure");
-                if (null == measureProperties || measureProperties.isEmpty())
+                VisDataRequest.Measure measure = measureInfo.getMeasure();
+                if (null == measure || measure.isEmpty())
                 {
                     throw new IllegalArgumentException("The 'measure' property is required for each of the elements in the measures array.");
                 }
 
-                Map<String, Object> dimensionProperties = (Map<String, Object>) measureInfo.get("dimension");
+                VisDataRequest.Measure dimension = measureInfo.getDimension();
 
                 VisualizationSourceQuery query;
                 VisualizationSourceColumn measureCol;
-                if (dimensionProperties != null && !dimensionProperties.isEmpty())
+                if (null != dimension && !dimension.isEmpty())
                 {
                     // this column is the value column of a pivot, so we assume that it's an aggregate
-                    measureCol = new VisualizationAggregateColumn(getViewContext(), measureProperties);
+                    measureCol = new VisualizationAggregateColumn(getViewContext(), measure);
                     query = ensureSourceQuery(_viewContext.getContainer(), measureCol, previous);
                     query.addAggregate((VisualizationAggregateColumn) measureCol);
-                    VisualizationSourceColumn pivot = _columnFactory.create(getViewContext(), dimensionProperties);
+                    VisualizationSourceColumn pivot = _columnFactory.create(getViewContext(), dimension);
                     query.setPivot(pivot);
                     _pivots.add(pivot);
                 }
                 else
                 {
-                    measureCol = _columnFactory.create(getViewContext(), measureProperties);
+                    measureCol = _columnFactory.create(getViewContext(), measure);
                     query = ensureSourceQuery(_viewContext.getContainer(), measureCol, previous);
                     query.addSelect(measureCol, true);
 
-                    if (measureProperties.containsKey("isDemographic"))
-                        query.setSkipVisitJoin((Boolean) measureProperties.get("isDemographic"));
+                    if (measure.isDemographic())
+                        query.setSkipVisitJoin(measure.isDemographic());
                 }
 
-                Object timeAxis = measureInfo.get("time");
+                String timeAxis = measureInfo.getTime();
                 VisualizationProvider.ChartType type;
                 if (timeAxis instanceof String)
                 {
@@ -198,17 +204,17 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 switch (type)
                 {
                     case TIME_DATEBASED:
-                        Map<String, Object> dateOptions = (Map<String, Object>) measureInfo.get("dateOptions");
+                        VisDataRequest.DateOptions dateOptions = measureInfo.getDateOptions();
 
-                        if (dateOptions != null && !dateOptions.isEmpty())
+                        if (dateOptions != null)
                         {
-                            String interval = (String) dateOptions.get("interval");
+                            String interval = dateOptions.getInterval();
                             interval = normalizeInterval(interval);
 
-                            Map<String, Object> dateProperties = (Map<String, Object>) dateOptions.get("dateCol");
-                            Map<String, Object> zeroDateProperties = (Map<String, Object>) dateOptions.get("zeroDateCol");
+                            VisDataRequest.Measure dateProperties = dateOptions.getDateCol();
+                            VisDataRequest.Measure zeroDateProperties = dateOptions.getZeroDateCol();
 
-                            if (dateProperties != null && !dateProperties.isEmpty() && zeroDateProperties != null && !zeroDateProperties.isEmpty())
+                            if (dateProperties != null && zeroDateProperties != null)
                             {
                                 VisualizationSourceColumn dateCol = _columnFactory.create(getViewContext(), dateProperties);
                                 dateCol.setAllowNullResults(measureCol.isAllowNullResults());
@@ -221,15 +227,15 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
                                 newInterval = new VisualizationIntervalColumn(zeroDateCol, dateCol, interval, false);
                             }
-                            else if (dateOptions.containsKey("zeroDayVisitTag"))
+                            else if (dateOptions.isZeroDayVisitTagSet())
                             {
                                 VisualizationSourceColumn zeroDayCol = null;
-                                boolean useProtocolDay = (null == dateOptions.get("useProtocolDay") || (boolean)dateOptions.get("useProtocolDay"));
+                                boolean useProtocolDay = dateOptions.isUseProtocolDay();
 
                                 //  Issue 20459: handle 'Unaligned' (i.e. null zero day) case for calculating weeks/months
-                                if (null != dateOptions.get("zeroDayVisitTag"))
+                                if (null != dateOptions.getZeroDayVisitTag())
                                 {
-                                    String zeroDayVisitTag = (String)dateOptions.get("zeroDayVisitTag");
+                                    String zeroDayVisitTag = dateOptions.getZeroDayVisitTag();
                                     zeroDayCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "ZeroDay", false,
                                             zeroDayVisitTag, useProtocolDay, interval);
                                     ensureSourceQuery(_viewContext.getContainer(), zeroDayCol, query).addSelect(zeroDayCol, false);
@@ -272,13 +278,12 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         break;
                 }
 
-                Object filterArray = measureInfo.get("filterArray");
-                if (null != filterArray)
+                List<String> filters = measureInfo.getFilterArray();
+                if (!filters.isEmpty())
                 {
-                    JSONArray filters = ((JSONArray) filterArray);
-                    for (int i = 0; i < filters.length(); i++)
+                    for (int i = 0; i < filters.size(); i++)
                     {
-                        String q = (String) filters.get(i);
+                        String q = filters.get(i);
                         if (null != q)
                         {
                             SimpleFilter filter = SimpleFilter.createFilterFromParameter(q);
@@ -312,21 +317,21 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             }
         }
 
-        Object sortsProp = properties.get("sorts");
-        if (sortsProp != null)
+        List<VisDataRequest.Measure> sorts = visreq.getSorts();
+        if (null != sorts && !sorts.isEmpty())
         {
-            for (Map<String, Object> sortInfo : ((JSONArray) sortsProp).toJSONObjectArray())
+            for (VisDataRequest.Measure sortInfo : sorts)
             {
                 VisualizationSourceColumn sort = _columnFactory.create(getViewContext(), sortInfo);
                 getSourceQuery(sort, true).addSort(sort);
             }
         }
 
-        Object filterUrlString = properties.get("filterUrl");
+        String filterUrlString = visreq.getFilterUrl();
         if (filterUrlString != null)
         {
             ActionURL filterUrl = new ActionURL((String) filterUrlString);
-            String queryName = (String) properties.get("filterQuery");
+            String queryName = (String) visreq.getFilterQuery();
             VisualizationSourceQuery query = _sourceQueries.get(queryName);
             if (query != null)
             {
@@ -335,10 +340,10 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             }
         }
 
-        Object groupBys = properties.get("groupBys");
+        List<VisDataRequest.Measure> groupBys = visreq.getGroupBys();
         if (groupBys != null)
         {
-            for (Map<String, Object> additionalSelectInfo : ((JSONArray)groupBys).toJSONObjectArray())
+            for (VisDataRequest.Measure additionalSelectInfo : groupBys)
             {
                 _groupBys.add(_columnFactory.create(getViewContext(), additionalSelectInfo));
             }
@@ -346,11 +351,10 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         ensureJoinColumns();
 
-        Object limit = properties.get("limit");
+        Integer limit = visreq.getLimit();
         if (limit != null)
         {
-            if (NumberUtils.isDigits(limit.toString()))
-                _limit = Integer.parseInt(limit.toString());
+            _limit = limit;
         }
 
         if (_sourceQueries.isEmpty())
@@ -1062,4 +1066,51 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             interval = interval.substring(0, interval.length() - 1);
         return interval;
     }
+
+
+    public static class TestCase extends Assert
+    {
+        VisualizationSQLGenerator getVSQL()
+        {
+            VisualizationSQLGenerator vs = new VisualizationSQLGenerator();
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+            ViewContext ctx = new ViewContext();
+            ctx.setContainer(c);
+            ctx.setUser(user);
+            vs.setViewContext(ctx);
+            return vs;
+        }
+
+        @Test
+        public void testOneMeasure()
+        {
+        }
+
+        @Test
+        public void testTwoMeasure()
+        {
+
+        }
+
+        @Test
+        public void testPivot()
+        {
+
+        }
+
+        @Test
+        public void testGroupBy()
+        {
+
+        }
+
+        @Test
+        public void testFullOuter()
+        {
+
+        }
+
+    }
+
 }

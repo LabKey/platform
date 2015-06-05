@@ -30,10 +30,12 @@ import org.labkey.api.visualization.VisualizationService;
 import org.labkey.visualization.report.GenericChartReportImpl;
 import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.report.VisualizationUIProvider;
+import org.labkey.visualization.sql.VisualizationSQLGenerator;
 
 import javax.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class VisualizationModule extends DefaultModule
@@ -64,6 +66,16 @@ public class VisualizationModule extends DefaultModule
         return Collections.emptyList();
     }
 
+
+    @NotNull
+    @Override
+    public Set<Class> getIntegrationTests()
+    {
+        Set<Class> set = new LinkedHashSet<>();
+        set.add(VisualizationController.TestCase.class);
+        set.add(VisualizationSQLGenerator.TestCase.class);
+        return set;
+    }
 
     @Override
     protected void init()

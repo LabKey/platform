@@ -15,6 +15,9 @@
  */
 package org.labkey.visualization;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.batik.dom.svg.SVGDOMImplementation;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
@@ -26,6 +29,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
@@ -37,6 +42,8 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtendedApiQueryResponse;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.DiscussionService;
@@ -101,6 +108,7 @@ import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SQLGenerationException;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
+import org.labkey.api.visualization.VisDataRequest;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
@@ -460,11 +468,23 @@ public class VisualizationController extends SpringActionController
 
     @RequiresPermissionClass(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class GetDataAction extends ApiAction<VisualizationSQLGenerator>
+    @Marshal(Marshaller.Jackson)
+    public class GetDataAction extends ApiAction<VisDataRequest>
     {
         @Override
-        public ApiResponse execute(VisualizationSQLGenerator sqlGenerator, BindException errors) throws Exception
+        protected ObjectReader getObjectReader(Class c)
         {
+            ObjectReader r = super.getObjectReader(c);
+            return r.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        }
+
+        @Override
+        public ApiResponse execute(VisDataRequest form, BindException errors) throws Exception
+        {
+            VisualizationSQLGenerator sqlGenerator = new VisualizationSQLGenerator();
+            sqlGenerator.setViewContext(getViewContext());
+            sqlGenerator.fromVisDataRequest(form);
+
             String sql;
             try
             {
@@ -1568,4 +1588,101 @@ public class VisualizationController extends SpringActionController
             return (JSONObject) _props;
         }
     }
+
+
+
+
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testJacksonBinding() throws Exception
+        {
+            ObjectReader r = new ObjectMapper().reader(VisDataRequest.class)
+                    .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            String measure1 = "{\"allowNullResults\":true, \"aggregate\":\"MAX\", \"alias\":\"table_column\", " +
+                    "\"inNotNullSet\":true, \"name\":\"column\", \"nsvalues\":\"whatisthis\"," +
+                    "\"queryName\":\"table\", \"requireLeftJoin\":true, \"schemaName\":\"schema\", \"values\":[1,2,3]}";
+            String measure2 = "{\"allowNullResults\":false, \"aggregate\":\"MAX\", \"alias\":\"table_column2\", " +
+                    "\"inNotNullSet\":false, \"name\":\"column2\"," +
+                    "\"queryName\":\"table\", \"requireLeftJoin\":false, \"schemaName\":\"schema\"}";
+            String measure3 = "{\"alias\":\"table_column3\", " +
+                    "\"name\":\"column3\", \"notafieldICareAbout\":[2]," +
+                    "\"queryName\":\"table\", \"schemaName\":\"schema\", \"values\":[\"a\",\"b\"]}";
+            String measure4 = "{\"alias\":\"dem_column4\", " +
+                    "\"name\":\"column4\", \"notafieldICareAbout\":[2]," +
+                    "\"queryName\":\"dem\", \"schemaName\":\"schema\"}";
+            String measureDateCol = "{\"alias\":\"table_visitday\", " +
+                    "\"name\":\"visitday\", \"notafieldICareAbout\":[2]," +
+                    "\"queryName\":\"table\", \"schemaName\":\"schema\"}";
+            String measureStartDateCol = "{\"alias\":\"dem_enrolldate\", " +
+                    "\"name\":\"enrolldate\", \"notafieldICareAbout\":[2]," +
+                    "\"queryName\":\"dem\", \"schemaName\":\"schema\"}";
+
+            String dateOptions = "{\"interval\":\"day\", \"dateCol\":" + measureDateCol + ", \"zeroDateCol\":"+ measureStartDateCol +", \"zeroDayVisitTag\":\"ZERO\", \"useProtocolDay\":false}";
+            String jsonA =
+                    "{" +
+                            "\"ignoreMePlease\":true," +
+                            "\"metaDataOnly\":true, " +
+                            "\"joinToFirst\":true, " +
+                            "\"measures\":[{\"measure\":" + measure1 + ", \"dimension\":" + measure2 + ", \"dateOptions\":"+dateOptions+", \"filterArray\":[] }], " +
+                            "\"sorts\":[" + measure3 + "], " +
+                            "\"limit\":99, " +
+                            "\"filterUrl\":\"x=5\", " +
+                            "\"filterQuery\":\"y=7\", " +
+                            "\"groupBys\":[" + measure4 + "] " +
+                            "}";
+
+            VisDataRequest vs = r.readValue(jsonA);
+            assertNotNull(vs);
+            assertTrue(vs.isMetaDataOnly());
+            assertTrue(vs.isJoinToFirst());
+            assertEquals(1, vs.getMeasures().size());
+            VisDataRequest.MeasureInfo mi = vs.getMeasures().get(0);
+            {
+                VisDataRequest.Measure m = mi.getMeasure();
+                assertNotNull(m);
+                assertFalse(m.isEmpty());
+                assertTrue(m.getAllowNullResults());
+                assertEquals("MAX", m.getAggregate());
+                assertEquals("table_column", m.getAlias());
+                assertTrue(m.getInNotNullSet());
+                assertEquals("column", m.getName());
+                assertEquals("whatisthis", m.getNsvalues());
+                assertEquals("table", m.getQueryName());
+                assertTrue(m.getRequireLeftJoin());
+                assertEquals("schema", m.getSchemaName());
+                List<Object> values = m.getValues();
+                assertNotNull(values);
+                assertEquals(3, values.size());
+                assertEquals("1", values.get(0).toString());
+                assertEquals(2, ((Number) values.get(1)).intValue());
+                assertEquals("3", values.get(2).toString());
+            }
+            {
+                VisDataRequest.Measure m = mi.getDimension();
+                assertNotNull(m);
+                assertFalse(m.isEmpty());
+                assertFalse(m.getAllowNullResults());
+                assertFalse(m.getInNotNullSet());
+                assertFalse(m.getRequireLeftJoin());
+            }
+            VisDataRequest.DateOptions dopt = mi.getDateOptions();
+            assertNotNull(dopt);
+            assertEquals("day",dopt.getInterval());
+            assertEquals("visitday", dopt.getDateCol().getName());
+            assertEquals("enrolldate", dopt.getZeroDateCol().getName());
+            assertEquals("ZERO", dopt.getZeroDayVisitTag());
+            assertFalse(dopt.isUseProtocolDay());
+            assertEquals(0,mi.getFilterArray().size());
+            assertEquals(1, vs.getSorts().size());
+            assertNotNull(vs.getLimit());
+            assertEquals(99,vs.getLimit().intValue());
+            assertEquals("x=5",vs.getFilterUrl());
+            assertEquals("y=7",vs.getFilterQuery());
+            assertEquals(1,vs.getGroupBys().size());
+        }
+    } /* TestCase */
+
 }

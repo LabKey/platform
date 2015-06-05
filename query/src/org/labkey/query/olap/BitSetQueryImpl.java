@@ -758,7 +758,7 @@ public class BitSetQueryImpl
                         VisualizationService.SQLResponse r = vs.getDataGenerateSQL(container, user, expr.getData);
                         sql = r.sql;
                     }
-                    catch (SQLGenerationException ex)
+                    catch (SQLGenerationException|IOException ex)
                     {
                         throw new IllegalArgumentException(ex);
                     }

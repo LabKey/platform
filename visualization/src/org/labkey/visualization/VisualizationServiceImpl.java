@@ -15,6 +15,10 @@
  */
 package org.labkey.visualization;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -34,6 +38,7 @@ import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.SQLGenerationException;
+import org.labkey.api.visualization.VisDataRequest;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationProvider.MeasureFilter;
 import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
@@ -41,6 +46,7 @@ import org.labkey.api.visualization.VisualizationService;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,16 +54,19 @@ import java.util.Map;
 
 public class VisualizationServiceImpl implements VisualizationService
 {
-    public SQLResponse getDataGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException
+    public SQLResponse getDataGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException, IOException
     {
         ViewContext context = new ViewContext();
         context.setUser(user);
         context.setContainer(c);
 
+        ObjectReader r = new ObjectMapper().reader(VisDataRequest.class).without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        VisDataRequest vdr = r.readValue(json.toString());
+        vdr.setMetaDataOnly(true);
+
         VisualizationSQLGenerator generator = new VisualizationSQLGenerator();
         generator.setViewContext(context);
-        generator.bindProperties(json);
-        generator.setMetaDataOnly(true);
+        generator.fromVisDataRequest(vdr);
 
         SQLResponse ret = new SQLResponse();
         ret.schemaKey = generator.getPrimarySchema().getSchemaPath();
