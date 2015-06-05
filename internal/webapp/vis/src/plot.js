@@ -1338,10 +1338,8 @@ boxPlot.render();
 
         // create a sequencial index to use for the x-axis value and keep a map from that index to the tick label
         // also, pull out the meanStdDev data for the unique x-axis values and calculate average values for the trend line data
-        var tickLabelMap = {};
-        var distinctColorValues = [];
-        var index = -1, xTickIndex = {};
-        var meanStdDevData = [], groupedTrendlineData = [];
+        var tickLabelMap = {}, index = -1, distinctColorValues = [], meanStdDevData = [], groupedTrendlineData = [];
+        var uniqueXAxisLabels =  Ext4.Array.sort(Ext4.Array.unique(Ext4.Array.pluck(config.data, config.properties.xTick)));
         for (var i = 0; i < config.data.length; i++)
         {
             var row = config.data[i];
@@ -1355,9 +1353,10 @@ boxPlot.render();
             if (config.properties.xTick)
             {
                 var xTickValue = row[config.properties.xTick];
-                if (xTickIndex[xTickValue] == undefined) {
-                    xTickIndex[xTickValue] = ++index;
-                    groupedTrendlineData.push({seqValue: index, sum: 0, count: 0});
+                index = uniqueXAxisLabels.indexOf(xTickValue);
+
+                if (groupedTrendlineData[index] == undefined) {
+                    groupedTrendlineData[index] = { seqValue: index, sum: 0, count: 0 };
                 }
 
                 // calculate average values for the trend line data (used when grouping x by unique value)
@@ -1482,12 +1481,13 @@ boxPlot.render();
 
         config.layers = config.properties.disableRangeDisplay ? [] : [stdDev3Layer, stdDev2Layer, stdDev1Layer, meanLayer];
 
-        if (config.properties.showTrendLine) {
+        if (config.properties.showTrendLine)
+        {
             var pathLayerConfig = {
                 geom: new LABKEY.vis.Geom.Path({
                     opacity: .6,
-                    size: 2 }),
-                data: config.properties.xTick ? groupedTrendlineData : undefined // default to using the data for the plot
+                    size: 2
+                })
             };
 
             if (config.properties.groupBy) {
@@ -1496,6 +1496,10 @@ boxPlot.render();
                     group: config.properties.groupBy
                 };
             }
+            else {
+                // if we aren't showing multiple series data via the group by, use the groupedTrendlineData for the path
+                pathLayerConfig.data = groupedTrendlineData;
+            }
 
             config.layers.push(new LABKEY.vis.Layer(pathLayerConfig));
         }
@@ -1503,7 +1507,7 @@ boxPlot.render();
         // points based on the data value, color and hover text can be added via params to config
         var pointLayerConfig = {
             geom: new LABKEY.vis.Geom.Point({
-                position: config.properties.xTick ? 'jitter' : undefined,
+                position: config.properties.groupBy ? undefined : 'jitter',
                 size: 3
             }),
             aes: {}
