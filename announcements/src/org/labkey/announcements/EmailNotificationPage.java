@@ -28,6 +28,7 @@ abstract public class EmailNotificationPage extends JspBase
     public Container c;
     public User recipient;
     public ActionURL threadURL;
+    public ActionURL threadParentURL;
     public String boardPath;
     public ActionURL boardURL;
     public String siteURL;

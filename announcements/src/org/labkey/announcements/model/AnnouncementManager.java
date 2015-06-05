@@ -474,7 +474,8 @@ public class AnnouncementManager
         page.c = c;
         page.recipient = recipient;
         page.settings = settings;
-        page.threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId());
+        page.threadURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", a.getRowId());
+        page.threadParentURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", parent.getRowId());
         page.boardPath = c.getPath();
         page.boardURL = AnnouncementsController.getBeginURL(c);
         page.removeURL = removeURL;

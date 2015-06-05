@@ -35,6 +35,7 @@
         }
 
     }
+    String urlString = announcementModel.getParent() == null ? threadURL.getURIString() : threadParentURL.getURIString();
 %>
 <html>
 <head>
@@ -43,10 +44,14 @@
 %></head>
 
 <body>
+***Please do not reply to this email notification. Replies to this email are routed to an unmonitored mailbox. Instead, please use the link below.***
+<br><br>
 <table width=100%>
     <tr class="labkey-alternate-row"><td colspan="2" class="labkey-bordered" style="border-right: 0 none">
     <%=h(announcementModel.getCreatedByName(includeGroups, recipient, false) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) + ".")%></td>
-    <td align="right" class="labkey-bordered" style="border-left: 0 none"><%=formatDateTime(announcementModel.getCreated())%></td></tr><%
+    <td align="right" class="labkey-bordered" style="border-left: 0 none"><%=formatDateTime(announcementModel.getCreated())%></td>
+    </tr>
+    <%
 
     if (null != body)
     { %>
@@ -57,7 +62,7 @@
 
     %>
     <tr><td colspan="3">&nbsp;</td></tr>
-    <tr><td colspan="3"><a href="<%=h(threadURL.getURIString())%>">View this <%=h(settings.getConversationName().toLowerCase())%></a></td></tr>
+    <tr><td colspan="3"><a href="<%=h(urlString)%>">Click here</a> to reply to this <%=h(settings.getConversationName().toLowerCase())%> or go to <a href="<%=h(urlString)%>"><%= h(urlString)%></a></td></tr>
     <tr><td colspan="3">&nbsp;</td></tr>
     <tr><td colspan="3"><%=sb%></td></tr>
 </table>

@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
+***Please do not reply to this email notification. Replies to this email are routed to an unmonitored mailbox. Instead, please use the link below.***
 
 <%=text(announcementModel.getCreatedByName(includeGroups, recipient, false) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase())) %> at <%=text(DateUtil.formatDateTime(c, announcementModel.getCreated()))%>.<%
 
@@ -43,9 +44,9 @@
         out.print(text(body));
     }
 %>
-View this <%=text(settings.getConversationName().toLowerCase())%> here:
+To view or reply to this <%=text(settings.getConversationName().toLowerCase())%> go to:
 
-<%=text(threadURL.getURIString())%>
+<%=text(announcementModel.getParent() == null ? threadURL.getURIString() : threadParentURL.getURIString())%>
 
 
 You have received this email because you are you are <%
