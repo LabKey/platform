@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import htsjdk.samtools.util.IOUtil;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
