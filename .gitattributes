@@ -909,6 +909,7 @@ filecontent/webapp/File/panel/ContextMenu.js -text
 filecontent/webapp/File/panel/EditCustomFileProps.js -text
 filecontent/webapp/File/panel/EmailProps.js -text
 filecontent/webapp/File/panel/FileProperties.js -text
+filecontent/webapp/File/panel/Preview.js -text
 filecontent/webapp/File/panel/Toolbar.js -text
 filecontent/webapp/File/panel/Upload.js -text
 filecontent/webapp/File/system/Abstract.js -text

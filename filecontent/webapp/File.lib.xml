@@ -7,6 +7,7 @@
         <script path="File/system/Abstract.js"/>
         <script path="File/system/Webdav.js"/>
         <script path="File/panel/Browser.js"/>
+        <script path="File/panel/Preview.js"/>
         <script path="File/panel/Upload.js"/>
         <script path="File/panel/Admin.js"/>
         <script path="File/panel/Toolbar.js"/>

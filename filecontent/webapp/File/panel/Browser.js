@@ -847,16 +847,52 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
-    initGridColumns : function() {
+    attachPreview : function(id, record)
+    {
+        if (this && !this.fileSystem.canRead(record))
+            return;
+        if (record.get("collection"))
+            return;
+        var img = Ext4.fly(id,"previewAnchor");
+        if (!img)
+            return;
+        var preview = Ext4.create('File.panel.Preview',{title:false, target:id, record:record});
+        //var preview = Ext4.create('Ext.tip.ToolTip',{target:id, html:'tip '+ id + ' ' + record.get("name")});
+    },
 
+    // minor hack call with scope having decorateIcon functions
+    iconRenderer : function(value, metadata, record, rowIndex, colIndex, store, grid)
+    {
+        if (!value)
+        {
+            if (record.get("collection"))
+            {
+                value = LABKEY.FileSystem.FOLDER_ICON;
+            }
+            else
+            {
+                var name = record.get("name");
+                var i = name.lastIndexOf(".");
+                var ext = i >= 0 ? name.substring(i) : name;
+                value = LABKEY.contextPath + "/project/icon.view?name=" + ext;
+            }
+        }
+        var img = {tag:'img', width:16, height:16, src:value, id:Ext4.id(null,'icon')};
+        var html = Ext4.DomHelper.markup(img);
+        Ext4.defer(this.attachPreview,10,this,[img.id,record]);
+        return html;
+    },
+
+    initGridColumns : function()
+    {
         var columns = [{
-            xtype : 'templatecolumn',
+            //xtype : 'templatecolumn', tpl : '<img height="16px" width="16px" src="{icon}" alt="{type}">',
+            renderer : this.iconRenderer,
             text  : '',
             dataIndex : 'icon',
             sortable : !this.bufferFiles,
             width : 25,
             height : 20,
-            tpl : '<img height="16px" width="16px" src="{icon}" alt="{type}">',
             scope : this
         },{
             xtype : 'templatecolumn',
