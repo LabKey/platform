@@ -755,15 +755,16 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         try
         {
             PipeRoot pipeRoot = PipelineService.get().getPipelineRootSetting(getContainer());
-            if (pipeRoot.isValid())
+            if (pipeRoot != null && pipeRoot.isValid())
             {
                 for (ExpData expData : getAllDataUsedByRun())
                 {
                     File file = expData.getFile();
-                    // If we can find the file on disk, and it's in the assaydata directory, and there aren't any other
-                    // usages, move it into an archived subdirectory
+                    // If we can find the file on disk, and it's in the assaydata directory or was created by this run,
+                    // and there aren't any other usages, move it into an archived subdirectory.
                     if (file != null && NetworkDrive.exists(file) && file.isFile() &&
-                        file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory( getContainer())) && !hasOtherRunUsing(expData, this))
+                            (inAssayData(file) || isCreatedByRun(expData)) &&
+                            !hasOtherRunUsing(expData, this))
                     {
                         File archivedDir;
                         try
@@ -797,6 +798,21 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             LOG.warn("Unable to read parent directory: " + e.getMessage());
         }
+    }
+
+    private boolean inAssayData(File file) throws ExperimentException
+    {
+        return file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory(getContainer()));
+    }
+
+    private boolean isCreatedByRun(ExpData data)
+    {
+        // TODO: is using data.getRun() sufficient or must we check sourceApp.getRun() to see if the data was created by this run?
+        ExpProtocolApplication sourceApp = data.getSourceApplication();
+        if (sourceApp != null && this.equals(sourceApp.getRun()))
+            return true;
+
+        return false;
     }
 
     @Override
