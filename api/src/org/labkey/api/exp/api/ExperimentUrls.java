@@ -37,7 +37,7 @@ public interface ExperimentUrls extends UrlProvider
     ActionURL getRunTextURL(Container c, int rowId);
     ActionURL getRunTextURL(ExpRun run);
 
-    public ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnURL);
+    ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnURL);
 
     ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL);
 
@@ -66,6 +66,8 @@ public interface ExperimentUrls extends UrlProvider
     ActionURL getShowFileURL(ExpData data, boolean inline);
 
     ActionURL getMaterialDetailsURL(ExpMaterial material);
+
+    ActionURL getMaterialDetailsURL(Container c, int materialRowId);
 
     ActionURL getShowUploadMaterialsURL(Container container);
 
