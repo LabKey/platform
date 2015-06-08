@@ -178,6 +178,40 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         }
     }
 
+    /**
+     * FreezerPro standard fields and their mapping to LabKey specimen fields
+     * Input field			Application field		Specimen Field
+     * obj_id          ->  barcode				-> 	global_unique_specimen_id (from barcode_tag ifdef else barcode)
+     * sample_id       ->  uid					->	unique_specimen_id
+     * sample_type     ->  derivative_type 	->	use derivative_type to lookup primary_type in mappings
+     * (unless empty then   type -> derivative_type)
+     * type            ->  derivative_type
+     * (see above)
+     * source          ->  source				->	source
+     * scount          ->  vials
+     * name            						->	ptid (from patient_id ifdef else name)
+     * description     ->  description
+     * owner_username  ->	(not mapped)
+     * owner_id        ->	(not mapped)
+     * created_at      -> 						-> draw_timestamp (default value if date_of_draw not defined)
+     * updated_at      -> (not mapped)
+     *
+     * Special fields that can be mapped by configuration of the freezerpro config xml:
+     * date_of_draw		->	draw_timestamp
+     * time_of_draw		-> 	draw_timestamp (in conjunction with date_of_draw)
+     * protocol_number		->	protocol_number
+     * date_of_process		->	processing_date
+     * time_of_process		-> 	processing_time
+     * processed_by		->	processed_by_initials
+     * freezer				->	freezer
+     * level1				-> 	fr_level1
+     * level2				-> 	fr_levle2
+     * box					->	fr_container
+     * position			->	fr_position
+     * comments			-> 	comments
+     * barcode_tag	(user override for global_unique_specimen_id field)
+     * patient_id	(user override for ptid)
+     */
     @Override
     @Nullable
     protected Map<String, Object> transformRow(Map<String, Object> inputData, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
@@ -189,11 +223,8 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         String lab = "unknown";
         Integer labId = labIds.get(lab);
 
-        String derivative = getNonNullValue(inputRow, "sample type");
-        if (StringUtils.isEmpty(derivative))
-        {
-            derivative = getNonNullValue(inputRow, "sampletype_name");
-        }
+        String derivative = getDerivative(inputRow);
+
         // Check if it has a known primary type
         String primary = DERIVATIVE_PRIMARY_MAPPINGS.get(derivative);
         if (primary == null)
@@ -220,7 +251,7 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         String ptid = getSubjectID(inputRow);
         if (ptid == null)
         {
-            warn("Skipping data row could not find 'patient id' value, row number " + rowIndex);
+            warn("Skipping data row could not find 'patient_id' value, row number " + rowIndex);
             return null;
         }
         else if (ptid.length() > 32)
@@ -250,12 +281,12 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         outputRow.put("draw_timestamp", collectionDate);
         outputRow.put("visit_value", "-1");
 
-        Date processDate = parseDate("date of process", inputRow);
-        Date processTime = parseTime("time of process", inputRow);
+        Date processDate = parseDate("date_of_process", inputRow);
+        Date processTime = parseTime("time_of_process", inputRow);
 
         outputRow.put("processing_date", processDate);
         outputRow.put("processing_time", processTime);
-        String processedBy = removeNonNullValue(inputRow, "processed by");
+        String processedBy = removeNonNullValue(inputRow, "processed_by");
         outputRow.put("processed_by_initials", processedBy);
 
         outputRow.put("lab_id", labId);
@@ -267,6 +298,8 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         outputRow.put("derivative_type_id", derivativeId);
 
         // freezer location
+        String freezer = removeNonNullValue(inputRow, "freezer");
+        outputRow.put("freezer", freezer);
         String level1 = removeNonNullValue(inputRow, "level1");
         outputRow.put("fr_level1", level1);
         String level2 = removeNonNullValue(inputRow, "level2");
@@ -277,6 +310,8 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         outputRow.put("fr_position", position);
 
         // protocol
+        String protocolNumber = removeNonNullValue(inputRow, "protocol_number");
+        outputRow.put("protocol_number", protocolNumber);
         //String protocol = removeNonNullValue(outputRow, "study protocol");
         //outputRow.put("protocol_number", protocol);
 
@@ -297,9 +332,26 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
     }
 
     @Nullable
+    private String getDerivative(Map<String, Object> row)
+    {
+        String derivative = getNonNullValue(row, "sample_type");
+        if (StringUtils.isEmpty(derivative))
+        {
+            derivative = getNonNullValue(row, "sampletype_name");
+        }
+        else if (StringUtils.isEmpty(derivative))
+        {
+            derivative = getNonNullValue(row, "type");
+        }
+        return derivative;
+    }
+
+    @Nullable
     private String getSubjectID(Map<String, Object> row)
     {
-        if (row.containsKey("patient id"))
+        if (row.containsKey("patient_id"))
+            return removeNonNullValue(row, "patient_id");
+        else if (row.containsKey("patient id"))
             return removeNonNullValue(row, "patient id");
         else if (row.containsKey("name"))
             return removeNonNullValue(row, "name");
@@ -310,10 +362,10 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
     @Nullable
     private String getGlobalUniqueSampleId(Map<String, Object> row)
     {
-        if (row.containsKey("barcode"))
-            return removeNonNullValue(row, "barcode");
-        else if (row.containsKey("barcode_tag"))
+        if (row.containsKey("barcode_tag"))
             return removeNonNullValue(row, "barcode_tag");
+        else if (row.containsKey("barcode"))
+            return removeNonNullValue(row, "barcode");
 
         return null;
     }
@@ -321,12 +373,12 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
     @Nullable
     private Date getDrawDate(Map<String, Object> row)
     {
-        if (row.containsKey("date of draw") && row.containsKey("time of draw"))
-            return parseDateTime("date of draw", "time of draw", row);
-        else if (row.containsKey("date of draw"))
-            return parseDate("date of draw", row);
-        else if (row.containsKey("created at"))
-            return parseDate("created at", row);
+        if (row.containsKey("date_of_draw") && row.containsKey("time_of_draw"))
+            return parseDateTime("date_of_draw", "time_of_draw", row);
+        else if (row.containsKey("date_of_draw"))
+            return parseDate("date_of_draw", row);
+        else if (row.containsKey("created_at"))
+            return parseDate("created_at", row);
 
         return null;
     }
@@ -404,17 +456,17 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
 
             List<Map<String, Object>> inputRows = new ArrayList<>();
             ArrayListMap<String, Object> row1 = new ArrayListMap(template.getFindMap());
-            row1.put("patient id", "ptid1");
+            row1.put("patient_id", "ptid1");
             row1.put("uid", "1111");
             row1.put("barcode", "barcode-1");
-            row1.put("sample type", "PBMC");
+            row1.put("sample_type", "PBMC");
             inputRows.add(row1);
             ArrayListMap<String, Object> row2 = new ArrayListMap(template.getFindMap());
             row2.putAll(row1);
             inputRows.add(row2);
             ArrayListMap<String, Object> row3 = new ArrayListMap(template.getFindMap());
             row3.putAll(row1);
-            row3.put("patient id", "ptid2");
+            row3.put("patient_id", "ptid2");
             inputRows.add(row3);
 
             List<Map<String, Object>> outputRows = _task.transformRows(inputRows);
@@ -428,25 +480,25 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
             List<Map<String, Object>> inputRows = new ArrayList<>();
 
             ArrayListMap<String,Object> row1 = new ArrayListMap<>(template.getFindMap());
-            row1.put("patient id", "ptid1");
+            row1.put("patient_id", "ptid1");
             row1.put("uid", "1111");
             row1.put("barcode", "barcode-1");
-            row1.put("sample type", "PBMC");
+            row1.put("sample_type", "PBMC");
             inputRows.add(row1);
 
             ArrayListMap<String,Object> row2 = new ArrayListMap<>(template.getFindMap());
             row2.putAll(row1);
-            row2.put("sample type", "H-PBMC");
+            row2.put("sample_type", "H-PBMC");
             inputRows.add(row2);
 
             ArrayListMap<String,Object> row3 = new ArrayListMap<>(template.getFindMap());
             row3.putAll(row1);
-            row3.put("sample type", "Urine");
+            row3.put("sample_type", "Urine");
             inputRows.add(row3);
 
             ArrayListMap<String,Object> row4 = new ArrayListMap<>(template.getFindMap());
             row4.putAll(row3);
-            row4.put("sample type", "Serum");
+            row4.put("sample_type", "Serum");
             inputRows.add(row4);
 
             List<Map<String, Object>> outputRows = _task.transformRows(inputRows);

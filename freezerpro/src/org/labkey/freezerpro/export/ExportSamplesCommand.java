@@ -54,7 +54,7 @@ public class ExportSamplesCommand
         _limit = limit;
     }
 
-    public FreezerProCommandResonse execute(HttpClient client, PipelineJob job)
+    public FreezerProCommandResponse execute(HttpClient client, PipelineJob job)
     {
         HttpPost post = new HttpPost(_url);
 

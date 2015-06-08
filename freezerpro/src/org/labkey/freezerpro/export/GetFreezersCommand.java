@@ -48,7 +48,7 @@ public class GetFreezersCommand
         _password = password;
     }
 
-    public FreezerProCommandResonse execute(HttpClient client, PipelineJob job)
+    public FreezerProCommandResponse execute(HttpClient client, PipelineJob job)
     {
         HttpPost post = new HttpPost(_url);
 

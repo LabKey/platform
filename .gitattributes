@@ -928,13 +928,14 @@ freezerpro/src/org/labkey/freezerpro/FreezerProModule.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProTransform.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProTransformTask.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProUploadTask.java -text
+freezerpro/src/org/labkey/freezerpro/export/ExportAdvancedSamplesCommand.java -text
 freezerpro/src/org/labkey/freezerpro/export/ExportLocationCommand.java -text
 freezerpro/src/org/labkey/freezerpro/export/ExportLocationResponse.java -text
 freezerpro/src/org/labkey/freezerpro/export/ExportSampleUserFieldsCommand.java -text
 freezerpro/src/org/labkey/freezerpro/export/ExportSamplesCommand.java -text
 freezerpro/src/org/labkey/freezerpro/export/ExportSamplesResponse.java -text
 freezerpro/src/org/labkey/freezerpro/export/ExportUserFieldsResponse.java -text
-freezerpro/src/org/labkey/freezerpro/export/FreezerProCommandResonse.java -text
+freezerpro/src/org/labkey/freezerpro/export/FreezerProCommandResponse.java -text
 freezerpro/src/org/labkey/freezerpro/export/FreezerProExport.java -text
 freezerpro/src/org/labkey/freezerpro/export/GetFreezerSamplesCommand.java -text
 freezerpro/src/org/labkey/freezerpro/export/GetFreezerSamplesResponse.java -text

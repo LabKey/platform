@@ -50,7 +50,7 @@ public class ExportSampleUserFieldsCommand
         _sampleId = sampleId;
     }
 
-    public FreezerProCommandResonse execute(HttpClient client, PipelineJob job)
+    public FreezerProCommandResponse execute(HttpClient client, PipelineJob job)
     {
         HttpPost post = new HttpPost(_url);
 

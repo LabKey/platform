@@ -15,19 +15,13 @@
  */
 package org.labkey.freezerpro.export;
 
-import com.fasterxml.jackson.core.JsonParser;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.util.JsonUtil;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.labkey.freezerpro.FreezerProConfig;
 
 /**
  * Created by klum on 5/24/2014.
  */
-public class ExportLocationResponse extends FreezerProCommandResonse
+public class ExportLocationResponse extends FreezerProCommandResponse
 {
     public static final String DATA_NODE_NAME = "Locations";
 
@@ -41,7 +35,7 @@ public class ExportLocationResponse extends FreezerProCommandResonse
     {
         // special case for this API using id as the sample id
         if ("id".equalsIgnoreCase(fieldName))
-            return FreezerProExport.SAMPLE_ID_FIELD_NAME;
+            return FreezerProConfig.SAMPLE_ID_FIELD_NAME;
         else
             return super.translateFieldName(fieldName);
     }

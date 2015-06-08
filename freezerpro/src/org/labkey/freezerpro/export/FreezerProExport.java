@@ -27,16 +27,12 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.xmlbeans.XmlException;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.freezerpro.FreezerProConfig;
-import org.labkey.study.xml.freezerProExport.FreezerProConfigDocument;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,108 +53,19 @@ public class FreezerProExport
     private PipelineJob _job;
     private File _archive;
 
-    private String _searchFilterString;
-    private boolean _getUserFields;
-    private static Map<String, String> COLUMN_MAP;
-    private List<Pair<String, List<String>>> _columnFilters = new ArrayList<>();
-    private Map<String, String> _columnMap = new CaseInsensitiveHashMap<>();
     private Set<String> _columnSet = new HashSet<>();
     private static int RECORD_CHUNK_SIZE = 2000;
-
-    public static final String BARCODE_FIELD_NAME = "barcode";
-    public static final String SAMPLE_ID_FIELD_NAME = "uid";
-
-    static
-    {
-        COLUMN_MAP = new CaseInsensitiveHashMap<>();
-
-        COLUMN_MAP.put("type", "sample type");
-        COLUMN_MAP.put("barcode_tag", BARCODE_FIELD_NAME);
-        COLUMN_MAP.put("sample_id", SAMPLE_ID_FIELD_NAME);
-        COLUMN_MAP.put("scount", "vials");
-        COLUMN_MAP.put("created at", "created");
-        COLUMN_MAP.put("box_name", "box");
-        COLUMN_MAP.put("time of draw", "time of draw");
-        COLUMN_MAP.put("date of process", "date of draw");
-    }
 
     public FreezerProExport(FreezerProConfig config, PipelineJob job, File archive)
     {
         _config = config;
         _job = job;
         _archive = archive;
-
-        _columnMap.putAll(COLUMN_MAP);
-        if (config.getMetadata() != null)
-            parseConfigMetadata(config.getMetadata());
     }
 
     public FreezerProConfig getConfig()
     {
         return _config;
-    }
-
-    private void parseConfigMetadata(String metadata)
-    {
-        if (metadata != null)
-        {
-            try
-            {
-                FreezerProConfigDocument doc = FreezerProConfigDocument.Factory.parse(metadata, XmlBeansUtil.getDefaultParseOptions());
-                FreezerProConfigDocument.FreezerProConfig config = doc.getFreezerProConfig();
-
-                if (config != null)
-                {
-                    // import user defined fields
-                    _getUserFields = config.getGetUserFields();
-                    if (config.isSetFilterString())
-                        _searchFilterString = config.getFilterString();
-
-                    Map<String, List<String>> filters = new HashMap<>();
-                    FreezerProConfigDocument.FreezerProConfig.ColumnFilters columnFilters = config.getColumnFilters();
-                    if (columnFilters != null)
-                    {
-                        for (FreezerProConfigDocument.FreezerProConfig.ColumnFilters.Filter filter : columnFilters.getFilterArray())
-                        {
-                            if (filter.getName() != null && filter.getValue() != null)
-                            {
-                                // filters can support multiple values for the same field
-                                if (!filters.containsKey(filter.getName()))
-                                {
-                                    filters.put(filter.getName(), new ArrayList<String>());
-                                }
-                                filters.get(filter.getName()).add(filter.getValue());
-                            }
-                        }
-                    }
-
-                    FreezerProConfigDocument.FreezerProConfig.ColumnMap columnMap = config.getColumnMap();
-                    if (columnMap != null)
-                    {
-                        for (FreezerProConfigDocument.FreezerProConfig.ColumnMap.Column col : columnMap.getColumnArray())
-                        {
-                            if (col.getSourceName() != null && col.getDestName() != null)
-                            {
-                                if (!COLUMN_MAP.containsKey(col.getSourceName()))
-                                    _columnMap.put(col.getSourceName(), col.getDestName());
-                                else
-                                    _job.warn("The column name: " + col.getSourceName() + " is reserved and cannot be remapped. " +
-                                            "The configuration specificed to remap to: " + col.getDestName() + " will be ignored.");
-                            }
-                        }
-                    }
-
-                    for (Map.Entry<String, List<String>> entry : filters.entrySet())
-                    {
-                        _columnFilters.add(new Pair<String, List<String>>(entry.getKey(), entry.getValue()));
-                    }
-                }
-            }
-            catch (XmlException e)
-            {
-                _job.error("The FreezerPro metadata XML was malformed. The error was returned: " + e.getMessage());
-            }
-        }
     }
 
     public File exportRepository()
@@ -168,59 +75,66 @@ public class FreezerProExport
 
         List<Map<String, Object>> data = new ArrayList<>();
 
-        // FreezerPro search_samples is slow and should be avoided as a way to export samples. The preferred way is to
-        // iterate over all freezers and request samples per each freezer
-        if (_searchFilterString != null)
+        if (getConfig().isUseAdvancedSearch())
         {
-            data = getSampleData(client);
-            // get location information
-            Map<String, Map<String, Object>> locationMap = new HashMap<>();
-            getSampleLocationData(client, locationMap);
-
-            // merge the location information into the sample data
-            for (Map<String, Object> dataRow : data)
-            {
-                String sampleId = String.valueOf(dataRow.get(SAMPLE_ID_FIELD_NAME));
-
-                if (locationMap.containsKey(sampleId))
-                {
-                    dataRow.putAll(locationMap.get(sampleId));
-                }
-            }
+            data = getAdvancedSampleData(client);
         }
         else
         {
-            getVialSamples(client, data);
-        }
-
-        // if there are any column filters in the configuration, perform the filtering
-        data = filterColumns(data);
-
-        if (_getUserFields && !data.isEmpty())
-        {
-            _job.info("requesting any user defined fields and location information");
-            int count = 0;
-            for (Map<String, Object> row : data)
+            // FreezerPro search_samples is slow and should be avoided as a way to export samples. The preferred way is to
+            // iterate over all freezers and request samples per each freezer
+            if (getConfig().getSearchFilterString() != null)
             {
-                if (_job.checkInterrupted())
-                    return null;
+                data = getSampleData(client);
+                // get location information
+                Map<String, Map<String, Object>> locationMap = new HashMap<>();
+                getSampleLocationData(client, locationMap);
 
-                if (row.containsKey(SAMPLE_ID_FIELD_NAME))
+                // merge the location information into the sample data
+                for (Map<String, Object> dataRow : data)
                 {
-                    String id = String.valueOf(row.get(SAMPLE_ID_FIELD_NAME));
+                    String sampleId = String.valueOf(FreezerProConfig.SAMPLE_ID_FIELD_NAME);
 
-                    // get any user defined fields
-                    getSampleUserData(client, id, row);
-                    if ((++count % 1000) == 0)
+                    if (locationMap.containsKey(sampleId))
                     {
-                        _job.info("User defined fields = retrieved " + count + " records out of a total of " + data.size());
+                        dataRow.putAll(locationMap.get(sampleId));
                     }
                 }
             }
-        }
+            else
+            {
+                getVialSamples(client, data);
+            }
 
-        // filter again to catch any column that may be user defined
-        data = filterColumns(data);
+            // if there are any column filters in the configuration, perform the filtering
+            data = filterColumns(data);
+
+            if (getConfig().isGetUserFields() && !data.isEmpty())
+            {
+                _job.info("requesting any user defined fields and location information");
+                int count = 0;
+                for (Map<String, Object> row : data)
+                {
+                    if (_job.checkInterrupted())
+                        return null;
+
+                    if (row.containsKey(FreezerProConfig.SAMPLE_ID_FIELD_NAME))
+                    {
+                        String id = String.valueOf(row.get(FreezerProConfig.SAMPLE_ID_FIELD_NAME));
+
+                        // get any user defined fields
+                        getSampleUserData(client, id, row);
+                        if ((++count % 1000) == 0)
+                        {
+                            _job.info("User defined fields = retrieved " + count + " records out of a total of " + data.size());
+                        }
+                    }
+                }
+            }
+
+            // filter again to catch any column that may be user defined
+            data = filterColumns(data);
+        }
 
         // write out the archive
         try
@@ -282,10 +196,10 @@ public class FreezerProExport
         }
     }
 
-    private List<Map<String, Object>> getSampleData(HttpClient client)
+    private List<Map<String, Object>> getAdvancedSampleData(HttpClient client)
     {
         List<Map<String, Object>> data = new ArrayList<>();
-        _job.info("requesting sample data from server url: " + _config.getBaseServerUrl());
+        _job.info("requesting sample data from server url: " + getConfig().getBaseServerUrl());
 
         try
         {
@@ -295,9 +209,94 @@ public class FreezerProExport
 
             while (!done)
             {
-                ExportSamplesCommand exportSamplesCmd = new ExportSamplesCommand(this, _config.getBaseServerUrl(), _config.getUsername(),
-                        _config.getPassword(), _searchFilterString, start, limit);
-                FreezerProCommandResonse response = exportSamplesCmd.execute(client, _job);
+                ExportAdvancedSamplesCommand exportAdvSamplesCmd = new ExportAdvancedSamplesCommand(this, getConfig(), false, start, limit);
+                FreezerProCommandResponse response = exportAdvSamplesCmd.execute(client, _job);
+                if (response != null)
+                {
+                    if (response.getStatusCode() == HttpStatus.SC_OK)
+                    {
+                        _job.info("sample request successfull, parsing returned data.");
+                        data.addAll(response.loadData());
+
+                        start += limit;
+                        done = (response.getTotalRecords() == 0) || (start >= response.getTotalRecords());
+                    }
+                    else
+                    {
+                        _job.error("request for sample data failed, status code: " + response.getStatusCode());
+                        throw new RuntimeException("request for sample data failed, status code: " + response.getStatusCode());
+                    }
+                }
+            }
+
+            if (getConfig().isGetArchivedSamples())
+            {
+                done = false;
+                start = 0;
+                while (!done)
+                {
+                    ExportAdvancedSamplesCommand exportAdvSamplesCmd = new ExportAdvancedSamplesCommand(this, getConfig(), true, start, limit);
+                    FreezerProCommandResponse response = exportAdvSamplesCmd.execute(client, _job);
+                    if (response != null)
+                    {
+                        if (response.getStatusCode() == HttpStatus.SC_OK)
+                        {
+                            _job.info("sample request successful, parsing returned data.");
+                            data.addAll(response.loadData());
+
+                            start += limit;
+                            done = (response.getTotalRecords() == 0) || (start >= response.getTotalRecords());
+                        }
+                        else
+                        {
+                            _job.error("request for sample data failed, status code: " + response.getStatusCode());
+                            throw new RuntimeException("request for sample data failed, status code: " + response.getStatusCode());
+                        }
+                    }
+                }
+            }
+
+            if (getConfig().isGetSampleLocation())
+            {
+                // get location information
+                Map<String, Map<String, Object>> locationMap = new HashMap<>();
+                getSampleLocationData(client, locationMap);
+
+                // merge the location information into the sample data
+                for (Map<String, Object> dataRow : data)
+                {
+                    String sampleId = String.valueOf(dataRow.get(FreezerProConfig.SAMPLE_ID_FIELD_NAME));
+
+                    if (locationMap.containsKey(sampleId))
+                    {
+                        dataRow.putAll(locationMap.get(sampleId));
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+        return data;
+    }
+
+    private List<Map<String, Object>> getSampleData(HttpClient client)
+    {
+        List<Map<String, Object>> data = new ArrayList<>();
+        _job.info("requesting sample data from server url: " + getConfig().getBaseServerUrl());
+
+        try
+        {
+            int start = 0;
+            int limit = RECORD_CHUNK_SIZE;
+            boolean done = false;
+
+            while (!done)
+            {
+                ExportSamplesCommand exportSamplesCmd = new ExportSamplesCommand(this, getConfig().getBaseServerUrl(), getConfig().getUsername(),
+                        getConfig().getPassword(), getConfig().getSearchFilterString(), start, limit);
+                FreezerProCommandResponse response = exportSamplesCmd.execute(client, _job);
                 if (response != null)
                 {
                     if (response.getStatusCode() == HttpStatus.SC_OK)
@@ -325,8 +324,8 @@ public class FreezerProExport
 
     private void getSampleUserData(HttpClient client, String sampleId, Map<String, Object> row)
     {
-        ExportSampleUserFieldsCommand exportUserFieldsCmd = new ExportSampleUserFieldsCommand(this, _config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), sampleId);
-        FreezerProCommandResonse response = exportUserFieldsCmd.execute(client, _job);
+        ExportSampleUserFieldsCommand exportUserFieldsCmd = new ExportSampleUserFieldsCommand(this, getConfig().getBaseServerUrl(), getConfig().getUsername(), getConfig().getPassword(), sampleId);
+        FreezerProCommandResponse response = exportUserFieldsCmd.execute(client, _job);
 
         try
         {
@@ -367,9 +366,9 @@ public class FreezerProExport
 
             while (!done)
             {
-                ExportLocationCommand exportLocationCommand = new ExportLocationCommand(this, _config.getBaseServerUrl(),
-                        _config.getUsername(), _config.getPassword(), start, limit);
-                FreezerProCommandResonse response = exportLocationCommand.execute(client, _job);
+                ExportLocationCommand exportLocationCommand = new ExportLocationCommand(this, getConfig().getBaseServerUrl(),
+                        getConfig().getUsername(), getConfig().getPassword(), start, limit);
+                FreezerProCommandResponse response = exportLocationCommand.execute(client, _job);
 
                 if (response != null)
                 {
@@ -377,7 +376,7 @@ public class FreezerProExport
                     {
                         for (Map<String, Object> row : response.loadData())
                         {
-                            String sampleId = String.valueOf(row.get(SAMPLE_ID_FIELD_NAME));
+                            String sampleId = String.valueOf(row.get(FreezerProConfig.SAMPLE_ID_FIELD_NAME));
                             String location = String.valueOf(row.get("location"));
 
                             if (!locationMap.containsKey(sampleId))
@@ -427,8 +426,8 @@ public class FreezerProExport
 
     private List<Freezer> getFreezers(HttpClient client)
     {
-        GetFreezersCommand sampleTypesCommand = new GetFreezersCommand(this, _config.getBaseServerUrl(), _config.getUsername(), _config.getPassword());
-        FreezerProCommandResonse response = sampleTypesCommand.execute(client, _job);
+        GetFreezersCommand sampleTypesCommand = new GetFreezersCommand(this, getConfig().getBaseServerUrl(), getConfig().getUsername(), getConfig().getPassword());
+        FreezerProCommandResponse response = sampleTypesCommand.execute(client, _job);
         List<Freezer> freezers = new ArrayList<>();
 
         try
@@ -445,7 +444,7 @@ public class FreezerProExport
                                         String.valueOf(row.get("description")),
                                         NumberUtils.toInt(String.valueOf(row.get("subdivisions"))),
                                         NumberUtils.toInt(String.valueOf(row.get("boxes"))),
-                                        String.valueOf(row.get(BARCODE_FIELD_NAME)),
+                                        String.valueOf(row.get(FreezerProConfig.BARCODE_FIELD_NAME)),
                                         String.valueOf(row.get("rfid_tag")))
                         );
 
@@ -470,8 +469,8 @@ public class FreezerProExport
     {
         if (freezer.getId() != null)
         {
-            GetFreezerSamplesCommand sampleTypesCommand = new GetFreezerSamplesCommand(this, _config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), freezer.getId());
-            FreezerProCommandResonse response = sampleTypesCommand.execute(client, _job);
+            GetFreezerSamplesCommand sampleTypesCommand = new GetFreezerSamplesCommand(this, getConfig().getBaseServerUrl(), getConfig().getUsername(), getConfig().getPassword(), freezer.getId());
+            FreezerProCommandResponse response = sampleTypesCommand.execute(client, _job);
 
             try
             {
@@ -510,9 +509,9 @@ public class FreezerProExport
 
             while (!done)
             {
-                GetVialSamplesCommand vialSamplesCommand = new GetVialSamplesCommand(this, _config.getBaseServerUrl(),
-                        _config.getUsername(), _config.getPassword(), start, limit);
-                FreezerProCommandResonse response = vialSamplesCommand.execute(client, _job);
+                GetVialSamplesCommand vialSamplesCommand = new GetVialSamplesCommand(this, getConfig().getBaseServerUrl(),
+                        getConfig().getUsername(), getConfig().getPassword(), start, limit);
+                FreezerProCommandResponse response = vialSamplesCommand.execute(client, _job);
                 if (response != null)
                 {
                     if (response.getStatusCode() == HttpStatus.SC_OK)
@@ -550,8 +549,8 @@ public class FreezerProExport
 
     public String translateFieldName(String fieldName)
     {
-        if (_columnMap.containsKey(fieldName))
-            fieldName = _columnMap.get(fieldName);
+        if (getConfig().getColumnMap().containsKey(fieldName))
+            fieldName = getConfig().getColumnMap().get(fieldName);
 
         // keep track of the global column list for the export
         if (!_columnSet.contains(fieldName))
@@ -562,14 +561,14 @@ public class FreezerProExport
 
     private List<Map<String, Object>> filterColumns(List<Map<String, Object>> data)
     {
-        if (!_columnFilters.isEmpty())
+        if (!getConfig().getColumnFilters().isEmpty())
         {
             List<Map<String, Object>> newData = new ArrayList<>();
 
             for (Map<String, Object> record : data)
             {
                 boolean addRecord = true;
-                for (Pair<String, List<String>> filter : _columnFilters)
+                for (Pair<String, List<String>> filter : getConfig().getColumnFilters())
                 {
                     if (record.containsKey(filter.getKey()) && !valueAllowed(record.get(filter.getKey()), filter.getValue()))
                     {

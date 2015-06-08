@@ -34,7 +34,7 @@ import static org.labkey.api.util.JsonUtil.expectArrayStart;
 /**
  * Created by klum on 5/21/2014.
  */
-public abstract class FreezerProCommandResonse
+public abstract class FreezerProCommandResponse
 {
     protected String _text;
     protected String _dataNodeName;
@@ -46,7 +46,7 @@ public abstract class FreezerProCommandResonse
     public static final String TOTAL_FIELD_NAME = "Total";
     protected int _totalRecords;
 
-    public FreezerProCommandResonse(FreezerProExport export, String text, int statusCode, String dataNodeName, PipelineJob job)
+    public FreezerProCommandResponse(FreezerProExport export, String text, int statusCode, String dataNodeName, PipelineJob job)
     {
         _export = export;
         _text = text;
