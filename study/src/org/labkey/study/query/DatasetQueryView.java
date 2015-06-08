@@ -18,6 +18,8 @@ package org.labkey.study.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.data.AbstractTableInfo;
@@ -85,6 +87,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -666,32 +669,61 @@ public class DatasetQueryView extends StudyQueryView
     {
         final Pattern alphaNumPattern = Pattern.compile("(\\D*)(\\d+)?(.*)");
 
-        Collections.sort(labels,new Comparator<String>(){
-            @Override
-            public int compare(String o1, String o2)
+        try
+        {
+            Collections.sort(labels, new Comparator<String>()
             {
-                Matcher m = alphaNumPattern.matcher(o1);
-                assert m.matches();
-                String prefix1 = m.groupCount()>0 ? m.group(1) : "";
-                String number1 = m.groupCount()>1 ? m.group(2) : "";
-                String suffix1 = m.groupCount()>2 ? m.group(3) : "";
-
-                m = alphaNumPattern.matcher(o2);
-                assert m.matches();
-                String prefix2 = m.groupCount()>0 ? m.group(1) : "";
-                String number2 = m.groupCount()>1 ? m.group(2) : "";
-                String suffix2 = m.groupCount()>2 ? m.group(3) : "";
-
-                if (0 == prefix1.compareTo(prefix2) && StringUtils.isNotEmpty(number1) && StringUtils.isNotEmpty(number2))
+                @Override
+                public int compare(String o1, String o2)
                 {
-                    long i1 = Long.parseLong(number1);
-                    long i2 = Long.parseLong(number2);
-                    if (i1 != i2)
-                        return i1 > i2 ? 1 : -1;
-                    return suffix1.compareTo(suffix2);
+                    Matcher m = alphaNumPattern.matcher(o1);
+                    boolean matches = m.matches();
+                    assert matches;
+                    String prefix1 = m.groupCount() > 0 ? m.group(1) : "";
+                    String number1 = m.groupCount() > 1 ? m.group(2) : "";
+                    String suffix1 = m.groupCount() > 2 ? m.group(3) : "";
+
+                    m = alphaNumPattern.matcher(o2);
+                    matches = m.matches();
+                    assert matches;
+                    String prefix2 = m.groupCount() > 0 ? m.group(1) : "";
+                    String number2 = m.groupCount() > 1 ? m.group(2) : "";
+                    String suffix2 = m.groupCount() > 2 ? m.group(3) : "";
+
+                    if (0 == prefix1.compareTo(prefix2) && StringUtils.isNotEmpty(number1) && StringUtils.isNotEmpty(number2))
+                    {
+                        long i1 = Long.parseLong(number1);
+                        long i2 = Long.parseLong(number2);
+                        if (i1 != i2)
+                            return i1 > i2 ? 1 : -1;
+                        return suffix1.compareTo(suffix2);
+                    }
+                    return o1.compareTo(o2);
                 }
-                return o1.compareTo(o2);
-            }
-        });
+            });
+        }
+        catch (IllegalStateException x)
+        {
+            assert false : "error sorting study list: " + StringUtils.join(labels,",");
+        }
+    }
+
+
+    static public class TestCase extends Assert
+    {
+        @Test
+        public void testSort()
+        {
+            String[] tests = new String[] {"SDY2","SDY100","SDYxyzpdq","100","SDY200","SDY1","abc21","qwerty77 abc","xyz99","54", "SDY144 Study"};
+            ArrayList<String> list = new ArrayList<>();
+            list.addAll(Arrays.asList(tests));
+            sortLabels(list);
+            assertTrue(list.indexOf("SDY1") < list.indexOf("SDY2"));
+            assertTrue(list.indexOf("SDY2") < list.indexOf("SDY200"));
+            assertTrue(list.indexOf("SDY21") < list.indexOf("SDY100"));
+            assertTrue(list.indexOf("SDY21") < list.indexOf("SDY144 Study"));
+            assertTrue(list.indexOf("SDY144 Study") < list.indexOf("SDY200"));
+        }
+
     }
 }
