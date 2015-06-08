@@ -18,6 +18,7 @@ jar application/x-java-archive
 ear application/x-java-archive
 war application/x-java-archive
 js	text/javascript
+ts	text/typescript
 hqx	application/mac-binhex40
 mrc	application/marc
 mbd	application/mbedlet
