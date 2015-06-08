@@ -763,7 +763,9 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                     // If we can find the file on disk, and it's in the assaydata directory or was created by this run,
                     // and there aren't any other usages, move it into an archived subdirectory.
                     if (file != null && NetworkDrive.exists(file) && file.isFile() &&
-                            (inAssayData(file) || isCreatedByRun(expData)) &&
+                            // TODO: Issue 22587: Delete all run outputs when you delete a run
+                            //(inAssayData(file) || isCreatedByRun(expData)) &&
+                            inAssayData(file) &&
                             !hasOtherRunUsing(expData, this))
                     {
                         File archivedDir;
