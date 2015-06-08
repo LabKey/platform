@@ -34,7 +34,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.writer.UTF8PrintWriter;
+import org.labkey.api.writer.PrintWriters;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -124,7 +124,7 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
             {
                 // Add a new file to the ZIP
                 zOut.putNextEntry(new ZipEntry("specimens.tsv"));
-                PrintWriter writer = new UTF8PrintWriter(zOut);
+                PrintWriter writer = PrintWriters.getPrintWriter(zOut);
 
                 try
                 {

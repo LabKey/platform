@@ -16,7 +16,7 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.writer.UTF8PrintWriter;
+import org.labkey.api.writer.PrintWriters;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.model.StudyImpl;
@@ -63,7 +63,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
                 try (OutputStream out = vf.getOutputStream("error.log"))
                 {
                     // Try to get some error information to the client instead of creating a completely invalid archive
-                    PrintWriter errorWriter = new UTF8PrintWriter(out);
+                    PrintWriter errorWriter = PrintWriters.getPrintWriter(out);
                     e.printStackTrace(errorWriter);
                     errorWriter.flush();
                 }
