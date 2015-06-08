@@ -20,6 +20,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.writer.PrintWriters.StandardPrintWriter;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
@@ -166,7 +167,7 @@ public class ZipFile extends AbstractVirtualFile
         }
     }
 
-    private static class NonCloseableUTF8PrintWriter extends UTF8PrintWriter
+    private static class NonCloseableUTF8PrintWriter extends StandardPrintWriter
     {
         private final ZipOutputStream _out;
 

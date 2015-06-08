@@ -67,7 +67,7 @@ public class FileSystemFile extends AbstractVirtualFile
     {
         File file = new File(_root, makeLegalName(filename));
 
-        return new UTF8PrintWriter(file);
+        return PrintWriters.getPrintWriter(file);
     }
 
     public OutputStream getOutputStream(String filename) throws IOException

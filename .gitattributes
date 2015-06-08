@@ -1814,8 +1814,8 @@ api/src/org/labkey/api/writer/FastaGenerator.java -text
 api/src/org/labkey/api/writer/FastaWriter.java -text
 api/src/org/labkey/api/writer/FileSystemFile.java -text
 api/src/org/labkey/api/writer/MemoryVirtualFile.java -text
+api/src/org/labkey/api/writer/PrintWriters.java -text
 api/src/org/labkey/api/writer/ResultSetFastaGenerator.java -text
-api/src/org/labkey/api/writer/UTF8PrintWriter.java -text
 api/src/org/labkey/api/writer/VirtualFile.java -text
 api/src/org/labkey/api/writer/Writer.java -text
 api/src/org/labkey/api/writer/WriterFactory.java -text

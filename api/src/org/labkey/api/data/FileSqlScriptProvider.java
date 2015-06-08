@@ -32,7 +32,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.JspTemplate;
-import org.labkey.api.writer.UTF8PrintWriter;
+import org.labkey.api.writer.PrintWriters;
 
 import java.io.File;
 import java.io.IOException;
@@ -214,7 +214,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         if (file.exists() && !overwrite)
             throw new IllegalStateException("File " + file.getAbsolutePath() + " already exists");
 
-        try (PrintWriter pw = new UTF8PrintWriter(file))
+        try (PrintWriter pw = PrintWriters.getPrintWriter(file))
         {
             pw.write(contents);
             pw.flush();
