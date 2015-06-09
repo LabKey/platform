@@ -5,13 +5,14 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.GUID;
 
+import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Random;
+import java.util.List;
 
 /**
  * Created by davebradlee on 6/5/15.
@@ -43,27 +44,19 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                 new SqlExecutor(DbSchema.getTemp()).execute(sqlCreate);
                 tempTableInfo.track();
 
-                // Insert values; batch size must be <= 1000 values
-                SQLFragment sqlInsert = new SQLFragment("INSERT INTO ");
-                sqlInsert.append(tableName).append(" (Id) VALUES ");
-                String sep = "";
-                int valueCount = 0;
+                List<List<?>> paramList = new ArrayList<>();
                 for (Object param : params)
-                {
-                    if (valueCount >= 1000)
-                    {
-                        new SqlExecutor(DbSchema.getTemp()).execute(sqlInsert);
-                        sqlInsert = new SQLFragment("INSERT INTO ");
-                        sqlInsert.append(tableName).append(" (Id) VALUES ");
-                        sep = "";
-                        valueCount = 0;
-                    }
-                    sqlInsert.append(sep).append("(").append(param).append(")");
-                    sep = ", ";
-                    valueCount += 1;
-                }
-                new SqlExecutor(DbSchema.getTemp()).execute(sqlInsert);
+                    paramList.add(Collections.singletonList(param));
 
+                String sql = "INSERT INTO " + tableName + " (Id) VALUES (?)";
+                try
+                {
+                    Table.batchExecute(DbSchema.getTemp(), sql, paramList);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
 
                 String indexSql = "CREATE INDEX IX_Id" + new GUID().toStringNoDashes() + " ON " + tableName + "(Id)";
                 new SqlExecutor(DbSchema.getTemp()).execute(indexSql);
