@@ -102,7 +102,8 @@
  *      </ul>
  * @param {Object} [config.margins] (Optional) Margin sizes in pixels. It can be useful to set the margins if the tick
  *      marks on an axis are overlapping with your axis labels. Defaults to top: 75px, right: 75px, bottom: 50px, and
- *      left: 75px. The right side my have a margin of 150px if a legend is needed.
+ *      left: 75px. The right side may have a margin of 150px if a legend is needed. Custom define margin size for a
+ *      legend that exceeds 150px.
  *      The object may contain any of the following properties:
  *      <ul>
  *          <li><strong>top:</strong> Size of top margin in pixels.</li>
@@ -1063,7 +1064,7 @@ boxPlot.render();
             // Takes a 2D array. First array is xMin, yMin, second array is xMax, yMax. If the seleciton is 1D, then the
             // min/max of the non-selected dimension will be null/null.
             this.renderer.setBrushExtent(extent);
-        }
+        };
 
         return this;
     };
@@ -1431,12 +1432,27 @@ boxPlot.render();
                 }
             }
         };
-        config.margins = {
-            top: config.labels && config.labels.main ? 30 : config.properties.topMargin || 10,
-            right: config.properties.color || (config.legendData && config.legendData.length > 0) ? 150 : 40,
-            bottom: config.labels && config.labels.x ? 75 : 55,
-            left: config.labels && config.labels.y ? 75 : 55
-        };
+
+        if(!config.margins) {
+            config.margins = {};
+        }
+
+        if(!config.margins.top) {
+            config.margins.top = config.labels && config.labels.main ? 30 : config.properties.topMargin || 10;
+        }
+
+        if(!config.margins.right) {
+            config.margins.right = config.properties.color || (config.legendData && config.legendData.length > 0) ? 150 : 40;
+        }
+
+        if(!config.margins.bottom) {
+            config.margins.bottom = config.labels && config.labels.x ? 75 : 55;
+        }
+
+        if(!config.margins.left) {
+            config.margins.left = config.labels && config.labels.y ? 75 : 55;
+        }
+
         config.aes = {
             yLeft: config.properties.value,
             x: 'seqValue'
