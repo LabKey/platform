@@ -30,21 +30,6 @@ public class TempTableInfo extends SchemaTableInfo
 
     private TempTableTracker _ttt;
 
-    static private String shortGuid()
-    {
-        String guid = GUID.makeGUID();
-        StringBuilder sb = new StringBuilder(guid.length());
-
-        for (int i = 0; i < guid.length(); i++)
-        {
-            char ch = guid.charAt(i);
-            if (ch != '-')
-                sb.append(ch);
-        }
-
-        return sb.toString();
-    }
-
     public TempTableInfo(String name, List<ColumnInfo> cols, List<String> pk)
     {
         this(DbSchema.getTemp(), name, cols, pk);
@@ -52,7 +37,7 @@ public class TempTableInfo extends SchemaTableInfo
 
     private TempTableInfo(DbSchema schema, String name, List<ColumnInfo> cols, List<String> pk)
     {
-        super(schema, DatabaseTableType.TABLE, name, name, schema.getName() + "." + name + "$" + shortGuid());
+        super(schema, DatabaseTableType.TABLE, name, name, schema.getName() + "." + name + "$" + new GUID().toStringNoDashes());
 
         // TODO: Do away with _tempTableName?  getSelectName() is synonymous.
         _tempTableName = getSelectName();

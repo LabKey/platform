@@ -395,6 +395,7 @@ api/src/org/labkey/api/data/TableInfoWriter.java -text
 api/src/org/labkey/api/data/TableResultSet.java -text
 api/src/org/labkey/api/data/TableSelector.java -text
 api/src/org/labkey/api/data/TableSelectorTestCase.java -text
+api/src/org/labkey/api/data/TempTableInClauseGenerator.java -text
 api/src/org/labkey/api/data/TempTableInfo.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TempTableWriter.java -text

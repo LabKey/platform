@@ -47,6 +47,7 @@ public class SQLFragment implements Appendable, CharSequence
     String sql;
     StringBuilder sb = null;
     List<Object> params;          // TODO: Should be List<?>
+    private final List<Object> tempTokens = new ArrayList<>();      // Hold refs to ensure they're not GC'd
 
     Map<Object,CTE> commonTableExpressionsMap = null;
 
@@ -126,6 +127,7 @@ public class SQLFragment implements Appendable, CharSequence
                 this.commonTableExpressionsMap.put(e.getKey(), new CTE(e.getValue().name, e.getValue().tokens, sqlf));
             }
         }
+        this.tempTokens.addAll(other.tempTokens);
     }
 
 
@@ -327,6 +329,7 @@ public class SQLFragment implements Appendable, CharSequence
         if (null != f.params)
             addAll(f.params);
         mergeCommonTableExpressions(f);
+        tempTokens.addAll(f.tempTokens);
         return this;
     }
 
@@ -515,7 +518,10 @@ public class SQLFragment implements Appendable, CharSequence
         }
     }
 
-
+    public void addTempToken(Object tempToken)
+    {
+        tempTokens.add(tempToken);
+    }
 
     public static SQLFragment prettyPrint(SQLFragment from)
     {
