@@ -936,7 +936,7 @@ public class StatementUtils
                 fn.append(";\n");
             }
             fn.append("END;\n$$ LANGUAGE plpgsql;\n");
-            _log.info(fn.toDebugString());
+            _log.debug(fn.toDebugString());
             new SqlExecutor(table.getSchema()).execute(fn);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
             ret.setDebugSql(fn.getSQL() + "--\n" + call.toDebugString());
