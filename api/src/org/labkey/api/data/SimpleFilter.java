@@ -1620,6 +1620,21 @@ public class SimpleFilter implements Filter
 
             testActiveUsersInClause(expected, ids);
             testActiveUsersInClause(expected, ids, ids);
+
+            // Test even bigger
+            for (int i = IN_CLAUSE_SIZE; i < IN_CLAUSE_SIZE * 2; i++)
+                ids.add(i);
+
+            testActiveUsersInClause(expected, ids);
+            testActiveUsersInClause(expected, ids, ids, ids);
+
+            // Test a little smaller than the IN_CLAUSE_SIZE
+            ids = new LinkedList<>();
+            for (int i = 0; i < IN_CLAUSE_SIZE - 10; i++)
+                ids.add(i);
+
+            testActiveUsersInClause(expected, ids);
+            testActiveUsersInClause(expected, ids, ids);
         }
 
         private void testActiveUsersInClause(int expectedSize, Collection... users)
