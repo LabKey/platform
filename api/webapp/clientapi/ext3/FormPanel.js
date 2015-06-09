@@ -32,7 +32,7 @@ Ext.namespace("LABKEY","LABKEY.ext");
  * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeyExt">Tips for Using Ext to Build LabKey Views</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">Tutorial: Create Applications with the JavaScript API</a></li>
  *              </ul>
  *           </p>
  * @constructor
