@@ -313,8 +313,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                         @Override
                         public TableInfo getLookupTableInfo()
                         {
-                            SpecimenDetailTable table = (SpecimenDetailTable)_userSchema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
-                            table.addCondition(new SimpleFilter(FieldKey.fromParts("Container"), _userSchema.getContainer().getId()));
+                            TableInfo table = _userSchema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
+                            if (table instanceof SpecimenDetailTable)       // Could be a UnionTable, which should already have right containers
+                                ((SpecimenDetailTable)table).addCondition(new SimpleFilter(FieldKey.fromParts("Container"), _userSchema.getContainer().getId()));
                             return table;
                         }
                     });
