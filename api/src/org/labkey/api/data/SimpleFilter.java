@@ -1612,12 +1612,17 @@ public class SimpleFilter implements Filter
             testActiveUsersInClause(1, Collections.singleton(user));
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("UserId"), IN_CLAUSE_SIZE, CompareType.LT);
-            int expected = (int)new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), filter, null).getRowCount();
+            Sort sort = new Sort();
+            sort.appendSortColumn(FieldKey.fromParts("UserId"), Sort.SortDirection.DESC, false);
+            TableInfo usersTable = CoreSchema.getInstance().getTableInfoActiveUsers();
+            List<Integer> userIdsDesc = new TableSelector(usersTable, Collections.singletonList(usersTable.getColumn("UserId")),
+                                                      filter, sort).getArrayList(Integer.class);
 
             Collection<Integer> ids = new LinkedList<>();
             for (int i = 0; i < IN_CLAUSE_SIZE; i++)
                 ids.add(i);
 
+            int expected = howManyLessThan(userIdsDesc, IN_CLAUSE_SIZE);
             testActiveUsersInClause(expected, ids);
             testActiveUsersInClause(expected, ids, ids);
 
@@ -1625,6 +1630,7 @@ public class SimpleFilter implements Filter
             for (int i = IN_CLAUSE_SIZE; i < IN_CLAUSE_SIZE * 2; i++)
                 ids.add(i);
 
+            expected = howManyLessThan(userIdsDesc, IN_CLAUSE_SIZE * 2);
             testActiveUsersInClause(expected, ids);
             testActiveUsersInClause(expected, ids, ids, ids);
 
@@ -1633,6 +1639,7 @@ public class SimpleFilter implements Filter
             for (int i = 0; i < IN_CLAUSE_SIZE - 10; i++)
                 ids.add(i);
 
+            expected = howManyLessThan(userIdsDesc, IN_CLAUSE_SIZE - 10);
             testActiveUsersInClause(expected, ids);
             testActiveUsersInClause(expected, ids, ids);
 
@@ -1641,6 +1648,7 @@ public class SimpleFilter implements Filter
             for (int i = 0; i < 1500; i++)
                 ids.add(i);
 
+            expected = howManyLessThan(userIdsDesc, 1500);
             testActiveUsersInClause(expected, ids);
             testActiveUsersInClause(expected, ids, ids);
         }
@@ -1657,6 +1665,18 @@ public class SimpleFilter implements Filter
             TableSelector userSelector = new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), f, null);
             Collection<User> ret = userSelector.getCollection(User.class);
             assertEquals(expectedSize, ret.size());
+        }
+
+        private int howManyLessThan(List<Integer> userIdsDesc, int max)
+        {
+            int howMany = userIdsDesc.size();
+            for (Integer id : userIdsDesc)
+            {
+                if (max > id)
+                    break;
+                howMany -= 1;
+            }
+            return howMany;
         }
     }
 
