@@ -73,10 +73,10 @@
             proxy: schemaProxyConfig
         });
 
-        var targetSchemaStore = Ext4.create('Ext.data.Store', {
-            model: 'Schema',
-            proxy: schemaProxyConfig
-        });
+//        var targetSchemaStore = Ext4.create('Ext.data.Store', {
+//            model: 'Schema',
+//            proxy: schemaProxyConfig
+//        });
 
         var dataSourceProxyConfig = {
             type: 'memory',
@@ -91,10 +91,10 @@
             proxy: dataSourceProxyConfig
         });
 
-        var targetDataSourceStore = Ext4.create('Ext.data.Store', {
-            model: 'DataSource',
-            proxy: dataSourceProxyConfig
-        });
+//        var targetDataSourceStore = Ext4.create('Ext.data.Store', {
+//            model: 'DataSource',
+//            proxy: dataSourceProxyConfig
+//        });
 
         var createDataSourceFilter = function(value) {
             return Ext4.create('Ext.util.Filter', {
@@ -132,32 +132,32 @@
             // Store kind of pain here -> mainly wired up values
         });
 
-        var targetDataSourceCombo = new Ext4.form.ComboBox({
-            name: 'targetDataSource',
-            editable: false,
-            fieldLabel: 'Target Data Source',
-            store: targetDataSourceStore,
-            queryMode: 'local',
-            displayField: 'dataSourceDisplayName',
-            valueField: 'dataSourceSourceName',
-            value: 'labkeyDataSource',
-            listeners: {
-                scope: this,
-                change: function(combo, newValue) {
-                    sourceDataSourceStore.clearFilter(true);
-                    sourceDataSourceStore.addFilter(createDataSourceFilter(newValue));
-                }
-            }
-        });
+//        var targetDataSourceCombo = new Ext4.form.ComboBox({
+//            name: 'targetDataSource',
+//            editable: false,
+//            fieldLabel: 'Target Data Source',
+//            store: targetDataSourceStore,
+//            queryMode: 'local',
+//            displayField: 'dataSourceDisplayName',
+//            valueField: 'dataSourceSourceName',
+//            value: 'labkeyDataSource',
+//            listeners: {
+//                scope: this,
+//                change: function(combo, newValue) {
+//                    targetDataSourceStore.clearFilter(true);
+//                    targetDataSourceStore.addFilter(createDataSourceFilter(newValue));
+//                }
+//            }
+//        });
 
-        var targetSchemaCombo = new Ext4.form.ComboBox({
-            name: 'targetSchema',
-            fieldLabel: 'Target Schema',
-            store: targetSchemaStore,
-            queryMode: 'local',
-            displayField: 'schemaName'
-            // Store kind of pain here -> mainly wired up values
-        });
+//        var targetSchemaCombo = new Ext4.form.ComboBox({
+//            name: 'targetSchema',
+//            fieldLabel: 'Target Schema',
+//            store: targetSchemaStore,
+//            queryMode: 'local',
+//            displayField: 'schemaName'
+//            // Store kind of pain here -> mainly wired up values
+//        });
 
         var pathTextField = new Ext4.form.Text({
             name: 'path',
@@ -172,7 +172,7 @@
 
                 // load up stores with schema model
                 sourceSchemaStore.loadRawData(data);
-                targetSchemaStore.loadRawData(data);
+//                targetSchemaStore.loadRawData(data);
 
                 // get unique datasource names
                 var s = {};
@@ -191,18 +191,18 @@
 
                 // load up stores with dataSource model
                 sourceDataSourceStore.loadRawData(dataSourceData);
-                targetDataSourceStore.loadRawData(dataSourceData);
+//                targetDataSourceStore.loadRawData(dataSourceData);
 
                 SS = sourceDataSourceStore;
                 SX = targetDataSourceStore;
 
                 // handle firing some events
                 sourceSchemaStore.addFilter(createDataSourceFilter('labkeyDataSource'));
-                targetSchemaStore.addFilter(createDataSourceFilter('labkeyDataSource'));
+//                targetSchemaStore.addFilter(createDataSourceFilter('labkeyDataSource'));
 
                 // select first item in schema dropdowns
                 sourceSchemaCombo.select(sourceSchemaStore.getAt(0));
-                targetSchemaCombo.select(targetSchemaStore.getAt(0));
+//                targetSchemaCombo.select(targetSchemaStore.getAt(0));
             }
         });
 
@@ -224,8 +224,8 @@
             items: [
                 sourceDataSourceCombo,
                 sourceSchemaCombo,
-                targetDataSourceCombo,
-                targetSchemaCombo,
+            <%--    targetDataSourceCombo,
+                targetSchemaCombo,      --%>
                 pathTextField,
                 {
                     xtype: 'hidden',

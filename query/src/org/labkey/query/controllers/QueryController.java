@@ -71,12 +71,10 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.DatasetTable;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
@@ -6159,25 +6157,26 @@ public class QueryController extends SpringActionController
             DbSchema sourceSchema = DbSchema.createFromMetaData(DbScope.getDbScope(form.getSourceDataSource()), form.getSourceSchema(), DbSchemaType.Bare);
             for (TableInfo table : TableSorter.sort(sourceSchema) )
             {
-                String tableName = table.getName();
-
-                try (Results results = new TableSelector(table).getResults(false))
+                if (DatabaseTableType.TABLE.equals(table.getTableType()))
                 {
-                    if (results.isBeforeFirst()) // only export tables with data
+                    String tableName = table.getName();
+                    try (Results results = new TableSelector(table).getResults(false))
                     {
-                        File outputFile = new File(form.getPath(), tableName + ".tsv.gz");
-                        GZIPOutputStream outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
-                        try (TSVGridWriter tsv = new TSVGridWriter(results))
+                        if (results.isBeforeFirst()) // only export tables with data
                         {
-                            tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey);
-                            tsv.setApplyFormats(false);
-                            tsv.write(outputStream);
-                        }
+                            File outputFile = new File(form.getPath(), tableName + ".tsv.gz");
+                            GZIPOutputStream outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
+                            try (TSVGridWriter tsv = new TSVGridWriter(results))
+                            {
+                                tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey);
+                                tsv.setApplyFormats(false);
+                                tsv.write(outputStream);
+                            }
 
-                        importScript.append(sourceSchema.getSqlDialect().execute(DbSchema.get("core"), "bulkImport", "'" + form.getTargetSchema() + "', '" + tableName + "', '" + outputFile.getName() + "'")).append(";\n");
+                            importScript.append(sourceSchema.getSqlDialect().execute(DbSchema.get("core"), "bulkImport", "'" + form.getTargetSchema() + "', '" + tableName + "', '" + outputFile.getName() + "'")).append(";\n");
+                        }
                     }
                 }
-
             }
 
             PrintWriter writer = new PrintWriter( new File(form.getPath(), form.getSourceSchema()+"_updateScript.sql"), "UTF-8" );
