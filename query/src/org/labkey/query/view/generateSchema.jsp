@@ -194,7 +194,7 @@
 //                targetDataSourceStore.loadRawData(dataSourceData);
 
                 SS = sourceDataSourceStore;
-                SX = targetDataSourceStore;
+//                SX = targetDataSourceStore;
 
                 // handle firing some events
                 sourceSchemaStore.addFilter(createDataSourceFilter('labkeyDataSource'));
