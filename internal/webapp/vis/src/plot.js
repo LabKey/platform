@@ -1304,7 +1304,6 @@ boxPlot.render();
  * @param {String} [config.properties.mean] The data property name for the mean of the expected range.
  * @param {String} [config.properties.stdDev] The data property name for the standard deviation of the expected range.
  * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
- * @param {Number} [config.properties.topMargin] (Optional) The top margin for the plot.
  * @param {Number} [config.properties.xTickTagIndex] (Optional) The index/value of the x-axis label to be tagged (i.e. class="xticktag").
  * @param {Boolean} [config.properites.showTrendLine] (Optional) Whether or not to show a line connecting the data points. Default false.
  * @param {Boolean} [config.properties.disableRangeDisplay] (Optional) Whether or not to show the mean/stdev ranges in the plot. Defaults to false.
@@ -1333,14 +1332,22 @@ boxPlot.render();
 
         if (config.properties == null || config.properties.value == null || config.properties.xTickLabel == null) {
             throw new Error("Unable to create Levey-Jennings plot, properties object not specified. "
-                    + "Required: value, xTickLabel. Optional: mean, stdDev, topMargin, color, colorRange, hoverTextFn, "
+                    + "Required: value, xTickLabel. Optional: mean, stdDev, color, colorRange, hoverTextFn, "
                     + "pointClickFn, showTrendLine, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
         }
+
+        // get a sorted array of the unique x-axis labels
+        var uniqueXAxisKeys = {}, uniqueXAxisLabels = [];
+        for (var i = 0; i < config.data.length; i++) {
+            if (!uniqueXAxisKeys[config.data[i][config.properties.xTick]]) {
+                uniqueXAxisKeys[config.data[i][config.properties.xTick]] = true;
+            }
+        }
+        uniqueXAxisLabels =  Object.keys(uniqueXAxisKeys).sort();
 
         // create a sequencial index to use for the x-axis value and keep a map from that index to the tick label
         // also, pull out the meanStdDev data for the unique x-axis values and calculate average values for the trend line data
         var tickLabelMap = {}, index = -1, distinctColorValues = [], meanStdDevData = [], groupedTrendlineData = [];
-        var uniqueXAxisLabels =  Ext4.Array.sort(Ext4.Array.unique(Ext4.Array.pluck(config.data, config.properties.xTick)));
         for (var i = 0; i < config.data.length; i++)
         {
             var row = config.data[i];
@@ -1438,7 +1445,7 @@ boxPlot.render();
         }
 
         if(!config.margins.top) {
-            config.margins.top = config.labels && config.labels.main ? 30 : config.properties.topMargin || 10;
+            config.margins.top = config.labels && config.labels.main ? 30 : 10;
         }
 
         if(!config.margins.right) {

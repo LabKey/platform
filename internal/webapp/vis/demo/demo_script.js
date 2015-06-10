@@ -898,6 +898,9 @@ var leveyJenningsPlot = LABKEY.vis.LeveyJenningsPlot({
         hoverTextFn: function(row){return 'X-Value: ' + row.xaxislabel + '\nColor: ' + row.colorlabel + '\nY-Value: ' + row.value;}
     },
     gridLineColor: 'white',
+    margins : {
+        top: 50
+    },
     labels: {
         main: {value: 'Example Levey-Jennings Plot'},
         y: {value: 'Value'},
