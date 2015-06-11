@@ -16,6 +16,7 @@
 package org.labkey.study.controllers;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
@@ -26,8 +27,13 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.GUID;
+import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataspaceQuerySchema;
 import org.springframework.validation.BindException;
@@ -70,6 +76,33 @@ public class SharedStudyController extends BaseStudyController
         }
     }
 
+
+    public static class StudyFilterWebPartFactory extends BaseWebPartFactory
+    {
+        public StudyFilterWebPartFactory()
+        {
+            super("Shared Study Filter", WebPartFactory.LOCATION_RIGHT);
+        }
+
+        @Override
+        public boolean isAvailable(Container c, String location)
+        {
+            if (!super.isAvailable(c, location))
+                return false;
+
+            Study study = StudyManager.getInstance().getStudy(c.getProject());
+            return study != null && study.getShareDatasetDefinitions();
+        }
+
+        @Override
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+        {
+            JspView<Object> view = new StudyFilterWebPart();
+            view.setTitle(getName());
+            view.setFrame(WebPartView.FrameType.PORTAL);
+            return view;
+        }
+    }
 
     public static class StudyFilterWebPart extends JspView<Object>
     {

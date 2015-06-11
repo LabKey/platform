@@ -40,6 +40,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
@@ -655,9 +657,21 @@ public class DatasetQueryView extends StudyQueryView
 
             StringBuilder msg = new StringBuilder();
             msg.append("<div><span class=\"labkey-strong\">Selected Studies:</span>&nbsp;");
+            String comma = "";
             for (String label : labels)
-                msg.append(PageFlowUtil.filter(label)).append(" ");
-            msg.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Edit... (NYI)").href("#"));
+            {
+                msg.append(comma).append(PageFlowUtil.filter(label));
+                comma = ", ";
+            }
+
+            // HACK -- link to immport/studyFinder.view
+            Module immport = ModuleLoader.getInstance().getModule("immport");
+            Container project = ctx.getContainer().getProject();
+            if (immport != null && project != null && project.getActiveModules().contains(immport))
+            {
+                ActionURL editSharedStudyURL = new ActionURL("immport", "studyFinder.view", project);
+                msg.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Edit").href(editSharedStudyURL.toString()));
+            }
             msg.append("</div>");
 
             headerMessage.append(msg);

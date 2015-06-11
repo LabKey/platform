@@ -19,6 +19,16 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.module.Module" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.query.DataspaceQuerySchema" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -32,152 +42,46 @@
 <%
     Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
     int uuid = this.getRequestScopedUID();
+
+    boolean hasStudy = study != null;
+    boolean isSharedStudy = study != null && study.isDataspaceStudy();
+    String studyLabel = null==study?"":study.getLabel();
+
+    Module immport = ModuleLoader.getInstance().getModule("immport");
+    Container project = getContainer().getProject();
+    ActionURL editSharedStudyURL = null;
+    if (immport != null && project != null && project.getActiveModules().contains(immport))
+        editSharedStudyURL = new ActionURL("immport", "studyFinder.view", project);
+
+    String key = DataspaceQuerySchema.SHARED_STUDY_CONTAINER_FILTER_KEY + getContainer().getProject().getRowId();
+    Object o = getViewContext().getSession().getAttribute(key);
+    List<Study> studies = new ArrayList<>();
+    if (o instanceof List)
+    {
+        List<GUID> containerIds = (List)o;
+        for (GUID id : containerIds)
+        {
+            Container c = ContainerManager.getForId(id);
+            Study s = StudyManager.getInstance().getStudy(c);
+            if (s != null)
+                studies.add(s);
+        }
+    }
 %>
-<style>
-    div.study-list .study-selected
-    {
-        font-weight:bold;
-    }
-    div.study-list .study-notselected
-    {
-        display:none;
-    }
-</style>
-<div id="studyFilterDiv<%=uuid%>">
+<h4 style="margin-top:0px; margin-bottom:8px; border-bottom:1px solid #e5e5e5;">Selected Studies</h4>
 
-</div>
-<script>
-Ext4.onReady(function()
-{
-    var div = Ext4.get('studyFilterDiv<%=uuid%>');
-    var availableStudies = null;
-    var selectedStudies = null;
+<% if (!hasStudy) { %>
+    <div>No study found in this folder</div>
+<% } else if (!isSharedStudy) { %>
+    <div>Current folder: <%=h(studyLabel)%></div>
+<% } else if (studies.size() == 0) { %>
+    <div>All studies</div>
+<% } else { %>
+    <% for (Study s : studies) { %>
+    <div data-container="<%=s.getContainer().getEntityId()%>"><%=h(s.getLabel())%></div>
+    <% } %>
+<% } %>
 
-    var hasStudy = <%=null==study?"false":"true"%>;
-    var isSharedStudy = <%=null==study||!study.isDataspaceStudy() ? "false":"true"%>;
-    var studyLabel = <%=q(null==study?"":study.getLabel())%>;
+<br>
+<% if (editSharedStudyURL != null) { %><%=this.textLink("study finder", editSharedStudyURL)%><% } %>
 
-    if (!hasStudy)
-    {
-        div.update("No study found in this folder");
-        return;
-    }
-    if (!isSharedStudy)
-    {
-        div.update("Showing " + Ext4.htmlEncode(studyLabel));
-        return;
-    }
-
-    // query available studies
-    LABKEY.Query.selectRows(
-    {
-        requiredVersion: 15.1,
-        schemaName: 'study',
-        queryName: 'StudyProperties',
-        columns: 'Label,Description,Container',
-        containerFilter: 'CurrentAndSubfolders',
-        filterArray: null,
-        success: updateAvailableStudies
-    });
-
-    // query current filters
-    // CONSIDER: delete the shared container filter if all loaded_studies are selected
-    LABKEY.Ajax.request({
-        url: LABKEY.ActionURL.buildURL('study-shared', 'sharedStudyContainerFilter.api'),
-        method: 'GET',
-        success : updateSelectedStudies
-    });
-
-
-    function updateAvailableStudies(results)
-    {
-        availableStudies = [];
-        var rows = results.rows;
-        var length = Math.min(10, rows.length);
-        for (var i = 0; i < length; i++)
-        {
-            var row = rows[i].data;
-            availableStudies.push({"container":row.Container.value, "label":row.Label.value});
-        }
-        if (null != selectedStudies)
-            update();
-    }
-
-    function updateSelectedStudies(result)
-    {
-        selectedStudies = [];
-        var json = JSON.parse(result.response);
-        if (!('data' in json))
-            return;
-        var data = json.data;
-        var containers = data.containers || [];
-
-        for (var i = 0; i < containers.length; i++)
-        {
-            selectedStudies.push({"container":containers[i]});
-        }
-        if (null != availableStudies)
-            update();
-    }
-
-    function update()
-    {
-        var i, s, studyMap = {};
-        var selectedCount = 0;
-        var availableCount = 0;
-        var html = [];
-
-        for (i = 0; i < availableStudies.length; i++)
-        {
-            s = availableStudies[i];
-            studyMap[s.container] = s;
-            availableCount++;
-        }
-
-        for (i = 0; i < selectedStudies.length; i++)
-        {
-            s = studyMap[selectedStudies[i].container];
-            if (s)
-            {
-                s.selected = true;
-                selectedCount++;
-            }
-        }
-
-        if (0 == selectedCount)
-        {
-            html.push("<p>Showing all available studies (" + availableCount + ")</p>");
-        }
-        else
-        {
-            html.push("<p>Showing " + selectedCount + " of " + availableCount + " available " + (availableCount==1?"study":"studies") + "</p>");
-            html.push('<div class="study-list">');
-            for (i = 0; i < availableStudies.length; i++)
-            {
-                s = availableStudies[i];
-                html.push('<div data-container="' + s.container + '" class="');
-                html.push(s.selected ? 'study-selected' : 'study-notselected');
-                html.push('">');
-                html.push(Ext4.htmlEncode(s.label));
-                html.push("</div>");
-            }
-            html.push("</div>");
-        }
-        div.insertHtml('afterEnd',html.join(''));
-    }
-
-
-    /*
-     //TODO use ext template
-     var row = rows[idxRow].data;
-     html.push("<span data-container=\""+row.Container.value+"\">");
-     //html.push("<img src=\"<%=getContextPath()%>/_images/close.png\">");
- html.push(Ext4.htmlEncode(row.Label.value));
- html.push("</span><br>");
- div.insertHtml('afterEnd',html.join(''));
-
-
- */
-
-});
-</script>

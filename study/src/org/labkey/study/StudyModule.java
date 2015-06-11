@@ -323,7 +323,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 subjectsWebPartFactory, dataToolsWebPartFactory,
                 specimenToolsWebPartFactory,
                 specimenReportWebPartFactory, studyScheduleWebPartFactory,
-                assayScheduleWebPartFactory, vaccineDesignWebPartFactory, immunizationScheduleWebpartFactory));
+                assayScheduleWebPartFactory, vaccineDesignWebPartFactory, immunizationScheduleWebpartFactory,
+                new SharedStudyController.StudyFilterWebPartFactory()));
     }
 
     @NotNull
