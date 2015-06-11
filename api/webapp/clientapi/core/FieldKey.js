@@ -19,7 +19,7 @@
 
 /**
  * @private
- * The QueryKey is private -- use SchemaKey or FieldKey subclasses .fromString() or .fromParts() instead.
+ * @class QueryKey The QueryKey is private -- use SchemaKey or FieldKey subclasses .fromString() or .fromParts() instead.
  *
  * @param parent
  * @param name
@@ -93,6 +93,7 @@ LABKEY.QueryKey.prototype.toString = function(divider)
 /**
  * Returns the encoded QueryKey string as the JSON representation of a QueryKey.
  * Called by JSON.stringify().
+ * @function
  */
 LABKEY.QueryKey.prototype.toJSON = function()
 {
@@ -101,6 +102,7 @@ LABKEY.QueryKey.prototype.toJSON = function()
 
 /**
  * Returns a string suitable for display to the user.
+ * @function
  * @returns {string} Unencoded display string.
  */
 LABKEY.QueryKey.prototype.toDisplayString = function()
@@ -182,6 +184,7 @@ LABKEY.QueryKey.quote = function(s)
  * Use {@link LABKEY.SchemaKey.fromString()} or {@link LABKEY.SchemaKey.fromParts()} to create new SchemaKey.
  *
  * @constructor
+ * @extends LABKEY.QueryKey
  * @param {LABKEY.SchemaKey} parent The parent SchemaKey or null.
  * @param {string} name The FieldKey's unencoded name.
  */
@@ -194,6 +197,7 @@ LABKEY.SchemaKey.prototype.constructor = LABKEY.SchemaKey;
 
 /**
  * Returns an encoded SchemaKey string suitable for sending to the server.
+ * @function
  * @returns {string} Encoded SchemaKey string.
  */
 LABKEY.SchemaKey.prototype.toString = function()
@@ -276,6 +280,7 @@ LABKEY.SchemaKey.fromParts = function(parts)
  </pre>
  *
  * @constructor
+ * @extends LABKEY.SchemaKey
  * @param {LABKEY.FieldKey} parent The parent FieldKey or null.
  * @param {string} name The FieldKey's unencoded name.
  */
@@ -288,6 +293,7 @@ LABKEY.FieldKey.prototype.constructor = LABKEY.FieldKey;
 
 /**
  * Returns an encoded FieldKey string suitable for sending to the server.
+ * @function
  * @returns {string} Encoded FieldKey string.
  */
 LABKEY.FieldKey.prototype.toString = function()
@@ -346,3 +352,85 @@ LABKEY.FieldKey.fromParts = function()
     }
     return ret;
 };
+
+/** docs for inherited methods defined in private class QueryKey */
+
+/**
+ * Get the unencoded QueryKey name.
+ * @memberOf LABKEY.SchemaKey
+ * @function
+ * @name getName
+ * @returns {string}
+ */
+
+/**
+ * Compares QueryKeys for equality.
+ * @memberOf LABKEY.SchemaKey
+ * @function
+ * @name equals
+ * @param {QueryKey} other
+ * @returns {boolean} true if this QueryKey and the other are the same.
+ */
+
+/**
+ * Returns an Array of unencoded QueryKey parts.
+ * @memberOf LABKEY.SchemaKey
+ * @function
+ * @name getParts
+ * @returns {Array} Array of unencoded QueryKey parts.
+ */
+
+/**
+ * Returns the encoded QueryKey string as the JSON representation of a QueryKey.
+ * Called by JSON.stringify().
+ * @memberOf LABKEY.SchemaKey
+ * @function
+ * @name toJSON
+ */
+
+/**
+ * Returns a string suitable for display to the user.
+ * @memberOf LABKEY.SchemaKey
+ * @function
+ * @name toDisplayString
+ */
+
+/**
+ * Get the unencoded QueryKey name.
+ * @memberOf LABKEY.FieldKey
+ * @function
+ * @name getName
+ * @returns {string}
+ */
+
+/**
+ * Compares QueryKeys for equality.
+ * @memberOf LABKEY.FieldKey
+ * @function
+ * @name equals
+ * @param {QueryKey} other
+ * @returns {boolean} true if this QueryKey and the other are the same.
+ */
+
+/**
+ * Returns an Array of unencoded QueryKey parts.
+ * @memberOf LABKEY.FieldKey
+ * @function
+ * @name getParts
+ * @returns {Array} Array of unencoded QueryKey parts.
+ */
+
+/**
+ * Returns the encoded QueryKey string as the JSON representation of a QueryKey.
+ * Called by JSON.stringify().
+ * @memberOf LABKEY.FieldKey
+ * @function
+ * @name toJSON
+ */
+
+/**
+ * Returns a string suitable for display to the user.
+ * @memberOf LABKEY.FieldKey
+ * @function
+ * @name toDisplayString
+ */
