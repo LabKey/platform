@@ -53,6 +53,8 @@ Ext.define('LABKEY.app.controller.View', {
             this.allowAnimations = false; //!Ext.isDefined(params['transition']);
         }
 
+        this.activeContext = {};
+
         // by default, just return the title as it is set
         var el = Ext.DomQuery.select('title');
         if (Ext.isArray(el) && el.length > 0) {
