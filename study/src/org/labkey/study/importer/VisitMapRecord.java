@@ -150,20 +150,6 @@ class VisitMapRecord
     public String getSequenceNumHandling()  { return _sequenceNumHandling; }
     public List<VisitTagRecord> getVisitTagRecords() { return _visitTagRecords;}
 
-/*    private int toInt(String str, int defaultValue)
-    {
-        if (str.length() == 0)
-            return defaultValue;
-        try
-        {
-            return Integer.parseInt(str.trim());
-        }
-        catch (NumberFormatException e)
-        {
-            return defaultValue;
-        }
-    } */
-
     private int toInt(String str)
     {
         return Integer.parseInt(str.trim());
@@ -264,23 +250,23 @@ class VisitMapRecord
 
         public Map<String, Object> toMap(VisitMapRecord bean, Map m)
         {
-            throw new java.lang.UnsupportedOperationException();
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public ArrayList<VisitMapRecord> handleArrayList(ResultSet rs) throws SQLException
         {
-            throw new java.lang.UnsupportedOperationException();
+            throw new UnsupportedOperationException();
         }
 
         public VisitMapRecord[] handleArray(ResultSet rs) throws SQLException
         {
-            throw new java.lang.UnsupportedOperationException();
+            throw new UnsupportedOperationException();
         }
 
         public VisitMapRecord handle(ResultSet rs) throws SQLException
         {
-            throw new java.lang.UnsupportedOperationException();
+            throw new UnsupportedOperationException();
         }
     }
 }

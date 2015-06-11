@@ -16,11 +16,15 @@
 
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.Study;
 import org.labkey.study.CohortForeignKey;
@@ -74,5 +78,23 @@ public class VisitTable extends BaseStudyTable
         cohortColumn.setFk(new CohortForeignKey(schema, showCohorts, cohortColumn.getLabel()));
         addColumn(cohortColumn);
         setTitleColumn("Label");
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        return new VisitUpdateService(this);
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        return hasPermissionOverridable(user, perm);
+    }
+
+    @Override
+    protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return getContainer().hasPermission(user, perm);
     }
 }

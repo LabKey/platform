@@ -33,7 +33,9 @@ import org.labkey.study.StudySchema;
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -279,6 +281,81 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
             _sequenceHandling = SequenceHandling.normal;
         else
             _sequenceHandling = SequenceHandling.valueOf(name);
+    }
+
+    public Map<String, Object> toMap()
+    {
+        Map<String, Object> map = new HashMap<>();
+        map.put("rowid", getRowId());
+        map.put("sequencenummin", getSequenceNumMin());
+        map.put("sequencenummax", getSequenceNumMax());
+        map.put("label", getLabel());
+        map.put("typecode", getTypeCode());
+        map.put("container", getContainer());
+        map.put("showbydefault", isShowByDefault());
+        map.put("displayorder", getDisplayOrder());
+        map.put("visitdatedatasetid", getVisitDateDatasetId());
+        map.put("cohortid", getCohortId());
+        map.put("chronologicalorder", getChronologicalOrder());
+        map.put("sequencenumhandling", getSequenceNumHandling());
+        map.put("description", getDescription());
+        map.put("protocolday", getProtocolDay());
+
+        return map;
+    }
+
+    @NotNull
+    public static VisitImpl fromMap(Map<String, Object> map, Container container)
+    {
+        // required properties
+        double seqNumMin = (double) map.get("sequencenummin");
+        double seqNumMax = map.containsKey("sequencenummax") ? (double) map.get("sequencenummax") : seqNumMin;
+        String label = map.containsKey("label") ? (String) map.get("label") : null;
+        Character type = map.containsKey("type") ? (Character) map.get("type") : null;
+
+        VisitImpl visit = new VisitImpl(container, seqNumMin, seqNumMax, label, type);
+
+        // optional properties
+        if (map.containsKey("rowid"))
+            visit.setRowId((int) map.get("rowid"));
+        if (map.containsKey("description"))
+            visit.setDescription((String) map.get("description"));
+        if (map.containsKey("showbydefalut"))
+            visit.setShowByDefault((boolean) map.get("showbydefault"));
+        if (map.containsKey("displayorder"))
+            visit.setDisplayOrder((int) map.get("displayorder"));
+        if (map.containsKey("chronologicalorder"))
+            visit.setChronologicalOrder((int) map.get("chronologicalorder"));
+        if (map.containsKey("sequencenumhandling"))
+            visit.setSequenceNumHandling((String) map.get("sequencenumhandling"));
+        if (map.containsKey("protocolday"))
+            visit.setProtocolDay((double) map.get("protocolday"));
+
+        return visit;
+    }
+
+    public static VisitImpl merge(VisitImpl target, VisitImpl source, boolean copyRowId)
+    {
+        VisitImpl _target = target.createMutable();
+
+        if (copyRowId)
+            _target.setRowId(source.getRowId());
+
+        _target.setSequenceNumMin(source.getSequenceNumMin());
+        _target.setSequenceNumMax(source.getSequenceNumMax());
+        _target.setLabel(source.getLabel());
+        _target.setTypeCode(source.getTypeCode());
+        _target.setContainer(source.getContainer());
+        _target.setShowByDefault(source.isShowByDefault());
+        _target.setDisplayOrder(source.getDisplayOrder());
+        _target.setVisitDateDatasetId(source.getVisitDateDatasetId());
+        _target.setCohortId(source.getCohortId());
+        _target.setChronologicalOrder(source.getChronologicalOrder());
+        _target.setSequenceNumHandling(source.getSequenceNumHandling());
+        _target.setDescription(source.getDescription());
+        _target.setProtocolDay(source.getProtocolDay());
+
+        return _target;
     }
 
     static _BeanObjectFactory _f = new _BeanObjectFactory();
