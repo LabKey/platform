@@ -432,7 +432,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _datasetId = datasetId;
     }
 
-
     public String getDataSharing()
     {
         return getDataSharingEnum().name();
@@ -440,7 +439,12 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     public void setDataSharing(@NotNull String datasharing)
     {
-        assert null != datasharing;
+        // datasharing can == null during server upgrade
+        if (null == datasharing)
+        {
+            _datasharing = DataSharing.NONE;
+            return;
+        }
         _datasharing = DataSharing.valueOf(datasharing);
         if (!getStudy().getShareVisitDefinitions() && _datasharing != DataSharing.NONE)
             throw new IllegalStateException();
