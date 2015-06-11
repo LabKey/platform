@@ -71,16 +71,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("TotalCellCount"));
         addWrapColumn(_rootTable.getColumn("TubeType"));
 
-        ColumnInfo specimenComment = createSpecimenCommentColumn(_userSchema, true);
-        specimenComment.setName("Comments");
-        specimenComment.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new SpecimenCommentDisplayColumn(colInfo);
-            }
-        });
-        addColumn(specimenComment);
+        addSpecimenCommentColumns(_userSchema, "Comments", true, false);
 
         boolean enableSpecimenRequest = SpecimenManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
         addWrapColumn(_rootTable.getColumn("LockedInRequest")).setHidden(!enableSpecimenRequest);

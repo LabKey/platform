@@ -453,7 +453,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         addColumn(commentsColumn);
     }
 
-    protected ColumnInfo createSpecimenCommentColumn(StudyQuerySchema schema, boolean includeVialComments)
+    protected void addSpecimenCommentColumns(StudyQuerySchema schema, @Nullable String alias, boolean includeVialComments, boolean hidden)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(_userSchema.getContainer());
 
@@ -470,8 +470,8 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         boolean validParticipantVisitCommentTable = defPtidVisit != null && defPtidVisit.canRead(schema.getUser()) && !defPtidVisit.isDemographicData();
         TableInfo participantVisitCommentTable = validParticipantVisitCommentTable ? defPtidVisit.getTableInfo(schema.getUser()) : null;
 
-        return new SpecimenCommentColumn(this, participantCommentTable, study.getParticipantCommentProperty(),
-                participantVisitCommentTable, study.getParticipantVisitCommentProperty(), includeVialComments);
+        addColumn(new SpecimenCommentColumn(this, participantCommentTable, study.getParticipantCommentProperty(),
+            participantVisitCommentTable, study.getParticipantVisitCommentProperty(), alias, includeVialComments, hidden));
     }
 
     public static class SpecimenCommentColumn extends ExprColumn
@@ -490,10 +490,11 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         private Container _container;
 
         public SpecimenCommentColumn(FilteredTable parent, TableInfo ptidCommentTable, String ptidCommentProperty,
-                                     TableInfo ptidVisitCommentTable, String ptidVisitCommentProperty, boolean includeVialComments)
+                                     TableInfo ptidVisitCommentTable, String ptidVisitCommentProperty, @Nullable String name,
+                                     boolean includeVialComments, boolean hidden)
         {
-            super(parent, COLUMN_NAME, new SQLFragment(), JdbcType.VARCHAR);
-
+            super(parent, (null != name ? name : COLUMN_NAME), new SQLFragment(), JdbcType.VARCHAR);
+            setHidden(hidden);
             _container = parent.getContainer();
             _ptidCommentTable = ptidCommentTable;
             _ptidVisitCommentTable = ptidVisitCommentTable;
@@ -519,22 +520,19 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             if (_includeVialComments)
             {
                 String field = ExprColumn.STR_TABLE_ALIAS + "$" + SPECIMEN_COMMENT_JOIN + ".Comment";
-
-                sql.append(field).append(" AS " + VIAL_COMMENT_ALIAS + ",\n");
+                parent.addColumn(new ExprColumn(parent, VIAL_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR)).setHidden(true);
                 commentFields.add(field);
             }
             if (ptidCommentTable != null && ptidCommentAlias != null)
             {
                 String field = ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_COMMENT_JOIN + "." + ptidCommentAlias;
-
-                sql.append(field).append(" AS " + PARTICIPANT_COMMENT_ALIAS + ",\n");
+                parent.addColumn(new ExprColumn(parent, PARTICIPANT_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR)).setHidden(true);
                 commentFields.add(field);
             }
             if (ptidVisitCommentTable != null && ptidVisitCommentAlias != null)
             {
                 String field = ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANTVISIT_COMMENT_JOIN + "." + ptidVisitCommentAlias;
-
-                sql.append(field).append(" AS " + PARTICIPANTVISIT_COMMENT_ALIAS + ",\n");
+                parent.addColumn(new ExprColumn(parent, PARTICIPANTVISIT_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR)).setHidden(true);
                 commentFields.add(field);
             }
 
@@ -572,6 +570,14 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             // Address issue #20328. Seems like this should be set automatically, since we're essentially wrapping a column that
             // we know shouldn't be faceted (based on inputType, e.g.), but that information isn't getting propagated.
             setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
+            setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new SpecimenCommentDisplayColumn(colInfo);
+                }
+            });
+
         }
 
         private void appendCommentCaseSQL(StringBuilder sb, String... fields)

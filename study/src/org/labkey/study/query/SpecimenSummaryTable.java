@@ -128,16 +128,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
             }
         });
 
-        ColumnInfo specimenComment = createSpecimenCommentColumn(_userSchema, false);
-        specimenComment.setHidden(true);
-        specimenComment.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new SpecimenCommentDisplayColumn(colInfo);
-            }
-        });
-        addColumn(specimenComment);
+        addSpecimenCommentColumns(_userSchema, null, false, true);
 
         // use sql aggregates to 'OR' together the conflict bits of the vials associated with this specimen hash:
         SQLFragment sqlFragConflicts = new SQLFragment("(SELECT CASE WHEN COUNT(QualityControlFlag) = 0 OR " +
