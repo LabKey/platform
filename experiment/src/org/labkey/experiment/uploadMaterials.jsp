@@ -428,11 +428,11 @@ function runner() {
     var validateKey = function() {
         var name = document.getElementById("name").value;
 
-        <% if (form.isImportMoreSamples()) { %>
         var insertOnlyChoice = document.getElementById("insertOnlyChoice");
         var insertIgnoreChoice = document.getElementById("insertIgnoreChoice");
         var insertOrUpdateChoice = document.getElementById("insertOrUpdateChoice");
         var updateOnlyChoice = document.getElementById("updateOnlyChoice");
+        <% if (form.isImportMoreSamples()) { %>
         if (!(insertOnlyChoice.checked || insertIgnoreChoice.checked || insertOrUpdateChoice.checked || updateOnlyChoice.checked))
         {
             alert("Please select how to deal with duplicates by selecting one of the insert/update options.");
@@ -553,7 +553,7 @@ function runner() {
             }
 
             // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
-            if (!insertIgnoreChoice.checked && hash[val])
+            if ((insertIgnoreChoice && !insertIgnoreChoice.checked) && hash[val])
             {
                 alert("The ID columns chosen do not form a unique key. The key " + val + " is on rows " + hash[val] + " and " + i + ".");
                 return false;
