@@ -606,3 +606,6 @@ vrt	x-world/x-vrt
 patch text/plain
 bat text/plain
 cmd text/plain
+ipr text/xml
+iml text/xml
+iws text/xml
