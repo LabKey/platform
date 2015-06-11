@@ -552,7 +552,8 @@ function runner() {
                 val = (colNum == 0 ? colVal : val + "-" + colVal);
             }
 
-            if (hash[val])
+            // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
+            if (!insertIgnoreChoice.checked && hash[val])
             {
                 alert("The ID columns chosen do not form a unique key. The key " + val + " is on rows " + hash[val] + " and " + i + ".");
                 return false;

@@ -19,6 +19,7 @@ package org.labkey.experiment.samples;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.commons.beanutils.ConversionException;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -273,30 +274,8 @@ public class UploadSamplesHelper
                 }
             }
 
-            // Remember the actual set of properties that we received, so we don't end up deleting
-            // unspecified values
-            Set<PropertyDescriptor> descriptors = new HashSet<>();
-            descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
+            Set<PropertyDescriptor> descriptors = getPropertyDescriptors(domain, idColPropertyURIs, maps);
 
-            Set<String> newNames = new CaseInsensitiveHashSet();
-            for (Map<String, Object> map : maps)
-            {
-                String name = decideName(map, idColPropertyURIs);
-                if (!newNames.add(name))
-                {
-                    throw new ExperimentException("Duplicate material: " + name);
-                }
-
-                for (Map.Entry<String, Object> entry : map.entrySet())
-                {
-                    DomainProperty prop = domain.getPropertyByURI(entry.getKey());
-                    if (prop != null)
-                    {
-                        descriptors.add(prop.getPropertyDescriptor());
-                    }
-
-                }
-            }
 
             Set<String> reusedMaterialLSIDs = new HashSet<>();
             if (_materialSource == null)
@@ -403,6 +382,49 @@ public class UploadSamplesHelper
         }
 
         return new Pair<>(_materialSource, materials);
+    }
+
+    // Remember the actual set of properties that we received, so we don't end up deleting unspecified values.
+    // Check for duplicate names and remove any rows that are duplicates if we are ignoring dupes.
+    @NotNull
+    private Set<PropertyDescriptor> getPropertyDescriptors(Domain domain, List<String> idColPropertyURIs, List<Map<String, Object>> maps) throws ExperimentException
+    {
+        InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
+
+        Set<PropertyDescriptor> descriptors = new HashSet<>();
+        descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
+
+        Set<String> newNames = new CaseInsensitiveHashSet();
+        ListIterator<Map<String, Object>> li = maps.listIterator();
+        while (li.hasNext())
+        {
+            Map<String, Object> map = li.next();
+
+            // Check for duplicate names
+            String name = decideName(map, idColPropertyURIs);
+            if (!newNames.add(name))
+            {
+                // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
+                if (insertUpdate == InsertUpdateChoice.insertIgnore)
+                {
+                    li.remove();
+                    continue;
+                }
+                else
+                    throw new ExperimentException("Duplicate material: " + name);
+            }
+
+            for (Map.Entry<String, Object> entry : map.entrySet())
+            {
+                DomainProperty prop = domain.getPropertyByURI(entry.getKey());
+                if (prop != null)
+                {
+                    descriptors.add(prop.getPropertyDescriptor());
+                }
+
+            }
+        }
+        return descriptors;
     }
 
     private boolean isNameHeader(String name)
