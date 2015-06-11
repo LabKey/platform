@@ -228,22 +228,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     }
 
 
-/*
-    @Override
-    public List<Map<String, Object>> importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
-    {
-        return super._importRowsUsingETL(user, container, rows, errors, extraScriptContext, true);
-    }
-
-
-    @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
-    {
-        return super._insertRowsUsingETL(user, container, rows, errors, extraScriptContext);
-    }
-*/
-
-
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
