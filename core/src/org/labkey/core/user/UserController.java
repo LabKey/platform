@@ -1822,7 +1822,7 @@ public class UserController extends SpringActionController
                 Group group = SecurityManager.getGroup(groupId);
 
                 if (null == group)
-                    throw new RuntimeException("Could not get group for group id " + groupId);
+                    throw new NotFoundException("Cannot find group with id " + groupId);
 
                 response.put("groupId", group.getUserId());
                 response.put("groupName", group.getName());
