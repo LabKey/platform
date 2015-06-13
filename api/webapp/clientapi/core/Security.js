@@ -419,7 +419,7 @@ LABKEY.Security = new function()
             }
 
             return LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("user", "getUsers", config.containerPath),
+                url: LABKEY.ActionURL.buildURL("user", "getUsers.api", config.containerPath),
                 method : 'GET',
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
