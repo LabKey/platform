@@ -40,7 +40,6 @@ import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -227,7 +226,7 @@ public class Table
 
     private static Map<Class, Getter> _getterMap = new HashMap<>(10);
 
-    static enum Getter
+    enum Getter
     {
         STRING(String.class) {
             String getObject(ResultSet rs, int i) throws SQLException { return rs.getString(i); }
@@ -274,7 +273,7 @@ public class Table
             return getObject(rs, 1);
         }
 
-        private Getter(Class c)
+        Getter(Class c)
         {
             _getterMap.put(c, this);
         }

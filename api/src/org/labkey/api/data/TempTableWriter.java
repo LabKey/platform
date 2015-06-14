@@ -17,16 +17,13 @@
 package org.labkey.api.data;
 
 import org.labkey.api.collections.RowMap;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.Loader;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -155,6 +152,4 @@ public class TempTableWriter
 
         return tinfoTempTable;
     }
-
-
 }
