@@ -245,7 +245,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                             }
                             else
                             {
-                                throw new IllegalArgumentException("The 'zeroDayVisitTag' property or the 'dateCol' and 'zeroDateCol' properties are requried.");
+                                throw new IllegalArgumentException("The 'zeroDayVisitTag' property or the 'dateCol' and 'zeroDateCol' properties are required.");
                             }
 
                             if (interval != null)

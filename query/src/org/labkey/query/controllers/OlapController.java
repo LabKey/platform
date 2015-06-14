@@ -1377,7 +1377,7 @@ public class OlapController extends SpringActionController
                 return;
 
             if (StringUtils.isBlank(form.getContextName()))
-                errors.rejectValue("contextName", ERROR_MSG, "contextName is requried");
+                errors.rejectValue("contextName", ERROR_MSG, "contextName is required");
         }
 
         @Override
@@ -1395,7 +1395,7 @@ public class OlapController extends SpringActionController
         public void validateForm(AppForm form, Errors errors)
         {
             if (StringUtils.isBlank(form.getContextName()))
-                errors.rejectValue("contextName", ERROR_MSG, "contextName is requried");
+                errors.rejectValue("contextName", ERROR_MSG, "contextName is required");
         }
 
         @Override
