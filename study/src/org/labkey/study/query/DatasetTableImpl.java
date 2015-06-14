@@ -216,15 +216,16 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             else if (name.equalsIgnoreCase("SequenceNum"))
             {
                 ColumnInfo c = addWrapColumn(baseColumn);
-                // set a format to prevent scientific notation, since the sequencenum values
-                // for date-based studies can be quite large (e.g., 20091014).
-                c.setFormat("#");
                 if (!timepointType.isVisitBased())
                 {
                     c.setHidden(true);
                     c.setShownInInsertView(false);
                     c.setShownInDetailsView(false);
                     c.setShownInUpdateView(false);
+
+                    // set a format to prevent scientific notation, since the sequencenum values
+                    // for date-based studies can be quite large (e.g., 20091014).
+                    c.setFormat("#");
                 }
                 //Don't add to default visible cols...
             }
