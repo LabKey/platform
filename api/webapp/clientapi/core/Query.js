@@ -2104,7 +2104,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 
     /**
      * Gets a specific link type for a row (details, update, etc.).
-     * @param linkType Requried. The name of the link type to be returned.
+     * @param linkType Required. The name of the link type to be returned.
      * @returns {Object} Returns an object with the display text and link value.
      */
     LABKEY.Query.Row.prototype.getLink = function(linkType){

@@ -249,7 +249,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * @function
      * @memberOf LABKEY.SecurityPolicy#
      * @param principalId The principal ID
-     * @param membershipsTable The group memberships table. This is requried to determine the groups
+     * @param membershipsTable The group memberships table. This is required to determine the groups
      * the principal belongs to. You can obtain this table by requesting the 'Members' table from the 'Core'
      * schema using LABKEY.Query.selectRows().
      * @returns An array of roles the principal is effectively playing.
@@ -299,7 +299,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * @function
      * @memberOf LABKEY.SecurityPolicy#
      * @param principalId The principal
-     * @param membershipsTable The group memberships table. This is requried to determine the groups
+     * @param membershipsTable The group memberships table. This is required to determine the groups
      * the principal belongs to. You can obtain this table by requesting the 'Members' table from the 'Core'
      * schema using LABKEY.Query.selectRows().
      * @returns An array of group IDs this user belongs to.
