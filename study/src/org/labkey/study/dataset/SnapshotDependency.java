@@ -15,6 +15,7 @@
  */
 package org.labkey.study.dataset;
 
+import com.sun.javafx.beans.annotations.NonNull;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ColumnInfo;
@@ -24,15 +25,15 @@ import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionTableInfo;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantCategoryImpl;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
@@ -116,24 +117,11 @@ public abstract class SnapshotDependency
                         List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudySchema.getInstance().getSchemaName());
                         if (!snapshots.isEmpty())
                         {
-                            Domain d = PropertyService.get().getDomain(dsDef.getContainer(), dsDef.getTypeURI());
-                            if (d != null)
+                            for (QuerySnapshotDefinition snapshot : snapshots)
                             {
-                                try {
-                                    for (DomainProperty prop : d.getProperties())
-                                    {
-                                        for (QuerySnapshotDefinition snapshot : snapshots)
-                                        {
-                                            if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, prop.getPropertyURI()))
-                                            {
-                                                dependencies.put(snapshot.getId(), snapshot);
-                                            }
-                                        }
-                                    }
-                                }
-                                catch (ServletException e)
+                                if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, dsDef))
                                 {
-                                    throw new RuntimeException(e);
+                                    dependencies.put(snapshot.getId(), snapshot);
                                 }
                             }
                         }
@@ -156,6 +144,19 @@ public abstract class SnapshotDependency
         // map of property uri to dataset id
         private static final Map<Integer, Map<String, String>> _snapshotPropertyMap = new HashMap<>();
 
+        private boolean hasDependency(QuerySnapshotDefinition qsDef, @NonNull org.labkey.api.study.Dataset dsDef)
+        {
+            // dataset snapshots must have an underlying dataset definition defined
+            StudyImpl study = StudyManager.getInstance().getStudy(qsDef.getContainer());
+            DatasetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, qsDef.getName());
+            if (def != null)
+            {
+                return def.getName().equals(dsDef.getName()) && (def.getDatasetId() == dsDef.getDatasetId());
+            }
+            return false;
+        }
+
+        @Deprecated
         private boolean hasDependency(QuerySnapshotDefinition def, String propertyURI) throws ServletException
         {
             Map<String, String> propertyMap;
