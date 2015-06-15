@@ -51,7 +51,7 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
         setReportKey(reportKey);
         setReportName(name);
         setDescriptorType(TYPE);
-        setReportType(getDefaultReportType(reportKey));
+        setReportType(JavaScriptReport.TYPE);
         _resource = getModuleReportResource(sourceFile);
         loadMetaData(container, user);
     }
@@ -59,11 +59,6 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
     public ModuleReportResource getModuleReportResource(Resource sourceFile)
     {
         return new ModuleReportResource(this, sourceFile);
-    }
-
-    public String getDefaultReportType(String reportKey)
-    {
-        return JavaScriptReport.TYPE;
     }
 
     @Override
@@ -128,7 +123,7 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
     public String getResourceId()
     {
         // default the module reports to container security, the report service guarantees that
-        // all module reports added will have it's container set.
+        // all module reports added will have its container set.
         return getContainerId();
     }
 

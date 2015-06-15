@@ -214,7 +214,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         public boolean accept(File dir, String name)
         {
             return ModuleRReportDescriptor.accept(name) ||
-                   name.toLowerCase().endsWith(ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
+                   StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
         }
     };
 

@@ -714,7 +714,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return null;
     }
 
-    public ReportDescriptorType setDescriptorFromXML(Container container, User user, String xmlString) throws IOException, XmlException
+    public ReportDescriptorType setDescriptorFromXML(@Nullable Container container, @Nullable User user, String xmlString) throws IOException, XmlException
     {
         ReportDescriptorType d;
 

@@ -60,7 +60,7 @@ public class ModuleQueryReportResource extends ModuleReportResource
                     throw new XmlException("Metadata for a Query Report must have a ReportType of Query.");
                 }
 
-                List<Pair<String,String>> props = _reportDescriptor.createPropsFromXML(xml);
+                List<Pair<String, String>> props = ReportDescriptor.createPropsFromXML(xml);
 
                 // parse out the query report specific schema elements
                 QueryReportDescriptorType queryReportDescriptorType = d.getReportType().getQuery();
@@ -79,15 +79,9 @@ public class ModuleQueryReportResource extends ModuleReportResource
 
             _sourceLastModified = _sourceFile.getLastModified();
         }
-        catch(IOException e)
+        catch(IOException | XmlException e)
         {
-            Logger.getLogger(ModuleQueryReportResource.class).warn("Unable to load query report metadata from file "
-                    + _sourceFile.getPath(), e);
-        }
-        catch(XmlException e)
-        {
-            Logger.getLogger(ModuleQueryReportResource.class).warn("Unable to load query report metadata from file "
-                    + _sourceFile.getPath(), e);
+            Logger.getLogger(ModuleQueryReportResource.class).warn("Unable to load query report metadata from file " + _sourceFile.getPath(), e);
         }
 
         return d;
