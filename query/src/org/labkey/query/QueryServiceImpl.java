@@ -659,7 +659,6 @@ public class QueryServiceImpl extends QueryService
                 @Override
                 public Collection<ModuleCustomViewDef> load(String key, Object argument)
                 {
-                    Pair<String, String> schemaQuery = (Pair<String, String>)argument;
                     ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
 
                     // Remove "/*" added by getCacheKey()
@@ -674,6 +673,7 @@ public class QueryServiceImpl extends QueryService
                     }
                     else
                     {
+                        Pair<String, String> schemaQuery = (Pair<String, String>)argument;
                         Collection<ModuleCustomViewDef> viewDefs = new LinkedList<>();
 
                         for (Resource view : viewResources)
@@ -702,7 +702,7 @@ public class QueryServiceImpl extends QueryService
         List<Resource> ret = new ArrayList<>();
         for (String name : queryDir.listNames())
         {
-            if (name.toLowerCase().endsWith(CustomViewXmlReader.XML_FILE_EXTENSION))
+            if (StringUtils.endsWithIgnoreCase(name, CustomViewXmlReader.XML_FILE_EXTENSION))
             {
                 Resource queryViewXml = queryDir.find(name);
                 if (queryViewXml != null)

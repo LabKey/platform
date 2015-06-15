@@ -319,7 +319,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public void setResolvedBy(Integer resolvedBy)
     {
-        if (null != resolvedBy && resolvedBy.intValue() == 0) resolvedBy = null;
+        if (null != resolvedBy && resolvedBy == 0) resolvedBy = null;
         this.resolvedBy = resolvedBy;
     }
 
@@ -362,7 +362,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public void setDuplicate(Integer duplicate)
     {
-        if (null != duplicate && duplicate.intValue() == 0) duplicate = null;
+        if (null != duplicate && duplicate == 0) duplicate = null;
         this.duplicate = duplicate;
     }
 
@@ -410,7 +410,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public void setClosedBy(Integer closedBy)
     {
-        if (null != closedBy && closedBy.intValue() == 0) closedBy = null;
+        if (null != closedBy && closedBy == 0) closedBy = null;
         this.closedBy = closedBy;
     }
 
