@@ -90,7 +90,11 @@ public class SharedStudyController extends BaseStudyController
             if (!super.isAvailable(c, location))
                 return false;
 
-            Study study = StudyManager.getInstance().getStudy(c.getProject());
+            Container project = c.getProject();
+            if (project == null)
+                return false;
+
+            Study study = StudyManager.getInstance().getStudy(project);
             return study != null && study.getShareDatasetDefinitions();
         }
 
