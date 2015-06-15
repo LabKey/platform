@@ -139,10 +139,10 @@ LABKEY.Utils = new function(impl, $) {
      */
     impl.alert = function(title, msg) {
         if (window.Ext4) {
-            Ext4.Msg.alert(title, msg);
+            Ext4.Msg.alert(title?Ext4.htmlEncode(title):"", msg?Ext4.htmlEncode(msg):"")
         }
         else if (window.Ext) {
-            Ext.Msg.alert(title, msg);
+            Ext.Msg.alert(title?Ext.util.Format.htmlEncode(title):"", msg?Ext.util.Format.htmlEncode(msg):"");
         }
         else {
             alert(title + ' : ' + msg);
