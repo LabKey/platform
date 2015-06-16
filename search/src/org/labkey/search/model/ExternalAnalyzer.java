@@ -18,7 +18,7 @@ package org.labkey.search.model;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
-import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 
 
 /**
@@ -33,7 +33,7 @@ public enum ExternalAnalyzer
         @Override
         Analyzer getAnalyzer()
         {
-            return new SimpleAnalyzer(LuceneSearchServiceImpl.LUCENE_VERSION);
+            return new SimpleAnalyzer();
         }},
     KeywordAnalyzer {
         @Override
@@ -41,11 +41,11 @@ public enum ExternalAnalyzer
         {
             return new KeywordAnalyzer();
         }},
-    SnowballAnalyzer {
+    EnglishAnalyzer {
         @Override
         Analyzer getAnalyzer()
         {
-            return new SnowballAnalyzer(LuceneSearchServiceImpl.LUCENE_VERSION, "English");
+            return new EnglishAnalyzer();
         }};
 
     abstract Analyzer getAnalyzer();

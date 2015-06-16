@@ -1,6 +1,7 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-lucene-core-4.8.1.jar|Lucene|4.8.1|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search
-lucene-analyzers-common-4.8.1.jar|Lucene Analyzers|4.8.1|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Stemming support for full-text search
-lucene-queryparser-4.8.1.jar|Lucene Query Parsers|4.8.1|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser support for full-text search
+lucene-core-5.2.0.jar|Lucene|5.2.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search
+lucene-analyzers-common-5.2.0.jar|Lucene Analyzers|5.2.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Stemming support for full-text search
+lucene-queryparser-5.2.0.jar|Lucene Query Parsers|5.2.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser support for full-text search
+lucene-backward-codecs-5.2.0.jar|Lucene Backward Compatibility|5.2.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Ability to read & upgrade Lucene 4.x indexes
 {table}

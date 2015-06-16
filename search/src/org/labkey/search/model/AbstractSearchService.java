@@ -429,7 +429,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         clearLastIndexed();
     }
 
-    
+
     public final void clearLastIndexed()
     {
         for (DocumentProvider p : _documentProviders)
@@ -1284,11 +1284,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     protected abstract void clearIndex();
 
 
-    static Map emptyMap = Collections.emptyMap();
-    
     Map<?,?> preprocess(String id, WebdavResource r, Throwable[] handledException)
     {
-        return emptyMap;
+        return Collections.emptyMap();
     }
 
 

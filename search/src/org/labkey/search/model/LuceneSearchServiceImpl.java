@@ -26,9 +26,10 @@ import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
+import org.apache.lucene.index.IndexOptions;
+import org.apache.lucene.index.IndexUpgrader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -44,8 +45,8 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.Version;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -114,8 +115,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private static final Logger _log = Logger.getLogger(LuceneSearchServiceImpl.class);
     private static final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
 
-    static final Version LUCENE_VERSION = Version.LUCENE_48;
-
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
     // is initialized).
@@ -123,7 +122,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private static ExternalIndexManager _externalIndexManager;
 
-    static enum FIELD_NAME
+    enum FIELD_NAME
     {
         title,                     // Used to be the "search" title (equivalent to keywordsMed), now the display title
         body,
@@ -153,7 +152,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             File indexDir = SearchPropertyManager.getPrimaryIndexDirectory();
-            _indexManager = WritableIndexManagerImpl.get(indexDir, getAnalyzer());
+            _indexManager = WritableIndexManagerImpl.get(indexDir.toPath(), getAnalyzer());
             setConfigurationError(null);  // Clear out any previous error
         }
         catch (IndexFormatTooOldException | IndexFormatTooNewException e)    // Lucene used to throw "TooOld" in this case; now throws "TooNew"... either way, suppress mothership logging
@@ -681,9 +680,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     static
     {
-        INDEXED_IDENTIFIER.setIndexed(true);
         INDEXED_IDENTIFIER.setOmitNorms(true);
-        INDEXED_IDENTIFIER.setIndexOptions(FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
+        INDEXED_IDENTIFIER.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
         INDEXED_IDENTIFIER.setTokenized(false);
     }
 
@@ -1052,6 +1050,23 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    // Upgrade index to the latest version. This must be called BEFORE start() and initializeIndex() are called, otherwise upgrade will fail to obtain the lock.
+    @Override
+    public final void upgradeIndex()
+    {
+        try
+        {
+            Directory directory = WritableIndexManagerImpl.openDirectory(SearchPropertyManager.getPrimaryIndexDirectory().toPath());
+            IndexUpgrader upgrader = new IndexUpgrader(directory);
+            upgrader.upgrade();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+
     public SearchHit find(String id) throws IOException
     {
         IndexSearcher searcher = _indexManager.getSearcher();
@@ -1120,7 +1135,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             try
             {
                 analyzer = getAnalyzer();
-                QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, standardFields, analyzer, boosts);
+                QueryParser queryParser = new MultiFieldQueryParser(standardFields, analyzer, boosts);
                 query = queryParser.parse(queryString);
             }
             catch (ParseException x)
@@ -1305,7 +1320,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         try
         {
-            QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, new String[]{"content", "title"}, _externalIndexManager.getAnalyzer());
+            QueryParser queryParser = new MultiFieldQueryParser(new String[]{"content", "title"}, _externalIndexManager.getAnalyzer());
             Query query = queryParser.parse(queryString);
             TopDocs docs = searcher.search(query, hitsToRetrieve);
             return createSearchResult(offset, hitsToRetrieve, docs, searcher);
@@ -1421,6 +1436,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     // fixed in Lucene 3.6, which we now use, so we could switch to a static instance of the Analyzer now.
     protected Analyzer getAnalyzer()
     {
-        return ExternalAnalyzer.SnowballAnalyzer.getAnalyzer();
+        return ExternalAnalyzer.EnglishAnalyzer.getAnalyzer();
     }
 }

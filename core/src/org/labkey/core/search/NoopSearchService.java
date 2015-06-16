@@ -135,7 +135,7 @@ public class NoopSearchService implements SearchService
             return null;
         }
 
-        public IndexTask get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+        public IndexTask get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
         {
             return null;
         }
@@ -227,6 +227,11 @@ public class NoopSearchService implements SearchService
 
     @Override
     public void clear()
+    {
+    }
+
+    @Override
+    public void upgradeIndex()
     {
     }
 

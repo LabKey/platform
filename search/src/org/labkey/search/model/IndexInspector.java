@@ -16,11 +16,11 @@
 package org.labkey.search.model;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.AtomicReader;
-import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.DocsEnum;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.LeafReader;
+import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.store.Directory;
@@ -33,8 +33,8 @@ import org.labkey.api.data.TextWriter;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 /**
  * User: adam
@@ -77,9 +77,9 @@ public class IndexInspector
         return uid.substring(0, uid.indexOf(':'));
     }
 
-    private static File getIndexDirectory()
+    private static Path getIndexDirectory()
     {
-        return SearchPropertyManager.getPrimaryIndexDirectory();
+        return SearchPropertyManager.getPrimaryIndexDirectory().toPath();
     }
 
     private static class TSVIndexWriter extends TSVWriter
@@ -99,14 +99,14 @@ public class IndexInspector
                 // term counts on each document to calculate a proxy for doc size.
                 int[] termCountPerDoc = new int[reader.maxDoc()];
 
-                for (AtomicReaderContext arc : reader.leaves())
+                for (LeafReaderContext arc : reader.leaves())
                 {
-                    AtomicReader ar = arc.reader();
+                    LeafReader ar = arc.reader();
                     Terms terms = ar.terms("body");
 
                     if (null != terms)
                     {
-                        TermsEnum termsEnum = terms.iterator(null);
+                        TermsEnum termsEnum = terms.iterator();
 
                         while (null != termsEnum.next())
                         {

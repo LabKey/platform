@@ -17,14 +17,16 @@
 package org.labkey.search.model;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.index.AtomicReader;
-import org.apache.lucene.index.AtomicReaderContext;
+import org.apache.lucene.index.LeafReader;
+import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.SortedDocValues;
 import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.Filter;
+import org.apache.lucene.util.BitDocIdSet;
+import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.DocIdBitSet;
+import org.apache.lucene.util.FixedBitSet;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -39,7 +41,6 @@ import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.search.model.LuceneSearchServiceImpl.FIELD_NAME;
 
 import java.io.IOException;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 
@@ -90,18 +91,18 @@ class SecurityFilter extends Filter
 
 
     @Override
-    public DocIdSet getDocIdSet(AtomicReaderContext context, Bits acceptDocs) throws IOException
+    public DocIdSet getDocIdSet(LeafReaderContext context, Bits acceptDocs) throws IOException
     {
         SearchService.SEARCH_PHASE currentPhase = _iTimer.getCurrentPhase();
         _iTimer.setPhase(SearchService.SEARCH_PHASE.applySecurityFilter);
 
-        AtomicReader reader = context.reader();
+        LeafReader reader = context.reader();
         int max = reader.maxDoc();
-        BitSet bits = new BitSet(max);
+        BitSet bits = new FixedBitSet(max);
 
         SortedDocValues containerDocValues = reader.getSortedDocValues(FIELD_NAME.container.name());
         SortedDocValues resourceDocValues = reader.getSortedDocValues(FIELD_NAME.resourceId.name());
-        BytesRef bytesRef = new BytesRef();
+        BytesRef bytesRef;
 
         try
         {
@@ -112,7 +113,7 @@ class SecurityFilter extends Filter
                 if (null != acceptDocs && !acceptDocs.get(i))
                     continue;
 
-                containerDocValues.get(i, bytesRef);
+                bytesRef = containerDocValues.get(i);
                 String containerId = StringUtils.trimToNull(bytesRef.utf8ToString());
 
                 if (!_containerIds.containsKey(containerId))
@@ -121,7 +122,7 @@ class SecurityFilter extends Filter
                 // Can be null, if no documents have a resource ID (e.g., shortly after bootstrap)
                 if (null != resourceDocValues)
                 {
-                    resourceDocValues.get(i, bytesRef);
+                    bytesRef = resourceDocValues.get(i);
                     String resourceId = StringUtils.trimToNull(bytesRef.utf8ToString());
 
                     if (null != resourceId && !resourceId.equals(containerId))
@@ -144,12 +145,18 @@ class SecurityFilter extends Filter
 
                 bits.set(i);
             }
-            return new DocIdBitSet(bits);
+            return new BitDocIdSet(bits);
         }
         finally
         {
             _iTimer.setPhase(currentPhase);
         }
+    }
+
+    @Override
+    public String toString(String field)
+    {
+        return null;
     }
 
 

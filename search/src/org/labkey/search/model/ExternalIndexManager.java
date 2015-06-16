@@ -28,16 +28,12 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.search.SearchModule;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * User: adam
@@ -65,7 +61,7 @@ public class ExternalIndexManager extends IndexManager implements SecurableResou
 
  */
 
-        Directory directory = FSDirectory.open(indexRoot);
+        Directory directory = FSDirectory.open(indexRoot.toPath());
 
         return new ExternalIndexManager(directory, indexPath, analyzer);
     }
@@ -89,7 +85,7 @@ public class ExternalIndexManager extends IndexManager implements SecurableResou
 
     protected void openDirectory(File indexPath) throws IOException
     {
-        _directory = FSDirectory.open(indexPath);
+        _directory = FSDirectory.open(indexPath.toPath());
     }
 
     public Analyzer getAnalyzer()

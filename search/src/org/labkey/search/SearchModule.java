@@ -57,7 +57,6 @@ import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.servlet.ServletContext;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -73,7 +72,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 15.10;
+        return 15.12;
     }
 
     public boolean hasScripts()
@@ -103,7 +102,7 @@ public class SearchModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(new SearchWebPartFactory()));
+        return new ArrayList<WebPartFactory>(Collections.singletonList(new SearchWebPartFactory()));
     }
 
     
@@ -140,11 +139,15 @@ public class SearchModule extends DefaultModule
             ss.addSearchCategory(UmlsController.umlsCategory);
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
-            // For future upgrades of Lucene or changes to indexing, update the version number below to rebuild the index.
-            final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 14.11);
+            // Update the version number below to force a clear and rebuild of the index. This is used when we change our indexing content or methodology.
+            final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 15.12);
+
+            // Update the version number below to force an upgrade of the index to the latest format. This is used when we upgrade the indexing library to a new version.
+            final boolean upgradeIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 15.12);
 
             // don't start the crawler until all the modules are done starting up
-            ContextListener.addStartupListener(new StartupListener(){
+            ContextListener.addStartupListener(new StartupListener()
+            {
                 @Override
                 public String getName()
                 {
@@ -153,6 +156,10 @@ public class SearchModule extends DefaultModule
 
                 public void moduleStartupComplete(ServletContext servletContext)
                 {
+                    // Must call upgrade before the SearchService is started
+                    if (upgradeIndex)
+                        ss.upgradeIndex();
+
                     ss.start();
 
                     if (clearIndex)

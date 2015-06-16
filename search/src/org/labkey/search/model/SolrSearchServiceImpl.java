@@ -65,9 +65,14 @@ public class SolrSearchServiceImpl extends AbstractSearchService
         return null;
     }
 
+    @Override
     public void clearIndex()
     {
-        
+    }
+
+    @Override
+    public void upgradeIndex()
+    {
     }
 
     protected void commitIndex()
@@ -92,13 +97,11 @@ public class SolrSearchServiceImpl extends AbstractSearchService
     @Override
     protected void deleteDocument(String id)
     {
-        
     }
 
     @Override
     protected void deleteDocumentsForPrefix(String prefix)
     {
-
     }
 
     @Override

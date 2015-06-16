@@ -8,25 +8,33 @@
 
     Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+
 package org.apache.lucene.index;
 
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * This class allows us to peek at various Lucene internals, not available
  * through public APIs (for good reasons, but inquiring minds want to know ...).
- * 
+ *
  * @author ab
  *
  */
 public class IndexGate {
-  static HashMap<String, String> knownExtensions = new HashMap<>();
+  static HashMap<String, String> knownExtensions = new HashMap<String, String>();
 
   // old version constants
   public static final int OLD_FORMAT = -1;
@@ -81,94 +89,121 @@ public class IndexGate {
   public static final int FORMAT_PRE_4 = -12;
 
   static {
-    knownExtensions.put(IndexFileNames.COMPOUND_FILE_EXTENSION, "compound file with various index data");
-    knownExtensions.put(IndexFileNames.COMPOUND_FILE_ENTRIES_EXTENSION, "compound file entries list");
-    knownExtensions.put(IndexFileNames.GEN_EXTENSION, "generation number - global file");
+    knownExtensions.put(IndexFileNames.CODEC_FILE_PATTERN.pattern(), "regexp pattern that all codec files must match to");
+    knownExtensions.put(IndexFileNames.OLD_SEGMENTS_GEN, "old generation number - global file");
+    knownExtensions.put(IndexFileNames.PENDING_SEGMENTS, "pending segments file");
     knownExtensions.put(IndexFileNames.SEGMENTS, "per-commit list of segments and user data");
   }
-  
+
+  public static String getFileFunction(String file) {
+    if (file == null || file.trim().length() == 0) return file;
+    String res = null;
+    file = file.trim();
+    int idx = file.indexOf('.');
+    String suffix = null;
+    if (idx != -1) {
+      suffix = file.substring(idx + 1);
+    }
+    if (suffix == null) {
+      if (file.startsWith("segments_")) {
+        return knownExtensions.get(IndexFileNames.SEGMENTS);
+      }
+    } else {
+      res = knownExtensions.get(suffix);
+      if (res != null) {
+        return res;
+      }
+      // perhaps per-field norms?
+      if (suffix.length() == 2) {
+        res = knownExtensions.get(suffix.substring(0, 1));
+      }
+    }
+    return res;
+  }
+
   private static void detectOldFormats(FormatDetails res, int format) {
     switch (format) {
-    case OLD_FORMAT:
-      res.capabilities = "old plain";
-      res.genericName = "Lucene Pre-2.1";
-      res.version = "2.0?";
-      break;
-    case FORMAT_LOCKLESS:
-      res.capabilities = "lock-less";
-      res.genericName = "Lucene 2.1";
-      res.version = "2.1";
-      break;
-    case FORMAT_SINGLE_NORM_FILE:
-      res.capabilities = "lock-less, single norms file";
-      res.genericName = "Lucene 2.2";
-      res.version = "2.2";
-      break;
-    case FORMAT_SHARED_DOC_STORE:
-      res.capabilities = "lock-less, single norms file, shared doc store";
-      res.genericName = "Lucene 2.3";
-      res.version = "2.3";
-      break;
-    case FORMAT_CHECKSUM:
-      res.capabilities = "lock-less, single norms, shared doc store, checksum";
-      res.genericName = "Lucene 2.4";
-      res.version = "2.4";
-      break;
-    case FORMAT_DEL_COUNT:
-      res.capabilities = "lock-less, single norms, shared doc store, checksum, del count";
-      res.genericName = "Lucene 2.4";
-      res.version = "2.4";
-      break;
-    case FORMAT_HAS_PROX:
-      res.capabilities = "lock-less, single norms, shared doc store, checksum, del count, omitTf";
-      res.genericName = "Lucene 2.4";
-      res.version = "2.4";
-      break;
-    case FORMAT_USER_DATA:
-      res.capabilities = "lock-less, single norms, shared doc store, checksum, del count, omitTf, user data";
-      res.genericName = "Lucene 2.9-dev";
-      res.version = "2.9-dev";
-      break;
-    case FORMAT_DIAGNOSTICS:
-      res.capabilities = "lock-less, single norms, shared doc store, checksum, del count, omitTf, user data, diagnostics";
-      res.genericName = "Lucene 2.9";
-      res.version = "2.9";
-      break;
-    case FORMAT_HAS_VECTORS:
-      res.capabilities = "lock-less, single norms, shared doc store, checksum, del count, omitTf, user data, diagnostics, hasVectors";
-      res.genericName = "Lucene 2.9";
-      res.version = "2.9";
-      break;
-    case FORMAT_3_1:
-      res.capabilities = "lock-less, single norms, shared doc store, checksum, del count, omitTf, user data, diagnostics, hasVectors";
-      res.genericName = "Lucene 3.1";
-      res.version = "3.1";
-      break;
-    case FORMAT_PRE_4:
-      res.capabilities = "flexible, unreleased 4.0 pre-alpha";
-      res.genericName = "Lucene 4.0-dev";
-      res.version = "4.0-dev";
-      break;
-    default:
-      if (format < FORMAT_PRE_4) {
+      case OLD_FORMAT:
+        res.capabilities = "old plain";
+        res.genericName = "Lucene Pre-2.1";
+        res.version = "2.0?";
+        break;
+      case FORMAT_LOCKLESS:
+        res.capabilities = "lock-less";
+        res.genericName = "Lucene 2.1";
+        res.version = "2.1";
+        break;
+      case FORMAT_SINGLE_NORM_FILE:
+        res.capabilities = "lock-less, single norms file";
+        res.genericName = "Lucene 2.2";
+        res.version = "2.2";
+        break;
+      case FORMAT_SHARED_DOC_STORE:
+        res.capabilities = "lock-less, single norms file, shared doc store";
+        res.genericName = "Lucene 2.3";
+        res.version = "2.3";
+        break;
+      case FORMAT_CHECKSUM:
+        res.capabilities = "lock-less, single norms, shared doc store, checksum";
+        res.genericName = "Lucene 2.4";
+        res.version = "2.4";
+        break;
+      case FORMAT_DEL_COUNT:
+        res.capabilities = "lock-less, single norms, shared doc store, checksum, del count";
+        res.genericName = "Lucene 2.4";
+        res.version = "2.4";
+        break;
+      case FORMAT_HAS_PROX:
+        res.capabilities = "lock-less, single norms, shared doc store, checksum, del count, omitTf";
+        res.genericName = "Lucene 2.4";
+        res.version = "2.4";
+        break;
+      case FORMAT_USER_DATA:
+        res.capabilities = "lock-less, single norms, shared doc store, checksum, del count, omitTf, user data";
+        res.genericName = "Lucene 2.9-dev";
+        res.version = "2.9-dev";
+        break;
+      case FORMAT_DIAGNOSTICS:
+        res.capabilities = "lock-less, single norms, shared doc store, checksum, del count, omitTf, user data, diagnostics";
+        res.genericName = "Lucene 2.9";
+        res.version = "2.9";
+        break;
+      case FORMAT_HAS_VECTORS:
+        res.capabilities = "lock-less, single norms, shared doc store, checksum, del count, omitTf, user data, diagnostics, hasVectors";
+        res.genericName = "Lucene 2.9";
+        res.version = "2.9";
+        break;
+      case FORMAT_3_1:
+        res.capabilities = "lock-less, single norms, shared doc store, checksum, del count, omitTf, user data, diagnostics, hasVectors";
+        res.genericName = "Lucene 3.1";
+        res.version = "3.1";
+        break;
+      case FORMAT_PRE_4:
         res.capabilities = "flexible, unreleased 4.0 pre-alpha";
         res.genericName = "Lucene 4.0-dev";
         res.version = "4.0-dev";
-      } else {
-        res.capabilities = "unknown";
-        res.genericName = "Lucene 1.3 or earlier, or unreleased";
-        res.version = "1.3?";
-      }
-      break;
+        break;
+      default:
+        if (format < FORMAT_PRE_4) {
+          res.capabilities = "flexible, unreleased 4.0 pre-alpha";
+          res.genericName = "Lucene 4.0-dev";
+          res.version = "4.0-dev";
+        } else {
+          res.capabilities = "unknown";
+          res.genericName = "Lucene 1.3 or earlier, or unreleased";
+          res.version = "1.3?";
+        }
+        break;
     }
-    res.genericName = res.genericName + " (" + format + ")";    
+    res.genericName = res.genericName + " (" + format + ")";
   }
-  
+
   public static FormatDetails getIndexFormat(final Directory dir) throws Exception {
     SegmentInfos.FindSegmentsFile fsf = new SegmentInfos.FindSegmentsFile(dir) {
 
+      @Override
       protected Object doBody(String segmentsFile) throws CorruptIndexException,
-          IOException {
+              IOException {
         FormatDetails res = new FormatDetails();
         res.capabilities = "unknown";
         res.genericName = "unknown";
@@ -176,20 +211,20 @@ public class IndexGate {
         try {
           int indexFormat = in.readInt();
           if (indexFormat == CodecUtil.CODEC_MAGIC) {
-            res.genericName = "Lucene 4.x";
+            res.genericName = "Lucene 4.x or 5.x";
             res.capabilities = "flexible, codec-specific";
             int actualVersion = SegmentInfos.VERSION_40;
             try {
               actualVersion = CodecUtil.checkHeaderNoMagic(in, "segments", SegmentInfos.VERSION_40, Integer.MAX_VALUE);
-              if (actualVersion > SegmentInfos.VERSION_40) {
-                res.capabilities += " (WARNING: newer version of Lucene that this tool)";
+              if (actualVersion > SegmentInfos.VERSION_50) {
+                res.capabilities += " (WARNING: newer version of Lucene than this tool)";
               }
             } catch (Exception e) {
               e.printStackTrace();
               res.capabilities += " (error reading: " + e.getMessage() + ")";
             }
-            res.genericName = "Lucene 4." + actualVersion;
-            res.version = "4." + actualVersion;
+            res.genericName = "Lucene 4.x or 5.x, segment ver.:" + actualVersion;
+            res.version = String.valueOf(actualVersion);
           } else {
             res.genericName = "Lucene 3.x or prior";
             detectOldFormats(res, indexFormat);
@@ -198,12 +233,71 @@ public class IndexGate {
             }
           }
         } finally {
-          in.close();          
+          in.close();
         }
         return res;
       }
     };
     return (FormatDetails)fsf.run();
+  }
+
+  public static boolean preferCompoundFormat(Directory dir) throws Exception {
+    SegmentInfos infos = new SegmentInfos();
+    infos=SegmentInfos.readLatestCommit(dir);
+    int compound = 0, nonCompound = 0;
+    for (int i = 0; i < infos.size(); i++) {
+      if (((SegmentCommitInfo)infos.info(i)).info.getUseCompoundFile()) {
+        compound++;
+      } else {
+        nonCompound++;
+      }
+    }
+    return compound > nonCompound;
+  }
+
+  public static void deletePendingFiles(Directory dir, IndexDeletionPolicy policy) throws Exception {
+    SegmentInfos infos = new SegmentInfos();
+    infos=SegmentInfos.readLatestCommit(dir);
+    IndexWriterConfig cfg = new IndexWriterConfig(new WhitespaceAnalyzer());
+    IndexWriter iw = new IndexWriter(dir, cfg);
+    IndexFileDeleter deleter = new IndexFileDeleter(dir, policy, infos, null, iw, true);
+    deleter.close();
+    iw.close();
+  }
+
+  public static List<String> getDeletableFiles(Directory dir) throws Exception {
+    List<String> known = getIndexFiles(dir);
+    Set<String> dirFiles = new HashSet<String>(Arrays.asList(dir.listAll()));
+    dirFiles.removeAll(known);
+    return new ArrayList<String>(dirFiles);
+  }
+
+  public static List<String> getIndexFiles(Directory dir) throws Exception {
+    List<IndexCommit> commits = null;
+    try {
+      commits = DirectoryReader.listCommits(dir);
+    } catch (IndexNotFoundException e) {
+      return Collections.emptyList();
+    }
+    Set<String> known = new HashSet<String>();
+    for (IndexCommit ic : commits) {
+      known.addAll(ic.getFileNames());
+    }
+
+    boolean prevExists;
+    try {
+      dir.openInput(IndexFileNames.OLD_SEGMENTS_GEN, IOContext.DEFAULT).close();
+      prevExists = true;
+    } catch (IOException ioe) {
+      prevExists = false;
+    }
+
+    if (prevExists) {
+      known.add(IndexFileNames.OLD_SEGMENTS_GEN);
+    }
+    List<String> names = new ArrayList<String>(known);
+    Collections.sort(names);
+    return names;
   }
 
   public static class FormatDetails {

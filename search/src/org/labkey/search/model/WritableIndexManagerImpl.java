@@ -33,8 +33,8 @@ import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.Constants;
 import org.labkey.api.util.ExceptionUtil;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 /**
  * User: adam
@@ -53,15 +53,15 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     private boolean _closed = false;
 
 
-    static WritableIndexManager get(File indexPath, Analyzer analyzer) throws IOException
+    static WritableIndexManager get(Path indexPath, Analyzer analyzer) throws IOException
     {
         SearcherFactory factory = new SearcherFactory()
         {
             @Override
-            public IndexSearcher newSearcher(IndexReader reader) throws IOException
+            public IndexSearcher newSearcher(IndexReader reader, IndexReader previousReader) throws IOException
             {
                 // TODO: Warm the new searcher before returning
-                return super.newSearcher(reader);
+                return super.newSearcher(reader, previousReader);
             }
         };
 
@@ -71,7 +71,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         try
         {
             // Consider: wrap analyzer with LimitTokenCountAnalyzer to limit indexed content?
-            iw = new IndexWriter(directory, new IndexWriterConfig(LuceneSearchServiceImpl.LUCENE_VERSION, analyzer));
+            iw = new IndexWriter(directory, new IndexWriterConfig(analyzer));
         }
         finally
         {
@@ -85,13 +85,13 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
     // We would like to call FSDirectory.open(indexPath) and let Lucene choose the best Directory implementation,
     // however, in 3.5.0 Lucene starting choosing memory mapped files, which seem to cause all kinds of problems
-    // on atlas test.  This approach mimics what Lucene 3.0 did, which seemed to work just fine.
-    static Directory openDirectory(File path) throws IOException
+    // on atlas test. This approach mimics what Lucene 3.0 did, which seemed to work just fine.
+    static Directory openDirectory(Path path) throws IOException
     {
         if (Constants.WINDOWS)
-            return new SimpleFSDirectory(path, null);
+            return new SimpleFSDirectory(path);
         else
-            return new NIOFSDirectory(path, null);
+            return new NIOFSDirectory(path);
     }
 
 
@@ -241,9 +241,6 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                     try
                     {
                         _directory.close();
-
-                        if (IndexWriter.isLocked(_directory))
-                            IndexWriter.unlock(_directory);
                     }
                     catch (IOException e1)
                     {

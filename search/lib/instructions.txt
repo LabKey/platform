@@ -2,6 +2,7 @@ download lucene-x.x.x.tgz and open
 - in /lucene-x.x.x/core, copy lucene-core-x.x.x.jar to /labkey/server/modules/search/lib
 - in /lucene-x.x.x/analysis/common, copy lucene-analyzers-common-x.x.x.jar to /labkey/server/modules/search/lib
 - in /lucene-x.x.x/queryparser, copy lucene-queryparser-x.x.x.jar to /labkey/server/modules/search/lib
+- in /lucene-x.x.x/backward-codecs, copy lucene-backward-codecs-x.x.x.jar to /labkey/server/modules/search/lib
 
 download lucene-x.x.x-src.tgz
 - right click "analysis" directory and "Copy To..." c:\temp
@@ -15,3 +16,5 @@ download lucene-x.x.x-src.tgz
   - delete directory "/analysis/common/src/test"
   - delete directory "/core/src/test"
   - delete directory "/queryparser/src/test"
+
+update /search/resources/credits/jars.txt with new version numbers
