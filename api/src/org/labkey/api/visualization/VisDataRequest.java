@@ -127,6 +127,8 @@ public class VisDataRequest
 
     public VisDataRequest addGroupBy(Measure m)
     {
+        if (null == groupBys)
+            groupBys = new ArrayList<>();
         groupBys.add(m);
         return this;
     }
@@ -140,6 +142,10 @@ public class VisDataRequest
 
         // study specific
         String time;                        // "DATE" or "VISIT"
+
+        public MeasureInfo()
+        {
+        }
 
         public Measure getMeasure()
         {
@@ -209,6 +215,17 @@ public class VisDataRequest
         Boolean requireLeftJoin;
         String schemaName;
         List<Object> values = new ArrayList<>();
+
+        public Measure()
+        {}
+
+        public Measure(String schema, String query, String name)
+        {
+            this.schemaName = schema;
+            this.queryName = query;
+            this.name = name;
+        }
+
 
         // study specific properties
         boolean isDemographic=false;        // study schema specific property
@@ -341,6 +358,7 @@ public class VisDataRequest
             return this;
         }
 
+        // see QueryService.get().getNamedSet();
         public String getNsvalues()
         {
             return nsvalues;

@@ -207,7 +207,7 @@ LABKEY.Utils = new function()
         },
 
         displayAjaxErrorResponse: function() {
-            console.warn('displayAjaxErrorRepsonse: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implemntation');
+            console.warn('displayAjaxErrorRepsonse: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implementation');
         },
 
         /**
@@ -777,7 +777,7 @@ LABKEY.Utils = new function()
         },
 
         onReady: function(config) {
-            console.warn('onReady: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implemntation');
+            console.warn('onReady: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implementation');
         },
 
         /**
@@ -835,7 +835,7 @@ LABKEY.Utils = new function()
          * @param msg
          */
         alert : function(title, msg) {
-            console.warn('alert: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implemntation');
+            console.warn('alert: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implementation');
             console.warn(title + ":", msg);
         },
 

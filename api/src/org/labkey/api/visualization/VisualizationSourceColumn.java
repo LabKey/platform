@@ -17,7 +17,6 @@ package org.labkey.api.visualization;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
@@ -31,7 +30,12 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -92,6 +96,9 @@ public class VisualizationSourceColumn
                 // do any necessary merging:
                 if (!col.isAllowNullResults())
                     current.setAllowNullResults(false);
+                if (!current._values.isEmpty() && !col._values.isEmpty())
+                    throw new IllegalStateException("multiple values array specified for column " + col.getOriginalName());
+                current._values.addAll(col._values);
                 return current;
             }
             else
