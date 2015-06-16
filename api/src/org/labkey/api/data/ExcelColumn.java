@@ -241,7 +241,7 @@ public class ExcelColumn extends RenderColumn
 
     protected void writeCell(Sheet sheet, int column, int row, RenderContext ctx)
     {
-        Object o = _dc.getDisplayValue(ctx);
+        Object o = _dc.getExcelCompatibleValue(ctx);
         ColumnInfo columnInfo = _dc.getColumnInfo();
         Row rowObject = getRow(sheet, row);
 

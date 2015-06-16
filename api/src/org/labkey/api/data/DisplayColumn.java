@@ -368,6 +368,11 @@ public abstract class DisplayColumn extends RenderColumn
         return formatValue(ctx, format);
     }
 
+    public Object getExcelCompatibleValue(RenderContext ctx)
+    {
+        return getDisplayValue(ctx);
+    }
+
     /**
      * Returns the JSON type name for the column's display value,
      * which might be different than its value (e.g., lookup column)
