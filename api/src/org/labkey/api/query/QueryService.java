@@ -200,6 +200,8 @@ abstract public class QueryService
     /* strictColumnList requires that query not add any addition columns to the query result */
     abstract public ResultSet select(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached) throws SQLException;
 
+    abstract public Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String,Object> parameters, boolean strictColumnList, boolean cached) throws SQLException;
+
     public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
         return select(table, columns, filter, sort, Collections.<String, Object>emptyMap(), true);
