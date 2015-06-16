@@ -1822,6 +1822,19 @@ public class SecurityManager
         return users;
     }
 
+    public static List<User> getUsersWithOneOf(Container c, Set<Class<? extends Permission>> perms)
+    {
+        Collection<User> allUsers = UserManager.getActiveUsers();
+        List<User> users = new ArrayList<>(allUsers.size());
+        SecurityPolicy policy = c.getPolicy();
+
+        for (User user : allUsers)
+            if (policy.hasOneOf(user, perms, null))
+                users.add(user);
+
+        return users;
+    }
+
 
     /** Returns both users and groups, but direct members only (not recursive) */
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path)
