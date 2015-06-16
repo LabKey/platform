@@ -982,7 +982,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    private QueryDefinition createTempQueryDefinition(User user, Container container, String schemaName, String queryName, SessionQuery query)
+    private QueryDefinition createTempQueryDefinition(User user, Container container, String schemaName, String queryName, @NotNull SessionQuery query)
     {
         QueryDefinition qdef = QueryService.get().createQueryDef(user, container, schemaName, queryName);
         qdef.setSql(query.sql);
@@ -1798,6 +1798,23 @@ public class QueryServiceImpl extends QueryService
 
 
     @Override
+    public Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String,Object> parameters, boolean strictColumnList, boolean cached) throws SQLException
+    {
+        Query q = new Query(schema);
+        q.setStrictColumnList(strictColumnList);
+        q.setTableMap(tableMap);
+        q.parse(sql);
+
+        if (q.getParseErrors().size() > 0)
+            throw q.getParseErrors().get(0);
+
+        TableInfo table = q.getTableInfo();
+
+        return select(table, table.getColumns(), null, null, parameters, cached);
+    }
+
+
+    @Override
     public void bindNamedParameters(SQLFragment frag, @Nullable Map<String,Object> in)
     {
         Map<String, Object> params = null == in ? Collections.<String, Object>emptyMap() :
@@ -2048,7 +2065,8 @@ public class QueryServiceImpl extends QueryService
         }
 
 		SQLFragment fromFrag = new SQLFragment("FROM ");
-        fromFrag.append(table.getFromSQL(tableAlias));
+        SQLFragment getfromsql = table.getFromSQL(tableAlias);
+        fromFrag.append(getfromsql);
         fromFrag.append(" ");
 
 		for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
