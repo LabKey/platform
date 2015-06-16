@@ -15,8 +15,9 @@
  */
 package org.labkey.study.dataset;
 
-import com.sun.javafx.beans.annotations.NonNull;
+
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -144,7 +145,7 @@ public abstract class SnapshotDependency
         // map of property uri to dataset id
         private static final Map<Integer, Map<String, String>> _snapshotPropertyMap = new HashMap<>();
 
-        private boolean hasDependency(QuerySnapshotDefinition qsDef, @NonNull org.labkey.api.study.Dataset dsDef)
+        private boolean hasDependency(QuerySnapshotDefinition qsDef, @NotNull org.labkey.api.study.Dataset dsDef)
         {
             // dataset snapshots must have an underlying dataset definition defined
             StudyImpl study = StudyManager.getInstance().getStudy(qsDef.getContainer());
