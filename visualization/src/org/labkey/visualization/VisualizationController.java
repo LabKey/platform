@@ -549,7 +549,7 @@ public class VisualizationController extends SpringActionController
         @Override
         public ModelAndView getView(Void noform, BindException errors) throws Exception
         {
-            return new JspView("/org/labkey/visualization/test.jsp");
+            return new JspView("/org/labkey/visualization/test/test.jsp");
         }
 
         @Override

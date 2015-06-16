@@ -15,41 +15,42 @@
  */
 package org.labkey.visualization.sql;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.IVisualizationSourceQuery;
 import org.labkey.api.visualization.SQLGenerationException;
+import org.labkey.api.visualization.VisDataRequest;
 import org.labkey.api.visualization.VisualizationAggregateColumn;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.labkey.visualization.VisualizationController;
-import org.labkey.api.visualization.VisDataRequest;
+import org.labkey.visualization.test.VisTestSchema;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -545,7 +546,8 @@ public class VisualizationSQLGenerator implements HasViewContext
                 aggregatedSQL.append(separator);
                 separator = " AND ";
                 aggregatedSQL.append("x.");
-                aggregatedSQL.append(columnAliases.get(pair.getKey().getOriginalName()).iterator().next().getSQLAlias());
+                VisualizationSourceColumn vsc = (VisualizationSourceColumn)pickFirst(columnAliases.get(pair.getKey().getOriginalName()));
+                aggregatedSQL.append(vsc.getSQLAlias());
                 aggregatedSQL.append(" = ");
                 aggregatedSQL.append(groupByQuery.getSQLAlias());
                 aggregatedSQL.append(".\"");
@@ -672,7 +674,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 selectAlias = parentQuery.getSelectListName(selectAliases);
             else
             {
-                VisualizationSourceColumn col = selectAliases.iterator().next();
+                VisualizationSourceColumn col = (VisualizationSourceColumn)pickFirst(selectAliases);
                 String label = col.getLabel();
                 selectAlias = col.getSQLAlias() + (null==label ? " @preservetitle" : " @title='" + StringUtils.replace(label,"'","''") + "'");
                 if (col.isHidden())
@@ -1018,7 +1020,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         {
             throw new NotFoundException("No primary schema found.");
         }
-        VisualizationSourceQuery firstQuery = _sourceQueries.values().iterator().next();
+        VisualizationSourceQuery firstQuery = (VisualizationSourceQuery)pickFirst(_sourceQueries.values());
         return firstQuery.getSchema();
     }
 
@@ -1038,6 +1040,12 @@ public class VisualizationSQLGenerator implements HasViewContext
             }
         }
         return builder.toString();
+    }
+
+    static Object pickFirst(Collection set)
+    {
+        set.iterator().hasNext();
+        return set.iterator().next();
     }
 
     public boolean isMetaDataOnly()
@@ -1068,30 +1076,234 @@ public class VisualizationSQLGenerator implements HasViewContext
     }
 
 
-    public static class TestCase extends Assert
+    public static class GetDataTestCase extends Assert
     {
-        VisualizationSQLGenerator getVSQL()
+        final ViewContext context;
+
+
+        static VisDataRequest.Measure m(String query, String name)
+        {
+            return new VisDataRequest.Measure().setSchemaName("vis_junit").setQueryName(query).setName(name);
+        }
+        static VisDataRequest.MeasureInfo mi(String query, String name, String time)
+        {
+            VisDataRequest.MeasureInfo mi = new VisDataRequest.MeasureInfo();
+            mi.setMeasure(m(query, name)).setTime(time);
+            return mi;
+        }
+
+        public GetDataTestCase()
+        {
+            ViewContext ctx = new ViewContext();
+            ctx.setContainer(JunitUtil.getTestContainer());
+            ctx.setUser( TestContext.get().getUser());
+            this.context = ctx;
+        }
+
+        VisualizationSQLGenerator getVSQL(VisDataRequest query)
         {
             VisualizationSQLGenerator vs = new VisualizationSQLGenerator();
-            Container c = JunitUtil.getTestContainer();
-            User user = TestContext.get().getUser();
-            ViewContext ctx = new ViewContext();
-            ctx.setContainer(c);
-            ctx.setUser(user);
-            vs.setViewContext(ctx);
+            vs.setViewContext(context);
+            vs.fromVisDataRequest(query);
             return vs;
         }
 
-        @Test
-        public void testOneMeasure()
+        String getSQL(VisDataRequest q) throws SQLGenerationException, SQLException
         {
+            VisualizationSQLGenerator gen = getVSQL(q);
+            UserSchema schema = new VisTestSchema(context.getUser(), context.getContainer());
+            return gen.getSQL();
+        }
+
+        Results getResults(VisDataRequest q) throws SQLGenerationException, SQLException
+        {
+            VisualizationSQLGenerator gen = getVSQL(q);
+            UserSchema schema = new VisTestSchema(context.getUser(), context.getContainer());
+            String sql = gen.getSQL();
+            return QueryService.get().selectResults(schema, sql, null, null, true, true);
+        }
+
+
+        void dump(ResultSet rs) throws SQLException
+        {
+            rs.beforeFirst();
+            ResultSetUtil.logData(rs);
+        }
+
+
+        @Test
+        public void testOneTable() throws SQLGenerationException, SQLException
+        {
+            VisDataRequest.MeasureInfo age = mi("demographics","age","visit");
+            VisDataRequest.MeasureInfo ptid = mi("demographics","ptid","visit");
+            VisDataRequest.MeasureInfo gender = mi("demographics","gender","visit");
+
+            VisDataRequest q = new VisDataRequest();
+            q.addMeasure(age);
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertEquals(48,r.getSize());
+                assertEquals(3, r.getMetaData().getColumnCount());
+                ColumnInfo ci = r.getColumnInfo(1);
+                assertTrue(StringUtils.endsWith(ci.getName(), "_age"));
+            }
+
+            q.addMeasure(ptid);
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertEquals(48,r.getSize());
+                assertEquals(3, r.getMetaData().getColumnCount());
+                ColumnInfo ci = r.getColumnInfo(2);
+                assertTrue(StringUtils.endsWith(ci.getName(), "_ptid"));
+            }
+
+            q.addMeasure(gender);
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertEquals(48,r.getSize());
+                assertEquals(4, r.getMetaData().getColumnCount());
+            }
+
+            // select the same column twice
+            // interestingly this ignores the duplicate column
+            q.addMeasure(age);
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertEquals(48,r.getSize());
+                assertEquals(4, r.getMetaData().getColumnCount());
+            }
+
+            // this also ignores duplicates.  measure.alias only affects the json response
+            VisDataRequest.MeasureInfo age1 = mi("demographics","age","visit");
+            age1.getMeasure().setAlias("age1");
+            VisDataRequest.MeasureInfo age2 = mi("demographics","age","visit");
+            age2.getMeasure().setAlias("age2");
+            q = new VisDataRequest();
+            q.addMeasure(ptid).addMeasure(age1).addMeasure(age2);
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertEquals(48,r.getSize());
+                assertEquals(3, r.getMetaData().getColumnCount());
+            }
+        }
+
+
+        @Test
+        public void testOneTableWithValues() throws Exception
+        {
+            VisDataRequest.MeasureInfo age = mi("demographics","age","visit");
+            VisDataRequest.MeasureInfo gender = mi("demographics","gender","visit");
+            // NOTE: adding ptid to the select list will cause the sort/filter to be missed or ignored, tbat seems strange...
+            VisDataRequest q = new VisDataRequest().addMeasure(age).addMeasure(gender);
+
+            // it seems strange to filter by using a sort?  but OK
+            VisDataRequest.Measure ptidList = new VisDataRequest.Measure("vis_junit","demographics","ptid");
+            ptidList.setValues((List)VisTestSchema.humans);
+            q.addSort(ptidList);
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertEquals(VisTestSchema.humans.size(),r.getSize());
+                assertEquals(4, r.getMetaData().getColumnCount());
+            }
+        }
+
+
+        @Test
+        public void testFilterQuery() throws Exception
+        {
+
         }
 
         @Test
-        public void testTwoMeasure()
+        public void testFilterURL() throws Exception
         {
 
         }
+
+        @Test
+        public void testOneTableWithGrouping() throws Exception
+        {
+            VisDataRequest.MeasureInfo age = mi("demographics","age","visit");
+            VisDataRequest.MeasureInfo gender = mi("demographics","gender","visit");
+
+            VisDataRequest q = new VisDataRequest();
+            q.addMeasure(age);
+            q.addGroupBy(gender.getMeasure());
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                // this is a surprise! we're implicitly groupoing by participant,visit as well as gender
+                assertTrue(48 == r.getSize());        // Female, female, Male, male, null
+                assertEquals(8, r.getMetaData().getColumnCount());  ;  // gender, count(*), avg(), stddev(), stderr()
+            }
+
+            // Assay Flow
+            q = new VisDataRequest()
+                    .addMeasure(mi("flow","count","visit"))
+                    .addMeasure(mi("flow", "ptid", "visit"))
+                    .addMeasure(mi("flow", "visit", "visit"))
+                    .addMeasure(mi("flow", "antigen", "visit"))
+                    .addMeasure(mi("flow", "population", "visit"));
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertEquals(192, r.getSize());     // 16*3*2*2
+                assertEquals(5, r.getMetaData().getColumnCount());
+            }
+
+            /*  TODO
+            This so doesn't work how you expect, this causes a self join on a subset of keys
+            and causes row duplication then grouping on that, and the wrong results and the wrong number of rows...
+            q = new VisDataRequest()
+                    .addMeasure(mi("flow","count","visit"))
+                    .addGroupBy(m("flow", "population"));
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertEquals(192, r.getSize());     // 16*3*2*2
+                assertEquals(8, r.getMetaData().getColumnCount());
+            }
+            */
+
+            // it seems that perhaps you can only really group on "demographic" properties
+            // and expect to get a meaningful answer
+            q = new VisDataRequest()
+                    .addMeasure(mi("flow","count","visit"))
+                    .addGroupBy(m("demographics", "gender"));
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertEquals(3, r.getSize());     // Male, Female, -
+                assertEquals(5, r.getMetaData().getColumnCount());
+            }
+        }
+
+
+        @Test
+        public void testTwoTablesDemStudy() throws Exception
+        {
+            VisDataRequest.MeasureInfo age = mi("demographics","age","visit");
+            VisDataRequest.MeasureInfo ptid = mi("demographics","ptid","visit");
+            VisDataRequest.MeasureInfo study = mi("demographics","study","visit");
+            VisDataRequest.MeasureInfo gender = mi("demographics","gender","visit");
+            VisDataRequest.MeasureInfo condition = mi("study","condition","visit");      // shouldn't need to specify time=visit
+
+            // SELECT demographics.ptid, study.condition
+            VisDataRequest q = new VisDataRequest();
+            q.addMeasure(ptid).addMeasure(condition);
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertTrue(48 == r.getSize());
+                assertEquals(4, r.getMetaData().getColumnCount());
+            }
+
+            // SELECT study.condition, AVG(age)
+            q = new VisDataRequest();
+            q.addMeasure(age);
+            q.addGroupBy(condition.getMeasure());
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertEquals(3, r.getSize());
+                assertEquals(5, r.getMetaData().getColumnCount());  ;  // gender, count(*), avg(), stddev(), stderr()
+            }
+        }
+
 
         @Test
         public void testPivot()
@@ -1110,7 +1322,6 @@ public class VisualizationSQLGenerator implements HasViewContext
         {
 
         }
-
     }
 
 }

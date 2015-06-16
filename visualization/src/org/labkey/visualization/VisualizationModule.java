@@ -18,10 +18,14 @@ package org.labkey.visualization;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
@@ -31,6 +35,7 @@ import org.labkey.visualization.report.GenericChartReportImpl;
 import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.report.VisualizationUIProvider;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
+import org.labkey.visualization.test.VisTestSchema;
 
 import javax.servlet.ServletContext;
 import java.util.Collection;
@@ -73,13 +78,28 @@ public class VisualizationModule extends DefaultModule
     {
         Set<Class> set = new LinkedHashSet<>();
         set.add(VisualizationController.TestCase.class);
-        set.add(VisualizationSQLGenerator.TestCase.class);
+        set.add(VisualizationSQLGenerator.GetDataTestCase.class);
         return set;
     }
 
     @Override
     protected void init()
     {
+        DefaultSchema.registerProvider("vis_junit", new DefaultSchema.SchemaProvider(this)
+        {
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                return schema.getContainer().getParsedPath().equals(JunitUtil.getTestContainerPath());
+            }
+
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
+            {
+                return new VisTestSchema(schema.getUser(), schema.getContainer());
+            }
+        });
+
+
         addController(VisualizationController.NAME, VisualizationController.class);
         ReportService.get().registerDescriptor(new TimeChartReportDescriptor());
         ReportService.get().registerDescriptor(new GenericChartReportDescriptor());
