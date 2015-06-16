@@ -57,13 +57,13 @@ import java.util.concurrent.Future;
  */
 public interface SearchService
 {
-    static final Logger _log = Logger.getLogger(SearchService.class);
+    Logger _log = Logger.getLogger(SearchService.class);
 
-    public static final SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
-    public static final SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments", false);
+    SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
+    SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments", false);
 
     // marker value for documents with indexing errors
-    public static final java.util.Date failDate = new java.sql.Timestamp(DateUtil.parseISODateTime("1899-12-30"));
+    java.util.Date failDate = new java.sql.Timestamp(DateUtil.parseISODateTime("1899-12-30"));
 
     enum PRIORITY
     {
@@ -107,16 +107,16 @@ public interface SearchService
         }
     }
 
-    static enum SEARCH_PHASE {createQuery, buildSecurityFilter, search, applySecurityFilter, processHits}
+    enum SEARCH_PHASE {createQuery, buildSecurityFilter, search, applySecurityFilter, processHits}
 
-    public interface TaskListener
+    interface TaskListener
     {
         void success();
         void indexError(Resource r, Throwable t);
     }
 
 
-    public interface IndexTask extends Future<IndexTask>
+    interface IndexTask extends Future<IndexTask>
     {
         String getDescription();
 
@@ -157,13 +157,13 @@ public interface SearchService
     // plug in interfaces
     //
     
-    public interface ResourceResolver
+    interface ResourceResolver
     {
         WebdavResource resolve(@NotNull String resourceIdentifier);
     }
 
 
-    public static class SearchCategory
+    class SearchCategory
     {
         private final String _name;
         private final String _description;
@@ -204,13 +204,13 @@ public interface SearchService
     //
 
     
-    public static class SearchResult
+    class SearchResult
     {
         public int totalHits;
         public List<SearchHit> hits;
     }
 
-    public static class SearchHit
+    class SearchHit
     {
         public String docid;
         public String container;
@@ -220,20 +220,20 @@ public interface SearchService
         public String navtrail;
     }
 
-    public String getIndexFormatDescription();
+    String getIndexFormatDescription();
 
-    public DbSchema getSchema();
+    DbSchema getSchema();
 
-    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
+    WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
 
-    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException;
+    SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException;
 
     // Search the external index.
-    public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException;
+    SearchResult searchExternal(String queryString, int offset, int limit) throws IOException;
 
-    public String escapeTerm(String term);
+    String escapeTerm(String term);
     
-    public List<SearchCategory> getSearchCategories();
+    List<SearchCategory> getSearchCategories();
 
     //
     // index
@@ -279,23 +279,24 @@ public interface SearchService
 
     void deleteContainer(String id);
 
-    public void clear();                // delete index and reset lastIndexed values
-    public void clearLastIndexed();     // just reset lastIndexed values
-    public void maintenance();
+    void clear();                // delete index and reset lastIndexed values
+    void upgradeIndex();         // upgrade to latest format. this must be called before the SearchService is started.
+    void clearLastIndexed();     // just reset lastIndexed values
+    void maintenance();
 
     //
     // configuration, plugins 
     //
     
-    public void addSearchCategory(SearchCategory category);
-    public List<SearchCategory> getCategories(String categories);
-    public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
-    public WebdavResource resolveResource(@NotNull String resourceIdentifier);
+    void addSearchCategory(SearchCategory category);
+    List<SearchCategory> getCategories(String categories);
+    void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
+    WebdavResource resolveResource(@NotNull String resourceIdentifier);
 
-    public void addSearchResultTemplate(@NotNull SearchResultTemplate template);
-    public @Nullable SearchResultTemplate getSearchResultTemplate(@Nullable String name);
+    void addSearchResultTemplate(@NotNull SearchResultTemplate template);
+    @Nullable SearchResultTemplate getSearchResultTemplate(@Nullable String name);
 
-    public interface DocumentProvider
+    interface DocumentProvider
     {
         /**
          * enumerate documents for full text search
@@ -313,18 +314,18 @@ public interface SearchService
     }
 
 
-    public interface DocumentParser
+    interface DocumentParser
     {
-        public String getMediaType();
-        public boolean detect(WebdavResource resource, String contentType, byte[] buf) throws IOException;
-        public void parse(InputStream stream, ContentHandler handler) throws IOException, SAXException;
+        String getMediaType();
+        boolean detect(WebdavResource resource, String contentType, byte[] buf) throws IOException;
+        void parse(InputStream stream, ContentHandler handler) throws IOException, SAXException;
     }
     
 
     // an interface that enumerates documents in a container (not recursive)
-    public void addDocumentProvider(DocumentProvider provider);
+    void addDocumentProvider(DocumentProvider provider);
 
-    public void addDocumentParser(DocumentParser parser);
+    void addDocumentParser(DocumentParser parser);
 
     
     //
@@ -346,7 +347,7 @@ public interface SearchService
      * see Module.enumerateDocuments
      */
 
-    public static class LastIndexedClause extends SimpleFilter.FilterClause
+    class LastIndexedClause extends SimpleFilter.FilterClause
     {
         SQLFragment _sqlf = new SQLFragment();
         private Set<FieldKey> _fieldKeys = new HashSet<>();
