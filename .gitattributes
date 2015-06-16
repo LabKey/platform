@@ -1262,8 +1262,11 @@ api/src/org/labkey/api/security/NestedGroupsTest.java -text
 api/src/org/labkey/api/security/PasswordExpiration.java -text
 api/src/org/labkey/api/security/PrincipalType.java -text
 api/src/org/labkey/api/security/ProjectAndSiteGroupsCache.java -text
+api/src/org/labkey/api/security/RequiresAllOf.java -text
+api/src/org/labkey/api/security/RequiresAnyOf.java -text
 api/src/org/labkey/api/security/RequiresLogin.java -text
 api/src/org/labkey/api/security/RequiresNoPermission.java -text
+api/src/org/labkey/api/security/RequiresPermission.java -text
 api/src/org/labkey/api/security/RequiresPermissionClass.java -text
 api/src/org/labkey/api/security/RequiresSiteAdmin.java -text
 api/src/org/labkey/api/security/RoleAssignment.java -text

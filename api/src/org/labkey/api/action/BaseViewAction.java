@@ -32,8 +32,11 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.ContextualRoles;
 import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.RequiresAllOf;
+import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityLogger;
@@ -88,9 +91,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -709,22 +714,40 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
         if (c.isForbiddenProject(user))
             throw new ForbiddenProjectException();
 
-        RequiresPermissionClass requiresPerm = actionClass.getAnnotation(RequiresPermissionClass.class);
-        boolean requiresAdmin = false;
-        Set<Class<? extends Permission>> permissionsRequired = null;
-        if (null != requiresPerm)
+        boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
+        if (requiresSiteAdmin && !user.isSiteAdmin())
         {
-            permissionsRequired = RoleManager.permSet(requiresPerm.value());
-            requiresAdmin = permissionsRequired.contains(AdminPermission.class);
+            throw new UnauthorizedException();
         }
 
-        ContextualRoles rolesAnnotation = actionClass.getAnnotation(ContextualRoles.class);
-        if (rolesAnnotation != null)
+        boolean requiresLogin = actionClass.isAnnotationPresent(RequiresLogin.class);
+        if (requiresLogin && user.isGuest())
         {
-            contextualRoles = RoleManager.mergeContextualRoles(context, rolesAnnotation.value(), contextualRoles);
+            throw new UnauthorizedException();
         }
-        
-        // Special handling for admin console actions to support TroubleShooter role.  Only site admins can POST,
+
+        // User must have ALL permissions in this set
+        Set<Class<? extends Permission>> permissionsRequired = new HashSet<>();
+
+        RequiresPermission requiresPerm = actionClass.getAnnotation(RequiresPermission.class);
+        if (null != requiresPerm)
+        {
+            permissionsRequired.add(requiresPerm.value());
+        }
+
+        RequiresAllOf requiresAllOf = actionClass.getAnnotation(RequiresAllOf.class);
+        if (null != requiresAllOf)
+        {
+            Collections.addAll(permissionsRequired, requiresAllOf.value());
+        }
+
+        RequiresPermissionClass requiresPermClass = actionClass.getAnnotation(RequiresPermissionClass.class);
+        if (null != requiresPermClass)
+        {
+            permissionsRequired.add(requiresPermClass.value());
+        }
+
+        // Special handling for admin console actions to support TroubleShooter role. Only site admins can POST,
         // but those with AdminReadPermission (i.e., TroubleShooters) can GET. 
         boolean adminConsoleAction = actionClass.isAnnotationPresent(AdminConsoleAction.class);
         if (adminConsoleAction)
@@ -741,28 +764,22 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
             }
             else
             {
-                permissionsRequired = RoleManager.permSet(AdminReadPermission.class);
+                permissionsRequired.add(AdminReadPermission.class);
             }
         }
 
-        if (null != permissionsRequired)
+        ContextualRoles rolesAnnotation = actionClass.getAnnotation(ContextualRoles.class);
+        if (rolesAnnotation != null)
         {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
-            if (!policy.hasOneOf(user, permissionsRequired, contextualRoles))
-                throw new UnauthorizedException();
+            contextualRoles = RoleManager.mergeContextualRoles(context, rolesAnnotation.value(), contextualRoles);
         }
 
-        boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
-        if (requiresSiteAdmin && !user.isSiteAdmin())
-        {
+        // Policy must have all permissions in permissionsRequired
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
+        if (!policy.hasPermissions(user, permissionsRequired, contextualRoles))
             throw new UnauthorizedException();
-        }
 
-        boolean requiresLogin = actionClass.isAnnotationPresent(RequiresLogin.class);
-        if (requiresLogin && user.isGuest())
-        {
-            throw new UnauthorizedException();
-        }
+        boolean requiresAdmin = permissionsRequired.contains(AdminPermission.class);
 
         if (isPOST)
         {
@@ -771,11 +788,22 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
                 CSRFUtil.validate(context);
         }
 
+        // User must have at least one permission in this set
+        Set<Class<? extends Permission>> permissionsAnyOf = Collections.emptySet();
+        RequiresAnyOf requiresAnyOf = actionClass.getAnnotation(RequiresAnyOf.class);
+        if (null != requiresAnyOf)
+        {
+            permissionsAnyOf = new HashSet<>();
+            Collections.addAll(permissionsAnyOf, requiresAnyOf.value());
+            if (!policy.hasOneOf(user, permissionsAnyOf, contextualRoles))
+                throw new UnauthorizedException();
+        }
+
         boolean requiresNoPermission = actionClass.isAnnotationPresent(RequiresNoPermission.class);
 
-        if (null == requiresPerm && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !adminConsoleAction)
+        if (permissionsRequired.isEmpty() && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !adminConsoleAction && permissionsAnyOf.isEmpty())
         {
-            throw new ConfigurationException("@RequiresPermissionClass, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
+            throw new ConfigurationException("@RequiresPermission, @RequiresPermissionClass, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
         }
 
         // All permission checks have succeeded.  Now check for deprecated action.
