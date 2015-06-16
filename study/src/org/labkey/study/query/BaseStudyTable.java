@@ -346,6 +346,18 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         }
 
         @Override
+        public String getTsvFormattedValue(RenderContext ctx)
+        {
+            return getFormattedValue(ctx);
+        }
+
+        @Override
+        public Object getExcelCompatibleValue(RenderContext ctx)
+        {
+            return getFormattedValue(ctx);
+        }
+
+        @Override
         public void addQueryFieldKeys(Set<FieldKey> keys)
         {
             super.addQueryFieldKeys(keys);
