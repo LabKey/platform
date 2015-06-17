@@ -15,12 +15,14 @@
  */
 package org.labkey.api.util;
 
-import org.junit.Assert;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.InputStream;
 import java.net.FileNameMap;
 import java.util.Enumeration;
@@ -144,7 +146,7 @@ public class MimeMap implements FileNameMap
     }
 
     /**
-     * Get extension of file, without fragment id
+     * Get extension of file name, stripping off any fragment id (after the #)
      */
     public static String getExtension(String fileName)
     {
@@ -170,6 +172,23 @@ public class MimeMap implements FileNameMap
         }
     }
 
+    /**
+     * Get extension of file
+     */
+    public static String getExtension(@NotNull File file)
+    {
+        int i = file.getName().lastIndexOf('.');
+        if (i != -1)
+        {
+            return file.getName().substring(i + 1);
+        }
+        else
+        {
+            // no extension, no content type
+            return null;
+        }
+    }
+
 
     public boolean isInlineImage(String extn)
     {
@@ -181,6 +200,19 @@ public class MimeMap implements FileNameMap
     public boolean isInlineImageFor(String fileName)
     {
         String extn = getExtension(fileName);
+        if (extn != null)
+        {
+            return isInlineImage(extn);
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public boolean isInlineImageFor(@NotNull File file)
+    {
+        String extn = getExtension(file);
         if (extn != null)
         {
             return isInlineImage(extn);
