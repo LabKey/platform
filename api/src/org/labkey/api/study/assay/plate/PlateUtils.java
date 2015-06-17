@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.query.ValidationException;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -41,9 +42,9 @@ public class PlateUtils
      * Search for a grid of numbers that has the expected number of rows and columns.
      * TODO: Find multiple plates in "RC121306.xls" while ignoring duplicate plate found in "20131218_0004.txt"
      */
-    public static Map<String, double[][]> parseAllGrids(File dataFile, List<Map<String, Object>> rows, int expectedRows, int expectedCols)
+    public static Map<String, double[][]> parseAllGrids(File dataFile, List<Map<String, Object>> rows, int expectedRows, int expectedCols, PlateReader reader)
     {
-        return _parseGrids(dataFile, rows, expectedRows, expectedCols, true);
+        return _parseGrids(dataFile, rows, expectedRows, expectedCols, true, reader);
     }
 
     /**
@@ -51,9 +52,9 @@ public class PlateUtils
      * TODO: Find multiple plates in "RC121306.xls" while ignoring duplicate plate found in "20131218_0004.txt"
      */
     @Nullable
-    public static double[][] parseGrid(File dataFile, List<Map<String, Object>> rows, int expectedRows, int expectedCols)
+    public static double[][] parseGrid(File dataFile, List<Map<String, Object>> rows, int expectedRows, int expectedCols, @Nullable PlateReader reader)
     {
-        Map<String, double[][]> gridMap = _parseGrids(dataFile, rows, expectedRows, expectedCols, false);
+        Map<String, double[][]> gridMap = _parseGrids(dataFile, rows, expectedRows, expectedCols, false, reader);
         if (!gridMap.isEmpty())
         {
             assert gridMap.size() == 1 : "_parseGrids returned more than 1 grid matrix for the data file";
@@ -66,7 +67,8 @@ public class PlateUtils
      * Search for a grid of numbers that has the expected number of rows and columns.
      * TODO: Find multiple plates in "RC121306.xls" while ignoring duplicate plate found in "20131218_0004.txt"
      */
-    private static Map<String, double[][]> _parseGrids(File dataFile, List<Map<String, Object>> rows, int expectedRows, int expectedCols, boolean parseAllGrids)
+    private static Map<String, double[][]> _parseGrids(File dataFile, List<Map<String, Object>> rows, int expectedRows,
+                                                       int expectedCols, boolean parseAllGrids, @Nullable PlateReader reader)
     {
         Map<String, double[][]> gridMap = new HashMap<>();
         double[][] matrix;
@@ -82,10 +84,10 @@ public class PlateUtils
 
                 // For Luc5, EnVision, and "16AUG11 KK CD3-1-1.8." plate formats:
                 // look for labeled matrix with a header row (numbered 1, 2, 3...) and header column (lettered A, B, C...)
-                Location loc = isPlateMatrix(rows, rowIdx, colIdx, expectedRows, expectedCols);
+                Location loc = isPlateMatrix(rows, rowIdx, colIdx, expectedRows, expectedCols, reader);
                 if (loc != null)
                 {
-                    matrix = parseGridAt(rows, loc.getRow(), loc.getCol(), expectedRows, expectedCols);
+                    matrix = parseGridAt(rows, loc.getRow(), loc.getCol(), expectedRows, expectedCols, reader);
 
                     if (matrix != null)
                     {
@@ -103,7 +105,7 @@ public class PlateUtils
                         // CONSIDER: Detecting SpectraMax format seems fragile.  Create SpectraMax specific PlateReader parser that can be chosen in the assay design ala Elispot.
                         // For SpectraMax format: look for a matrix grid at rowIdx+2, colIdx+2
                         loc = new Location(rowIdx+2, colIdx+2);
-                        matrix = parseGridAt(rows, loc.getRow(), loc.getCol(), expectedRows, expectedCols);
+                        matrix = parseGridAt(rows, loc.getRow(), loc.getCol(), expectedRows, expectedCols, reader);
                         if (matrix != null)
                         {
                             LOG.debug(String.format("found SpectraMax grid style plate data at (%d,%d) in %s", rowIdx+1, colIdx+1, dataFile.getName()));
@@ -131,7 +133,7 @@ public class PlateUtils
         // attempt to parse a grid at the "well known" location (pun intended)
         if (gridMap.isEmpty())
         {
-            matrix = parseGridAt(rows, START_ROW, START_COL, expectedRows, expectedCols);
+            matrix = parseGridAt(rows, START_ROW, START_COL, expectedRows, expectedCols, reader);
             if (matrix != null)
             {
                 gridMap.put(DEFAULT_GRID_NAME, matrix);
@@ -139,7 +141,7 @@ public class PlateUtils
             else
             {
                 // attempt to parse as grid at 0,0
-                matrix = parseGridAt(rows, 0, 0, expectedRows, expectedCols);
+                matrix = parseGridAt(rows, 0, 0, expectedRows, expectedCols, reader);
                 if (matrix != null)
                     gridMap.put(DEFAULT_GRID_NAME, matrix);
             }
@@ -151,7 +153,7 @@ public class PlateUtils
      * Look for a grid of numbers (or blank) staring from rowIdx, colIdx and matches the expected size.
      * The startRow may be a header row (numbered 1..12)
      */
-    public static double[][] parseGridAt(List<Map<String, Object>> rows, int startRow, int startCol, int expectedRows, int expectedCols)
+    public static double[][] parseGridAt(List<Map<String, Object>> rows, int startRow, int startCol, int expectedRows, int expectedCols, @Nullable PlateReader reader)
     {
         // Ensure there are enough available rows from startRow
         if (startRow + expectedRows > rows.size())
@@ -164,7 +166,7 @@ public class PlateUtils
             Map<String, Object> row = rows.get(startRow + i);
             RowMap<Object> rowMap = (RowMap<Object>)row;
 
-            double[] cells = parseRowAt(rowMap, startCol, expectedCols);
+            double[] cells = parseRowAt(rowMap, startCol, expectedCols, reader);
             if (cells == null)
                 return null;
 
@@ -181,7 +183,7 @@ public class PlateUtils
                 Map<String, Object> row = rows.get(startRow + expectedRows + 1);
                 RowMap<Object> rowMap = (RowMap<Object>)row;
 
-                double[] cells = parseRowAt(rowMap, startCol, expectedCols);
+                double[] cells = parseRowAt(rowMap, startCol, expectedCols, reader);
                 if (cells != null)
                 {
                     // CONSIDER: Only accept this new row if it has non-null values?
@@ -209,7 +211,7 @@ public class PlateUtils
      * @return the Location of the upper left hand corner of the start of the data matrix
      */
     @Nullable
-    public static Location isPlateMatrix(List<Map<String, Object>> rows, int startRow, int startCol, int expectedRows, int expectedCols)
+    public static Location isPlateMatrix(List<Map<String, Object>> rows, int startRow, int startCol, int expectedRows, int expectedCols, @Nullable PlateReader reader)
     {
         Map<String, Object> row = rows.get(startRow);
         RowMap<Object> rowMap = (RowMap<Object>)row;
@@ -223,7 +225,7 @@ public class PlateUtils
             return null;
 
         // check for 1-12 in the row:
-        double[] headerRow = parseRowAt(rowMap, startCol+1, expectedCols);
+        double[] headerRow = parseRowAt(rowMap, startCol+1, expectedCols, reader);
         if (headerRow == null)
             return null;
 
@@ -255,7 +257,7 @@ public class PlateUtils
         return new Location(startRow+rowOffset, startCol+1);
     }
 
-    public static double[] parseRowAt(RowMap<Object> rowMap, int startCol, int expectedCols)
+    public static double[] parseRowAt(RowMap<Object> rowMap, int startCol, int expectedCols, @Nullable PlateReader reader)
     {
         // Ensure there are enough available columns from startCol
         if (startCol + expectedCols > rowMap.size())
@@ -274,9 +276,12 @@ public class PlateUtils
             {
                 try
                 {
-                    cells[j] = Double.parseDouble((String) value);
+                    if (reader != null)
+                        cells[j] = reader.convertWellValue((String)value);
+                    else
+                        cells[j] = Double.parseDouble((String) value);
                 }
-                catch (NumberFormatException nfe)
+                catch (ValidationException | NumberFormatException e)
                 {
                     // failed
                     return null;

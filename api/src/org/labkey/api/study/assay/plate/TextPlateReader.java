@@ -126,22 +126,4 @@ public class TextPlateReader extends AbstractPlateReader implements PlateReader
         }
         return false;
     }
-
-    /**
-     * Converts the string token value to a numeric well value.
-     * @param token
-     * @return
-     * @throws ValidationException - if the value cannot be converted, will cause the entire upload to fail
-     */
-    protected double convertWellValue(String token) throws ValidationException
-    {
-        if (!NumberUtilsLabKey.isNumber(token))
-        {
-            throw new ValidationException("The specified well value: " + token + " could not be converted into a numeric value");
-        }
-        else
-        {
-            return NumberUtils.toDouble(token);
-        }
-    }
 }

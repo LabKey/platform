@@ -52,7 +52,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
             DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
             DataLoader loader = factory.createLoader(dataFile, false);
 
-            return PlateUtils.parseGrid(dataFile, loader.load(), template.getRows(), template.getColumns());
+            return PlateUtils.parseGrid(dataFile, loader.load(), template.getRows(), template.getColumns(), this);
         }
         catch (IOException ioe)
         {
@@ -68,7 +68,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
             DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
             DataLoader loader = factory.createLoader(dataFile, false);
 
-            return PlateUtils.parseAllGrids(dataFile, loader.load(), template.getRows(), template.getColumns());
+            return PlateUtils.parseAllGrids(dataFile, loader.load(), template.getRows(), template.getColumns(), this);
         }
         catch (IOException ioe)
         {

@@ -17,6 +17,7 @@ package org.labkey.api.study.assay.plate;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.util.NumberUtilsLabKey;
 
@@ -46,6 +47,8 @@ public abstract class AbstractPlateReader implements PlateReader
 
             if (dblValue == WELL_NOT_COUNTED)
                 return "TNTC";
+            else if (dblValue == WELL_OFF_SCALE)
+                return "--";
         }
         return strValue;
     }
@@ -54,5 +57,23 @@ public abstract class AbstractPlateReader implements PlateReader
     public Map<String, double[][]> loadMultiGridFile(PlateTemplate template, File dataFile) throws ExperimentException
     {
         throw new UnsupportedOperationException("loading multiple grids for this reader implementation is not supported");
+    }
+
+    /**
+     * Converts the string token value to a numeric well value.
+     * @param token
+     * @return
+     * @throws ValidationException - if the value cannot be converted, will cause the entire upload to fail
+     */
+    public double convertWellValue(String token) throws ValidationException
+    {
+        if (!NumberUtilsLabKey.isNumber(token))
+        {
+            throw new ValidationException("The specified well value: " + token + " could not be converted into a numeric value");
+        }
+        else
+        {
+            return NumberUtils.toDouble(token);
+        }
     }
 }

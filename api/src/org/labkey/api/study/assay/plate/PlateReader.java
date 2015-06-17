@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay.plate;
 
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.PlateTemplate;
 
 import java.io.File;
@@ -72,4 +73,12 @@ public interface PlateReader
      * @return
      */
     public String getWellDisplayValue(Object value);
+
+    /**
+     * Converts the string token value to a numeric well value.
+     * @param token
+     * @return
+     * @throws ValidationException - if the value cannot be converted, will halt parsing of the plate
+     */
+    public double convertWellValue(String token) throws ValidationException;
 }
