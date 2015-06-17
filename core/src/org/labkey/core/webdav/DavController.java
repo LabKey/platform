@@ -410,6 +410,7 @@ public class DavController extends SpringActionController
                                 "post".equals(getViewContext().getActionURL().getAction()) &&
                                 getRequest() instanceof MultipartHttpServletRequest)
                         {
+                            response.setHeader("Content-Type", "text/html");
                             response.getWriter().write("<html><body><textarea>" + o.toString() + "</textarea></body></html>");
                         }
                         else
