@@ -320,7 +320,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return !isForbiddenProject(user) && getPolicy().hasOneOf(user, perms, null);
     }
 
-    public boolean hasOneOf(@NotNull User user, @NotNull Class<? extends Permission>... perms)
+    @SafeVarargs
+    public final boolean hasOneOf(@NotNull User user, @NotNull Class<? extends Permission>... perms)
     {
         return hasOneOf(user, Arrays.asList(perms));
     }
