@@ -388,6 +388,24 @@ LABKEY.Utils = new function(impl, $) {
         });
     };
 
+    impl.signalWebDriverTest = function(signalName)
+    {
+        const signalContainerId = 'testSignals';
+        const signalContainerSelector = '#' + signalContainerId;
+        var signalContainer = $(signalContainerSelector);
+        const formHTML = '<div id="' + signalContainerId + '"></div>';
+
+        if (!signalContainer.length)
+        {
+            $('body').append(formHTML);
+            signalContainer = $(signalContainerSelector);
+            signalContainer.hide();
+        }
+
+        signalContainer.find('div[name=' + signalName + ']').remove();
+        signalContainer.append('<div name="' + signalName + '" id="'+impl.id()+'"/>');
+    };
+
     return impl;
 
 }(LABKEY.Utils, jQuery);
