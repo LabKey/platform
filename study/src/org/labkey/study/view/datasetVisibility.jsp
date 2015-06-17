@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper"%>
-<%@ page import="org.labkey.api.reports.model.ViewCategory" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -29,6 +28,8 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="java.util.LinkedHashMap" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -40,8 +41,10 @@
   }
 %>
 <%
-    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getUser());
     JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
+
+    Study study = getStudy();
+    List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
     Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
     ArrayList<Integer> emptyDatasets = new ArrayList<>();
 
@@ -52,13 +55,28 @@
     for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
     {
         Map<String, Object> ds = new HashMap<>();
-        ViewCategory category = entry.getValue().viewCategory;
+        Integer categoryId = entry.getValue().categoryId;
 
-        ds.put("id", entry.getKey() + "-viewcategory");
-        ds.put("categoryId", category != null ? category.getRowId() : null);
+        ds.put("id", entry.getKey());
+        ds.put("categoryId", categoryId);
 
         datasetInfo.add(ds);
     }
+
+    Map<String, String> statusOpts = new LinkedHashMap<>();
+    statusOpts.put(null, "None");
+    statusOpts.put("Draft", "Draft");
+    statusOpts.put("Final", "Final");
+    statusOpts.put("Locked", "Locked");
+    statusOpts.put("Unlocked", "Unlocked");
+
+    Map<Integer, String> cohortOpts = new LinkedHashMap<>();
+    cohortOpts.put(null, "All");
+    for (CohortImpl cohort : cohorts)
+    {
+        cohortOpts.put(cohort.getRowId(), cohort.getLabel());
+    }
+
 %>
 
 
@@ -83,15 +101,17 @@
 <p>Datasets can be hidden on the study overview screen.</p>
 <p>Hidden data can always be viewed, but is not shown by default.</p>
     <table>
-        <tr>
-            <th align="left">ID</th>
-            <th align="left">Label</th>
-            <th align="left">Category</th>
-            <th align="left">Cohort</th>
-            <th align="left">Status</th>
-            <th align="left">Visible</th>
-            <th>&nbsp;</th>
-        </tr>
+        <thead>
+            <tr>
+                <th align="left">ID</th>
+                <th align="left">Label</th>
+                <th align="left">Category</th>
+                <th align="left">Cohort</th>
+                <th align="left">Status</th>
+                <th align="left">Visible</th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
     <%
         for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
         {
@@ -100,10 +120,10 @@
             if (data.empty)
                 emptyDatasets.add(id);
     %>
-        <tr>
+        <tr data-datasetid="<%=id%>">
             <td><%= id %></td>
             <td>
-                <input type="text" size="20" name="label" value="<%= h(data.label != null ? data.label : "") %>">
+                <input type="text" size="20" name="<%="dataset[" + id + "].label"%>" value="<%= h(data.label != null ? data.label : "") %>" placeholder="Dataset label required">
             </td>
             <td>
                 <div id="<%=h(id + "-viewcategory")%>"></div>
@@ -119,36 +139,20 @@
                     else
                     {
                     %>
-                    <select name="cohort">
-                        <option value="-1">All</option>
-                    <%
-
-                        for (CohortImpl cohort : cohorts)
-                        {
-                    %>
-                        <option value="<%= cohort.getRowId()%>"<%=selected(data.cohort != null && data.cohort == cohort.getRowId()) %>>
-                            <%= h(cohort.getLabel())%>
-                        </option>
-                    <%
-                        }
-                    %>
+                    <select name="<%="dataset[" + id + "].cohort"%>">>
+                        <labkey:options value="<%=data.cohort%>" map="<%=cohortOpts%>"/>
                     </select>
                     <%
                     }
                 %>
             </td>
             <td>
-                <select name="statuses">
-                    <option value=""<%=selected(data.status == null || data.status.equals("None"))%>>None</option>
-                    <option value="Draft"<%=selected(data.status != null && data.status.equals("Draft"))%>>Draft</option>
-                    <option value="Final"<%=selected(data.status != null && data.status.equals("Final"))%>>Final</option>
-                    <option value="Locked"<%=selected(data.status != null && data.status.equals("Locked"))%>>Locked</option>
-                    <option value="Unlocked"<%=selected(data.status != null && data.status.equals("Unlocked"))%>>Unlocked</option>
+                <select name="<%="dataset[" + id + "].status"%>">>
+                    <labkey:options value="<%=data.status%>" map="<%=statusOpts%>"/>
                 </select>
             </td>
             <td align="center">
-                <input type="checkbox" name="visible"<%=checked(data.visible)%> value="<%= id %>">
-                <input type="hidden" name="ids" value="<%= id %>">
+                <labkey:checkbox name='<%="dataset[" + id + "].visible"%>' id='<%="dataset[" + id + "].visible"%>' value="true" checked="<%=data.visible%>"/>
             </td>
             <td><%= text(data.empty ? "empty" : "&nbsp;") %></td>
         </tr>
@@ -199,11 +203,11 @@
             }
             %>
         };
-        var checkboxes = Ext4.select("INPUT[name=visible]").elements;
-        for (var i=0 ; i<checkboxes.length ; i++)
-        {
-            var checkbox = checkboxes[i];
-            if (emptyDatasets[checkbox.value])
+        for (var id in emptyDatasets) {
+            if (!emptyDatasets.hasOwnProperty(id))
+                continue;
+            var checkbox = document.getElementById("dataset[" + id + "].visible");
+            if (checkbox)
                 checkbox.checked = false;
         }
     }
@@ -218,12 +222,12 @@
         {
             var ds = datasetInfo[i];
             Ext4.create('Ext.form.field.ComboBox', {
-                name        : 'category',
-                hiddenName  : 'extraData',
-                store       : store,
-                typeAhead   : true,
+                name           : 'dataset[' + ds.id + '].categoryLabel',
+                hiddenName     : 'dataset[' + ds.id + '].categoryId',
+                store          : store,
+                typeAhead      : true,
                 typeAheadDelay : 75,
-                renderTo       : ds.id,
+                renderTo       : ds.id + "-viewcategory",
                 minChars       : 1,
                 autoSelect     : false,
                 queryMode      : 'remote',
@@ -242,7 +246,14 @@
                             '</tpl>',
                         '</li>',
                     '</tpl></ul>'
-                )
+                ),
+                listeners: {
+                    change: function () {
+                        if (this.getValue() === null) {
+                            this.clearValue();
+                        }
+                    }
+                }
             });
         }
     });

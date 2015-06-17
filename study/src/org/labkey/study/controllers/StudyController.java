@@ -19,6 +19,8 @@ package org.labkey.study.controllers;
 import gwt.client.org.labkey.study.StudyApplication;
 import gwt.client.org.labkey.study.dataset.client.Designer;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections15.FactoryUtils;
+import org.apache.commons.collections15.MapUtils;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.BooleanUtils;
@@ -98,6 +100,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
@@ -4468,7 +4471,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DatasetVisibilityAction extends FormViewAction<DatasetPropertyForm>
     {
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors) throws Exception
@@ -4478,10 +4481,12 @@ public class StudyController extends BaseStudyController
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
                 data.label = def.getLabel();
-                data.viewCategory = def.getViewCategory();
+                data.categoryId = def.getViewCategory() != null ? def.getViewCategory().getRowId() : null;
                 data.cohort = def.getCohortId();
                 data.visible = def.isShowByDefault();
                 data.status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
+                if ("None".equals(data.status))
+                    data.status = null;
                 TableInfo t = def.getTableInfo(getViewContext().getUser());
                 boolean exists = new TableSelector(t).exists();
                 data.empty = !exists;
@@ -4489,39 +4494,23 @@ public class StudyController extends BaseStudyController
             }
 
             // Merge with form data
-            int[] ids = form.getIds();
-            if (ids != null)
+            Map<Integer, DatasetVisibilityData> formDataset = form.getDataset();
+            if (formDataset != null)
             {
-                String[] labels = form.getLabel();
-                int[] visibleIds = form.getVisible();
-                if (visibleIds == null)
-                    visibleIds = new int[0];
-                Set<Integer> visible = new HashSet<>(visibleIds.length);
-                for (int id : visibleIds)
-                    visible.add(id);
-                int[] cohorts = form.getCohort();
-                if (cohorts == null)
-                    cohorts = new int[ids.length];
-                String[] categories = form.getExtraData();
-
-                for (int i=0; i<ids.length; i++)
+                for (Map.Entry<Integer, DatasetVisibilityData> entry : formDataset.entrySet())
                 {
-                    int id = ids[i];
-                    DatasetVisibilityData data = bean.get(id);
-                    data.label = labels != null ? labels[i] : null;
-                    if (categories != null && categories[i] != null)
-                    {
-                        Integer categoryId = null;
-                        if (NumberUtils.isDigits(categories[i]))
-                        {
-                            categoryId = NumberUtils.toInt(categories[i]);
-                            data.viewCategory = ViewCategoryManager.getInstance().getCategory(getContainer(), categoryId);
-                        }
-                    }
-                    data.cohort = cohorts[i] == -1 ? null : cohorts[i];
-                    data.visible = visible.contains(id);
+                    DatasetVisibilityData formData = entry.getValue();
+                    DatasetVisibilityData beanData = bean.get(entry.getKey());
+                    if (formData == null || beanData == null)
+                        continue;
+
+                    beanData.label = formData.label;
+                    beanData.categoryId = formData.categoryId;
+                    beanData.cohort = formData.cohort;
+                    beanData.visible = formData.visible;
                 }
             }
+
             return new StudyJspView<>(
                     getStudyRedirectIfNull(), "datasetVisibility.jsp", bean, errors);
         }
@@ -4534,59 +4523,46 @@ public class StudyController extends BaseStudyController
             return root;
         }
 
-        public void validateCommand(DatasetPropertyForm target, Errors errors) {}
-
-        public boolean handlePost(DatasetPropertyForm form, BindException errors) throws Exception
+        public void validateCommand(DatasetPropertyForm form, Errors errors)
         {
-            // Check for bad labels, including the case where all labels are cleared out:
-            if (form.getIds() != null && form.getIds().length > 0 && form.getLabel() == null)
-            {
-                errors.reject("datasetVisibility", "Label cannot be blank");
-                return false;
-            }
-
+            // Check for bad labels
             Set<String> labels = new HashSet<>();
-            for (String label : form.getLabel())
+            for (DatasetVisibilityData data : form.getDataset().values())
             {
-                if (label == null)
+                String label = data.getLabel();
+                if (StringUtils.isBlank(label))
                 {
                     errors.reject("datasetVisibility", "Label cannot be blank");
-                    return false;
                 }
                 if (labels.contains(label))
                 {
                     errors.reject("datasetVisibility", "Labels must be unique. Found two or more labels called '" + label + "'.");
-                    return false;
                 }
                 labels.add(label);
             }
+        }
 
-            int[] allIds = form.getIds();
-            if (allIds == null)
-                allIds = new int[0];
-            int[] visibleIds = form.getVisible();
-            if (visibleIds == null)
-                visibleIds = new int[0];
-            Set<Integer> visible = new HashSet<>(visibleIds.length);
-            for (int id : visibleIds)
-                  visible.add(id);
-            String[] statuses = form.getStatuses();
-            for (int i = 0; i < allIds.length; i++)
+        public boolean handlePost(DatasetPropertyForm form, BindException errors) throws Exception
+        {
+            for (Map.Entry<Integer,DatasetVisibilityData> entry : form.getDataset().entrySet())
             {
-                DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), allIds[i]);
-                boolean show = visible.contains(allIds[i]);
-                String[] extraData = form.getExtraData();
-                String category = extraData == null ? null : extraData[i];
-                Integer categoryId = null;
-                if (NumberUtils.isDigits(category))
-                    categoryId = NumberUtils.toInt(category);
+                Integer id = entry.getKey();
+                DatasetVisibilityData data = entry.getValue();
 
-                Integer cohortId = null;
-                if (form.getCohort() != null)
-                    cohortId = form.getCohort()[i];
+                if (id == null)
+                    throw new IllegalArgumentException("id required");
+
+                DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), id);
+                if (def == null)
+                    throw new NotFoundException("dataset");
+
+                String label = data.getLabel();
+                boolean show = data.isVisible();
+                Integer categoryId = data.getCategoryId();
+                Integer cohortId = data.getCohort();
                 if (cohortId != null && cohortId.intValue() == -1)
                     cohortId = null;
-                String label = form.getLabel()[i];
+
                 if (def.isShowByDefault() != show || !nullSafeEqual(categoryId, def.getCategoryId()) || !nullSafeEqual(label, def.getLabel()) || !BaseStudyController.nullSafeEqual(cohortId, def.getCohortId()))
                 {
                     def = def.createMutable();
@@ -4594,9 +4570,15 @@ public class StudyController extends BaseStudyController
                     def.setCategoryId(categoryId);
                     def.setCohortId(cohortId);
                     def.setLabel(label);
-                    StudyManager.getInstance().updateDatasetDefinition(getUser(), def);
+                    List<String> saveErrors = new ArrayList<>();
+                    StudyManager.getInstance().updateDatasetDefinition(getUser(), def, saveErrors);
+                    for (String error : saveErrors)
+                    {
+                        errors.reject(ERROR_MSG, error);
+                        return false;
+                    }
                 }
-                ReportPropsManager.get().setPropertyValue(def.getEntityId(), getContainer(), "status", statuses[i]);
+                ReportPropsManager.get().setPropertyValue(def.getEntityId(), getContainer(), "status", data.getStatus());
             }
 
             return true;
@@ -4611,12 +4593,65 @@ public class StudyController extends BaseStudyController
     // Bean will be an map of these
     public static class DatasetVisibilityData
     {
+        // form POSTed values
         public String label;
         public Integer cohort; // null for none
         public String status;
+        public Integer categoryId;
         public boolean visible;
+
+        // not form POSTed -- used to render view
         public boolean empty;
-        public ViewCategory viewCategory;
+
+        public String getLabel()
+        {
+            return label;
+        }
+
+        public void setLabel(String label)
+        {
+            this.label = label;
+        }
+
+        public Integer getCohort()
+        {
+            return cohort;
+        }
+
+        public void setCohort(Integer cohort)
+        {
+            this.cohort = cohort;
+        }
+
+        public String getStatus()
+        {
+            return status;
+        }
+
+        public void setStatus(String status)
+        {
+            this.status = status;
+        }
+
+        public boolean isVisible()
+        {
+            return visible;
+        }
+
+        public void setVisible(boolean visible)
+        {
+            this.visible = visible;
+        }
+
+        public Integer getCategoryId()
+        {
+            return categoryId;
+        }
+
+        public void setCategoryId(Integer categoryId)
+        {
+            this.categoryId = categoryId;
+        }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
@@ -5381,44 +5416,18 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DatasetPropertyForm extends PropertyForm
+    public static class DatasetPropertyForm
     {
-        private int[] _ids;
-        private int[] _visible;
-        private String[] _statuses;
+        private Map<Integer, DatasetVisibilityData> _map = MapUtils.lazyMap(new HashMap<Integer, DatasetVisibilityData>(), FactoryUtils.instantiateFactory(DatasetVisibilityData.class));
 
-        public int[] getIds()
+        public Map<Integer, DatasetVisibilityData> getDataset()
         {
-            return _ids;
+            return _map;
         }
 
-        public void setIds(int[] ids)
+        public void setDataset(Map<Integer, DatasetVisibilityData> map)
         {
-            _ids = ids;
-        }
-
-        public int[] getVisible()
-        {
-            return _visible;
-        }
-
-        public void setVisible(int[] visible)
-        {
-            _visible = visible;
-        }
-
-        public String[] getStatuses()
-        {
-            if (null == _statuses)
-            {
-                return new String[1];
-            }
-            return _statuses;
-        }
-
-        public void setStatuses(String[] statuses)
-        {
-            _statuses = statuses;
+            _map = map;
         }
     }
 
