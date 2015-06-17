@@ -152,7 +152,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public boolean isInlineImage()
     {
-        return null != getDataFileUrl() && MIME_MAP.isInlineImageFor(getDataFileUrl());
+        return null != getFile() && MIME_MAP.isInlineImageFor(getFile());
     }
 
     public String urlFlag(boolean flagged)
