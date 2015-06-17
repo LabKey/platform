@@ -364,7 +364,7 @@ public class DbSchema
     {
         try (JdbcMetaDataLocator locator = getSqlDialect().getJdbcMetaDataLocator(getScope(), getName(), tableName))
         {
-            return new SingleTableMetaDataLoader(tableName, locator).load();
+            return new SingleTableMetaDataLoader(tableName, locator, DbSchema.getTemp() != this).load();
         }
     }
 
@@ -374,9 +374,9 @@ public class DbSchema
         private final String _tableName;
         private SchemaTableInfo _ti = null;
 
-        private SingleTableMetaDataLoader(String tableName, JdbcMetaDataLocator locator)
+        private SingleTableMetaDataLoader(String tableName, JdbcMetaDataLocator locator, boolean ignoreTemp)
         {
-            super(locator, true);
+            super(locator, ignoreTemp);
             _tableName = tableName;
         }
 
