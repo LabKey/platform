@@ -33,6 +33,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
@@ -55,6 +56,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QuerySchemaWrapper;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
@@ -725,6 +727,8 @@ public class Query
 		{
 			String name = names.get(i);
             resolvedSchema = resolvedSchema.getSchema(name);
+            if (resolvedSchema == null && DbSchema.TEMP_SCHEMA_NAME.equalsIgnoreCase(name))
+                resolvedSchema = new QuerySchemaWrapper(DbSchema.getTemp());
 			if (resolvedSchema == null)
 			{
                 throw new QueryNotFoundException(StringUtils.join(names,"."), null==node?0:node.getLine(), null==node?0:node.getColumn());
