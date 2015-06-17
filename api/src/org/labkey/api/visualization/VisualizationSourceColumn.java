@@ -96,7 +96,7 @@ public class VisualizationSourceColumn
                 // do any necessary merging:
                 if (!col.isAllowNullResults())
                     current.setAllowNullResults(false);
-                if (!current._values.isEmpty() && !col._values.isEmpty())
+                if (!current._values.isEmpty() && !col._values.isEmpty() && !col._values.equals(current._values))
                     throw new IllegalStateException("multiple values array specified for column " + col.getOriginalName());
                 current._values.addAll(col._values);
                 return current;
