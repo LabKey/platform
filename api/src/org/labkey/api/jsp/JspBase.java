@@ -231,24 +231,30 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
 
-    // Returns " checked" (if true) or "" (false)
+    /** Returns " checked" (if true) or "" (false) */
     public _HtmlString checked(boolean checked)
     {
         return new _HtmlString(checked ? " checked" : "");
     }
 
 
-    // Returns " selected" (if true) or "" (false)
+    /** Returns " selected" (if true) or "" (false) */
     public _HtmlString selected(boolean selected)
     {
         return new _HtmlString(selected ? " selected" : "");
     }
 
 
-    // Returns " disabled" (if true) or "" (false)
+    /** Returns " disabled" (if true) or "" (false) */
     public _HtmlString disabled(boolean disabled)
     {
         return new _HtmlString(disabled ? " disabled" : "");
+    }
+
+    /** Returns " readonly" (if true) or "" (false) */
+    public _HtmlString readonly(boolean readOnly)
+    {
+        return new _HtmlString(readOnly ? " readonly" : "");
     }
 
 

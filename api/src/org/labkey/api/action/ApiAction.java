@@ -310,7 +310,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 ObjectReader reader = getObjectReader(c);
                 form = reader.readValue(getViewContext().getRequest().getInputStream());
             }
-            errors = new NullSafeBindException(form, "form");
+            errors = new NullSafeBindException(form != null ? form : new Object(), "form");
         }
         catch (SocketTimeoutException x)
         {
