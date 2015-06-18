@@ -403,7 +403,7 @@ LABKEY.Utils = new function(impl, $) {
         }
 
         signalContainer.find('div[name=' + signalName + ']').remove();
-        signalContainer.append('<div name="' + signalName + '" id="'+impl.id()+'"/>');
+        signalContainer.append('<div name="' + signalName + '" id="' + LABKEY.Utils.id() + '"/>');
     };
 
     return impl;
