@@ -158,10 +158,10 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
             proxy   : {
                 type   : 'ajax',
                 api    : {
-                    create  : LABKEY.ActionURL.buildURL('reports', 'saveCategories.api'),
-                    read    : LABKEY.ActionURL.buildURL('reports', 'getCategories.api'),
-                    update  : LABKEY.ActionURL.buildURL('reports', 'saveCategories.api'),
-                    destroy : LABKEY.ActionURL.buildURL('reports', 'deleteCategories.api')
+                    create  : LABKEY.ActionURL.buildURL('reports', 'saveCategories.api', opts.container),
+                    read    : LABKEY.ActionURL.buildURL('reports', 'getCategories.api', opts.container),
+                    update  : LABKEY.ActionURL.buildURL('reports', 'saveCategories.api', opts.container),
+                    destroy : LABKEY.ActionURL.buildURL('reports', 'deleteCategories.api', opts.container)
                 },
                 extraParams : {
                     // These parameters are required for specific webpart filtering

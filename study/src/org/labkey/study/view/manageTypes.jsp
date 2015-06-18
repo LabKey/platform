@@ -45,7 +45,7 @@
     Container c = getContainer();
     Study study = StudyManager.getInstance().getStudy(c);
 
-    List<DatasetDefinition> hidden = StudyManager.getInstance().getHiddenDatasets(study,null);
+    List<DatasetDefinition> shadowed = StudyManager.getInstance().getShadowedDatasets(study, null);
 
     List<? extends Dataset> datasets = study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER);
     int countUndefined = 0;
@@ -135,20 +135,22 @@
 <% WebPartView.endTitleFrame(out); %>
 
 <% WebPartView.startTitleFrame(out, "Datasets", null, null, "datasets"); %>
-<table>
+<table id="dataregion_datasets" class="labkey-data-region">
     <tr>
-        <th align="left">ID</th>
-        <th align="left">Name</th>
-        <th align="left">Label</th>
-        <th align="left">Category</th>
-        <th align="left">Type</th>
-        <th align="left">Cohort</th>
-        <th align="left">Shown</th>
-        <th align="left">Demographic</th>
-        <th align="left">Keys</th>
-        <th align="left">Source Assay</th>
-    </tr><%
+        <th class="labkey-column-header" align="left">ID</th>
+        <th class="labkey-column-header" align="left">Name</th>
+        <th class="labkey-column-header" align="left">Label</th>
+        <th class="labkey-column-header" align="left">Category</th>
+        <th class="labkey-column-header" align="left">Type</th>
+        <th class="labkey-column-header" align="left">Cohort</th>
+        <th class="labkey-column-header" align="left">Shown</th>
+        <th class="labkey-column-header" align="left">Demographic</th>
+        <th class="labkey-column-header" align="left">Keys</th>
+        <th class="labkey-column-header" align="left">Source Assay</th>
+    </tr>
+    <%
 
+    int i = 0;
     ActionURL details = new ActionURL(DatasetDetailsAction.class, c);
     for (Dataset def : datasets)
     {
@@ -156,7 +158,8 @@
         ViewCategory viewCategory = def.getViewCategory();
         Cohort cohort = def.getCohort();
         boolean isShared = def.isShared();
-    %><tr>
+        i++;
+    %><tr class="<%=getShadeRowClass(i % 2 != 0)%>">
         <td align=right><a href="<%=h(details)%>"><%=def.getDatasetId()%></a></td>
         <td><a href="<%=h(details)%>"><%= h(def.getName()) %><%=text(!isShared?"":((DatasetDefinition)def).getDataSharingEnum()== DatasetDefinition.DataSharing.PTID?" (shared data)":" (shared)")%></a></td>
         <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%=h(details)%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
@@ -170,11 +173,12 @@
     </tr><%
     }
 %></table>
+<br>
 <%= textLink("Create New Dataset", new ActionURL(DefineDatasetTypeAction.class,c).addParameter("autoDatasetId","true"))%>
-<% if (!hidden.isEmpty())
+<% if (!shadowed.isEmpty())
 {
-    %><p>WARNING: One or more datasets in parent study are hidden by datasets defined in this folder.<br><ul><%
-    for (DatasetDefinition h : hidden)
+    %><p>WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.<br><ul><%
+    for (DatasetDefinition h : shadowed)
     {
         %><li><%=h(h.getDatasetId())%>:&nbsp;<%=h(h.getName())%></li><%
     }

@@ -152,6 +152,7 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.writer.DatasetWriter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -514,7 +515,7 @@ public class StudyManager
 
 
     @Nullable
-    public StudyImpl getStudy(Container c)
+    public StudyImpl getStudy(@NotNull Container c)
     {
         StudyImpl study;
         boolean retry = true;
@@ -696,10 +697,10 @@ public class StudyManager
     {
         if (datasetDefinition.isShared())
         {
-            // verify that we're updating from the correct container
+            // check if we're updating the dataset property overrides in a sub-folder
             if (!datasetDefinition.getContainer().equals(datasetDefinition.getDefinitionContainer()))
             {
-                throw new IllegalStateException("Dataset can only be edited from the shared study: " + datasetDefinition.getName());
+                return updateDatasetPropertyOverrides(user, datasetDefinition, errors);
             }
         }
 
@@ -807,6 +808,175 @@ public class StudyManager
         return true;
     }
 
+    /**
+     * Shared datasets may save some of it's properties in the current container rather than the dataset definition container.
+     * Currently allowed overrides:
+     * <ul>
+     *     <li>isShownByDefault</li>
+     * </ul>
+     * @return true if successful.
+     */
+    private boolean updateDatasetPropertyOverrides(User user, final DatasetDefinition datasetDefinition, List<String> errors)
+    {
+        if (!datasetDefinition.isShared() || datasetDefinition.getContainer().isProject())
+        {
+            errors.add("Dataset property overrides can only be applied to shared datasets and in sub-containers");
+            return false;
+        }
+
+        DbScope scope = StudySchema.getInstance().getScope();
+
+        try (Transaction transaction = scope.ensureTransaction())
+        {
+            DatasetDefinition old = getDatasetDefinition(datasetDefinition.getStudy(), datasetDefinition.getDatasetId());
+            if (null == old)
+                throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+
+            DatasetDefinition original = getDatasetDefinition(datasetDefinition.getDefinitionStudy(), datasetDefinition.getDatasetId());
+
+            // make sure we reload domain and tableinfo
+            Domain domain = datasetDefinition.refreshDomain();
+
+            // Error if any other properties have been changed
+            if (!Objects.equals(old.getLabel(), datasetDefinition.getLabel()))
+            {
+                errors.add("Shared dataset label can't be changed");
+                return false;
+            }
+            if (!Objects.equals(old.getCategoryId(), datasetDefinition.getCategoryId()))
+            {
+                errors.add("Shared dataset category can't be changed");
+                return false;
+            }
+            if (!Objects.equals(old.getCohortId(), datasetDefinition.getCohortId()))
+            {
+                errors.add("Shared dataset cohort can't be changed");
+                return false;
+            }
+
+            // track added and removed properties against the shared dataset in the definition container
+            Map<String,String> add = new HashMap<>();
+            List<String> remove = new LinkedList<>();
+            if (datasetDefinition.isShowByDefault() != original.isShowByDefault())
+                add.put("showByDefault", String.valueOf(datasetDefinition.isShowByDefault()));
+            else
+                remove.add("showByDefault");
+
+
+            // update the override map
+            Container c = datasetDefinition.getContainer();
+            String category = "dataset-overrides:" + datasetDefinition.getDatasetId();
+            PropertyManager.PropertyMap map = null;
+            if (!add.isEmpty())
+            {
+                map = PropertyManager.getWritableProperties(c, category, true);
+                map.putAll(add);
+            }
+
+            if (!remove.isEmpty())
+            {
+                if (map == null)
+                    map = PropertyManager.getWritableProperties(c, category, false);
+
+                if (map != null)
+                {
+                    for (String key : remove)
+                        map.remove(key);
+                }
+            }
+
+            // persist change -- if overrides are no longer needed, just remove it
+            if (map != null)
+            {
+                if (map.isEmpty())
+                    map.delete();
+                else
+                    map.save();
+            }
+
+            transaction.addCommitTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // And post-commit to make sure that no other threads have reloaded the cache in the meantime
+                    uncache(datasetDefinition);
+                }
+            }, CommitTaskOption.POSTCOMMIT, CommitTaskOption.IMMEDIATE);
+            transaction.commit();
+        }
+
+        return true;
+    }
+
+    public void deleteDatasetPropertyOverrides(User user, Container c, BindException errors)
+    {
+        if (c.isProject())
+        {
+            errors.reject(ERROR_MSG, "can't delete dataset property override from project-level study");
+            return;
+        }
+
+        Study study = getStudy(c);
+        if (study == null)
+        {
+            errors.reject(ERROR_MSG, "study not found");
+            return;
+        }
+
+        if (study.isDataspaceStudy())
+        {
+            errors.reject(ERROR_MSG, "can't delete dataset property override from a shared study");
+            return;
+        }
+
+        Study sharedStudy = getSharedStudy(study);
+        if (sharedStudy == null)
+        {
+            errors.reject(ERROR_MSG, "not a sub-study of a shared study");
+            return;
+        }
+
+        DbScope scope = StudySchema.getInstance().getScope();
+        try (Transaction transaction = scope.ensureTransaction())
+        {
+            for (DatasetDefinition dataset : getDatasetDefinitions(study))
+            {
+                if (dataset.isInherited())
+                    deleteDatasetPropertyOverrides(user, dataset);
+            }
+            transaction.commit();
+        }
+    }
+
+    private boolean deleteDatasetPropertyOverrides(User user, final DatasetDefinition datasetDefinition)
+    {
+        if (!datasetDefinition.isInherited() || datasetDefinition.getContainer().isProject())
+        {
+            throw new IllegalArgumentException("Dataset property overrides can only be applied to shared datasets and in sub-containers");
+        }
+
+        DbScope scope = StudySchema.getInstance().getScope();
+        try (Transaction transaction = scope.ensureTransaction())
+        {
+            Container c = datasetDefinition.getContainer();
+            String category = "dataset-overrides:" + datasetDefinition.getDatasetId();
+            PropertyManager.getNormalStore().deletePropertySet(c, category);
+
+            transaction.addCommitTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // And post-commit to make sure that no other threads have reloaded the cache in the meantime
+                    uncache(datasetDefinition);
+                }
+            }, CommitTaskOption.POSTCOMMIT, CommitTaskOption.IMMEDIATE);
+            transaction.commit();
+        }
+
+        return true;
+    }
 
     public boolean isDataUniquePerParticipant(DatasetDefinition dataset) throws SQLException
     {
@@ -2270,11 +2440,12 @@ public class StudyManager
     }
 
 
-    /*
+    /**
+     * Get the list of datasets that are 'shadowed' by the list of local dataset definitions or for any local dataset in the study.
      * This is pretty much the inverse of getDatasetDefinitions()
-     * This can be used in the management/admin UI to warn about hidden datasets
+     * This can be used in the management/admin UI to warn about shadowed datasets
      */
-    public List<DatasetDefinition> getHiddenDatasets(@NotNull Study study, @Nullable List<DatasetDefinition> local)
+    public List<DatasetDefinition> getShadowedDatasets(@NotNull Study study, @Nullable List<DatasetDefinition> local)
     {
         if (study.getContainer().isProject())
             return Collections.emptyList();
@@ -2301,14 +2472,14 @@ public class StudyManager
                 ids.add(dsd.getDatasetId());
             }
         }
-        Map<Integer,DatasetDefinition> hidden = new TreeMap<>();
+        Map<Integer,DatasetDefinition> shadowed = new TreeMap<>();
         for (DatasetDefinition dsd : shared)
         {
             if (names.contains(dsd.getName()) || ids.contains(dsd.getDatasetId()))
-                hidden.put(dsd.getDatasetId(), dsd);
+                shadowed.put(dsd.getDatasetId(), dsd);
         }
 
-        return new ArrayList<>(hidden.values());
+        return new ArrayList<>(shadowed.values());
     }
 
 

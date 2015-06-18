@@ -4484,6 +4484,8 @@ public class StudyController extends BaseStudyController
                 data.categoryId = def.getViewCategory() != null ? def.getViewCategory().getRowId() : null;
                 data.cohort = def.getCohortId();
                 data.visible = def.isShowByDefault();
+                data.shared = def.isShared();
+                data.inherited = ((DatasetDefinition)def).isInherited();
                 data.status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
                 if ("None".equals(data.status))
                     data.status = null;
@@ -4602,6 +4604,8 @@ public class StudyController extends BaseStudyController
 
         // not form POSTed -- used to render view
         public boolean empty;
+        public boolean shared;
+        public boolean inherited;
 
         public String getLabel()
         {
@@ -4651,6 +4655,18 @@ public class StudyController extends BaseStudyController
         public void setCategoryId(Integer categoryId)
         {
             this.categoryId = categoryId;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public class DeleteDatasetPropertyOverrideAction extends MutatingApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            StudyManager.getInstance().deleteDatasetPropertyOverrides(getUser(), getContainer(), errors);
+            return errors.hasErrors() ? null : success();
         }
     }
 

@@ -44,6 +44,8 @@
     JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
 
     Study study = getStudy();
+    Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
     Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
     ArrayList<Integer> emptyDatasets = new ArrayList<>();
@@ -59,6 +61,7 @@
 
         ds.put("id", entry.getKey());
         ds.put("categoryId", categoryId);
+        ds.put("inherited", entry.getValue().inherited);
 
         datasetInfo.add(ds);
     }
@@ -123,7 +126,7 @@
         <tr data-datasetid="<%=id%>">
             <td><%= id %></td>
             <td>
-                <input type="text" size="20" name="<%="dataset[" + id + "].label"%>" value="<%= h(data.label != null ? data.label : "") %>" placeholder="Dataset label required">
+                <input type="text" size="20" name="<%="dataset[" + id + "].label"%>" value="<%= h(data.label != null ? data.label : "") %>" placeholder="Dataset label required" <%=readonly(data.inherited)%>>
             </td>
             <td>
                 <div id="<%=h(id + "-viewcategory")%>"></div>
@@ -139,7 +142,7 @@
                     else
                     {
                     %>
-                    <select name="<%="dataset[" + id + "].cohort"%>">>
+                    <select name="<%="dataset[" + id + "].cohort"%>" <%=disabled(data.inherited)%>>
                         <labkey:options value="<%=data.cohort%>" map="<%=cohortOpts%>"/>
                     </select>
                     <%
@@ -147,7 +150,7 @@
                 %>
             </td>
             <td>
-                <select name="<%="dataset[" + id + "].status"%>">>
+                <select name="<%="dataset[" + id + "].status"%>" <%=disabled(data.inherited)%>>
                     <labkey:options value="<%=data.status%>" map="<%=statusOpts%>"/>
                 </select>
             </td>
@@ -160,11 +163,17 @@
         }
     %>
     </table>
+    <p>
     <%= button("Save").submit(true) %>&nbsp;
     <%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %>&nbsp;
+    <% if (sharedStudy == null) { %>
     <%= button("Manage Categories").href("javascript:void(0);").onClick("onManageCategories()") %>
+    <% } %>
     <% if (!emptyDatasets.isEmpty()) { %>
     <%= button("Hide empty datasets").href("javascript:void(0);").onClick("onHideEmptyDatasets()") %>
+    <% } %>
+    <% if (sharedStudy != null /*&& overrides exist in this container*/) { %>
+    <%= button("Reset Overrides").href("javascript:void(0);").onClick("onResetOverrides()") %>
     <% } %>
 </labkey:form>
 <%
@@ -213,10 +222,35 @@
     }
 
 
+    function onResetOverrides()
+    {
+        Ext4.Msg.confirm("Reset all dataset overrides in this folder?",
+                "Are you sure you want to reset all dataset overides in the current folder?",
+                function (btn) {
+                    if (btn == "yes") {
+                        LABKEY.Ajax.request({
+                            method: 'POST',
+                            url: LABKEY.ActionURL.buildURL('study', 'deleteDatasetPropertyOverride.api'),
+                            jsonData: {},
+                            success: function () {
+                                // reshow the page
+                                window.location = window.location;
+                            },
+                            // Show generic error message
+                            failure: LABKEY.Utils.getCallbackWrapper(null, null, true)
+                        })
+                    }
+                }
+        );
+    }
+
     Ext4.onReady(function()
     {
         var datasetInfo = <%=text(jsonMapper.writeValueAsString(datasetInfo))%>;
-        var store = LABKEY.study.DataViewUtil.getViewCategoriesStore({storeId : '<%=h(storeId)%>'});
+        var store = LABKEY.study.DataViewUtil.getViewCategoriesStore({
+            storeId : '<%=h(storeId)%>',
+            container: <%=q((sharedStudy != null ? sharedStudy.getContainer() : study.getContainer()).getPath())%>
+        });
 
         for (var i=0; i < datasetInfo.length; i++)
         {
@@ -235,6 +269,7 @@
                 valueField     : 'rowid',
                 value          : ds.categoryId || '',
                 emptyText      : 'Uncategorized',
+                disabled       : ds.inherited,
                 tpl : new Ext4.XTemplate(
                     '<ul><tpl for=".">',
                         '<li role="option" class="x4-boundlist-item">',

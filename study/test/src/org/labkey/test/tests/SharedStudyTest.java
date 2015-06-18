@@ -35,6 +35,7 @@ import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.DatasetDomainEditor;
+import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.Maps;
 
 import java.io.File;
@@ -282,9 +283,9 @@ public class SharedStudyTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testHidingSharedDataset()
+    public void testShadowingSharedDataset()
     {
-        final String datasetName = "Hiding Dataset";
+        final String datasetName = "Shadowing Dataset";
 
         _containerHelper.createSubfolder(getProjectName(), datasetName, "Study");
         createDefaultStudy();
@@ -300,10 +301,61 @@ public class SharedStudyTest extends BaseWebDriverTest
         waitAndClick(Locator.id("partdelete_0"));
         clickButton("Save");
 
-        assertTextPresent(String.format("A shared dataset is hidden by this local dataset definition: %s.", SHARED_DEMOGRAPHICS));
+        assertTextPresent(String.format("A shared dataset is shadowed by this local dataset definition: %s.", SHARED_DEMOGRAPHICS));
         clickAndWait(Locator.linkWithText("Manage Datasets"));
-        assertTextPresent("WARNING: One or more datasets in parent study are hidden by datasets defined in this folder.");
+        assertTextPresent("WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.");
         assertElementNotPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
+    }
+
+    @Test
+    public void testSharedDatasetOverrides()
+    {
+        // verify the demographics dataset is visible in the project shared study
+        beginAt(WebTestHelper.buildURL("study", getProjectName(), "datasets"));
+        assertTextPresent(SHARED_DEMOGRAPHICS);
+
+        // verify the demographics dataset in STUDY2 is also visible
+        beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "datasets"));
+        assertTextPresent(SHARED_DEMOGRAPHICS, STUDY2_DATASET);
+
+        // go to the dataset property editor
+        clickAndWait(Locator.linkWithText("Manage Datasets"));
+        clickAndWait(Locator.linkWithText("Change Properties"));
+
+        // verify the shared dataset label is readonly while the local dataset is not
+        Assert.assertEquals(null, getAttribute(Locator.xpath("//input[@type='text' and @value='" + STUDY2_DATASET + "']"), "readonly"));
+        Assert.assertEquals("true", getAttribute(Locator.xpath("//input[@type='text' and @value='" + SHARED_DEMOGRAPHICS + "']"), "readonly"));
+
+        // hide the demographics dataset in STUDY2
+        click(Locator.checkboxById("dataset[" + SHARED_DEMOGRAPHICS_ID + "].visible"));
+        clickAndWait(Locator.lkButton("Save"));
+
+        // verify the dataset is hidden in the datasets webpart
+        beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "datasets"));
+        assertTextNotPresent(SHARED_DEMOGRAPHICS);
+        assertTextPresent(STUDY2_DATASET);
+
+        // verify the dataset is hidden in the study navigator
+        beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "overview"));
+        assertTextNotPresent(SHARED_DEMOGRAPHICS);
+        assertTextPresent(STUDY2_DATASET);
+
+        // verify the dataset is visible in the project datasets webpart
+        beginAt(WebTestHelper.buildURL("study", getProjectName(), "datasets"));
+        assertTextPresent(SHARED_DEMOGRAPHICS);
+
+        // verify the dataset is visible in the project study navigator
+        beginAt(WebTestHelper.buildURL("study", getProjectName(), "overview"));
+        assertTextPresent(SHARED_DEMOGRAPHICS);
+
+        // reset all dataset overrides
+        beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "datasetVisibility"));
+        click(Locator.lkButton("Reset Overrides"));
+        clickAndWait(Ext4Helper.Locators.ext4Button("Yes")); // reloads the current page
+
+        // verify the dataset is visible in the datasets webpart
+        beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "datasets"));
+        assertTextPresent(SHARED_DEMOGRAPHICS, STUDY2_DATASET);
     }
 
     @Test

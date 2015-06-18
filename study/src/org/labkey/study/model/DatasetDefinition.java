@@ -286,6 +286,16 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         assert sub != this;
         sub._definitionContainer = sub.getContainer();
         sub.setContainer(substudy.getContainer());
+
+        // apply substudy dataset overrides
+        String category = "dataset-overrides:" + getDatasetId();
+        PropertyManager.PropertyMap map = PropertyManager.getProperties(substudy.getContainer(), category);
+        if (!map.isEmpty())
+        {
+            if (map.get("showByDefault") != null)
+                sub.setShowByDefault(Boolean.valueOf(map.get("showByDefault")));
+        }
+
         sub.lock();
         assert sub.isShared();
         return sub;
@@ -304,9 +314,17 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return _isShared;
     }
 
-    private boolean isInherited()
+    public boolean isInherited()
     {
         return isShared() && null != _definitionContainer && !_definitionContainer.equals(getContainer());
+    }
+
+    /**
+     * Return true if this local dataset has the same id as a dataset from a shared study.
+     */
+    public List<DatasetDefinition> getShadowed()
+    {
+        return StudyManager.getInstance().getShadowedDatasets(getStudy(), Arrays.asList(this));
     }
 
 

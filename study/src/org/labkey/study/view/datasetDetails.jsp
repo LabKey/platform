@@ -57,12 +57,12 @@
     Set<Class<? extends Permission>> permissions = c.getPolicy().getPermissions(user);
 
     // is definition inherited
-    boolean isDatasetInherited = dataset.isShared() && !study.getContainer().getId().equals(dataset.getDefinitionStudy().getContainer().getId());
+    boolean isDatasetInherited = dataset.isInherited();
 
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
     boolean pipelineSet = null != PipelineService.get().findPipelineRoot(c);
 
-    List<DatasetDefinition> hidden = StudyManager.getInstance().getHiddenDatasets(study, Collections.singletonList(dataset));
+    List<DatasetDefinition> shadowed = StudyManager.getInstance().getShadowedDatasets(study, Collections.singletonList(dataset));
 %>
 <%
 if (isDatasetInherited)
@@ -70,12 +70,12 @@ if (isDatasetInherited)
     ActionURL manageShared = new ActionURL(StudyController.DatasetDetailsAction.class,dataset.getDefinitionContainer()).addParameter("id",dataset.getDatasetId());
     %>This dataset is defined in another folder: <a href="<%=h(manageShared)%>"><%=h(dataset.getDefinitionContainer().getName())%></a><br><%
 }
-if (!hidden.isEmpty())
+if (!shadowed.isEmpty())
 {
     StringBuilder sb = new StringBuilder();
-    sb.append(hidden.size() == 1 ? "A shared dataset is" : "These shared datasets are").append(" hidden by this local dataset definition:");
+    sb.append(shadowed.size() == 1 ? "A shared dataset is" : "These shared datasets are").append(" shadowed by this local dataset definition:");
     String comma = " ";
-    for (DatasetDefinition h : hidden)
+    for (DatasetDefinition h : shadowed)
     {
         sb.append(comma).append(h(h.getName()));
         comma = ", ";
