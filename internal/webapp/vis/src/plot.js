@@ -1336,18 +1336,174 @@ boxPlot.render();
                     + "pointClickFn, showTrendLine, disableRangeDisplay, xTick, yAxisScale, yAxisDomain, xTickTagIndex.");
         }
 
+        var groupedTrendlineDataForCombinedPlot = [];
+
         // get a sorted array of the unique x-axis labels
         var uniqueXAxisKeys = {}, uniqueXAxisLabels = [];
         for (var i = 0; i < config.data.length; i++) {
             if (!uniqueXAxisKeys[config.data[i][config.properties.xTick]]) {
                 uniqueXAxisKeys[config.data[i][config.properties.xTick]] = true;
             }
+
+            //if(config.data[i].type == 'data' && groupedTrendlineDataForCombinedPlot[config.data[index].sequence] == undefined)
+            //{
+            //    groupedTrendlineDataForCombinedPlot[config.data[index].sequence] = {
+            //        sequence: config.data[index].sequence,
+            //        avgValue: 0,
+            //        seqValue: config.data[index].seqValue
+            //    };
+            //}
         }
         uniqueXAxisLabels =  Object.keys(uniqueXAxisKeys).sort();
 
         // create a sequencial index to use for the x-axis value and keep a map from that index to the tick label
         // also, pull out the meanStdDev data for the unique x-axis values and calculate average values for the trend line data
         var tickLabelMap = {}, index = -1, distinctColorValues = [], meanStdDevData = [], groupedTrendlineData = [];
+
+        if(config.renderTo == 'combinedPlot' && config.properties.xTick)
+        {
+            var sum = 0;
+            var avg = 0;
+            var count = 0;
+            var index = 0;
+            var currentSequence = "";
+
+            for(var i = 0; i < config.data.length; i++)
+            {
+                //sum += config.data[i][config.properties.value];
+                //count++;
+                //
+                //if((i+1) < config.data.length && config.data[i].seqValue != config.data[i+1].seqValue)
+                //{
+                //    avg = sum/count;
+                //    if(count > 1)
+                //    {
+                //        console.log("i", i);
+                //    }
+                //    if(groupedTrendlineDataForCombinedPlot[index] == undefined)
+                //    {
+                //            groupedTrendlineDataForCombinedPlot[index] = {
+                //                sequence: config.data[i].sequence,
+                //                avgValue: 0,
+                //                seqValue: config.data[i].seqValue,
+                //                count: 0,
+                //                sum: 0
+                //            };
+                //    }
+                //    index++;
+                //    sum = 0;
+                //    avg = 0;
+                //    count = 0;
+                //}
+
+                currentSequence = config.data[i].sequence;
+                if(currentSequence == undefined)
+                {
+                    continue;
+                }
+                var key = currentSequence + "," + config.data[i][config.properties.xTickLabel];
+                var newlyDefined = 0;
+
+                if(groupedTrendlineDataForCombinedPlot[key] == undefined)
+                {
+                    newlyDefined = 1;
+                    groupedTrendlineDataForCombinedPlot[key] = {
+                        sequence: config.data[i].sequence,
+                        avgValue: 0,
+                        seqValue: 0,
+                        count: 0,
+                        sum: 0
+                    };
+                }
+
+                if (groupedTrendlineDataForCombinedPlot[key] != undefined)
+                {
+                    groupedTrendlineDataForCombinedPlot[key].sum += config.data[i][config.properties.value];
+                    groupedTrendlineDataForCombinedPlot[key].count++;
+                    groupedTrendlineDataForCombinedPlot[key].avgValue = groupedTrendlineDataForCombinedPlot[key].sum / groupedTrendlineDataForCombinedPlot[key].count;
+
+                    if(newlyDefined == 1)
+                    {
+                        groupedTrendlineDataForCombinedPlot[key].seqValue = index++;
+                    }
+                }
+                if((i+1) < config.data.length && config.data[i+1].type == 'annotation')
+                {
+                    key = currentSequence + "," + config.data[i+1][config.properties.xTickLabel];
+                    if(groupedTrendlineDataForCombinedPlot[key] == undefined)
+                    {
+                        newlyDefined = 1;
+                        groupedTrendlineDataForCombinedPlot[key] = {
+                            sequence: '',
+                            avgValue: 0,
+                            seqValue: index++,
+                            count: 0,
+                            sum: 0
+                        };
+                    }
+                    continue;
+                }
+                if((i+1) < config.data.length && config.data[i+1].type == 'data' && config.data[i+1].sequence != currentSequence)
+                {
+                    index = 0;
+                }
+
+            }
+            //var index = 0;
+            //
+            //while(index < config.data.length)
+            //{
+            //    var sum = 0;
+            //    var avg = 0;
+            //    var count = 0;
+            //    var index2 = 0;
+            //
+            //    if(config.data[index].type != 'data')
+            //    {
+            //        index++;
+            //        continue;
+            //    }
+            //
+            //    if(groupedTrendlineDataForCombinedPlot[config.data[index].seqValue] == undefined)
+            //    {
+            //        groupedTrendlineDataForCombinedPlot[config.data[index].seqValue] = {
+            //            sequence: config.data[index].sequence,
+            //            avgValue: 0,
+            //            seqValue: config.data[index].seqValue
+            //        };
+            //    }
+            //    while(index < config.data.length && groupedTrendlineDataForCombinedPlot[config.data[index].seqValue].seqValue == config.data[index].seqValue)
+            //    {
+            //        index2 = config.data[index].seqValue;
+            //        sum += config.data[index][config.properties.value];
+            //        count++;
+            //        index++;
+            //
+            //        if(index < config.data.length && config.data[index].type != 'data')
+            //        {
+            //            index++;
+            //        }
+            //        if(index < config.data.length && groupedTrendlineDataForCombinedPlot[config.data[index].seqValue] == undefined)
+            //        {
+            //            break;
+            //        }
+            //        console.log("index", index);
+            //
+            //    }
+            //    avg = sum/count;
+            //    if(avg > 0 && index > 0)
+            //    {
+            //        console.log("index2", index2);
+            //        groupedTrendlineDataForCombinedPlot[index2].avgValue = avg;
+            //    }
+            //}
+        }
+
+        console.log("config", config);
+
+        console.log("groupedTrendlineDataForCombinedPlot", groupedTrendlineDataForCombinedPlot);
+
+
         for (var i = 0; i < config.data.length; i++)
         {
             var row = config.data[i];
@@ -1386,6 +1542,7 @@ boxPlot.render();
                 meanStdDevData[index] = row;
             }
         }
+        console.log("groupedTrendlineData", groupedTrendlineData);
 
         // min x-axis tick length is 10 by default
         var maxSeqValue = config.data.length > 0 ? config.data[config.data.length - 1].seqValue + 1 : 0;
@@ -1513,11 +1670,16 @@ boxPlot.render();
                 })
             };
 
-            if (config.properties.groupBy) {
+            if (config.properties.groupBy)
+            {
                 pathLayerConfig.aes = {
                     pathColor: config.properties.groupBy,
                     group: config.properties.groupBy
                 };
+
+                    if(config.properties.singlePlotAndGroupedX)
+                        pathLayerConfig.data = groupedTrendlineDataForCombinedPlot;
+
             }
             else {
                 // if we aren't showing multiple series data via the group by, use the groupedTrendlineData for the path
