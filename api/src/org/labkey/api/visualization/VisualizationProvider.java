@@ -15,6 +15,7 @@
  */
 package org.labkey.api.visualization;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.labkey.api.data.ColumnInfo;
@@ -28,6 +29,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -380,6 +382,21 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
         public void setShowHidden(boolean showHidden)
         {
             _showHidden = showHidden;
+        }
+
+        public String getCacheKey()
+        {
+            ArrayList<String> strs = new ArrayList<>(14);
+            strs.add(String.valueOf(_schemaName));
+            strs.add(String.valueOf(_queryName));
+            strs.add(String.valueOf(_name));
+            strs.add(String.valueOf(_dateMeasures));
+            strs.add(String.valueOf(_zeroDateMeasures));
+            strs.add(String.valueOf(_dateMeasures));
+            strs.add(String.valueOf(_allColumns));
+            strs.add(String.valueOf(_showHidden));
+            strs.addAll(Arrays.asList(_filters));
+            return StringUtils.join(strs,'|');
         }
     }
 

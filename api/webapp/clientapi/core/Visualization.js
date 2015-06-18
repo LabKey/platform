@@ -147,7 +147,7 @@ LABKEY.Query.Visualization = new function() {
 
             LABKEY.Ajax.request(
             {
-                url : LABKEY.ActionURL.buildURL("visualization", "getMeasures"),
+                url : config.endpoint || LABKEY.ActionURL.buildURL("visualization", "getMeasures"),
                 method : 'GET',
                 success: getSuccessCallbackWrapper(createMeasures, LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
