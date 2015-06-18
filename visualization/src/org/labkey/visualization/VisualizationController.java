@@ -48,6 +48,8 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -80,9 +82,11 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
@@ -276,7 +280,7 @@ public class VisualizationController extends SpringActionController
 
 
     @Action(ActionType.SelectMetaData.class)
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetMeasuresAction<Form extends MeasureSetRequest> extends ApiAction<Form>
     {
         public ApiResponse execute(Form measureRequest, BindException errors) throws Exception
@@ -290,6 +294,52 @@ public class VisualizationController extends SpringActionController
             return resp;
         }
     }
+
+
+    /**
+     * This is exactly the same as getMeasures(), but will return the same result over-and-over for all users
+     * until clear caches is called (or this particular cache is cleared).  Only apps with fixes schemas should use this
+     * action.
+     */
+
+    static private final StringKeyCache _getMeasuresCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED,CacheManager.UNLIMITED,"getMeasuresStaticCache");
+
+    @Action(ActionType.SelectMetaData.class)
+    @RequiresPermission(ReadPermission.class)
+    public class GetMeasuresStaticAction<Form extends MeasureSetRequest> extends ApiAction<Form>
+    {
+        public ApiResponse execute(Form measureRequest, BindException errors) throws Exception
+        {
+            String key = getContainer().getId() + ":" + measureRequest.getCacheKey();
+            List<Map<String,Object>> json = (List<Map<String,Object>>)_getMeasuresCache.get(key);
+            if (json == null)
+            {
+                VisualizationService vs = ServiceRegistry.get(VisualizationService.class);
+                Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = vs.getMeasures(getContainer(), getUser(), measureRequest);
+                 json = vs.toJSON(measures);
+                _getMeasuresCache.put(key,json);
+            }
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("measures", json);
+            return resp;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class ClearMeasuresCacheAction extends ApiAction<Object>
+    {
+        public ApiResponse execute(Object measureRequest, BindException errors) throws Exception
+        {
+            _getMeasuresCache.clear();
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            return resp;
+        }
+    }
+
+
 
     @Action(ActionType.SelectMetaData.class)
     @RequiresPermissionClass(ReadPermission.class)
