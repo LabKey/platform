@@ -64,14 +64,16 @@
         items.push(sqvModel.makeSchemaComboConfig({
             name        : 'selectedSchemaName',
             editable    : false,
-            emptyText   : 'None'
+            emptyText   : 'None',
+            msgTarget   : 'qtip'
         }));
 
         items.push(sqvModel.makeQueryComboConfig({
             name        : 'selectedQueryName',
             editable    : false,
             typeAhead   : 'true',
-            emptyText   : 'None'
+            emptyText   : 'None',
+            msgTarget   : 'qtip'
         }));
 
         items.push(sqvModel.makeViewComboConfig({
@@ -102,7 +104,7 @@
             fieldDefaults: {
                 width : 500,
                 labelWidth : 120,
-                msgTarget : 'side'
+                msgTarget : 'qtip'
             },
             visibleFields   : {
                 viewName: true,
