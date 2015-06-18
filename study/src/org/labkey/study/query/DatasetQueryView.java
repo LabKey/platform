@@ -483,7 +483,10 @@ public class DatasetQueryView extends StudyQueryView
     public MenuButton createViewButton(ReportService.ItemFilter filter)
     {
         MenuButton button =  super.createViewButton(filter);
-        button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
+
+        ActionURL url = new ActionURL(StudyController.ViewPreferencesAction.class, getContainer());
+        url.addParameter("datasetId", _dataset.getDatasetId());
+        button.addMenuItem("Set Default View", url);
 
         return button;
     }

@@ -3893,54 +3893,63 @@ public class StudyController extends BaseStudyController
         return new ActionURL(ViewPreferencesAction.class, c).addParameter(DatasetDefinition.DATASETKEY, id).addParameter("defaultView", viewName);
     }
 
+    public static class ViewPreferencesForm extends DatasetController.DatasetIdForm
+    {
+        private String _defaultView;
+
+        public String getDefaultView()
+        {
+            return _defaultView;
+        }
+
+        public void setDefaultView(String defaultView)
+        {
+            _defaultView = defaultView;
+        }
+    }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ViewPreferencesAction extends SimpleViewAction
+    public class ViewPreferencesAction extends SimpleViewAction<ViewPreferencesForm>
     {
         private StudyImpl _study;
         private Dataset _def;
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(ViewPreferencesForm form, BindException errors) throws Exception
         {
             _study = getStudyRedirectIfNull();
 
-            // TODO: Here's an idea... use a form!
-            String id = getViewContext().getRequest().getParameter(DatasetDefinition.DATASETKEY);
-            String defaultView = getViewContext().getRequest().getParameter("defaultView");
+            int dsid = form.getDatasetId();
+            String defaultView = form.getDefaultView();
 
-            if (NumberUtils.isDigits(id))  // Should be a positive integer
+            _def = StudyManager.getInstance().getDatasetDefinition(_study, dsid);
+            if (_def != null)
             {
-                int dsid = NumberUtils.toInt(id);
-                _def = StudyManager.getInstance().getDatasetDefinition(_study, dsid);
-                if (_def != null)
+                List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), _def);
+                if (defaultView != null)
                 {
-                    List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), _def);
-                    if (defaultView != null)
-                    {
-                        setDefaultView(dsid, defaultView);
-                    }
-                    else
-                    {
-                        defaultView = getDefaultView(getViewContext(), _def.getDatasetId());
-                        if (!StringUtils.isEmpty(defaultView))
-                        {
-                            boolean defaultExists = false;
-                            for (Pair<String, String> view : views)
-                            {
-                                if (StringUtils.equals(view.getValue(), defaultView))
-                                {
-                                    defaultExists = true;
-                                    break;
-                                }
-                            }
-                            if (!defaultExists)
-                                setDefaultView(dsid, "");
-                        }
-                    }
-
-                    ViewPrefsBean bean = new ViewPrefsBean(views, _def);
-                    return new StudyJspView<>(_study, "viewPreferences.jsp", bean, errors);
+                    setDefaultView(dsid, defaultView);
                 }
+                else
+                {
+                    defaultView = getDefaultView(getViewContext(), _def.getDatasetId());
+                    if (!StringUtils.isEmpty(defaultView))
+                    {
+                        boolean defaultExists = false;
+                        for (Pair<String, String> view : views)
+                        {
+                            if (StringUtils.equals(view.getValue(), defaultView))
+                            {
+                                defaultExists = true;
+                                break;
+                            }
+                        }
+                        if (!defaultExists)
+                            setDefaultView(dsid, "");
+                    }
+                }
+
+                ViewPrefsBean bean = new ViewPrefsBean(views, _def);
+                return new StudyJspView<>(_study, "viewPreferences.jsp", bean, errors);
             }
             throw new NotFoundException("Invalid dataset ID");
         }
