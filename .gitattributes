@@ -2669,6 +2669,7 @@ study/src/org/labkey/study/view/specimen/manageSpecimenWebPart.jsp -text
 study/src/org/labkey/study/view/specimen/manageStatusOrder.jsp -text
 study/src/org/labkey/study/view/specimen/manageStatuses.jsp -text
 study/src/org/labkey/study/view/specimen/notification.txt -text
+study/src/org/labkey/study/view/specimen/pivot.jsp -text
 study/src/org/labkey/study/view/specimen/relevantRequests.jsp -text
 study/src/org/labkey/study/view/specimen/requestSamples.jsp -text
 study/src/org/labkey/study/view/specimen/sample.jsp -text

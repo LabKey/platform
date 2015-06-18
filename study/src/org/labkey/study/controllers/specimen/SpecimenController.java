@@ -74,6 +74,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -5865,6 +5866,23 @@ public class SpecimenController extends BaseStudyController
         protected BaseRemoteService createService()
         {
             return new SpecimenServiceImpl(getViewContext());
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class PivotAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/specimen/pivot.jsp");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
         }
     }
 
