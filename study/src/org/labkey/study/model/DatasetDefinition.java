@@ -738,21 +738,20 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     /**
      * Deletes rows without auditing
      */
-    public int deleteRows(User user, Date cutoff)
+    public int deleteRows(User user, @Nullable Date cutoff)
     {
-        assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
         int count;
 
-        TableInfo table = getStorageTableInfo();
+        DbSchema schema = StudySchema.getInstance().getSchema();
 
-        try
+        try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
         {
             CPUTimer time = new CPUTimer("purge");
             time.start();
 
             boolean deleteSharedRows = isShared() && getContainer().getId().equals(getDefinitionContainer().getId());
 
-            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM " + table.getSelectName() + "\n");
+            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM " + getStorageTableInfo().getSelectName() + "\n");
             String and = "WHERE ";
             if (!deleteSharedRows)
             {
@@ -762,11 +761,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             if (cutoff != null)
             {
                 studyDataFrag.append(and).append(" AND _VisitDate > ?").add(cutoff);
-                and = " AND ";
             }
-            SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema()).setExceptionFramework(ExceptionFramework.JDBC);
+
+            SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
             count = executor.execute(studyDataFrag);
             StudyManager.datasetModified(this, user, true);
+
+            transaction.commit();
 
             time.stop();
             _log.debug("purgeDataset " + getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
@@ -779,6 +780,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             }
             throw s;
         }
+
         return count;
     }
 
