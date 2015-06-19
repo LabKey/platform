@@ -97,6 +97,12 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         return _snapshotDef.getQueryTableName();
     }
 
+    @Override
+    public String getQueryTableContainerId()
+    {
+        return _snapshotDef.getQueryTableContainer();
+    }
+
     public int getId()
     {
         return _snapshotDef.getRowId();

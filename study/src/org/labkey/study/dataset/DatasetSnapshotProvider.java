@@ -651,7 +651,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             List<QuerySnapshotDefinition> dependencies = getDependencies(data);
                             for (QuerySnapshotDefinition snapshotDef : dependencies)
                             {
-                                _log.debug("Updating snapshot definition : " + snapshotDef.getName());
+                                _log.info("Updating snapshot definition : " + snapshotDef.getName());
                                 autoUpdateSnapshot(snapshotDef);
                             }
                         }
@@ -665,7 +665,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             }
             catch (InterruptedException e)
             {
-                _log.debug(getClass().getSimpleName() + " is terminating due to interruption");
+                _log.info(getClass().getSimpleName() + " is terminating due to interruption");
             }
         }
 

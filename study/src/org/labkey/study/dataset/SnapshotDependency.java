@@ -26,6 +26,9 @@ import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionTableInfo;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -147,18 +150,36 @@ public abstract class SnapshotDependency
 
         private boolean hasDependency(QuerySnapshotDefinition qsDef, @NotNull org.labkey.api.study.Dataset dsDef)
         {
-            // dataset snapshots must have an underlying dataset definition defined
-            StudyImpl study = StudyManager.getInstance().getStudy(qsDef.getContainer());
-            DatasetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, qsDef.getName());
-            if (def != null)
+            if (dsDef.getContainer().getId().equals(qsDef.getQueryTableContainerId()))
             {
-                return def.getName().equals(dsDef.getName()) && (def.getDatasetId() == dsDef.getDatasetId());
+                // dataset snapshots must have an underlying dataset definition defined
+                StudyImpl study = StudyManager.getInstance().getStudy(qsDef.getContainer());
+                DatasetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, qsDef.getName());
+                if (def != null)
+                {
+                    if (qsDef.getQueryTableName().equals(dsDef.getName()))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            // if we can't match by 1:1 table relationship (ie: query or custom view), try the legacy property URI approach
+            Domain d = PropertyService.get().getDomain(dsDef.getContainer(), dsDef.getTypeURI());
+            if (d != null)
+            {
+                for (DomainProperty prop : d.getProperties())
+                {
+                    if (hasDependency(qsDef, prop.getPropertyURI()))
+                    {
+                        return true;
+                    }
+                }
             }
             return false;
         }
 
-        @Deprecated
-        private boolean hasDependency(QuerySnapshotDefinition def, String propertyURI) throws ServletException
+        private boolean hasDependency(QuerySnapshotDefinition def, String propertyURI)
         {
             Map<String, String> propertyMap;
 
