@@ -32,6 +32,7 @@ public interface QuerySnapshotDefinition
 {
     String getName();
     String getQueryTableName();
+    String getQueryTableContainerId();
     int getId();
     @Nullable
     QueryDefinition getQueryDefinition(User user);
