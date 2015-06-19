@@ -532,19 +532,19 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             if (_includeVialComments)
             {
                 String field = ExprColumn.STR_TABLE_ALIAS + "$" + SPECIMEN_COMMENT_JOIN + ".Comment";
-                parent.addColumn(new ExprColumn(parent, VIAL_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR)).setHidden(true);
+                parent.addColumn(new ExprColumn(parent, VIAL_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR));
                 commentFields.add(field);
             }
             if (ptidCommentTable != null && ptidCommentAlias != null)
             {
                 String field = ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_COMMENT_JOIN + "." + ptidCommentAlias;
-                parent.addColumn(new ExprColumn(parent, PARTICIPANT_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR)).setHidden(true);
+                parent.addColumn(new ExprColumn(parent, PARTICIPANT_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR));
                 commentFields.add(field);
             }
             if (ptidVisitCommentTable != null && ptidVisitCommentAlias != null)
             {
                 String field = ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANTVISIT_COMMENT_JOIN + "." + ptidVisitCommentAlias;
-                parent.addColumn(new ExprColumn(parent, PARTICIPANTVISIT_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR)).setHidden(true);
+                parent.addColumn(new ExprColumn(parent, PARTICIPANTVISIT_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR));
                 commentFields.add(field);
             }
 
