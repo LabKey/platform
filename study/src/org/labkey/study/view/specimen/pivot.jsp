@@ -62,7 +62,7 @@ var starttime;
         });
     });
 
-    var model = {onRows:[], onColumns:[], filter:[], measures:[]};
+    var model = {onRows:[], onColumns:[], filter:[], measures:[], filterValues:{}};
 
 
     function renderUI()
@@ -78,6 +78,26 @@ var starttime;
         var columnsHtml = [];
         var rowsHtml = [];
 
+        // render select for each hierachy
+        function renderHierarchyFilter(h)
+        {
+            var select = ['<select onchange="return run()" class="filter" data-hierarchy="' + h.uniqueName + '">'];
+            // TODO list every member in tree order
+            for (var l=0 ; l<2 ; l++)
+            {
+                var level = h.levels[l];
+                for (var m=0 ; m<level.members.length ; m++)
+                {
+                    var member = level.members[m];
+                    if (member.name === "#notnull") continue;
+                    select.push('<option value="' + member.uniqueName + '">' + member.name + '</option>');
+                }
+            }
+            select.push("</select>");
+            Ext4.get(pivotDesignerId+".filterArea").insertHtml("beforeEnd", select.join(''));
+        }
+
+
         var dimensions = cube.getDimensions();
         for (var d=0 ; d<dimensions.length ; d++)
         {
@@ -88,7 +108,8 @@ var starttime;
             for (var h=0 ; h<hierarchies.length ; h++)
             {
                 var hierarchy = hierarchies[h];
-                filterHtml.push('<div class="hierarchy" data-hierarchy="' + hierarchy.uniqueName + '">' + hierarchy.name +'</div>');
+                filterHtml.push('<div style="font-family:verdana; font-size:12pt; padding:2pt;" class="hierarchy" data-hierarchy="' + hierarchy.uniqueName + '">' + hierarchy.name +'</div>');
+                renderHierarchyFilter(hierarchy);
             }
         }
 
@@ -97,7 +118,7 @@ var starttime;
         for (var m=0 ; m<measures.length ; m++)
         {
             var measure = measures[m];
-            measureHtml.push('<input onclick="run()" type="checkbox" name="chooseMeasure' + measure.name + '" value="measures:' + measure.uniqueName + '">' + measure.name + '<br>');
+            measureHtml.push('<div style="font-family:verdana; font-size:12pt; padding:2pt;"><input onclick="run()" type="checkbox" ' + (m==0?"checked":"") + ' name="chooseMeasure' + measure.name + '" value="measures:' + measure.uniqueName + '">' + measure.name + '</div>');
         }
 
         pivotDesignerPages.update(pagesHtml.join(''));
@@ -219,14 +240,31 @@ var starttime;
     function run()
     {
         updateModel();
+        updateFilterUI();
         executeQuery();
     }
 
     window.run = run;
 
+
+    function updateFilterUI()
+    {
+        var filterMap = {};
+        model.filter.forEach(function (uniqueName) {filterMap[uniqueName] = true;});
+        var selects = Ext4.DomQuery.select("SELECT.filter");
+        selects.forEach(function (s) {
+            if (filterMap[s.dataset.hierarchy])
+                Ext4.fly(s).removeCls("x-hidden");
+            else
+                Ext4.fly(s).addCls("x-hidden");
+        });
+        // call after updateModel
+    }
+
+
     function updateModel()
     {
-        model = {onRows:[], onColumns:[], filter:[], measures:[]};
+        model = {onRows:[], onColumns:[], filter:[], measures:[], filterValues:[]};
 
         // draggable elements
         var draggableDivs = Ext4.DomQuery.select("DIV.hierarchy");
@@ -252,6 +290,22 @@ var starttime;
             console.log(where + "||" + uniqueName);
             model[where].push(uniqueName);
         }
+
+        // active filters
+        var filterMap = {};
+        model.filter.forEach(function (uniqueName) {filterMap[uniqueName] = true;});
+        var selects = Ext4.DomQuery.select("SELECT.filter");
+        selects.forEach(function (s)
+        {
+            var hierarchy = filterMap[s.dataset.hierarchy];
+            if (!filterMap[s.dataset.hierarchy])
+                return;
+            var value = Ext4.get(s).getValue();
+            if (Ext4.String.endsWith(value,".[(All)]"))
+                return;
+            model.filterValues.push(value);
+        });
+
         console.log("model=" + JSON.stringify(model));
     }
 
@@ -280,7 +334,18 @@ var starttime;
             query += ", NON EMPTY " + rowexpr + " ON ROWS\n";
         }
 
-        query += "FROM " + cubeName;
+        query += "FROM " + cubeName + "\n";
+
+        if (model.filterValues.length !== 0)
+        {
+            query += " WHERE (";
+            var comma = "";
+            model.filterValues.forEach(function(s){
+                query += comma + s;
+                comma = ", ";
+            });
+            query += ")\n";
+        }
 
         console.log(query);
 
@@ -408,14 +473,19 @@ var starttime;
 <button onclick="run()">RUN</button>
 <table id="<%=text(pivotDesignerId)%>">
 <tr>
-    <td rowspan="2"><fieldset style="height:100%"><legend>pages (NYI)</legend><div class="drop" id="<%=text(pivotDesignerId)%>.pages" data-axis="pages" style="min-height:200pt;">&nbsp;</div></fieldset></td>
-    <td><fieldset height=100%><legend>filters</legend><div class="drop" id="<%=text(pivotDesignerId)%>.filter" data-axis="filter" style="min-height:100pt;">&nbsp;</div></fieldset></td>
-    <td><fieldset height=100%><legend>columns</legend><div class="drop" id="<%=text(pivotDesignerId)%>.columns" data-axis="onColumns" style="min-height:100pt;">&nbsp;</div></fieldset></td>
+    <td rowspan="2"><fieldset style="height:100%"><legend>pages (NYI)</legend><div class="drop" id="<%=text(pivotDesignerId)%>.pages" data-axis="pages" style="min-height:200pt; min-width:100pt;">&nbsp;</div></fieldset></td>
+    <td><fieldset height=100%><legend>filters</legend><div class="drop" id="<%=text(pivotDesignerId)%>.filter" data-axis="filter" style="min-height:100pt; min-width:100pt;">&nbsp;</div></fieldset></td>
+    <td><fieldset height=100%><legend>columns</legend><div class="drop" id="<%=text(pivotDesignerId)%>.columns" data-axis="onColumns" style="min-height:100pt; min-width:100pt;">&nbsp;</div></fieldset></td>
 </tr>
 <tr>
-    <td><fieldset height=100%><legend>rows</legend><div class="drop" id="<%=text(pivotDesignerId)%>.rows" data-axis="onRows" style="min-height:100pt;"></div></fieldset></td>
-    <td><fieldset height=100%><legend>measures</legend><div id="<%=text(pivotDesignerId)%>.measures" style="min-height:100pt;">&nbsp;</div></fieldset></td></tr>
+    <td><fieldset height=100%><legend>rows</legend><div class="drop" id="<%=text(pivotDesignerId)%>.rows" data-axis="onRows" style="min-height:100pt; min-width:100pt;"></div></fieldset></td>
+    <td><fieldset height=100%><legend>measures</legend><div id="<%=text(pivotDesignerId)%>.measures" style="min-height:100pt; min-width:100pt;">&nbsp;</div></fieldset></td></tr>
 </table>
 
+
+<select><option>filter me</option></select>
+<hr>
+<div id="<%=pivotDesignerId%>.filterArea"></div>
+<h3>I'm a page header</h3>
 <div id="<%=text(cellsetId)%>">
 </div>
