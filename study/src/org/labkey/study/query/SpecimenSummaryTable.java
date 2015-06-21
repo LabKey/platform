@@ -128,7 +128,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
             }
         });
 
-        addSpecimenCommentColumns(_userSchema, null, false, true);
+        addSpecimenCommentColumns(_userSchema, false);
 
         // use sql aggregates to 'OR' together the conflict bits of the vials associated with this specimen hash:
         SQLFragment sqlFragConflicts = new SQLFragment("(SELECT CASE WHEN COUNT(QualityControlFlag) = 0 OR " +
@@ -210,11 +210,15 @@ public class SpecimenSummaryTable extends BaseStudyTable
             FieldKey specimenHashKey = new FieldKey(me.getParent(), "SpecimenHash");
             // select the base 'comments' column (our bound column is an exprcolumn that doesn't simply select the base value):
             FieldKey commentsHashKey = new FieldKey(me.getParent(), "Comments");
-            FieldKey participantCommentKey = new FieldKey(me.getParent(), SpecimenCommentColumn.COLUMN_NAME);
+            FieldKey specimenCommentKey = new FieldKey(me.getParent(), SpecimenCommentColumn.COLUMN_NAME);
+            FieldKey participantCommentKey = new FieldKey(me.getParent(), SpecimenCommentColumn.PARTICIPANT_COMMENT_ALIAS);
+            FieldKey participantVisitCommentKey = new FieldKey(me.getParent(), SpecimenCommentColumn.PARTICIPANTVISIT_COMMENT_ALIAS);
             Set<FieldKey> fieldKeys = new HashSet<>();
             fieldKeys.add(specimenHashKey);
             fieldKeys.add(commentsHashKey);
+            fieldKeys.add(specimenCommentKey);
             fieldKeys.add(participantCommentKey);
+            fieldKeys.add(participantVisitCommentKey);
             Map<FieldKey, ColumnInfo> requiredColumns = QueryService.get().getColumns(getBoundColumn().getParentTable(), fieldKeys);
             _specimenHashColumn = requiredColumns.get(specimenHashKey);
             if (_specimenHashColumn != null)
@@ -222,9 +226,15 @@ public class SpecimenSummaryTable extends BaseStudyTable
             ColumnInfo col = requiredColumns.get(commentsHashKey);
             if (col != null)
                 columns.add(col);
+            ColumnInfo specimenCommentCol = requiredColumns.get(specimenCommentKey);
+            if (specimenCommentCol != null)
+                columns.add(specimenCommentCol);
             ColumnInfo participantCommentCol = requiredColumns.get(participantCommentKey);
             if (participantCommentCol != null)
                 columns.add(participantCommentCol);
+            ColumnInfo participantVisitCommentCol = requiredColumns.get(participantVisitCommentKey);
+            if (participantVisitCommentCol != null)
+                columns.add(participantVisitCommentCol);
         }
 
         private Map<String, String> _commentCache;
