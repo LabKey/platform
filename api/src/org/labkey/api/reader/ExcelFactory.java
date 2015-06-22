@@ -410,10 +410,15 @@ public class ExcelFactory
                         Cell cell = row.getCell(cellIndex, Row.CREATE_NULL_AS_BLANK);
                         String formatString = cell.getCellStyle().getDataFormatString();
                         String formattedValue;
-                        if (cell.getCellComment() != null && cell.getCellComment().getString() != null)
+                        try
                         {
-                            metadataMap.put("comment", cell.getCellComment().getString().getString());
+                            if (cell.getCellComment() != null && cell.getCellComment().getString() != null)
+                            {
+                                metadataMap.put("comment", cell.getCellComment().getString().getString());
+                            }
                         }
+                        // Workaround for issue 15437
+                        catch (NullPointerException ignored) {}
 
                         if ("General".equalsIgnoreCase(formatString))
                         {
