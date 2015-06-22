@@ -30,6 +30,7 @@ import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -395,7 +396,21 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         // Add the batch column, but replace the lookup with one to the assay's Batches table.
         ColumnInfo batchColumn = runTable.addColumn(AssayService.BATCH_COLUMN_NAME, ExpRunTable.Column.Batch);
-        batchColumn.setFk(new QueryForeignKey(this, getContainer(), AssayProtocolSchema.BATCHES_TABLE_NAME, "RowId", null));
+        batchColumn.setFk(new QueryForeignKey(this, getContainer(), AssayProtocolSchema.BATCHES_TABLE_NAME, "RowId", null)
+        {
+            // Issue 23399: Batch properties not accessible from copy to study Nab assay.
+            // Propagate run table's container filter to batch table
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                TableInfo result = super.getLookupTableInfo();
+                if (result instanceof ContainerFilterable)
+                {
+                    ((ContainerFilterable)result).setContainerFilter(new DelegatingContainerFilter(runTable));
+                }
+                return result;
+            }
+        });
 
         visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
         FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName());
