@@ -78,6 +78,7 @@ public class RequeueLostJobsRequest implements StatusRequest
                             {
                                 try
                                 {
+                                    _log.info("Requeueing job: "  + sf.getDescription());
                                     PipelineJobService.get().getJobStore().retry(sf);
                                 }
                                 catch (IOException | NoSuchJobException e)
