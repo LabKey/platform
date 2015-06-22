@@ -625,21 +625,25 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         // We actually need to handle the container filter in the "dataset with shared data" case
         if (_dsd.isShared())
         {
-            TableInfo tiParticipant = _userSchema.getDbSchema().getTable("Participant");
-            ColumnInfo ciContainer = tiParticipant.getColumn("Container");
             ContainerFilter cf = getContainerFilter();
-            SimpleFilter.FilterClause f = super.getContainerFilterClause(cf, ciContainer.getFieldKey());
-            SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
-            if (((DatasetDefinition) getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
+
+            if (null != cf.getIds(getContainer()))
             {
-                sqlf.append(" WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
-            }
-            else
-            {
-                // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
-                if (!StringUtils.startsWithIgnoreCase(sqlCF.getRawSQL(),"container"))
-                    throw new IllegalStateException("problem generating dataset SQL");
-                sqlf.append(" WHERE ").append(innerAlias).append(".").append(sqlCF);
+                TableInfo tiParticipant = _userSchema.getDbSchema().getTable("Participant");
+                ColumnInfo ciContainer = tiParticipant.getColumn("Container");
+                SimpleFilter.FilterClause f = super.getContainerFilterClause(cf, ciContainer.getFieldKey());
+                SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
+                if (((DatasetDefinition) getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
+                {
+                    sqlf.append(" WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
+                }
+                else
+                {
+                    // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
+                    if (!StringUtils.startsWithIgnoreCase(sqlCF.getRawSQL(), "container"))
+                        throw new IllegalStateException("problem generating dataset SQL");
+                    sqlf.append(" WHERE ").append(innerAlias).append(".").append(sqlCF);
+                }
             }
         }
 

@@ -558,6 +558,21 @@ public class StudyManager
         return Collections.unmodifiableSet(new LinkedHashSet<>(new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).getArrayList(StudyImpl.class)));
     }
 
+
+    public Set<? extends StudyImpl> getAllStudies(Container root)
+    {
+        Set<StudyImpl> result = new LinkedHashSet<>();
+        for (StudyImpl study : getAllStudies())
+        {
+            if (study.getContainer().equals(root) || study.getContainer().isDescendant(root))
+            {
+                result.add(study);
+            }
+        }
+        return Collections.unmodifiableSet(result);
+    }
+
+
     @NotNull
     public Set<? extends StudyImpl> getAllStudies(Container root, User user)
     {
@@ -611,6 +626,7 @@ public class StudyManager
             StudySchema.getInstance().getTableInfoSpecimenEvent(container, user);
             transaction.commit();
         }
+        ContainerManager.notifyContainerChange(container.getId(), ContainerManager.Property.StudyChange);
         return study;
     }
 
@@ -3081,12 +3097,15 @@ public class StudyManager
             transaction.commit();
         }
 
+        ContainerManager.notifyContainerChange(c.getId(), ContainerManager.Property.StudyChange);
+
         //
         // trust and verify... but only when asserts are on
         //
 
         assert verifyAllTablesWereDeleted(deletedTables);
     }
+
 
     /**
      * Drops the domains for the provisioned study data tables : Product, Treatment, ProductAntigen

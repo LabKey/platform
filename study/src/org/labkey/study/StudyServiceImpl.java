@@ -679,6 +679,12 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @Override
+    public Set<? extends Study> getAllStudies(Container root)
+    {
+        return StudyManager.getInstance().getAllStudies(root);
+    }
+
+    @Override
     public boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
     {
         try
