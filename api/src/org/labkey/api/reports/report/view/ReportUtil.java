@@ -356,7 +356,20 @@ public class ReportUtil
 
             if ((report.getDescriptor().getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
             {
-                return !c.getId().equals(report.getDescriptor().getContainerId());
+                Container reportContainer = ContainerManager.getForId(report.getDescriptor().getContainerId());
+                if (!c.equals(reportContainer))
+                {
+                    // not the current container but verify that it is from a parent container
+                    Container parent = c.getParent();
+                    while (parent != null)
+                    {
+                        if (parent.equals(reportContainer))
+                        {
+                            return true;
+                        }
+                        parent = parent.getParent();
+                    }
+                }
             }
         }
         return false;
