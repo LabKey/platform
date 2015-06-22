@@ -340,6 +340,7 @@ public class ReportManager implements DatasetManager.DatasetListener
      */
     public boolean canReadReport(User user, Container c, Report report)
     {
+/*
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor(), false);
 
         if (policy.isEmpty())
@@ -369,8 +370,7 @@ public class ReportManager implements DatasetManager.DatasetListener
                 return true;
             }
         }
-
-        // fall through
+*/
         return report.hasPermission(user, c, ReadPermission.class);
     }
 
