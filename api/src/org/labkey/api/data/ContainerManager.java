@@ -147,7 +147,9 @@ public class ContainerManager
         PipelineRoot,
         Title,
         Description,
-        SiteRoot
+        SiteRoot,
+
+        StudyChange
     }
 
     static Path makePath(Container parent, String name)
@@ -1582,6 +1584,11 @@ public class ContainerManager
 
     public static void notifyContainerChange(String id)
     {
+        notifyContainerChange(id, Property.Policy);
+    }
+
+    public static void notifyContainerChange(String id, Property prop)
+    {
         Container c = getForId(id);
         if (null != c)
         {
@@ -1589,7 +1596,7 @@ public class ContainerManager
             c = getForId(id);  // load a fresh container since the original might be stale.
             if (null != c)
             {
-                ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.Policy, null, null);
+                ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, prop, null, null);
                 firePropertyChangeEvent(evt);
             }
         }
@@ -1785,6 +1792,9 @@ public class ContainerManager
          */
         @NotNull
         Collection<String> canMove(Container c, Container newParent, User user);
+
+        @Override
+        void propertyChange(PropertyChangeEvent evt);
     }
 
     public static abstract class AbstractContainerListener implements ContainerListener

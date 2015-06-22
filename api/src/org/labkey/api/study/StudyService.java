@@ -173,6 +173,7 @@ public class StudyService
 
         /** @return all studies under the specified parent container that the user has at least read access to */
         Set<? extends Study> getAllStudies(Container root, User user);
+        Set<? extends Study> getAllStudies(Container root);
 
         boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 

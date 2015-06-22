@@ -15,6 +15,11 @@
  */
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -23,8 +28,10 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
 
-import java.util.ArrayList;
+import java.beans.PropertyChangeEvent;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -61,20 +68,99 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     @Override
     public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
     {
+        HashSet<GUID> allowedContainers = new HashSet<>();
         if (_containerIds != null && !_containerIds.isEmpty())
         {
-            List<GUID> containers = new ArrayList<>(_containerIds.size());
             for (GUID guid : _containerIds)
             {
                 Container c = ContainerManager.getForId(guid);
                 if (!c.isWorkbook() && c.hasPermission(_user, perm, roles))
-                    containers.add(guid);
+                    allowedContainers.add(guid);
             }
-            return containers;
+            if (currentContainer.hasPermission(_user,perm,roles))
+                allowedContainers.add(currentContainer.getEntityId());
         }
         else
         {
-            return super.getIds(currentContainer, perm, roles);
+            allowedContainers.addAll(super.getIds(currentContainer, perm, roles));
         }
+
+        Set<GUID> studyContainers = studiesCache.get(currentContainer.getId());
+        if (null == studyContainers)
+            studyContainers = Collections.emptySet();
+
+        // OPTIMIZATION: intersect the containers with permissions with the actual list of studies
+        // OPTIMIZATION: check if the list is a superset of all studies (e.g. no containers are filtered)
+        allowedContainers.retainAll(studyContainers);
+        if (allowedContainers.containsAll(studyContainers))
+            return null;
+        return allowedContainers;
     }
+
+
+
+    /*
+     CONSIDER: if there were a caching version of StudyService.get().getAllStudies(project)
+     we could do away with this cache
+    */
+    private static final StringKeyCache<Set<GUID>> studiesCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "Dataspace study cache", new CacheLoader<String,Set<GUID>>(){
+        @Override
+        public Set<GUID> load(String key, @Nullable Object argument)
+        {
+            Container project = ContainerManager.getForId(key);
+            if (null == project || !project.isProject())
+                return null;
+            HashSet<GUID> ret = new HashSet<>();
+            for (Study s : StudyService.get().getAllStudies(project))
+                ret.add(s.getContainer().getEntityId());
+            return ret;
+        }
+    });
+
+    static
+    {
+        ContainerManager.addContainerListener(new ContainerManager.ContainerListener(){
+            @Override
+            public void containerCreated(Container c, User user)
+            {
+                if (!c.isRoot())
+                    studiesCache.remove(c.getProject().getId());
+            }
+
+            @Override
+            public void containerDeleted(Container c, User user)
+            {
+                if (!c.isRoot())
+                    studiesCache.remove(c.getProject().getId());
+            }
+
+            @Override
+            public void containerMoved(Container c, Container oldParent, User user)
+            {
+                if (!c.isRoot())
+                    studiesCache.remove(c.getProject().getId());
+                if (!oldParent.isRoot())
+                    studiesCache.remove(oldParent.getProject().getId());
+            }
+
+            @NotNull
+            @Override
+            public Collection<String> canMove(Container c, Container newParent, User user)
+            {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                if (!(evt instanceof ContainerManager.ContainerPropertyChangeEvent))
+                    return;
+                ContainerManager.ContainerPropertyChangeEvent event = (ContainerManager.ContainerPropertyChangeEvent) evt;
+
+                if (!event.container.isRoot())
+                    studiesCache.remove(event.container.getProject().getId());
+            }
+        });
+    }
+
 }
