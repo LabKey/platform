@@ -18,6 +18,7 @@ package org.labkey.api.sequenceanalysis.pipeline;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -28,13 +29,39 @@ import java.util.List;
  */
 abstract public class AbstractAlignmentStepProvider<StepType extends AlignmentStep> extends AbstractPipelineStepProvider<StepType>
 {
-    private boolean _supportsPairedEnd;
+    public static String SUPPORT_MERGED_UNALIGNED = "supportsMergeUnaligned";
 
-    public AbstractAlignmentStepProvider(String name, String description, @Nullable List<ToolParameterDescriptor> parameters, @Nullable Collection<String> clientDependencyPaths, @Nullable String websiteURL, boolean supportsPairedEnd)
+    private boolean _supportsPairedEnd;
+    private boolean _supportsMergeUnaligned;
+
+    public AbstractAlignmentStepProvider(String name, String description, @Nullable List<ToolParameterDescriptor> parameters, @Nullable Collection<String> clientDependencyPaths, @Nullable String websiteURL, boolean supportsPairedEnd, boolean supportsMergeUnaligned)
     {
-        super(name, name, name, description, parameters, clientDependencyPaths, websiteURL);
+        super(name, name, name, description, getParamList(parameters, supportsMergeUnaligned), clientDependencyPaths, websiteURL);
 
         _supportsPairedEnd = supportsPairedEnd;
+        _supportsMergeUnaligned = supportsMergeUnaligned;
+    }
+
+    private static List<ToolParameterDescriptor> getParamList(List<ToolParameterDescriptor> list, boolean supportsMergeUnaligned)
+    {
+        List<ToolParameterDescriptor> parameters = new ArrayList<>();
+        if (list != null)
+        {
+            parameters.addAll(list);
+        }
+
+        if (supportsMergeUnaligned)
+        {
+            parameters.add(ToolParameterDescriptor.create(SUPPORT_MERGED_UNALIGNED, "Merge Unaligned Reads", "If checked, the pipeline will attempt to merge unaligned reads into the final BAM file.  This is generally a good idea since it ensures information is not lost; however, in some situations you may know upfront that you do not need these reads.", "checkbox", new JSONObject(){{
+                put("checked", true);
+            }}, true));
+        }
+        else
+        {
+            parameters.add(ToolParameterDescriptor.create(SUPPORT_MERGED_UNALIGNED, "Merge Unaligned Reads", "If checked, the pipeline will attempt to merge unaligned reads into the final BAM file.  This is generally a good idea since it ensures information is not lost; however, in some situations you may know upfront that you do not need these reads.", "hidden", null, false));
+        }
+
+        return parameters;
     }
 
     public boolean supportsPairedEnd()
@@ -42,11 +69,17 @@ abstract public class AbstractAlignmentStepProvider<StepType extends AlignmentSt
         return _supportsPairedEnd;
     }
 
+    public boolean isSupportsMergeUnaligned()
+    {
+        return _supportsMergeUnaligned;
+    }
+
     @Override
     public JSONObject toJSON()
     {
         JSONObject json = super.toJSON();
         json.put("supportsPairedEnd", supportsPairedEnd());
+        json.put("supportsMergeUnaligned", isSupportsMergeUnaligned());
 
         return json;
     }

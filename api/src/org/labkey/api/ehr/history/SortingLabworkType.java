@@ -32,7 +32,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -83,7 +82,7 @@ public class SortingLabworkType extends DefaultLabworkType
     @Override
     protected Map<String, List<String>> getRows(TableSelector ts, final Collection<ColumnInfo> cols, final boolean redacted)
     {
-        final Map<String, Map<Integer, List<String>>> rows = new HashMap<>();
+        final Map<String, Map<Integer, List<String>>> rows = new CaseInsensitiveHashMap<>();
         ts.forEach(new Selector.ForEachBlock<ResultSet>()
         {
             @Override
@@ -110,7 +109,7 @@ public class SortingLabworkType extends DefaultLabworkType
             }
         });
 
-        Map<String, List<String>> sortedResults = new HashMap<>();
+        Map<String, List<String>> sortedResults = new CaseInsensitiveHashMap<>();
         for (String runId : rows.keySet())
         {
             List<String> sorted = new ArrayList<>();

@@ -18,6 +18,7 @@ package org.labkey.api.ehr.history;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -152,7 +153,7 @@ public class DefaultLabworkType implements LabworkType
 
         Map<String, List<String>> rows = getRows(ts, cols, redacted);
 
-        Map<String, List<String>> formattedRows = new HashMap<>();
+        Map<String, List<String>> formattedRows = new CaseInsensitiveHashMap<>();
         for (String runId : rows.keySet())
         {
             List<String> results = rows.get(runId);
@@ -172,7 +173,7 @@ public class DefaultLabworkType implements LabworkType
 
     protected Map<String, List<String>> getRows(TableSelector ts, final Collection<ColumnInfo> cols, final boolean redacted)
     {
-        final Map<String, List<String>> rows = new HashMap<>();
+        final Map<String, List<String>> rows = new CaseInsensitiveHashMap<>();
         ts.forEach(new Selector.ForEachBlock<ResultSet>()
         {
             @Override

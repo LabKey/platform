@@ -155,6 +155,19 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             getModelBean().setRootOffset(form.getRootOffset());
         }
 
+        String path = webPartDescriptor.getPropertyMap().get("path");
+        if (null != path)
+        {
+            try
+            {
+                getModelBean().setDirectory(Path.decode(path));
+            }
+            catch (Throwable t)
+            {
+                _log.warn("improper path passed to webpart: [" + path + "]");
+            }
+        }
+
         setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
         setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
 
