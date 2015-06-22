@@ -1637,6 +1637,12 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
             return new SynonymForeignKeyResolver(pair.first, scope, pair.second);   // tableName is a synonym, so return a synonym resolver
     }
 
+    @Override
+    public boolean canExecuteUpgradeScripts()
+    {
+        return true;
+    }
+
 
     private @Nullable Pair<DbScope, Synonym> getSynonym(DbScope scope, String schemaName, String tableName)
     {

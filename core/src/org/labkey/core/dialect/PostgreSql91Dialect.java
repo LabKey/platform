@@ -905,6 +905,12 @@ public class PostgreSql91Dialect extends SqlDialect
         return super.getJDBCArrayType(object);
     }
 
+    @Override
+    public boolean canExecuteUpgradeScripts()
+    {
+        return true;
+    }
+
 
     @Override
     public String getMasterDataBaseName()
