@@ -40,6 +40,8 @@ import org.labkey.etl.xml.FilterType;
 
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -231,6 +233,17 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             timestamps.put(FilterTimestamp.END, incrementalEndTimestamp);
         else if (isUseRowversion(deleting) && incrementalEndTimestamp instanceof byte[])
             timestamps.put(FilterTimestamp.END, ByteBuffer.wrap((byte[]) incrementalEndTimestamp).getLong()); // a SQL Server timestamp column
+        else if (incrementalEndTimestamp instanceof String)
+        {
+            try
+            {
+                timestamps.put(FilterTimestamp.END, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse((String) incrementalEndTimestamp));
+            }
+            catch (ParseException e)
+            {
+                throw new IllegalArgumentException("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a date, timestamp or integer: " + incrementalEndTimestamp.toString());
+            }
+        }
         else
             throw new IllegalArgumentException("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a date, timestamp or integer: " + incrementalEndTimestamp.toString());
         return timestamps;
