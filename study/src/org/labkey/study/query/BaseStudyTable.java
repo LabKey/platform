@@ -560,6 +560,8 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                         specimenCommentJoin(parentAlias, map);
                     }
                 }).setHidden(true);
+                if (getSqlDialect().isSqlServer())
+                    field = "CAST((" + field + ") AS VARCHAR)";
                 commentFields.add(new Pair<>(field, "'Vial: '"));
             }
             if (ptidCommentTable != null && ptidCommentAlias != null)
