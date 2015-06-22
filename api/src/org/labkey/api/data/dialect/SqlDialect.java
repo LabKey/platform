@@ -884,6 +884,8 @@ public abstract class SqlDialect
         return STANDARD_RESOLVER;
     }
 
+    public abstract boolean canExecuteUpgradeScripts();
+
     protected static class StandardForeignKeyResolver implements ForeignKeyResolver
     {
         @Override

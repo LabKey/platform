@@ -57,6 +57,7 @@ public enum DbSchemaType
             if ("labkey".equals(requestedSchemaName))
                 return ModuleLoader.getInstance().getCoreModule();
 
+            // TODO requestedSchemaName should be the fully qualified name - Issue 23581
             Module module = ModuleLoader.getInstance().getModuleForSchemaName(requestedSchemaName);
 
             // For now, throw if no module claims this schema. We could relax this to an assert (and fall back to core)

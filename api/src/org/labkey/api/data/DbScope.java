@@ -999,9 +999,6 @@ public class DbScope
         // Only way to get the right dialect is to look up based on the driver class name.
         SqlDialect dialect = SqlDialectManager.getFromDriverClassname(dsName, props.getDriverClassName());
 
-        if (!dialect.isPostgreSQL() && !dialect.isSqlServer())
-            throw new ConfigurationException("Can't use data source \"" + dsName + "\" for module schemas; " + dialect.getProductName() + " does not support module schemas");
-
         SQLException lastException = null;
 
         // Attempt a connection three times before giving up

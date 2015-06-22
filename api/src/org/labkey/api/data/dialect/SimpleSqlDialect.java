@@ -423,6 +423,11 @@ public abstract class SimpleSqlDialect extends SqlDialect
         return true;
     }
 
+    @Override
+    public boolean canExecuteUpgradeScripts()
+    {
+        return false;
+    }
     // The following methods should never be called on a simple dialect.
 
     @Override

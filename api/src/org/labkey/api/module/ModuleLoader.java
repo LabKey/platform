@@ -1035,6 +1035,8 @@ public class ModuleLoader implements Filter
             try
             {
                 DbScope scope = DbScope.getDbScope(name);
+                if (!scope.getSqlDialect().canExecuteUpgradeScripts())
+                    continue;
 
                 // This should return a special DbSchema subclass (LabKeyDbSchema) that eliminates the data source prefix
                 // from display name, causing labkey-*-*.sql scripts to be found.
