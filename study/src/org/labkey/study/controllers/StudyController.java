@@ -54,7 +54,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -122,7 +121,6 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -196,7 +194,6 @@ import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
-import org.labkey.study.query.DataspaceQuerySchema;
 import org.labkey.study.query.LocationTable;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyPropertiesQueryView;
@@ -4485,8 +4482,9 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors) throws Exception
         {
+            _study = getStudyRedirectIfNull();
             Map<Integer, DatasetVisibilityData> bean = new HashMap<>();
-            for (Dataset def : getStudyRedirectIfNull().getDatasets())
+            for (Dataset def : _study.getDatasets())
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
                 data.label = def.getLabel();
@@ -4498,9 +4496,10 @@ public class StudyController extends BaseStudyController
                 data.status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
                 if ("None".equals(data.status))
                     data.status = null;
-                TableInfo t = def.getTableInfo(getViewContext().getUser());
-                boolean exists = new TableSelector(t).exists();
-                data.empty = !exists;
+                TableInfo t = def.getTableInfo(getViewContext().getUser(), false, _study.isDataspaceStudy());
+                long rowCount = new TableSelector(t).getRowCount();
+                data.rowCount = rowCount;
+                data.empty = 0 == rowCount;
                 bean.put(def.getDatasetId(), data);
             }
 
@@ -4612,6 +4611,7 @@ public class StudyController extends BaseStudyController
         public boolean visible;
 
         // not form POSTed -- used to render view
+        public long rowCount;
         public boolean empty;
         public boolean shared;
         public boolean inherited;
