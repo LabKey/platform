@@ -15,6 +15,8 @@
  */
 package org.labkey.study.visualization;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
@@ -59,5 +61,17 @@ public class DataspaceVisualizationProvider extends StudyVisualizationProvider
         String subjectVisit = subjectNounSingular + "Visit";
         String colName = (query.getQueryName().equalsIgnoreCase(subjectVisit) ? "" : subjectVisit + "/") + "sequencenum";
         return factory.create(query.getSchema(), query.getQueryName(), colName, true);
+    }
+
+    @Override
+    public String getSourceCountSql(@NotNull JSONArray sources, JSONArray members, String colName)
+    {
+        String sql = super.getSourceCountSql(sources, members, colName);
+
+        // special case for "SubjectVisit" table as it is not a dataset so it won't be included with the StudyVisualizationProvider.getSourceCountSql
+        if (sources.toString().contains("\"SubjectVisit\""))
+            sql += " UNION SELECT 'SubjectVisit', COUNT(DISTINCT ParticipantId) FROM SubjectVisit";
+
+        return sql;
     }
 }
