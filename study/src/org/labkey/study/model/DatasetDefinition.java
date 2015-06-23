@@ -1032,6 +1032,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     public void deleteAllRows(User user)
     {
         TableInfo data = getStorageTableInfo();
+        if (null == data)
+            return;
         DbScope scope =  StudySchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
