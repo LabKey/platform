@@ -854,6 +854,7 @@
       <ns:column columnName="Modified"/>
       <ns:column columnName="ModifiedBy"/>
       <ns:column columnName="Container"/>
+      <ns:column columnName="Generated"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="ExperimentRunDataOutputs" tableDbType="VIEW">
