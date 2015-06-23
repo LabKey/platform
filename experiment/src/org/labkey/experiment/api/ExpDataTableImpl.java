@@ -99,6 +99,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.FileSize);
         addColumn(Column.FileExtension);
         addColumn(Column.ViewOrDownload);
+        addColumn(Column.Generated);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Name));
@@ -363,6 +364,8 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 result.setDescription("Displays links to either download the file or view directly on the web site");
                 return result;
             }
+            case Generated:
+                return wrapColumn(alias, _rootTable.getColumn("Generated"));
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }

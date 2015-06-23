@@ -200,6 +200,18 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         return result == null ? ExpData.DEFAULT_CPAS_TYPE : result;
     }
 
+    public void setGenerated(boolean generated)
+    {
+        ensureUnlocked();
+        _object.setGenerated(generated);
+    }
+
+    @Override
+    public boolean isGenerated()
+    {
+        return _object.isGenerated();
+    }
+
     public void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException
     {
         String dataFileURL = getDataFileUrl();

@@ -174,12 +174,12 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                         Collection<File> contents = FileUtils.listFiles(f, FileFilterUtils.fileFileFilter(), FileFilterUtils.trueFileFilter());
                         for (File content : contents)
                         {
-                            action.addOutput(content, role, false);
+                            action.addOutput(content, role, false, true);
                         }
                     }
                     else
                     {
-                        action.addOutput(f, role, false);
+                        action.addOutput(f, role, false, true);
                     }
                 }
             }
@@ -261,7 +261,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             {
                 // Add it as an output if it's non-optional, or if it's optional and the file exists
                 File f = outputFile(fileWork, fileOutput);
-                action.addOutput(f, role, false);
+                action.addOutput(f, role, false, true);
             }
         }
     }

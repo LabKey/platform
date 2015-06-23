@@ -29,6 +29,7 @@ import java.net.URI;
 public class Data extends ProtocolOutput
 {
     private String dataFileUrl;
+    private boolean generated;
 
     public Data()
     {
@@ -60,6 +61,16 @@ public class Data extends ProtocolOutput
         {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    public boolean isGenerated()
+    {
+        return generated;
+    }
+
+    public void setGenerated(boolean generated)
+    {
+        this.generated = generated;
     }
 
     public boolean equals(Object o)

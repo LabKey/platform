@@ -39,6 +39,7 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
@@ -346,11 +347,15 @@ public class ExpGeneratorHelper
 
                     outputData = addData(job, datas, dd.getURI(), source);
                     outputData.setSourceApplication(app);
+                    if (dd.isGenerated())
+                        ((ExpDataImpl)outputData).setGenerated(true); // CONSIDER: Add .setGenerated() to ExpData interface
                     outputData.save(job.getUser());
                 }
                 else
                 {
                     outputData.setSourceApplication(app);
+                    if (dd.isGenerated())
+                        ((ExpDataImpl)outputData).setGenerated(true); // CONSIDER: Add .setGenerated() to ExpData interface
                     outputData.save(job.getUser());
                 }
             }
