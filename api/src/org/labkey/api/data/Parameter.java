@@ -765,7 +765,7 @@ public class Parameter implements AutoCloseable
             {
                 Parameter p = getParameter(name);
                 if (null == p)
-                    throw new IllegalArgumentException("parameter not found: " + name);
+                    throw new IllegalArgumentException("parameter not found: " + name + ", available parameters are: " + _map.keySet());
                 if (p._constant)
                     throw new IllegalStateException("Can't set constant parameter: " + name);
                 p.setValue(value);
