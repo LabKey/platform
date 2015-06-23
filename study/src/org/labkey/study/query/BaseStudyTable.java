@@ -561,7 +561,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                     }
                 }).setHidden(true);
                 if (getSqlDialect().isSqlServer())
-                    field = "CAST((" + field + ") AS VARCHAR)";
+                    field = "CAST((" + field + ") AS VARCHAR(500))";
                 commentFields.add(new Pair<>(field, "'Vial: '"));
             }
             if (ptidCommentTable != null && ptidCommentAlias != null)
@@ -654,7 +654,8 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
             for (int i = 0; i < fields.size(); i++)
             {
-                castFields[i] = "CAST((" + getSqlDialect().concatenate(sep, fields.get(i).second, fields.get(i).first) + ") AS VARCHAR)";
+                castFields[i] = "CAST((" + getSqlDialect().concatenate(sep, fields.get(i).second, fields.get(i).first) + ") AS VARCHAR" +
+                                 (getSqlDialect().isSqlServer() ? "(500)" : "") + ")";
                 sep = "', '";
             }
 
