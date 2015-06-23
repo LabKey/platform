@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
@@ -48,9 +49,19 @@ public class StudyProductTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("Type"));
     }
 
-    public StudyProductTable(Domain domain, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    public static StudyProductTable create(Domain domain, UserSchema schema, @com.drew.lang.annotations.Nullable ContainerFilter containerFilter)
     {
-        super(domain, schema, containerFilter);
+        TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
+        if (null == storageTableInfo)
+        {
+            throw new IllegalStateException("Could not create provisioned table for domain: " + domain.getTypeURI());
+        }
+        return new StudyProductTable(domain, storageTableInfo, schema, containerFilter);
+    }
+
+    private StudyProductTable(Domain domain, TableInfo storageTableInfo, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    {
+         super(domain, storageTableInfo, schema, containerFilter);
 
         setName(StudyQuerySchema.PRODUCT_TABLE_NAME);
         setDescription("Contains one row per study product");

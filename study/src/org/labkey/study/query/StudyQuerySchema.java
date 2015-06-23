@@ -690,28 +690,28 @@ public class StudyQuerySchema extends UserSchema
             StudyProductDomainKind domainKind = new StudyProductDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_TABLE_NAME);
 
-            return new StudyProductTable(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return StudyProductTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (PRODUCT_ANTIGEN_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyProductAntigenDomainKind domainKind = new StudyProductAntigenDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_ANTIGEN_TABLE_NAME);
 
-            return new StudyProductAntigenTable(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return StudyProductAntigenTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (TREATMENT_PRODUCT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentProductDomainKind domainKind = new StudyTreatmentProductDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
 
-            return new StudyTreatmentProductTable(domain, this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
+            return StudyTreatmentProductTable.create(domain, this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
         }
         if (TREATMENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentDomainKind domainKind = new StudyTreatmentDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_TABLE_NAME);
 
-            return new StudyTreatmentTable(domain, this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
+            return StudyTreatmentTable.create(domain, this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
         }
         if (TREATMENT_VISIT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -739,7 +739,7 @@ public class StudyQuerySchema extends UserSchema
             StudyPersonnelDomainKind domainKind = new StudyPersonnelDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PERSONNEL_TABLE_NAME);
 
-            return new StudyPersonnelTable(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return StudyPersonnelTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (OBJECTIVE_TABLE_NAME.equalsIgnoreCase(name))
         {

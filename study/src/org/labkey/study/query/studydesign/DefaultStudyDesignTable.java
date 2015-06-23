@@ -58,10 +58,10 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
     protected List<FieldKey> _defaultVisibleColumns = new ArrayList<>();
     private Domain _domain;
 
-    public DefaultStudyDesignTable(Domain domain, UserSchema schema)
-    {
-        super(StorageProvisioner.createTableInfo(domain), schema);
 
+    protected DefaultStudyDesignTable(Domain domain, TableInfo storageTableInfo,  UserSchema schema)
+    {
+        super(storageTableInfo, schema);
         _domain = domain;
 
         for (ColumnInfo baseColumn : getRealTable().getColumns())
@@ -126,12 +126,21 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
         initColumns();
     }
 
-    public DefaultStudyDesignTable(Domain domain, UserSchema schema, @Nullable ContainerFilter containerFilter)
+
+    protected DefaultStudyDesignTable(Domain domain, TableInfo storageTableInfo,  UserSchema schema, @Nullable ContainerFilter containerFilter)
     {
-        this(domain, schema);
+        this(domain, storageTableInfo, schema);
         if (null != containerFilter)
             _setContainerFilter(containerFilter);
     }
+
+
+    public static DefaultStudyDesignTable create(Domain domain, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    {
+        TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
+        return new DefaultStudyDesignTable(domain, storageTableInfo, schema, containerFilter);
+    }
+
 
     @Override
     public List<FieldKey> getDefaultVisibleColumns()

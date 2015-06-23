@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
@@ -51,9 +52,20 @@ public class StudyTreatmentTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("DescriptionRendererType"));
     }
 
-    public StudyTreatmentTable(Domain domain, UserSchema schema, @Nullable ContainerFilter filter)
+    public static StudyTreatmentTable create(Domain domain, UserSchema schema, @Nullable ContainerFilter filter)
     {
-        super(domain, schema, filter);
+        TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
+        if (null == storageTableInfo)
+        {
+            throw new IllegalStateException("Could not create provisioned table for domain: " + domain.getTypeURI());
+        }
+        return new StudyTreatmentTable(domain, storageTableInfo, schema, filter);
+    }
+
+
+    private StudyTreatmentTable(Domain domain, TableInfo storageTableInfo, UserSchema schema, @Nullable ContainerFilter filter)
+    {
+        super(domain, storageTableInfo, schema, filter);
 
         setName(StudyQuerySchema.TREATMENT_TABLE_NAME);
         setDescription("Contains one row per study treatment");

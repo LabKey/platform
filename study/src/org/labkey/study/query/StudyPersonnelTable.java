@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserIdForeignKey;
@@ -47,9 +49,20 @@ public class StudyPersonnelTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("UserId"));
     }
 
-    public StudyPersonnelTable(Domain domain, UserSchema schema, @Nullable ContainerFilter containerFilter)
+
+    public static StudyPersonnelTable create(Domain domain, UserSchema schema, @Nullable ContainerFilter containerFilter)
     {
-        super(domain, schema, containerFilter);
+        TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
+        if (null == storageTableInfo)
+        {
+            throw new IllegalStateException("Could not create provisioned table for domain: " + domain.getTypeURI());
+        }
+        return new StudyPersonnelTable(domain, storageTableInfo, schema, containerFilter);
+    }
+
+    private StudyPersonnelTable(Domain domain, TableInfo storageTableInfo, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    {
+        super(domain, storageTableInfo, schema, containerFilter);
 
         setName(StudyQuerySchema.PERSONNEL_TABLE_NAME);
         setDescription("Contains one row per each study personnel");
