@@ -1429,7 +1429,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpSampleSetImpl ensureDefaultSampleSet()
     {
-        ExpSampleSetImpl sampleSet = getSampleSet(ExperimentService.get().getDefaultSampleSetLsid());
+        ExpSampleSetImpl sampleSet = getSampleSet(getDefaultSampleSetLsid());
 
         if (null == sampleSet)
             return createDefaultSampleSet();
@@ -1444,9 +1444,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (null == matSource)
         {
             matSource = createSampleSet();
-            matSource.setLSID(ExperimentService.get().getDefaultSampleSetLsid());
+            matSource.setLSID(getDefaultSampleSetLsid());
             matSource.setName(DEFAULT_MATERIAL_SOURCE_NAME);
-            matSource.setMaterialLSIDPrefix(new Lsid("Sample", "Unspecified").toString() + "#");
+            matSource.setMaterialLSIDPrefix(new Lsid("Sample", DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#");
             matSource.setContainer(ContainerManager.getSharedContainer());
             matSource.save(null);
         }
