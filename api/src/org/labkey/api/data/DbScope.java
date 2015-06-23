@@ -152,6 +152,23 @@ public class DbScope
         }
     };
 
+
+    private static IllegalStateException createIllegalStateException(String message, @Nullable DbScope scope, @Nullable ConnectionWrapper conn)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (null != conn)
+        {
+            sb.append("SPID=").append(conn.getSPID()).append(" ");
+        }
+        if (null != scope)
+        {
+            sb.append("DbScope=").append(scope.getDisplayName()).append(" " );
+        }
+        sb.append(message);
+        throw new IllegalStateException(sb.toString());
+    }
+
+
     public static final TransactionKind FINAL_COMMIT_UNLOCK_TRANSACTION_KIND = new TransactionKind()
     {
         @NotNull
@@ -1489,7 +1506,7 @@ public class DbScope
             }
             if (_closesToIgnore < 0)
             {
-                throw new IllegalStateException("Popped too many closes from the stack");
+                throw createIllegalStateException("Popped too many closes from the stack",DbScope.this,_conn);
             }
         }
 
@@ -1498,13 +1515,13 @@ public class DbScope
         {
             if (_aborted)
             {
-                throw new IllegalStateException("Transaction has already been rolled back");
+                throw createIllegalStateException("Transaction has already been rolled back",DbScope.this,_conn);
             }
             if (_closesToIgnore > 0)
             {
                 _closesToIgnore = 0;
                 closeConnection();
-                throw new IllegalStateException("Missing expected call to close after prior commit");
+                throw createIllegalStateException("Missing expected call to close after prior commit",DbScope.this,_conn);
             }
 
             _closesToIgnore++;
@@ -1571,7 +1588,7 @@ public class DbScope
         {
             if (_locks.isEmpty())
             {
-                throw new IllegalStateException("No transactions remain, can't decrement!");
+                throw createIllegalStateException("No transactions remain, can't decrement!", DbScope.this, _conn);
             }
             List<Lock> locks= _locks.remove(_locks.size() - 1);
             for (Lock lock : locks)
