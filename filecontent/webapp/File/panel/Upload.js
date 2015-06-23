@@ -50,19 +50,6 @@ Ext4.define('File.panel.Upload', {
     },
 
     // From FileSystem.js
-    /*getPrefixUrl: function() {
-        var prefix = '';
-
-        prefix = this.concatPaths(this.baseURL, this.rootPath);
-
-        if (prefix.length > 0 && prefix.charAt(prefix.length-1) == this.separator){
-            prefix = prefix.substring(0,prefix.length-1);
-        }
-
-        return prefix;
-    },*/
-
-    // From FileSystem.js
     concatPaths : function(a,b)
     {
         var c = 0;
@@ -149,7 +136,7 @@ Ext4.define('File.panel.Upload', {
                 }
 
                 if (file.fullPath && file.fullPath.indexOf('/') != -1 && !canMkdir) {
-                    done("You don't have permission to create folders in '" + path + "'.")
+                    done("You don't have permission to create folders in '" + path + "'.");
                     return;
                 }
 
@@ -162,6 +149,11 @@ Ext4.define('File.panel.Upload', {
             },
 
             init : function () {
+
+                var getMaskElement = function(uploadPanel) {
+                    var browser = uploadPanel.up('filebrowser');
+                    return browser ? browser.getEl() : uploadPanel.getEl();
+                };
 
                 this.on('processing', function (file) {
                     var cwd = this.uploadPanel.getWorkingDirectory('cwd');
@@ -176,7 +168,7 @@ Ext4.define('File.panel.Upload', {
                         file.uri = this.uploadPanel.fileSystem.getURI(uri);
 
                         // Folder the file will be POSTed into
-                        var folderUri = this.uploadPanel.fileSystem.getParentPath(file.uri)
+                        var folderUri = this.uploadPanel.fileSystem.getParentPath(file.uri);
                         this.options.url = folderUri + '?overwrite=' + (overwrite ? 'T' : 'F');
                     }
                 });
@@ -194,11 +186,7 @@ Ext4.define('File.panel.Upload', {
                 this.on('sending', function (file, xhr, formData) {
                     if (!this.uploadPanel.isBusy()) {
                         this.uploadPanel.setBusy(true);
-
-                        this.parentToMask = this.uploadPanel.ownerCt.el.up("table");
-                        if (!this.parentToMask)
-                            this.parentToMask = this.uploadPanel.ownerCt.el;
-                        this.parentToMask.mask();
+                        getMaskElement(this.uploadPanel).mask();
 
                         this.uploadPanel.statusText.setText('Uploading ' + file.name + '...');
                     }
@@ -282,7 +270,7 @@ Ext4.define('File.panel.Upload', {
                 this.on('error', function (file, message, xhr) {
                     var title = 'Error';
                     // NOTE: we do not get a xhr response from labkey/_webdav
-                    if(xhr != undefined && xhr.readyState == 4)
+                    if (xhr != undefined && xhr.readyState == 4)
                     {
                         // here we should be able to provide a more meaningful message
                         if (xhr.status == 0 && xhr.statusText == "" && xhr.responseText == "" )
@@ -302,20 +290,18 @@ Ext4.define('File.panel.Upload', {
                     this.uploadPanel.showErrorMsg(title, message);
                 });
 
-                this.on('complete', function (file) {
-                });
+                //this.on('complete', function (file) {
+                //});
 
                 this.on('canceled', function (file) {
                     this.uploadPanel.statusText.setText('Canceled upload of ' + file.name);
                     this.uploadPanel.setBusy(false);
-                    if (this.parentToMask)
-                        this.parentToMask.unmask();
+                    getMaskElement(this.uploadPanel).unmask();
                 });
 
                 this.on('queuecomplete', function () {
                     this.uploadPanel.setBusy(false);
-                    if (this.parentToMask)
-                        this.parentToMask.unmask();
+                    getMaskElement(this.uploadPanel).unmask();
 
                     var errorFiles = [];
                     var fileRecords = [];
@@ -363,7 +349,7 @@ Ext4.define('File.panel.Upload', {
                     name     : 'rb-file-upload-type',
                     checked  : true,
                     handler  : function(cmp, checked) {
-                        if(checked){
+                        if (checked) {
                             uploadsPanel.getLayout().setActiveItem(this.getSingleUpload());
                         }
                     },
@@ -372,7 +358,7 @@ Ext4.define('File.panel.Upload', {
                     boxLabel : 'Multiple files',
                     name     : 'rb-file-upload-type',
                     handler  : function(cmp, checked) {
-                        if(checked){
+                        if (checked) {
                             uploadsPanel.getLayout().setActiveItem(this.getMultiUpload());
                         }
                     },
@@ -495,7 +481,7 @@ Ext4.define('File.panel.Upload', {
 
 
     getMultiUpload: function() {
-        if(this.multiUpload){
+        if (this.multiUpload) {
             return this.multiUpload;
         }
 
@@ -505,7 +491,8 @@ Ext4.define('File.panel.Upload', {
         if (window.Dropzone && window.Dropzone.isBrowserSupported()) {
             html = "To upload, drag files " + (Ext4.isChrome ? "and folders " : "") +
                     "from your desktop onto this file browser.";
-        } else {
+        }
+        else {
             html = "Your web browser doesn't support drag and drop uploading of files.<br>" +
                     "You can upgrade your web browser or upload multiple files using an external " +
                     "<a target=_blank href='https://www.labkey.org/wiki/home/Documentation/page.view?name=webdav'>WebDAV client</a>.";
@@ -623,8 +610,8 @@ Ext4.define('File.panel.Upload', {
                                         cls : 'data-window',
                                         icon : Ext4.Msg.QUESTION,
                                         buttons : Ext4.Msg.YESNO,
-                                        fn : function(btn){
-                                            if(btn == 'yes')
+                                        fn : function(btn) {
+                                            if (btn == 'yes')
                                                 this.doPost(true);
                                         },
                                         scope : this
