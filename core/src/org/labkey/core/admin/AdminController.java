@@ -3958,6 +3958,8 @@ public class AdminController extends SpringActionController
     public static class ManageFoldersForm extends ReturnUrlForm
     {
         private String name;
+        private String title;
+        private boolean titleSameAsName;
         private String folder;
         private String target;
         private String folderType;
@@ -4027,6 +4029,25 @@ public class AdminController extends SpringActionController
             return name;
         }
 
+        public String getTitle()
+        {
+            return title;
+        }
+
+        public void setTitle(String title)
+        {
+            this.title = title;
+        }
+
+        public boolean isTitleSameAsName()
+        {
+            return titleSameAsName;
+        }
+
+        public void setTitleSameAsName(boolean updateTitle)
+        {
+            this.titleSameAsName = updateTitle;
+        }
         public void setName(String name)
         {
             this.name = name;
@@ -4120,13 +4141,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
-    private String getTitle(String action)
-    {
-        return action + " " + (getContainer().isProject() ? "Project" : "Folder");
-    }
-
-
     @RequiresPermissionClass(AdminPermission.class)
     public class RenameFolderAction extends FormViewAction<ManageFoldersForm>
     {
@@ -4150,6 +4164,11 @@ public class AdminController extends SpringActionController
         public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
+            return updateFolderName(c, form, errors) && updateFolderTitle(c, form, errors);
+        }
+
+        private boolean updateFolderName(Container c, ManageFoldersForm form, BindException errors)
+        {
             String folderName = StringUtils.trimToNull(form.getName());
             StringBuilder error = new StringBuilder();
 
@@ -4187,6 +4206,27 @@ public class AdminController extends SpringActionController
             return false;
         }
 
+        private boolean updateFolderTitle(Container c, ManageFoldersForm form, BindException errors)
+        {
+            //if we have gotten this far, we can assume that the formName is valid.
+            String folderTitle = form.isTitleSameAsName() ? null : StringUtils.trimToNull(form.getTitle());
+            StringBuilder error = new StringBuilder();
+            if(Container.isLegalTitle(folderTitle, error))
+            {
+                try
+                {
+                    ContainerManager.updateTitle(c, folderTitle, getUser());
+                    return true;
+                }
+                catch (ValidationException e)
+                {
+                    error.append(e.getMessage());
+                }
+            }
+            errors.reject(ERROR_MSG, "Error: " + error + "  Please enter a different folder name.");
+            return false;
+        }
+
         public ActionURL getSuccessURL(ManageFoldersForm form)
         {
             return _returnURL;
@@ -4195,10 +4235,10 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
-            return appendAdminNavTrail(root, getTitle("Rename"), this.getClass());
+            String containerType = getContainer().isProject() ? "Project" : "Folder";
+            return appendAdminNavTrail(root, "Change " + containerType  + " Name Settings", this.getClass());
         }
     }
-
 
     public static ActionURL getShowMoveFolderTreeURL(Container c, boolean addAlias, boolean showAll)
     {
