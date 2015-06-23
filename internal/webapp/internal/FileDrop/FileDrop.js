@@ -168,7 +168,7 @@ LABKEY.internal.FileDrop = new function () {
                     "font-size: 40px;" +
                     "text-align:center;'>" +
                 "<span style='font-weight: bold'>" +
-                (Ext4.isChrome ? "Drop files or folders here" : "Drop files here") +
+                (Ext4.isChrome ? "Drop files or folders here" : "Drop files here</br>Folder upload requires Google Chrome") +
                 "</span>" +
                 "</div>";
 
