@@ -281,7 +281,8 @@ public class TabLoader extends DataLoader
         if (null == _reader)
         {
             _reader = _readerFactory.getReader();
-            _reader.mark(1024 * 1024);
+            // Issue 23437 - use a reasonably high limit for buffering
+            _reader.mark(10 * 1024 * 1024);
         }
 
         return _reader;
