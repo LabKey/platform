@@ -105,7 +105,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new UpdateSerivce(this);
+        return new UpdateService(this);
     }
 
     @Override
@@ -115,11 +115,11 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
         return super.persistRows(data, context);
     }
 
-    private class UpdateSerivce extends SimpleQueryUpdateService
+    private class UpdateService extends SimpleQueryUpdateService
     {
         private KeyManager _keyManager = new KeyManager();
 
-        public UpdateSerivce(SimpleUserSchema.SimpleTable ti)
+        public UpdateService(SimpleUserSchema.SimpleTable ti)
         {
             super(ti, ti.getRealTable());
         }
@@ -243,7 +243,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
 
             //set the value of the RowId column
             ColumnInfo pseudoPkCol = getColumn(_pseudoPk);
-            it.addColumn(pseudoPkCol, new Callable()
+            it.addColumn(pseudoPkCol, new Callable<Object>()
             {
                 @Override
                 public Object call() throws Exception
@@ -268,7 +268,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
                         Object pesudoPkVal = it.getInputColumnValue(inputColMap.get(_pseudoPk));
                         if (pesudoPkVal != null)
                         {
-                            if (keyManager.rowExists(c, pesudoPkVal))
+                            if (_context.getInsertOption() != QueryUpdateService.InsertOption.MERGE && keyManager.rowExists(c, pesudoPkVal))
                             {
                                 throw new ValidationException("A record is already present with value: " + pesudoPkVal);
                             }

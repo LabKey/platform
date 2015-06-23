@@ -379,8 +379,6 @@ public class StatementUtils
         {
             if (!this._dialect.isPostgreSQL() && !this._dialect.isSqlServer())
                 throw new IllegalArgumentException("Merge is only supported/tested on postgres and sql server");
-            if (_selectIds)
-                throw new IllegalArgumentException("Merge does not support the selectid option");
         }
 
         useVariables = Operation.merge == _operation; //  && dialect.isPostgreSQL();
@@ -663,6 +661,10 @@ public class StatementUtils
 
             if (_selectIds && null != autoIncrementColumn)
             {
+                if (Operation.merge == _operation)
+                {
+                    throw new IllegalArgumentException("Merge does not support the selectid option");
+                }
                 selectAutoIncrement = true;
                 if (null != objectIdVar)
                 {
@@ -750,6 +752,11 @@ public class StatementUtils
 
         if (_selectIds && (null != objectIdVar || null != rowIdVar))
         {
+            if (Operation.merge == _operation)
+            {
+                throw new IllegalArgumentException("Merge does not support the selectid option");
+            }
+
             sqlfSelectIds = new SQLFragment("SELECT ");
             comma = "";
             if (null != rowIdVar)

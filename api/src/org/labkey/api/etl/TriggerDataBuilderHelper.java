@@ -33,6 +33,8 @@ public class TriggerDataBuilderHelper
     final TableInfo _target;
     final Map<String,Object> _extraContext;
     final boolean _useImportAliases;
+    /** Only fire complete() if we got far enough to fire init() */
+    boolean firedInit = false;
 
     public TriggerDataBuilderHelper(TableInfo target, Container c, Map<String,Object> extraContext, boolean useImportAliases)
     {
@@ -117,6 +119,7 @@ public class TriggerDataBuilderHelper
             if (_firstRow)
             {
                 _target.fireBatchTrigger(_c, TableInfo.TriggerType.INSERT, true, getErrors(), _extraContext);
+                firedInit = true;
                 _firstRow = false;
             }
 
@@ -218,7 +221,7 @@ public class TriggerDataBuilderHelper
             }
             finally
             {
-                if (!hasNext)
+                if (!hasNext && firedInit)
                     _target.fireBatchTrigger(_c, TableInfo.TriggerType.INSERT, false, getErrors(), _extraContext);
             }
         }
