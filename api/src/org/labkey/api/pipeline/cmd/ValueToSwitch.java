@@ -20,7 +20,7 @@ import java.util.List;
 
 /**
  * <code>ValueToSwitch</code> returns the switch name regardless of what the value is, as long as it is not null
- * most likely used in conjuction with another cmd type (ex. ValueToSwitch and ValueToMultiCommandArgs) 
+ * most likely used in conjunction with another cmd type (ex. ValueToSwitch and ValueToMultiCommandArgs)
 */
 public class ValueToSwitch extends AbstractValueToNamedSwitch
 {

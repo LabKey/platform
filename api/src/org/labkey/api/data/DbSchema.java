@@ -117,6 +117,7 @@ public class DbSchema
 
     // "core" returns <<labkey scope>, "core">
     // "external.myschema" returns <<external scope>, "myschema">
+    @NotNull
     public static Pair<DbScope, String> getDbScopeAndSchemaName(String fullyQualifiedSchemaName)
     {
         int dot = fullyQualifiedSchemaName.indexOf('.');
