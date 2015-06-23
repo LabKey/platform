@@ -22,7 +22,10 @@
 <%@ page import="org.labkey.di.pipeline.TransformManager" %>
 <%@ page import="org.labkey.di.pipeline.TransformRun" %>
 <%@ page import="org.labkey.di.view.DataIntegrationController" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
@@ -198,7 +201,16 @@ function onResetStateClicked(el, id)
     </tr><%
 
 int row = 0;
-for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
+List<ScheduledPipelineJobDescriptor> sortedDescriptors = new ArrayList<>(descriptorsMap.values());
+Collections.sort(sortedDescriptors, new Comparator<ScheduledPipelineJobDescriptor>()
+{
+    @Override
+    public int compare(ScheduledPipelineJobDescriptor o1, ScheduledPipelineJobDescriptor o2)
+    {
+        return o1.getName().compareToIgnoreCase(o2.getName());
+    }
+});
+for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
 {
     row++;
     String id = descriptor.getId();
