@@ -107,21 +107,26 @@ public class BlockingCache<K, V> implements Cache<K, V>
         // we don't guarantee that two objects can't be loaded concurrently for the same key,
         // just that it's unlikely
 
-        //noinspection SynchronizationOnLocalVariableOrMethodParameter
-        synchronized (w)
+        synchronized (w.getLockObject())
         {
             if (isValid(w, key, argument, loader))
                 return w.getValue();
 
-            if (w.isLoading())
+            while (w.isLoading())
             {
-                try {w.wait(TimeUnit.MINUTES.toMillis(1));}catch (InterruptedException x) {/* */}
-                if (isValid(w, key, argument, loader))
-                    return w.getValue();
+                try
+                {
+                    w.getLockObject().wait(TimeUnit.MINUTES.toMillis(1));
+                }
+                catch (InterruptedException x)
+                {/* */}
+            }
+
+            if (isValid(w , key, argument, loader))
+                return w.getValue();
 
                 // if we fall through here it means there _could_ be two threads trying to load the same object
                 // the cache loader needs to support that
-            }
 
             w.setLoading();
         }
@@ -139,11 +144,10 @@ public class BlockingCache<K, V> implements Cache<K, V>
             V value = loader.load(key, argument);
             CacheManager.validate(loader, value);
 
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (w)
+            synchronized (w.getLockObject())
             {
                 w.setValue(value);
-                w.notifyAll();
+                w.getLockObject().notifyAll();
             }
             success = true;
             return value;
@@ -153,10 +157,10 @@ public class BlockingCache<K, V> implements Cache<K, V>
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             if (!success)
             {
-                synchronized (w)
+                synchronized (w.getLockObject())
                 {
                     w.doneLoading();
-                    w.notifyAll();
+                    w.getLockObject().notifyAll();
                 }
             }
         }

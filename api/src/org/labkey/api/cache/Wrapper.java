@@ -31,25 +31,34 @@ public class Wrapper<V>
     // weak reference, because I'm paranoid of accidently holding onto threads
     protected WeakReference<Thread> loadingThread;
 
+    Object getLockObject()
+    {
+        return this;
+    }
+
     void setLoading()
     {
+        assert Thread.holdsLock(getLockObject());
         loadingThread = new WeakReference<>(Thread.currentThread());
     }
 
     // call in finally
     void doneLoading()
     {
+        assert Thread.holdsLock(getLockObject());
         loadingThread = null;
     }
 
     void loadFailed()
     {
+        assert Thread.holdsLock(this);
         value =  (V) BlockingCache.UNINITIALIZED;
         doneLoading();
     }
 
     boolean isLoading()
     {
+        assert Thread.holdsLock(getLockObject());
         Thread t = null==loadingThread ? null : loadingThread.get();
         if (null == t)
             return false;
@@ -60,12 +69,14 @@ public class Wrapper<V>
 
     void setValue(V v)
     {
+        assert Thread.holdsLock(getLockObject());
         value = v;
         doneLoading();
     }
 
     public V getValue()
     {
+        assert Thread.holdsLock(getLockObject());
         return value == BlockingCache.UNINITIALIZED ? null : value;
     }
 }
