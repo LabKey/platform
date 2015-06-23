@@ -67,17 +67,27 @@ public class RecordedAction
 
     public void addInput(URI input, String role)
     {
-        _inputs.add(new DataFile(input, role, false));
+        _inputs.add(new DataFile(input, role, false, false));
     }
 
     public void addOutput(File output, String role, boolean transientFile)
     {
-        addOutput(output.toURI(), role, transientFile);
+        addOutput(output.toURI(), role, transientFile, false);
+    }
+
+    public void addOutput(File output, String role, boolean transientFile, boolean generated)
+    {
+        addOutput(output.toURI(), role, transientFile, generated);
     }
 
     public void addOutput(URI output, String role, boolean transientFile)
     {
-        _outputs.add(new DataFile(output, role, transientFile));
+        addOutput(output, role, transientFile, false);
+    }
+
+    public void addOutput(URI output, String role, boolean transientFile, boolean generated)
+    {
+        _outputs.add(new DataFile(output, role, transientFile, generated));
     }
 
     public Set<DataFile> getInputs()
@@ -220,6 +230,7 @@ public class RecordedAction
         private URI _uri;
         private String _role;
         private boolean _transient;
+        private boolean _generated;
 
         // No-args constructor to support de-serialization in Java 7
         @SuppressWarnings({"UnusedDeclaration"})
@@ -227,11 +238,12 @@ public class RecordedAction
         {
         }
 
-        public DataFile(URI uri, String role, boolean transientFile)
+        public DataFile(URI uri, String role, boolean transientFile, boolean generated)
         {
             _uri = uri;
             _role = role;
             _transient = transientFile;
+            _generated = generated;
         }
 
         public URI getURI()
@@ -266,6 +278,11 @@ public class RecordedAction
             result = (_uri != null ? _uri.hashCode() : 0);
             result = 31 * result + (_role != null ? _role.hashCode() : 0);
             return result;
+        }
+
+        public boolean isGenerated()
+        {
+            return _generated;
         }
     }
 
