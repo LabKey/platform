@@ -38,6 +38,9 @@ import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.SpecimenEventDomainKind;
 import org.labkey.study.model.VialDomainKind;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class SpecimenTablesProvider
 {
     public static final String SCHEMA_NAME = "specimentables";
@@ -155,46 +158,22 @@ public class SpecimenTablesProvider
 
     public void deleteTables()
     {
-        try
+        List<String> tableNames = Arrays.asList(SPECIMENEVENT_TABLENAME, VIAL_TABLENAME, SPECIMEN_TABLENAME, LOCATION_TABLENAME,
+                                                PRIMARYTYPE_TABLENAME, DERIVATIVETYPE_TABLENAME, ADDITIVETYPE_TABLENAME);
+        for (String tableName : tableNames)
         {
-            Domain domain = getDomain(SPECIMENEVENT_TABLENAME, false);
-            if (null != domain)
+            try
             {
-                domain.delete(_user);
+                Domain domain = getDomain(tableName, false);
+                if (null != domain)
+                {
+                    domain.delete(_user);
+                }
             }
-            domain = getDomain(VIAL_TABLENAME, false);
-            if (null != domain)
+            catch (DomainNotFoundException | RuntimeSQLException e)
             {
-                domain.delete(_user);
+                // ignore
             }
-            domain = getDomain(SPECIMEN_TABLENAME, false);
-            if (null != domain)
-            {
-                domain.delete(_user);
-            }
-            domain = getDomain(LOCATION_TABLENAME, false);
-            if (null != domain)
-            {
-                domain.delete(_user);
-            }
-            domain = getDomain(PRIMARYTYPE_TABLENAME, false);
-            if (null != domain)
-            {
-                domain.delete(_user);
-            }
-            domain = getDomain(DERIVATIVETYPE_TABLENAME, false);
-            if (null != domain)
-            {
-                domain.delete(_user);
-            }
-            domain = getDomain(ADDITIVETYPE_TABLENAME, false);
-            if (null != domain)
-            {
-                domain.delete(_user);
-            }
-        }
-        catch (DomainNotFoundException e)
-        {
         }
     }
 
