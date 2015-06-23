@@ -728,6 +728,7 @@ public class AdminController extends SpringActionController
             "<table>" +
             "<tr><td class='labkey-form-label'>Path</td><td>" + PageFlowUtil.filter(c.getPath()) + "</td></tr>" +
             "<tr><td class='labkey-form-label'>Name</td><td>" + PageFlowUtil.filter(c.getName()) + "</td></tr>" +
+            "<tr><td class='labkey-form-label'>Displayed Title</td><td>" + PageFlowUtil.filter(c.getTitle()) + "</td></tr>" +
             "<tr><td class='labkey-form-label'>EntityId</td><td>" + c.getId() + "</td></tr>" +
             "<tr><td class='labkey-form-label'>RowId</td><td>" + c.getRowId() + "</td></tr>" +
             "<tr><td class='labkey-form-label'>Created</td><td>" + c.getCreated() + "</td></tr>" +
