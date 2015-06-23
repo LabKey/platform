@@ -81,6 +81,7 @@ public class RedcapController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("redCap");
             return root.addChild("REDCap Configuration");
         }
     }
