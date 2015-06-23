@@ -114,8 +114,8 @@ public class CustomFolderType implements FolderType
         List<NavTree> tabs = new ArrayList<>();
 
         Container container = context.getContainer();
-        String name = container.getName();
-        ActionURL url = container.getStartURL(context.getUser()); 
+        String name = container.getTitle().isEmpty() ? container.getName() : container.getTitle();
+        ActionURL url = container.getStartURL(context.getUser());
         if (!container.isRoot())
         {
             Set<Module> containerModules = container.getActiveModules();

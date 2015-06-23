@@ -1299,6 +1299,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return null != _title ? _title : getName();
     }
 
+    public boolean isTitleFieldSet()
+    {
+        return null != _title;
+    }
+
     public void setTitle(String title)
     {
         _title = title;

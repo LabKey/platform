@@ -316,8 +316,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
     protected String getFolderTitle(ViewContext context)
     {   // Default; often overridden
-        String title = context.getContainer().isWorkbook() ? context.getContainer().getTitle() : context.getContainer().getName();
-        return title;
+        return context.getContainer().getTitle();
     }
 
 
