@@ -11,17 +11,17 @@
     <orderEntry type="module" module-name="API" />
     <orderEntry type="module" module-name="Internal" />
     <orderEntry type="module-library">
-      <library name="Lucene 5.20">
+      <library name="Lucene 5.2.1">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-common-5.2.0.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/lucene-core-5.2.0.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/lucene-queryparser-5.2.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-common-5.2.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-core-5.2.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-queryparser-5.2.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-5.2.0-src.zip!/analysis/common/src/java" />
-          <root url="jar://$MODULE_DIR$/lib/lucene-5.2.0-src.zip!/core/src/java" />
-          <root url="jar://$MODULE_DIR$/lib/lucene-5.2.0-src.zip!/queryparser/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-5.2.1-src.zip!/analysis/common/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-5.2.1-src.zip!/core/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-5.2.1-src.zip!/queryparser/src/java" />
         </SOURCES>
       </library>
     </orderEntry>

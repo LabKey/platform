@@ -1886,11 +1886,11 @@ redcap/src/org/labkey/redcap/RedcapReloadSource.java -text
 redcap/src/org/labkey/redcap/view/configure.jsp -text
 search/Search.iml -text
 search/lib/instructions.txt -text
-search/lib/lucene-5.2.0-src.zip -text
-search/lib/lucene-analyzers-common-5.2.0.jar -text
-search/lib/lucene-backward-codecs-5.2.0.jar -text
-search/lib/lucene-core-5.2.0.jar -text
-search/lib/lucene-queryparser-5.2.0.jar -text
+search/lib/lucene-5.2.1-src.zip -text
+search/lib/lucene-analyzers-common-5.2.1.jar -text
+search/lib/lucene-backward-codecs-5.2.1.jar -text
+search/lib/lucene-core-5.2.1.jar -text
+search/lib/lucene-queryparser-5.2.1.jar -text
 search/module.properties -text
 search/resources/credits/jars.txt -text
 search/resources/schemas/dbscripts/postgresql/obsolete/search-0.00-10.10.sql -text
