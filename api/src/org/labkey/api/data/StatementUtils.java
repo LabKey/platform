@@ -981,6 +981,11 @@ public class StatementUtils
         assert null != jdbcType;
         String type = _dialect.sqlTypeNameFromJdbcType(jdbcType);
         assert null != type;
+        // Workaround - SQLServer doesn't support TEXT, NTEXT, or IMAGE as local variables in statements, but is OK with NVARCHAR(MAX)
+        if (("NTEXT".equalsIgnoreCase(type) || "TEXT".equalsIgnoreCase(type)) && _dialect.isSqlServer())
+        {
+            type = "NVARCHAR(MAX)";
+        }
         sqlfDeclare.append(type);
         if (jdbcType.isText() && ph.p.getType() != JdbcType.LONGVARCHAR && ph.p.getType() != JdbcType.GUID)
         {
