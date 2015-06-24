@@ -855,7 +855,7 @@ public class OlapController extends SpringActionController
                 try
                 {
                     start = System.currentTimeMillis();
-                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, getConnection(sd), qquery, errors);
+                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, null, qquery, errors);
                     if (null != cf)
                         bitsetquery.setContainerFilter(getContainerCollection(cf));
                     cs = bitsetquery.executeQuery();
@@ -1048,6 +1048,8 @@ public class OlapController extends SpringActionController
     }
 
 
+
+    // TODO move these annotations out of the schema.xml file, and into a separate .config.xml file
     @Nullable
     private String getAnnotation(Cube cube, String name)  throws SQLException
     {
