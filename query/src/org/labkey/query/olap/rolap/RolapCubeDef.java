@@ -21,6 +21,7 @@ import static org.apache.commons.lang3.StringUtils.*;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -422,7 +423,7 @@ public class RolapCubeDef
 
         private void validate()
         {
-            Map<String,JoinOrTable> tables = new HashMap<>();
+            Map<String,JoinOrTable> tables = new CaseInsensitiveHashMap<>();
             _validate(tables);
         }
 
@@ -623,6 +624,12 @@ public class RolapCubeDef
             }
             if (null == primaryKeyTable && null != join)
                 primaryKeyTable = join.tableName;
+
+            if (null != join)
+            {
+                if (null==join.tables.get(primaryKeyTable))
+                    throw new IllegalStateException("Could not find primaryKeyTable: " + primaryKeyTable + " in hierarchy definition: " + name);
+            }
         }
 
 
@@ -642,6 +649,7 @@ public class RolapCubeDef
                 return;
             this.join.addJoins(joins);
             JoinOrTable pkTable = join.tables.get(primaryKeyTable);
+            assert null != pkTable;
             Join j = new Join(
                     new Path(cube.factTable.schemaName, cube.factTable.tableName, dimension.foreignKey),
                     new Path(pkTable.schemaName, pkTable.tableName, primaryKey));
