@@ -113,7 +113,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
             HashSet<GUID> ret = new HashSet<>();
             for (Study s : StudyService.get().getAllStudies(project))
                 ret.add(s.getContainer().getEntityId());
-            return ret;
+            return Collections.unmodifiableSet(ret);
         }
     });
 
