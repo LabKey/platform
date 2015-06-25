@@ -160,7 +160,7 @@ public class RequestNotificationSettings
     {
         if (_cc == null || _cc.length() == 0)
             return null;
-        StringTokenizer splitter = new StringTokenizer(_cc, ",;: \t\n\r");
+        StringTokenizer splitter = new StringTokenizer(_cc, ",;:\t\n\r");
         List<Address> addresses = new ArrayList<>();
         while (splitter.hasMoreTokens())
         {
@@ -175,7 +175,7 @@ public class RequestNotificationSettings
     {
         if (_newRequestNotify == null || _newRequestNotify.length() == 0)
             return null;
-        StringTokenizer splitter = new StringTokenizer(_newRequestNotify, ",;: \t\n\r");
+        StringTokenizer splitter = new StringTokenizer(_newRequestNotify, ",;:\t\n\r");
         List<Address> addresses = new ArrayList<>();
         while (splitter.hasMoreTokens())
         {
