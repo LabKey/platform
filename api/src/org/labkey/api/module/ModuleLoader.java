@@ -528,7 +528,7 @@ public class ModuleLoader implements Filter
         {
             SqlScriptManager manager = SqlScriptManager.get(provider, schema);
 
-            if (manager.requiresUpgrade())
+            if (schema.getSqlDialect().canExecuteUpgradeScripts() && manager.requiresUpgrade())
                 schemaNames.add(schema.getDisplayName());
         }
 
