@@ -327,6 +327,7 @@ core/src/org/labkey/core/CoreController.java -text
 core/src/org/labkey/core/CoreFirstRequestHandler.java -text
 core/src/org/labkey/core/CoreModule.java -text
 core/src/org/labkey/core/CoreUpgradeCode.java -text
+core/src/org/labkey/core/LabKeyDbSchema.java -text
 core/src/org/labkey/core/ModuleInfoTestCase.java -text
 core/src/org/labkey/core/ModulePropertiesTestCase.java -text
 core/src/org/labkey/core/admin/AbstractFileSiteSettingsAction.java -text

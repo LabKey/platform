@@ -875,6 +875,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     @Override
+    public DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, String> metaDataTableNames)
+    {
+        // Special case for the "labkey" schema we create in every module data source
+        if ("labkey".equals(metaDataName))
+            return new LabKeyDbSchema(scope, metaDataTableNames);
+
+        return super.createModuleDbSchema(scope, metaDataName, metaDataTableNames);
+    }
+
+    @Override
     @NotNull
     public Collection<String> getSchemaNames()
     {
@@ -901,7 +911,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Set<DbSchema> result = new LinkedHashSet<>(super.getSchemasToTest());
 
         // Add the "labkey" schema in all module data sources as well... should match labkey.xml
-        for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSources())
+        for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSourceNames())
         {
             DbScope scope = DbScope.getDbScope(dataSourceName);
             result.add(scope.getLabKeySchema());
