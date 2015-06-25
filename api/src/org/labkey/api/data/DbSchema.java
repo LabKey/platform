@@ -175,52 +175,17 @@ public class DbSchema
 
     public static @NotNull DbSchema createFromMetaData(DbScope scope, String requestedSchemaName, DbSchemaType type) throws SQLException
     {
-        Module module = type.getModule(requestedSchemaName);
+        String fullyQualifiedSchemaName = DbSchema.getDisplayName(scope, requestedSchemaName);
+        Module module = type.getModule(fullyQualifiedSchemaName);
 
         if (null != module)
-            requestedSchemaName = module.getDatabaseSchemaName(requestedSchemaName);
+            fullyQualifiedSchemaName = module.getDatabaseSchemaName(fullyQualifiedSchemaName);
 
+        String schemaName = DbSchema.getDbScopeAndSchemaName(fullyQualifiedSchemaName).second;
         Map<String, String> schemaNameMap = SchemaNameCache.get().getSchemaNameMap(scope);
-        String metaDataName = schemaNameMap.get(requestedSchemaName);
+        String metaDataName = schemaNameMap.get(schemaName);
 
-        // TODO: mark this schema as not in the database
-        if (null == metaDataName)
-            return new DbSchema(requestedSchemaName, type, scope, new HashMap<String, String>());
-
-        return type.createDbSchema(scope, metaDataName, module);
-    }
-
-
-    // Special subclass to handle the peculiarities of the "labkey" schema that gets created in all module-required
-    // external data sources. Key changes:
-    // 1. Override getDisplayName() to eliminate the standard datasource prefix, so labkey-*-*.sql scripts are found
-    // 2. Override getSchemaResource() to resolve labkey.xml
-    public static class LabKeyDbSchema extends DbSchema
-    {
-        public LabKeyDbSchema(DbScope scope, Map<String, String> metaDataTableNames)
-        {
-            super("labkey", DbSchemaType.Module, scope, metaDataTableNames);
-        }
-
-        @Override
-        public String getDisplayName()
-        {
-            return "labkey";
-        }
-
-        @Override
-        public Resource getSchemaResource(String schemaName) throws IOException
-        {
-            // CoreModule does not claim the "labkey" schema because we don't want to install this schema in the labkey
-            // datasource. Override here so we find labkey.xml; this eliminates warnings and supports junit tests.
-            return getSchemaResource(ModuleLoader.getInstance().getCoreModule(), schemaName);
-        }
-
-        @Override
-        public String toString()
-        {
-            return "LabKeyDbSchema in \"" + getScope().getDisplayName() + "\"";
-        }
+        return type.createDbSchema(scope, null == metaDataName ? requestedSchemaName : metaDataName, module);
     }
 
 

@@ -1030,7 +1030,7 @@ public class ModuleLoader implements Filter
         FileSqlScriptProvider provider = new FileSqlScriptProvider(coreModule);
         double to = coreModule.getVersion();
 
-        for (String name : getAllModuleDataSources())
+        for (String name : getAllModuleDataSourceNames())
         {
             try
             {
@@ -1537,30 +1537,30 @@ public class ModuleLoader implements Filter
     }
 
     // Returns a set of data source names representing all external data sources that are required for module schemas
-    public Set<String> getAllModuleDataSources()
+    public Set<String> getAllModuleDataSourceNames()
     {
         // Find all the external data sources that modules require
-        Set<String> allModuleDataSources = new LinkedHashSet<>();
+        Set<String> allModuleDataSourceNames = new LinkedHashSet<>();
 
         for (Module module : _modules)
-            allModuleDataSources.addAll(getModuleDataSources(module));
+            allModuleDataSourceNames.addAll(getModuleDataSourceNames(module));
 
-        return allModuleDataSources;
+        return allModuleDataSourceNames;
     }
 
-    public Set<String> getModuleDataSources(Module module)
+    public Set<String> getModuleDataSourceNames(Module module)
     {
-        Set<String> moduleDataSources = new LinkedHashSet<>();
+        Set<String> moduleDataSourceNames = new LinkedHashSet<>();
 
         for (String schemaName : module.getSchemaNames())
         {
             int idx = schemaName.indexOf('.');
 
             if (-1 != idx)
-                moduleDataSources.add(schemaName.substring(0, idx) + "DataSource");
+                moduleDataSourceNames.add(schemaName.substring(0, idx) + "DataSource");
         }
 
-        return moduleDataSources;
+        return moduleDataSourceNames;
     }
 
     public String getAdminOnlyMessage()
@@ -1640,23 +1640,23 @@ public class ModuleLoader implements Filter
 
 
     /*  Use data source qualified name (e.g., core or external.myschema)  */
-    public @Nullable Module getModuleForSchemaName(String schemaName)
+    public @Nullable Module getModuleForSchemaName(String fullyQualifiedSchemaName)
     {
-        SchemaDetails details = getSchemaDetails(schemaName);
+        SchemaDetails details = getSchemaDetails(fullyQualifiedSchemaName);
 
         return null != details ? details.getModule() : null;
     }
 
     /*  Use data source qualified name (e.g., core or external.myschema)  */
-    public @Nullable DbSchemaType getSchemaTypeForSchemaName(String schemaName)
+    public @Nullable DbSchemaType getSchemaTypeForSchemaName(String fullyQualifiedSchemaName)
     {
-        SchemaDetails details = getSchemaDetails(schemaName);
+        SchemaDetails details = getSchemaDetails(fullyQualifiedSchemaName);
 
         return null != details ? details.getType() : null;
     }
 
     /*  Use data source qualified name (e.g., core or external.myschema)  */
-    private @Nullable SchemaDetails getSchemaDetails(String schemaName)
+    private @Nullable SchemaDetails getSchemaDetails(String fullyQualifiedSchemaName)
     {
         synchronized(_schemaNameToSchemaDetails)
         {
@@ -1671,10 +1671,27 @@ public class ModuleLoader implements Filter
                         DbSchemaType type = provisioned.contains(name) ? DbSchemaType.Provisioned : DbSchemaType.Module;
                         _schemaNameToSchemaDetails.put(name, new SchemaDetails(module, type));
                     }
+
+                    // Now register the special "labkey" schema we create in each module data source and associate it with the core module
+                    if (module instanceof DefaultModule && ((DefaultModule)module).hasScripts())
+                    {
+                        Set<String> moduleDataSourceNames = getModuleDataSourceNames(module);
+
+                        for (String moduleDataSourceName : moduleDataSourceNames)
+                        {
+                            DbScope scope = DbScope.getDbScope(moduleDataSourceName);
+
+                            if (null != scope && scope.getSqlDialect().canExecuteUpgradeScripts())
+                            {
+                                String labkeySchemaName = DbSchema.getDisplayName(scope, "labkey");
+                                _schemaNameToSchemaDetails.put(labkeySchemaName, new SchemaDetails(getCoreModule(), DbSchemaType.Module));
+                            }
+                        }
+                    }
                 }
             }
 
-            return _schemaNameToSchemaDetails.get(schemaName);
+            return _schemaNameToSchemaDetails.get(fullyQualifiedSchemaName);
         }
     }
 

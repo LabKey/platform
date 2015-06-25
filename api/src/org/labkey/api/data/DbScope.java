@@ -796,12 +796,13 @@ public class DbScope
 
         if (null == resource)
         {
-            LOG.info("no schema metadata xml file found for schema '" + schemaName + "'");
+            String displayName = DbSchema.getDisplayName(schema.getScope(), schemaName);
+            LOG.info("no schema metadata xml file found for schema \"" + displayName + "\"");
 
             DbSchemaType type = ModuleLoader.getInstance().getSchemaTypeForSchemaName(schemaName);
 
             if (null != type && !type.applyXmlMetaData())
-                LOG.info("Shouldn't be loading metadata for " + type.name() + " schema '" + schemaName + "'");
+                LOG.info("Shouldn't be loading metadata for " + type.name() + " schema \"" + displayName + "\"");
         }
         else
         {
@@ -927,7 +928,7 @@ public class DbScope
                 throw new IllegalStateException(labkeyDsName + " DataSource not found");
 
             // Find all the external data sources required by module schemas; we attempt to create these databases
-            Set<String> moduleDataSources = ModuleLoader.getInstance().getAllModuleDataSources();
+            Set<String> moduleDataSources = ModuleLoader.getInstance().getAllModuleDataSourceNames();
 
             // Make sorted collection of data sources names, but with labkey data source first
             Set<String> dsNames = new LinkedHashSet<>();

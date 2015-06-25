@@ -496,7 +496,7 @@ public class MockModule implements Module
     }
 
     @Override
-    public String getDatabaseSchemaName(String requestedSchemaName)
+    public String getDatabaseSchemaName(String fullyQualifiedSchemaName)
     {
         return null;
     }

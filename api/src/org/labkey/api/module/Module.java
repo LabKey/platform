@@ -365,10 +365,10 @@ public interface Module extends Comparable<Module>
      * an administrator-configurable schema name; code always references "caisis" but administrators can point Argos to a different
      * database schema.
      *
-     * @param requestedSchemaName The name passed into DbSchema.get()
+     * @param fullyQualifiedSchemaName The name passed into DbSchema.get()
      * @return The actual schema name in the database
      */
-    String getDatabaseSchemaName(String requestedSchemaName);
+    String getDatabaseSchemaName(String fullyQualifiedSchemaName);
 
     /**
      * Called by ModuleLoader to lock module info after construction.

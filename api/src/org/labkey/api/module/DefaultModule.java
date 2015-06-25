@@ -171,7 +171,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         if (!getSupportedDatabasesSet().contains(coreType))
             throw new DatabaseNotSupportedException("This module does not support " + CoreSchema.getInstance().getSqlDialect().getProductName());
 
-        for (String dsName : ModuleLoader.getInstance().getModuleDataSources(this))
+        for (String dsName : ModuleLoader.getInstance().getModuleDataSourceNames(this))
         {
             Throwable t = DbScope.getDataSourceFailure(dsName);
 
@@ -1501,9 +1501,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public String getDatabaseSchemaName(String requestedSchemaName)
+    public String getDatabaseSchemaName(String fullyQualifiedSchemaName)
     {
-        return requestedSchemaName;
+        return fullyQualifiedSchemaName;
     }
 
     @Override

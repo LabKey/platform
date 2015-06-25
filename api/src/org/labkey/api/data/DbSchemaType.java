@@ -42,28 +42,19 @@ public enum DbSchemaType
         {
             Map<String, String> metaDataTableNames = DbSchema.loadTableNames(scope, metaDataName);
 
-            // TODO: Eliminate this special case... register "labkey" with core module and handle it there
-            if ("labkey".equals(metaDataName))
-                return new DbSchema.LabKeyDbSchema(scope, metaDataTableNames);
-
             return module.createModuleDbSchema(scope, metaDataName, metaDataTableNames);
         }
 
         @Nullable
         @Override
-        public org.labkey.api.module.Module getModule(String requestedSchemaName)
+        public org.labkey.api.module.Module getModule(String fullyQualifiedSchemaName)
         {
-            // TODO: Eliminate this special case... register "labkey" with core module and handle it there
-            if ("labkey".equals(requestedSchemaName))
-                return ModuleLoader.getInstance().getCoreModule();
-
-            // TODO requestedSchemaName should be the fully qualified name - Issue 23581
-            Module module = ModuleLoader.getInstance().getModuleForSchemaName(requestedSchemaName);
+            Module module = ModuleLoader.getInstance().getModuleForSchemaName(fullyQualifiedSchemaName);
 
             // For now, throw if no module claims this schema. We could relax this to an assert (and fall back to core)
             // to provide backward compatibility for external modules that don't register their schemas.
             if (null == module)
-                throw new IllegalStateException("Schema \"" + requestedSchemaName + "\" is not claimed by any module.");
+                throw new IllegalStateException("Schema \"" + fullyQualifiedSchemaName + "\" is not claimed by any module.");
 
             return module;
         }
@@ -164,7 +155,7 @@ public enum DbSchemaType
 
     abstract DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException;
 
-    public @Nullable org.labkey.api.module.Module getModule(String requestedSchemaName)
+    public @Nullable org.labkey.api.module.Module getModule(String fullyQualifiedSchemaName)
     {
         return null;
     }
