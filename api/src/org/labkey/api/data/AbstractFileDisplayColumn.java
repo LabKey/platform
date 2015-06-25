@@ -21,6 +21,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 
@@ -83,7 +84,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             icon.append("\" alt=\"icon\"");
             icon.append("/>&nbsp;").append(PageFlowUtil.filter(displayName));
 
-            if (thumbnail && _map.isInlineImageFor(filename))
+            if (thumbnail && _map.isInlineImageFor(new File(filename)))
             {
                 StringBuilder thumbnailHtml = new StringBuilder();
                 thumbnailHtml.append("<img style=\"max-width:300px; height:auto;\" src=\"");
