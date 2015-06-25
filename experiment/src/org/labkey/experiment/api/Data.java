@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpData;
 
 import java.io.File;
@@ -46,6 +47,7 @@ public class Data extends ProtocolOutput
         this.dataFileUrl = dataFileUrl;
     }
 
+    @Nullable
     public File getFile()
     {
         if (getDataFileUrl() == null)
@@ -55,7 +57,17 @@ public class Data extends ProtocolOutput
         
         try
         {
-            return new File(new URI(getDataFileUrl()));
+            URI uri = new URI(getDataFileUrl());
+            if ("file".equals(uri.getScheme()))
+            {
+                //consider try/catch on IllegalArgumentException
+                return new File(uri);
+            }
+            else
+            {
+                return null;
+            }
+
         }
         catch (URISyntaxException e)
         {

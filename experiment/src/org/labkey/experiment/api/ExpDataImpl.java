@@ -145,6 +145,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         return _object.getDataFileUrl();
     }
 
+    @Nullable
     public File getFile()
     {
         return _object.getFile();
