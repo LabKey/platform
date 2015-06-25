@@ -118,7 +118,15 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             if (columnInfo.getFk() != null)
             {
                 ForeignKey fk = columnInfo.getFk();
-                TableInfo lookupTarget = fk.getLookupTableInfo();
+                TableInfo lookupTarget = null;
+                try
+                {
+                    lookupTarget = fk.getLookupTableInfo();
+                }
+                catch (QueryParseException ignored)
+                {
+                    // Be tolerant of problematic lookup targets
+                }
                 if (fk.getLookupSchemaName() == null || fk.getLookupTableName() == null)
                 {
                     if (lookupTarget != null && lookupTarget.isPublic() && lookupTarget.getPublicSchemaName() != null && lookupTarget.getPublicName() != null)
