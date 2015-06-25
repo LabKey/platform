@@ -113,7 +113,7 @@ public class ServerManager
     private static final ModuleResourceCache<OlapSchemaDescriptor> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube definitions (module)", new OlapSchemaCacheHandler());
     private static final BlockingStringKeyCache<OlapSchemaDescriptor> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Olap cube definitions (db) ", new OlapCacheLoader());
 
-    private static final BlockingStringKeyCache<Cube> CUBES = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "cube cache", null);
+    private static final BlockingStringKeyCache<Cube> CUBES = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, 2 * CacheManager.DAY, "cube cache", null);
 
     private static final String DATA_SOURCE_NAME = "dsn_LABKEY";
 
