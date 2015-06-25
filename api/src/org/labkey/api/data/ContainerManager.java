@@ -833,7 +833,7 @@ public class ContainerManager
 
     public static Container getForId(String id)
     {
-        Container d = _getFromCacheId(id);
+        Container d = getFromCacheId(id);
         if (null != d)
             return d;
 
@@ -1505,7 +1505,8 @@ public class ContainerManager
     }
 
 
-    private static Container _getFromCacheId(String id)
+
+    public static Container getFromCacheId(String id)
     {
         return (Container) CACHE.get(CONTAINER_PREFIX + id);
     }
