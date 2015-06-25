@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.XarSource;
@@ -38,6 +39,7 @@ public interface ExpData extends ExpProtocolOutput
 
     String getDataFileUrl();
 
+    @Nullable
     File getFile();
 
     boolean isInlineImage();
