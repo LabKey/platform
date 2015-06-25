@@ -393,29 +393,9 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         String distinctColumn = "ParticipantId";
 
         String selectSql = "SELECT " + targetColumn + " as label, COUNT(DISTINCT " + distinctColumn + ") AS value FROM StudyData ";
-        String innerSql = "";
-        String sep = "";
-        if (members != null)
-        {
-            if (members.length() > 0)
-            {
-                innerSql += "WHERE " + distinctColumn + " IN (";
-                for (int i = 0; i < members.length(); i++)
-                {
-                    innerSql += sep + toSqlString(members.getString(i));
-                    sep = ", ";
-                }
-                innerSql += ") ";
-            }
-            else
-            {
-                // empty members array means that there are no patients that match the fitlers, so force empty results
-                innerSql += "WHERE 1=0 ";
-            }
+        selectSql += getMemberWhereClause(members, distinctColumn);
 
-            selectSql += innerSql;
-        }
-
+        String innerSql = "", sep = "";
         if (members != null && sources.length() > 0)
             innerSql = "AND ";
         else if (sources.length() > 0)
@@ -437,6 +417,32 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         selectSql += "GROUP BY " + targetColumn;
 
         return selectSql;
+    }
+
+    protected String getMemberWhereClause(JSONArray members, String distinctColumn)
+    {
+        String sql = "", sep = "";
+
+        if (members != null)
+        {
+            if (members.length() > 0)
+            {
+                sql += " WHERE " + distinctColumn + " IN (";
+                for (int i = 0; i < members.length(); i++)
+                {
+                    sql += sep + toSqlString(members.getString(i));
+                    sep = ", ";
+                }
+                sql += ") ";
+            }
+            else
+            {
+                // empty members array means that there are no patients that match the fitlers, so force empty results
+                sql += " WHERE 1=0 ";
+            }
+        }
+
+        return sql;
     }
 
     private String toSqlString(String unescapedSql)

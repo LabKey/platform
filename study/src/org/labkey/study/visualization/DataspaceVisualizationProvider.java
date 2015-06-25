@@ -70,7 +70,7 @@ public class DataspaceVisualizationProvider extends StudyVisualizationProvider
 
         // special case for "SubjectVisit" table as it is not a dataset so it won't be included with the StudyVisualizationProvider.getSourceCountSql
         if (sources.toString().contains("\"SubjectVisit\""))
-            sql += " UNION SELECT 'SubjectVisit', COUNT(DISTINCT ParticipantId) FROM SubjectVisit";
+            sql += " UNION SELECT 'SubjectVisit', COUNT(DISTINCT ParticipantId) FROM SubjectVisit " + getMemberWhereClause(members, "ParticipantId");
 
         return sql;
     }
