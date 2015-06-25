@@ -16,7 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.QueryForeignKey;
 
 import java.util.ArrayList;
@@ -32,12 +32,12 @@ import java.util.Objects;
  */
 public final class TableExtension
 {
-    private final FilteredTable _primaryTable;
+    private final AbstractTableInfo _primaryTable;
     private final TableInfo _extensionTable;
     private final ColumnInfo _extensionCol;
     private final QueryForeignKey _extensionFK;
 
-    protected TableExtension(FilteredTable primaryTable, TableInfo extensionTable, ColumnInfo extensionCol, QueryForeignKey extensionFK)
+    protected TableExtension(AbstractTableInfo primaryTable, TableInfo extensionTable, ColumnInfo extensionCol, QueryForeignKey extensionFK)
     {
         _primaryTable = primaryTable;
         _extensionTable = extensionTable;
@@ -45,7 +45,7 @@ public final class TableExtension
         _extensionFK = extensionFK;
     }
 
-    public static TableExtension create(FilteredTable primaryTable, TableInfo extensionTable)
+    public static TableExtension create(AbstractTableInfo primaryTable, TableInfo extensionTable)
     {
         String pkColumn = extensionTable.getPkColumnNames().get(0); // Note this only works for simple primary keys, not compound.
         String fkColumn = extensionTable.getColumn(pkColumn).getFk().getLookupColumnName();
@@ -53,7 +53,7 @@ public final class TableExtension
         return create(primaryTable, extensionTable, fkColumn, pkColumn, LookupColumn.JoinType.leftOuter);
     }
 
-    public static TableExtension create(FilteredTable primaryTable, TableInfo extensionTable, String foreignKey, String lookupKey, LookupColumn.JoinType joinType)
+    public static TableExtension create(AbstractTableInfo primaryTable, TableInfo extensionTable, String foreignKey, String lookupKey, LookupColumn.JoinType joinType)
     {
         ColumnInfo extensionCol = primaryTable.getColumn(foreignKey);
         assert extensionCol != null;
@@ -98,11 +98,11 @@ public final class TableExtension
         newColName = Objects.toString(newColName, baseCol.getName());
 
         ColumnInfo lookupCol = _extensionFK.createLookupColumn(_extensionCol, baseCol.getName());
-        ColumnInfo ret = _primaryTable.addWrapColumnWithoutTableCheck(newColName, lookupCol);
+        AliasedColumn aliased = new AliasedColumn(_primaryTable, newColName, lookupCol);
         if (lookupCol.isHidden() || baseCol.isHidden())
-            ret.setHidden(true);
+            aliased.setHidden(true);
 
-        return ret;
+        return _primaryTable.addColumn(aliased);
     }
 
     public String getLookupColumnName()

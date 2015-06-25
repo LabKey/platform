@@ -414,11 +414,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     public ColumnInfo addWrapColumn(String name, ColumnInfo column)
     {
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
-        return addWrapColumnWithoutTableCheck(name, column);
-    }
-
-    public ColumnInfo addWrapColumnWithoutTableCheck(String name, ColumnInfo column)
-    {
         ColumnInfo ret = new AliasedColumn(this, name, column);
         propagateKeyField(column, ret);
         addColumn(ret);
