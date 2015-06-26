@@ -113,12 +113,19 @@ Ext4.define('TreeFilter', {
         });
 
         root.cascadeBy(function(node) {                             // finally loop to hide/show each node
-            viewNode = Ext4.fly(tree.getView().getNode(node));       // get the dom element assocaited with each node
+            viewNode = Ext4.fly(tree.getView().getNode(node));       // get the dom element associated with each node
             if (viewNode) {                                          // the first one is undefined ? escape it with a conditional
                 viewNode.setVisibilityMode(Ext4.Element.DISPLAY);    // set the visibility mode of the dom node to display (vs offsets)
                 viewNode.setVisible(Ext4.Array.contains(visibleNodes, node));
             }
         });
+
+        if (matches.length === 0) {
+            tree.fireEvent('nomatches');
+        }
+        else {
+            tree.fireEvent('hasmatches');
+        }
     }
 });
 
@@ -165,19 +172,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.callParent([config]);
 
-        if (this.isCustomizable()) {
-            this.addEvents(
-                'enableCustomMode',
-                'disableCustomMode'
-            );
-        }
-
-        if (this.isEditable()) {
-            this.addEvents(
-                'enableEditMode',
-                'disableEditMode'
-            );
-        }
+        this.addEvents(
+            'enableCustomMode',
+            'disableCustomMode',
+            'enableEditMode',
+            'disableEditMode',
+            'initgrid'
+        );
     },
 
     initComponent : function() {
@@ -515,6 +516,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         });
 
         this.getCenter().add(this.gridPanel);
+
+        this.fireEvent('initgrid', this.gridPanel);
     },
 
     initGridColumns : function(visibleColumns) {
@@ -715,7 +718,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
         });
 
-        this.mineField = Ext4.create('Ext.form.field.Checkbox', {
+        var mineField = Ext4.create('Ext.form.field.Checkbox', {
             boxLabel        : '<span data-qtip="Check to show only views that have either been created by me or that list me as the author.">&nbsp;Mine</span>',
             boxLabelAlign   : 'before',
             border          : false, frame : false,
@@ -728,6 +731,30 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             },
             scope : this
         });
+
+        var msgField = Ext4.create('Ext.Component', {
+            tpl: new Ext4.XTemplate('<span>{msg:htmlEncode}</span>'),
+            data: {}
+        });
+
+        var clearMessage = function() {
+            msgField.update({});
+        };
+
+        searchField.on('change', clearMessage);
+        mineField.on('change', clearMessage);
+
+        this.on('initgrid', function(grid) {
+            this.on('disableCustomMode', function() {
+                clearMessage();
+            });
+
+            grid.on({
+                remove: function() { clearMessage(); },
+                hasmatches: function() { clearMessage(); },
+                nomatches: function() { msgField.update({msg: 'No results found.'}) }
+            });
+        }, this);
 
         // toolbar
         return {
@@ -748,7 +775,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         src : LABKEY.ActionURL.getContextPath() + '/_images/search.png'
                     }}
                 ]},
-                '->', this.mineField
+                msgField, '->', mineField
             ]
         };
     },
@@ -819,7 +846,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     /**
      * Takes the panel into/outof customize mode. Customize mode allows users to view edit links,
-     * adminstrate view categories and determine what data types should be shown.
+     * administrate view categories and determine what data types should be shown.
      */
     customize : function() {
 
@@ -1037,7 +1064,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }, scope : this}}
             }]
         });
-        
+
         var formPanel = Ext4.create('Ext.form.Panel',{
             border : false,
             layout : 'hbox',
