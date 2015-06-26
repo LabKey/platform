@@ -105,7 +105,7 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
                     {text : 'Create Subfolder',     itemId : 'create',  handler : function() { this.action('create'); },  scope : this, tooltip: "Create a subfolder for the selected folder" },
                     {text : 'Delete',               itemId : 'remove',  handler : function() { this.action('remove'); },  scope : this, tooltip: "Delete the selected folder" },
                     {text : 'Move',                 itemId : 'move',    handler : function() { this.action('move'); },    scope : this, tooltip: "Move the selected folder" },
-                    {text : 'Change Name Settings', itemId : 'rename',  handler : function() { this.action('rename'); },  scope : this, tooltip: "Change the name settings for the selected folder" },
+                    {text : 'Rename',               itemId : 'rename',  handler : function() { this.action('rename'); },  scope : this, tooltip: "Change the name settings for the selected folder" },
                     {text : 'Revert',               itemId : 'revert',  handler : function() { this.action('revert'); },  scope : this,
                         tooltip: "For a tab folder, revert to the original folder type; for a folder with child tab folders, revert each child tab folder to its original folder type"
                     },

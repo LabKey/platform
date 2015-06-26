@@ -4164,8 +4164,16 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
         {
-            Container c = getContainer();
-            return updateFolderName(c, form, errors) && updateFolderTitle(c, form, errors);
+            try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                Container c = getContainer();
+                if (updateFolderName(c, form, errors) && updateFolderTitle(c, form, errors))
+                {
+                    transaction.commit();
+                    return true;
+                }
+            }
+            return false;
         }
 
         private boolean updateFolderName(Container c, ManageFoldersForm form, BindException errors)
