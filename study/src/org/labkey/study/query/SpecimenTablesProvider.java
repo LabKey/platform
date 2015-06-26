@@ -89,52 +89,41 @@ public class SpecimenTablesProvider
         Domain domain = null;
 
         // it's possible that another thread is attempting to create the table, so we can (rarely) get a constraint violation
-        // so try again if that happens
-        final int MAX_TRYS = 3;
-        for (int tryCount = 0; tryCount < MAX_TRYS; tryCount += 1)
+        // We can't try again, but tell the user to try the operation again
+        domain = PropertyService.get().getDomain(_container, domainURI);
+        if (null == domain && create)
         {
-            domain = PropertyService.get().getDomain(_container, domainURI);
-            if (null == domain && create)
+            try
             {
-                try
-                {
-                    domain = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
+                domain = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
 
-                    // Add properties for all required fields
-                    for (PropertyStorageSpec propSpec : domainKind.getBaseProperties())
+                // Add properties for all required fields
+                for (PropertyStorageSpec propSpec : domainKind.getBaseProperties())
+                {
+                    DomainProperty prop = domain.addProperty(propSpec);
+                    prop.setRequired(true);
+                }
+                if (null != _template)
+                {
+                    // Add optional fields to table
+                    for (PropertyStorageSpec propSpec : domainKind.getPropertySpecsFromTemplate(_template))
                     {
-                        DomainProperty prop = domain.addProperty(propSpec);
-                        prop.setRequired(true);
+                        domain.addProperty(propSpec);
                     }
-                    if (null != _template)
-                    {
-                        // Add optional fields to table
-                        for (PropertyStorageSpec propSpec : domainKind.getPropertySpecsFromTemplate(_template))
-                        {
-                            domain.addProperty(propSpec);
-                        }
 
-                    }
-                    domain.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, this));
-                    domain.save(_user);
-                    break;      // Sucessfully created domain, so we're done
                 }
-                catch (ChangePropertyDescriptorException e)
-                {
-                    throw new RuntimeException(e);
-                }
-                catch (RuntimeSQLException e)
-                {
-                    if (tryCount + 1 < MAX_TRYS)
-                        continue;     // try again
-                    throw e;
-                }
+                domain.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, this));
+                domain.save(_user);
             }
-            else
+            catch (ChangePropertyDescriptorException e)
             {
-                break;  // No need to create domain so we're done
+                throw new RuntimeException(e);
             }
-        } // for MAX-TRYS
+            catch (RuntimeSQLException e)
+            {
+                throw new RuntimeException("Cannot create domain for table. Another process may be creating it or may have deleted it. Please try your action again.");
+            }
+        }
         return domain;
     }
 
