@@ -1483,7 +1483,7 @@ public class UserController extends SpringActionController
                     UserSchema auditLogSchema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
                     if (auditLogSchema != null)
                     {
-                        QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                        QuerySettings settings = new QuerySettings(getViewContext(), "auditHistory");
                         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_USER), _detailsUserId);
 
                         List<FieldKey> columns = new ArrayList<>();
