@@ -162,7 +162,14 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
                         if (column.clazz == Integer.class && !datum.isEmpty())
                         {
                             // data comes back as "3.0", but we know it's an integer column... so convert to "3", #21232
-                            datum = String.valueOf(Double.valueOf(datum).intValue());
+                            try
+                            {
+                                datum = String.valueOf(Double.valueOf(datum).intValue());
+                            }
+                            catch (NumberFormatException e)
+                            {
+                                // must not have been integer (beyond inference) so ignore conversion (issue 23472)
+                            }
                         }
                     }
 
