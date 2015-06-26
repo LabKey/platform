@@ -92,8 +92,11 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
         // OPTIMIZATION: intersect the containers with permissions with the actual list of studies
         // OPTIMIZATION: check if the list is a superset of all studies (e.g. no containers are filtered)
         allowedContainers.retainAll(studyContainers);
-        if (allowedContainers.containsAll(studyContainers))
-            return null;
+
+// TODO this optimization works for datasets
+//        if (allowedContainers.containsAll(studyContainers))
+//            return null;
+
         return allowedContainers;
     }
 
