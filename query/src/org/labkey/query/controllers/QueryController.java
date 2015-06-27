@@ -139,6 +139,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -2736,6 +2737,10 @@ public class QueryController extends SpringActionController
             QuerySettings settings = form.getQuerySettings();
             if (form.isSaveInSession())
             {
+                HttpSession session = getViewContext().getSession();
+                if (session == null)
+                    throw new IllegalStateException("Session required");
+
                 QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), schemaName, sql);
                 settings.setDataRegionName("executeSql");
                 settings.setQueryName(def.getName());

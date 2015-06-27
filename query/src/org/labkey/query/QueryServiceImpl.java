@@ -871,8 +871,10 @@ public class QueryServiceImpl extends QueryService
 
 
     @Override
-    public QueryDefinition saveSessionQuery(HttpSession session, Container container, User user, String schemaName, String sql, String metadataXml)
+    public QueryDefinition saveSessionQuery(@NotNull HttpSession session, Container container, User user, String schemaName, String sql, String metadataXml)
     {
+        if (session == null)
+            throw new IllegalStateException();
         Map<String, SessionQuery> queries = getSessionQueryMap(session, container, schemaName, true);
         String queryName = null;
         SessionQuery sq = new SessionQuery(sql, metadataXml);
@@ -940,10 +942,10 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
-    private Map<String, SessionQuery> getSessionQueryMap(HttpSession session, Container container, String schemaName, boolean create)
+    private Map<String, SessionQuery> getSessionQueryMap(@NotNull HttpSession session, Container container, String schemaName, boolean create)
     {
         if (session == null)
-            return Collections.emptyMap();
+            throw new IllegalStateException();
         Map<ContainerSchemaKey, Map<String, SessionQuery>> containerQueries = (Map<ContainerSchemaKey, Map<String, SessionQuery>>) session.getAttribute(PERSISTED_TEMP_QUERIES_KEY);
         if (containerQueries == null)
         {
