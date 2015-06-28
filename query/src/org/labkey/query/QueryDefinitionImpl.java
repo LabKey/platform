@@ -35,6 +35,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.MetadataParseException;
+import org.labkey.api.query.MetadataParseWarning;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryChangeListener.QueryProperty;
 import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
@@ -354,6 +355,15 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (errors.isEmpty() && null != warnings)
             warnings.addAll(q.getParseWarnings());
 
+        List<QueryException> queryExceptions = new ArrayList<>();
+        getTable(queryExceptions, true);
+        for (QueryException e : queryExceptions)
+        {
+            if (e instanceof MetadataParseWarning)
+                warnings.add((MetadataParseWarning)e);
+            else
+                errors.add(wrapParseException(e, true));
+        }
         return errors.isEmpty();
     }
 
