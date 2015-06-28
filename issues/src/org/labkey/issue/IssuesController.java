@@ -907,16 +907,24 @@ public class IssuesController extends SpringActionController
             if (form.getIssueId() == null || form.getEntityId() == null)
                 throw new NotFoundException();
 
+            Container c = getContainer();
+
             SimpleFilter filter = new SimpleFilter();
-            filter.addCondition(FieldKey.fromParts("issueId"), form.getIssueId());
-            filter.addCondition(FieldKey.fromParts("entityid"), form.getEntityId());
+            filter.addCondition(FieldKey.fromParts("IssueId"), form.getIssueId());
+            filter.addCondition(FieldKey.fromParts("EntityId"), form.getEntityId());
+            filter.addCondition(FieldKey.fromString("IssueId/Container"), c);
 
             TableInfo table = IssuesSchema.getInstance().getTableInfoComments();
-            TableSelector ts = new TableSelector(table, filter, null);
+            TableSelector ts = new TableSelector(table, table.getColumns("EntityId"), filter, null);
 
+            // Verifies that IssueId, EntityId, and Container are all correct
             final Issue.Comment comment = ts.getObject(Issue.Comment.class);
             if (comment == null)
                 throw new NotFoundException("Issue comment not found");
+
+            // I don't see a good way to select the Container column (which is in the Issues table, not Comments) above,
+            // so push it in here. The Comment select already verified that c is the correct container.
+            comment.setContainerId(c.getId());
 
             getPageConfig().setTemplate(PageConfig.Template.None);
 
