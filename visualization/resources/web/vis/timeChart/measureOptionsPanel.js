@@ -730,13 +730,21 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                         }
                     }
 
+                    // Issue 23557: use dimension displayColumn for dataset columns that have a lookup
+                    for (var i = 0; i < records.length; i++) {
+                        if (records[i].raw.lookup && records[i].raw.lookup.displayColumn) {
+                            var displayColumn = records[i].raw.lookup.displayColumn;
+                            records[i].set('name', records[i].get('name') + '/' + displayColumn);
+                        }
+                    }
+
                     this.toggleDimensionOptions(dimension.name, measure.aggregate);
 
                     // this is one of the requests being tracked, see if the rest are done
                     if (toFireEvent)
                         this.fireEvent('measureMetadataRequestComplete');
 
-                    // if this is the last loader for the given measure, reload teh measure list store data
+                    // if this is the last loader for the given measure, reload the measure list store data
                     this.loaderCount--;
                     if (this.loaderCount == 0)
                     {
@@ -987,7 +995,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         return index;
     },
 
-    // method called on render of this panel when a saved chart is being viewed to set the dimension stores for all of the measrues
+    // method called on render of this panel when a saved chart is being viewed to set the dimension stores for all of the measures
     initializeDimensionStores: function(){
         this.uniqueDimensions = [];
 
