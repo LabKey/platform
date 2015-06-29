@@ -26,7 +26,6 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
@@ -140,14 +139,16 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     protected ColumnInfo addWrapParticipantColumn(String rootTableColumnName)
     {
         final String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
+        final String subjectTableName = StudyService.get().getSubjectTableName(getContainer());
+
         ColumnInfo participantColumn =
                 new AliasedColumn(this, subjectColName, _rootTable.getColumn(rootTableColumnName));
-        LookupForeignKey lfk = new LookupForeignKey(StudyService.get().getSubjectTableName(getContainer()), subjectColName, null)
+        LookupForeignKey lfk = new LookupForeignKey(subjectTableName, subjectColName, null)
         {
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return _userSchema.getTable(StudyService.get().getSubjectTableName(getContainer()));
+                return _userSchema.getTable(subjectTableName);
             }
 
             public StringExpression getURL(ColumnInfo parent)
@@ -157,13 +158,8 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                     return null;
                 return LookupForeignKey.getDetailsURL(parent, table, _columnName);
             }
-
-            public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
-            {
-                return super.remapFieldKeys(parent, mapping);
-            }
         };
-        lfk.addJoin(new FieldKey(null, "Container"), "Container", false);
+        lfk.addJoin(FieldKey.fromParts("Container"), "Container", false);
         participantColumn.setFk(lfk);
 
         // Don't setKeyField. Use addQueryFieldKeys where needed

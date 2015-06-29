@@ -34,6 +34,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
@@ -119,6 +120,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class SpecimenManager implements ContainerManager.ContainerListener
 {
     private final static SpecimenManager _instance = new SpecimenManager();
+
+    public static final String STUDY_SPECIMENS_SAMPLE_SET_NAME = "Study Specimens";
 
     private final QueryHelper<SpecimenRequestEvent> _requestEventHelper;
 //    private final QueryHelper<AdditiveType> _additiveHelper;
@@ -2063,8 +2066,15 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         DbSchema expSchema = ExperimentService.get().getSchema();
         TableInfo tinfoMaterial = expSchema.getTable("Material");
-        containerFilter.addCondition(FieldKey.fromParts("CpasType"), StudyService.SPECIMEN_NAMESPACE_PREFIX);
-        Table.delete(tinfoMaterial, containerFilter);
+
+        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, SpecimenManager.STUDY_SPECIMENS_SAMPLE_SET_NAME);
+
+        if (sampleSet != null)
+        {
+            SimpleFilter materialFilter = new SimpleFilter(containerFilter);
+            materialFilter.addCondition(FieldKey.fromParts("CpasType"), sampleSet.getLSID());
+            Table.delete(tinfoMaterial, containerFilter);
+        }
 
         // Views  // TODO when these views get removed remove this
         assert set.add(StudySchema.getInstance().getSchema().getTable("LockedSpecimens"));

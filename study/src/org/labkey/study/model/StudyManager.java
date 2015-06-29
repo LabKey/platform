@@ -700,6 +700,7 @@ public class StudyManager
     }
 
     @Deprecated
+    /** Use the variant that accepts an errors list */
     public void updateDatasetDefinition(User user, DatasetDefinition datasetDefinition)
     {
         List<String> errors = new ArrayList<>();

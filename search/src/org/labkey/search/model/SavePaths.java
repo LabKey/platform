@@ -65,13 +65,10 @@ public class SavePaths implements DavCrawler.SavePaths
         return f;
     }
 
-    SQLFragment pathFilter(TableInfo ti, int parentId, String name)
+    SQLFragment pathFilter(int parentId, String name)
     {
-        SQLFragment f;
-        f = new SQLFragment(" Parent=? AND Name=?", parentId, name);
-        return f;
+        return new SQLFragment(" Parent=? AND Name=?", parentId, name);
     }
-
 
     //
     // FOLDER/RESOURCES
@@ -132,9 +129,8 @@ public class SavePaths implements DavCrawler.SavePaths
         int parentId = _getParentId(path);
         String name = path.size() == 0 ? "/" : path.getName();
 
-        String pathStr = toPathString(path);
         SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE ");
-        find.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), parentId, name));
+        find.append(pathFilter(parentId, name));
         id = new SqlSelector(getSearchSchema(), find).getObject(Integer.class);
         return null != id ? id : -1;
     }

@@ -2245,16 +2245,15 @@ public class SpecimenImporter
 
         String prefix = new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + info.getContainer().getRowId(), "").toString();
         String cpasType;
-        String name = "Study Specimens";
-        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(info.getContainer(), name);
+        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(info.getContainer(), SpecimenManager.STUDY_SPECIMENS_SAMPLE_SET_NAME);
 
         if (sampleSet == null)
         {
             ExpSampleSet source = ExperimentService.get().createSampleSet();
             source.setContainer(info.getContainer());
             source.setMaterialLSIDPrefix(prefix);
-            source.setName(name);
-            source.setLSID(ExperimentService.get().getSampleSetLsid(name, info.getContainer()).toString());
+            source.setName(SpecimenManager.STUDY_SPECIMENS_SAMPLE_SET_NAME);
+            source.setLSID(ExperimentService.get().getSampleSetLsid(SpecimenManager.STUDY_SPECIMENS_SAMPLE_SET_NAME, info.getContainer()).toString());
             source.setDescription("Study specimens for " + info.getContainer().getPath());
             source.save(null);
             cpasType = source.getLSID();
