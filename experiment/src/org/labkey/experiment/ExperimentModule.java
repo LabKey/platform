@@ -72,7 +72,6 @@ import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
 
-import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -230,25 +229,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 catch (ExperimentException ee)
                 {
                     throw new RuntimeException(ee);
-                }
-            }
-
-            public void propertyChange(PropertyChangeEvent evt)
-            {
-                if (evt.getPropertyName().equals("Parent"))
-                {
-                    Container c = (Container) evt.getSource();
-                    Container cOldParent = (Container) evt.getOldValue();
-                    Container cNewParent = (Container) evt.getNewValue();
-                    try
-                    {
-                        ExperimentService.get().moveContainer(c, cOldParent, cNewParent);
-                    }
-                    catch (ExperimentException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-
                 }
             }
         },

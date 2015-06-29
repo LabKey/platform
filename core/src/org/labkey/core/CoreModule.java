@@ -937,75 +937,81 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     @Override
-    public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, Date since)
+    public void enumerateDocuments(final SearchService.IndexTask task, @NotNull final Container c, Date since)
     {
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        final SearchService ss = ServiceRegistry.get(SearchService.class);
         if (ss == null)
             return;
-
-        if (null == task)
-            task = ss.defaultTask();
 
         if (c.isRoot())
             return;
 
-        Container p = c.getProject();
-        assert null != p;
-        String title;
-        String keywords;
-        String body;
-
-        // UNDONE: generalize to other folder types
-        StudyService.Service svc = StudyService.get();
-        Study study = svc != null ? svc.getStudy(c) : null;
-
-        if (null != study)
+        Runnable r = new Runnable()
         {
-            title = study.getSearchDisplayTitle();
-            keywords = study.getSearchKeywords();
-            body = study.getSearchBody();
-        }
-        else
-        {
-            String type;
+            @Override
+            public void run()
+            {
+                Container p = c.getProject();
+                if (null == p)
+                    return;
+                String title;
+                String keywords;
+                String body;
 
-            if (c.isProject())
-                type = "Project";
-            else if (c.isWorkbook())
-                type = "Workbook";
-            else
-                type = "Folder";
+                // UNDONE: generalize to other folder types
+                StudyService.Service svc = StudyService.get();
+                Study study = svc != null ? svc.getStudy(c) : null;
 
-            String containerTitle = c.getTitle();
+                if (null != study)
+                {
+                    title = study.getSearchDisplayTitle();
+                    keywords = study.getSearchKeywords();
+                    body = study.getSearchBody();
+                }
+                else
+                {
+                    String type;
 
-            String description = StringUtils.trimToEmpty(c.getDescription());
-            title = type + " -- " + containerTitle;
-            User u_user = UserManager.getUser(c.getCreatedBy());
-            String user = (u_user == null) ? "" : u_user.getDisplayName(User.getSearchUser());
-            keywords = description + " " + type + " " + user;
-            body = type + " " + containerTitle + (c.isProject() ? "" : " in Project " + p.getName());
-            body += "\n" + description;
-        }
+                    if (c.isProject())
+                        type = "Project";
+                    else if (c.isWorkbook())
+                        type = "Workbook";
+                    else
+                        type = "Folder";
 
-        String identifiers = c.getName();
+                    String containerTitle = c.getTitle();
 
-        Map<String, Object> properties = new HashMap<>();
+                    String description = StringUtils.trimToEmpty(c.getDescription());
+                    title = type + " -- " + containerTitle;
+                    User u_user = UserManager.getUser(c.getCreatedBy());
+                    String user = (u_user == null) ? "" : u_user.getDisplayName(User.getSearchUser());
+                    keywords = description + " " + type + " " + user;
+                    body = type + " " + containerTitle + (c.isProject() ? "" : " in Project " + p.getName());
+                    body += "\n" + description;
+                }
 
-        assert (null != keywords);
-        properties.put(SearchService.PROPERTY.indentifiersMed.toString(), identifiers);
-        properties.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
-        properties.put(SearchService.PROPERTY.title.toString(), title);
-        properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
-        ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
-        startURL.setExtraPath(c.getId());
-        WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
-                "link:" + c.getId(),
-                c.getId(),
-                "text/plain",
-                body.getBytes(),
-                startURL,
-                properties);
-        task.addResource(doc, SearchService.PRIORITY.item);
+                String identifiers = c.getName();
+
+                Map<String, Object> properties = new HashMap<>();
+
+                assert (null != keywords);
+                properties.put(SearchService.PROPERTY.indentifiersMed.toString(), identifiers);
+                properties.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
+                properties.put(SearchService.PROPERTY.title.toString(), title);
+                properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
+                ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
+                startURL.setExtraPath(c.getId());
+                WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
+                        "link:" + c.getId(),
+                        c.getId(),
+                        "text/plain",
+                        body.getBytes(),
+                        startURL,
+                        properties);
+                (null==task?ss.defaultTask():task).addResource(doc, SearchService.PRIORITY.item);
+            }
+        };
+        (null==task?ss.defaultTask():task).addRunnable(r, SearchService.PRIORITY.item);
     }
 
     

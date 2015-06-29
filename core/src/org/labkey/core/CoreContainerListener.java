@@ -76,8 +76,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     {
         String message = c.getName() + " was moved from " + oldParent.getPath() + " to " + c.getParent().getPath();
         addAuditEvent(user, c, message);
-
-        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, c, null);
+        // re-index is handled when the propertyChange() event fires
     }
 
     @NotNull

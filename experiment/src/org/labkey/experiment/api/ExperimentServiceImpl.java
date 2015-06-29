@@ -1990,6 +1990,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             // do the same for all of its children
             for (Container ctemp : ContainerManager.getAllChildren(c))
             {
+                if (ctemp.equals(c))
+                    continue;
                 OntologyManager.moveContainer(ctemp, oldParent, newParent);
             }
 
