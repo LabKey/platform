@@ -53,7 +53,7 @@
 %>
 <table class="labkey-export-tab-contents">
     <tr>
-        <td valign="center"><input type="radio" id="<%=h(xlsxGUID)%>" name="excelExportType" checked/></td>
+        <td valign="center"><input type="radio" id="<%=h(xlsxGUID)%>" name="excelExportType" checked="checked" /></td>
         <td valign="center"><label for="<%=h(xlsxGUID)%>">Excel Workbook (.xlsx)</label> <span style="font-size: smaller">Maximum 1,048,576 rows and 16,384 columns.</span></td>
     </tr>
     <tr>
@@ -81,7 +81,7 @@
     <% } %>
     <tr><td colspan="2"></td></tr>
     <tr>
-        <td valign="center"><input type="checkbox" id="<%=h(exportSelectedId)%>" value="exportSelected" <%=checked(hasSelected)%> <%=disabled(!hasSelected)%>/></td>
+        <td valign="center"><input <%=text(hasSelected ? "" : "disabled=\"\"")%> type="checkbox" id="<%=h(exportSelectedId)%>" value="exportSelected" <%=checked(hasSelected)%> <%=disabled(!hasSelected)%>/></td>
         <td valign="center"><label class="<%=text(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>" for="<%=h(exportSelectedId)%>">Export selected rows</label></td>
     </tr>
     <tr>
