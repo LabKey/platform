@@ -93,9 +93,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -115,18 +113,19 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
                     });
                 }
             }
-
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
         };
 
         DetailsURL url = DetailsURL.fromString("list/listItemDetails.view?listId=${listId}&entityId=${listItemEntityId}&rowId=${rowId}");
         table.setDetailsURL(url);
 
         return table;
+    }
+
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
     }
 
     @Override

@@ -128,9 +128,7 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -148,12 +146,6 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
                     col.setLabel("Query Name");
                 }
             }
-
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
         };
 
         // Query details redirect action
@@ -163,6 +155,14 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
 
         return table;
     }
+
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
+    }
+
 
     public static class QueryAuditEvent extends AuditTypeEvent
     {

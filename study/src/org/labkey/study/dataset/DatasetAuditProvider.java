@@ -100,9 +100,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -120,12 +118,6 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
                     col.setFk(fk);
                 }
             }
-
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
         };
         appendValueMapColumns(table);
 
@@ -137,6 +129,15 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
 
         return table;
     }
+
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
+    }
+
+
 
     /**
      * issue 14463 : filter the audit records to those that the user has read access to. For basic

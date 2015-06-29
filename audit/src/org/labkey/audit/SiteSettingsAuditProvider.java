@@ -112,21 +112,18 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
-        {
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
-        };
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns);
         DetailsURL url = DetailsURL.fromString("audit/showSiteSettingsAuditDetails.view?id=${rowId}");
         url.setStrictContainerContextEval(true);
         table.setDetailsURL(url);
 
         return table;
+    }
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
     }
 
     public static class SiteSettingsAuditEvent extends AuditTypeEvent

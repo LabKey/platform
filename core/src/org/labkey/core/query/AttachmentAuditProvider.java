@@ -106,18 +106,9 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
     }
 
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema)
+    public List<FieldKey> getDefaultVisibleColumns()
     {
-        Domain domain = getDomain();
-
-        return new DefaultAuditTypeTable(this, domain, userSchema)
-        {
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
-        };
+        return defaultVisibleColumns;
     }
 
     @Override

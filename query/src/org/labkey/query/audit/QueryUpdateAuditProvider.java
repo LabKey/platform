@@ -145,9 +145,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -161,12 +159,6 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
                     col.setLabel("Query Name");
                 }
             }
-
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
         };
         appendValueMapColumns(table);
 
@@ -176,6 +168,13 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
 
         return table;
     }
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
+    }
+
 
     public static QueryView createHistoryQueryView(ViewContext context, QueryForm form, BindException errors)
     {

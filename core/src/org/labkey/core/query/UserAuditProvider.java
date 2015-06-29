@@ -107,9 +107,7 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        return new DefaultAuditTypeTable(this, domain, userSchema)
+        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -117,13 +115,13 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
                 if (COLUMN_NAME_USER.equalsIgnoreCase(col.getName()))
                     UserIdForeignKey.initColumn(col);
             }
-
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
         };
+    }
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
     }
 
     @Override

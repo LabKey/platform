@@ -130,9 +130,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     public TableInfo createTableInfo(final UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -154,15 +152,15 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                     UserIdForeignKey.initColumn(col);
                 }
             }
-
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
         };
 
         return table;
+    }
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
     }
 
     @Nullable

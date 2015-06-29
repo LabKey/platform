@@ -124,9 +124,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -178,16 +176,18 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
                     });
                 }
             }
-
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
         };
 
         return table;
     }
+
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
+    }
+
 
     public static class SpecimenCommentAuditEvent extends AuditTypeEvent
     {

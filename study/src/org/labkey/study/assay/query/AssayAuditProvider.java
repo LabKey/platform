@@ -95,9 +95,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -140,12 +138,6 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
                     col.setFk(fk);
                 }
             }
-
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
         };
         FieldKey containerFieldKey = FieldKey.fromParts(COLUMN_NAME_TARGET_STUDY);
         DetailsURL url = DetailsURL.fromString("study/publishHistoryDetails.view?protocolId=${protocol}&datasetId=${datasetId}&sourceLsid=${sourceLsid}&recordCount=${recordCount}", new ContainerContext.FieldKeyContext(containerFieldKey));
@@ -155,6 +147,15 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
 
         return table;
     }
+
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
+    }
+
+
 
     @Override
     protected AbstractAuditDomainKind getDomainKind()
