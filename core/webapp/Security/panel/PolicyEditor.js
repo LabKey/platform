@@ -357,8 +357,7 @@ Ext4.define('Security.panel.PolicyEditor', {
             }
 
             // make it easier for Selenium to recognize when permissions is loaded
-            if (!Ext4.get('policyRendered'))
-                Ext4.DomHelper.insertHtml('beforeend', document.body, '<input type=hidden id="policyRendered" value="1">');
+            LABKEY.Utils.signalWebDriverTest("policyRendered");
         }
 
         this.disableRoles(this.getInheritCheckboxValue());
@@ -497,8 +496,6 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     onChangeInherited : function(checkbox)
     {
-        Ext4.removeNode(document.getElementById('policyRendered')); // to aid selenium automation
-
         var inh = this.getInheritCheckboxValue();
         if (inh && !this.inheritedPolicy)
         {
@@ -648,8 +645,6 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     save : function(overwrite, success, scope)
     {
-        Ext4.removeNode(document.getElementById('policyRendered')); // to aid selenium automation
-
         success = success || this.saveSuccess;
         scope = scope || this;
 

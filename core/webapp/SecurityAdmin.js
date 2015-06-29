@@ -1765,8 +1765,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
                 }
             }
             // make selenium testing easiers
-            if (!$('policyRendered'))
-                $dom.insertHtml('beforeend', document.body, '<input type=hidden id="policyRendered" value="1">');
+            LABKEY.Utils.signalWebDriverTest("policyRendered");
         }
         if (this.getInheritCheckboxValue())
             this.disable();
@@ -1816,8 +1815,6 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
     Inherited_onChange : function(checkbox)
     {
-        Ext.removeNode(document.getElementById('policyRendered')); // to aid selenium automation
-
         var inh = this.getInheritCheckboxValue();
         if (inh && !this.inheritedPolicy)
         {
@@ -1978,8 +1975,6 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
     save : function(overwrite, success, scope)
     {
-        Ext.removeNode(document.getElementById('policyRendered')); // to aid selenium automation
-
         success = success || this.saveSuccess;
         scope = scope || this;
 

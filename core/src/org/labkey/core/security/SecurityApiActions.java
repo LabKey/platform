@@ -69,7 +69,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -189,6 +188,23 @@ public class SecurityApiActions
                 }
                 groupPerms.put("roles", effectiveRoleList);
                 groupPerms.put("effectivePermissions", container.getPolicy().getPermissionNames(group));
+
+                if (container.hasPermission(getUser(), AdminPermission.class))
+                {
+                    int[] parentGroupIds = group.getGroups();
+                    List<Map<String, Object>> parentGroupInfos = new ArrayList<>();
+                    for (int parentGroupId : parentGroupIds)
+                    {
+                        Group parentGroup = SecurityManager.getGroup(parentGroupId);
+                        Map<String, Object> groupInfo = new HashMap<>();
+                        groupInfo.put("id", parentGroup.getUserId());
+                        groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(parentGroup));
+                        groupInfo.put("isProjectGroup", parentGroup.isProjectGroup());
+                        groupInfo.put("isSystemGroup", parentGroup.isSystemGroup());
+                        parentGroupInfos.add(groupInfo);
+                    }
+                    groupPerms.put("groups", parentGroupInfos);
+                }
 
                 groupsPerms.add(groupPerms);
             }
@@ -859,7 +875,7 @@ public class SecurityApiActions
         {
             String parentResource = resource.getParentResource() != null ? resource.getParentResource().getResourceName() : "root";
             AuditLogEvent event = new AuditLogEvent();
-            event.setComment("The security policy for " + resource.getResourceName() 
+            event.setComment("The security policy for " + resource.getResourceName()
                     + " was deleted. It will now inherit the security policy of " +
                     parentResource);
             event.setContainerId(resource.getResourceContainer().getId());
