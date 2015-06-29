@@ -121,7 +121,7 @@ public class SpecimenTablesProvider
             }
             catch (RuntimeSQLException e)
             {
-                throw new RuntimeException("Cannot create domain for table. Another process may be creating it or may have deleted it. Please try your action again.");
+                throw new RuntimeException("Cannot create domain for table. Another process may be creating it or may have deleted it. Please try your action again.", e);
             }
         }
         return domain;
