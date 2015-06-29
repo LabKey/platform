@@ -248,7 +248,10 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, getDefaultVisibleColumns());
     }
 
-    public abstract List<FieldKey> getDefaultVisibleColumns();
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return null;
+    }
 
     @Override
     public Map<FieldKey, String> legacyNameMap()
