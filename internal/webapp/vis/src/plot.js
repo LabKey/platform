@@ -1459,6 +1459,20 @@ boxPlot.render();
             }
         };
 
+        // Issue 23626: map line/point color based on legend data
+        if (config.legendData && config.properties.color && !config.properties.colorRange) {
+            var legendColorMap = {};
+            for (var i = 0; i < config.legendData.length; i++) {
+                legendColorMap[config.legendData[i].text] = config.legendData[i].color;
+            }
+
+            config.scales.color = {
+                scale: function(group) {
+                    return legendColorMap[group];
+                }
+            };
+        }
+
         if(!config.margins) {
             config.margins = {};
         }
