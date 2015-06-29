@@ -350,7 +350,8 @@ public class UploadSamplesHelper
                         // 8309 : preserve comment property on existing materials
                         // 10164 : Deleting flag/comment doesn't clear flag/comment after reupload
                         String oldComment = material.getComment();
-                        String newComment = (String)map.get(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI());
+                        Object newCommentObj = map.get(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI());
+                        String newComment = null==newCommentObj ? null : String.valueOf(newCommentObj);
                         if (StringUtils.isEmpty(newComment) && !hasCommentHeader && oldComment != null)
                         {
                             Map<String, Object> newMap = new HashMap<>(map);
