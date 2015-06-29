@@ -48,7 +48,7 @@ public abstract class AbstractPlateReader implements PlateReader
             if (dblValue == WELL_NOT_COUNTED)
                 return "TNTC";
             else if (dblValue == WELL_OFF_SCALE)
-                return "--";
+                return "0";
         }
         return strValue;
     }
