@@ -101,13 +101,14 @@ public class ImageUtil
         });
     }
 
-    /** Rewrite the output files so that they look nice and antialiased */
+    /** Rewrite the output files so that they look nice and antialiased, and writes a PNG to the outputStream */
     public static double resizeImage(BufferedImage originalImage, OutputStream outputStream, double incrementalScale, int iterations) throws IOException
     {
         int imageType = (originalImage.getType() == BufferedImage.TYPE_CUSTOM ? BufferedImage.TYPE_INT_RGB : originalImage.getType());
         return resizeImage(originalImage, outputStream, incrementalScale, iterations, imageType);
     }
 
+    /** Rewrite the output files so that they look nice and antialiased, and writes a PNG to the outputStream */
     public static double resizeImage(BufferedImage originalImage, OutputStream outputStream, double incrementalScale, int iterations, int imageType) throws IOException
     {
         double finalScale = 1;
