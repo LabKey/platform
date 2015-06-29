@@ -218,7 +218,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setDescription(String description)
     {
-        if (StringUtils.equalsIgnoreCase(description, getDescription()))
+        if (StringUtils.equals(description, getDescription()))
             return;
         edit().setDescription(description);
     }
@@ -230,14 +230,14 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setPropertyURI(String uri)
     {
-        if (StringUtils.equalsIgnoreCase(uri, getPropertyURI()))
+        if (StringUtils.equals(uri, getPropertyURI()))
             return;
         edit().setPropertyURI(uri);
     }
 
     public void setRangeURI(String rangeURI)
     {
-        if (StringUtils.equalsIgnoreCase(rangeURI, getRangeURI()))
+        if (StringUtils.equals(rangeURI, getRangeURI()))
             return;
         editSchema().setRangeURI(rangeURI);
     }
@@ -249,21 +249,21 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setFormat(String s)
     {
-        if (StringUtils.equalsIgnoreCase(s, getFormat()))
+        if (StringUtils.equals(s, getFormat()))
             return;
         edit().setFormat(s);
     }
 
     public void setLabel(String caption)
     {
-        if (StringUtils.equalsIgnoreCase(caption, getLabel()))
+        if (StringUtils.equals(caption, getLabel()))
             return;
         edit().setLabel(caption);
     }
 
     public void setConceptURI(String conceptURI)
     {
-        if (StringUtils.equalsIgnoreCase(conceptURI, getConceptURI()))
+        if (StringUtils.equals(conceptURI, getConceptURI()))
             return;
         edit().setConceptURI(conceptURI);
     }
@@ -386,7 +386,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         String current = getImportAliases();
         String newAliases = ColumnRenderProperties.convertToString(aliases);
-        if (StringUtils.equalsIgnoreCase(current, newAliases))
+        if (StringUtils.equals(current, newAliases))
             return;
         edit().setImportAliasesSet(aliases);
     }
@@ -398,7 +398,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setURL(String url)
     {
-        if (StringUtils.equalsIgnoreCase(getURL(), url))
+        if (StringUtils.equals(getURL(), url))
             return;
 
         if (null == url)
@@ -820,7 +820,7 @@ public class DomainPropertyImpl implements DomainProperty
             assertTrue(_dp.isDirty());
             assertTrue(_dp._schemaChanged);
             assertFalse(_dp.isRecreateRequired());
-            assertTrue(StringUtils.equalsIgnoreCase(_dp.getRangeURI(), _pd.getRangeURI()));
+            assertTrue(StringUtils.equals(_dp.getRangeURI(), _pd.getRangeURI()));
 
             // setting schema import to true will enable the _schemaChanged flag to toggle
             // so it should be set true here
@@ -831,7 +831,7 @@ public class DomainPropertyImpl implements DomainProperty
             assertTrue(_dp.isDirty());
             assertTrue(_dp._schemaChanged);
             assertTrue(_dp.isRecreateRequired());
-            assertTrue(StringUtils.equalsIgnoreCase(_dp.getRangeURI(), _pd.getRangeURI()));
+            assertTrue(StringUtils.equals(_dp.getRangeURI(), _pd.getRangeURI()));
 
             // verify no change when setting value to the same value as it was
             resetProperties(d, domainURI, c);
