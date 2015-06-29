@@ -305,7 +305,6 @@ public class DomainImpl implements Domain
     private static final LockManager<String> _domainSaveLockManager = new LockManager<>();
 
 
-    // TODO: throws SQLException instead of RuntimeSQLException (e.g., constraint violation due to duplicate domain name) 
     public void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException
     {
         ExperimentService.Interface exp = ExperimentService.get();
