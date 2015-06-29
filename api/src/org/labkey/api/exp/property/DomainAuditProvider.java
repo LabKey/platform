@@ -87,9 +87,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        return new DefaultAuditTypeTable(this, domain, userSchema)
+        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -109,13 +107,13 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                     });
                 }
             }
-
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
         };
+    }
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
     }
 
     @Override

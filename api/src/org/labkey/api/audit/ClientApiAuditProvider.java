@@ -136,16 +136,8 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
         {
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
-
             @Override
             public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
             {
@@ -165,6 +157,11 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
         return table;
     }
 
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
+    }
 
     @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()

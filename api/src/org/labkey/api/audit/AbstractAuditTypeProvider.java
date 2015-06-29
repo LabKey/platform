@@ -36,6 +36,7 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -55,6 +56,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -225,18 +227,28 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         return PropertyService.get().getDomain(getDomainContainer(), domainURI);
     }
 
+
     protected DbSchema getSchema()
     {
         return DbSchema.get(SCHEMA_NAME, DbSchemaType.Provisioned);
     }
 
+
+    public TableInfo createStorageTableInfo()
+    {
+        Domain domain = getDomain();
+        if (null == domain)
+            throw new NullPointerException("Could not find domain for " + getEventName());
+        return StorageProvisioner.createTableInfo(domain);
+    }
+
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
-        Domain domain = getDomain();
-
-        return new DefaultAuditTypeTable(this, domain, userSchema);
+        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, getDefaultVisibleColumns());
     }
+
+    public abstract List<FieldKey> getDefaultVisibleColumns();
 
     @Override
     public Map<FieldKey, String> legacyNameMap()

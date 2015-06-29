@@ -488,8 +488,10 @@ public class StorageProvisioner
      * Return a TableInfo for this domain, creating if necessary. This method uses the DbSchema caching layer.
      */
     @NotNull
-    public static TableInfo createTableInfo(Domain domain)
+    public static TableInfo createTableInfo(@NotNull Domain domain)
     {
+        if (null == domain)
+            throw new NullPointerException("domain is null");
         DomainKind kind = domain.getDomainKind();
         if (null == kind)
             throw new IllegalArgumentException("Could not find information for domain (deleted?): " + domain.getTypeURI());

@@ -88,17 +88,11 @@ public class AuthenticationProviderConfigAuditTypeProvider extends AbstractAudit
         return (Class<K>)AuthProviderConfigAuditEvent.class;
     }
 
+
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema)
+    public List<FieldKey> getDefaultVisibleColumns()
     {
-        return new DefaultAuditTypeTable(this, getDomain(), userSchema)
-        {
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return DEFAULT_VISIBLE_COLUMNS;
-            }
-        };
+        return DEFAULT_VISIBLE_COLUMNS;
     }
 
     public static class AuthProviderConfigAuditEvent extends AuditTypeEvent

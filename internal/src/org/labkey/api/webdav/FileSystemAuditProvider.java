@@ -113,20 +113,9 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
     }
 
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema)
+    public List<FieldKey> getDefaultVisibleColumns()
     {
-        Domain domain = getDomain();
-
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
-        {
-            @Override
-            public List<FieldKey> getDefaultVisibleColumns()
-            {
-                return defaultVisibleColumns;
-            }
-        };
-
-        return table;
+        return defaultVisibleColumns;
     }
 
     public static class FileSystemAuditEvent extends AuditTypeEvent

@@ -25,6 +25,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.AliasedColumn;
@@ -57,11 +58,18 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     protected AuditTypeProvider _provider;
     protected Map<FieldKey, String> _legacyNameMap;
     protected Map<String, String> _dbSchemaToColumnMap;
-    protected List<FieldKey> _defaultVisibleColumns = new ArrayList<>();
-    
+
+
+    @Deprecated
     public DefaultAuditTypeTable(AuditTypeProvider provider, Domain domain, UserSchema schema)
     {
-        super(StorageProvisioner.createTableInfo(domain), schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
+        this(provider, StorageProvisioner.createTableInfo(domain), schema, null);
+    }
+
+
+    public DefaultAuditTypeTable(AuditTypeProvider provider, TableInfo storage, UserSchema schema, List<FieldKey> defaultVisibleColumns)
+    {
+        super(storage, schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
 
         _provider = provider;
 
@@ -84,11 +92,16 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
 
         wrapAllColumns(true);
 
-        _defaultVisibleColumns.add(FieldKey.fromParts("Created"));
-        _defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
-        _defaultVisibleColumns.add(FieldKey.fromParts("ImpersonatedBy"));
-        _defaultVisibleColumns.add(FieldKey.fromParts("ProjectId"));
-        _defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
+        if (null == defaultVisibleColumns || defaultVisibleColumns.isEmpty())
+        {
+            defaultVisibleColumns = new ArrayList<>();
+            defaultVisibleColumns.add(FieldKey.fromParts("Created"));
+            defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
+            defaultVisibleColumns.add(FieldKey.fromParts("ImpersonatedBy"));
+            defaultVisibleColumns.add(FieldKey.fromParts("ProjectId"));
+            defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
+        }
+        setDefaultVisibleColumns(defaultVisibleColumns);
 
         ColumnInfo rowIdColumn = getColumn(FieldKey.fromParts("rowId"));
         rowIdColumn.setSortDirection(Sort.SortDirection.DESC);
@@ -116,12 +129,6 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         initColumns();
     }
 
-    @Override
-    public List<FieldKey> getDefaultVisibleColumns()
-    {
-        return _defaultVisibleColumns;
-    }
-    
     protected void initColumns()
     {
         for (ColumnInfo col : getColumns())
