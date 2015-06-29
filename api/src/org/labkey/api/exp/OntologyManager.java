@@ -54,6 +54,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -591,7 +592,19 @@ public class OntologyManager
             filter.addCondition(FieldKey.fromParts("Container"), container);
         }
 
-		m = new HashMap<>();
+        if (_log.isDebugEnabled())
+        {
+            try (ResultSet rs = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getResultSet())
+            {
+                ResultSetUtil.logData(rs);
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeException(x);
+            }
+        }
+
+        m = new HashMap<>();
 		for (ObjectProperty value : new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArrayList(ObjectProperty.class))
 		{
 			m.put(value.getPropertyURI(), value);
@@ -1013,6 +1026,8 @@ public class OntologyManager
 
     private static void copyDescriptors(final Container c, final Container project) throws ValidationException
     {
+        _log.warn("OntologyManager.copyDescriptors  " + c.getName() + " " + project.getName());
+
         // if c is (was) a project, then nothing to do
         if (c.getId().equals(project.getId()))
             return;
@@ -1029,6 +1044,18 @@ public class OntologyManager
         final Map<String, ObjectProperty> mObjsUsingMyProps = new HashMap<>();
         final StringBuilder sqlIn= new StringBuilder();
         final StringBuilder sep = new StringBuilder();
+
+        if (_log.isDebugEnabled())
+        {
+            try (ResultSet rs = new SqlSelector(getExpSchema(), sql, c).getResultSet())
+            {
+                ResultSetUtil.logData(rs);
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeException(x);
+            }
+        }
 
         new SqlSelector(getExpSchema(), sql, c).forEach(new Selector.ForEachBlock<ResultSet>()
         {
@@ -1074,6 +1101,18 @@ public class OntologyManager
                     " ON (PD.PropertyId = PDM2.PropertyId) " +
                     " WHERE PDM.PropertyId IN (" + sqlIn.toString() + ") " +
                     " OR PD.PropertyId IN (" + sqlIn.toString() + ") ";
+
+            if (_log.isDebugEnabled())
+            {
+                try (ResultSet rs = new SqlSelector(getExpSchema(), sql).getResultSet())
+                {
+                    ResultSetUtil.logData(rs, _log);
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeException(x);
+                }
+            }
 
             new SqlSelector(getExpSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
             {
@@ -1128,8 +1167,9 @@ public class OntologyManager
 
     public static void moveContainer(final Container c, Container oldParent, Container newParent) throws SQLException
     {
-        final Container oldProject = (null != oldParent ? oldParent.getProject() : c);
+        _log.debug("OntologyManager.moveContainer  " + c.getName() + " " + oldParent.getName() + "->" + newParent.getName());
 
+        final Container oldProject = (null != oldParent ? oldParent.getProject() : c);
         Container newProject = c;
 
         if (null != newParent)
@@ -1149,9 +1189,26 @@ public class OntologyManager
         {
             clearCaches();
 
+            if (_log.isDebugEnabled())
+            {
+                try (ResultSet rs=new SqlSelector(getExpSchema(), "SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE Container='" + c.getId() + "'").getResultSet())
+                {
+                    ResultSetUtil.logData(rs, _log);
+                }
+            }
+
             // update project of any descriptors in folder just moved
             String sql = "UPDATE " + getTinfoPropertyDescriptor() + " SET Project = ? WHERE Container = ?";
             new SqlExecutor(getExpSchema()).execute(sql, newProject, c);
+
+            if (_log.isDebugEnabled())
+            {
+                try (ResultSet rs = new SqlSelector(getExpSchema(), "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container='" + c.getId() + "'").getResultSet())
+                {
+                    ResultSetUtil.logData(rs, _log);
+                }
+            }
+
             sql = "UPDATE " + getTinfoDomainDescriptor() + " SET Project = ? WHERE Container = ?";
             new SqlExecutor(getExpSchema()).execute(sql, newProject, c);
 
@@ -1166,19 +1223,29 @@ public class OntologyManager
             copyDescriptors(c, oldProject);
 
             // if my objects refer to project-scoped properties I need a copy of those properties
-            sql = " SELECT O.ObjectURI, PD.PropertyURI, PD.PropertyId  " +
+            sql = " SELECT O.ObjectURI, PD.PropertyURI, PD.PropertyId, PD.Container  " +
                     " FROM " + getTinfoPropertyDescriptor() + " PD " +
                     " INNER JOIN " + getTinfoObjectProperty() + " OP ON PD.PropertyId = OP.PropertyId" +
                     " INNER JOIN " + getTinfoObject() + " O ON (O.ObjectId = OP.ObjectId) " +
                     " WHERE O.Container = ? " +
                     " AND O.Container <> PD.Container " +
-                    " AND PD.Project <> ? ";
+                    " AND PD.Project NOT IN (?,?) ";
+
+            if (_log.isDebugEnabled())
+            {
+                try (ResultSet rs = new SqlSelector(getExpSchema(), sql, c, _sharedContainer, newProject).getResultSet())
+                {
+                    ResultSetUtil.logData(rs, _log);
+                }
+            }
+
+
 
             final Map<String, ObjectProperty> mMyObjsThatRefProjProps  = new HashMap<>();
             final StringBuilder sqlIn = new StringBuilder();
             final StringBuilder sep = new StringBuilder();
 
-            new SqlSelector(getExpSchema(), sql, c, _sharedContainer).forEach(new Selector.ForEachBlock<ResultSet>()
+            new SqlSelector(getExpSchema(), sql, c, _sharedContainer, newProject).forEach(new Selector.ForEachBlock<ResultSet>()
             {
                 @Override
                 public void exec(ResultSet rs) throws SQLException
@@ -1210,13 +1277,21 @@ public class OntologyManager
             //todo  what about materialsource ?
             if (mMyObjsThatRefProjProps.size() > 0)
             {
-                sql = "SELECT PD.PropertyURI, DD.DomainURI " +
+                sql = "SELECT PD.PropertyURI, DD.DomainURI, PD.PropertyId " +
                         " FROM " + getTinfoPropertyDescriptor() + " PD " +
                         " LEFT JOIN (" + getTinfoPropertyDomain() + " PDM " +
                         " INNER JOIN " + getTinfoPropertyDomain() + " PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
                         " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)) "+
                         " ON (PD.PropertyId = PDM2.PropertyId) " +
                         " WHERE PDM.PropertyId IN (" + sqlIn + " ) ";
+
+                if (_log.isDebugEnabled())
+                {
+                    try (ResultSet rs = new SqlSelector(getExpSchema(), sql).getResultSet())
+                    {
+                        ResultSetUtil.logData(rs, _log);
+                    }
+                }
 
                 final Container fNewProject = newProject;
 

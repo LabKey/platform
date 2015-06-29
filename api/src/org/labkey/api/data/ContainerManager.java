@@ -37,6 +37,8 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.event.PropertyChange;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -1258,6 +1260,17 @@ public class ContainerManager
             // this could be done in the trigger, but I prefer to put it in the transaction
             if (changedProjects)
                 SecurityManager.changeProject(c, oldProject, newProject);
+
+            clearCache();
+
+            try
+            {
+                ExperimentService.get().moveContainer(c, oldParent, newParent);
+            }
+            catch (ExperimentException e)
+            {
+                throw new RuntimeException(e);
+            }
 
             // Clear after the commit has propagated the state to other threads and transactions
             // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
