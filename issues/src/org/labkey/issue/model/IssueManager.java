@@ -16,6 +16,7 @@
 package org.labkey.issue.model;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections15.comparators.ReverseComparator;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -232,14 +233,22 @@ public class IssueManager
         // Add all current issue comments
         commentLinkedList.addAll(issue.getComments());
 
-        Collections.sort(commentLinkedList, new Comparator<Issue.Comment>()
+        Comparator<Issue.Comment> comparator = new Comparator<Issue.Comment>()
         {
             @Override
             public int compare(Issue.Comment c1, Issue.Comment c2)
             {
                 return c1.getCreated().compareTo(c2.getCreated());
             }
-        });
+        };
+        // Respect the configuration's sorting order - issue 23524
+        Container issueContainer = issue.lookupContainer();
+        if (Sort.SortDirection.DESC == getCommentSortDirection(issueContainer))
+        {
+            comparator = new ReverseComparator<>(comparator);
+        }
+
+        Collections.sort(commentLinkedList, comparator);
         return commentLinkedList;
     }
 
