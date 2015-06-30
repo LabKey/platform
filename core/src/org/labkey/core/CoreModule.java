@@ -1011,7 +1011,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 (null==task?ss.defaultTask():task).addResource(doc, SearchService.PRIORITY.item);
             }
         };
-        (null==task?ss.defaultTask():task).addRunnable(r, SearchService.PRIORITY.item);
+        // running this asynchronously seems to expose race conditions in domain checking/creation
+        // (null==task?ss.defaultTask():task).addRunnable(r, SearchService.PRIORITY.item);
+        r.run();
     }
 
     
