@@ -1592,6 +1592,7 @@ public class PostgreSql91Dialect extends SqlDialect
             }
             catch (SQLException e)
             {
+                LOG.error("SQLException hit for " + connection);
                 scope.logCurrentConnectionState();
                 throw e;
             }
