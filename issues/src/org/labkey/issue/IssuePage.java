@@ -425,7 +425,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return DateUtil.formatDateTime(_c, d);
     }
 
-    public String renderAttachments(ViewContext context, AttachmentParent parent)
+    public String renderAttachments(ViewContext context, Issue.Comment parent)
     {
         List<Attachment> attachments = new ArrayList<>(AttachmentService.get().getAttachments(parent));
 
@@ -438,9 +438,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
             for (Attachment a : attachments)
             {
+                Issue issue = parent.getIssue();
                 sb.append("<tr><td>");
                 sb.append("<a href=\"");
-                sb.append(PageFlowUtil.filter(a.getDownloadUrl(DownloadAction.class).addParameter("issueId", _issue.getIssueId())));
+                sb.append(PageFlowUtil.filter(a.getDownloadUrl(DownloadAction.class).addParameter("issueId", issue.getIssueId())));
                 sb.append("\" target=\"_blank\"><img src=\"");
                 sb.append(context.getRequest().getContextPath());
                 sb.append(PageFlowUtil.filter(a.getFileIcon()));
