@@ -279,7 +279,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         for (ColumnInfo column : getDbTable().getColumns())
         {
             Object value = row.get(column.getName());
-            if (!column.isAutoIncrement() && column.isRequired() && (null == value || value instanceof String && 0 == ((String) value).length()))
+            if (!column.isAutoIncrement() &&
+                    column.isRequired() &&
+                    (null == value || value instanceof String && 0 == ((String) value).length()) &&
+                    !Table.AUTOPOPULATED_COLUMN_NAMES.contains(column.getName()))
             {
                 throw new ValidationException("A value is required for field '" + column.getName() + "'", column.getName());
             }

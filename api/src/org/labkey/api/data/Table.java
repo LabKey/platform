@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
@@ -48,6 +49,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 
 import java.io.IOException;
@@ -92,6 +94,22 @@ public class Table
 
     // Makes long parameter lists easier to read
     public static final int NO_OFFSET = 0;
+
+    public static final String ENTITY_ID_COLUMN_NAME = "EntityId";
+    public static final String OWNER_COLUMN_NAME = "Owner";
+    public static final String CREATED_BY_COLUMN_NAME = "CreatedBy";
+    public static final String CREATED_COLUMN_NAME = "Created";
+    public static final String MODIFIED_BY_COLUMN_NAME = "ModifiedBy";
+    public static final String MODIFIED_COLUMN_NAME = "Modified";
+
+    /** Columns that are magically populated as part of an insert or update operation */
+    public static final Set<String> AUTOPOPULATED_COLUMN_NAMES = Collections.unmodifiableSet(new CaseInsensitiveHashSet(PageFlowUtil.set(
+                    ENTITY_ID_COLUMN_NAME,
+                    OWNER_COLUMN_NAME,
+                    CREATED_BY_COLUMN_NAME,
+                    CREATED_COLUMN_NAME,
+                    MODIFIED_BY_COLUMN_NAME,
+                    MODIFIED_COLUMN_NAME)));
 
     private Table()
     {
@@ -423,22 +441,22 @@ public class Table
 
     protected static void _insertSpecialFields(User user, TableInfo table, Map<String, Object> fields, java.sql.Timestamp date)
     {
-        ColumnInfo col = table.getColumn("Owner");
+        ColumnInfo col = table.getColumn(OWNER_COLUMN_NAME);
         if (null != col && null != user)
-            fields.put("Owner", user.getUserId());
-        col = table.getColumn("CreatedBy");
+            fields.put(OWNER_COLUMN_NAME, user.getUserId());
+        col = table.getColumn(CREATED_BY_COLUMN_NAME);
         if (null != col && null != user)
-            fields.put("CreatedBy", user.getUserId());
-        col = table.getColumn("Created");
+            fields.put(CREATED_BY_COLUMN_NAME, user.getUserId());
+        col = table.getColumn(CREATED_COLUMN_NAME);
         if (null != col)
         {
-            Date dateCreated = (Date)fields.get("Created");
+            Date dateCreated = (Date)fields.get(CREATED_COLUMN_NAME);
             if (null == dateCreated || 0 == dateCreated.getTime())
-                fields.put("Created", date);
+                fields.put(CREATED_COLUMN_NAME, date);
         }
-        col = table.getColumn("EntityId");
-        if (col != null && fields.get("EntityId") == null)
-            fields.put("EntityId", GUID.makeGUID());
+        col = table.getColumn(ENTITY_ID_COLUMN_NAME);
+        if (col != null && fields.get(ENTITY_ID_COLUMN_NAME) == null)
+            fields.put(ENTITY_ID_COLUMN_NAME, GUID.makeGUID());
     }
 
     protected static void _copyInsertSpecialFields(Object returnObject, Map<String, Object> fields)
@@ -447,23 +465,23 @@ public class Table
             return;
 
         // make sure that any GUID generated in this routine is stored in the returned object
-        if (fields.containsKey("EntityId"))
-            _setProperty(returnObject, "EntityId", fields.get("EntityId"));
-        if (fields.containsKey("Owner"))
-            _setProperty(returnObject, "Owner", fields.get("Owner"));
-        if (fields.containsKey("Created"))
-            _setProperty(returnObject, "Created", fields.get("Created"));
-        if (fields.containsKey("CreatedBy"))
-            _setProperty(returnObject, "CreatedBy", fields.get("CreatedBy"));
+        if (fields.containsKey(ENTITY_ID_COLUMN_NAME))
+            _setProperty(returnObject, ENTITY_ID_COLUMN_NAME, fields.get(ENTITY_ID_COLUMN_NAME));
+        if (fields.containsKey(OWNER_COLUMN_NAME))
+            _setProperty(returnObject, OWNER_COLUMN_NAME, fields.get(OWNER_COLUMN_NAME));
+        if (fields.containsKey(CREATED_COLUMN_NAME))
+            _setProperty(returnObject, CREATED_COLUMN_NAME, fields.get(CREATED_COLUMN_NAME));
+        if (fields.containsKey(CREATED_BY_COLUMN_NAME))
+            _setProperty(returnObject, CREATED_BY_COLUMN_NAME, fields.get(CREATED_BY_COLUMN_NAME));
     }
 
     protected static void _updateSpecialFields(@Nullable User user, TableInfo table, Map<String, Object> fields, java.sql.Timestamp date)
     {
-        ColumnInfo colModifiedBy = table.getColumn("ModifiedBy");
+        ColumnInfo colModifiedBy = table.getColumn(MODIFIED_BY_COLUMN_NAME);
         if (null != colModifiedBy && null != user)
             fields.put(colModifiedBy.getName(), user.getUserId());
 
-        ColumnInfo colModified = table.getColumn("Modified");
+        ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
         if (null != colModified)
             fields.put(colModified.getName(), date);
 
@@ -477,13 +495,13 @@ public class Table
         if (returnObject == fields)
             return;
 
-        if (fields.containsKey("ModifiedBy"))
-            _setProperty(returnObject, "ModifiedBy", fields.get("ModifiedBy"));
+        if (fields.containsKey(MODIFIED_BY_COLUMN_NAME))
+            _setProperty(returnObject, MODIFIED_BY_COLUMN_NAME, fields.get(MODIFIED_BY_COLUMN_NAME));
 
-        if (fields.containsKey("Modified"))
-            _setProperty(returnObject, "Modified", fields.get("Modified"));
+        if (fields.containsKey(MODIFIED_COLUMN_NAME))
+            _setProperty(returnObject, MODIFIED_COLUMN_NAME, fields.get(MODIFIED_COLUMN_NAME));
 
-        ColumnInfo colModified = table.getColumn("Modified");
+        ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
         ColumnInfo colVersion = table.getVersionColumn();
         if (null != colVersion && colVersion != colModified && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
             _setProperty(returnObject, colVersion.getName(), fields.get(colVersion.getName()));
@@ -729,7 +747,7 @@ public class Table
         _updateSpecialFields(user, table, fields, date);
 
         List<ColumnInfo> columns = table.getColumns();
-        ColumnInfo colModified = table.getColumn("Modified");
+        ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
 
         for (ColumnInfo column : columns)
         {
@@ -1200,8 +1218,8 @@ public class Table
             aggregates.add(new Aggregate(FieldKey.fromParts("Parent", "Parent"), Aggregate.Type.COUNT));
             aggregates.add(new Aggregate(tinfo.getColumn("SortOrder"), Aggregate.Type.SUM));
             aggregates.add(new Aggregate(tinfo.getColumn("SortOrder").getFieldKey(), Aggregate.Type.SUM, null, true));
-            aggregates.add(new Aggregate(tinfo.getColumn("CreatedBy"), Aggregate.Type.COUNT));
-            aggregates.add(new Aggregate(tinfo.getColumn("Created"), Aggregate.Type.MIN));
+            aggregates.add(new Aggregate(tinfo.getColumn(CREATED_BY_COLUMN_NAME), Aggregate.Type.COUNT));
+            aggregates.add(new Aggregate(tinfo.getColumn(CREATED_COLUMN_NAME), Aggregate.Type.MIN));
             aggregates.add(new Aggregate(tinfo.getColumn("Name"), Aggregate.Type.MIN));
 
             aggregateMap = new TableSelector(tinfo, Collections.<ColumnInfo>emptyList(), null, null).getAggregates(aggregates);
@@ -1248,8 +1266,8 @@ public class Table
             verifyAggregate(expected.get("SumSortOrder"), aggregateMap.get("SortOrder").get(0).getValue());
             verifyAggregate(expected.get("SumDistinctSortOrder"), aggregateMap.get("SortOrder").get(1).getValue());
 
-            verifyAggregate(expected.get("CountCreatedBy"), aggregateMap.get("CreatedBy").get(0).getValue());
-            verifyAggregate(expected.get("MinCreated"), aggregateMap.get("Created").get(0).getValue());
+            verifyAggregate(expected.get("CountCreatedBy"), aggregateMap.get(CREATED_BY_COLUMN_NAME).get(0).getValue());
+            verifyAggregate(expected.get("MinCreated"), aggregateMap.get(CREATED_COLUMN_NAME).get(0).getValue());
             verifyAggregate(expected.get("MinName"), aggregateMap.get("Name").get(0).getValue());
         }
 
@@ -1471,7 +1489,7 @@ public class Table
             new _ColumnInfo("IntNotNull", JdbcType.INTEGER),
             new _ColumnInfo("BitNotNull", JdbcType.BOOLEAN),
             new _ColumnInfo("DateTimeNotNull", JdbcType.TIMESTAMP),
-            new _ColumnInfo("EntityId", JdbcType.VARCHAR)
+            new _ColumnInfo(ENTITY_ID_COLUMN_NAME, JdbcType.VARCHAR)
         };
 
         int currentRow = -1;
