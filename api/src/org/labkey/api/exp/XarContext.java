@@ -16,24 +16,26 @@
 
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.pipeline.PipelineJobService;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * User: jeckels
@@ -46,6 +48,7 @@ public class XarContext
     private final String _jobDescription;
     private final Container _container;
     private final User _user;
+    private PipelineJob _job;
 
     private final Map<String, String> _substitutions;
 
@@ -73,6 +76,12 @@ public class XarContext
         _substitutions = new HashMap<>(parent._substitutions);
         _container = parent.getContainer();
         _user = parent.getUser();
+    }
+
+    public XarContext(PipelineJob job)
+    {
+        this(job.getDescription(), job.getContainer(), job.getUser());
+        _job = job;
     }
 
     public XarContext(String jobDescription, Container c, User user)
@@ -300,5 +309,10 @@ public class XarContext
     public User getUser()
     {
         return _user;
+    }
+
+    public @Nullable PipelineJob getJob()
+    {
+        return _job;
     }
 }

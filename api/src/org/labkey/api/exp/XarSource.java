@@ -56,9 +56,8 @@ public abstract class XarSource implements Serializable
 
     public XarSource(PipelineJob job)
     {
-        this(job.getDescription(), job.getContainer(), job.getUser());
+        _xarContext = new XarContext(job);
     }
-
 
     public abstract ExperimentArchiveDocument getDocument() throws XmlException, IOException;
 
