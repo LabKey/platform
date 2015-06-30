@@ -76,7 +76,7 @@ public class RelativeDateVisitManager extends VisitManager
 
         SQLFragment studyDataContainerFilter = new SQLFragment(alias + ".Container = ?", _study.getContainer());
         if (_study.isDataspaceStudy())
-            studyDataContainerFilter = new DataspaceContainerFilter(user).getSQLFragment(studyData.getSchema(), new SQLFragment(alias+".Container"),getStudy().getContainer());
+            studyDataContainerFilter = new DataspaceContainerFilter(user, _study).getSQLFragment(studyData.getSchema(), new SQLFragment(alias+".Container"),getStudy().getContainer());
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<RelativeDateVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());

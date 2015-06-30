@@ -67,7 +67,7 @@ public class SequenceVisitManager extends VisitManager
 
         SQLFragment studyDataContainerFilter = null; // new SQLFragment(alias + ".Container = ?", _study.getContainer());
         if (_study.isDataspaceStudy())
-            studyDataContainerFilter = new DataspaceContainerFilter(user).getSQLFragment(studyData.getSchema(), new SQLFragment(alias+".container"),getStudy().getContainer());
+            studyDataContainerFilter = new DataspaceContainerFilter(user, _study).getSQLFragment(studyData.getSchema(), new SQLFragment(alias+".container"),getStudy().getContainer());
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<SequenceVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());
