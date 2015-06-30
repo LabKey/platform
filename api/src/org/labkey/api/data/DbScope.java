@@ -615,7 +615,7 @@ public class DbScope
     }
 
 
-    private static Connection getDelegate(Connection conn)
+    static Connection getDelegate(Connection conn)
     {
         Connection delegate = null;
 
@@ -1161,7 +1161,8 @@ public class DbScope
         return this == getLabkeyScope();
     }
 
-
+    /** Gets a DbScope based on the data source name from the Tomcat deployment descriptor */
+    @Nullable
     public static DbScope getDbScope(String dsName)
     {
         synchronized (_scopes)

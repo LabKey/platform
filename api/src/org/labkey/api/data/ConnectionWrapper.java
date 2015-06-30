@@ -26,6 +26,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewServlet;
 
+import java.lang.reflect.Method;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -95,6 +96,9 @@ public class ConnectionWrapper implements java.sql.Connection
 
     /** Remember code that closed the Transaction but didn't commit - it may be faulty if it doesn't signal the failure back to the caller */
     private Throwable _suspiciousCloseStackTrace;
+
+    /** For debugging issue 23044 */
+    private static Method _transactionStateMethod;
 
     public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, @Nullable Logger log) throws SQLException
     {
@@ -327,10 +331,36 @@ public class ConnectionWrapper implements java.sql.Connection
     {
         _openConnections.remove(this);
         _loggedLeaks.remove(this);
+
         // The Tomcat connection pool violates the API for close() - it throws an exception
         // if it's already been closed instead of doing a no-op
         if (null != _connection && !isClosed())
         {
+            /** For debugging issue 23044, look for connections that are set to be autoCommit but the driver thinks are mid-transaction */
+            Connection connection = DbScope.getDelegate(_connection);
+            if (connection != null && connection.getAutoCommit() && "org.postgresql.jdbc4.Jdbc4Connection".equals(connection.getClass().getName()))
+            {
+                try
+                {
+                    if (_transactionStateMethod == null)
+                    {
+                        _transactionStateMethod = connection.getClass().getMethod("getTransactionState");
+                        _log.info("Got transactionStateMethod from org.postgresql.jdbc4.Jdbc4Connection. " + _transactionStateMethod);
+                    }
+                    Object state = _transactionStateMethod.invoke(connection);
+
+                    // org.postgresql.core.ProtocolConnection.TRANSACTION_OPEN = 1
+                    if (1 == ((Number) state).intValue())
+                    {
+                        _log.error("Transaction state does not match autoCommit for " + this, new Throwable());
+                    }
+                }
+                catch (Exception e)
+                {
+                    _log.error("Reflection error", e);
+                }
+            }
+
             try
             {
                 _connection.close();
