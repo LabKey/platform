@@ -199,10 +199,7 @@ public class TableWriter
 
     private Collection<ColumnInfo> getColumns(TableInfo tinfo, CustomView view)
     {
-        if (view == null)
-            return tinfo.getColumns();
-
-        List<FieldKey> fields = view.getColumns();
+        List<FieldKey> fields = view == null ? tinfo.getDefaultVisibleColumns() : view.getColumns();
         Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, fields);
         return Collections.unmodifiableCollection(colMap.values());
     }
