@@ -3932,9 +3932,9 @@ public class QueryController extends SpringActionController
                 form.doUpdate();
                 ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, getContainer(), null);
             }
-            catch (SQLException e)
+            catch (RuntimeSQLException e)
             {
-                if (RuntimeSQLException.isConstraintException(e))
+                if (e.isConstraintException())
                 {
                     errors.reject(ERROR_MSG, "A schema by that name is already defined in this folder");
                     return false;
