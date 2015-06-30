@@ -27,6 +27,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
 import java.util.Collection;
@@ -40,12 +42,26 @@ import java.util.Set;
  */
 public class DataspaceContainerFilter extends ContainerFilter.AllInProject
 {
+    public static final String SHARED_STUDY_CONTAINER_FILTER_KEY = "sharedStudyContainerFilter.";
+
     private final List<GUID> _containerIds;
 
-    public DataspaceContainerFilter(User user)
+    public DataspaceContainerFilter(User user, Study sharedStudy)
     {
         super(user);
-        _containerIds = null;
+        assert sharedStudy.isDataspaceStudy();
+
+        List<GUID> containerIds = null;
+        Container sharedStudyProject = sharedStudy.getContainer().getProject();
+        ViewContext context = HttpView.hasCurrentView() ? HttpView.currentContext() : null;
+        if (sharedStudyProject != null && context != null)
+        {
+            Object o = context.getSession().getAttribute(SHARED_STUDY_CONTAINER_FILTER_KEY + sharedStudyProject.getRowId());
+            if (o instanceof List)
+                containerIds = (List) o;
+        }
+
+        _containerIds = containerIds;
     }
 
     public DataspaceContainerFilter(User user, List<GUID> containerIds)
