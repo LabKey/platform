@@ -31,6 +31,7 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -134,11 +135,15 @@ public class CasController extends SpringActionController
                 {
                     new URI(url);
 
-                    if (URLHelper.isHttpURL(url))
-                    {
-                        if (!StringUtils.endsWithIgnoreCase(url, "/cas"))
-                            errors.reject(ERROR_MSG, "Server URL must end with \"/cas\"");
+                    URLHelper h = new URLHelper(url);
+                    String scheme = h.getScheme().toLowerCase();
 
+                    if ("https".equals(scheme))
+                    {
+                        if (!new URLHelper(url).getParsedPath().endsWith(new Path("cas")))
+                        {
+                            errors.reject(ERROR_MSG, "Server URL must end with \"/cas\"");
+                        }
                         return;
                     }
                 }
@@ -153,7 +158,7 @@ public class CasController extends SpringActionController
             }
 
             // One of the checks failed, so display a general error message
-            errors.reject(ERROR_MSG, "Enter a valid HTTP URL to your Apereo CAS server (e.g., http://test.org/cas)");
+            errors.reject(ERROR_MSG, "Enter a valid HTTP URL to your Apereo CAS server (e.g., https://test.org/cas)");
         }
 
         @Override
