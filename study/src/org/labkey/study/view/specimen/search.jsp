@@ -87,7 +87,12 @@ Ext4.onReady(function(){
         if (errorMessages.length > 0)
             Ext4.get('<%=text(renderTarget)%>').update(errorMessages.join("<br>"));
         else
-            Ext4.create('LABKEY.ext.SampleSearchPanel', { renderTo: '<%=text(renderTarget)%>'});
+        {
+            Ext4.create('LABKEY.ext.SampleSearchPanel', {
+                renderTo: '<%=text(renderTarget)%>',
+                individualVials: <%=me.getModelBean().isDetailsView()%>
+            });
+        }
     });
 });
 </script>

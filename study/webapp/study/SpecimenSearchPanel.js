@@ -12,7 +12,8 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
     showExtraFields: false,
     initComponent: function(){
         Ext4.QuickTips.init();
-        Ext4.apply(this, {
+        Ext4.applyIf(this, {
+            individualVials : true,
             border: false,
             bodyStyle: 'background-color: transparent;padding: 5px;',
             defaults: {
@@ -31,12 +32,12 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
                     boxLabel: 'Individual Vials',
                     inputValue: 'individual',
                     name: 'groupType',
-                    checked: true
+                    checked: this.individualVials === true
                 },{
                     boxLabel: 'Grouped Vials',
                     inputValue: 'grouped',
                     name: 'groupType',
-                    checked: false
+                    checked: this.individualVials !== true
                 }],
                 listeners: {
                     buffer: 50,
@@ -158,10 +159,10 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
             var panel = this.down('#searchFields');
             panel.removeAll();
             if(val == 'grouped'){
-                panel.add(this.getGroupedSearchCfg());
+                panel.add(this.getIndividualSearchCfg(false));
             }
             else {
-                panel.add(this.getIndividualSearchCfg());
+                panel.add(this.getIndividualSearchCfg(true));
             }
 
             var target = this.down('#extraFieldsPanel');
@@ -170,7 +171,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
         }
     },
 
-    getIndividualSearchCfg: function(){
+    getIndividualSearchCfg: function(guidOpFieldVisible){
         var cfg = [{
             xtype: 'labkey-operatorcombo',
             itemId: 'guidOpField',
@@ -180,6 +181,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
             includeHasAnyValue: true,
             value: null,
             fieldLabel: 'Global Unique ID',
+            hidden: guidOpFieldVisible !== true,
             listeners: {
                 scope: this,
                 change: function(field, val){
