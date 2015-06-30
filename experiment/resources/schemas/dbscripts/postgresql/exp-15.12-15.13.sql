@@ -14,7 +14,5 @@
  * limitations under the License.
  */
 
-/* exp-15.12.15.13.sql */
-
 ALTER TABLE exp.Data ADD COLUMN Generated BOOLEAN NOT NULL DEFAULT FALSE;
 

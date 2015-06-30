@@ -56,7 +56,7 @@ public class VisualizationModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 15.10;
+        return 15.20;
     }
 
     @Override

@@ -41,7 +41,7 @@ public class RedcapModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 14.30;
+        return 15.20;
     }
 
     @Override
