@@ -714,9 +714,6 @@ public class SecurityManager
         if (UserManager.userExists(email))
             throw new UserAlreadyExistsException(email);
 
-        if (null != UserManager.getUserByDisplayName(email.getEmailAddress()))
-            throw new UserAlreadyExistsException(email, "Display name is already in use");
-
         User newUser;
         DbScope scope = core.getSchema().getScope();
 
