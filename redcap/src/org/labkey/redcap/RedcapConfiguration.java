@@ -167,7 +167,7 @@ public class RedcapConfiguration
                     _duplicateNamePolicy = DuplicateNamePolicy.valueOf(duplicateNamePolicy);
             }
 
-            if (timepointType.equalsIgnoreCase("visit"))
+            if ("visit".equalsIgnoreCase(timepointType))
                 _timepointType = TimepointType.VISIT;
 
             for (RedcapConfigDocument.RedcapConfig.Projects.Project project : rc.getProjects().getProjectArray())
