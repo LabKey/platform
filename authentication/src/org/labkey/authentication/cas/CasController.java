@@ -136,7 +136,7 @@ public class CasController extends SpringActionController
                     new URI(url);
 
                     URLHelper h = new URLHelper(url);
-                    String scheme = h.getScheme().toLowerCase();
+                    String scheme = h.getScheme() != null ? h.getScheme().toLowerCase() : null;
 
                     if ("https".equals(scheme))
                     {
