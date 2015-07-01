@@ -74,6 +74,11 @@ LABKEY.Query.experimental.MeasureStore = new (function()
         removeFrom:function()
         {
             this.count--;
+        },
+
+        supports:function()
+        {
+            return ["COUNT"];
         }
     };
 
@@ -116,6 +121,10 @@ LABKEY.Query.experimental.MeasureStore = new (function()
         removeFrom: function(value, record)
         {
             // not supported
+        },
+        supports:function()
+        {
+            return ["VALUE"];
         }
     };
 
@@ -278,6 +287,19 @@ LABKEY.Query.experimental.MeasureStore = new (function()
             if (!this._isSorted && 1 < this.values.length)
                 crossfilter.quicksort(this.values, 0, this.values.length);
             this._isSorted = true;
+        },
+
+        supports:function()
+        {
+            if (this.values.length > 0 && typeof this.values[0] != "number")
+            {
+                return ["COUNT","MIN","MAX"];
+            }
+            else
+            {
+                return ["COUNT","SUM","MEAN","MEDIAN","MIN","MAX","VAR","STDDEV","STDERR"];
+            }
+
         }
     };
 window.DEBUG.CollectPreAggregatedValues = CollectPreAggregatedValues;
@@ -291,9 +313,13 @@ window.DEBUG.CollectPreAggregatedValues = CollectPreAggregatedValues;
         this.countColumn = config.countColumn;
         this.sumColumn = config.sumColumn;
         this.sumOfSquaresColumn = config.sumOfSquaresColumn;
+        this.minColumn = config.minColumn;
+        this.maxColumn = config.maxColumn;
         this.count = 0;
         this.sum = 0
         this.sumOfSquares = 0;
+        this.min = null;
+        this.max = null;
     };
     CollectPreAggregatedValues.prototype =
     {
@@ -306,6 +332,12 @@ window.DEBUG.CollectPreAggregatedValues = CollectPreAggregatedValues;
                 this.sum += v;
             if (this.sumOfSquaresColumn && null !== (v=record[this.sumOfSquaresColumn]))
                 this.sumOfSquares += v;
+            if (this.minColumn && null !== (v=record[this.minColumn]))
+                if (this.min===null || v < this.min)
+                    this.min = v;
+            if (this.maxColumn && null !== (v=record[this.maxColumn]))
+                if (this.max===null || v < this.max)
+                    this.max = v;
             return this;
         },
         removeFrom:function(value, record)
@@ -365,8 +397,30 @@ window.DEBUG.CollectPreAggregatedValues = CollectPreAggregatedValues;
                 return null;
             var N = this.getCount();
             return stddev/Math.sqrt(N);
+        },
+        supports:function()
+        {
+            var ret = [];
+            if (this.countColumn)
+                ret.push("COUNT");
+            if (this.sumColumn)
+                ret.push("SUM");
+            if (this.countColumn && this.sumColumn)
+                ret.push("MEAN");
+            if (this.countColumn && this.sumColumn && sumOfSquaresColumn)
+            {
+                ret.push("STDDEV");
+                ret.push("VAR");
+                ret.push("STDERR");
+            }
+            if (this.minColumn)
+                ret.push("MIN");
+            if (this.maxColumn)
+                ret.push("MAX");
+            return ret;
         }
     };
+
 window.DEBUG.CollectNonNullValuesAggregator = CollectNonNullValuesAggregator;
 
     function reduceInit(columns)
@@ -632,19 +686,12 @@ window.DEBUG.CollectNonNullValuesAggregator = CollectNonNullValuesAggregator;
          */
         _array: function(entries, memberIndex, aggregate)
         {
-            // CONSIDER use array.map() (who defines .map()?)
             switch (aggregate)
             {
                 case "VALUES":
                     return entries.map(function(entry)
                     {
                         return null==entry ? null : entry.value[memberIndex].getValues();
-                    });
-                    break;
-                case "MEAN":
-                    return entries.map(function(entry)
-                    {
-                        return null==entry ? null : entry.value[memberIndex].getMean();
                     });
                     break;
                 case "COUNT":
@@ -659,6 +706,42 @@ window.DEBUG.CollectNonNullValuesAggregator = CollectNonNullValuesAggregator;
                         return null==entry ? null : entry.value[memberIndex].getSum();
                     });
                     break;
+                case "MEAN":
+                    return entries.map(function(entry)
+                    {
+                        return null==entry ? null : entry.value[memberIndex].getMean();
+                    });
+                    break;
+                case "VAR":
+                    return entries.map(function(entry)
+                    {
+                        return null==entry ? null : entry.value[memberIndex].getVariance();
+                    });
+                    break;
+                case "STDDEV":
+                    return entries.map(function(entry)
+                    {
+                        return null==entry ? null : entry.value[memberIndex].getStdDev();
+                    });
+                    break;
+                case "STDERR":
+                    return entries.map(function(entry)
+                    {
+                        return null==entry ? null : entry.value[memberIndex].getStdErr();
+                    });
+                    break;
+                case "MIN":
+                    return entries.map(function(entry)
+                    {
+                        return null==entry ? null : entry.value[memberIndex].getMin();
+                    });
+                    break;
+                case "MAX":
+                    return entries.map(function(entry)
+                    {
+                        return null==entry ? null : entry.value[memberIndex].getMax();
+                    });
+                    break;
                 default:
                     throw "NYI";
             }
@@ -668,7 +751,7 @@ window.DEBUG.CollectNonNullValuesAggregator = CollectNonNullValuesAggregator;
         flattenGroupEntry : function(dim,entry)
         {
             var columns = this._columns;
-            var r = {};
+            var r = {__key:entry.key};
             //var keyNames = dim._keys;
             //var keyValues = entry.key.split(CONCAT_STRING);
             //for (var i = 0; i < keyNames.length; i++)
@@ -785,7 +868,8 @@ window.DEBUG.CollectNonNullValuesAggregator = CollectNonNullValuesAggregator;
             var results = this._selectSeries(rowDim,colDim,true);
             var me = this;
             var dim = this.getDimension(rowDim.concat(colDim));
-            var ret = results.map(function(rowArray){
+            var ret;
+            ret = results.map(function(rowArray){
                 return rowArray.map(function(entry){
                     return me.flattenGroupEntry(dim,entry);
                 });
@@ -875,7 +959,8 @@ window.DEBUG.CollectNonNullValuesAggregator = CollectNonNullValuesAggregator;
                     dimensions.push(field.name);
             });
         }
-        var measureStore = new MeasureStore
+        var measureStore;
+        measureStore = new MeasureStore
         ({
             // there's not really an advantage to pre constructing the dimensions
             //dimensions: dimensions,
@@ -899,7 +984,8 @@ window.DEBUG.CollectNonNullValuesAggregator = CollectNonNullValuesAggregator;
             else if ('isDimension' in m.measure && m.measure.isDimension)
                 dimensions.push(name);
         });
-        var measureStore = new MeasureStore
+        var measureStore;
+        measureStore = new MeasureStore
         ({
             // there's not really an advantage to pre constructing the dimensions
             //dimensions: dimensions,
@@ -952,7 +1038,8 @@ window.DEBUG.CollectNonNullValuesAggregator = CollectNonNullValuesAggregator;
             return retrow;
         });
 
-        var measureStore = new MeasureStore
+        var measureStore;
+        measureStore = new MeasureStore
         ({
             // there's not really an advantage to pre constructing the dimensions
             //dimensions: dimensions,
@@ -1039,32 +1126,35 @@ window.DEBUG.CollectNonNullValuesAggregator = CollectNonNullValuesAggregator;
  */
 LABKEY.Query.experimental.AxisMeasureStore = new (function()
 {
+    var CONCAT_STRING = '|\uFFFF|';
+
     var AxisMeasureStore = function()
     {
         this.axes = [];
         this.measures = [];
+        this._columns = [];
     };
     AxisMeasureStore.prototype =
     {
         axes:null,
         measures:null,
 
-        setMeasure : function(index, store, measureName, filters)
+        setMeasure : function(index, label, store, measureName, filters)
         {
-            this.measures[index] = {measureStore: store, measureName: measureName, filters: filters, index: index};
+            this.measures[index] = {measureStore: store, measureName: measureName, label:label, filters: filters, index: index};
         },
         // plot axis names
         setXMeasure: function (store, measureName, filters)
         {
-            this.setMeasure(0, store, measureName, filters);
+            this.setMeasure(0, 'x', store, measureName, filters);
         },
         setYMeasure: function (store, measureName, filters)
         {
-            this.setMeasure(1, store, measureName, filters);
+            this.setMeasure(1, 'y', store, measureName, filters);
         },
         setZMeasure: function (store, measureName, filters)
         {
-            this.setMeasure(2, store, measureName, filters);
+            this.setMeasure(2, 'z', store, measureName, filters);
         },
 
         setAxis:function(axis,dimension){},
@@ -1086,31 +1176,39 @@ LABKEY.Query.experimental.AxisMeasureStore = new (function()
         {
         },
     */
+        flattenJoinEntry : function(dim,entry)
+        {
+            var measures = this.measures;
+            var r = {};
+            var keyNames = dim._keys;
+            var keyValues = entry.key.split(CONCAT_STRING);
+            for (var i = 0; i < keyNames.length; i++)
+                r[keyNames[i]] = i < keyValues.length ? keyValues[i] : null;
+            for (var m = 0; m < measures.length; m++)
+            {
+                var label = measures[m].label;
+                var measureName = measures[m].measureName;
+                r[label] = entry.value[m][measureName];
+            }
+            return r;
+        },
 
         setJoinOption: function(){},
 
         _join:function(dimArray, results)
         {
-            //var union = [];
-            //if (results[0])
-            //    union.splice(union.length,0,results[0]);
-            //if (results[1])
-            //    union.splice(union.length,0,results[1]);
-            //if (results[2])
-            //    union.splice(union.length,0,results[2]);
-            //
+            var cf = crossfilter();
+            results.forEach(function(result,index){
+                result.forEach(function(row){row.__index = index;});
+                cf.add(result);
+            });
             var initFn = function() {return [];};
             var addFn = function(accum, row)
             {
-                accum[row.index] = row.key;
+                accum[row.__index] = row;
+                return accum;
             };
-            var cf = crossfilter();
-            results.forEach(function(result,index){
-                result.forEach(function(row){row.index = index;});
-                cf.add(result);
-            });
-            var xyz;
-            xyz = cf.dimension(function(row){return row.key;}).group().reduce(addFn, null, initFn).all();
+            var xyz = cf.dimension(function(row){return row.__key;}).group().reduce(addFn, null, initFn).all();
             return xyz;
         },
 
@@ -1145,17 +1243,26 @@ LABKEY.Query.experimental.AxisMeasureStore = new (function()
                     }
                 }
                 var measureStore = measure.measureStore;
-                var dim = measureStore.getDimension(dimArray);
-                var group = measureStore._group(dim);
-                var entries = group.all();
-                group.dispose();
-                return entries;
+                //var dim = measureStore.getDimension(dimArray);
+                //var group = measureStore._group(dim);
+                //var entries = group.all();
+                //group.dispose();
+                //return entries;
+                return measureStore.select(dimArray);
             });
+
             if (0 == results.length)
                 return null;
-            if (1==results.length)
-                return results[0];
-            return this._join(dimArray,results);
+            else if (1==results.length)
+                results = results[0];
+            else
+                results = this._join(dimArray,results);
+
+            var me = this;
+            var ret = results.map(function(entry){
+                return me.flattenJoinEntry(dim,entry);
+            });
+            return ret;
         }
     };
 
