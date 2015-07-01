@@ -113,6 +113,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
                         xtype       : 'checkbox',
                         fieldLabel  : 'Enable Reloading',
                         name        : 'enableReload',
+                        inputId     : 'enableReload',
                         checked     : this.bean.enableReload,
                         uncheckedValue : 'false',
                         listeners : {
@@ -265,17 +266,24 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
         var parent = cmp.findParentByType('fieldset');
         if (parent){
             var row = [];
+            var deleteButtons = [];
+
             Ext4.each(parent.items.items, function(item){
                 if (item.row == cmp.row){
                     row.push(item);
                 }
-
+                else if (item.xtype == 'button' && item.text == 'delete'){
+                    deleteButtons.push(item);
+                }
             }, this);
 
             Ext4.each(row, function(item){
                 parent.remove(item);
-
             }, this);
+
+            if (deleteButtons.length == 1)
+                deleteButtons[0].disable();
+
             this.markDirty(true);
         }
     },
@@ -284,6 +292,12 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
         var parent = cmp.findParentByType('fieldset');
         if (parent){
             parent.add(this.getRowFields());
+
+            Ext4.each(parent.items.items, function(item){
+                if (item.xtype == 'button' && item.text == 'delete'){
+                    item.enable();
+                }
+            }, this);
 
             this.currentRow++;
         }
@@ -323,7 +337,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
             row         : this.currentRow,
             margin      : '0 0 5 8',
             handler     : this.deleteRow,
-            disabled    : this.currentRow === 0,
+            disabled    : this.bean.projectname.length === 1,
             scope       : this
         }];
     },
