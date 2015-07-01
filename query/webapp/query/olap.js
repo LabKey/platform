@@ -1306,10 +1306,6 @@
                             }
                         }
 
-                        if (LABKEY.devMode && !Ext4.isDefined(vv))
-                        {
-                            console.warn("Invalid 'path::' for (key -- value): (" + key + " -- " + value + ") on", object.uniqueName);
-                        }
                         dd[key] = vv;
                     }
                     else if (value.indexOf('label::') === 0 && Ext4.isString(object.name))
