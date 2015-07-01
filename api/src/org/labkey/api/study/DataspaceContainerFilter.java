@@ -48,15 +48,17 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
 
     public DataspaceContainerFilter(User user, Study sharedStudy)
     {
-        super(user);
-        assert sharedStudy.isDataspaceStudy();
+        this(user, sharedStudy.getContainer().getProject());
+    }
 
+    public DataspaceContainerFilter(User user, Container project)
+    {
+        super(user);
         List<GUID> containerIds = null;
-        Container sharedStudyProject = sharedStudy.getContainer().getProject();
         ViewContext context = HttpView.hasCurrentView() ? HttpView.currentContext() : null;
-        if (sharedStudyProject != null && context != null)
+        if (project != null && context != null)
         {
-            Object o = context.getSession().getAttribute(SHARED_STUDY_CONTAINER_FILTER_KEY + sharedStudyProject.getRowId());
+            Object o = context.getSession().getAttribute(SHARED_STUDY_CONTAINER_FILTER_KEY + project.getRowId());
             if (o instanceof List)
                 containerIds = (List) o;
         }
