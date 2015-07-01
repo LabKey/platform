@@ -123,7 +123,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             this.hIndex = hIndex || 0;
 
             if (this.enableSelection) {
-                // reset selection ignoring inflight requests
+                // reset selection ignoring in-flight requests
                 this.mflight = 0;
             }
             this.loadDimension(selections, altRequestDimNamedFilters);
@@ -277,34 +277,32 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             return;
         }
 
-        var hierarchy = this.dim.getHierarchies()[this.hIndex];
-        var baseResult = response.baseResult;
-        var selectionResult = response.selectionResult;
-        var targetLevels = hierarchy.levels;
+        var hierarchy = this.dim.getHierarchies()[this.hIndex],
+            baseResult = response.baseResult,
+            dims = baseResult.metadata.cube.dimensions,
+            selectionResult = response.selectionResult,
+            targetLevels = dims.length > 1 ? dims[1].hierarchies[0].levels : hierarchy.levels,
+            max = this.totals[hierarchy.getUniqueName()],
+            target,
+            pos = baseResult.axes[1].positions,
+            activeGroup = '',
+            isGroup = false,
+            groupTarget,
+            hasSubjectLevel = targetLevels[targetLevels.length-1].name === this.subjectName,
+            hasGrpLevel = targetLevels.length > (hasSubjectLevel ? 3 : 2),
+            grpLevelID = targetLevels[1] ? targetLevels[1].id : null,
+            subPosition,
+            customGroups = {},
+            groupRecords = [],
+            childRecords = [],
+            //
+            // Support for 'sortStrategy' being declared on the MDX.Level. See this app's cube metadata documentation
+            // to see if this app supports the 'sortStrategy' be declared.
+            //
+            sortStrategy = 'SERVER',
+            sortLevelUniqueName,
+            sortLevel;
 
-        if (baseResult.metadata.cube.dimensions.length > 1) {
-            targetLevels = baseResult.metadata.cube.dimensions[1].hierarchies[0].levels;
-        }
-
-        var max = this.totals[hierarchy.getUniqueName()],
-                target,
-                pos = baseResult.axes[1].positions,
-                activeGroup = '',
-                isGroup = false,
-                groupTarget;
-
-        var hasSubjectLevel = targetLevels[targetLevels.length-1].name === this.subjectName;
-        var hasGrpLevel = targetLevels.length > (hasSubjectLevel ? 3 : 2);
-        var grpLevelID = targetLevels[1] ? targetLevels[1].id : null;
-        var subPosition;
-        var customGroups = {}, groupRecords = [], childRecords = [];
-
-        //
-        // Support for 'sortStrategy' being declared on the MDX.Level. See this app's cube metadata documentation
-        // to see if this app supports the 'sortStrategy' be declared.
-        //
-        var sortStrategy = 'SERVER';
-        var sortLevelUniqueName;
         if (hasGrpLevel) {
             Ext.each(targetLevels, function(level) {
                 if (level.id === grpLevelID) {
@@ -317,14 +315,13 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             sortLevelUniqueName = targetLevels[targetLevels.length-1].uniqueName;
         }
 
-        var sortLevel = response.mdx.getLevel(sortLevelUniqueName);
+        sortLevel = response.mdx.getLevel(sortLevelUniqueName);
         if (sortLevel && !Ext.isEmpty(sortLevel.sortStrategy)) {
             sortStrategy = sortLevel.sortStrategy;
         }
 
         // skip (All)
-        for (var x=1; x < pos.length; x++)
-        {
+        for (var x=1; x < pos.length; x++) {
             subPosition = pos[x][0];
 
             // Subjects should not be listed so do not roll up
@@ -387,7 +384,8 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         var groupOnly = true;
         for (var i=0; i < childRecords.length; i++) {
             if (!childRecords[i].get('isGroup')) {
-                groupOnly = false; break;
+                groupOnly = false;
+                break;
             }
         }
 
@@ -504,33 +502,35 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
 
     requestSelection : function(mflight, callback, scope) {
 
-        var queryConfig = {
-            onRows : [{
-                hierarchy: this.dim.getHierarchies()[this.hIndex].getUniqueName(),
-                members: 'members'
-            }],
-            useNamedFilters: ['stateSelectionFilter', 'hoverSelectionFilter', 'statefilter'],
-            mflight: mflight,
-            showEmpty: this.showEmpty,
-            success: callback,
-            scope : scope
-        };
+        if (Ext.isDefined(this.dim)) {
+            var queryConfig = {
+                onRows : [{
+                    hierarchy: this.dim.getHierarchies()[this.hIndex].getUniqueName(),
+                    members: 'members'
+                }],
+                useNamedFilters: ['stateSelectionFilter', 'hoverSelectionFilter', 'statefilter'],
+                mflight: mflight,
+                showEmpty: this.showEmpty,
+                success: callback,
+                scope : scope
+            };
 
-        if (Ext.isString(this.perspective)) {
-            queryConfig.perspective = this.perspective;
+            if (Ext.isString(this.perspective)) {
+                queryConfig.perspective = this.perspective;
+            }
+
+            if (Ext.isDefined(this.dim.distinctLevel)) {
+                queryConfig.countDistinctLevel = this.dim.distinctLevel;
+            }
+
+            var config = this.appendAdditionalQueryConfig(queryConfig);
+            this.mdx.query(config);
         }
-
-        if (Ext.isDefined(this.dim.distinctLevel)) {
-            queryConfig.countDistinctLevel = this.dim.distinctLevel;
-        }
-
-        var config = this.appendAdditionalQueryConfig(queryConfig);
-        this.mdx.query(config);
     },
 
     loadSelection : function() {
         if (this.enableSelection) {
-            // asks for the subselected portion
+            // asks for the sub-selected portion
             this.mflight++;
             this.requestSelection(this.mflight, this.onLoadSelection, this);
         }
@@ -607,7 +607,6 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
     },
 
     refresh : function() {
-        OP = this;
         if (this.store.KEYED_LOAD === true) {
             this.addAnimations();
 
@@ -680,8 +679,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
         //
         // Remove animators
         //
-        var anims = Ext.DomQuery.select('.animator');
-        Ext.each(anims, function(a) {
+        Ext.each(Ext.DomQuery.select('.animator'), function(a) {
             a = Ext.get(a);
             a.replaceCls('animator', '');
         });
@@ -718,8 +716,6 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                                 (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
                                 '</span>',
                                 '{[ this.renderCount(values) ]}',
-//                                '<span class="info" style="left: {[ this.calcLeft(values) ]}%"></span>',
-//                                '<span class="info" style="left: 115%"></span>',
                                 '{[ this.renderBars(values) ]}',
                             '</div>',
                         '</tpl>',
@@ -727,9 +723,6 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                 '</div>',
             '</div>',
                 {
-//                    calcLeft : function(v) {
-//                        return ((v.count / v.maxcount) * 100) + 15;
-//                    },
                     renderBars : function(values) {
                         return barTpl.apply(values);
                     },
@@ -911,7 +904,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
     },
 
     selection : function() {
-        if (this.selectRequest || (Ext.isArray(this.selections) && this.selections.length > 0)) {
+        if (this.selectRequest || !Ext.isEmpty(this.selections)) {
             this.store.loadSelection();
         }
         else {
