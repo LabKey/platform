@@ -95,8 +95,6 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
                 if (!c.isWorkbook() && c.hasPermission(_user, perm, roles))
                     allowedContainers.add(guid);
             }
-            if (currentContainer.hasPermission(_user,perm,roles))
-                allowedContainers.add(currentContainer.getEntityId());
         }
         else
         {
