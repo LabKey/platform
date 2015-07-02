@@ -861,7 +861,7 @@ public class ModuleLoader implements Filter
         {
             // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists in
             // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
-            labkeyDsName = ensureDatabase(new String[]{"labkeyDataSource", "cpasDataSource"});
+            labkeyDsName = ensureDatabase("labkeyDataSource", "cpasDataSource");
 
             InitialContext ctx = new InitialContext();
             Context envCtx = (Context) ctx.lookup("java:comp/env");
@@ -890,10 +890,14 @@ public class ModuleLoader implements Filter
         DbScope.initializeScopes(labkeyDsName, dataSources);
     }
 
-    // For each name in dsNames, look for a matching data source in labkey.xml. If found, attempt a connection and
+    // For each name, look for a matching data source in labkey.xml. If found, attempt a connection and
     // create the database if it doesn't already exist, report any errors and return the name.
-    public String ensureDatabase(String[] dsNames) throws NamingException, ServletException
+    public String ensureDatabase(@NotNull String primaryName, String... alternativeNames) throws NamingException, ServletException
     {
+        List<String> dsNames = new ArrayList<>();
+        dsNames.add(primaryName);
+        dsNames.addAll(Arrays.asList(alternativeNames));
+
         InitialContext ctx = new InitialContext();
         Context envCtx = (Context) ctx.lookup("java:comp/env");
 
@@ -952,7 +956,7 @@ public class ModuleLoader implements Filter
         }
 
         if (null == dataSource)
-            throw new ConfigurationException("You must have a DataSource named \"" + dsNames[0] + "\" defined in labkey.xml.");
+            throw new ConfigurationException("You must have a DataSource named \"" + primaryName + "\" defined in labkey.xml.");
 
         DbScope.ensureDataBase(dsName, dataSource);
 

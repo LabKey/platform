@@ -471,7 +471,7 @@ public class ExceptionUtil
     {
         try
         {
-            DbScope.closeAllConnections();
+            DbScope.closeAllConnectionsForCurrentThread();
         }
         catch (Throwable t)
         {

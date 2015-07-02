@@ -39,7 +39,7 @@ public class TransactionFilter implements Filter
         }
         finally
         {
-            DbScope.closeAllConnections();
+            DbScope.closeAllConnectionsForCurrentThread();
         }
     }
 

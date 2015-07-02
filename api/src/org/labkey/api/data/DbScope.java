@@ -947,7 +947,7 @@ public class DbScope
                     {
                         try
                         {
-                            ModuleLoader.getInstance().ensureDatabase(new String[]{dsName});
+                            ModuleLoader.getInstance().ensureDatabase(dsName);
                         }
                         catch (Throwable t)
                         {
@@ -1179,30 +1179,31 @@ public class DbScope
         }
     }
 
-    public static void closeAllConnections()
+    /** Shuts down any connections associated with DbScopes that have been handed out to the current thread */
+    public static void closeAllConnectionsForCurrentThread()
     {
-        DbScope[] scopes;
+        Collection<DbScope> scopes;
         synchronized (_scopes)
         {
-            scopes = _scopes.values().toArray(new DbScope[_scopes.size()]);
+            scopes = new ArrayList<>(_scopes.values());
         }
 
+        for (DbScope scope : scopes)
         {
-            for (DbScope scope : scopes)
+            TransactionImpl t = scope.getCurrentTransactionImpl();
+            while (t != null)
             {
-                TransactionImpl t = scope.getCurrentTransactionImpl();
-                if (t != null)
+                try
                 {
-                    try
-                    {
-                        LOG.warn("Forcing close of transaction started at ", t._creation);
-                        t.closeConnection();
-                    }
-                    catch (Exception x)
-                    {
-                        LOG.error("Failure forcing connection close on " + scope, x);
-                    }
+                    LOG.warn("Forcing close of transaction started at ", t._creation);
+                    t.closeConnection();
                 }
+                catch (Exception x)
+                {
+                    LOG.error("Failure forcing connection close on " + scope, x);
+                }
+                // We may have nested concurrent transactions for a given scope, so be sure we close them all
+                t = scope.getCurrentTransactionImpl();
             }
         }
     }
