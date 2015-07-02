@@ -433,7 +433,11 @@ public class QueryServiceImpl extends QueryService
 
         // custom views in the database get highest precedence, so let them overwrite the module-defined views in the map
         for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, qd.getSchema().getSchemaPath().toString(), qd.getName(), owner, inheritable, sharedOnly))
-            views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
+        {
+            // The database custom views are in priority order so check if the view has already been added
+            if (!views.containsKey(cstmView.getName()))
+                views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
+        }
 
         return views;
     }
