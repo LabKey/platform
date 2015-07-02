@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.mule;
 
+import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
 
 /**
@@ -28,6 +29,13 @@ public class PipelineJobRunner
 {
     public void run(PipelineJob job)
     {
-        job.run();
+        try
+        {
+            job.run();
+        }
+        finally
+        {
+            DbScope.closeAllConnectionsForCurrentThread();
+        }
     }
 }

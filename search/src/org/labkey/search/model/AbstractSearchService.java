@@ -1057,7 +1057,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     }
                     finally
                     {
-                        DbScope.closeAllConnections();
+                        DbScope.closeAllConnectionsForCurrentThread();
                     }
                 }
             }
@@ -1202,7 +1202,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     }
                     finally
                     {
-                        DbScope.closeAllConnections();
+                        DbScope.closeAllConnectionsForCurrentThread();
                     }
                 }
             }
