@@ -1156,16 +1156,19 @@ public class ModuleLoader implements Filter
 
         for (DbSchema schema : type.orderSchemas(provider.getSchemas()))
         {
-            try
+            if (schema.getSqlDialect().canExecuteUpgradeScripts())
             {
-                SqlScript script = type.getScript(provider, schema);
+                try
+                {
+                    SqlScript script = type.getScript(provider, schema);
 
-                if (null != script)
-                    SqlScriptRunner.runScripts(module, null, Arrays.asList(script));
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException("Error running scripts in module " + module.getName(), e);
+                    if (null != script)
+                        SqlScriptRunner.runScripts(module, null, Arrays.asList(script));
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException("Error running scripts in module " + module.getName(), e);
+                }
             }
         }
     }

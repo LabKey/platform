@@ -359,6 +359,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
             for (DbSchema schema : provider.getSchemas())
             {
+
                 SqlScriptManager manager = SqlScriptManager.get(provider, schema);
                 List<SqlScript> scripts = manager.getRecommendedScripts(getVersion());
 

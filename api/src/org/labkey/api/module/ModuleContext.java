@@ -146,8 +146,11 @@ public class ModuleContext implements Cloneable
 
         for (DbSchema schema : provider.getSchemas())
         {
-            SqlScriptManager manager = SqlScriptManager.get(provider, schema);
-            manager.updateSchemaVersion(_installedVersion);
+            if (schema.getSqlDialect().canExecuteUpgradeScripts())
+            {
+                SqlScriptManager manager = SqlScriptManager.get(provider, schema);
+                manager.updateSchemaVersion(_installedVersion);
+            }
         }
     }
 

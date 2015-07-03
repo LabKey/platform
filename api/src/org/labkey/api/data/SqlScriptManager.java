@@ -99,6 +99,9 @@ public abstract class SqlScriptManager
 
     public List<SqlScript> getRecommendedScripts(double to) throws SQLException, SqlScriptException
     {
+        if (!_schema.getSqlDialect().canExecuteUpgradeScripts())
+            return Collections.emptyList();
+
         List<SqlScript> newScripts = getNewScripts();
         return getRecommendedScripts(newScripts, getFrom(), to);
     }
@@ -380,6 +383,9 @@ public abstract class SqlScriptManager
 
         public boolean requiresUpgrade()
         {
+            if (!_schema.getSqlDialect().canExecuteUpgradeScripts())
+                return false;
+
             SchemaBean bean = ensureSchemaBean();
             Module module = ModuleLoader.getInstance().getModule(_provider.getProviderName());
             ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
