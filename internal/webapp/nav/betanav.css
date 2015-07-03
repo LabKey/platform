@@ -81,6 +81,9 @@
     padding: 5px 50px 10px 10px;
 }
 
+.maintainHover {
+    color: #ffffff;
+}
 .nav-buttons {
     margin-top: 10px;
 }

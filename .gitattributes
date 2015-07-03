@@ -8114,6 +8114,7 @@ internal/webapp/internal/jQuery/jquery-1.11.2.js -text
 internal/webapp/internal/jQuery/jquery-1.11.2.min.js -text
 internal/webapp/internal/jQuery/jquery-dateFormat.js -text
 internal/webapp/internal/jQuery/jquery-dateFormat.min.js -text
+internal/webapp/internal/jQuery/jquery.menu-aim.js -text
 internal/webapp/js_color_picker_v2.css -text
 internal/webapp/js_color_picker_v2.js -text
 internal/webapp/labkey.js -text
