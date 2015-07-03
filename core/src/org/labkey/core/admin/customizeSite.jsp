@@ -108,6 +108,10 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label">Base server URL (used to create links in emails sent by the system)</td>
     <td><input type="text" name="baseServerUrl" size="50" value="<%= h(appProps.getBaseServerUrl()) %>"></td>
 </tr>
+    <tr>
+        <td class="labkey-form-label">Use "path first" urls (/home/project-begin.view)</td>
+        <td><labkey:checkbox id="useContainerRelativeURL" name="useContainerRelativeURL" checked="<%= appProps.getUseContainerRelativeURL() %>" value="true" /></td>
+    </tr>
 <tr>
     <td>&nbsp;</td>
 </tr>

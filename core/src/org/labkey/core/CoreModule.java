@@ -694,10 +694,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             dls.registerFactory(new FastaDataLoader.Factory());
         }
 
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL,
-                "Container Relative URL",
-                "Use container relative URLs of the form /labkey/container/controller-action instead of the current /labkey/controller/container/action URLs.",
-                false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
                 "Client-side Exception Logging To Mothership",
                 "Report unhandled JavaScript exceptions to mothership.",

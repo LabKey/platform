@@ -32,25 +32,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasValidator;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.IgnoresAllocationTracking;
-import org.labkey.api.action.LabkeyError;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.RedirectAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.StatusReportingRunnableAction;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
@@ -1228,6 +1210,8 @@ public class AdminController extends SpringActionController
             props.setRibbonMessageHtml(form.getRibbonMessageHtml());
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
 
+            props.setUseContainerRelativeURL(form.getUseContainerRelativeURL());
+
             try
             {
                 ExceptionReportingLevel level = ExceptionReportingLevel.valueOf(form.getExceptionReportingLevel());
@@ -1699,6 +1683,7 @@ public class AdminController extends SpringActionController
         private String _networkDrivePassword;
         private String _baseServerUrl;
         private String _callbackPassword;
+        private boolean _useContainerRelativeURL;
 
         public void setDefaultDomain(String defaultDomain)
         {
@@ -1948,6 +1933,16 @@ public class AdminController extends SpringActionController
         public void setRibbonMessageHtml(String ribbonMessageHtml)
         {
             _ribbonMessageHtml = ribbonMessageHtml;
+        }
+
+        public boolean getUseContainerRelativeURL()
+        {
+            return _useContainerRelativeURL;
+        }
+
+        public void setUseContainerRelativeURL(boolean useContainerRelativeURL)
+        {
+            _useContainerRelativeURL = useContainerRelativeURL;
         }
     }
 
@@ -5510,7 +5505,7 @@ public class AdminController extends SpringActionController
         public boolean doAction(Object o, BindException errors) throws Exception
         {
             // Find a valid pipeline root - we don't really care which one, we just need somewhere to write the log file
-            for (Container project : ContainerManager.getProjects())
+            for (Container project : Arrays.asList(ContainerManager.getSharedContainer(), ContainerManager.getHomeContainer()))
             {
                 PipeRoot root = PipelineService.get().findPipelineRoot(project);
                 if (root != null && root.isValid())
