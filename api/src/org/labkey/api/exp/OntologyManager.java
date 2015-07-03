@@ -1026,7 +1026,7 @@ public class OntologyManager
 
     private static void copyDescriptors(final Container c, final Container project) throws ValidationException
     {
-        _log.warn("OntologyManager.copyDescriptors  " + c.getName() + " " + project.getName());
+        _log.debug("OntologyManager.copyDescriptors  " + c.getName() + " " + project.getName());
 
         // if c is (was) a project, then nothing to do
         if (c.getId().equals(project.getId()))
