@@ -73,7 +73,7 @@ public interface QueryChangeListener
     void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries);
 
     /**
-     * Get a textual representation of items that depdend on a table or query.
+     * Get a textual representation of items that depend on a table or query.
      * For example, the user can be presented with a list of items that will break if a query is deleted.
      *
      * @param user The current user.
