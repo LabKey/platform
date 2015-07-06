@@ -37,10 +37,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * QueryChangeListener for custom views.
@@ -70,6 +68,20 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
     @Override
     public void queryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
+        HttpServletRequest request = new MockHttpServletRequest();
+        QueryServiceImpl svc = QueryServiceImpl.get();
+        String schemaName = schema.toString();
+
+        for (String query : queries)
+        {
+            // We do not want to get the inherited custom views because the child should not delete inherited views
+            List<CustomView> views = svc.getCustomViews(user, container, null, schemaName, query, false);
+            for (CustomView view : views)
+            {
+                if (view.canEdit(container, null))
+                    view.delete(user, request);
+            }
+        }
     }
 
     @Override
@@ -205,7 +217,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                 CustomViewInfo.FilterAndSort fas = CustomViewInfo.FilterAndSort.fromString(customView.getFilterAndSort());
                 ActionURL updatedFilterAndSortUrl = new ActionURL();
 
-                // update filter info list based on fieldKey parts, and include them in the udpated FilterAndSort URL
+                // update filter info list based on fieldKey parts, and include them in the updated FilterAndSort URL
                 boolean filtersUpdated = false;
                 for (FilterInfo filterInfo : fas.getFilter())
                 {
@@ -219,7 +231,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                     filterInfo.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, newFieldKey != null ? newFieldKey : origFieldKey);
                 }
 
-                // update sort field list based on fieldKey parts, and include them in the udpated FilterAndSort URL
+                // update sort field list based on fieldKey parts, and include them in the updated FilterAndSort URL
                 boolean sortsUpdated = false;
                 Sort sort = new Sort();
                 for (Sort.SortField sortField : fas.getSort())
@@ -235,7 +247,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
                 }
                 sort.applyToURL(updatedFilterAndSortUrl, CustomViewInfo.FILTER_PARAM_PREFIX, false);
 
-                // update aggregates based on fieldKey parts, and include them in the udpated FilterAndSort URL
+                // update aggregates based on fieldKey parts, and include them in the updated FilterAndSort URL
                 boolean aggregatesUpdated = false;
                 for (Aggregate aggregate : fas.getAggregates())
                 {
