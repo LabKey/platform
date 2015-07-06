@@ -109,6 +109,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
+import javax.mail.Message;
 import javax.mail.internet.AddressException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -1378,8 +1379,11 @@ public class IssuesController extends SpringActionController
                 Issue.Comment lastComment = issue.getLastComment();
                 String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                 String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-                MailHelper.ViewMessage m = MailHelper.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(), to);
+                MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
+                m.setFrom(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress());
+                m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(to));
                 Address[] addresses = m.getAllRecipients();
+
                 if (addresses != null && addresses.length > 0)
                 {
                     IssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(IssueUpdateEmailTemplate.class, getContainer());
@@ -1388,7 +1392,21 @@ public class IssuesController extends SpringActionController
                     m.setSubject(template.renderSubject(getContainer()));
                     m.setHeader("References", references);
                     String body = template.renderBody(getContainer());
-                    m.setText(body);
+
+                    m.setBodyContent(body,"text/plain");
+                    StringBuilder html = new StringBuilder();
+                    html.append("<html><head></head><body>");
+                    html.append(PageFlowUtil.filter(body,true,true));
+                    html.append(
+                            "<div itemscope itemtype=\"http://schema.org/EmailMessage\">\n" +
+                            "  <div itemprop=\"action\" itemscope itemtype=\"http://schema.org/ViewAction\">\n" +
+                            "    <link itemprop=\"url\" href=\"" + PageFlowUtil.filter(detailsURL) + "\"></link>\n" +
+                            "    <meta itemprop=\"name\" content=\"View Commit\"></meta>\n" +
+                            "  </div>\n" +
+                            "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(getContainer()).singularName) + "\"></meta>\n" +
+                            "</div>\n");
+                    html.append("</body></html>");
+                    m.setBodyContent(html.toString(),"text/html");
 
                     MailHelper.send(m, getUser(), getContainer());
                 }
@@ -2404,6 +2422,12 @@ public class IssuesController extends SpringActionController
         public String getResultName()
         {
             return "issue";
+        }
+
+        @Override
+        public boolean includeNavigationLinks()
+        {
+            return false;
         }
 
         @Override

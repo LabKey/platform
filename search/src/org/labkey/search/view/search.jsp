@@ -77,6 +77,8 @@
     String queryString = form.getQueryString();
 
     SearchController.SearchConfiguration searchConfig = form.getConfig();
+
+    boolean includeNavigationLinks = !form.isWebPart() && searchConfig.includeNavigationLinks() && template.includeNavigationLinks();
     boolean showAdvancedUI = !form.isWebPart() && searchConfig.includeAdvancedUI() && template.includeAdvanceUI();
 
     // if login status changes, cookie will change, and we want to not cache this page
@@ -226,14 +228,22 @@
                 Container documentContainer = ContainerManager.getForId(hit.container);
 
                 String href = normalizeHref(documentContainer, contextPath, hit.url);
-                String summary = StringUtils.trimToNull(hit.summary);
                 %>
                 <div class="labkey-search-result">
                 <a class="labkey-search-title" href="<%=h(href)%>"><%=h(hit.title)%></a><div style='margin-left:10px; width:600px;'><%
 
-                if (null != summary)
+                HttpView summaryView = ss.getCustomSearchResult(user, hit.docid);
+                if (null != summaryView)
                 {
-                    %><%=h(summary, false)%><br><%
+                    include(summaryView,out);
+                }
+                else
+                {
+                    String summary = StringUtils.trimToNull(hit.summary);
+                    if (null != summary)
+                    {
+                        %><%=h(summary, false)%><br><%
+                    }
                 }
 
                 NavTree nav = getDocumentContext(documentContainer, hit);
@@ -288,7 +298,7 @@
 
             %></div></td><%
 
-            if (null == categories && wideView && searchConfig.includeNavigationLinks() && scope != SearchScope.Folder)
+            if (wideView && includeNavigationLinks && scope != SearchScope.Folder)
             {
                 result = ss.search(queryString, Arrays.asList(SearchService.navigationCategory), user, c, scope, offset, hitsPerPage);
 
@@ -654,6 +664,10 @@ String normalizeHref(Container c, Path contextPath, String href)
                         {
                             scopeEl.disabled = false;
                             scopeEl.value = chkbox.id.substring(3);
+                        }
+                        if (chkbox.boxLabel && Ext.get('labkey-nav-trail-current-page'))
+                        {
+                            Ext.get('labkey-nav-trail-current-page').update("Search " + Ext.util.Format.htmlEncode(chkbox.boxLabel));
                         }
                     }
                 },

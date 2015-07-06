@@ -69,6 +69,8 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.AbstractDocumentResource;
@@ -1367,7 +1369,39 @@ public class IssueManager
             {
                 return IssueManager.resolve(resourceIdentifier);
             }
+
+            @Override
+            public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
+            {
+                int issueId;
+                try
+                {
+                    issueId = Integer.parseInt(resourceIdentifier);
+                }
+                catch (NumberFormatException x)
+                {
+                    return null;
+                }
+
+                final Issue issue = getIssue(null, issueId);
+                if (null == issue)
+                    return null;
+                Container c = issue.lookupContainer();
+                if (null == c || !c.hasPermission(user, ReadPermission.class))
+                    return null;
+
+                return new IssueSummaryView(issue);
+            }
         };
+    }
+
+
+    public static class IssueSummaryView extends JspView
+    {
+        IssueSummaryView(Issue issue)
+        {
+            super("/org/labkey/issue/searchSummary.jsp", issue);
+        }
     }
 
 

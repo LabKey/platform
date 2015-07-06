@@ -36,12 +36,14 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.ActionResource;
@@ -117,12 +119,24 @@ public class SearchModule extends DefaultModule
             {
                 return new ActionResource(str);
             }
+
+            @Override
+            public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
+            {
+                return null;
+            }
         });
         ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
         {
             public WebdavResource resolve(@NotNull String path)
             {
                 return WebdavService.get().lookup(path);
+            }
+
+            @Override
+            public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
+            {
+                return null;
             }
         });
         ServiceRegistry.get().registerService(SearchService.class, ss);

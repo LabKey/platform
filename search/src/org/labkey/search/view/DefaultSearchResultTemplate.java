@@ -56,6 +56,12 @@ public class DefaultSearchResultTemplate implements SearchResultTemplate
     }
 
     @Override
+    public boolean includeNavigationLinks()
+    {
+        return true;
+    }
+
+    @Override
     public boolean includeAdvanceUI()
     {
         return true;

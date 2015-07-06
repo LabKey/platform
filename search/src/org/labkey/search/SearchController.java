@@ -727,10 +727,20 @@ public class SearchController extends SpringActionController
 
             if (null != StringUtils.trimToNull(query))
             {
-                //UNDONE: paging, rowlimit etc
-                int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
-                SearchService.SearchResult result = ss.search(query, null, getUser(), getContainer(), form.getSearchScope(),
+                SearchService.SearchResult result;
+                try
+                {
+                    //UNDONE: paging, rowlimit etc
+                    int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
+                    result = ss.search(query, null, getUser(), getContainer(), form.getSearchScope(),
                         form.getOffset(), limit);
+                }
+                catch (Exception x)
+                {
+                    errors.rejectValue("q", ERROR_MSG,x.getMessage());
+                    return null;
+                }
+
                 List<SearchService.SearchHit> hits = result.hits;
                 totalHits = result.totalHits;
 

@@ -51,6 +51,7 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.view.DefaultSearchResultTemplate;
@@ -651,6 +652,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (null == res)
             return null;
         return res.resolve(resourceIdentifier.substring(i+1));
+    }
+
+
+    @Override
+    public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
+    {
+        int i = resourceIdentifier.indexOf(":");
+        if (i == -1)
+            return null;
+        String prefix = resourceIdentifier.substring(0, i);
+        ResourceResolver res = _resolvers.get(prefix);
+        if (null == res)
+            return null;
+        return res.getCustomSearchResult(user, resourceIdentifier.substring(i+1));
     }
 
 
