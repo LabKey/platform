@@ -303,9 +303,12 @@ LABKEY.Query.Visualization = new function() {
                 }
             }
 
+            var endpoint = config.endpoint || LABKEY.ActionURL.buildURL("visualization", "getData", config.containerPath);
+            endpoint += LABKEY.ActionURL.queryString(urlParams);
+
             LABKEY.Ajax.request(
             {
-                url : LABKEY.ActionURL.buildURL("visualization", "getData", config.containerPath, urlParams),
+                url : endpoint,
                 method : 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),

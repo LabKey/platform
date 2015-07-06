@@ -15,10 +15,10 @@
  */
 package org.labkey.api.search;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewContext;
+        import org.jetbrains.annotations.NotNull;
+        import org.jetbrains.annotations.Nullable;
+        import org.labkey.api.view.NavTree;
+        import org.labkey.api.view.ViewContext;
 
 /**
  * User: adam
@@ -36,6 +36,8 @@ public interface SearchResultTemplate
     public @Nullable SearchScope getSearchScope();
 
     public @NotNull String getResultName();
+
+    public boolean includeNavigationLinks();
 
     public boolean includeAdvanceUI();
 

@@ -945,13 +945,13 @@ public class Portal
     }
 
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template) throws Exception
+    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView) throws Exception
     {
-        populatePortalView(context, id, template, context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class));
+        populatePortalView(context, id, template, printView, context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class));
     }
 
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean canCustomize) throws Exception
+    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView, boolean canCustomize) throws Exception
     {
         id = StringUtils.defaultString(id, DEFAULT_PORTAL_PAGE_ID);
         String contextPath = context.getContextPath();
@@ -990,7 +990,7 @@ public class Portal
                 template.addClientDependencies(view.getClientDependencies());
 
                 NavTree navTree = view.getPortalLinks();
-                if (canCustomize)
+                if (canCustomize && !printView)
                 {
                     if (desc.isEditable() && view.getCustomize() == null)
                         view.setCustomize(new NavTree("", getCustomizeURL(context, part)));
@@ -1017,9 +1017,12 @@ public class Portal
                     }
                 }
 
-                if (parts.size() == 1 && location.equals(HttpView.BODY))
+                if (parts.size() == 1)
                 {
-                    view.setIsOnlyWebPartOnPage(true);
+                    if (printView)
+                        view.setFrame(WebPartView.FrameType.NONE);
+                    if (location.equals(HttpView.BODY))
+                        view.setIsOnlyWebPartOnPage(true);
                 }
 
                 addViewToRegion(template, location, view);
@@ -1027,7 +1030,7 @@ public class Portal
             }
         }
 
-        if (canCustomize)
+        if (canCustomize && !printView)
             addCustomizeDropdowns(context.getContainer(), template, id, locations);
     }
 

@@ -32,6 +32,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
@@ -160,6 +161,7 @@ public interface SearchService
     interface ResourceResolver
     {
         WebdavResource resolve(@NotNull String resourceIdentifier);
+        HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier);
     }
 
 
@@ -291,7 +293,9 @@ public interface SearchService
     void addSearchCategory(SearchCategory category);
     List<SearchCategory> getCategories(String categories);
     void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
+
     WebdavResource resolveResource(@NotNull String resourceIdentifier);
+    HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier);
 
     void addSearchResultTemplate(@NotNull SearchResultTemplate template);
     @Nullable SearchResultTemplate getSearchResultTemplate(@Nullable String name);
