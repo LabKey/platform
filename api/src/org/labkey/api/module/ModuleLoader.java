@@ -25,6 +25,7 @@ import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.Sets;
@@ -810,10 +811,11 @@ public class ModuleLoader implements Filter
      *
      * @throws ConfigurationException if Java version is not supported
      */
+    @JavaRuntimeVersion
     private void verifyJavaVersion() throws ConfigurationException
     {
-        if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_7))
-            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 7.");
+        if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_8))
+            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 8.");
     }
 
     /**
@@ -834,7 +836,7 @@ public class ModuleLoader implements Filter
             int majorVersion = Integer.valueOf(versionParts[0]);
 
             if (majorVersion < 7)
-                throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 7.");
+                throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 7 or 8.");
 
             return majorVersion;
         }
@@ -848,12 +850,7 @@ public class ModuleLoader implements Filter
     {
         _log.debug("Ensuring that all databases specified by datasources in webapp configuration xml are present");
 
-        Map<String, DataSource> dataSources = new TreeMap<>(new Comparator<String>() {
-            public int compare(String name1, String name2)
-            {
-                return name1.compareTo(name2);
-            }
-        });
+        Map<String, DataSource> dataSources = new TreeMap<>(String::compareTo);
 
         String labkeyDsName;
 

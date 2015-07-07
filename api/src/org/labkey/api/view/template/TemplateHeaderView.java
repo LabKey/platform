@@ -16,9 +16,7 @@
 
 package org.labkey.api.view.template;
 
-import org.apache.commons.lang3.JavaVersion;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ConnectionWrapper;
@@ -98,10 +96,11 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
                 _warningMessages.add(bean.upgradeMessage);
             }
 
+/*
             // We have deprecated support for Java 7... warn
             if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_8))
                 _warningMessages.add("LabKey Server no longer supports Java 7. Please upgrade your runtime to Java 8.");
-/*
+
             String serverInfo = ModuleLoader.getServletContext().getServerInfo();
 
             if (serverInfo.startsWith("Apache Tomcat/"))

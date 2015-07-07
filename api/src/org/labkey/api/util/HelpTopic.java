@@ -38,7 +38,7 @@ public class HelpTopic
     private static String HELP_VERSION = null;
 
     @JavaRuntimeVersion // Update this link whenever we require a new major Java version so we always point at the current docs
-    private static final String JDK_JAVADOC_BASE_URL = "http://docs.oracle.com/javase/7/docs/api/";
+    private static final String JDK_JAVADOC_BASE_URL = "http://docs.oracle.com/javase/8/docs/api/";
 
     private String _topic;
 

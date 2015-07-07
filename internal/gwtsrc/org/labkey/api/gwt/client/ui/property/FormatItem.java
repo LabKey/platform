@@ -32,9 +32,9 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
 {
     // @JavaRuntimeVersion: Update these documentation links whenever we require a new major Java version so we always point at the current docs.
     // Should match Formats.getDecimalFormatDocumentationURL()
-    private static final String DECIMAL_FORMAT_DOCUMENTATION_LINK = "http://docs.oracle.com/javase/7/docs/api/java/text/DecimalFormat.html";
+    private static final String DECIMAL_FORMAT_DOCUMENTATION_LINK = "http://docs.oracle.com/javase/8/docs/api/java/text/DecimalFormat.html";
     // Should match DateUtil.getSimpleDateFormatDocumentationURL()
-    private static final String SIMPLE_DATE_FORMAT_DOCUMENTATION_LINK = "http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html";
+    private static final String SIMPLE_DATE_FORMAT_DOCUMENTATION_LINK = "http://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html";
 
     private static final String FORMAT_HELP_NUMBER = "The format string for numbers " +
     "must be compatible with the format that the java class <a href=\"" + DECIMAL_FORMAT_DOCUMENTATION_LINK + "\" target=\"blank\"><code>DecimalFormat</code></a> accepts.<br/>" +

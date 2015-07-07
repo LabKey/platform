@@ -21,7 +21,6 @@ import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.data.PropertyManager;
 
 import java.util.ArrayList;
@@ -120,7 +119,6 @@ public class CollectionUtils
 
     public static class TestCase extends Assert
     {
-        @JavaRuntimeVersion  // Re-enable code below when we require Java 8
         @Test
         public void testModifiableCollectionDetection()
         {
@@ -182,13 +180,13 @@ public class CollectionUtils
             // Unmodifiable MultiMap
             assertUnmodifiable(new UnmodifiableMultiMap<>(new MultiHashMap<>()));
 
-//  These Collections methods are new to Java 8... re-enable when we require that version
-//            assertUnmodifiable(Collections.emptyNavigableSet());
-//            assertUnmodifiable(Collections.emptySortedSet());
-//            assertUnmodifiable(Collections.unmodifiableNavigableSet(new TreeSet<>()));
-//            assertUnmodifiable(Collections.emptyNavigableMap());
-//            assertUnmodifiable(Collections.emptySortedMap());
-//            assertUnmodifiable(Collections.unmodifiableNavigableMap(new TreeMap<>()));
+            //  These Collections methods are new to Java 8
+            assertUnmodifiable(Collections.emptyNavigableSet());
+            assertUnmodifiable(Collections.emptySortedSet());
+            assertUnmodifiable(Collections.unmodifiableNavigableSet(new TreeSet<>()));
+            assertUnmodifiable(Collections.emptyNavigableMap());
+            assertUnmodifiable(Collections.emptySortedMap());
+            assertUnmodifiable(Collections.unmodifiableNavigableMap(new TreeMap<>()));
         }
 
         private void assertModifiable(Object value, String expectedType)
