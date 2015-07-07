@@ -108,46 +108,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         add, delete
     }
 
-    static final Comparator<Item> itemCompare = new Comparator<Item>()
-    {
-        public int compare(Item o1, Item o2)
-        {
-            return o1._pri.compareTo(o2._pri);
-        }
-    };
+    static final Comparator<Item> itemCompare = (o1, o2) -> o1._pri.compareTo(o2._pri);
 
 
-    @JavaRuntimeVersion
     public AbstractSearchService()
     {
         addSearchCategory(fileCategory);
         addSearchCategory(navigationCategory);
-
-        // Hack to work around Java 7 PriorityBlockingQueue bug, http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7161229
-        // This has been fixed in Java 7u40. For now, continue implementing memtracker hack for JVM < 1.7.0_40.
-        if (SystemUtils.IS_JAVA_1_7)
-        {
-            String version = SystemUtils.JAVA_VERSION;
-
-            if (version.startsWith("1.7.0_"))
-            {
-                int minorVersion = Integer.valueOf(version.substring(6));
-
-                if (minorVersion < 40)
-                {
-                    MemTracker.getInstance().register(new MemTrackerListener()
-                    {
-                        @Override
-                        public void beforeReport(Set<Object> set)
-                        {
-                            // Add a no-op marker item to the queue to purge previously removed item that queue might be holding.
-                            _itemQueue.put(_commitItem);
-                            _runQueue.put(_commitItem);
-                        }
-                    });
-                }
-            }
-        }
     }
     
 
