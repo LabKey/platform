@@ -284,7 +284,7 @@ public class ModuleLoader implements Filter
 
         verifyTomcatVersion();
 
-        _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath(".")));
+        _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath("")));
 
         List<File> explodedModuleDirs;
 
@@ -1163,7 +1163,7 @@ public class ModuleLoader implements Filter
                     SqlScript script = type.getScript(provider, schema);
 
                     if (null != script)
-                        SqlScriptRunner.runScripts(module, null, Arrays.asList(script));
+                        SqlScriptRunner.runScripts(module, null, Collections.singletonList(script));
                 }
                 catch (Exception e)
                 {
