@@ -21,6 +21,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
@@ -143,6 +145,25 @@ class MockServletResponse implements HttpServletResponse
         headers.put(s,String.valueOf(i));
     }
 
+//  This will be required when we upgrade servlet-api to a more modern version
+//    @Override
+//    public String getHeader(String s)
+//    {
+//        return headers.get(s);
+//    }
+//
+//    @Override
+//    public Collection<String> getHeaders(String s)
+//    {
+//        return Collections.singleton(getHeader(s));
+//    }
+//
+//    @Override
+//    public Collection<String> getHeaderNames()
+//    {
+//        return headers.keySet();
+//    }
+//
     @Override
     public void setStatus(int i)
     {
@@ -156,6 +177,12 @@ class MockServletResponse implements HttpServletResponse
         message = s;
     }
 
+//    @Override
+//    public int getStatus()
+//    {
+//        return status;
+//    }
+//
     @Override
     public String getCharacterEncoding()
     {
