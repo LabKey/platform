@@ -337,7 +337,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
             row         : this.currentRow,
             margin      : '0 0 5 8',
             handler     : this.deleteRow,
-            disabled    : this.bean.projectname.length === 1,
+            disabled    : this.bean.projectname ? this.bean.projectname.length === 1 : true,
             scope       : this
         }];
     },
