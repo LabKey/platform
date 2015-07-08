@@ -257,6 +257,110 @@
       <ns:column columnName="RendererType"/>
     </ns:columns>
   </ns:table>
+  <ns:table tableName="PagePaths" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RowId">
+        <ns:columnTitle>Row Id</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:nullable>false</ns:nullable>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:isKeyField>true</ns:isKeyField>
+      </ns:column>
+      <ns:column columnName="EntityId">
+        <ns:datatype>uniqueidentifier</ns:datatype>
+        <ns:columnTitle>Entity Id</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>36</ns:inputLength>
+        <ns:nullable>true</ns:nullable>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="CreatedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Created By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Created">
+        <ns:columnTitle>Created</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="ModifiedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Modified By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Modified">
+        <ns:columnTitle>Modified</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Owner">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Owner</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Container">
+        <ns:datatype>nvarchar</ns:datatype>
+        <ns:columnTitle>Container</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:scale>255</ns:scale>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:nullable>true</ns:nullable>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Name">
+        <ns:columnTitle>Name</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:scale>195</ns:scale>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:nullable>true</ns:nullable>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Path">
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="PathPaths">
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Depth">
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:isHidden>true</ns:isHidden>
+      </ns:column>
+      <ns:column columnName="Parent"/>
+      <ns:column columnName="DisplayOrder"/>
+      <ns:column columnName="PageVersionId"/>
+      <ns:column columnName="ShowAttachments"/>
+      <ns:column columnName="LastIndexed">
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="ShouldIndex">
+        <ns:isHidden>true</ns:isHidden>
+      </ns:column>
+    </ns:columns>
+    <ns:tableTitle>PagePaths</ns:tableTitle>
+    <ns:pkColumnName>RowId</ns:pkColumnName>
+    <ns:versionColumnName>Modified</ns:versionColumnName>
+    <ns:titleColumn>EntityId</ns:titleColumn>
+  </ns:table>
   <ns:table tableName="CurrentWikiVersions" tableDbType="VIEW">
     <ns:description>Contains one row per wiki page joined to its most current wiki version</ns:description>
     <ns:tableUrl>/wiki/page.view?name=${Name}</ns:tableUrl>
@@ -272,6 +376,18 @@
       </ns:column>
       <ns:column columnName="Name">
         <ns:url>/wiki/page.view?name=${Name}</ns:url>
+      </ns:column>
+      <ns:column columnName="Path">
+        <ns:url>/wiki/page.view?name=${Part}</ns:url>
+        <ns:displayColumnFactory>
+          <ns:className>org.labkey.wiki.query.PathDisplayColumn$Factory</ns:className>
+        </ns:displayColumnFactory>
+      </ns:column>
+      <ns:column columnName="PathParts">
+        <ns:isHidden>true</ns:isHidden>
+      </ns:column>
+      <ns:column columnName="Depth">
+        <ns:isHidden>true</ns:isHidden>
       </ns:column>
       <ns:column columnName="Title"/>
       <ns:column columnName="Version">
@@ -305,6 +421,17 @@
       </ns:column>
       <ns:column columnName="Name">
         <ns:url>/wiki/page.view?name=${Name}</ns:url>
+      </ns:column>
+      <ns:column columnName="Path">
+        <ns:displayColumnFactory>
+          <ns:className>org.labkey.wiki.query.PathDisplayColumn$Factory</ns:className>
+        </ns:displayColumnFactory>
+      </ns:column>
+      <ns:column columnName="PathParts">
+        <ns:isHidden>true</ns:isHidden>
+      </ns:column>
+      <ns:column columnName="Depth">
+        <ns:isHidden>true</ns:isHidden>
       </ns:column>
       <ns:column columnName="Title"/>
       <ns:column columnName="Version">

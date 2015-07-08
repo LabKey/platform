@@ -26,4 +26,4 @@ SELECT core.fn_dropifexists('PagesAndVersions', 'comm', 'VIEW', NULL);
 
 SELECT core.fn_dropifexists('CurrentWikiVersions', 'comm', 'VIEW', NULL);
 SELECT core.fn_dropifexists('AllWikiVersions', 'comm', 'VIEW', NULL);
-
+SELECT core.fn_dropifexists('PagePaths', 'comm', 'VIEW', NULL);

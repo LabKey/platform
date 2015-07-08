@@ -3417,6 +3417,7 @@ wiki/src/org/labkey/wiki/model/WikiVersionsGrid.java -text
 wiki/src/org/labkey/wiki/model/WikiView.java -text
 wiki/src/org/labkey/wiki/model/WikiWebPart.java -text
 wiki/src/org/labkey/wiki/permissions/IncludeScriptPermission.java -text
+wiki/src/org/labkey/wiki/query/PathDisplayColumn.java -text
 wiki/src/org/labkey/wiki/query/WikiSchema.java -text
 wiki/src/org/labkey/wiki/renderer/ClientDependencySubstitutionHandler.java -text
 wiki/src/org/labkey/wiki/renderer/HtmlRenderer.java -text
