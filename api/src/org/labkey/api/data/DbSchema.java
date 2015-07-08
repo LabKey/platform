@@ -784,10 +784,9 @@ public class DbSchema
         }
     }
 
-    private static Integer checkContainerColumns(String dbSchemaName, SQLFragment sbSqlCmd, String tempTableName, String moduleName, Integer rowId) throws SQLException
+    private static Integer checkContainerColumns(DbSchema curSchema, SQLFragment sbSqlCmd, String tempTableName, String moduleName, Integer rowId) throws SQLException
     {
         int row = rowId;
-        DbSchema curSchema = DbSchema.get(dbSchemaName, DbSchemaType.Module);
         SQLFragment sbSql = new SQLFragment();
 
         for (String tableName : curSchema.getTableNames())
@@ -886,7 +885,7 @@ public class DbSchema
             Set<DbSchema> schemas = module.getSchemasToTest();
 
             for (DbSchema schema : schemas)
-                lastRowId = checkContainerColumns(schema.getDisplayName(), sbCheck, tempTableName, module.getName(), lastRowId);
+                lastRowId = checkContainerColumns(schema, sbCheck, tempTableName, module.getName(), lastRowId);
         }
 
         tTemplate.track();
