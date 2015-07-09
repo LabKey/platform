@@ -16,6 +16,7 @@
 package org.labkey.api.visualization;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -76,6 +77,12 @@ public class VisDataRequest
     public VisDataRequest addMeasure(MeasureInfo mi)
     {
         this.measures.add(mi);
+        return this;
+    }
+
+    public VisDataRequest addAll(Collection<MeasureInfo> c)
+    {
+        this.measures.addAll(c);
         return this;
     }
 
@@ -160,6 +167,11 @@ public class VisDataRequest
 
         public MeasureInfo()
         {
+        }
+
+        public MeasureInfo(Measure m)
+        {
+            this.measure = m;
         }
 
         public Measure getMeasure()
@@ -396,6 +408,54 @@ public class VisDataRequest
             return this;
         }
     }
+
+/*
+    public static class ConstantMeasure extends Measure
+    {
+        Object constantValue = null;
+        JdbcType constantType = null;
+
+        public ConstantMeasure(String alias, Object value, JdbcType type)
+        {
+            this.alias = alias;
+            this.constantValue = value;
+            this.constantType = type;
+        }
+
+        public Object getConstantValue()
+        {
+            return constantValue;
+        }
+
+        public void setConstantValue(Object constantValue)
+        {
+            this.constantValue = constantValue;
+        }
+
+        public JdbcType getConstantType()
+        {
+            return constantType;
+        }
+
+        public void setConstantType(JdbcType constantType)
+        {
+            this.constantType = constantType;
+        }
+
+        public String getSQLLiteral(SqlDialect d)
+        {
+            if (null == constantValue)
+            {
+                if (null == constantType)
+                    return "NULL";
+                else
+                    return "CAST(NULL AS " + d.sqlTypeNameFromJdbcType(constantType);
+            }
+            else
+                throw new UnsupportedOperationException();
+        }
+    }
+*/
 
 
     public static class DateOptions

@@ -99,12 +99,15 @@ public class VisualizationSourceColumn
                 if (!current._values.isEmpty() && !col._values.isEmpty() && !col._values.equals(current._values))
                     throw new IllegalStateException("multiple values array specified for column " + col.getOriginalName());
                 current._values.addAll(col._values);
+                if (null != col.getClientAlias() && null == current.getClientAlias())
+                    current._clientAlias = col.getClientAlias();
                 return current;
             }
             else
             {
                 _currentCols.put(key, col);
-                _aliasMap.put(col.getAlias(), col);
+                if (null != col.getAlias())
+                    _aliasMap.put(col.getAlias(), col);
                 return col;
             }
         }
