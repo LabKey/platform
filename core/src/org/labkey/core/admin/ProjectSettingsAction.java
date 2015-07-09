@@ -439,7 +439,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                     WebPartView v = new JspView<Object>(AdminController.class, "editMenuBar.jsp", null);
                     v.setView("menubar", new VBox());
                     //TODO: propagate ClientDependencies
-                    Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, true);
+                    Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, false, true);
 
                     return v;
                 case "files":
