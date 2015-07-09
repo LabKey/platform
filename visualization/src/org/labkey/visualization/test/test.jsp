@@ -1,4 +1,9 @@
-<%
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.visualization.VisualizationController" %>
+<%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%--
 /*
  * Copyright (c) 2014-2015 LabKey Corporation
  *
@@ -14,6 +19,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+--%>
+<%
+    ViewContext context = HttpView.currentContext();
+    ActionURL endpoint = new ActionURL(VisualizationController.GetDataAction.class,context.getContainer());
+    if (context.getActionURL().getAction().startsWith("cds"))
+        endpoint = new ActionURL(VisualizationController.cdsGetDataAction.class,context.getContainer());
 %>
 <textarea id="json" style="height:400px; width: 100%;">
 
@@ -35,7 +46,21 @@ if (Ext4||Ext)
 function getData()
 {
     document.getElementById("response").innerHTML = "";
-    var config = JSON.parse(document.getElementById("json").value);
+
+    var config, json = document.getElementById("json").value;
+    try
+    {
+        config = JSON.parse(json);
+    }
+    catch (error)
+    {
+        // try more forgiving parsing
+        eval("_json_=(" + json + ")");
+        config = _json_;
+    }
+
+
+    config.endpoint = <%=q(endpoint.getLocalURIString(false))%>;
     config.success = function(json, response)
     {
         var r = response.responseText;
@@ -47,6 +72,5 @@ function getData()
 }
 </script>
 
-<pre id="response" style="border:solid 1px grey; min-height:100px;">
-
-</pre>
+<pre id="response" style="border:solid 1px grey; min-height:100px;"></pre>
+<div id="grid" style="border:solid 1px grey; min-height:100px;"></div>

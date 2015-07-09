@@ -3105,6 +3105,7 @@ visualization/src/org/labkey/visualization/report/GenericChartReportImpl.java -t
 visualization/src/org/labkey/visualization/report/TimeChartReportImpl.java -text
 visualization/src/org/labkey/visualization/report/VisualizationUIProvider.java -text
 visualization/src/org/labkey/visualization/sql/OuterJoinSourceQuery.java -text
+visualization/src/org/labkey/visualization/sql/VisualizationCDSGenerator.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSQLGenerator.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSourceQuery.java -text
 visualization/src/org/labkey/visualization/test/VisTestSchema.java -text

@@ -67,7 +67,9 @@ public class VisTestSchema extends UserSchema
             case "visit":
                 return createVisit();
             case "flow":
-                return createAssayFlow();
+                return createAssay("Flow", "cellcount", 10000, "lin");
+            case "ics":
+                return createAssay("ICS", "MFI", 1000, "log");
         }
         return null;
     }
@@ -76,7 +78,7 @@ public class VisTestSchema extends UserSchema
     @Override
     public Set<String> getTableNames()
     {
-        return new CaseInsensitiveHashSet(Arrays.asList("Demographics", "Study", "Visit", "Flow"));
+        return new CaseInsensitiveHashSet(Arrays.asList("Demographics", "Study", "Visit", "Flow", "ICS"));
     }
 
 
@@ -182,7 +184,7 @@ public class VisTestSchema extends UserSchema
     {
         ColumnInfo[] cols = new ColumnInfo[]
         {
-                new ColumnInfo("ptid", JdbcType.VARCHAR),
+                new ColumnInfo("participantid", JdbcType.VARCHAR),
                 new ColumnInfo("study", JdbcType.VARCHAR),
                 new ColumnInfo("age", JdbcType.INTEGER),
                 new ColumnInfo("gender", JdbcType.VARCHAR),
@@ -245,7 +247,7 @@ public class VisTestSchema extends UserSchema
                 row("P006008", "S006", 60, null, null)
         };
 
-        return new TestTableInfo("Demographics", cols, new String[]{"ptid"}, data);
+        return new TestTableInfo("Demographics", cols, new String[]{"participantid"}, data);
     }
 
     TableInfo createStudy()
@@ -272,49 +274,59 @@ public class VisTestSchema extends UserSchema
     {
         ColumnInfo[] cols = new ColumnInfo[]
         {
+                new ColumnInfo("sequencenum", JdbcType.INTEGER),
                 new ColumnInfo("visit", JdbcType.VARCHAR),
                 new ColumnInfo("label", JdbcType.VARCHAR)
         };
         Object[][] data = new Object[][]
         {
-                row("V0", "Day 0"),
-                row("V1", "Day 1"),
-                row("V7", "Day 7"),
-                row("V28", "Follow-up")
+                row(0, "V0", "Day 0"),
+                row(1, "V1", "Day 1"),
+                row(7, "V7", "Day 7"),
+                row(28, "V28", "Follow-up")
         };
-        return new TestTableInfo("Visit", cols, new String[]{"visit"}, data);
+        return new TestTableInfo("Visit", cols, new String[]{"sequencenum"}, data);
     }
 
 
-    TableInfo createAssayFlow()
+    TableInfo createAssay(String assayName, String measureName, double range, String scale)
     {
         ColumnInfo[] cols = new ColumnInfo[]
         {
-                new ColumnInfo("ptid", JdbcType.VARCHAR),
-                new ColumnInfo("visit", JdbcType.VARCHAR),
+                new ColumnInfo("participantid", JdbcType.VARCHAR),
+                new ColumnInfo("sequencenum", JdbcType.INTEGER),
                 new ColumnInfo("antigen", JdbcType.VARCHAR),
                 new ColumnInfo("population", JdbcType.VARCHAR),
-                new ColumnInfo("count",JdbcType.DOUBLE)
+                new ColumnInfo(measureName,JdbcType.DOUBLE)
         };
-        String[] keys = new String[] {"ptid","visit","antigen","population"};
+        String[] keys = new String[] {"participantid","sequencenum","antigen","population"};
         ArrayList<Object[]> data = new ArrayList<>();
         Random r = new Random();
-        for (String ptid : Arrays.asList(
+        for (String participantid : Arrays.asList(
                 "P001001","P001002","P001003","P001004","P001005","P001006","P001007","P001008",
                 "P002001","P002002","P002003","P002004","P002005","P002006","P002007","P002008"
                 ))
         {
-            for (String visit : Arrays.asList("V0","V1","V7"))
+            for (Integer visit : Arrays.asList(0,1,7))
             {
                 for (String antigen : Arrays.asList("A1","A2"))
                 {
-                    for (String pop : Arrays.asList("C4","C8"))
-                        data.add(new Object[]{ptid,visit,antigen,pop, 1000+r.nextInt()%1000});
+                    if (scale.equals("log"))
+                    {
+                        for (String pop : Arrays.asList("C4", "C8"))
+                            data.add(new Object[]{participantid, visit, antigen, pop, Math.exp(r.nextDouble()*Math.log(range))});
+                    }
+                    else
+                    {
+                        for (String pop : Arrays.asList("C4","C8"))
+                            data.add(new Object[]{participantid,visit,antigen,pop, Math.round(r.nextDouble()*range)});
+
+                    }
                 }
             }
         }
 
-        return new TestTableInfo("Flow", cols, keys, data.toArray(new Object[data.size()][]));
+        return new TestTableInfo(assayName, cols, keys, data.toArray(new Object[data.size()][]));
     }
 
     static String toSqlLiteral(JdbcType type, Object value)
@@ -371,7 +383,7 @@ public class VisTestSchema extends UserSchema
         {
             List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> list = new ArrayList<>();
 
-            for (String name : Arrays.asList("ptid","study","visit"))
+            for (String name : Arrays.asList("participantid","study","sequencenum"))
             {
                 if (columnExists(first.getQueryName(), name) && columnExists(second.getQueryName(), name))
                 {
@@ -386,7 +398,7 @@ public class VisTestSchema extends UserSchema
         @Override
         public void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query)
         {
-            for (String name : Arrays.asList("ptid","study","visit"))
+            for (String name : Arrays.asList("participantid","study","sequencenum"))
             {
                 if (columnExists(query.getQueryName(), name))
                 {

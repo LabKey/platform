@@ -50,6 +50,7 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -118,6 +119,7 @@ import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.visualization.VisualizationService;
 import org.labkey.api.visualization.VisualizationUrls;
+import org.labkey.visualization.sql.VisualizationCDSGenerator;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -134,6 +136,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /*
  * User: brittp
@@ -516,7 +519,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     @Marshal(Marshaller.Jackson)
     public class GetDataAction extends ApiAction<VisDataRequest>
@@ -608,6 +611,102 @@ public class VisualizationController extends SpringActionController
             return root;
         }
     }
+
+
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectData.class)
+    @Marshal(Marshaller.Jackson)
+    public class cdsGetDataAction extends GetDataAction
+    {
+        @Override
+        protected ObjectReader getObjectReader(Class c)
+        {
+            ObjectReader r = super.getObjectReader(c);
+            return r.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        }
+
+        @Override
+        public ApiResponse execute(VisDataRequest form, BindException errors) throws Exception
+        {
+            VisualizationCDSGenerator sqlGenerator = new VisualizationCDSGenerator(getViewContext(), form);
+
+            String sql;
+            try
+            {
+                sql = sqlGenerator.getSQL(errors);
+            }
+            catch (SQLGenerationException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+                _log.warn("Unable to generate visualization SQL. " + e.getMessage());
+                return null;
+            }
+
+            ApiQueryResponse response = getApiResponse(getViewContext(), sqlGenerator.getPrimarySchema(), sql, sqlGenerator.isMetaDataOnly(), sqlGenerator.getSort(), errors);
+
+            // Note: extra properties can only be gathered after the query has executed, since execution populates the name maps.
+            Map<String, Object> extraProperties = new HashMap<>();
+            extraProperties.put("measureToColumn", sqlGenerator.getColumnMapping());
+            extraProperties.put("columnAliases", sqlGenerator.getColumnAliases());
+            sqlGenerator.getPrimarySchema().createVisualizationProvider().addExtraResponseProperties(extraProperties);
+            String filterDescription = sqlGenerator.getFilterDescription();
+            if (filterDescription != null && filterDescription.length() > 0)
+                extraProperties.put("filterDescription", filterDescription);
+            response.setExtraReturnProperties(extraProperties);
+
+            return response;
+        }
+
+
+        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors) throws Exception
+        {
+            String schemaName = schema.getName();
+            //create a temp query settings object initialized with the posted LabKey SQL
+            //this will provide a temporary QueryDefinition to Query
+
+            QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), schemaName, sql);
+
+            QuerySettings settings = new QuerySettings(context, "visualization", def.getName());
+
+            //need to explicitly turn off various UI options that will try to refer to the
+            //current URL and query string
+            settings.setAllowChooseView(false);
+            settings.setAllowCustomizeView(false);
+            settings.setBaseSort(sort);
+
+            //by default, return all rows
+            settings.setShowRows(ShowRows.ALL);
+
+            //build a query view using the schema and settings
+            QueryView view = new QueryView(schema, settings, errors);
+            view.setShowRecordSelectors(false);
+            view.setShowExportButtons(false);
+            view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+
+            return new ExtendedApiQueryResponse(view, false,
+                    false, schemaName, def.getName(), 0, null, metaDataOnly, false, false);
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class cdsTestGetDataAction extends SimpleViewAction<Void>
+    {
+        @Override
+        public ModelAndView getView(Void noform, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/visualization/test/test.jsp");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
+
+
 
 
     /**

@@ -34,6 +34,7 @@ import org.labkey.api.visualization.VisualizationService;
 import org.labkey.visualization.report.GenericChartReportImpl;
 import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.report.VisualizationUIProvider;
+import org.labkey.visualization.sql.VisualizationCDSGenerator;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
 import org.labkey.visualization.test.VisTestSchema;
 
@@ -79,6 +80,7 @@ public class VisualizationModule extends DefaultModule
         Set<Class> set = new LinkedHashSet<>();
         set.add(VisualizationController.TestCase.class);
         set.add(VisualizationSQLGenerator.GetDataTestCase.class);
+        set.add(VisualizationCDSGenerator.TestCase.class);
         return set;
     }
 

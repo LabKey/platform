@@ -28,6 +28,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -67,7 +68,6 @@ import java.util.Set;
  */
 public class VisualizationSQLGenerator implements HasViewContext
 {
-
     private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<>();
     private Map<String, VisualizationIntervalColumn> _intervals = new HashMap<>();
     private List<VisualizationSourceColumn> _groupBys = new ArrayList<>();
@@ -81,6 +81,18 @@ public class VisualizationSQLGenerator implements HasViewContext
     private boolean _metaDataOnly;
     private boolean _joinToFirst;
     private Integer _limit;
+
+    public VisualizationSQLGenerator()
+    {
+
+    }
+
+    public VisualizationSQLGenerator(ViewContext context, VisDataRequest req)
+    {
+        setViewContext(context);
+        fromVisDataRequest(req);
+    }
+
 
     @Override
     public void setViewContext(ViewContext context)
@@ -422,6 +434,8 @@ public class VisualizationSQLGenerator implements HasViewContext
 
     public String getSQL() throws SQLGenerationException
     {
+        SqlDialect dialect = getPrimarySchema().getDbSchema().getSqlDialect();
+
         Set<IVisualizationSourceQuery> outerJoinQueries = new LinkedHashSet<>();
         Set<VisualizationSourceQuery> innerJoinQueries = new LinkedHashSet<>();
         for (VisualizationSourceQuery query : _sourceQueries.values())
@@ -471,8 +485,10 @@ public class VisualizationSQLGenerator implements HasViewContext
             sb.append(" LIMIT ").append(_limit);
             sql = sb.toString();
         }
+
         return sql;
     }
+
 
     private String wrapInGroupBy(IVisualizationSourceQuery joinQuery, List<IVisualizationSourceQuery> queries, String sql)
             throws SQLGenerationException
@@ -676,7 +692,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             {
                 VisualizationSourceColumn col = (VisualizationSourceColumn)pickFirst(selectAliases);
                 String label = col.getLabel();
-                selectAlias = col.getSQLAlias() + (null==label ? " @preservetitle" : " @title='" + StringUtils.replace(label,"'","''") + "'");
+                selectAlias = col.getSQLAlias() + (null==label ? " @preservetitle" : " @title='" + StringUtils.replace(label,"'", "''") + "'");
                 if (col.isHidden())
                     selectAlias += " @hidden";
 
@@ -1135,7 +1151,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         public void testOneTable() throws SQLGenerationException, SQLException
         {
             VisDataRequest.MeasureInfo age = mi("demographics","age","visit");
-            VisDataRequest.MeasureInfo ptid = mi("demographics","ptid","visit");
+            VisDataRequest.MeasureInfo ptid = mi("demographics","participantid","visit");
             VisDataRequest.MeasureInfo gender = mi("demographics","gender","visit");
 
             VisDataRequest q = new VisDataRequest();
@@ -1154,7 +1170,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 assertEquals(48,r.getSize());
                 assertEquals(3, r.getMetaData().getColumnCount());
                 ColumnInfo ci = r.getColumnInfo(2);
-                assertTrue(StringUtils.endsWith(ci.getName(), "_ptid"));
+                assertTrue(StringUtils.endsWith(ci.getName(), "_participantid"));
             }
 
             q.addMeasure(gender);
@@ -1197,7 +1213,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             VisDataRequest q = new VisDataRequest().addMeasure(age).addMeasure(gender);
 
             // it seems strange to filter by using a sort?  but OK
-            VisDataRequest.Measure ptidList = new VisDataRequest.Measure("vis_junit","demographics","ptid");
+            VisDataRequest.Measure ptidList = new VisDataRequest.Measure("vis_junit", "demographics", "participantid");
             ptidList.setValues((List)VisTestSchema.humans);
             q.addSort(ptidList);
             try (ResultsImpl r = (ResultsImpl)getResults(q))
@@ -1238,9 +1254,9 @@ public class VisualizationSQLGenerator implements HasViewContext
 
             // Assay Flow
             q = new VisDataRequest()
-                    .addMeasure(mi("flow","count","visit"))
-                    .addMeasure(mi("flow", "ptid", "visit"))
-                    .addMeasure(mi("flow", "visit", "visit"))
+                    .addMeasure(mi("flow", "cellcount", "visit"))
+                    .addMeasure(mi("flow", "participantid", "visit"))
+                    .addMeasure(mi("flow", "sequencenum", "visit"))
                     .addMeasure(mi("flow", "antigen", "visit"))
                     .addMeasure(mi("flow", "population", "visit"));
             try (ResultsImpl r = (ResultsImpl)getResults(q))
@@ -1253,7 +1269,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             This so doesn't work how you expect, this causes a self join on a subset of keys
             and causes row duplication then grouping on that, and the wrong results and the wrong number of rows...
             q = new VisDataRequest()
-                    .addMeasure(mi("flow","count","visit"))
+                    .addMeasure(mi("flow", "cellcount", "sequencenum"))
                     .addGroupBy(m("flow", "population"));
             try (ResultsImpl r = (ResultsImpl)getResults(q))
             {
@@ -1265,7 +1281,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             // it seems that perhaps you can only really group on "demographic" properties
             // and expect to get a meaningful answer
             q = new VisDataRequest()
-                    .addMeasure(mi("flow","count","visit"))
+                    .addMeasure(mi("flow","cellcount","visit"))
                     .addGroupBy(m("demographics", "gender"));
             try (ResultsImpl r = (ResultsImpl)getResults(q))
             {
@@ -1279,7 +1295,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         public void testTwoTablesDemStudy() throws Exception
         {
             VisDataRequest.MeasureInfo age = mi("demographics","age","visit");
-            VisDataRequest.MeasureInfo ptid = mi("demographics","ptid","visit");
+            VisDataRequest.MeasureInfo ptid = mi("demographics","participantid","visit");
             VisDataRequest.MeasureInfo study = mi("demographics","study","visit");
             VisDataRequest.MeasureInfo gender = mi("demographics","gender","visit");
             VisDataRequest.MeasureInfo condition = mi("study","condition","visit");      // shouldn't need to specify time=visit
