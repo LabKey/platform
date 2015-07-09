@@ -2,7 +2,7 @@ The following executable files are distributed and installed only with the LabKe
 
 {table}
 Component|Version|Source|License|LabKey Dev|Purpose
-{link:Java Runtime Environment (JRE)|http://www.oracle.com/technetwork/java/index.html}|1.8.0_31|{link:Oracle Corporation|http://www.oracle.com}|{link:Binary Code License Agreement|http://java.com/en/download/license.jsp}|tchad|Provides the Java Virtual Machine, libraries, and other components to run LabKey Server on Windows machines
-{link:PostgreSQL|http://www.postgresql.org/}|9.3.6|{link:PostgreSQL|http://www.postgresql.org/}|{link:BSD|http://www.postgresql.org/about/licence}|tchad|A powerful, open source relational database system that LabKey Server uses to store data
-{link:Apache Tomcat|http://tomcat.apache.org/}|7.0.59|{link:Apache|http://tomcat.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|tchad|Web server on which LabKey Server runs
+{link:Java Runtime Environment (JRE)|http://www.oracle.com/technetwork/java/index.html}|1.8.0_45|{link:Oracle Corporation|http://www.oracle.com}|{link:Binary Code License Agreement|http://java.com/en/download/license.jsp}|tchad|Provides the Java Virtual Machine, libraries, and other components to run LabKey Server on Windows machines
+{link:PostgreSQL|http://www.postgresql.org/}|9.4.4|{link:PostgreSQL|http://www.postgresql.org/}|{link:BSD|http://www.postgresql.org/about/licence}|tchad|A powerful, open source relational database system that LabKey Server uses to store data
+{link:Apache Tomcat|http://tomcat.apache.org/}|7.0.62|{link:Apache|http://tomcat.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|tchad|Web server on which LabKey Server runs
 {table}
