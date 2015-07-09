@@ -1400,7 +1400,7 @@ public class IssueManager
     {
         IssueSummaryView(Issue issue)
         {
-            super("/org/labkey/issue/searchSummary.jsp", issue);
+            super("/org/labkey/issue/view/searchSummary.jsp", issue);
         }
     }
 

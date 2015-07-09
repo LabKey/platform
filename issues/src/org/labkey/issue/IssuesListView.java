@@ -33,7 +33,7 @@ public class IssuesListView extends VBox
         QueryView queryView = schema.createView(getViewContext(), settings, null);
 
         // add the header for buttons and views
-        addView(new JspView("/org/labkey/issue/list.jsp"));
+        addView(new JspView("/org/labkey/issue/view/list.jsp"));
         addView(queryView);
 
         setTitleHref(IssuesController.getListURL(getViewContext().getContainer()));

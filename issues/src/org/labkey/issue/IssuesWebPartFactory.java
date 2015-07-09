@@ -18,8 +18,6 @@ package org.labkey.issue;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.*;
 
-import java.lang.reflect.InvocationTargetException;
-
 /**
  * User: adam
  * Date: Nov 5, 2008
@@ -43,6 +41,6 @@ class IssuesWebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new JspView<>("/org/labkey/issue/issuesCustomize.jsp", webPart);
+        return new JspView<>("/org/labkey/issue/view/issuesCustomize.jsp", webPart);
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.issue;
+package org.labkey.issue.model;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -33,6 +33,8 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
+import org.labkey.issue.ColumnType;
+import org.labkey.issue.IssuesController;
 import org.labkey.issue.IssuesController.DownloadAction;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;

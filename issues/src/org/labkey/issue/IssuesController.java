@@ -98,6 +98,7 @@ import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueManager.CustomColumn;
 import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
 import org.labkey.issue.model.IssueManager.EntryTypeNames;
+import org.labkey.issue.model.IssuePage;
 import org.labkey.issue.model.KeywordManager;
 import org.labkey.issue.model.KeywordManager.Keyword;
 import org.labkey.issue.query.IssuesQuerySchema;
@@ -368,7 +369,7 @@ public class IssuesController extends SpringActionController
             page.setMoveDestinations(IssueManager.getMoveDestinationContainers(getContainer()).size() != 0 ? true : false);
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
 
-            return new JspView<>("/org/labkey/issue/detailView.jsp", page);
+            return new JspView<>("/org/labkey/issue/view/detailView.jsp", page);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -424,7 +425,7 @@ public class IssuesController extends SpringActionController
 
             IssuePage page = new IssuePage(getContainer(), getUser());
             page.setPrint(isPrint());
-            JspView v = new JspView<>(IssuesController.class, "detailList.jsp", page);
+            JspView v = new JspView<>("/org/labkey/issue/view/detailList.jsp", page);
 
             page.setIssueIds(issueIds);
             page.setCustomColumnConfiguration(getCustomColumnConfiguration());
@@ -495,7 +496,7 @@ public class IssuesController extends SpringActionController
                 _issue.setPriority(Integer.parseInt(form.getPriority()));
 
             IssuePage page = new IssuePage(getContainer(), getUser());
-            JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
+            JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -974,7 +975,7 @@ public class IssuesController extends SpringActionController
             _issue.beforeUpdate(getContainer());
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
+            JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -1069,7 +1070,7 @@ public class IssuesController extends SpringActionController
             }
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
+            JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -1112,7 +1113,7 @@ public class IssuesController extends SpringActionController
             _issue.close(user);
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
+            JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -1157,7 +1158,7 @@ public class IssuesController extends SpringActionController
             _issue.open(getContainer(), user);
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
+            JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -1492,8 +1493,7 @@ public class IssuesController extends SpringActionController
 
             int emailPrefs = IssueManager.getUserEmailPreferences(getContainer(), getUser().getUserId());
             int issueId = form.getIssueId() == null ? 0 : form.getIssueId().intValue();
-            return new JspView<>(IssuesController.class, "emailPreferences.jsp",
-                new EmailPrefsBean(emailPrefs, errors, _message, issueId));
+            return new JspView<>("/org/labkey/issue/view/emailPreferences.jsp", new EmailPrefsBean(emailPrefs, errors, _message, issueId));
         }
 
         public boolean handlePost(EmailPrefsForm form, BindException errors) throws Exception
@@ -2251,7 +2251,7 @@ public class IssuesController extends SpringActionController
                 String filteredURLString = PageFlowUtil.filter(url);
                 String detailsURLString = filteredURLString.substring(0, filteredURLString.length() - 1);
 
-                WebPartView v = new JspView<>("/org/labkey/issue/rss.jsp", new RssBean(issues, detailsURLString));
+                WebPartView v = new JspView<>("/org/labkey/issue/view/rss.jsp", new RssBean(issues, detailsURLString));
                 v.setFrame(WebPartView.FrameType.NOT_HTML);
 
                 return v;
@@ -2740,7 +2740,7 @@ public class IssuesController extends SpringActionController
     {
         public AdminView(Container c, CustomColumnConfiguration ccc, BindException errors)
         {
-            super("/org/labkey/issue/adminView.jsp", null, errors);
+            super("/org/labkey/issue/view/adminView.jsp", null, errors);
 
             Set<String> columnNames = new LinkedHashSet<>();
             columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
@@ -3055,7 +3055,7 @@ public class IssuesController extends SpringActionController
 
         public KeywordAdminView(Container c, CustomColumnConfiguration ccc)
         {
-            super("/org/labkey/issue/keywordAdmin.jsp");
+            super("/org/labkey/issue/view/keywordAdmin.jsp");
             setModelBean(_keywordPickers);
             _c = c;
             _ccc = ccc;
@@ -3290,7 +3290,7 @@ public class IssuesController extends SpringActionController
     {
         public SummaryWebPart()
         {
-            super("/org/labkey/issue/summaryWebpart.jsp", new SummaryBean());
+            super("/org/labkey/issue/view/summaryWebpart.jsp", new SummaryBean());
 
             SummaryBean bean = getModelBean();
 
