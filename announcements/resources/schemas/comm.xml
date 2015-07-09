@@ -338,7 +338,7 @@
       <ns:column columnName="Path">
         <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
-      <ns:column columnName="PathPaths">
+      <ns:column columnName="PathParts">
         <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="Depth">
