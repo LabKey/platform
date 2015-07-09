@@ -503,7 +503,7 @@ boxPlot.render();
     };
 
     var requiresDomain = function(name, colorScale) {
-        if (name == 'yLeft' || name == 'yRight' || name == 'x' || name == 'size') {
+        if (name == 'yLeft' || name == 'yRight' || name == 'x' || name == 'xTop' || name == 'size') {
             return true;
         }
         // We only need the domain of the a color scale if it's a continuous one.

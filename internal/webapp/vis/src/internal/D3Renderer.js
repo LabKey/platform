@@ -13,7 +13,7 @@ LABKEY.vis.internal.Axis = function() {
     // different colored tick & gridlines, etc.
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
             tickRectCls, tickRectHeightOffset=6, tickRectWidthOffset=8, tickClick, axisSel, tickSel, textSel, gridLineSel,
-            borderSel, grid;
+            borderSel, grid, scalesList = [];
     var tickColor = '#000000', tickTextColor = '#000000', tickTextBkgdColor = 'transparent', gridLineColor = '#DDDDDD',
             borderColor = '#000000', tickDigits;
     var tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1;
@@ -66,8 +66,10 @@ LABKEY.vis.internal.Axis = function() {
             gridLineFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + grid.leftEdge + ',' + v + 'Z';};
             border = 'M' + (Math.floor(grid.leftEdge) + .5) + ',' + (grid.bottomEdge + 1) + 'L' + (Math.floor(grid.leftEdge) + .5) + ',' + grid.topEdge + 'Z';
             // Don't overlap gridlines with x axis border.
-            if (Math.floor(scale(data[0])) == Math.floor(grid.bottomEdge)) {
+            if (scalesList.indexOf('x') != -1 && Math.floor(scale(data[0])) == Math.floor(grid.bottomEdge)) {
                 gridLineData = gridLineData.slice(1);
+            } else if (scalesList.indexOf('xTop') != -1 && Math.floor(scale(data[gridLineData.length-1])) == Math.floor(grid.topEdge)) {
+                gridLineData = gridLineData.slice(0, gridLineData.length-1)
             }
         } else if (orientation == 'right') {
             textAnchor = 'start';
@@ -77,15 +79,16 @@ LABKEY.vis.internal.Axis = function() {
             gridLineFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + (grid.leftEdge + 1) + ',' + v + 'Z';};
             border = 'M' + (Math.floor(grid.rightEdge) + .5) + ',' + (grid.bottomEdge + 1) + 'L' + (Math.floor(grid.rightEdge) + .5) + ',' + grid.topEdge + 'Z';
             // Don't overlap gridlines with x axis border.
-            if (Math.floor(scale(data[0])) == Math.floor(grid.bottomEdge)) {
+            if (scalesList.indexOf('x') != -1 && Math.floor(scale(data[0])) == Math.floor(grid.bottomEdge)) {
                 gridLineData = gridLineData.slice(1);
+            } else if (scalesList.indexOf('xTop') != -1 && Math.floor(scale(data[gridLineData.length-1])) == Math.floor(grid.topEdge)) {
+                gridLineData = gridLineData.slice(0, gridLineData.length-1)
             }
         }else if(orientation == 'top') {
-            orientation = 'top';
             textAnchor = 'middle';
             textXFn = function(v) {return (Math.floor(scale(v)) +.5);};
             textYFn = function() {return grid.topEdge - tickPadding};
-            tickFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.topEdge + 'L' + v + ',' + (grid.topEdge + tickLength) + 'Z';};
+            tickFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.topEdge + 'L' + v + ',' + (grid.topEdge - tickLength) + 'Z';};
             gridLineFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + grid.topEdge + 'Z';};
             border = 'M' + grid.leftEdge + ',' + (Math.floor(grid.topEdge) + .5) + 'L' + grid.rightEdge + ',' + (Math.floor(grid.topEdge) + .5) + 'Z';
             // Don't overlap gridlines with y-left axis border.
@@ -276,6 +279,7 @@ LABKEY.vis.internal.Axis = function() {
     axis.tickClick = function(h) {tickClick = h; return axis;};
     axis.tickMouseOver = function(h) {tickMouseOver = h; return axis;};
     axis.tickMouseOut = function(h) {tickMouseOut = h; return axis;};
+    axis.scalesList = function(h) {scalesList = h; return axis;};
 
     axis.tickPadding = function(p) {
         if (p !== null && p !== undefined) {
@@ -382,6 +386,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         labelElements.main = appendLabelElement('main', 18);
         labelElements.x = appendLabelElement('x', 14);
+        labelElements.xTop = appendLabelElement('xTop', 14);
         labelElements.y = appendLabelElement('yLeft', 14);
         labelElements.yLeft = labelElements.y;
         labelElements.yRight = appendLabelElement('yRight', 14);
@@ -457,6 +462,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             .fontSize(plot.fontSize)
             .tickOverlapRotation(plot.tickOverlapRotation)
             .fontFamily(plot.fontFamily)
+            .scalesList(Object.keys(plot.scales))
     };
 
     var updateIndividualAxisConfig = function(indAxis, name) {
@@ -1210,6 +1216,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         } else if (name == 'x') {
             x = plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2;
             y = plot.grid.height - (plot.labels[name].position != undefined ? plot.labels[name].position : 10);
+        } else if (name == 'xTop') {
+            x = plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2;
+            y = plot.grid.topEdge - (plot.labels[name].position != undefined ? plot.labels[name].position : 25);
         } else if (name == 'main') {
             x = plot.grid.width / 2;
             y = plot.labels[name].position != undefined ? plot.labels[name].position : 30;

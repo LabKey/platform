@@ -136,6 +136,53 @@ var coffeePlot = new LABKEY.vis.Plot({
     }
 });
 
+var coffeeXTopPointLayer = new LABKEY.vis.Layer({
+    name: "Efficiency",
+    geom: new LABKEY.vis.Geom.Point(),
+    aes: {
+        color: 'person',
+        shape: 'consumedCoffee',
+        hoverText: function(row){return 'Person: ' + row.person + "\n" + row.consumedCoffee + " Consumed \nEfficiency: " + row.efficiency}
+    }
+});
+
+var coffeeXTopPathLayer = new LABKEY.vis.Layer({
+    name: "Efficiency",
+    geom: new LABKEY.vis.Geom.Path({}),
+    aes: {
+        pathColor: 'person',
+        group: 'person'
+    }
+});
+
+var coffeeXTopPlot = new LABKEY.vis.Plot({
+    renderTo: 'coffeeXTopPlot',
+    rendererType: 'd3',
+    width: 900,
+    height: 300,
+    labels: {
+        main: {value: 'Efficiency (%) Over Time'},
+        xTop: {value: 'Time (PST)'},
+        yLeft: {value: 'Efficiency (%)'}
+    },
+    data: coffeeData,
+    layers: [coffeeXTopPathLayer, coffeeXTopPointLayer],
+    aes: {
+        xTop: 'time',
+        yLeft: 'efficiency'
+    },
+    scales: {
+        xTop: {
+            scaleType: 'discrete'
+        },
+        yLeft: {
+            scaleType: 'continuous',
+            trans: 'linear',
+            min: 0
+        }
+    }
+});
+
 var boxLayer = new LABKEY.vis.Layer({
     geom: new LABKEY.vis.Geom.Boxplot({
         position: 'jitter',
@@ -943,6 +990,7 @@ var renderStats = function(){
 var start = new Date().getTime();
 labResultsPlot.render();
 coffeePlot.render();
+coffeeXTopPlot.render();
 boxPlot.render();
 discreteScatter.render();
 scatterPlot.render();
