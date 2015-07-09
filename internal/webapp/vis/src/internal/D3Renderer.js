@@ -43,7 +43,7 @@ LABKEY.vis.internal.Axis = function() {
             var convert = false;
             for (var i=0; i<gridLineData.length; i++)
             {
-                if (gridLineData[i].toString().length >= tickDigits)
+                if (gridLineData[i].toString().replace('.','').length >= tickDigits)
                 {
                     convert = true;
                     break;
