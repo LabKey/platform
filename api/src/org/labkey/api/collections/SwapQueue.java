@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Very simple synchronized for swapping two items between a foreground and background thread.
  * Be careful to get your starting conditions right, and this will work great.
  *
- * This is bascially like two BlockingQueues with a max size of one element.  One queue for 'full elements
+ * This is basically like two BlockingQueues with a max size of one element.  One queue for 'full elements
  * (elements to be consumed), and one queue for empty elements (consumed).
  *
  */

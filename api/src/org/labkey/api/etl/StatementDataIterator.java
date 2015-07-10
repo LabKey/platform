@@ -323,15 +323,17 @@ class StatementDataIterator extends AbstractDataIterator
         {
             _currentStmt.execute();
         }
-        else if (_useAsynchronousExecute && _stmts.length > 1 && _txSize==-1)
-        {
-            _currentStmt = _queue.swapFullForEmpty(_currentStmt);
-            _currentBinding = (_currentStmt == _stmts[0] ? _bindings[0] : _bindings[1]);
-        }
+        // TODO: Re-enable this once the deadlock is resolved. See issue 23734
+//        else if (_useAsynchronousExecute && _stmts.length > 1 && _txSize==-1)
+//        {
+//            _currentStmt = _queue.swapFullForEmpty(_currentStmt);
+//            _currentBinding = (_currentStmt == _stmts[0] ? _bindings[0] : _bindings[1]);
+//        }
         else
         {
             _currentStmt.executeBatch();
         }
+
         assert _execute.stop();
     }
 
