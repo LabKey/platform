@@ -1888,6 +1888,11 @@ redcap/src/org/labkey/redcap/RedcapManager.java -text
 redcap/src/org/labkey/redcap/RedcapModule.java -text
 redcap/src/org/labkey/redcap/RedcapReloadSource.java -text
 redcap/src/org/labkey/redcap/view/configure.jsp -text
+redcap/test/sampledata/redcap/template.xml -text
+redcap/test/src/org/labkey/test/pages/redcap/ConfigurePage.java -text
+redcap/test/src/org/labkey/test/tests/RedCapTest.java -text
+redcap/test/src/org/labkey/test/util/redcap/ConfigXmlBuilder.java -text
+redcap/test/test_redcap.iml -text
 search/Search.iml -text
 search/lib/instructions.txt -text
 search/lib/lucene-5.2.1-src.zip -text
