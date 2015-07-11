@@ -91,7 +91,7 @@ public class DbSchema
     public static @NotNull DbSchema get(String fullyQualifiedSchemaName, DbSchemaType type)
     {
         // Quick check to avoid creating Pair object in most common case
-        int dot = fullyQualifiedSchemaName.indexOf('.');
+        int dot = fullyQualifiedSchemaName.lastIndexOf('.');
 
         if (-1 == dot)
         {
@@ -120,7 +120,7 @@ public class DbSchema
     @NotNull
     public static Pair<DbScope, String> getDbScopeAndSchemaName(String fullyQualifiedSchemaName)
     {
-        int dot = fullyQualifiedSchemaName.indexOf('.');
+        int dot = fullyQualifiedSchemaName.lastIndexOf('.');
 
         if (-1 == dot)
         {
