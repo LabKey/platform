@@ -19,6 +19,7 @@ import org.apache.commons.io.FileUtils;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.FileXarSource;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -29,6 +30,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.PropertiesJobSupport;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.query.ValidationException;
@@ -44,6 +46,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -56,6 +59,8 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
     public static class Factory extends AbstractTaskFactory<XarGeneratorFactorySettings, Factory>
     {
         private FileType _outputType = XarGeneratorId.FT_PIPE_XAR_XML;
+        private boolean _loadFiles;
+        private String _statusName;
 
         public Factory()
         {
@@ -77,9 +82,14 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             return _outputType;
         }
 
+        public boolean isLoadFiles()
+        {
+            return _loadFiles;
+        }
+
         public String getStatusName()
         {
-            return "IMPORT RESULTS";
+            return _statusName;
         }
 
         public List<String> getProtocolActionNames()
@@ -106,6 +116,8 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
 
             if (settings.getOutputExt() != null)
                 _outputType = new FileType(settings.getOutputExt());
+            _loadFiles = settings.isLoadFiles();
+            _statusName = _loadFiles ? "IMPORT RESULTS" : "GENERATING EXPERIMENT";
         }
     }
     
@@ -132,25 +144,42 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         {
             // Keep track of all of the runs that have been created by this task
             Set<ExpRun> importedRuns = new HashSet<>();
-
-            File permanentXAR = _factory.getXarFile(getJob());
-            if (NetworkDrive.exists(permanentXAR))
+            if (_factory.isLoadFiles())
             {
-                // Be sure that it's been imported (and not already deleted from the database)
-                importedRuns.addAll(ExperimentService.get().importXar(new FileXarSource(permanentXAR, getJob()), getJob(), false));
+                File permanentXAR = _factory.getXarFile(getJob());
+                if (NetworkDrive.exists(permanentXAR))
+                {
+                    // Be sure that it's been imported (and not already deleted from the database)
+                    importedRuns.addAll(ExperimentService.get().importXar(new FileXarSource(permanentXAR, getJob()), getJob(), false));
+                }
+                else
+                {
+                    if (!NetworkDrive.exists(getLoadingXarFile()))
+                    {
+                        XarSource source = new XarGeneratorSource(getJob(), _factory.getXarFile(getJob()));
+                        importedRuns.add(ExpGeneratorHelper.insertRun(getJob(), source, this));
+                    }
+
+                    // Load the data files for this run
+                    importedRuns.addAll(ExperimentService.get().importXar(new FileXarSource(getLoadingXarFile(), getJob()), getJob(), false));
+
+                    getLoadingXarFile().renameTo(permanentXAR);
+                }
             }
             else
             {
-                if (!NetworkDrive.exists(getLoadingXarFile()))
+                importedRuns.add(ExpGeneratorHelper.insertRun(getJob(), null, null));
+            }
+
+            // save any job-level custom properties from the run
+            if (getJob() instanceof PropertiesJobSupport)
+            {
+                PropertiesJobSupport jobSupport = getJob().getJobSupport(PropertiesJobSupport.class);
+                for (Map.Entry<PropertyDescriptor, Object> prop : jobSupport.getProps().entrySet())
                 {
-                    XarSource source = new XarGeneratorSource(getJob(), _factory.getXarFile(getJob()));
-                    importedRuns.add(ExpGeneratorHelper.insertRun(getJob(), source, this));
+                    for (ExpRun importedRun : importedRuns)
+                        importedRun.setProperty(getJob().getUser(), prop.getKey(), prop.getValue());
                 }
-
-                // Load the data files for this run
-                importedRuns.addAll(ExperimentService.get().importXar(new FileXarSource(getLoadingXarFile(), getJob()), getJob(), false));
-
-                getLoadingXarFile().renameTo(permanentXAR);
             }
 
             // Check if we've been cancelled. If so, delete any newly created runs from the database

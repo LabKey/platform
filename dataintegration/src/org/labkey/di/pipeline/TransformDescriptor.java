@@ -38,7 +38,7 @@ import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.pipeline.ExpGeneratorId;
+import org.labkey.api.exp.pipeline.XarGeneratorFactorySettings;
 import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -108,6 +108,8 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final String _description;
     private final String _moduleName;
     private final boolean _loadReferencedFiles;
+    private final boolean _gatedByStep;
+    private static final String XAR_EXT = ".etl.xar.xml";
 
     // declared variables
     private Map<ParameterDescription,Object> _declaredVariables = new LinkedHashMap<>();
@@ -125,13 +127,13 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                                CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
                                Map<ParameterDescription, Object> declaredVariables) throws XmlException, IOException
     {
-        this(id, name, description, moduleName, interval, cron, defaultFactory, stepMetaDatas, declaredVariables, false);
+        this(id, name, description, moduleName, interval, cron, defaultFactory, stepMetaDatas, declaredVariables, false, false);
     }
 
     public TransformDescriptor(String id, String name, String description, String moduleName, Long interval,
                                CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
                                Map<ParameterDescription, Object> declaredVariables,
-                               boolean loadReferencedFiles) throws XmlException, IOException
+                               boolean loadReferencedFiles, boolean gatedByStep) throws XmlException, IOException
     {
         _id = id;
         _name = name;
@@ -144,6 +146,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         if (null != declaredVariables)
             _declaredVariables.putAll(declaredVariables);
         _loadReferencedFiles = loadReferencedFiles;
+        _gatedByStep = gatedByStep;
     }
 
 
@@ -167,6 +170,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         return _id;
     }
 
+    public boolean isGatedByStep()
+    {
+        return _gatedByStep;
+    }
 
     public int getVersion()
     {
@@ -437,20 +444,22 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
         // Register all the tasks that are associated with this transform and
         // associate the correct stepMetaData with the task via the index
-        boolean hasExternalPipelineTask = false;
+        int i = 0;
         for (StepMeta meta : _stepMetaDatas)
         {
+            i++;
             if ((meta instanceof ExternalPipelineTaskMeta))
             {
                 progressionSpec.add(((ExternalPipelineTaskMeta) meta).getExternalTaskId());
-                // Register the task to generate an experiment run to track this transform.
-                // Need XarGeneratorId for proper loading of input/output files and handoff to ExperimentDataHandlers
-                // Needed here instead of at end in case later etl steps should not be run if DataHandler fails
-                // The Xar and ExpGenerator factories should have already been registered by the Experiment module
-                // TODO: Would be nice to reunify Xar and ExpGenerators. Can't without proper handling of a XarSource with null root in XarGeneratorId
 
+                // Register the task to generate an experiment run to track this transform.
                 if (_loadReferencedFiles)
-                    progressionSpec.add(new TaskId(XarGeneratorId.class));
+                {
+                    XarGeneratorFactorySettings factorySettings = new XarGeneratorFactorySettings(getFullTaskName(meta));
+                    factorySettings.setOutputExt(".step" + i + XAR_EXT);
+                    PipelineJobService.get().addTaskFactory(factorySettings);
+                    progressionSpec.add(factorySettings.getId());
+                }
             }
             else
             {
@@ -477,7 +486,11 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             }
         }
 
-        progressionSpec.add(new TaskId(ExpGeneratorId.class));
+        XarGeneratorFactorySettings factorySettings = new XarGeneratorFactorySettings("expGen");
+        factorySettings.setOutputExt(".expGen" + XAR_EXT);
+        factorySettings.setLoadFiles(_loadReferencedFiles);
+        PipelineJobService.get().addTaskFactory(factorySettings);
+        progressionSpec.add(factorySettings.getId());
 
         // add the pipeline
         settings.setTaskProgressionSpec(progressionSpec.toArray());
@@ -736,7 +749,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             }
             else
             {
-                assertTrue(PipelineJob.TaskStatus.error.matches(status));
+                assertTrue("Got status: " + status, PipelineJob.TaskStatus.error.matches(status));
                 assertNull(expId);
             }
 
@@ -927,11 +940,11 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             TaskId[] steps = p.getTaskProgression();
 
             // we should always have one more task than steps to account for the
-            // ExpGenerator task
+            // XarGenerator task
             assertEquals(d._stepMetaDatas.size() + 1, steps.length);
 
             TaskId expStep = steps[steps.length - 1];
-            assertEquals(ExpGeneratorId.class, expStep.getNamespaceClass());
+            assertEquals(XarGeneratorId.class, expStep.getNamespaceClass());
         }
 
         private TransformDescriptor checkValidSyntax(File file) throws XmlException, XmlValidationException, IOException

@@ -96,7 +96,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     public static final String OUTPUT_ROLE = "Row Destination";
     protected boolean _validateSource = true;
     FilterStrategy _filterStrategy = null;
-    private String _targetStringForURI;
+    private Object _targetForURI;
 
     private final int DELETE_BATCH_SIZE = 1000;
 
@@ -159,7 +159,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             Map<String, Object> extraContext = new HashMap<>();
             extraContext.put("dataSource", "etl");
 
-            setTargetStringForURI(meta.getFullTargetString());
+            setTargetForURI(meta.getFullTargetString());
 
             Map<Enum, Object> options = new HashMap<>();
             options.put(QueryUpdateService.ConfigParameters.Logger, log);
@@ -382,7 +382,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             // TODO: refactor these out as a separate method so other tasks that write files can do this too (none yet, but seems a file copy task is likely to be needed soon)
             _txJob.setAnalysisDirectory(outputDir);
             _txJob.setBaseName(baseName);
-            setTargetStringForURI(outputFile.toURI().toString());
+            setTargetForURI(outputFile);
 
             return rowCount;
         }
@@ -403,7 +403,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         // We support two special substitions in the base filename.
         // ${TransformRunId} will be substituted with the txJob transformRunId
         // ${Timestamp} will be substituted with a timestamp
-        // One could imagine other future substitions, at which point it might be better to
+        // One could imagine other future substitutions, at which point it might be better to
         // use StringExpressionFactory. Also, could in future support SimpleDateFormat-style formatted timestamp substitutions.
         name = name.replaceAll("(?i)\\$\\{TransformRunId\\}", Integer.toString(_txJob.getTransformRunId()));
         name = name.replaceAll("(?i)\\$\\{Timestamp\\}", FileUtil.getTimestamp());
@@ -439,6 +439,8 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             addProperties(action);
             action.setRecordCount(_txJob.getRecordCountForAction(action));
             _records.add(action);
+            if (_meta.isSaveState())
+                getTransformJob().saveVariableMap(false);
             return _records;
         }
         finally
@@ -466,7 +468,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         }
     }
 
-    public boolean hasWork()
+    protected boolean sourceHasWork()
     {
         QuerySchema sourceSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _meta.getSourceSchema());
         if (null == sourceSchema || null == sourceSchema.getDbSchema())
@@ -476,8 +478,17 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         if (null == t)
             throw new IllegalArgumentException("Could not find table: " +  _meta.getSourceSchema() + "." + _meta.getSourceQuery());
 
-        FilterStrategy filterStrategy = getFilterStrategy();
-        return filterStrategy.hasWork();
+        return getFilterStrategy().hasWork();
+    }
+
+    public boolean hasWork()
+    {
+        return !isEtlGatedByStep();
+    }
+
+    protected boolean isEtlGatedByStep()
+    {
+        return ((TransformDescriptor)_context.getJobDescriptor()).isGatedByStep();
     }
 
     protected FilterStrategy getFilterStrategy()
@@ -517,16 +528,11 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             }
             if (_meta.isUseTarget())
             {
-                action.addOutput(new URI(getTargetStringForURI()), TransformTask.OUTPUT_ROLE, false);
-                // TODO: This isn't being set correctly for target files; however, attempts to fix this so far (like passing in a file instead of URI to
-                // addOutput only make it worse; the file doesn't resolve correctly in the run for straight ETL's, and if there's a pipeline task,
-                // it gets removed from the list of inputs so not found by ExperimentDataHandlers.
-
-//                Object target = getTargetStringForURI();
-//                if (target instanceof String)
-//                    action.addOutput(new URI((String)target), TransformTask.OUTPUT_ROLE, false);
-//                else if (target instanceof File)
-//                    action.addOutput((File)target, TransformTask.OUTPUT_ROLE, false);
+                Object target = getTargetForURI();
+                if (target instanceof String)
+                    action.addOutput(new URI((String)target), TransformTask.OUTPUT_ROLE, false);
+                else if (target instanceof File)
+                    action.addOutput((File)target, TransformTask.OUTPUT_ROLE, false);
 //                // if neither of those we don't know how to resolve it anyway
             }
         }
@@ -611,13 +617,13 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         return true;
     }
 
-    public String getTargetStringForURI()
+    public Object getTargetForURI()
     {
-        return _targetStringForURI;
+        return _targetForURI;
     }
 
-    public void setTargetStringForURI(String targetStringForURI)
+    public void setTargetForURI(Object targetForURI)
     {
-        _targetStringForURI = targetStringForURI;
+        _targetForURI = targetForURI;
     }
 }

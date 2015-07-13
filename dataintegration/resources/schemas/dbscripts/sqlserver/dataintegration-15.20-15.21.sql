@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 LabKey Corporation
+ * Copyright (c) 2013-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.di.pipeline;
-
-import org.jetbrains.annotations.NotNull;
-
-/**
- * User: dax
- * Date: 4/16/13
- */
-public interface TransformJobSupport
-{
-    TransformDescriptor getTransformDescriptor();
-    @NotNull
-    TransformJobContext getTransformJobContext();
-}
+ALTER TABLE dataintegration.TransformConfiguration DROP CONSTRAINT UQ_TransformConfiguration_TransformId;
+ALTER TABLE dataintegration.TransformConfiguration ALTER COLUMN TransformId nvarchar(100) NOT NULL;
+ALTER TABLE dataintegration.TransformConfiguration ADD CONSTRAINT UQ_TransformConfiguration_TransformId UNIQUE (Container, TransformId);

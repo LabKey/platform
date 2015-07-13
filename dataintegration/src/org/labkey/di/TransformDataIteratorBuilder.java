@@ -31,6 +31,8 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.di.pipeline.TransformUtils;
 
+import java.util.Map;
+
 import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformModified;
 import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformRunId;
 
@@ -47,14 +49,16 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
     @NotNull
     PipelineJob _job;
     private final String _statusName;
+    final Map<String, String> _columnMap;
 
-    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, @NotNull PipelineJob job, String statusName)
+    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, @NotNull PipelineJob job, String statusName, Map<String, String> columnMap)
     {
         _transformRunId = transformRunId;
         _input = input;
         _statusLogger = statusLogger;
         _job = job;
         _statusName = statusName;
+        _columnMap = columnMap;
     }
 
 
@@ -106,7 +110,10 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
             ColumnInfo c = in.getColumnInfo(i);
             if (diColumns.contains(c.getName()) || TransformUtils.isRowversionColumn(c))
                 continue;
-            out.addColumn(i);
+            if (_columnMap.containsKey(c.getColumnName()))
+                out.addAliasColumn(_columnMap.get(c.getColumnName()), i);
+            else
+                out.addColumn(i);
         }
         out.addConstantColumn(TransformRunId.getColumnName(), JdbcType.INTEGER, _transformRunId);
         out.addTimestampColumn(TransformModified.getColumnName());

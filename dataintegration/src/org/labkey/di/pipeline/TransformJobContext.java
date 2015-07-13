@@ -19,11 +19,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.di.ScheduledPipelineJobContext;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.api.di.ScheduledPipelineJobContext;
-import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;
@@ -84,4 +84,10 @@ public class TransformJobContext extends ScheduledPipelineJobContext implements 
     {
         return (TransformJobContext)super.clone();
     }
+
+    public Map<ParameterDescription, Object> getParams()
+    {
+        return _params;
+    }
+
 }

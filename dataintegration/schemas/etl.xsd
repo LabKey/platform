@@ -6,7 +6,6 @@
         elementFormDefault="qualified"
         attributeFormDefault="unqualified">
 
-    <import namespace="http://labkey.org/pipeline/xml" schemaLocation="../../../../schemas/pipelineTasks.xsd"/>
     <import namespace="http://labkey.org/data/xml/queryCustomView" schemaLocation="../../../../schemas/queryCustomView.xsd"/>
 
     <element name="etl" type="etl:EtlType"/>
@@ -55,6 +54,9 @@
         <annotation>
             <documentation>Targets will be of type 'query' (the default), or 'file'. For query, the schemaName and queryName attributes are required. For file, the fileBaseName and fileExtension attributes are required.</documentation>
         </annotation>
+        <all>
+            <element name="columnTransforms" type="etl:ColumnTransformsType" minOccurs="0" maxOccurs="1"/>
+        </all>
         <attribute name="schemaName" type="string" use="optional"/>
         <attribute name="queryName" type="string" use="optional"/>
         <attribute name="bulkLoad" type="boolean" use="optional">
@@ -142,6 +144,16 @@
         <attribute name="value" type="string" use="optional"/>
         <attribute name="override" type="boolean" use="optional" default="false"/>
         <attribute name="scope" type="etl:ProcedureParameterScopeType" use="optional" default="local"/>
+        <attribute name="noWorkValue" type="string" use="optional">
+            <annotation>
+                <documentation>When present, this procedure will be used to check if there is work for the job to do. If the output value
+                of this parameter is equal to the noWorkValue, there is no work for the job to do.
+                This can either be an actual value ("4"), or there is a substitution syntax to indicate comparison should be against the
+                input value of a certain parameter. E.g., a parameter name="batchId" noWorkValue="${batchId}" will indicate there
+                    is no work for the job if the ouput batchId is the same as the one saved from the previous run.
+                </documentation>
+            </annotation>
+        </attribute>
     </complexType>
 
     <simpleType name="ProcedureParameterScopeType">
@@ -174,6 +186,14 @@
         <attribute name="file" type="string"/>
         <attribute name="streaming" type="boolean" default="true"/>
         <attribute name="externalTaskId" type="string"/>
+        <attribute name="saveState" type="boolean" default="false">
+            <annotation>
+                <documentation>
+                    Persist the job state to the database after this step (in addition to at the end of a successfully complete job).
+                    Use with extreme caution; if a later step causes an error in the job, this will still be the assumed state for the next run.
+                </documentation>
+            </annotation>
+        </attribute>
     </complexType>
 
 <!-- <complexType name="PropertiesType">
@@ -297,4 +317,19 @@
         <attribute name="value" type="string" use="required"/>
     </complexType>
 
+    <complexType name="ColumnTransformsType">
+        <sequence minOccurs="0" maxOccurs="unbounded">
+            <element name="column" type="etl:ColumnTransformType"/>
+        </sequence>
+    </complexType>
+
+    <complexType name="ColumnTransformType">
+        <annotation>
+            <documentation>Defines an in-flight mapping of column names between source and target.
+                This works for both query and file targets.
+            </documentation>
+        </annotation>
+        <attribute name="source" type="string" use="required" />
+        <attribute name="target" type="string" use="required"/>
+    </complexType>
 </schema>

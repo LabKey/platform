@@ -548,10 +548,12 @@ dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.00-13.1
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.10-13.20.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.20-13.30.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.30-14.10.sql -text
+dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-15.20-15.21.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.00-13.10.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.10-13.20.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.20-13.30.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.30-14.10.sql -text
+dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-15.20-15.21.sql -text
 dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
 dataintegration/src/org/labkey/di/DataIntegrationQuerySchema.java -text
@@ -589,6 +591,7 @@ dataintegration/src/org/labkey/di/steps/CubeMaintenanceTask.java -text
 dataintegration/src/org/labkey/di/steps/ExternalPipelineTaskMeta.java -text
 dataintegration/src/org/labkey/di/steps/ExternalPipelineTaskProvider.java -text
 dataintegration/src/org/labkey/di/steps/ExternalPipelineTaskStep.java -text
+dataintegration/src/org/labkey/di/steps/QueueJobTask.java -text
 dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStep.java -text
 dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStepMeta.java -text
 dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStepProvider.java -text
@@ -819,7 +822,6 @@ experiment/src/org/labkey/experiment/experimentRunQueryHeader.jsp -text
 experiment/src/org/labkey/experiment/fileExportOptions.jsp -text
 experiment/src/org/labkey/experiment/moveRunsLocation.jsp -text
 experiment/src/org/labkey/experiment/pipeline/ExpGeneratorHelper.java -text
-experiment/src/org/labkey/experiment/pipeline/ExpGeneratorTask.java -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineJob.java -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineProvider.java -text
 experiment/src/org/labkey/experiment/pipeline/MoveRunsPipelineJob.java -text

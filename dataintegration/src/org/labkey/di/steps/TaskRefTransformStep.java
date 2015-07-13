@@ -43,12 +43,6 @@ public class TaskRefTransformStep extends TransformTask
     }
 
     @Override
-    public boolean hasWork()
-    {
-        return true;
-    }
-
-    @Override
     public void doWork(RecordedAction action) throws PipelineJobException
     {
         try
@@ -58,7 +52,7 @@ public class TaskRefTransformStep extends TransformTask
             String className = taskInstance.getClass().getName();
             taskInstance.setContainerUser(_context);
             getJob().info("Running taskref task " + className);
-            Map<String, String> output = digestRecordedActionSet(taskInstance.run(getJob().getLogger()));
+            Map<String, String> output = digestRecordedActionSet(taskInstance.run(getJob()));
             output.put("class", className);
 
             // Persist output and classname into dataintegration.TransformConfiguration.TransformState

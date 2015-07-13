@@ -51,7 +51,7 @@ public class TransformQuartzJobRunner implements Job
 
         if (d.isPending(info))
         {
-            LOG.info("Not queuing job because ETL is already pending: " + d.getId());
+            LOG.info(TransformManager.getJobPendingMessage(d.getId()));
             return;
         }
         boolean hasWork = d.checkForWork(info, true, info.isVerbose());

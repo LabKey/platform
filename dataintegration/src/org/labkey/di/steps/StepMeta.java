@@ -19,6 +19,8 @@ import org.apache.xmlbeans.XmlException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.etl.xml.TransformType;
 
+import java.util.Map;
+
 /**
  * User: matthew
  * Date: 4/22/13
@@ -55,4 +57,10 @@ public interface StepMeta
     boolean isUseTargetTransaction();
 
     int getTransactionSize();
+
+    boolean isGating();
+
+    boolean isSaveState();
+
+    Map<String, String> getColumnTransforms();
 }

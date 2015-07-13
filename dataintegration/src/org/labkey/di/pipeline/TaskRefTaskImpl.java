@@ -15,12 +15,16 @@
  */
 package org.labkey.di.pipeline;
 
+import org.apache.xmlbeans.XmlException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.di.TaskRefTask;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.di.steps.TaskRefTransformStepMeta;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,20 +33,38 @@ import java.util.Map;
  */
 public abstract class TaskRefTaskImpl implements TaskRefTask
 {
-
-    protected Map<String, String> settings = new CaseInsensitiveHashMap<>();
+    protected final Map<String, String> settings = new CaseInsensitiveHashMap<>();
     protected ContainerUser containerUser;
 
     @Override
-    public void setSettings(Map<String, String> settings)
+    public void setSettings(Map<String, String> xmlSettings) throws XmlException
     {
-        this.settings = settings;
+        StringBuilder sb = new StringBuilder();
+        for (String requiredSetting : getRequiredSettings())
+        {
+            if (!xmlSettings.containsKey(requiredSetting))
+            {
+                if (sb.length() == 0)
+                    sb.append(TaskRefTransformStepMeta.TASKREF_MISSING_REQUIRED_SETTING).append("\n");
+                sb.append(requiredSetting).append("\n");
+            }
+        }
+        if (sb.length() > 0)
+            throw new XmlException(sb.toString());
+
+        this.settings.putAll(xmlSettings);
     }
 
     @Override
     public void setContainerUser(ContainerUser containerUser)
     {
         this.containerUser = containerUser;
+    }
+
+    @Override
+    public List<String> getRequiredSettings()
+    {
+        return Collections.emptyList();
     }
 
     /**
@@ -53,7 +75,7 @@ public abstract class TaskRefTaskImpl implements TaskRefTask
     protected RecordedAction makeRecordedAction()
     {
         RecordedAction ra = new RecordedAction(this.getClass().getSimpleName());
-        for (Map.Entry<String,String> setting : settings.entrySet())
+        for (Map.Entry<String, String> setting : settings.entrySet())
         {
             RecordedAction.ParameterType paramType = new RecordedAction.ParameterType(setting.getKey(), PropertyType.STRING);
             ra.addParameter(paramType, setting.getValue());

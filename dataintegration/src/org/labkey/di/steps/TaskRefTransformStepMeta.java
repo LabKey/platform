@@ -83,26 +83,7 @@ public class TaskRefTransformStepMeta extends StepMetaImpl
         {
             throw new XmlException(TASKREF_CLASS_INSTANTIATION_EXCEPTION + taskClassName, e);
         }
-
-        validateSettings(xmlSettings);
-
         taskInstance.setSettings(xmlSettings);
-    }
-
-    private void validateSettings(Map<String, String> xmlSettings) throws XmlException
-    {
-        StringBuilder sb = new StringBuilder();
-        for (String requiredSetting : taskInstance.getRequiredSettings())
-        {
-            if (!xmlSettings.containsKey(requiredSetting))
-            {
-                if (sb.length() == 0)
-                    sb.append(TASKREF_MISSING_REQUIRED_SETTING).append("\n");
-                sb.append(requiredSetting).append("\n");
-            }
-        }
-        if (sb.length() > 0)
-            throw new XmlException(sb.toString());
     }
 
     public TaskRefTask getTaskInstance()

@@ -18,9 +18,11 @@ package org.labkey.di.steps;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -34,6 +36,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.di.TransformDataIteratorBuilder;
 import org.labkey.di.VariableMap;
@@ -41,7 +44,9 @@ import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.filters.RunFilterStrategy;
+import org.labkey.di.pipeline.TransformDescriptor;
 import org.labkey.di.pipeline.TransformJobContext;
+import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
 
@@ -78,14 +83,14 @@ public class StoredProcedureStep extends TransformTask
     private CaseInsensitiveHashMap<Object> globalSavedParamVals = new CaseInsensitiveHashMap<>();
     private Map<String, MetadataParameterInfo> metadataParameters;
 
-    private static enum RETURN_TYPE
+    private enum RETURN_TYPE
     {
         NONE,
         INTEGER,
         RESULTSET
     }
 
-    private static enum SPECIAL_PARAMS
+    private enum SPECIAL_PARAMS
     {
         transformRunId,
         filterRunId,
@@ -143,16 +148,80 @@ public class StoredProcedureStep extends TransformTask
     {
         FilterStrategy filterStrategy = getFilterStrategy();
         if (_meta.isUseSource() && filterStrategy instanceof ModifiedSinceFilterStrategy)
-        {
-            return super.hasWork();
-        }
+            return sourceHasWork();
         else if (filterStrategy instanceof RunFilterStrategy)
-        {
             return filterStrategy.hasWork();
-        }
+
+        _meta.setUseFilterStrategy(false);
+        if (_meta.isGating())
+            return checkWorkGatingParams();
         else
-            _meta.setUseFilterStrategy(false);
-            return true;
+            return !((TransformDescriptor)_context.getJobDescriptor()).isGatedByStep();
+    }
+
+    /**
+     * Sets up parameters and executes the procedure, then checks each gating parameter against its noWorkValue.
+     * Output parameters are *not* persisted into the saved json state for this ETL, nor will global output parameter
+     * values be available to other gating stored procs for their own work checks.
+     *
+     */
+    private boolean checkWorkGatingParams()
+    {
+        boolean hasWork = false;
+        try
+        {
+            prepareExecution(true);
+            CaseInsensitiveHashMap<Object> checkVals = new CaseInsensitiveHashMap<>();
+            for (Map.Entry<String, StoredProcedureStepMeta.ETLParameterInfo> xmlParam : _meta.getXmlParamInfos().entrySet())
+            {
+                if (xmlParam.getValue().isGating())
+                {
+                    String paramName = procDialect.translateParameterName(xmlParam.getKey(), true);
+                    Object outputVal;
+                    String noWorkValue = xmlParam.getValue().getNoWorkValue();
+                    String compareParam = StringUtils.substringBetween(noWorkValue, "${", "}");
+                    if (null == compareParam)
+                        outputVal = noWorkValue;
+                    else
+                    {
+                        if (!metadataParameters.containsKey(procDialect.translateParameterName(compareParam, false)))
+                            throw new ConfigurationException("Bad comparison parameter name: " + compareParam); // TODO: move this check to parsing validation
+                        compareParam = procDialect.translateParameterName(compareParam, true);
+                        if (VariableMap.Scope.global.equals(xmlParam.getValue().getScope()))
+                            outputVal = globalSavedParamVals.get(compareParam);
+                        else
+                            outputVal = localSavedParamVals.get(compareParam);
+                    }
+                    if (null == outputVal)
+                        return true;
+                    else
+                        checkVals.put(paramName, outputVal);
+                }
+            }
+
+            if (!callProcedure(true))
+                throw new ConfigurationException("Error calling procedure");
+
+            for (Map.Entry<String, Object> checkVal : checkVals.entrySet())
+            {
+                Object outputValue;
+                if (VariableMap.Scope.global.equals(_meta.getXmlParamInfos().get(procDialect.translateParameterName(checkVal.getKey(), false)).getScope()))
+                    outputValue = globalSavedParamVals.get(checkVal.getKey());
+                else
+                    outputValue = localSavedParamVals.get(checkVal.getKey());
+
+                if (null != outputValue && !outputValue.toString().equals(checkVal.getValue().toString()))  // TODO: boolean parameters?
+                {
+                    hasWork = true;
+                    break;
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new ConfigurationException("SQL Exception checking for work", e);
+        }
+        return hasWork;
     }
 
     @Override
@@ -160,8 +229,8 @@ public class StoredProcedureStep extends TransformTask
     {
         try
         {
-            getJob().debug("StoredProcedureStep.doWork called");
-            if (!executeProcedure())
+            debug("StoredProcedureStep.doWork called");
+            if (!prepareExecution(false) || !callProcedure(false))
                 throw new PipelineJobException("Error running procedure");
             recordWork(action);
         }
@@ -185,37 +254,34 @@ public class StoredProcedureStep extends TransformTask
 
     }
 
-    private boolean executeProcedure() throws SQLException
+    private boolean prepareExecution(boolean checkingForWork) throws SQLException
     {
-        if (!validate(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger())) return false;
-        if (!validateAndSetDbScopes()) return false;
-        if (!getParametersFromDbMetadata()) return false;
-        seedParameterValues();
-        logFilterValues();
-        return callProcedure();
-
+        if (!checkingForWork && !validate(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger())) return false;
+        setDbScopes();
+        getParametersFromDbMetadata();
+        initSavedParamVals(checkingForWork);
+        seedParameterValues(checkingForWork);
+        return true;
     }
 
-    private boolean validateAndSetDbScopes()
+    private void setDbScopes()
     {
-        // TODO: This is misnamed; we're not really doing validation, nor do we ever return false
         procSchema = _meta.getProcedureSchema().toString();
         procName = _meta.getProcedure();
 
-        DbSchema schema = DbSchema.get(procSchema);
+        DbSchema schema = DbSchema.get(procSchema, DbSchemaType.Bare);
         procScope = schema.getScope();
         procDialect = procScope.getSqlDialect();
 
         if (_meta.getTargetSchema() != null && StringUtils.isNotEmpty(_meta.getTargetSchema().toString()))
         {
-            schema = DbSchema.get(_meta.getTargetSchema().toString());
+            schema = DbSchema.get(_meta.getTargetSchema().toString(), DbSchemaType.Module);
             if (!schema.getScope().equals(procScope))
                 targetScope = schema.getScope();
         }
-        return true;
     }
 
-    private boolean callProcedure() throws SQLException
+    private boolean callProcedure(boolean checkingForWork) throws SQLException
     {
         int returnValue = 1;
         long duration = 0;
@@ -230,7 +296,7 @@ public class StoredProcedureStep extends TransformTask
         {
             procDialect.registerParameters(procScope, stmt, metadataParameters, procReturns.equals(RETURN_TYPE.RESULTSET));
 
-            getJob().info("Executing stored procedure " + procSchema + "." + procName);
+            info("Executing stored procedure " + procSchema + "." + procName);
             long start = System.currentTimeMillis();
 
             if (procReturns.equals(RETURN_TYPE.RESULTSET))
@@ -239,16 +305,16 @@ public class StoredProcedureStep extends TransformTask
 
             long finish = System.currentTimeMillis();
 
-            processInlineResults(stmt, resultsAvailable, txTarget == null ? txProc : txTarget);
+            processInlineResults(stmt, resultsAvailable, txTarget == null ? txProc : txTarget, checkingForWork);
 
             SQLWarning warn = stmt.getWarnings();
             while (warn != null)
             {
-                getJob().info(warn.getMessage());
+                info(warn.getMessage());
                 warn = warn.getNextWarning();
             }
 
-            Integer procResult = readOutputParams(stmt, txTarget == null ? txProc : txTarget);
+            Integer procResult = readOutputParams(stmt, txTarget == null ? txProc : txTarget, checkingForWork);
             if (procResult == null)
                 return false;
             else returnValue = procResult;
@@ -263,10 +329,10 @@ public class StoredProcedureStep extends TransformTask
         }
         if (badReturn)
         {
-            getJob().error("Error: Sproc exited with return code " + returnValue);
+            error("Error: Sproc exited with return code " + returnValue);
             return false;
         }
-        getJob().info("Stored procedure " + procSchema + "." + procName + " completed in " + DateUtil.formatDuration(duration));
+        info("Stored procedure " + procSchema + "." + procName + " completed in " + DateUtil.formatDuration(duration));
         return true;
 
     }
@@ -275,7 +341,7 @@ public class StoredProcedureStep extends TransformTask
      *  For SQL Server. Have to step through all inline resultsets before allowed to access output metadataParameters.
      * Also, the first may be the real resultset we want to write to a target. Postgres result sets are handled later with output metadataParameters
      */
-    private boolean processInlineResults(CallableStatement stmt, boolean resultsAvailable, DbScope.Transaction txTarget) throws SQLException
+    private boolean processInlineResults(CallableStatement stmt, boolean resultsAvailable, DbScope.Transaction txTarget, boolean checkingForWork) throws SQLException
     {
         ResultSet inlineResult;
         boolean firstResult = true;
@@ -284,7 +350,7 @@ public class StoredProcedureStep extends TransformTask
             while (resultsAvailable || stmt.getUpdateCount() > -1) // row counts of queries internal to the proc are also in the set of resultsets. Nice, huh?
             {
                 inlineResult = stmt.getResultSet();
-                if (inlineResult != null) // its a real resultset, not just a placeholder for a row count
+                if (inlineResult != null && !checkingForWork) // its a real resultset, not just a placeholder for a row count
                 {
                     // Only keep the first of the inline result sets.
                     // TODO: might be nice to allow multiple result sets/targets, and also respect debug/verbose flag to log result sets
@@ -296,7 +362,7 @@ public class StoredProcedureStep extends TransformTask
                             return false;
                     }
                     else
-                        getJob().warn("Warning: more than one inline result set output by stored procedure. Only the first is processed.");
+                        warn("Warning: more than one inline result set output by stored procedure. Only the first is processed.");
                 }
                 resultsAvailable = stmt.getMoreResults();
             }
@@ -305,7 +371,7 @@ public class StoredProcedureStep extends TransformTask
         return true;
     }
 
-    private boolean getParametersFromDbMetadata() throws SQLException
+    private void getParametersFromDbMetadata() throws SQLException
     {
         metadataParameters = procDialect.getParametersFromDbMetadata(procScope, procSchema, procName);
 
@@ -313,17 +379,15 @@ public class StoredProcedureStep extends TransformTask
             procReturns = RETURN_TYPE.INTEGER;
         else if (metadataParameters.containsKey(SPECIAL_PARAMS.resultSet.name()))
             procReturns = RETURN_TYPE.RESULTSET;
-
-        return true;
     }
 
-    private void seedParameterValues()
+    private void seedParameterValues(boolean checkingForWork)
     {
         boolean missingParam = false;
 
-        Map<String, StoredProcedureStepMeta.ETLParameterInfo> xmlParamInfos= _meta.getXmlParamInfos();
+        Map<String, StoredProcedureStepMeta.ETLParameterInfo> xmlParamInfos = _meta.getXmlParamInfos();
 
-        initSavedParamVals();
+        logFilterValues();
 
         for (Map.Entry<String, MetadataParameterInfo> parameter : metadataParameters.entrySet())
         {
@@ -334,7 +398,7 @@ public class StoredProcedureStep extends TransformTask
 
             if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.transformRunId.name()))
             {
-                inputValue = getTransformJob().getTransformRunId();
+                inputValue = checkingForWork ? -1 : getTransformJob().getTransformRunId();
             }
             else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.containerId.name()))
             {
@@ -398,7 +462,6 @@ public class StoredProcedureStep extends TransformTask
             }
 
             mdParamInfo.setParamValue(inputValue);
-            
         }
     }
 
@@ -436,43 +499,65 @@ public class StoredProcedureStep extends TransformTask
         }
     }
 
-    private void initSavedParamVals()
+    private void initSavedParamVals(boolean checkingForWork)
     {
-        Object o = getVariableMap().get(TransformProperty.Parameters);
-        if (null != o)
-            localSavedParamVals.putAll((Map) o);
-
-        getVariableMap().put(TransformProperty.Parameters, localSavedParamVals);
-
-        // Trim any local scoped persisted parameters that have been deprecated and no longer part of the procedure,
-        // or have been rescoped to global
-        Iterator<Map.Entry<String,Object>> it = localSavedParamVals.entrySet().iterator();
-        while (it.hasNext())
+        if (checkingForWork)
+            getParamsFromTransformConfig();
+        else
         {
-            Map.Entry<String, Object> e = it.next();
+            Object o = getVariableMap().get(TransformProperty.Parameters);
+            if (null != o)
+                localSavedParamVals.putAll((Map) o);
 
-            final String paramName = procDialect.translateParameterName(e.getKey(), false);
-            if (!metadataParameters.containsKey(paramName)
-                    && !SPECIAL_PARAMS.getTimestampParams().containsKey(paramName)
-                && !_meta.isGlobalParam(paramName))
-                it.remove();
+            getVariableMap().put(TransformProperty.Parameters, localSavedParamVals);
+
+            // Trim any local scoped persisted parameters that have been deprecated and no longer part of the procedure,
+            // or have been rescoped to global
+            Iterator<Map.Entry<String, Object>> it = localSavedParamVals.entrySet().iterator();
+            while (it.hasNext())
+            {
+                Map.Entry<String, Object> e = it.next();
+
+                final String paramName = procDialect.translateParameterName(e.getKey(), false);
+                if (!metadataParameters.containsKey(paramName)
+                        && !SPECIAL_PARAMS.getTimestampParams().containsKey(paramName)
+                        && !_meta.isGlobalParam(paramName))
+                    it.remove();
+            }
+
+            Object globalO = getVariableMap().get(TransformProperty.GlobalParameters);
+            if (null != globalO)
+                globalSavedParamVals.putAll((Map) globalO);
+            // Don't trim persisted global parameters. If they're not part of this procedure, there's no way to tell whether or not they're part of others
+            getVariableMap().put(TransformProperty.GlobalParameters, globalSavedParamVals, VariableMap.Scope.global);
         }
+    }
 
-        Object globalO = getVariableMap().get(TransformProperty.GlobalParameters);
-        if (null != globalO)
-            globalSavedParamVals.putAll((Map) globalO);
-        // Don't trim persisted global parameters. If they're not part of this procedure, there's no way to tell whether or not they're part of others
-        getVariableMap().put(TransformProperty.GlobalParameters, globalSavedParamVals, VariableMap.Scope.global );
+    private void getParamsFromTransformConfig()
+    {
+        JSONObject state = TransformManager.get().getTransformConfiguration(_context.getContainer(), _context.getJobDescriptor()).getJsonState();
+        if (!state.isEmpty())
+        {
+            if (state.has(TransformProperty.GlobalParameters))
+                globalSavedParamVals.putAll(state.getJSONObject(TransformProperty.GlobalParameters));
+
+            if (state.has("steps"))
+            {
+                JSONObject steps = state.getJSONObject("steps");
+                if (steps.has(_meta.getId()) && steps.getJSONObject(_meta.getId()).has(TransformProperty.Parameters))
+                    localSavedParamVals.putAll(steps.getJSONObject(_meta.getId()).getJSONObject(TransformProperty.Parameters));
+            }
+        }
     }
 
     @Nullable
-    private Integer readOutputParams(CallableStatement stmt, DbScope.Transaction txTarget) throws SQLException
+    private Integer readOutputParams(CallableStatement stmt, DbScope.Transaction txTarget, boolean checkingForWork) throws SQLException
     {
         Integer returnVal;
 
         if (procReturns.equals(RETURN_TYPE.RESULTSET) && _meta.isUseTarget()) // Postgres resultset output
         {
-            if (writeToTarget((ResultSet) stmt.getObject(1), getJob().getLogger(), txTarget))
+            if (checkingForWork || writeToTarget((ResultSet) stmt.getObject(1), getJob().getLogger(), txTarget))
                 returnVal = 0;
             else returnVal = null;
         }
@@ -482,41 +567,44 @@ public class StoredProcedureStep extends TransformTask
         {
             String paramName = parameter.getKey();
             MetadataParameterInfo paramInfo = parameter.getValue();
-            if (paramInfo.getParamTraits().get(ParamTraits.direction) == DatabaseMetaData.procedureColumnInOut)
+            final Object value = paramInfo.getParamValue();
+            final int paramDirection = paramInfo.getParamTraits().get(ParamTraits.direction);
+            String dialectName = procDialect.translateParameterName(paramName, true);
+            if (paramDirection == DatabaseMetaData.procedureColumnInOut)
             {
-                Object value = paramInfo.getParamValue();
-                if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.rowsInserted.name()) && (Integer)value > -1)
+                if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.rowsInserted.name()) && (Integer) value > -1)
                 {
-                    _recordsInserted = (Integer)value;
-                    getJob().info("Inserted " + getNumRowsString(_recordsInserted));
+                    _recordsInserted = (Integer) value;
+                    info("Inserted " + getNumRowsString(_recordsInserted));
                 }
-                else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.rowsDeleted.name()) && (Integer)value > -1)
+                else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.rowsDeleted.name()) && (Integer) value > -1)
                 {
-                    _recordsDeleted = (Integer)value;
-                    getJob().info("Deleted " + getNumRowsString(_recordsDeleted));
+                    _recordsDeleted = (Integer) value;
+                    info("Deleted " + getNumRowsString(_recordsDeleted));
                 }
-                else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.rowsModified.name()) && (Integer)value > -1)
+                else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.rowsModified.name()) && (Integer) value > -1)
                 {
-                    _recordsModified = (Integer)value;
-                    getJob().info("Modified " + getNumRowsString(_recordsModified));
+                    _recordsModified = (Integer) value;
+                    info("Modified " + getNumRowsString(_recordsModified));
                 }
                 else if (paramName.equalsIgnoreCase(SPECIAL_PARAMS.returnMsg.name()) && StringUtils.isNotEmpty((String) value))
                 {
                     if (null == returnVal || returnVal > 0)
-                        getJob().error("Return Msg: " + value);
-                    getJob().info("Return Msg: " + value);
+                        error("Return Msg: " + value);
+                    info("Return Msg: " + value);
                 }
 
                 // Persist the new value to the correct scope
-                String dialectName = procDialect.translateParameterName(paramName, true);
                 if (_meta.isGlobalParam(paramName))
                     globalSavedParamVals.put(dialectName, value);
                 else
                     localSavedParamVals.put(dialectName, value);
             }
 
+            // Also save the value for input-only global parameters, so they'll also be available to later stored procs
+            if (_meta.isGlobalParam(paramName) && !globalSavedParamVals.containsKey(dialectName) && paramDirection == DatabaseMetaData.procedureColumnIn)
+                globalSavedParamVals.put(dialectName, value);
         }
-
         return returnVal;
     }
 
@@ -534,18 +622,44 @@ public class StoredProcedureStep extends TransformTask
         context.setFailFast(true);
 
         int transformRunId = getTransformJob().getTransformRunId();
-        DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context)), getJob().getLogger(), getTransformJob(), _factory.getStatusName());
+        DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context)), getJob().getLogger(), getTransformJob(), _factory.getStatusName(), _meta.getColumnTransforms());
         _recordsInserted = appendToTarget(_meta, _context.getContainer(), _context.getUser(), context, transformSource , getJob().getLogger(), txTarget);
 
         if (context.getErrors().hasErrors())
         {
             for (ValidationException v : context.getErrors().getRowErrors())
             {
-                getJob().error(v.getMessage());
+                error(v.getMessage());
             }
             return false;
         }
 
         return true;
     }
+
+    private void info(String message)
+    {
+        if (null != getJob())
+            getJob().info(message);
+    }
+
+    private void warn(String message)
+    {
+        if (null != getJob())
+            getJob().warn(message);
+    }
+
+    private void debug(String message)
+    {
+        if (null != getJob())
+            getJob().debug(message);
+    }
+
+    private void error(String message)
+    {
+        if (null != getJob())
+            getJob().error(message);
+        else throw new IllegalArgumentException(message);
+    }
+
 }

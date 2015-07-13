@@ -65,6 +65,12 @@ public class SimpleQueryTransformStep extends TransformTask
         _meta = meta;
     }
 
+    @Override
+    public boolean hasWork()
+    {
+        return sourceHasWork();
+    }
+
     public void doWork(RecordedAction action) throws PipelineJobException
     {
         try
@@ -133,7 +139,7 @@ public class SimpleQueryTransformStep extends TransformTask
                 if (null == source)
                     return false;
                 int transformRunId = getTransformJob().getTransformRunId();
-                DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log, getTransformJob(), _factory.getStatusName());
+                DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log, getTransformJob(), _factory.getStatusName(), _meta.getColumnTransforms());
 
                 _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log, txTarget);
 

@@ -15,7 +15,8 @@
  */
 package org.labkey.di.steps;
 
-import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.di.pipeline.TaskRefTaskImpl;
@@ -29,18 +30,21 @@ import java.util.List;
  */
 public class TestTaskRefTask extends TaskRefTaskImpl
 {
-    private static final String SETTING_1 = "setting1";
-    private static final String SLEEP = "sleep";
+    private enum Setting
+    {
+        setting1,
+        sleep
+    }
 
     @Override
-    public RecordedActionSet run(Logger logger) throws PipelineJobException
+    public RecordedActionSet run(@NotNull PipelineJob job) throws PipelineJobException
     {
-        settings.put(SETTING_1, "test");
-        logger.info("Log from test task");
-        if (settings.get(SLEEP) != null)
+        settings.put(Setting.setting1.name(), "test");
+        job.getLogger().info("Log from test task");
+        if (settings.get(Setting.sleep.name()) != null)
         {
-            int sleepSeconds = Integer.parseInt(settings.get(SLEEP));
-            logger.info("Sleeping ETL task for " +  sleepSeconds + " seconds");
+            int sleepSeconds = Integer.parseInt(settings.get(Setting.sleep.name()));
+            job.getLogger().info("Sleeping ETL task for " + sleepSeconds + " seconds");
             try
             {
                 Thread.sleep(sleepSeconds * 1000);
@@ -53,6 +57,6 @@ public class TestTaskRefTask extends TaskRefTaskImpl
     @Override
     public List<String> getRequiredSettings()
     {
-        return Collections.singletonList(SETTING_1);
+        return Collections.singletonList(Setting.setting1.name());
     }
 }

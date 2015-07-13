@@ -61,6 +61,6 @@ public class ExternalPipelineTaskProvider extends StepProviderImpl
     @Override
     public TransformTask createStepInstance(TransformTaskFactory f, PipelineJob job, StepMeta meta, TransformJobContext context)
     {
-        return new ExternalPipelineTaskStep(f, job, meta);
+        return new ExternalPipelineTaskStep(f, job, meta, context);
     }
 }

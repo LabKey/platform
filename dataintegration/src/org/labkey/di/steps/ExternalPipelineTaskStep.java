@@ -18,6 +18,7 @@ package org.labkey.di.steps;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
+import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
 
@@ -31,20 +32,14 @@ import org.labkey.di.pipeline.TransformTaskFactory;
  */
 public class ExternalPipelineTaskStep extends TransformTask
 {
-    public ExternalPipelineTaskStep(TransformTaskFactory factory, PipelineJob job, StepMeta meta)
+    public ExternalPipelineTaskStep(TransformTaskFactory factory, PipelineJob job, StepMeta meta, TransformJobContext context)
     {
-        super(factory, job, meta);
+        super(factory, job, meta, context);
     }
 
     @Override
     public void doWork(RecordedAction action) throws PipelineJobException
     {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean hasWork()
-    {
-        return true;
     }
 }

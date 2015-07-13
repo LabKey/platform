@@ -59,7 +59,7 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
     @Override
     public boolean hasWork()
     {
-        return true;
+        return !isEtlGatedByStep();
     }
 
     @Override

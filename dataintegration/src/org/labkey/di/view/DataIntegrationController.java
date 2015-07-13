@@ -320,7 +320,7 @@ public class DataIntegrationController extends SpringActionController
             JSONObject ret = new JSONObject();
             if (etl.isPending(getViewContext()))
             {
-                status = "Not queuing job because ETL is already pending.";
+                status = TransformManager.getJobPendingMessage(null);
                 LOG.info(status);
             }
             else

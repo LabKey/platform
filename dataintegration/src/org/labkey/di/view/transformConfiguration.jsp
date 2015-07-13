@@ -196,6 +196,7 @@ function onResetStateClicked(el, id)
         <td class="labkey-column-header">Verbose Logging</td>
         <td class="labkey-column-header">Last Status</td>
         <td class="labkey-column-header">Last Successful Run</td>
+        <td class="labkey-column-header">Last Checked</td>
         <td class="labkey-column-header"></td>
         <td class="labkey-column-header"></td>
     </tr><%
@@ -230,9 +231,12 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox onchange="onEnabledChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isEnabled())%>></td>
-        <td><input type=checkbox onchange="onVerboseLoggingChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isVerboseLogging())%>></td>
+        <td><input type=checkbox
+                   onchange="onVerboseLoggingChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isVerboseLogging())%>>
+        </td>
         <td><%=text(configuration.getLastStatusUrl())%></td>
         <td><%=text(configuration.getLastCompletionUrl())%></td>
+        <td><%=text(configuration.getLastCheckedString())%></td>
         <td class="etl-action-col"><%= button("run now").href("#").onClick("onRunNowClicked(this," + q(descriptor.getId()) + "); return false;").enabled(enableControls) %></td>
         <td class="etl-action-col"><%= button("reset state").href("#").onClick("onResetStateClicked(this," + q(descriptor.getId()) + "); return false;").enabled(enableControls && !configuration.getTransformState().contentEquals("{}")) %></td>
         </tr><%
@@ -245,6 +249,7 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox disabled="true" <%=checked(configuration.isEnabled())%>></td>
         <td><input type=checkbox disabled="true" onchange="onVerboseLoggingChanged()" <%=checked(configuration.isVerboseLogging())%>></td>
+        <td></td>
         <td></td>
         <td></td>
         </tr><%

@@ -173,6 +173,13 @@ public class TransformConfiguration extends Entity
         return TransformManager.get().getJobDetailsLink(lookupContainer(), getLastCompletionJobId(), formattedCompletion, false);
     }
 
+    public String getLastCheckedString()
+    {
+        if (null == getLastChecked())
+            return null;
+        return DateUtil.formatDateTime(lookupContainer(), getLastChecked());
+    }
+
     public String getTransformState()
     {
         return null==jsonState ? "{}" : jsonState.toString();

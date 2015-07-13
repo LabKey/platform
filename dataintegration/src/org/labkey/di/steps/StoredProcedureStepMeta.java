@@ -41,6 +41,8 @@ public class StoredProcedureStepMeta extends StepMetaImpl
         private String value;
         private boolean override = false;
         private VariableMap.Scope scope = VariableMap.Scope.local;
+        private boolean gating = false;
+        private String noWorkValue;
 
         public String getValue()
         {
@@ -70,6 +72,23 @@ public class StoredProcedureStepMeta extends StepMetaImpl
         public void setScope(ProcedureParameterScopeType.Enum scope)
         {
             this.scope = VariableMap.Scope.valueOf(scope.toString());
+        }
+
+        public String getNoWorkValue()
+        {
+            return noWorkValue;
+        }
+
+        public void setNoWorkValue(String noWorkValue)
+        {
+            this.noWorkValue = noWorkValue;
+            if (null != noWorkValue)
+                gating = true;
+        }
+
+        public boolean isGating()
+        {
+            return gating;
         }
     }
 
@@ -114,6 +133,11 @@ public class StoredProcedureStepMeta extends StepMetaImpl
                 parameterInfo.setValue(xmlParam.getValue());
                 parameterInfo.setOverride(xmlParam.getOverride());
                 parameterInfo.setScope(xmlParam.getScope());
+                if (xmlParam.isSetNoWorkValue())
+                {
+                    parameterInfo.setNoWorkValue(xmlParam.getNoWorkValue());
+                    setGating(true);
+                }
                 xmlParamInfos.put(name, parameterInfo); // TODO: Handle dupes?
             }
         }

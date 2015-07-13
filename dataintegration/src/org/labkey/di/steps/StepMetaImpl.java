@@ -22,6 +22,7 @@ import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.di.pipeline.TransformManager;
+import org.labkey.etl.xml.ColumnTransformType;
 import org.labkey.etl.xml.SourceObjectType;
 import org.labkey.etl.xml.TargetObjectType;
 import org.labkey.etl.xml.TransformType;
@@ -70,6 +71,7 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
         {
             setDescription(transformXML.getDescription());
         }
+        setSaveState(transformXML.getSaveState());
         parseWorkOptions(transformXML);
     }
 
@@ -166,6 +168,12 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
             }
 
             validateDestination();
+
+            if (null != destination.getColumnTransforms())
+            {
+                for (ColumnTransformType column : destination.getColumnTransforms().getColumnArray())
+                    _columnTransforms.put(column.getSource(), column.getTarget());
+            }
         }
         else
             _useTarget = false;
@@ -176,5 +184,10 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
         if ( (getTargetType().equals(TargetTypes.query) && (getTargetSchema() == null || getTargetQuery() == null))
                 || (getTargetType().equals(TargetTypes.file) && (getTargetFileProperties().get(TargetFileProperties.dir) == null || getTargetFileProperties().get(TargetFileProperties.baseName) == null))) // OK to allow empty extension?
             throw new XmlException(TransformManager.INVALID_DESTINATION);
+    }
+    @Override
+    public Map<String, String> getColumnTransforms()
+    {
+        return _columnTransforms;
     }
 }

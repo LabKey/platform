@@ -61,7 +61,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     private final VariableMapImpl _variableMap = new VariableMapImpl(null);
     private final Map<String,VariableMapImpl> _stepVariableMaps = new HashMap<>();
     public static final String ETL_PREFIX = "ETL Job: ";
-
+    private static final String LOG_EXTENSION = "etl.log";
 
     public TransformPipelineJob(@NotNull TransformJobContext info, TransformDescriptor etlDescriptor)
     {
@@ -74,9 +74,12 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         //TODO: The string replace is a temp workaround until we remove the braces from the module name and switch
         // to passing around a TaskId instead.
         String filePath = StringUtils.replace(StringUtils.replace(etlDescriptor.getId(), "{", ""), "}", "");
-        File etlLogFile = new File(etlLogDir, FileUtil.makeFileNameWithTimestamp(filePath, "etl.log"));
+        File etlLogFile = new File(etlLogDir, FileUtil.makeFileNameWithTimestamp(filePath, LOG_EXTENSION));
         _transformJobContext = new TransformJobContext(etlDescriptor, info.getContainer(), info.getUser(), info._params);
         setLogFile(etlLogFile);
+        // Default job to etl log directory & file base name. These will be changed if etl target is a file.
+        setAnalysisDirectory(etlLogDir);
+        setBaseName(StringUtils.substringBefore(etlLogFile.getName(), "." + LOG_EXTENSION));
         initVariableMap(info);
     }
 
@@ -142,23 +145,28 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
 
         if (TaskStatus.complete == status)
         {
-            JSONObject state = _variableMap.toJSONObject();
-            state.remove(TransformProperty.RanStep1);
-            JSONObject steps = new JSONObject();
-            for (Map.Entry<String,VariableMapImpl> e : _stepVariableMaps.entrySet())
-            {
-                JSONObject step = e.getValue().toJSONObject();
-                if (null == step || step.isEmpty())
-                    continue;
-                steps.put(e.getKey(), step);
-            }
-            state.put("steps",steps);
-            TransformConfiguration cfg = TransformManager.get().getTransformConfiguration(getContainer(),_etlDescriptor);
-            cfg.setJsonState(state);
-            TransformManager.get().saveTransformConfiguration(getUser(),cfg);
+            saveVariableMap(true);
         }
     }
 
+    void saveVariableMap(boolean removeTransientProperties)
+    {
+        JSONObject state = _variableMap.toJSONObject();
+        if (removeTransientProperties)
+            state.remove(TransformProperty.RanStep1);
+        JSONObject steps = new JSONObject();
+        for (Map.Entry<String,VariableMapImpl> e : _stepVariableMaps.entrySet())
+        {
+            JSONObject step = e.getValue().toJSONObject();
+            if (null == step || step.isEmpty())
+                continue;
+            steps.put(e.getKey(), step);
+        }
+        state.put("steps",steps);
+        TransformConfiguration cfg = TransformManager.get().getTransformConfiguration(getContainer(),_etlDescriptor);
+        cfg.setJsonState(state);
+        TransformManager.get().saveTransformConfiguration(getUser(), cfg);
+    }
 
     @Override
     protected void done(Throwable throwable)
@@ -219,6 +227,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         return _etlDescriptor;
     }
 
+    @NotNull
     public TransformJobContext getTransformJobContext()
     {
         return _transformJobContext;

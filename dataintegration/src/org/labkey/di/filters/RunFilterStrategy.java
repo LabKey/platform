@@ -38,7 +38,6 @@ import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.etl.xml.FilterType;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -160,7 +159,7 @@ public class RunFilterStrategy extends FilterStrategyImpl
 
         TableSelector ts = new TableSelector(_runsTable, Collections.singleton(_runPkCol), f, null);
         Aggregate min = new Aggregate(_runPkCol, Aggregate.Type.MIN);
-        Map<String, List<Aggregate.Result>> results = ts.getAggregates(Arrays.asList(min));
+        Map<String, List<Aggregate.Result>> results = ts.getAggregates(Collections.singletonList(min));
         List<Aggregate.Result> list = results.get(_runPkCol.getName());
         Aggregate.Result minResult = list.get(0);
         Integer nextRunId = null;
@@ -177,7 +176,7 @@ public class RunFilterStrategy extends FilterStrategyImpl
 
         Integer nextRunId;
         Object v = variables.get(getRunPropertyDescriptor(deleting).getName());
-        // The incremental run id is saved at global scope. We shouldn't increment it for each step the ETL
+        // The incremental run id is saved at global scope. We shouldn't increment it for each step in the ETL
         Boolean ranStep1 = (Boolean)variables.get(TransformProperty.RanStep1);
         if (v instanceof Integer && ranStep1 && !deleting)
         {

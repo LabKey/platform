@@ -106,6 +106,7 @@ import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
@@ -127,6 +128,7 @@ public class TransformManager implements DataIntegrationService.Interface
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
     private static final ModuleResourceCache<ScheduledPipelineJobDescriptor> DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), "ETL job descriptors", new DescriptorCacheHandler());
+    public static final String JOB_PENDING_MSG = "Not queuing job because ETL is already pending";
 
     private Map<String, StepProvider> _providers = new CaseInsensitiveHashMap<>();
 
@@ -212,6 +214,7 @@ public class TransformManager implements DataIntegrationService.Interface
             }
 
             TransformsType transforms = etlXML.getTransforms();
+            boolean hasGateStep = false;
             if (null != transforms)
             {
                 TransformType[] transformTypes = transforms.getTransformArray();
@@ -219,6 +222,8 @@ public class TransformManager implements DataIntegrationService.Interface
                 {
                     StepMeta meta = buildTransformStepMeta(t, stepIds);
                     stepMetaDatas.add(meta);
+                    if (meta.isGating())
+                        hasGateStep = true;
                 }
             }
 
@@ -239,7 +244,7 @@ public class TransformManager implements DataIntegrationService.Interface
             // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
             XmlBeansUtil.validateXmlDocument(document, "ETL '" + resource.getPath() + "'");
 
-            return new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXML.getLoadReferencedFiles());
+            return new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXML.getLoadReferencedFiles(), hasGateStep);
         }
     }
 
@@ -337,9 +342,15 @@ public class TransformManager implements DataIntegrationService.Interface
         return DESCRIPTOR_CACHE.getResource(id);
     }
 
-
     public synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user,
             Map<ParameterDescription,Object> params)
+        throws PipelineJobException
+    {
+        return runNowPipeline(descriptor, container, user, params, null, null, null);
+    }
+
+    public synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user,
+            Map<ParameterDescription,Object> params, Map<String, String> jobParams, File analysisDirectory, String baseName)
         throws PipelineJobException
     {
         if (ViewServlet.isShuttingDown())
@@ -351,16 +362,23 @@ public class TransformManager implements DataIntegrationService.Interface
             // Don't double queue jobs
             if (descriptor.isPending(context))
             {
-                LOG.info("Not queuing job because ETL is already pending: " + descriptor.getId());
+                LOG.info(getJobPendingMessage(descriptor.getId()));
                 return null;
             }
             // see if we have work to do before directly scheduling the pipeline job
             boolean hasWork = descriptor.checkForWork(context, false, true);
             if (!hasWork)
                 return null;
-            PipelineJob job = descriptor.getPipelineJob(context);
+
+            TransformPipelineJob job = (TransformPipelineJob) descriptor.getPipelineJob(context);
             if (null == job)
                 throw new PipelineJobException("Could not create job: " + descriptor.toString());
+            if (null != jobParams)
+                job.getParameters().putAll(jobParams);
+            if (null != analysisDirectory)
+                job.setAnalysisDirectory(analysisDirectory);
+            if (null != baseName)
+                job.setBaseName(baseName);
 
             try
             {
@@ -377,6 +395,15 @@ public class TransformManager implements DataIntegrationService.Interface
         {
             assert dumpScheduler();
         }
+    }
+
+    @NotNull
+    public static String getJobPendingMessage(@Nullable String id)
+    {
+        StringBuilder sb = new StringBuilder().append(JOB_PENDING_MSG);
+        if (null == id)
+            return sb.append(".").toString();
+        else return sb.append(": ").append(id).toString();
     }
 
 
@@ -570,13 +597,17 @@ public class TransformManager implements DataIntegrationService.Interface
     {
         return new SQLFragment("with runs AS")
                 .append(" (SELECT *, ROW_NUMBER() OVER (PARTITION BY transformid, container ORDER BY starttime DESC) as rn")
+                .append(" FROM dataintegration.transformrun WHERE status != 'NO WORK'),")
+                .append("workCheckedRuns AS")
+                .append(" (SELECT *, ROW_NUMBER() OVER (PARTITION BY transformid, container ORDER BY starttime DESC) as rn")
                 .append(" FROM dataintegration.transformrun),")
                 .append("successRuns AS")
                 .append(" (SELECT *, ROW_NUMBER() OVER (PARTITION BY transformid, container ORDER BY starttime DESC) as rn")
                 .append(" FROM dataintegration.transformrun WHERE endtime is not NULL)")
                 .append(" select c.*, runs.jobid as lastJobId, ")
                 .append("CASE WHEN runs.status != 'PENDING' OR s.Status = 'WAITING' THEN runs.status ELSE 'RUNNING' END as lastStatus, ")
-                .append("successRuns.jobid as lastCompletionJobId, successRuns.endtime as lastCompletion from dataintegration.transformconfiguration c")
+                .append("successRuns.jobid as lastCompletionJobId, successRuns.endtime as lastCompletion, workCheckedRuns.startTime as lastChecked from dataintegration.transformconfiguration c")
+                .append(" LEFT JOIN workCheckedRuns ON c.container = workCheckedRuns.container AND c.transformid = workCheckedRuns.transformid AND workCheckedRuns.rn = 1")
                 .append(" LEFT JOIN runs ON c.container = runs.container AND c.transformid = runs.transformid AND runs.rn = 1")
                 .append(" LEFT JOIN pipeline.StatusFiles s ON runs.jobid = s.rowId")
                 .append(" LEFT JOIN successRuns ON c.container = successRuns.container AND c.transformid = successRuns.transformid AND successRuns.rn = 1")

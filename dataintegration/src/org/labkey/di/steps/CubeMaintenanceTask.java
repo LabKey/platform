@@ -15,19 +15,28 @@
  */
 package org.labkey.di.steps;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.security.User;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.di.pipeline.TaskRefTaskImpl;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -53,77 +62,85 @@ import java.util.Set;
  */
 public class CubeMaintenanceTask extends TaskRefTaskImpl
 {
-    private static final String CUBE = "cube";
-    private static final String SCHEMA = "schema";
-    private static final String CONFIG_ID = "configId";
-    private static final String ACTION = "action";
-    private static final String ACTION_REFRESH = "refresh";
-    private static final String ACTION_WARM = "warm";
-    private static final String ACTION_BOTH = "both";
-    private static final String SCOPE = "scope";
-    private static final String SCOPE_CONTAINER = "container";
-    private static final String SCOPE_SITE = "site";
 
-    @Override
-    public RecordedActionSet run(Logger logger) throws PipelineJobException
+    private enum Action
     {
-        String action = settings.get(ACTION);
-        if (action == null)
-            action = ACTION_BOTH;
-        String scope = settings.get(SCOPE);
-        if (!SCOPE_SITE.equals(scope))
-            scope = SCOPE_CONTAINER;
-        performAction(action, scope, logger);
+        @SuppressWarnings({"UnusedDeclaration"})
+        refresh
+                {
+                    @Override
+                    protected void doIt(User u, Map<Setting, String> settings, Set<Container> containers, Logger logger) throws PipelineJobException
+                    {
+                        for (Container c : containers)
+                            refreshCube(c, settings.get(Setting.cube), logger);
+                    }
+                },
+        @SuppressWarnings({"UnusedDeclaration"})
+        warm
+                {
+                    @Override
+                    protected void doIt(User u, Map<Setting, String> settings, Set<Container> containers, Logger logger) throws PipelineJobException
+                    {
+                        for (Container c : containers)
+                            warmCube(c, u, settings, logger);
+                    }
+                },
+        both
+                {
+                    @Override
+                    protected void doIt(User u, Map<Setting, String> settings, Set<Container> containers, Logger logger) throws PipelineJobException
+                    {
+                        for (Container c : containers)
+                        {
+                            refreshCube(c, settings.get(Setting.cube), logger);
+                            warmCube(c, u, settings, logger);
+                        }
+                    }
+                };
 
+        protected abstract void doIt(User u, Map<Setting, String> settings, Set<Container> containers, Logger logger) throws PipelineJobException;
+
+        protected void run(Map<Setting, String> settings, ContainerUser cu, Logger logger) throws PipelineJobException
+        {
+            Set<Container> containers = new HashSet<>();
+            if (Scope.container.name().equals(settings.get(Setting.scope)))
+                containers.add(cu.getContainer());
+            else
+                containers.addAll(findContainers(settings.get(Setting.schema)));
+            doIt(cu.getUser(), settings, containers, logger);
+        };
+    }
+
+    private enum Scope
+    {
+        @SuppressWarnings({"UnusedDeclaration"})
+        site,
+        container
+    }
+
+    private enum Setting
+    {
+        cube,
+        schema,
+        configId,
+        action,
+        scope
+    }
+
+    private Map<Setting, String> enumSettings = new HashMap<>();
+    
+    @Override
+    public RecordedActionSet run(@NotNull PipelineJob job) throws PipelineJobException
+    {
+        Action action = Action.valueOf(enumSettings.get(Setting.action));
+        action.run(enumSettings, containerUser, job.getLogger());
         return new RecordedActionSet(makeRecordedAction());
     }
 
-    // TODO: Convert settings and actions to enums instead of these string literals
-
-    private void performAction(String action, String scope, Logger logger) throws PipelineJobException
+    private static void warmCube(Container c, User u, Map<Setting, String> settings, Logger logger) throws PipelineJobException
     {
-        String cube = settings.get(CUBE);
-        String schema = settings.get(SCHEMA);
-        String configId = settings.get(CONFIG_ID);
-        Set<Container> containers = new HashSet<>();
-
-        if (SCOPE_CONTAINER.equals(scope))
-            containers.add(containerUser.getContainer());
-        else
-            containers.addAll(findContainers(schema));
-
-        switch (action)
-        {
-            case ACTION_REFRESH:
-                for (Container c : containers)
-                    refreshCube(c, cube, logger);
-                break;
-            case ACTION_WARM:
-                for (Container c : containers)
-                    warmCube(c, cube, schema, configId, logger);
-                break;
-            case ACTION_BOTH:
-                for (Container c : containers)
-                {
-                    refreshCube(c, cube, logger);
-                    warmCube(c, cube, schema, configId, logger);
-                }
-                break;
-            default:
-                logger.info("Unknown action specified: " + action + ". Refreshing and warming.");
-                for (Container c : containers)
-                {
-                    refreshCube(c, cube, logger);
-                    warmCube(c, cube, schema, configId, logger);
-                }
-            break;
-        }
-    }
-
-    private void warmCube(Container c, String cube, String schema, String configId, Logger logger) throws PipelineJobException
-    {
-        logger.info("Warming cube " + cube + " in container " + c.getName());
-        String warmResult = QueryService.get().warmCube(containerUser.getUser(), c, schema, configId, cube);
+        logger.info("Warming cube " + settings.get(Setting.cube) + " in container " + c.getName());
+        String warmResult = QueryService.get().warmCube(u, c, settings.get(Setting.schema), settings.get(Setting.configId), settings.get(Setting.cube));
         // I hate to derive an exception case from an arbitrary string set elsewhere, but otherwise altering the signature of warmCube()
         // is more disruptive to other callers.
         if (warmResult.startsWith("Error"))
@@ -131,14 +148,14 @@ public class CubeMaintenanceTask extends TaskRefTaskImpl
         logger.info(warmResult);
     }
 
-    private void refreshCube(Container c, String cube, Logger logger)
+    private static void refreshCube(Container c, String cube, Logger logger)
     {
         logger.info("Refreshing cube " + cube + " in container " + c.getName());
         QueryService.get().cubeDataChanged(c);
         logger.info("Cube cache reset");
     }
 
-    private Set<Container> findContainers(String schema) throws PipelineJobException
+    private static Set<Container> findContainers(String schema) throws PipelineJobException
     {
         Module module = ModuleLoader.getInstance().getModuleForSchemaName(schema);
         if (module == null)
@@ -149,6 +166,25 @@ public class CubeMaintenanceTask extends TaskRefTaskImpl
     @Override
     public List<String> getRequiredSettings()
     {
-        return Arrays.asList(CUBE, SCHEMA, CONFIG_ID);
+        return Collections.unmodifiableList(Arrays.asList(Setting.cube.name(), Setting.schema.name(), Setting.configId.name()));
+    }
+
+    @Override
+    public void setSettings(Map<String, String> xmlSettings) throws XmlException
+    {
+        super.setSettings(xmlSettings);
+
+        for (Setting enumSetting : Setting.values())
+            enumSettings.put(enumSetting, settings.get(enumSetting.name()));
+
+        // Unfortunately no way to validate cube name or configId, but we can validate the schema name
+        if (null == ModuleLoader.getInstance().getModuleForSchemaName(enumSettings.get(Setting.schema)))
+            throw new XmlException("No module found for schema " + enumSettings.get(Setting.schema));
+
+        // Defaults for optional parameters
+        if (!EnumUtils.isValidEnum(Scope.class, enumSettings.get(Setting.scope)))
+            enumSettings.put(Setting.scope, Scope.container.name());
+        if (!EnumUtils.isValidEnum(Action.class, enumSettings.get(Setting.action)))
+            enumSettings.put(Setting.action, Action.both.name());
     }
 }

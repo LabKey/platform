@@ -50,18 +50,9 @@ public class TestTask extends TransformTask
     public static final String InjectedException = "Injected exception!";
     public static final String Transient = "TransientProperty";
 
-
-    private final SimpleQueryTransformStepMeta _meta;
-
     public TestTask(TransformTaskFactory factory, PipelineJob job, SimpleQueryTransformStepMeta meta)
     {
         super(factory, job, meta);
-        _meta = meta;
-    }
-
-    public boolean hasWork()
-    {
-        return true;
     }
 
     // test action that adds 3 inserted, 2 modified, and 1 deleted row(s)
@@ -90,7 +81,7 @@ public class TestTask extends TransformTask
             // output is dest table
             // todo: this is a fake URI, figure out the real story for the Data Input/Ouput for a transform step
             action.addInput(new URI(_meta.getSourceSchema() + "." + _meta.getSourceQuery()), TransformTask.INPUT_ROLE);
-            action.addOutput(new URI(_meta.getFullTargetString()), TransformTask.OUTPUT_ROLE, false);
+            action.addOutput(new URI(((SimpleQueryTransformStepMeta)_meta).getFullTargetString()), TransformTask.OUTPUT_ROLE, false);
         }
         catch (URISyntaxException ignore){}
         catch (InterruptedException ignore) {}
