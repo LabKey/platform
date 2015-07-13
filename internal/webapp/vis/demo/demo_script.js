@@ -115,58 +115,11 @@ var coffeePlot = new LABKEY.vis.Plot({
     height: 300,
     labels: {
         main: {value: 'Efficiency (%) Over Time'},
-        x: {value: 'Time (PST)'},
-        yLeft: {value: 'Efficiency (%)'}
-    },
-    data: coffeeData,
-    layers: [coffeePathLayer, coffeePointLayer],
-    aes: {
-        x: 'time',
-        yLeft: 'efficiency'
-    },
-    scales: {
-        x: {
-            scaleType: 'discrete'
-        },
-        yLeft: {
-            scaleType: 'continuous',
-            trans: 'linear',
-            min: 0
-        }
-    }
-});
-
-var coffeeXTopPointLayer = new LABKEY.vis.Layer({
-    name: "Efficiency",
-    geom: new LABKEY.vis.Geom.Point(),
-    aes: {
-        color: 'person',
-        shape: 'consumedCoffee',
-        hoverText: function(row){return 'Person: ' + row.person + "\n" + row.consumedCoffee + " Consumed \nEfficiency: " + row.efficiency}
-    }
-});
-
-var coffeeXTopPathLayer = new LABKEY.vis.Layer({
-    name: "Efficiency",
-    geom: new LABKEY.vis.Geom.Path({}),
-    aes: {
-        pathColor: 'person',
-        group: 'person'
-    }
-});
-
-var coffeeXTopPlot = new LABKEY.vis.Plot({
-    renderTo: 'coffeeXTopPlot',
-    rendererType: 'd3',
-    width: 900,
-    height: 300,
-    labels: {
-        main: {value: 'Efficiency (%) Over Time'},
         xTop: {value: 'Time (PST)'},
         yLeft: {value: 'Efficiency (%)'}
     },
     data: coffeeData,
-    layers: [coffeeXTopPathLayer, coffeeXTopPointLayer],
+    layers: [coffeePathLayer, coffeePointLayer],
     aes: {
         xTop: 'time',
         yLeft: 'efficiency'
@@ -180,6 +133,10 @@ var coffeeXTopPlot = new LABKEY.vis.Plot({
             trans: 'linear',
             min: 0
         }
+    },
+    margins: {
+        top: 90,
+        bottom: 15
     }
 });
 
@@ -233,15 +190,11 @@ var boxPlot = new LABKEY.vis.Plot({
         yLeft: {value: 'Age'},
         x: {value: 'Race'}
     },
-//    data: labResultsRows,
     data: boxPlotData,
-    layers: [boxLayer, medianLineLayer/*, boxPointLayer*/],
+    layers: [boxLayer, medianLineLayer],
     aes: {
         yLeft: 'age',
         x: 'group'
-//        yLeft: function(row){return row.study_LabResults_CD4.value},
-//        x: function(row){return "All Participants"}
-//        x: function(row){return row.study_LabResults_ParticipantId.value}
     },
     scales: {
         x: {
@@ -990,7 +943,6 @@ var renderStats = function(){
 var start = new Date().getTime();
 labResultsPlot.render();
 coffeePlot.render();
-coffeeXTopPlot.render();
 boxPlot.render();
 discreteScatter.render();
 scatterPlot.render();
