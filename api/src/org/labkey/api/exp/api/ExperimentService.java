@@ -119,6 +119,7 @@ public class ExperimentService
          */
         ExpData createData(Container container, @NotNull DataType type);
         ExpData createData(Container container, @NotNull DataType type, @NotNull String name);
+        ExpData createData(Container container, @NotNull DataType type, @NotNull String name, boolean generated);
         ExpData createData(Container container, String name, String lsid);
         ExpData createData(URI uri, XarSource source) throws XarFormatException;
 

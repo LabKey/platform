@@ -359,7 +359,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         return lookupBooleanValue(EXT3_REQUIRED, false);
     }
 
-    public boolean isExt3APIRequired() { return lookupBooleanValue(EXT3API_REQUIRED, false); }
+    public boolean isExt3APIRequired() { return lookupBooleanValue(EXT3API_REQUIRED, true); }
 
     public boolean isSelfReportExceptions() { return MothershipReport.isShowSelfReportExceptions() && lookupBooleanValue(SELF_REPORT_EXCEPTIONS, true); }
 

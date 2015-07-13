@@ -1611,12 +1611,11 @@ public class SimpleFilter implements Filter
             testActiveUsersInClause(1, Collections.singleton(user.getUserId()));
             testActiveUsersInClause(1, Collections.singleton(user));
 
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("UserId"), IN_CLAUSE_SIZE, CompareType.LT);
             Sort sort = new Sort();
             sort.appendSortColumn(FieldKey.fromParts("UserId"), Sort.SortDirection.DESC, false);
             TableInfo usersTable = CoreSchema.getInstance().getTableInfoActiveUsers();
             List<Integer> userIdsDesc = new TableSelector(usersTable, Collections.singletonList(usersTable.getColumn("UserId")),
-                                                      filter, sort).getArrayList(Integer.class);
+                                                          null, sort).getArrayList(Integer.class);
 
             Collection<Integer> ids = new LinkedList<>();
             for (int i = 0; i < IN_CLAUSE_SIZE; i++)
