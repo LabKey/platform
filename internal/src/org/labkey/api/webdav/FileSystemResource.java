@@ -39,13 +39,8 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.files.FileContentEmailPref;
-import org.labkey.api.files.FileContentEmailPrefFilter;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.FileUrls;
 import org.labkey.api.flow.api.FlowService;
-import org.labkey.api.notification.EmailMessage;
-import org.labkey.api.notification.EmailService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
@@ -60,17 +55,13 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 
@@ -81,8 +72,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.nio.file.FileSystemException;
@@ -102,6 +91,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
 * User: matthewb
@@ -157,10 +147,9 @@ public class FileSystemResource extends AbstractWebdavResource
         setPolicy(folder.getPolicy());
 
         _files = new ArrayList<>(folder._files.size());
-        for (FileInfo file : folder._files)
-        {
-            _files.add(new FileInfo(new File(file.getFile(), relativePath)));
-        }
+        _files.addAll(folder._files.stream()
+                .map(file -> new FileInfo(new File(file.getFile(), relativePath)))
+                .collect(Collectors.toList()));
     }
 
     public FileSystemResource(Path path, File file, SecurityPolicy policy)
@@ -400,18 +389,16 @@ public class FileSystemResource extends AbstractWebdavResource
         Set<String> result = new TreeSet<>();
         if (_files != null)
         {
-            for (FileInfo file : _files)
-            {
-                if (file.getType() == FileType.directory)
-                {
-                    File[] children = file.getFile().listFiles();
-                    if (null != children)
-                    {
-                        for (File child: children)
-                            result.add(child.getName());
-                    }
-                }
-            }
+            _files.stream()
+                    .filter(file -> file.getType() == FileType.directory)
+                    .forEach(file -> {
+                        File[] children = file.getFile().listFiles();
+                        if (null != children)
+                        {
+                            for (File child : children)
+                                result.add(child.getName());
+                        }
+                    });
         }
         return result;
     }
@@ -420,14 +407,14 @@ public class FileSystemResource extends AbstractWebdavResource
     public Collection<WebdavResource> list()
     {
         Collection<String> names = listNames();
-        ArrayList<WebdavResource> infos = new ArrayList<>(names.size());
+        ArrayList<WebdavResource> resources = new ArrayList<>(names.size());
         for (String name : names)
         {
             WebdavResource r = find(name);
             if (null != r && !(r instanceof WebdavResolverImpl.UnboundResource))
-                infos.add(r);
+                resources.add(r);
         }
-        return infos;
+        return resources;
     }
 
 
@@ -661,8 +648,9 @@ public class FileSystemResource extends AbstractWebdavResource
             return Collections.emptyList();
 
         List<WebdavResolver.History> history = new ArrayList<>(logs.size());
-        for (AuditTypeEvent e : logs)
-            history.add(new HistoryImpl(e.getCreatedBy().getUserId(), e.getCreated(), e.getComment(), null));
+        history.addAll(logs.stream()
+                .map(e -> new HistoryImpl(e.getCreatedBy().getUserId(), e.getCreated(), e.getComment(), null))
+                .collect(Collectors.toList()));
         return history;
     }
 
@@ -694,12 +682,10 @@ public class FileSystemResource extends AbstractWebdavResource
         if (!isFile())
             return Collections.emptyList();
 
-        List<ExpData> datas = getExpData();
-
         List<NavTree> result = new ArrayList<>();
-        Set<Integer> runids = new HashSet<>();
+        Set<Integer> runIDs = new HashSet<>();
 
-        for (ExpData data : datas)
+        for (ExpData data : getExpData())
         {
             if (data == null || !data.getContainer().hasPermission(user, ReadPermission.class))
                 continue;
@@ -711,7 +697,7 @@ public class FileSystemResource extends AbstractWebdavResource
             {
                 if (!run.getContainer().hasPermission(user, ReadPermission.class))
                     continue;
-                if (!runids.add(run.getRowId()))
+                if (!runIDs.add(run.getRowId()))
                     continue;
 
                 String runURL = dataURL == null ? LsidManager.get().getDisplayURL(run.getLSID()) : dataURL.toString();
@@ -780,7 +766,7 @@ public class FileSystemResource extends AbstractWebdavResource
         if (FileType.directory == ft)
         {
             if (null != _shouldIndex)
-                shouldIndexFolder = _shouldIndex;
+                shouldIndexFolder = _shouldIndex.booleanValue();
         }
         else if (FileType.file == ft)
         {
@@ -867,113 +853,7 @@ public class FileSystemResource extends AbstractWebdavResource
     public void notify(ContainerUser context, String message)
     {
         addAuditEvent(new DefaultContainerUser(getContainer(), context.getUser()), message);
-
-        //AuditLogService.get().addEvent(context.getUser(), getContainer(), FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
-/*
-        if (context instanceof ViewContext)
-            sendNotificationEmail((ViewContext)context, message, subject);
-        else
-        {
-            ViewContext viewContext = HttpView.currentContext();
-            if (viewContext != null)
-                sendNotificationEmail(viewContext, message, subject);
-        }
-*/
     }
-
-    private void sendNotificationEmail(ViewContext context, String message, String subject)
-    {
-        try {
-            EmailService.I svc = EmailService.get();
-            User[] users = svc.getUsersWithEmailPref(getContainer(), new FileContentEmailPrefFilter(FileContentEmailPref.INDIVIDUAL));
-
-            if (users != null && users.length > 0)
-            {
-                FileEmailForm form = new FileEmailForm(this, message);
-                List<EmailMessage> messages = new ArrayList<>();
-
-                form.setUrlEmailPrefs(PageFlowUtil.urlProvider(FileUrls.class).urlFileEmailPreference(getContainer()));
-                form.setUrlFileBrowser(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(getContainer()));
-                form.setContainerPath(getContainer().getPath());
-
-                for (User user : users)
-                {
-                    EmailMessage msg = svc.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(),
-                            new String[]{user.getEmail()}, subject);
-
-                    msg.addContent(EmailMessage.contentType.HTML, context,
-                            new JspView<>("/org/labkey/api/webdav/view/fileEmailNotify.jsp", form));
-                    msg.addContent(EmailMessage.contentType.PLAIN, context,
-                            new JspView<>("/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp", form));
-
-                    messages.add(msg);
-                }
-                // send messages in bulk
-                svc.sendMessage(messages.toArray(new EmailMessage[messages.size()]), context == null ? null : context.getUser(), getContainer());
-             }
-       }
-        catch (Exception e)
-        {
-            // Don't fail the request because of this error
-            _log.warn("Unable to send email for the file notification: " + e.getMessage());
-        }
-    }
-
-    public static class FileEmailForm
-    {
-        private String _action;
-        private WebdavResource _resource;
-        private ActionURL _urlEmailPrefs;
-        private ActionURL _urlFileBrowser;
-        private String _containerPath;
-
-        public ActionURL getUrlEmailPrefs()
-        {
-            return _urlEmailPrefs;
-        }
-
-        public void setUrlEmailPrefs(ActionURL urlEmailPrefs)
-        {
-            _urlEmailPrefs = urlEmailPrefs;
-        }
-
-        public ActionURL getUrlFileBrowser()
-        {
-            return _urlFileBrowser;
-        }
-
-        public void setUrlFileBrowser(ActionURL urlFileBrowser)
-        {
-            _urlFileBrowser = urlFileBrowser;
-        }
-
-        public String getContainerPath()
-        {
-            return _containerPath;
-        }
-
-        public void setContainerPath(String containerPath)
-        {
-            _containerPath = containerPath;
-        }
-
-        public FileEmailForm(WebdavResource resource, String action)
-        {
-            _resource = resource;
-            _action = action;
-        }
-
-        public String getAction()
-        {
-            return _action;
-        }
-
-        public WebdavResource getResource()
-        {
-            return _resource;
-        }
-    }
-
 
 
     static final FileTime nullTime = FileTime.from(Long.MIN_VALUE,TimeUnit.MILLISECONDS);
@@ -981,18 +861,14 @@ public class FileSystemResource extends AbstractWebdavResource
     static final BasicFileAttributes doesNotExist = (BasicFileAttributes)Proxy.newProxyInstance(
             FileSystemResource.class.getClassLoader(),
             new Class[] {BasicFileAttributes.class},
-            new InvocationHandler(){
-                @Override
-                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
-                {
-                    if (method.getReturnType() == Boolean.class)
-                        return false;
-                    if (method.getReturnType() == FileTime.class)
-                        return nullTime;
-                    if (method.getReturnType() == Long.class)
-                        return 0;
-                    return null;
-                }
+            (proxy, method, args) -> {
+                if (method.getReturnType() == Boolean.class)
+                    return false;
+                if (method.getReturnType() == FileTime.class)
+                    return nullTime;
+                if (method.getReturnType() == Long.class)
+                    return 0;
+                return null;
             });
 
 

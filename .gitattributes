@@ -6839,8 +6839,6 @@ internal/src/org/labkey/api/webdav/FileSystemBatchAuditViewFactory.java -text
 internal/src/org/labkey/api/webdav/FileSystemResource.java -text
 internal/src/org/labkey/api/webdav/ModuleStaticResolverImpl.java -text
 internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
-internal/src/org/labkey/api/webdav/view/fileEmailNotify.jsp -text
-internal/src/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp -text
 internal/src/org/labkey/remoteapi/RemoteConnections.java -text
 internal/src/org/labkey/remoteapi/SelectRowsStreamHack.java -text
 internal/webapp/ComponentDataView.js -text
