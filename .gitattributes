@@ -478,6 +478,7 @@ api/src/org/labkey/api/defaults/SetDefaultValuesAssayAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesDatasetAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesListAction.java -text
 api/src/org/labkey/api/di/DataIntegrationService.java -text
+api/src/org/labkey/api/di/DataIntegrationUrls.java -text
 api/src/org/labkey/api/di/ScheduledPipelineJobContext.java -text
 api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
 api/src/org/labkey/api/di/TaskRefTask.java -text
