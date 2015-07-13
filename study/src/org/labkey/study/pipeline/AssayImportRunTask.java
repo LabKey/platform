@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -50,6 +51,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.pipeline.AssayImportRunTaskFactorySettings;
 import org.labkey.api.study.assay.pipeline.AssayImportRunTaskId;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -257,14 +259,14 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
     }
 
     // Get the outputs of the last action in the job sequence
-    private List<File> getOutputs(PipelineJob job) throws PipelineJobException
+    private List<RecordedAction.DataFile> getOutputs(PipelineJob job) throws PipelineJobException
     {
         RecordedActionSet actionSet = job.getActionSet();
         List<RecordedAction> actions = new ArrayList<>(actionSet.getActions());
         if (actions.size() < 1)
             throw new PipelineJobException("No recorded actions");
 
-        List<File> outputs = new ArrayList<>();
+        List<RecordedAction.DataFile> outputs = new ArrayList<>();
 
         RecordedAction lastAction = actions.get(actions.size()-1);
         for (RecordedAction.DataFile dataFile : lastAction.getOutputs())
@@ -277,18 +279,20 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             {
                 File file = new File(uri);
                 if (NetworkDrive.exists(file))
-                    outputs.add(file);
+                    outputs.add(dataFile);
             }
         }
 
         return outputs;
     }
 
-    private File findMatchedOutputFile(FileType fileType, List<File> outputFiles)
+    private RecordedAction.DataFile findMatchedOutputFile(FileType fileType, List<RecordedAction.DataFile> outputFiles)
     {
-        for (File outputFile : outputFiles)
+        for (RecordedAction.DataFile outputFile : outputFiles)
         {
-            if (fileType.isType(outputFile))
+            URI uri = outputFile.getURI();
+            File f = new File(uri);
+            if (fileType.isType(f))
                 return outputFile;
         }
 
@@ -404,15 +408,20 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 throw new PipelineJobException("Assay FileType required for importing run");
 
             // Find output from the previous task
-            List<File> outputFiles = getOutputs(getJob());
+            List<RecordedAction.DataFile> outputFiles = getOutputs(getJob());
             if (outputFiles.isEmpty())
                 throw new PipelineJobException("No output files found for importing run into assay '" + protocol.getName() + "'");
 
             // UNDONE: Support multiple input files
             // Find the first output that matches the assay's file type
-            File matchedFile = findMatchedOutputFile(assayFileType, outputFiles);
+            RecordedAction.DataFile matchedFile = findMatchedOutputFile(assayFileType, outputFiles);
             if (matchedFile == null)
                 throw new PipelineJobException("No output files matched assay file type: " + assayFileType);
+
+            // Issue 22587: Create ExpData for the output file from the RecordedActions if necessary so that we
+            // ensure the generated bit is set on the ExpData.  Otherwise, the DefaultAssayRunCreator will create
+            // the ExpData but without the generated bit.
+            createData(matchedFile, assayDataType);
 
             User user = getJob().getUser();
             Container container = getJob().getContainer();
@@ -426,7 +435,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             // Add the job inputs as the assay run's inputs
             factory.setInputDatas(getInputs(getJob()));
 
-            factory.setUploadedData(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, matchedFile));
+            File uploadedData = new File(matchedFile.getURI());
+            factory.setUploadedData(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, uploadedData));
 
             factory.setBatchProperties(getBatchProperties());
 
@@ -478,6 +488,24 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             throw new PipelineJobException("Failed to save experiment run in the database", e);
         }
         return new RecordedActionSet();
+    }
+
+    private ExpData createData(RecordedAction.DataFile dataFile, AssayDataType assayDataType)
+    {
+        Container c = getJob().getContainer();
+        URI uri = dataFile.getURI();
+        File file = new File(uri);
+
+        ExpData data = ExperimentService.get().getExpDataByURL(file, c);
+        if (data == null)
+        {
+            data = ExperimentService.get().createData(c, assayDataType, file.getName(), dataFile.isGenerated());
+            data.setLSID(ExperimentService.get().generateGuidLSID(c, assayDataType));
+            data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
+            data.save(getJob().getUser());
+        }
+
+        return data;
     }
 
 }

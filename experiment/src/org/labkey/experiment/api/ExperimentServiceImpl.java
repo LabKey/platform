@@ -440,16 +440,27 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpDataImpl createData(Container container, @NotNull DataType type, @NotNull String name)
     {
-        return createData(container, name, generateLSID(container, type, name));
+        return createData(container, type, name, false);
+    }
+
+    public ExpDataImpl createData(Container container, @NotNull DataType type, @NotNull String name, boolean generated)
+    {
+        return createData(container, name, generateLSID(container, type, name), generated);
     }
 
     public ExpDataImpl createData(Container container, String name, String lsid)
+    {
+        return createData(container, name, lsid, false);
+    }
+
+    public ExpDataImpl createData(Container container, String name, String lsid, boolean generated)
     {
         Data data = new Data();
         data.setLSID(lsid);
         data.setName(name);
         data.setCpasType(ExpData.DEFAULT_CPAS_TYPE);
         data.setContainer(container);
+        data.setGenerated(generated);
         return new ExpDataImpl(data);
     }
 

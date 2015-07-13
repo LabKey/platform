@@ -2095,52 +2095,68 @@ public class StudyController extends BaseStudyController
 
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
-            Collection<Integer> ids = new SqlSelector(StudySchema.getInstance().getScope(),
-                    new SQLFragment(
-                            "SELECT V.RowId FROM study.Visit V WHERE Container=? AND NOT EXISTS (SELECT * FROM study.participantvisit PV where PV.container = ? and PV.visitrowid=V.rowid)",
-                            getContainer(), getContainer()
-                    )
-            ).getCollection(Integer.class);
-
+            Collection<VisitImpl> visits = getUnusedVisits(study);
             StringBuilder sb = new StringBuilder();
-            sb.append("Delete visits:<br>");
-            for (Integer rowid : ids)
+
+            if (visits.isEmpty())
             {
-                VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, rowid);
-                if (null != visit)
+                sb.append("No unused visits found.<br>");
+            }
+            else
+            {
+                sb.append("Delete visits:<br><br>");
+
+                for (VisitImpl visit : visits)
                 {
-                    sb.append(PageFlowUtil.filter(visit.getLabel()) + " (" + visit.getSequenceNumMin());
+                    sb.append(PageFlowUtil.filter(visit.getLabel())).append(" (").append(visit.getSequenceNumMin());
                     if (visit.getSequenceNumMax() != visit.getSequenceNumMin())
                         sb.append("-").append(visit.getSequenceNumMax());
                     sb.append(")<br>");
                 }
             }
-            if (ids.isEmpty())
-                sb.append("No unused visits found.<br>");
+
             return new HtmlView(sb.toString());
         }
 
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
+            long start = System.currentTimeMillis();
             StudyImpl study = getStudyThrowIfNull();
 
-            Collection<Integer> ids = new SqlSelector(StudySchema.getInstance().getScope(),
-                    new SQLFragment(
-                        "SELECT V.RowId FROM study.Visit V WHERE Container=? AND NOT EXISTS (SELECT * FROM study.participantvisit PV where PV.container = ? and PV.visitrowid=V.rowid)",
-                        getContainer(), getContainer()
-                    )
-                ).getCollection(Integer.class);
+            StudyManager.getInstance().deleteVisits(study, getUnusedVisits(study), getUser(), true);
 
-            for (Integer rowid : ids)
-            {
-                VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, rowid);
-                    StudyManager.getInstance().deleteVisit(study, visit, getUser());
-            }
+            _log.info("Delete unused visits took: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+
             return true;
         }
 
+        private @NotNull Collection<VisitImpl> getUnusedVisits(final StudyImpl study)
+        {
+            final List<VisitImpl> visits = new LinkedList<>();
+
+            new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment
+                (
+                    "SELECT v.RowId FROM study.Visit v WHERE Container = ? AND NOT EXISTS (SELECT * FROM study.ParticipantVisit pv WHERE pv.Container = ? and pv.VisitRowId = v.RowId)",
+                    getContainer(), getContainer()
+                )
+            ).forEach(new Selector.ForEachBlock<Integer>()
+                {
+                    @Override
+                    public void exec(Integer rowId) throws SQLException
+                    {
+                        VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, rowId);
+
+                        if (null != visit)
+                            visits.add(visit);
+                    }
+                }, Integer.class);
+
+            return visits;
+        }
+
         @Override
+        @NotNull
         public ActionURL getSuccessURL(IdForm idForm)
         {
             return new ActionURL(ManageVisitsAction.class, getContainer());
@@ -4102,7 +4118,23 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(StartStudyImportForm form, BindException errors) throws Exception
         {
+            PipeRoot root = PipelineService.get().getPipelineRootSetting(getContainer());
+            if (root == null)
+            {
+                throw new IllegalStateException("No pipeline root available for " + getContainer().getPath());
+            }
             File studyFile = new File(form.getStudyFile());
+            if (!studyFile.isAbsolute())
+            {
+                // Resolve the relative path to an absolute path under the root
+                studyFile = root.resolvePath(form.getStudyFile());
+            }
+
+            // Be sure that the referenced file is under the root
+            if (!root.isUnderRoot(studyFile))
+            {
+                throw new UnauthorizedException("Cannot access file " + form.getStudyFile());
+            }
 
             if (studyFile.exists())
                 return importStudy(getViewContext(), errors, studyFile, studyFile.getName(), form);

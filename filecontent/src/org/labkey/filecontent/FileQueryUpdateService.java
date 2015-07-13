@@ -210,6 +210,8 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         {
             _columns = new HashSet<>();
 
+            _columns.add(new FieldKey(null, ExpDataTable.Column.RowId.name()));
+            _columns.add(new FieldKey(null, ExpDataTable.Column.LSID.name()));
             _columns.add(new FieldKey(null, ExpDataTable.Column.Flag.name()));
             _columns.add(COL_COMMENT);
             _columns.add(new FieldKey(null, ExpDataTable.Column.DataFileUrl.name()));

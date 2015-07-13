@@ -16,6 +16,8 @@
 
 package org.labkey.study.model;
 
+import org.apache.commons.collections15.CollectionUtils;
+import org.apache.commons.collections15.Transformer;
 import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -538,7 +540,7 @@ public class StudyManager
             if (!retry) // we only get one retry
                 break;
 
-            _studyHelper.clearCache(study);
+            _studyHelper.clearCache(c);
             retry = false;
         }
 
@@ -1585,60 +1587,99 @@ public class StudyManager
 
     public void deleteVisit(StudyImpl study, VisitImpl visit, User user) throws SQLException
     {
+        deleteVisits(study, Collections.singleton(visit), user, false);
+    }
+
+    /*
+        Delete multiple visits; more efficient than calling deleteVisit() in a loop.
+    */
+    public void deleteVisits(StudyImpl study, Collection<VisitImpl> visits, User user, boolean unused) throws SQLException
+    {
+        // Short circuit on empty
+        if (visits.isEmpty())
+            return;
+
+        // Extract visit rowIds
+        Collection<Integer> visitIds = CollectionUtils.collect(visits, new Transformer<VisitImpl, Integer>()
+        {
+            @Override
+            public Integer transform(VisitImpl visit)
+            {
+                return visit.getRowId();
+            }
+        });
+
         StudySchema schema = StudySchema.getInstance();
+        SQLFragment visitInClause = new SQLFragment();
+        schema.getSqlDialect().appendInClauseSql(visitInClause, visitIds);
 
         try (Transaction transaction = schema.getSchema().getScope().ensureTransaction())
         {
-            for (DatasetDefinition def : study.getDatasets())
+            if (!unused)
             {
-                TableInfo t = def.getStorageTableInfo();
-                if (null == t)
-                    continue;
+                for (DatasetDefinition def : study.getDatasets())
+                {
+                    TableInfo t = def.getStorageTableInfo();
+                    if (null == t)
+                        continue;
 
-                SQLFragment sqlf = new SQLFragment();
-                sqlf.append("DELETE FROM ");
-                sqlf.append(t.getSelectName());
-                sqlf.append(" WHERE LSID IN (SELECT LSID FROM ");
-                sqlf.append(t.getSelectName());
-                sqlf.append(" d, ");
-                sqlf.append(StudySchema.getInstance().getTableInfoParticipantVisit(), "pv");
-                sqlf.append(" WHERE d.ParticipantId = pv.ParticipantId AND d.SequenceNum = pv.SequenceNum AND pv.VisitRowId = ? AND pv.Container = ?)");
-                sqlf.add(visit.getRowId());
-                sqlf.add(study.getContainer());
-                int count = new SqlExecutor(schema.getSchema()).execute(sqlf);
-                if (count > 0)
-                    StudyManager.datasetModified(def, user, true);
+                    SQLFragment sqlf = new SQLFragment();
+                    sqlf.append("DELETE FROM ");
+                    sqlf.append(t.getSelectName());
+                    sqlf.append(" WHERE LSID IN (SELECT LSID FROM ");
+                    sqlf.append(t.getSelectName());
+                    sqlf.append(" d, ");
+                    sqlf.append(StudySchema.getInstance().getTableInfoParticipantVisit(), "pv");
+                    sqlf.append(" WHERE d.ParticipantId = pv.ParticipantId AND d.SequenceNum = pv.SequenceNum AND pv.Container = ?");
+                    sqlf.add(study.getContainer());
+                    sqlf.append(" AND pv.VisitRowId ").append(visitInClause).append(')');
+
+                    int count = new SqlExecutor(schema.getSchema()).execute(sqlf);
+                    if (count > 0)
+                        StudyManager.datasetModified(def, user, true);
+                }
+
+                for (VisitImpl visit : visits)
+                {
+                    // Delete samples first because we may need ParticipantVisit to figure out which samples
+                    SpecimenManager.getInstance().deleteSamplesForVisit(visit);
+
+                    TreatmentManager.getInstance().deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
+                    deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
+                }
             }
 
-            // Delete samples first because we may need ParticipantVisit to figure out which samples
-            SpecimenManager.getInstance().deleteSamplesForVisit(visit);
-
-            TreatmentManager.getInstance().deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
-            deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
-
             SQLFragment sqlFragParticipantVisit = new SQLFragment("DELETE FROM " + schema.getTableInfoParticipantVisit() + "\n" +
-                    "WHERE Container = ? and VisitRowId = ?");
-            sqlFragParticipantVisit.add(study.getContainer().getId());
-            sqlFragParticipantVisit.add(visit.getRowId());
+                    "WHERE Container = ?").add(study.getContainer());
+            sqlFragParticipantVisit.append(" AND VisitRowId ").append(visitInClause);
             new SqlExecutor(schema.getSchema()).execute(sqlFragParticipantVisit);
 
             SQLFragment sqlFragVisitMap = new SQLFragment("DELETE FROM " + schema.getTableInfoVisitMap() + "\n" +
-                    "WHERE Container=? AND VisitRowId=?");
-            sqlFragVisitMap.add(study.getContainer().getId());
-            sqlFragVisitMap.add(visit.getRowId());
+                    "WHERE Container = ?").add(study.getContainer());
+            sqlFragVisitMap.append(" AND VisitRowId ").append(visitInClause);
             new SqlExecutor(schema.getSchema()).execute(sqlFragVisitMap);
 
             // UNDONE broken _visitHelper.delete(visit);
             try
             {
                 Study visitStudy = getStudyForVisits(study);
-                Table.delete(schema.getTableInfoVisit(), new Object[]{visitStudy.getContainer(), visit.getRowId()});
+
+                for (VisitImpl visit : visits)
+                {
+                    try
+                    {
+                        Table.delete(schema.getTableInfoVisit(), new Object[]{visitStudy.getContainer(), visit.getRowId()});
+                    }
+                    finally
+                    {
+                        _visitHelper.clearCache(visit);
+                    }
+                }
             }
             catch (Table.OptimisticConflictException x)
             {
                 /* ignore */
             }
-            _visitHelper.clearCache(visit);
 
             transaction.commit();
 
