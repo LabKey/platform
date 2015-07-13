@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.TaskId;
 public class XarGeneratorFactorySettings extends AbstractTaskFactorySettings
 {
     private String _outputExt;
+    private boolean _loadFiles = true;
 
     public XarGeneratorFactorySettings(String name)
     {
@@ -44,5 +45,15 @@ public class XarGeneratorFactorySettings extends AbstractTaskFactorySettings
     public void setOutputExt(String outputExt)
     {
         _outputExt = outputExt;
+    }
+
+    public boolean isLoadFiles()
+    {
+        return _loadFiles;
+    }
+
+    public void setLoadFiles(boolean loadFiles)
+    {
+        _loadFiles = loadFiles;
     }
 }

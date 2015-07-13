@@ -15,7 +15,9 @@
  */
 package org.labkey.api.di;
 
-import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.writer.ContainerUser;
@@ -48,18 +50,19 @@ public interface TaskRefTask
      * @return RecordedActionSet Any parameters of any RecordedActions in the set get persisted in the job parameter set in
      *          dataintegration.TransformConfiguration.TransformState
      * @throws PipelineJobException
+     * @param job
      */
-    public RecordedActionSet run(Logger logger) throws PipelineJobException;
+    RecordedActionSet run(@NotNull PipelineJob job) throws PipelineJobException;
 
     /**
      * For upfront validation; if any of these are missing, we won't even try to run the task
      */
-    public List<String> getRequiredSettings();
+    List<String> getRequiredSettings();
 
     /**
      * Settings read from the etl xml (or elsewhere). Eventually would be good to use TaskFactorySettings instead.
      */
-    public void setSettings(Map<String, String> settings);
+    void setSettings(Map<String, String> settings) throws XmlException;
 
     /**
      * Downcast from the ScheduledPipelineJobContext or TransformJobContext that the etl job will be otherwise passing
@@ -67,5 +70,5 @@ public interface TaskRefTask
      * go away.
      *
      */
-    public void setContainerUser(ContainerUser containerUser);
+    void setContainerUser(ContainerUser containerUser);
 }

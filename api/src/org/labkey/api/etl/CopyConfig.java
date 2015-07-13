@@ -16,6 +16,7 @@
 package org.labkey.api.etl;
 
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.query.SchemaKey;
 
 import java.util.Map;
@@ -60,6 +61,10 @@ public class CopyConfig
     protected boolean _useProcTransaction;
     protected boolean _useTargetTransaction;
     private String _targetString;
+    private boolean _gating = false;
+    private boolean _saveState = false;
+
+    protected Map<String, String> _columnTransforms = new CaseInsensitiveHashMap<>();
 
     public CopyConfig()
     {
@@ -348,5 +353,25 @@ public class CopyConfig
     public void setTransactionSize(int transactionSize)
     {
         _transactionSize = transactionSize;
+    }
+
+    public boolean isGating()
+    {
+        return _gating;
+    }
+
+    public void setGating(boolean isGating)
+    {
+        _gating = isGating;
+    }
+
+    public boolean isSaveState()
+    {
+        return _saveState;
+    }
+
+    public void setSaveState(boolean saveState)
+    {
+        _saveState = saveState;
     }
 }
