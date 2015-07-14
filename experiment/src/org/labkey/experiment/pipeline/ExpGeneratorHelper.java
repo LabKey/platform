@@ -54,7 +54,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Helper class to build experiments from pipeline jobs.  Used by XarGeneratorTask and ExpGeneratorTask
+ * Helper class to build experiments from pipeline jobs.  Used by XarGeneratorTask
  * User: dax
  * Date: Apr 24, 2013
 */

@@ -7,7 +7,6 @@
         <property name="factoryImpls">
             <list>
                 <bean class="org.labkey.experiment.pipeline.XarGeneratorTask$Factory"/>
-                <bean class="org.labkey.experiment.pipeline.ExpGeneratorTask$Factory"/>
                 <bean class="org.labkey.experiment.pipeline.MoveRunsTaskFactory">
                     <property name="location" value="webserver-high-priority" />
                 </bean>

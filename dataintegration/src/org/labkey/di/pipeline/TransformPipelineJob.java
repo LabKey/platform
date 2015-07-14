@@ -258,7 +258,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
 
 
     //
-    // Called by the ExpGeneratorTask after it has finished
+    // Called by the ExpGeneratorHelper after it has finished
     // generating the experiment run for the current set
     // of actions for this transform job.
     //
