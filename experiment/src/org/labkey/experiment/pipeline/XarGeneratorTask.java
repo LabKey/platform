@@ -59,8 +59,8 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
     public static class Factory extends AbstractTaskFactory<XarGeneratorFactorySettings, Factory>
     {
         private FileType _outputType = XarGeneratorId.FT_PIPE_XAR_XML;
-        private boolean _loadFiles;
-        private String _statusName;
+        private boolean _loadFiles = true;
+        private String _statusName = "IMPORT RESULTS";
 
         public Factory()
         {
@@ -117,7 +117,8 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             if (settings.getOutputExt() != null)
                 _outputType = new FileType(settings.getOutputExt());
             _loadFiles = settings.isLoadFiles();
-            _statusName = _loadFiles ? "IMPORT RESULTS" : "GENERATING EXPERIMENT";
+            if (!_loadFiles)
+                _statusName = "GENERATING EXPERIMENT";
         }
     }
     
