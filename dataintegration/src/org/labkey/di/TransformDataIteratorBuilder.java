@@ -110,10 +110,9 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
             ColumnInfo c = in.getColumnInfo(i);
             if (diColumns.contains(c.getName()) || TransformUtils.isRowversionColumn(c))
                 continue;
-            if (_columnMap.containsKey(c.getColumnName()))
-                out.addAliasColumn(_columnMap.get(c.getColumnName()), i);
-            else
-                out.addColumn(i);
+            int outColIndex = out.addColumn(i);
+            if (_columnMap.containsKey(c.getColumnName())) // Map to a different output name
+                out.getColumnInfo(outColIndex).setName(_columnMap.get(c.getColumnName()));
         }
         out.addConstantColumn(TransformRunId.getColumnName(), JdbcType.INTEGER, _transformRunId);
         out.addTimestampColumn(TransformModified.getColumnName());
