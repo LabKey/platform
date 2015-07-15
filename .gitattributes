@@ -7915,6 +7915,8 @@ internal/webapp/vis/demo/demo_data.js -text
 internal/webapp/vis/demo/demo_script.js -text
 internal/webapp/vis/demo/index.html -text
 internal/webapp/vis/experimental/MeasureStore.js -text
+internal/webapp/vis/lib/crossfilter-1.3.11.js -text
+internal/webapp/vis/lib/crossfilter-1.3.11.min.js -text
 internal/webapp/vis/lib/d3-3.3.9.js -text
 internal/webapp/vis/lib/d3-3.3.9.min.js -text
 internal/webapp/vis/lib/d3pie.js -text
