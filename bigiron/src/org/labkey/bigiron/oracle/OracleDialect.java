@@ -86,6 +86,13 @@ public abstract class OracleDialect extends SimpleSqlDialect
     }
 
     @Override
+    public int getIdentifierMaxLength()
+    {
+        // the limit for Oracle is 30, but we reserve 2 characters for appending qualifiers to create aliases
+        return 28;
+    }
+
+    @Override
     protected Set<String> getJdbcKeywords(SqlExecutor executor) throws SQLException, IOException
     {
         // Remove goofy "keyword" that Orcale includes in JDBC call
