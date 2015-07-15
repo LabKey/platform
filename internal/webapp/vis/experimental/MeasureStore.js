@@ -481,7 +481,6 @@
             return accumulators;
         }
 
-
         /**
          * TODO richer metadata
          * dimensions should collect more info like conceptURI, etc
@@ -497,32 +496,31 @@
          */
         var MeasureStore = function(config)
         {
+            var columnNames = config.columns || [];
+            var countStar = {
+                name: '*',
+                index: 0,
+                aggregator: CountStarAggregator
+            };
+
             this._dimensions = {};
             this._records = config.records || [];
-
-            var columnNames = config.columns || [],
-                countStar = {
-                    name: '*',
-                    index: 0,
-                  aggregator: CountStarAggregator
-                };
+            this._columns = [countStar];
+            this._columnMap = {
+                '*': countStar
+            };
 
             if (!config.columns && 0 < config.records.length)
             {
                 var rec = config.records[0];
                 for (var name in rec)
                 {
-                    if (!rec.hasOwnProperty(name))
-                        continue;
-                    columnNames.push(name);
+                    if (rec.hasOwnProperty(name))
+                        columnNames.push(name);
                 }
             }
 
             // consider using some sort of NamedList implementation
-            this._columns = [countStar];
-            this._columnMap = {
-                '*': countStar
-            };
             var me = this;
             columnNames.forEach(function(name, index) {
                 var col = {
@@ -535,7 +533,7 @@
             });
 
             this._measures = (config.measures || []).map(function(m) {
-                if (typeof m === "string")
+                if (LABKEY.Utils.isString(m))
                     m = {name: m};
                 return m;
             });
@@ -545,7 +543,7 @@
                 {
                     var column = me._columns[index];
                     // consider is apply(column,measure) better or column.measure = measure
-                    Ext4.apply(column, m);
+                    $.extend(column, m);
                     if (m.countColumn || m.sumColumn)
                         me._columns[index].aggregator = CollectPreAggregatedValues;
                     else
@@ -555,7 +553,8 @@
 
             this._crossfilter = crossfilter(this._records);
             var dimensions = config.dimensions || [];
-            for (var i = 0; i < dimensions.length; i++) {
+            for (var i = 0; i < dimensions.length; i++)
+            {
                 this.getDimension(dimensions[i]);
             }
         };
@@ -569,12 +568,12 @@
             _columnsMap: null,      // column name to index
             _columns: null,         // {name:foo, index:i, aggregator:constructor}
 
-            records: function()
+            records : function()
             {
                 return this._records;
             },
 
-            _group: function(dim, keyFn)
+            _group : function(dim, keyFn)
             {
                 var fnInit = reduceInit.bind(null, this._columns);
                 var fnAdd = reduceAdd.bind(null, this._columns);
@@ -590,35 +589,21 @@
                 return group.reduce(fnAdd, fnRemove, fnInit);
             },
 
-            group: function(dimName, keyFn)
+            group : function(dimName, keyFn)
             {
                 var dim = null == dimName ? null : this.getDimension(dimName);
                 return this._group(dim, keyFn);
             },
 
-            filter: function(dimName, range)
+            filter : function(dimName, range)
             {
                 return this.getDimension(dimName).filter(range);
             },
 
             /**
-             * Select the list of distinct member values in this dimension, will return raw concatenated keys
-             */
-            _members: function(dimName)
-            {
-                var group = this.group(dimName);
-                var ret = group.reduceCount().all().map(function(entry)
-                {
-                    return entry.key;
-                });
-                group.dispose();
-                return ret;
-            },
-
-            /**
              * Select the list of distinct member values in this dimension as an array
              */
-            members: function(dimName)
+            members : function(dimName)
             {
                 var dim = this.getDimension(dimName),
                     group = this._group(dim),
@@ -626,14 +611,14 @@
 
                 if (1 == dim._keys.length)
                 {
-                    ret = group.reduceCount().all().map(function (entry)
+                    ret = group.reduceCount().all().map(function(entry)
                     {
                         return entry.key;
                     });
                 }
                 else
                 {
-                    ret = group.reduceCount().all().map(function (entry)
+                    ret = group.reduceCount().all().map(function(entry)
                     {
                         return entry.key.split(CONCAT_STRING);
                     });
@@ -669,6 +654,11 @@
                 {
                     dimArray.forEach(function(name)
                     {
+                        if (name === undefined)
+                        {
+                            throw 'Column is undefined.';
+                        }
+
                         if (!(name in firstRow))
                         {
                             throw "Column not found in data: " + name;
@@ -702,8 +692,7 @@
                     }).bind(null, dimArray);
                 }
 
-                // TODO: Remove this global declaration -- this is awful
-                dim = this._crossfilter.dimension(getter);
+                var dim = this._crossfilter.dimension(getter);
                 dim._name = dimName;
                 dim._keys = dimArray;
                 this._dimensions[dimName] = dim;
@@ -715,74 +704,7 @@
             // Data selecting methods
             //
 
-            /**
-             * Returns an array with one element for each element in the dimension.
-             * See MeasureStore.members()
-             */
-            _array : function(entries, memberIndex, aggregate)
-            {
-                switch (aggregate)
-                {
-                    case "VALUES":
-                    return entries.map(function(entry)
-                        {
-                            return null == entry ? null : entry.value[memberIndex].getValues();
-                        });
-                        break;
-                    case "COUNT":
-                    return entries.map(function(entry)
-                        {
-                            return null == entry ? null : entry.value[memberIndex].getCount();
-                        });
-                        break;
-                    case "SUM":
-                    return entries.map(function(entry)
-                        {
-                            return null == entry ? null : entry.value[memberIndex].getSum();
-                        });
-                        break;
-                    case "MEAN":
-                    return entries.map(function(entry)
-                        {
-                            return null == entry ? null : entry.value[memberIndex].getMean();
-                        });
-                        break;
-                    case "VAR":
-                    return entries.map(function(entry)
-                        {
-                            return null == entry ? null : entry.value[memberIndex].getVariance();
-                        });
-                        break;
-                    case "STDDEV":
-                    return entries.map(function(entry)
-                        {
-                            return null == entry ? null : entry.value[memberIndex].getStdDev();
-                        });
-                        break;
-                    case "STDERR":
-                    return entries.map(function(entry)
-                        {
-                            return null == entry ? null : entry.value[memberIndex].getStdErr();
-                        });
-                        break;
-                    case "MIN":
-                    return entries.map(function(entry)
-                        {
-                            return null == entry ? null : entry.value[memberIndex].getMin();
-                        });
-                        break;
-                    case "MAX":
-                    return entries.map(function(entry)
-                        {
-                            return null == entry ? null : entry.value[memberIndex].getMax();
-                        });
-                        break;
-                    default:
-                        throw "NYI";
-                }
-            },
-
-            flattenGroupEntry: function(dim, entry)
+            flattenGroupEntry : function(dim, entry)
             {
                 var columns = this._columns;
                 var r = {__key: entry.key};
@@ -795,11 +717,10 @@
                 return r;
             },
 
-
             /**
              * Returns one object per key in dimension dimName
              */
-            select: function(dimName)
+            select : function(dimName)
             {
                 var dim = this.getDimension(dimName),
                     group = this._group(dim),
@@ -814,25 +735,31 @@
                 return ret;
             },
 
-            selectArray: function(dimName, measureName, aggregate)
+            selectArray : function(dimName, measureName, aggregate)
             {
                 // find index of this measureName
                 var index = -1;
                 for (var m = 0; m < this._columns.length; m++)
-                    if (measureName === this._columns[m].name)
+                {
+                    if (LABKEY.Utils.isDefined(measureName) && measureName === this._columns[m].name)
+                    {
                         index = m;
+                        break;
+                    }
+                }
+
                 if (index === -1)
                     throw "Column name not found: " + measureName;
 
                 var dim = this.getDimension(dimName);
                 var group = this._group(dim);
-                var ret = this._array(group.all(), index, aggregate);
+                var ret = _array(this, group.all(), index, aggregate);
                 group.dispose();
                 return ret;
             },
 
             // CONSIDER: transpose by default?
-            selectXYArray: function(dimName, measureXName, aggregateX, measureYName, aggregateY)
+            selectXYArray : function(dimName, measureXName, aggregateX, measureYName, aggregateY)
             {
                 var x = -1, y = -1;
                 for (var m = 0; m < this._columns.length; m++)
@@ -849,62 +776,24 @@
 
                 var group = this.group(dimName);
                 var entries = group.all();
-                var xSeries = this._array(entries, x, aggregateX);
-                var ySeries = this._array(entries, y, aggregateY);
+                var xSeries = _array(this, entries, x, aggregateX);
+                var ySeries = _array(this, entries, y, aggregateY);
                 group.dispose();
                 return [xSeries, ySeries];
             },
 
-            _selectSeries: function(rowDim, colDim)
+            selectSeries : function(rowDim, colDim)
             {
-                var rowMemberKeys = this._members(rowDim),
-                    colMemberKeys = this._members(colDim),
-                    keyDividerIndex = rowDim.length,
-                    dim = this.getDimension(rowDim.concat(colDim)),
-                    group = this._group(dim),
-                    entries = group.all(),
-                    rowMap = {},
-                    colMap = {},
-                    r, c;
-
-                // generate mapping table for rows and cols
-                // TODO natural sorting instead of string sorting (maybe use crossfilter.permute())
-                for (r = 0; r < rowMemberKeys.length; r++)
+                if (!LABKEY.Utils.isDefined(rowDim) || !LABKEY.Utils.isDefined(colDim))
                 {
-                    rowMap[rowMemberKeys[r]] = r;
-                }
-                for (c = 0; c < colMemberKeys.length; c++)
-                {
-                    colMap[colMemberKeys[c]] = c;
+                    console.error('MeasureStore.selectSeries(rowDim, colDim) requires row and column dimensions be specified.');
+                    return;
                 }
 
-                // preallocate arrays
-                var resultArray = new Array(rowMemberKeys.length);
-                for (r = 0; r < rowMemberKeys.length; r++)
-                {
-                    resultArray[r] = new Array(colMemberKeys.length);
-                }
-
-                entries.forEach(function(entry)
-                {
-                    var keyValues = entry.key.split(CONCAT_STRING);
-
-                    var rowKey = keyValues.slice(0, keyDividerIndex).join(CONCAT_STRING);
-                    var colKey = keyValues.slice(keyDividerIndex, keyValues.length).join(CONCAT_STRING);
-                    var rowIndex = rowMap[rowKey];
-                    var colIndex = colMap[colKey];
-                    resultArray[rowIndex][colIndex] = entry;
-                });
-
-                return resultArray;
-            },
-
-            selectSeries: function(rowDim, colDim)
-            {
                 rowDim = LABKEY.Utils.isArray(rowDim) ? rowDim : [rowDim];
                 colDim = LABKEY.Utils.isArray(colDim) ? colDim : [colDim];
 
-                var results = this._selectSeries(rowDim, colDim, true),
+                var results = _selectSeries(this, rowDim, colDim),
                     dim = this.getDimension(rowDim.concat(colDim)),
                     me = this;
 
@@ -915,7 +804,7 @@
                 });
             },
 
-            selectSeriesArray: function(rowDim, colDim, measureName, aggregate)
+            selectSeriesArray : function(rowDim, colDim, measureName, aggregate)
             {
                 rowDim = LABKEY.Utils.isArray(rowDim) ? rowDim : [rowDim];
                 colDim = LABKEY.Utils.isArray(colDim) ? colDim : [colDim];
@@ -928,9 +817,9 @@
                     throw "Column name not found: " + measureName;
 
                 var me = this;
-                var results = this._selectSeries(rowDim, colDim, false);
+                var results = _selectSeries(this, rowDim, colDim);
                 return results.map(function(row) {
-                    return me._array(row, index, aggregate);
+                    return _array(me, row, index, aggregate);
                 });
             }
         };
@@ -939,8 +828,37 @@
         // static methods
         //
 
+        var aggregateFnMap = {
+            VALUES: 'getValues',
+            COUNT: 'getCount',
+            SUM: 'getSum',
+            MEAN: 'getMean',
+            VAR: 'getVariance',
+            STDDEV: 'getStdDev',
+            STDERR: 'getStdErr',
+            MIN: 'getMin',
+            MAX: 'getMax'
+        };
+
+        /**
+         * Returns an array with one element for each element in the dimension.
+         * See MeasureStore.members()
+         */
+        function _array(measureStore, entries, memberIndex, aggregate)
+        {
+            var aggImpl = aggregateFnMap[aggregate];
+            if (aggImpl) {
+                return entries.map(function(entry)
+                {
+                    return null == entry ? null : entry.value[memberIndex][aggImpl]();
+                });
+            }
+
+            throw 'Aggregate \"' + aggregate + '\" does not exist';
+        }
+
         // LABKEY.Query.selectRows() wrapper
-        var _apiWrapper = function(originalConfig, apiFn, resultHanderFn)
+        function _apiWrapper(originalConfig, apiFn, resultHandlerFn)
         {
             var apiConfig = {};
             var onSuccess;
@@ -967,15 +885,16 @@
                 }
             }
 
+            // TODO: These do not apply scope properly, fix these wrappers
             apiConfig.success = function(results)
             {
-                var measureStore = resultHanderFn(results, measures, dimensions);
+                var measureStore = resultHandlerFn(results, measures, dimensions);
                 if (onSuccess)
                     onSuccess(measureStore);
             };
 
             apiFn(apiConfig);
-        };
+        }
 
         function _handleSelectRowsResponse(results, measures, dimensions)
         {
@@ -989,18 +908,18 @@
                 });
             }
 
-            if (null == dimensions)
-            {
-                dimensions = [];
-                results.metaData.fields.forEach(function(field)
-                {
-                    if (field.dimension || field.recommendedVariable)
-                        dimensions.push(field.name);
-                });
-            }
+            // UNDO: there's not really an advantage to pre constructing the dimensions
+            //if (null == dimensions)
+            //{
+            //    dimensions = [];
+            //    results.metaData.fields.forEach(function(field)
+            //    {
+            //        if (field.dimension || field.recommendedVariable)
+            //            dimensions.push(field.name);
+            //    });
+            //}
 
             return new MeasureStore({
-                // there's not really an advantage to pre constructing the dimensions
                 //dimensions: dimensions,
                 measures: measures,
                 records: results.rows
@@ -1015,11 +934,15 @@
 
             measureSpecs.forEach(function(m)
             {
-                var name = ('alias' in m.measure) ? m.measure.alias : m.measure.schemaName + "_" + m.measure.queryName + "_" + m.measure.name;
-                if ('isMeasure' in m.measure && m.measure.isMeasure)
+                var _measure = m.measure,
+                    name = ('alias' in _measure) ? _measure.alias : _generateAlias(_measure);
+
+                if (_measure.isMeasure === true) {
                     measures.push(name);
-                else if ('isDimension' in m.measure && m.measure.isDimension)
+                }
+                else if (_measure.isDimension === true) {
                     dimensions.push(name);
+                }
             });
             return new MeasureStore({
                 // there's not really an advantage to pre constructing the dimensions
@@ -1049,7 +972,7 @@
                 if (posArray.length != 1)
                     throw "MeasureStore does not support nesting on the ROWS axis";
                 m = posArray[0];
-                if (!Ext4.String.startsWith(m.uniqueName, "[Measures].["))
+                if (!/\[Measures]\.\[/g.test(m.uniqueName))
                     throw "MeasureStore expects measures on the ROWS axis";
 
                 measureConfig = measuresMap[m.name];
@@ -1065,16 +988,20 @@
 
             rows = cellset.cells.map(function(cellrow)
             {
-                var retrow = {};
-                for (var m = 0; m < cellrow.length; m++)
+                var retrow = {},
+                    cell,
+                    member,
+                    m, p;
+
+                for (m = 0; m < cellrow.length; m++)
                 {
-                    var cell = cellrow[m];
+                    cell = cellrow[m];
                     // row properties
                     if (m == 0)
                     {
-                        for (var p = 0; p < cell.positions[1].length; p++)
+                        for (p = 0; p < cell.positions[1].length; p++)
                         {
-                            var member = cell.positions[1][p];
+                            member = cell.positions[1][p];
                             retrow[member.level.uniqueName] = member.name;
                         }
                     }
@@ -1090,6 +1017,113 @@
                 measures: measures,
                 records: rows
             });
+        }
+
+        function _generateAlias(measure) {
+            return [measure.schemaName, measure.queryName, measure.name].join('_');
+        }
+
+        /**
+         * Select the list of distinct member values in this dimension, will return raw concatenated keys
+         */
+        function _members(measureStore, dimName)
+        {
+            var group = measureStore.group(dimName);
+            var ret = group.reduceCount().all().map(function(entry)
+            {
+                return entry.key;
+            });
+            group.dispose();
+            return ret;
+        }
+
+        function _naturalSort(aso, bso)
+        {
+            // http://stackoverflow.com/questions/19247495/alphanumeric-sorting-an-array-in-javascript
+            var a, b, a1, b1, i= 0, n, L,
+                rx=/(\.\d+)|(\d+(\.\d+)?)|([^\d.]+)|(\.\D+)|(\.$)/g;
+
+            if (aso === bso) return 0;
+            a = aso.toLowerCase().match(rx);
+            b = bso.toLowerCase().match(rx);
+
+            //var _empty = LABKEY.app.model.Filter.sorters.handleEmptySort(a, b);
+            //if (_empty !== undefined) {
+            //    return _empty;
+            //}
+
+            L = a.length;
+            while (i < L) {
+                if (!b[i]) return 1;
+                a1 = a[i]; b1 = b[i++];
+                if (a1 !== b1) {
+                    n = a1 - b1;
+                    if (!isNaN(n)) return n;
+                    return a1 > b1 ? 1 : -1;
+                }
+            }
+            return b[i] ? -1 : 0;
+        }
+
+        function _selectSeries(measureStore, rowDim, colDim)
+        {
+            var rowMemberKeys = _members(measureStore, rowDim),
+                colMemberKeys = _members(measureStore, colDim),
+                keyDividerIndex = rowDim.length,
+                dim = measureStore.getDimension(rowDim.concat(colDim)),
+                group = measureStore._group(dim),
+                entries = group.all(),
+                rowMap = {},
+                colMap = {},
+                r, c;
+
+            // generate mapping table for rows
+            if (rowMemberKeys.length > 0)
+            {
+                if (LABKEY.Utils.isString(rowMemberKeys[0]))
+                {
+                    rowMemberKeys.sort(_naturalSort);
+                }
+
+                for (r = 0; r < rowMemberKeys.length; r++)
+                {
+                    rowMap[rowMemberKeys[r]] = r;
+                }
+            }
+
+            // generate mapping table for cols
+            if (colMemberKeys.length > 0)
+            {
+                if (LABKEY.Utils.isString(colMemberKeys[0]))
+                {
+                    colMemberKeys.sort(_naturalSort);
+                }
+
+                for (c = 0; c < colMemberKeys.length; c++)
+                {
+                    colMap[colMemberKeys[c]] = c;
+                }
+            }
+
+            // preallocate arrays
+            var resultArray = new Array(rowMemberKeys.length);
+            for (r = 0; r < rowMemberKeys.length; r++)
+            {
+                resultArray[r] = new Array(colMemberKeys.length);
+            }
+
+            entries.forEach(function(entry)
+            {
+                var keyValues = entry.key.split(CONCAT_STRING);
+
+                var rowKey = keyValues.slice(0, keyDividerIndex).join(CONCAT_STRING);
+                var colKey = keyValues.slice(keyDividerIndex, keyValues.length).join(CONCAT_STRING);
+                var rowIndex = rowMap[rowKey];
+                var colIndex = colMap[colKey];
+                resultArray[rowIndex][colIndex] = entry;
+            });
+
+            return resultArray;
         }
 
         // MeasureStoreStatic
@@ -1119,7 +1153,7 @@
              * FROM [Cube]
              *
              * Note only measures on columns, only level.members on rows
-             * Any sort of ragged hierarchy or heterogeous members is NOT supported.
+             * Any sort of ragged hierarchy or heterogeneous members is NOT supported.
              */
             executeOlapQuery : function(config)
             {
@@ -1157,7 +1191,7 @@
      *    this can be partially handled by using selectSeries() or two calls two .select() with different filter() values
      * b) plotting/grouping measures with different keys, where storing the data in one-store doesn't work
      *
-     * MultiMeasureStore can be used to make all these cases look the same.
+     * AxisMeasureStore can be used to make all these cases look the same.
      */
     LABKEY.Query.experimental.AxisMeasureStore = new (function()
     {
@@ -1272,7 +1306,8 @@
             select : function(dimName)
             {
                 var dimArray = [],
-                    results;
+                    results,
+                    dim;
 
                 if (!dimName)
                 {
@@ -1302,7 +1337,11 @@
                         }
                     }
                     var measureStore = measure.measureStore;
-                    //var dim = measureStore.getDimension(dimArray);
+
+                    // TODO: Have this reviewed, we're cherry picking the dim off the first measureStore.
+                    // Definitely better than using a global. Should AxisMeasureStore implement getDimension? Inherit from MeasureStore?
+                    if (!dim)
+                        dim = measureStore.getDimension(dimArray);
                     //var group = measureStore._group(dim);
                     //var entries = group.all();
                     //group.dispose();
@@ -1310,7 +1349,7 @@
                     return measureStore.select(dimArray);
                 });
 
-                if (0 == results.length)
+                if (0 == results.length || !dim)
                     return null;
                 else if (1 == results.length)
                     results = results[0];
@@ -1320,7 +1359,6 @@
                 var me = this;
                 return results.map(function(entry)
                 {
-                    // TODO: Stop referencing the global 'dim'
                     return me.flattenJoinEntry(dim, entry);
                 });
             }
