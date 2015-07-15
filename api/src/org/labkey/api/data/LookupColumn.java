@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -129,8 +130,9 @@ public class LookupColumn extends ColumnInfo
         _joinType = joinType;
         setSqlTypeName(lookupColumn.getSqlTypeName());
         String alias = foreignKey.getAlias() + "$" + lookupColumn.getAlias();
-        if (alias.length() > 60)
-            alias = AliasManager.truncate(foreignKey.getAlias(),30) + "$" + AliasManager.truncate(lookupColumn.getAlias(),30);
+        int maxLength = lookupColumn.getSqlDialect().getIdentifierMaxLength();
+        if (alias.length() > maxLength)
+            alias = AliasManager.truncate(foreignKey.getAlias(),maxLength/2) + "$" + AliasManager.truncate(lookupColumn.getAlias(),maxLength/2);
         setAlias(alias);
     }
 
@@ -250,15 +252,14 @@ public class LookupColumn extends ColumnInfo
      */
     public String getTableAlias(String baseAlias)
     {
-        return getTableAlias(baseAlias, _foreignKey.getAlias());
+        return getTableAlias(baseAlias, _foreignKey.getAlias(), _foreignKey.getSqlDialect());
     }
 
-    public static String getTableAlias(String baseAlias, String fkAlias)
+    public static String getTableAlias(String baseAlias, String fkAlias, SqlDialect dialect)
     {
         String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + fkAlias + "$";
-        // 63 works, but save 2 chars for appending chars to
-        // create aliases for extra tables used in the lookup (e.g. junctionAlias = getTableAlias() + "_j")
-        alias = AliasManager.truncate(alias, 61);
+
+        alias = AliasManager.truncate(alias, dialect.getIdentifierMaxLength());
         return alias;
     }
 

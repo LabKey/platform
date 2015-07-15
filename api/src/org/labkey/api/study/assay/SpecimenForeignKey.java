@@ -328,7 +328,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     String getBaseAlias(String parentAlias, String fkAlias)
     {
-        return LookupColumn.getTableAlias(parentAlias,fkAlias);
+        return LookupColumn.getTableAlias(parentAlias,fkAlias, _schema.getDbSchema().getSqlDialect());
     }
 
 

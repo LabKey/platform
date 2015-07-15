@@ -152,7 +152,9 @@ public class AliasManager
         int length = ret.length();
         if (0 == length)
             return "_";
-        return (truncate && length > 40) ? truncate(ret, 40) : ret;
+        // we use 28 here because Oracle has a limit or 30 characters, and that is likely the shortest restriction
+        int maxLength = dialect == null ? 28 : dialect.getIdentifierMaxLength();
+        return (truncate && length > maxLength) ? truncate(ret, maxLength) : ret;
     }
 
 
@@ -168,7 +170,8 @@ public class AliasManager
             sb.append(legalNameFromName(part));
             connector = "_";
         }
-        return truncate(sb.toString(), 40);
+        // we use 28 here because Oracle has a limit or 30 characters, and that is likely the shortest restriction
+        return truncate(sb.toString(), dialect == null ? 28 : dialect.getIdentifierMaxLength());
     }
 
 
@@ -297,7 +300,7 @@ public class AliasManager
     public static class TestCase extends Assert
     {
         @Test
-        public void test_legalNameFromname()
+        public void test_legalNameFromName()
         {
             assertEquals("bob", legalNameFromName("bob"));
             assertEquals("bob1", legalNameFromName("bob1"));
@@ -331,7 +334,7 @@ public class AliasManager
 
             assertEquals("_select", m.decideAlias("select"));
 
-            assertEquals(40, m.decideAlias("This is a very long name for a column, but it happens! go figure.").length());
+            assertEquals(m._dialect.getIdentifierMaxLength(), m.decideAlias("This is a very long name for a column, but it happens! go figure.").length());
         }
     }
 }
