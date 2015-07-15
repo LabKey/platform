@@ -21,8 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -34,8 +33,11 @@ import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.di.TransformDataIteratorBuilder;
@@ -73,7 +75,7 @@ public class StoredProcedureStep extends TransformTask
 {
     private final StoredProcedureStepMeta _meta;
 
-    private String procSchema;
+    private QuerySchema procSchema;
     private String procName;
     private DbScope procScope;
     private DbScope targetScope = null;
@@ -246,7 +248,7 @@ public class StoredProcedureStep extends TransformTask
         super.recordWork(action);
         try
         {
-            action.addInput(new URI(_meta.getProcedureSchema() + "." + _meta.getProcedure()), TransformTask.INPUT_ROLE);
+            action.addInput(new URI(procSchema.getName() + "." + procName), TransformTask.INPUT_ROLE);
         }
         catch (URISyntaxException ignore)
         {
@@ -257,27 +259,27 @@ public class StoredProcedureStep extends TransformTask
     private boolean prepareExecution(boolean checkingForWork) throws SQLException
     {
         if (!checkingForWork && !validate(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger())) return false;
-        setDbScopes();
+        setDbScopes(_context.getContainer(), _context.getUser());
         getParametersFromDbMetadata();
         initSavedParamVals(checkingForWork);
         seedParameterValues(checkingForWork);
         return true;
     }
 
-    private void setDbScopes()
+    private void setDbScopes(Container c, User u)
     {
-        procSchema = _meta.getProcedureSchema().toString();
+        procSchema = DefaultSchema.get(u, c, _meta.getProcedureSchema());
+        if (null == procSchema)
+            throw new ConfigurationException("Could not resolve procedure schema " + _meta.getProcedureSchema());
         procName = _meta.getProcedure();
-
-        DbSchema schema = DbSchema.get(procSchema, DbSchemaType.Bare);
-        procScope = schema.getScope();
+        procScope = procSchema.getDbSchema().getScope();
         procDialect = procScope.getSqlDialect();
 
         if (_meta.getTargetSchema() != null && StringUtils.isNotEmpty(_meta.getTargetSchema().toString()))
         {
-            schema = DbSchema.get(_meta.getTargetSchema().toString(), DbSchemaType.Module);
-            if (!schema.getScope().equals(procScope))
-                targetScope = schema.getScope();
+            QuerySchema targetQuerySchema = DefaultSchema.get(u, c, _meta.getTargetSchema());
+            if (!targetQuerySchema.getDbSchema().getScope().equals(procScope))
+                targetScope = targetQuerySchema.getDbSchema().getScope();
         }
     }
 
@@ -288,15 +290,15 @@ public class StoredProcedureStep extends TransformTask
         boolean badReturn = false;
 
         try (Connection conn = procScope.getConnection();
-             CallableStatement stmt = conn.prepareCall(procDialect.buildProcedureCall(procSchema, procName, metadataParameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET)));
+             CallableStatement stmt = conn.prepareCall(procDialect.buildProcedureCall(procSchema.getDbSchema().getName(), procName, metadataParameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET)));
              DbScope.Transaction txProc = _meta.isUseProcTransaction() ?  procScope.ensureTransaction() : null;
-             DbScope.Transaction txTarget = (targetScope != null && _meta.isUseTargetTransaction()) ? procScope.ensureTransaction() : null
+             DbScope.Transaction txTarget = (targetScope != null && _meta.isUseTargetTransaction()) ? targetScope.ensureTransaction() : null
         )
 
         {
             procDialect.registerParameters(procScope, stmt, metadataParameters, procReturns.equals(RETURN_TYPE.RESULTSET));
 
-            info("Executing stored procedure " + procSchema + "." + procName);
+            info("Executing stored procedure " + procSchema.getName() + "." + procName);
             long start = System.currentTimeMillis();
 
             if (procReturns.equals(RETURN_TYPE.RESULTSET))
@@ -332,7 +334,7 @@ public class StoredProcedureStep extends TransformTask
             error("Error: Sproc exited with return code " + returnValue);
             return false;
         }
-        info("Stored procedure " + procSchema + "." + procName + " completed in " + DateUtil.formatDuration(duration));
+        info("Stored procedure " + procSchema.getName() + "." + procName + " completed in " + DateUtil.formatDuration(duration));
         return true;
 
     }
@@ -373,7 +375,7 @@ public class StoredProcedureStep extends TransformTask
 
     private void getParametersFromDbMetadata() throws SQLException
     {
-        metadataParameters = procDialect.getParametersFromDbMetadata(procScope, procSchema, procName);
+        metadataParameters = procDialect.getParametersFromDbMetadata(procScope, procSchema.getDbSchema().getName(), procName);
 
         if (metadataParameters.containsKey(SPECIAL_PARAMS.return_status.name()))
             procReturns = RETURN_TYPE.INTEGER;
