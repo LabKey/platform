@@ -36,46 +36,42 @@
  */
 
 
-(function()
+(function($, crossfilter)
 {
     var CONCAT_STRING = '|\uFFFF|';
 
-
     LABKEY.Query.experimental = LABKEY.Query.experimental || {};
 
+    var CountStarAggregator = function() {};
 
-
-    var CountStarAggregator = function()
-    {
-    };
-    CountStarAggregator.prototype =
-    {
+    CountStarAggregator.prototype = {
         count: 0,
 
-        valueOf: function()
+        valueOf : function()
         {
             return this.count;
         },
-        getCount: function()
+
+        getCount : function()
         {
             return this.count;
         },
-        addTo: function()
+
+        addTo : function()
         {
             this.count++;
         },
 
-        removeFrom: function()
+        removeFrom : function()
         {
             this.count--;
         },
 
-        supports: function()
+        supports : function()
         {
             return ["COUNT"];
         }
     };
-
 
     var UniqueValueAggregator = function()
     {
@@ -83,17 +79,20 @@
         this.isUnique = true;
         this.value = null;
     };
-    UniqueValueAggregator.prototype =
-    {
-        valueOf: function()
+
+    UniqueValueAggregator.prototype = {
+
+        valueOf : function()
         {
             return this.getValue();
         },
-        getValue: function()
+
+        getValue : function()
         {
             return this.isUnique && this.valueHasBeenSet ? this.value : undefined;
         },
-        addTo: function(value, record)
+
+        addTo : function(value, record)
         {
             if (!this.isUnique)
                 return this;
@@ -112,11 +111,13 @@
             this.value = undefined;
             return this;
         },
-        removeFrom: function(value, record)
+
+        removeFrom : function(value, record)
         {
             // not supported
         },
-        supports: function()
+
+        supports : function()
         {
             return ["VALUE"];
         }
@@ -131,25 +132,29 @@
     {
         this.values = [];
     };
-    CollectNonNullValuesAggregator.prototype =
-    {
+
+    CollectNonNullValuesAggregator.prototype = {
+
         values: null,
         _isSorted: false,
         sum: null,
 
-        valueOf: function()
+        valueOf : function()
         {
             return this.getMean();
         },
-        getValues: function()
+
+        getValues : function()
         {
             return this.values;
         },
-        getCount: function()
+
+        getCount : function()
         {
             return this.values.length;
         },
-        getSum: function()
+
+        getSum : function()
         {
             if (null == this.sum && 0 < this.values.length)
             {
@@ -161,7 +166,8 @@
             }
             return this.sum;
         },
-        getMean: function()
+
+        getMean : function()
         {
             var count = this.getCount();
             if (0 == count)
@@ -169,7 +175,8 @@
             var sum = this.getSum();
             return sum / count;
         },
-        getVariance: function()
+
+        getVariance : function()
         {
             var N = this.getCount();
             if (N < 2)
@@ -184,14 +191,16 @@
             }
             return sumSquareOfDifference / (N - 1);
         },
-        getStdDev: function()
+
+        getStdDev : function()
         {
             var var_ = this.getVariance();
             if (null === var_)
                 return null;
             return Math.sqrt(var_);
         },
-        getStdErr: function()
+
+        getStdErr : function()
         {
             var stddev = this.getStdDev();
             if (null == stddev)
@@ -199,7 +208,8 @@
             var N = this.getCount();
             return stddev / Math.sqrt(N);
         },
-        getMedian: function()
+
+        getMedian : function()
         {
             this._sort();
             var values = this.values;
@@ -211,7 +221,8 @@
             else
                 return (values[length / 2 - 1] + values[length / 2]) / 2.0;
         },
-        getMax: function()
+
+        getMax : function()
         {
             var values = this.values;
             var length = values.length;
@@ -223,7 +234,8 @@
                     max = values[i];
             return max;
         },
-        getMin: function()
+
+        getMin : function()
         {
             var values = this.values;
             var length = values.length;
@@ -235,7 +247,8 @@
                     max = values[i];
             return max;
         },
-        getCountDistinct: function()
+
+        getCountDistinct : function()
         {
             var values = this.values;
             var length = values.length;
@@ -255,7 +268,7 @@
             return count;
         },
 
-        addTo: function(value, record)
+        addTo : function(value, record)
         {
             if (null == value)
                 return;
@@ -263,7 +276,8 @@
             this._isSorted = false;
             return this;
         },
-        removeFrom: function(value, record)
+
+        removeFrom : function(value, record)
         {
             if (null == value)
                 return;
@@ -276,14 +290,14 @@
             return this;
         },
 
-        _sort: function()
+        _sort : function()
         {
             if (!this._isSorted && 1 < this.values.length)
                 crossfilter.quicksort(this.values, 0, this.values.length);
             this._isSorted = true;
         },
 
-        supports: function()
+        supports : function()
         {
             if (this.values.length > 0 && typeof this.values[0] != "number")
             {
@@ -309,14 +323,15 @@
         this.minColumn = config.minColumn;
         this.maxColumn = config.maxColumn;
         this.count = 0;
-        this.sum = 0
+        this.sum = 0;
         this.sumOfSquares = 0;
         this.min = null;
         this.max = null;
     };
-    CollectPreAggregatedValues.prototype =
-    {
-        addTo: function(value, record)
+
+    CollectPreAggregatedValues.prototype = {
+
+        addTo : function(value, record)
         {
             var v;
             if (this.countColumn && null !== (v = record[this.countColumn]))
@@ -326,14 +341,19 @@
             if (this.sumOfSquaresColumn && null !== (v = record[this.sumOfSquaresColumn]))
                 this.sumOfSquares += v;
             if (this.minColumn && null !== (v = record[this.minColumn]))
+            {
                 if (this.min === null || v < this.min)
                     this.min = v;
+            }
             if (this.maxColumn && null !== (v = record[this.maxColumn]))
+            {
                 if (this.max === null || v < this.max)
                     this.max = v;
+            }
             return this;
         },
-        removeFrom: function(value, record)
+
+        removeFrom : function(value, record)
         {
             var v;
             if (this.countColumn && null !== (v = record[this.countColumn]))
@@ -344,25 +364,29 @@
                 this.sumOfSquares -= v;
             return this;
         },
-        getCount: function()
+
+        getCount : function()
         {
             if (!this.countColumn)
                 return null;
             return this.count;
         },
-        getSum: function()
+
+        getSum : function()
         {
             if (!this.sumColumn)
                 return null;
             return this.sum;
         },
-        getMean: function()
+
+        getMean : function()
         {
             if (!this.countColumn || !this.sumColumn)
                 return null;
             return this.count == 0 ? null : this.sum / this.count;
         },
-        getVariance: function()
+
+        getVariance : function()
         {
             if (!this.countColumn || !this.sumColumn || !this.sumOfSquaresColumn)
                 return null;
@@ -373,17 +397,18 @@
             var N = this.count;
             var s1 = this.sum;
             var s2 = this.sumOfSquares;
-            var var_ = (N * s2 - s1 * s1) / (N * (N - 1));
-            return var_;
+            return (N * s2 - s1 * s1) / (N * (N - 1));
         },
-        getStdDev: function()
+
+        getStdDev : function()
         {
             var var_ = this.getVariance();
             if (null === var_)
                 return null;
             return Math.sqrt(var_);
         },
-        getStdErr: function()
+
+        getStdErr : function()
         {
             var stddev = this.getStdDev();
             if (null == stddev)
@@ -391,7 +416,8 @@
             var N = this.getCount();
             return stddev / Math.sqrt(N);
         },
-        supports: function()
+
+        supports : function()
         {
             var ret = [];
             if (this.countColumn)
@@ -399,12 +425,15 @@
             if (this.sumColumn)
                 ret.push("SUM");
             if (this.countColumn && this.sumColumn)
-                ret.push("MEAN");
-            if (this.countColumn && this.sumColumn && sumOfSquaresColumn)
             {
-                ret.push("STDDEV");
-                ret.push("VAR");
-                ret.push("STDERR");
+                ret.push("MEAN");
+
+                if (this.sumOfSquaresColumn)
+                {
+                    ret.push("STDDEV");
+                    ret.push("VAR");
+                    ret.push("STDERR");
+                }
             }
             if (this.minColumn)
                 ret.push("MIN");
@@ -471,7 +500,13 @@
             this._dimensions = {};
             this._records = config.records || [];
 
-            var columnNames = config.columns || [];
+            var columnNames = config.columns || [],
+                countStar = {
+                    name: '*',
+                    index: 0,
+                  aggregator: CountStarAggregator
+                };
+
             if (!config.columns && 0 < config.records.length)
             {
                 var rec = config.records[0];
@@ -484,23 +519,27 @@
             }
 
             // consider using some sort of NamedList implementation
-            this._columnMap = {};
-            this._columns = [];
-            me = this;
-            me._columns.push({name: '*', index: 0, aggregator: CountStarAggregator});
-            me._columnMap['*'] = me._columns[0];
-        columnNames.forEach(function(name,index){
-                var col = {name: name, index: index + 1, aggregator: UniqueValueAggregator};
+            this._columns = [countStar];
+            this._columnMap = {
+                '*': countStar
+            };
+            var me = this;
+            columnNames.forEach(function(name, index) {
+                var col = {
+                    name: name,
+                    index: index + 1,
+                    aggregator: UniqueValueAggregator
+                };
                 me._columnMap[name] = col.index;
                 me._columns[col.index] = col;
             });
 
-        this._measures = (config.measures || []).map(function(m){
+            this._measures = (config.measures || []).map(function(m) {
                 if (typeof m === "string")
                     m = {name: m};
                 return m;
             });
-        this._measures.forEach(function(m){
+            this._measures.forEach(function(m) {
                 var index = me._columnMap[m.name];
                 if (index)
                 {
@@ -516,9 +555,11 @@
 
             this._crossfilter = crossfilter(this._records);
             var dimensions = config.dimensions || [];
-            for (var i = 0; i < dimensions.length; i++)
+            for (var i = 0; i < dimensions.length; i++) {
                 this.getDimension(dimensions[i]);
+            }
         };
+
         MeasureStore.prototype =
         {
             _crossfilter: null,
@@ -532,7 +573,6 @@
             {
                 return this._records;
             },
-
 
             _group: function(dim, keyFn)
             {
@@ -550,18 +590,15 @@
                 return group.reduce(fnAdd, fnRemove, fnInit);
             },
 
-
             group: function(dimName, keyFn)
             {
                 var dim = null == dimName ? null : this.getDimension(dimName);
                 return this._group(dim, keyFn);
             },
 
-
             filter: function(dimName, range)
             {
-                var dim = this.getDimension(dimName);
-                return dim.filter(range);
+                return this.getDimension(dimName).filter(range);
             },
 
             /**
@@ -570,7 +607,7 @@
             _members: function(dimName)
             {
                 var group = this.group(dimName);
-            var ret = group.reduceCount().all().map(function(entry)
+                var ret = group.reduceCount().all().map(function(entry)
                 {
                     return entry.key;
                 });
@@ -583,19 +620,20 @@
              */
             members: function(dimName)
             {
-                var dim = this.getDimension(dimName);
-                var group = this._group(dim);
-                var ret;
+                var dim = this.getDimension(dimName),
+                    group = this._group(dim),
+                    ret;
+
                 if (1 == dim._keys.length)
                 {
-                ret = group.reduceCount().all().map(function (entry)
+                    ret = group.reduceCount().all().map(function (entry)
                     {
                         return entry.key;
                     });
                 }
                 else
                 {
-                ret = group.reduceCount().all().map(function (entry)
+                    ret = group.reduceCount().all().map(function (entry)
                     {
                         return entry.key.split(CONCAT_STRING);
                     });
@@ -604,37 +642,40 @@
                 return ret;
             },
 
-            filterAll: function(dimName)
+            filterAll : function(dimName)
             {
                 return this.getDimension(dimName).filterAll();
             },
 
-            getDimension: function(dimName)
+            getDimension : function(dimName)
             {
-                var dimArray = [dimName];
+                var dimArray = [dimName],
+                    firstRow = this._records.length ? this._records[0] : null,
+                    getter;
+
                 if (LABKEY.Utils.isArray(dimName))
                 {
                     dimArray = dimName;
                     dimName = dimName.join(CONCAT_STRING);
                 }
+
                 if (this._dimensions.hasOwnProperty(dimName))
+                {
                     return this._dimensions[dimName];
+                }
 
                 // validate that we can find these names
-                var firstRow = this._records.length ? this._records[0] : null;
                 if (firstRow)
                 {
-                dimArray.forEach(function(name)
+                    dimArray.forEach(function(name)
                     {
                         if (!(name in firstRow))
                         {
-                            console.error("Column not found in data: " + name);
                             throw "Column not found in data: " + name;
                         }
                     });
                 }
 
-                var getter;
                 if (dimArray.length == 1)
                 {
                     getter = (function(name, record)
@@ -660,6 +701,8 @@
                         return keys.join(CONCAT_STRING);
                     }).bind(null, dimArray);
                 }
+
+                // TODO: Remove this global declaration -- this is awful
                 dim = this._crossfilter.dimension(getter);
                 dim._name = dimName;
                 dim._keys = dimArray;
@@ -672,13 +715,11 @@
             // Data selecting methods
             //
 
-
-
             /**
              * Returns an array with one element for each element in the dimension.
              * See MeasureStore.members()
              */
-            _array: function(entries, memberIndex, aggregate)
+            _array : function(entries, memberIndex, aggregate)
             {
                 switch (aggregate)
                 {
@@ -741,7 +782,6 @@
                 }
             },
 
-
             flattenGroupEntry: function(dim, entry)
             {
                 var columns = this._columns;
@@ -761,20 +801,18 @@
              */
             select: function(dimName)
             {
-                var dim = this.getDimension(dimName);
-                var group = this._group(dim);
-                var entries = group.all();
+                var dim = this.getDimension(dimName),
+                    group = this._group(dim),
+                    entries = group.all(),
+                    ret, me = this;
 
-                var ret;
-                var me = this;
-            ret = entries.map(function(entry)
+                ret = entries.map(function(entry)
                 {
                     return me.flattenGroupEntry(dim, entry);
                 });
                 group.dispose();
                 return ret;
             },
-
 
             selectArray: function(dimName, measureName, aggregate)
             {
@@ -817,32 +855,37 @@
                 return [xSeries, ySeries];
             },
 
-
             _selectSeries: function(rowDim, colDim)
             {
-                var rowMemberKeys = this._members(rowDim);
-                var colMemberKeys = this._members(colDim);
-                var keyDividerIndex = rowDim.length;
-                var r, c;
+                var rowMemberKeys = this._members(rowDim),
+                    colMemberKeys = this._members(colDim),
+                    keyDividerIndex = rowDim.length,
+                    dim = this.getDimension(rowDim.concat(colDim)),
+                    group = this._group(dim),
+                    entries = group.all(),
+                    rowMap = {},
+                    colMap = {},
+                    r, c;
 
                 // generate mapping table for rows and cols
                 // TODO natural sorting instead of string sorting (maybe use crossfilter.permute())
-                var rowMap = {};
                 for (r = 0; r < rowMemberKeys.length; r++)
+                {
                     rowMap[rowMemberKeys[r]] = r;
-                var colMap = {};
+                }
                 for (c = 0; c < colMemberKeys.length; c++)
+                {
                     colMap[colMemberKeys[c]] = c;
+                }
 
                 // preallocate arrays
                 var resultArray = new Array(rowMemberKeys.length);
                 for (r = 0; r < rowMemberKeys.length; r++)
+                {
                     resultArray[r] = new Array(colMemberKeys.length);
+                }
 
-                var dim = this.getDimension(rowDim.concat(colDim));
-                var group = this._group(dim);
-                var entries = group.all();
-            entries.forEach(function(entry)
+                entries.forEach(function(entry)
                 {
                     var keyValues = entry.key.split(CONCAT_STRING);
 
@@ -852,6 +895,7 @@
                     var colIndex = colMap[colKey];
                     resultArray[rowIndex][colIndex] = entry;
                 });
+
                 return resultArray;
             },
 
@@ -859,16 +903,16 @@
             {
                 rowDim = LABKEY.Utils.isArray(rowDim) ? rowDim : [rowDim];
                 colDim = LABKEY.Utils.isArray(colDim) ? colDim : [colDim];
-                var results = this._selectSeries(rowDim, colDim, true);
-                var me = this;
-                var dim = this.getDimension(rowDim.concat(colDim));
-                var ret;
-            ret = results.map(function(rowArray){
-                return rowArray.map(function(entry){
+
+                var results = this._selectSeries(rowDim, colDim, true),
+                    dim = this.getDimension(rowDim.concat(colDim)),
+                    me = this;
+
+                return results.map(function(rowArray) {
+                    return rowArray.map(function(entry) {
                         return me.flattenGroupEntry(dim, entry);
                     });
                 });
-                return ret;
             },
 
             selectSeriesArray: function(rowDim, colDim, measureName, aggregate)
@@ -876,26 +920,26 @@
                 rowDim = LABKEY.Utils.isArray(rowDim) ? rowDim : [rowDim];
                 colDim = LABKEY.Utils.isArray(colDim) ? colDim : [colDim];
                 var index = -1;
-                for (var m = 0; m < this._columns.length; m++)
+                for (var m = 0; m < this._columns.length; m++) {
                     if (measureName === this._columns[m].name)
                         index = m;
+                }
                 if (index === -1)
                     throw "Column name not found: " + measureName;
 
                 var me = this;
                 var results = this._selectSeries(rowDim, colDim, false);
-            return results.map(function(row){return me._array(row,index,aggregate)});
+                return results.map(function(row) {
+                    return me._array(row, index, aggregate);
+                });
             }
         };
 
+        //
+        // static methods
+        //
 
-
-
-//
-// static methods
-//
-
-// LABKEY.Query.selectRows() wrapper
+        // LABKEY.Query.selectRows() wrapper
         var _apiWrapper = function(originalConfig, apiFn, resultHanderFn)
         {
             var apiConfig = {};
@@ -938,30 +982,29 @@
             if (null == measures)
             {
                 measures = [];
-            results.metaData.fields.forEach(function(field)
+                results.metaData.fields.forEach(function(field)
                 {
                     if (field.measure)
                         measures.push(field.name);
                 });
             }
+
             if (null == dimensions)
             {
                 dimensions = [];
-            results.metaData.fields.forEach(function(field)
+                results.metaData.fields.forEach(function(field)
                 {
                     if (field.dimension || field.recommendedVariable)
                         dimensions.push(field.name);
                 });
             }
-            var measureStore;
-            measureStore = new MeasureStore
-            ({
+
+            return new MeasureStore({
                 // there's not really an advantage to pre constructing the dimensions
                 //dimensions: dimensions,
                 measures: measures,
                 records: results.rows
             });
-            return measureStore;
         }
 
         function _handleGetDataResponse(results, measures, dimensions)
@@ -970,7 +1013,7 @@
             measures = [];
             dimensions = [];
 
-        measureSpecs.forEach(function(m)
+            measureSpecs.forEach(function(m)
             {
                 var name = ('alias' in m.measure) ? m.measure.alias : m.measure.schemaName + "_" + m.measure.queryName + "_" + m.measure.name;
                 if ('isMeasure' in m.measure && m.measure.isMeasure)
@@ -978,40 +1021,49 @@
                 else if ('isDimension' in m.measure && m.measure.isDimension)
                     dimensions.push(name);
             });
-            var measureStore;
-            measureStore = new MeasureStore
-            ({
+            return new MeasureStore({
                 // there's not really an advantage to pre constructing the dimensions
                 //dimensions: dimensions,
                 measures: measures,
                 records: results.rows
             });
-            return measureStore;
         }
 
         function _handleCellSetResponse(cellset, measuresConfig)
         {
-            var measuresMap = {};
-            if (measuresConfig)
-            measuresConfig.forEach(function(m){measuresMap[m.name] = m;});
+            var measuresMap = {},
+                measures = [],
+                positions = cellset.axes[0].positions,
+                posArray,
+                measureConfig,
+                rows, i, m;
+
+            if (measuresConfig) {
+                measuresConfig.forEach(function(m) { measuresMap[m.name] = m; });
+            }
 
             // verify that all columns are measures
-            var measures = [];
-            var positions = cellset.axes[0].positions;
-            for (var i = 0; i < positions.length; i++)
+            for (i = 0; i < positions.length; i++)
             {
-                var posArray = positions[i];
+                posArray = positions[i];
                 if (posArray.length != 1)
                     throw "MeasureStore does not support nesting on the ROWS axis";
-                var m = posArray[0];
+                m = posArray[0];
                 if (!Ext4.String.startsWith(m.uniqueName, "[Measures].["))
                     throw "MeasureStore expects measures on the ROWS axis";
-                var measureConfig = measuresMap[m.name];
+
+                measureConfig = measuresMap[m.name];
                 if (!measureConfig)
-                    measureConfig = {name: m.name, sumColumn: m.name};
+                {
+                    measureConfig = {
+                        name: m.name,
+                        sumColumn: m.name
+                    };
+                }
                 measures.push(measureConfig);
             }
-            var rows = cellset.cells.map(function(cellrow)
+
+            rows = cellset.cells.map(function(cellrow)
             {
                 var retrow = {};
                 for (var m = 0; m < cellrow.length; m++)
@@ -1032,75 +1084,66 @@
                 return retrow;
             });
 
-            var measureStore;
-            measureStore = new MeasureStore
-            ({
+            return new MeasureStore({
                 // there's not really an advantage to pre constructing the dimensions
                 //dimensions: dimensions,
                 measures: measures,
                 records: rows
             });
-            return measureStore;
         }
 
+        // MeasureStoreStatic
+        return {
 
-        var MeasureStoreStatic = {};
+            VALUES: 'VALUES',
+            COUNT: 'COUNT',
+            SUM: 'SUM',
+            MEAN: 'MEAN',
 
-        MeasureStoreStatic.selectRows = function(config)
-        {
-            _apiWrapper(config, LABKEY.Query.selectRows, _handleSelectRowsResponse);
+            selectRows : function(config)
+            {
+                _apiWrapper(config, LABKEY.Query.selectRows, _handleSelectRowsResponse);
+            },
+
+            executeSql : function(config)
+            {
+                _apiWrapper(config, LABKEY.Query.executeSql, _handleSelectRowsResponse);
+            },
+
+            // NOTE mdx is only supported for site admin at the moment
+            /**
+             * NOTE: only loads results of the form
+             *
+             * SELECT [Measures].members ON COLUMNS,
+             * CROSSJOIN([Level1].members,...,[LevelN].members) ON ROWS
+             * FROM [Cube]
+             *
+             * Note only measures on columns, only level.members on rows
+             * Any sort of ragged hierarchy or heterogeous members is NOT supported.
+             */
+            executeOlapQuery : function(config)
+            {
+                _apiWrapper(config, LABKEY.query.olap.CubeManager.executeOlapQuery, _handleCellSetResponse);
+            },
+
+            // LABKEY.Query.Visualization.getData() wrapper
+            // NOTE: getData() does not require that measures be marked with isMeasure and isDimension, but this
+            // wrapper API does
+            getData : function(config)
+            {
+                _apiWrapper(config, LABKEY.Query.Visualization.getData, _handleGetDataResponse);
+            },
+
+            // NYI load from Ext.Store (listen to data change events?)
+            store : function(config)
+            {
+            },
+
+            create : function(config)
+            {
+                return new MeasureStore(config);
+            }
         };
-
-
-        MeasureStoreStatic.executeSql = function(config)
-        {
-            _apiWrapper(config, LABKEY.Query.executeSql, _handleSelectRowsResponse);
-        };
-
-
-        // NOTE mdx is only supported for site admin at the moment
-        /**
-         * NOTE: only loads results of the form
-         *
-         * SELECT [Measures].members ON COLUMNS,
-         * CROSSJOIN([Level1].members,...,[LevelN].members) ON ROWS
-         * FROM [Cube]
-         *
-         * Note only measures on columns, only level.members on rows
-         * Any sort of ragged hierarchy or heterogeous members is NOT supported.
-         */
-        MeasureStoreStatic.executeOlapQuery = function(config)
-        {
-            _apiWrapper(config, LABKEY.query.olap.CubeManager.executeOlapQuery, _handleCellSetResponse);
-        };
-
-
-        // LABKEY.Query.Visualization.getData() wrapper
-        // NOTE: getData() does not require that measures be marked with isMeasure and isDimension, but this
-        // wrapper API does
-        MeasureStoreStatic.getData = function(config)
-        {
-            _apiWrapper(config, LABKEY.Query.Visualization.getData, _handleGetDataResponse);
-        };
-
-
-        // NYI load from Ext.Store (listen to data change events?)
-        MeasureStoreStatic.store = function(config)
-        {
-        };
-
-
-        MeasureStoreStatic.create = function(config)
-        {
-            return new MeasureStore(config);
-        };
-
-        MeasureStoreStatic.VALUES = "VALUES";
-        MeasureStoreStatic.COUNT = "COUNT";
-        MeasureStoreStatic.SUM = "SUM";
-        MeasureStoreStatic.MEAN = "MEAN";
-
-        return MeasureStoreStatic;
 
     })();
 
@@ -1124,12 +1167,13 @@
             this.measures = [];
             this._columns = [];
         };
+
         AxisMeasureStore.prototype =
         {
             axes: null,
             measures: null,
 
-            setMeasure: function(index, label, store, measureName, filters)
+            setMeasure : function(index, label, store, measureName, filters)
             {
                 this.measures[index] =
                 {
@@ -1140,21 +1184,24 @@
                     index: index
                 };
             },
+
             // plot axis names
-            setXMeasure: function(store, measureName, filters)
+            setXMeasure : function(store, measureName, filters)
             {
                 this.setMeasure(0, 'x', store, measureName, filters);
             },
-            setYMeasure: function(store, measureName, filters)
+
+            setYMeasure : function(store, measureName, filters)
             {
                 this.setMeasure(1, 'y', store, measureName, filters);
             },
-            setZMeasure: function(store, measureName, filters)
+
+            setZMeasure : function(store, measureName, filters)
             {
                 this.setMeasure(2, 'z', store, measureName, filters);
             },
 
-            setAxis: function(axis, dimension)
+            setAxis : function(axis, dimension)
             {
             },
 
@@ -1175,59 +1222,71 @@
              {
              },
              */
-            flattenJoinEntry: function(dim, entry)
+            flattenJoinEntry : function(dim, entry)
             {
-                var measures = this.measures;
-                var r = {};
-                var keyNames = dim._keys;
-                var keyValues = entry.key.split(CONCAT_STRING);
-                for (var i = 0; i < keyNames.length; i++)
-                    r[keyNames[i]] = i < keyValues.length ? keyValues[i] : null;
-                for (var m = 0; m < measures.length; m++)
+                var measures = this.measures,
+                    r = {},
+                    keyNames = dim._keys,
+                    keyValues = entry.key.split(CONCAT_STRING),
+                    label, measureName, i;
+
+                for (i = 0; i < keyNames.length; i++)
                 {
-                    var label = measures[m].label;
-                    var measureName = measures[m].measureName;
-                    r[label] = entry.value[m][measureName];
+                    r[keyNames[i]] = i < keyValues.length ? keyValues[i] : null;
                 }
+
+                for (i = 0; i < measures.length; i++)
+                {
+                    label = measures[i].label;
+                    measureName = measures[i].measureName;
+                    r[label] = entry.value[i][measureName];
+                }
+
                 return r;
             },
 
-        setJoinOption: function(){},
+            setJoinOption : function() {},
 
-            _join: function(dimArray, results)
+            _join : function(dimArray, results)
             {
                 var cf = crossfilter();
-            results.forEach(function(result,index){
-                result.forEach(function(row){row.__index = index;});
+                results.forEach(function(result, index)
+                {
+                    result.forEach(function(row)
+                    {
+                        row.__index = index;
+                    });
                     cf.add(result);
                 });
-            var initFn = function() {return [];};
+                var initFn = function() {return [];};
                 var addFn = function(accum, row)
                 {
                     accum[row.__index] = row;
                     return accum;
                 };
-            var xyz = cf.dimension(function(row){return row.__key;}).group().reduce(addFn, null, initFn).all();
-                return xyz;
+                return cf.dimension(function(row) { return row.__key; }).group().reduce(addFn, null, initFn).all();
             },
 
-        members : function(dim){},
+            members : function(dim) {},
 
-            select: function(dimName)
+            select : function(dimName)
             {
-                var dimArray = [];
+                var dimArray = [],
+                    results;
+
                 if (!dimName)
                 {
-                    for (var a = 0; a < this.axes; a++)
+                    for (var a = 0; a < this.axes; a++) {
                         if (this.axes[a])
                             dimArray = dimArray.concat(this.axes[a]);
+                    }
                 }
                 else if (LABKEY.Utils.isArray(dimName))
                     dimArray = dimName;
                 else
                     dimArray = [dimName];
 
-                var results = this.measures.map(function(measure)
+                results = this.measures.map(function(measure)
                 {
                     if (null == measure)
                         return null;
@@ -1236,9 +1295,10 @@
                     {
                         for (var d in measure.filters)
                         {
-                            if (!axis.filters.hasOwnProperty(d))
-                                continue;
-                            measure.measureStore.filter(d, measure.filters[d]);
+                            if (measure.filters.hasOwnProperty(d))
+                            {
+                                measure.measureStore.filter(d, measure.filters[d]);
+                            }
                         }
                     }
                     var measureStore = measure.measureStore;
@@ -1258,23 +1318,21 @@
                     results = this._join(dimArray, results);
 
                 var me = this;
-                var ret = results.map(function(entry)
+                return results.map(function(entry)
                 {
+                    // TODO: Stop referencing the global 'dim'
                     return me.flattenJoinEntry(dim, entry);
                 });
-                return ret;
             }
         };
 
         return {
-            create: function()
+            create : function()
             {
                 return new AxisMeasureStore();
             }
         }
     });
 
-
-
-})();
+})(jQuery, crossfilter);
 
