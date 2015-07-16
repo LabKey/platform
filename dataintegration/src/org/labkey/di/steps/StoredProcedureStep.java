@@ -49,8 +49,6 @@ import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.filters.RunFilterStrategy;
-import org.labkey.di.filters.SelectAllFilterStrategy;
-import org.labkey.di.pipeline.TransformDescriptor;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.TransformTask;
@@ -163,7 +161,7 @@ public class StoredProcedureStep extends TransformTask
         if (_meta.isGating())
             return gateHasWork();
         else
-            return !((TransformDescriptor)_context.getJobDescriptor()).isGatedByStep();
+            return !isEtlGatedByStep();
     }
 
     /**
@@ -517,23 +515,20 @@ public class StoredProcedureStep extends TransformTask
 
     private void setAndLogFilterValues()
     {
-        FilterStrategy filterStrategy = getFilterStrategy();
-        if (null != filterStrategy && !(filterStrategy instanceof SelectAllFilterStrategy))
+        if (_meta.isUseFilterStrategy())
         {
-
+            FilterStrategy filterStrategy = getFilterStrategy();
             // This also sets the values
             SimpleFilter f = filterStrategy.getFilter(getVariableMap());
             try
             {
-                getJob().info(filterStrategy.getClass().getSimpleName() + ": " + (null == f ? "no filter" : f.toSQLString(procDialect)));
+                getJob().info(filterStrategy.getLogMessage(null == f ? null : f.toSQLString(procDialect)));
             }
             catch (UnsupportedOperationException|IllegalArgumentException x)
             {
                 /* oh well */
             }
         }
-        else
-            _meta.setUseFilterStrategy(false);
     }
 
     private void initSavedParamVals(boolean checkingForWork)
@@ -696,7 +691,7 @@ public class StoredProcedureStep extends TransformTask
     {
         if (null != getJob())
             getJob().error(message);
-        else throw new IllegalArgumentException(message);
+        else throw new IllegalStateException(message);
     }
 
 }

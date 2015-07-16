@@ -29,6 +29,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterDescription;
@@ -55,6 +56,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -604,9 +606,11 @@ public class TransformManager implements DataIntegrationService.Interface
                 .append("successRuns AS")
                 .append(" (SELECT *, ROW_NUMBER() OVER (PARTITION BY transformid, container ORDER BY starttime DESC) as rn")
                 .append(" FROM dataintegration.transformrun WHERE endtime is not NULL)")
-                .append(" select c.*, runs.jobid as lastJobId, ")
-                .append("CASE WHEN runs.status != 'PENDING' OR s.Status = 'WAITING' THEN runs.status ELSE 'RUNNING' END as lastStatus, ")
-                .append("successRuns.jobid as lastCompletionJobId, successRuns.endtime as lastCompletion, workCheckedRuns.startTime as lastChecked from dataintegration.transformconfiguration c")
+                .append(" select c.*, runs.jobid as lastJobId, runs.transformrunid as lastRunId,")
+                .append(" CASE")
+                .append(" WHEN s.status = 'COMPLETE' OR s.status LIKE 'CANCEL%' THEN s.status")
+                .append(" WHEN runs.status != 'PENDING' OR s.Status = 'WAITING' THEN runs.status ELSE 'RUNNING' END as lastStatus,")
+                .append(" successRuns.jobid as lastCompletionJobId, successRuns.endtime as lastCompletion, workCheckedRuns.startTime as lastChecked from dataintegration.transformconfiguration c")
                 .append(" LEFT JOIN workCheckedRuns ON c.container = workCheckedRuns.container AND c.transformid = workCheckedRuns.transformid AND workCheckedRuns.rn = 1")
                 .append(" LEFT JOIN runs ON c.container = runs.container AND c.transformid = runs.transformid AND runs.rn = 1")
                 .append(" LEFT JOIN pipeline.StatusFiles s ON runs.jobid = s.rowId")
@@ -616,7 +620,7 @@ public class TransformManager implements DataIntegrationService.Interface
 
     public List<TransformConfiguration> getTransformConfigurations(Container c)
     {
-        DbScope scope = DbSchema.get("dataintegration").getScope();
+        DbScope scope = DbSchema.get("dataintegration", DbSchemaType.Module).getScope();
         SQLFragment sql = transformConfigurationSQLFragment(c);
         return new SqlSelector(scope, sql).getArrayList(TransformConfiguration.class);
     }
@@ -624,7 +628,7 @@ public class TransformManager implements DataIntegrationService.Interface
 
     public TransformConfiguration getTransformConfiguration(Container c, ScheduledPipelineJobDescriptor etl)
     {
-        DbScope scope = DbSchema.get("dataintegration").getScope();
+        DbScope scope = DbSchema.get("dataintegration", DbSchemaType.Module).getScope();
         SQLFragment sql = transformConfigurationSQLFragment(c).append(" and c.transformid=?").add(etl.getId());
         TransformConfiguration ret = new SqlSelector(scope, sql).getObject(TransformConfiguration.class);
         if (null != ret)
@@ -661,6 +665,19 @@ public class TransformManager implements DataIntegrationService.Interface
         ActionURL detailsURL = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(c, jobId);
 
         return styled ? PageFlowUtil.textLink(text, detailsURL ) : PageFlowUtil.unstyledTextLink(text, detailsURL);
+    }
+
+    public String getRunDetailsLink(Container c, Integer runId, String text)
+    {
+        if (null == runId)
+            return null;
+        ActionURL runDetailURL = new ActionURL();
+        runDetailURL.setContainer(c);
+        runDetailURL.addParameter("schemaName", DataIntegrationQuerySchema.SCHEMA_NAME);
+        runDetailURL.addParameter("query.queryName", DataIntegrationQuerySchema.TRANSFORMRUN_TABLE_NAME);
+        runDetailURL.addParameter("query.TransformRunId~eq", runId.intValue());
+
+        return PageFlowUtil.unstyledTextLink(text, PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(runDetailURL));
     }
 
     public void shutdownPre()

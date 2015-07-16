@@ -46,7 +46,9 @@ public interface FilterStrategy
 
     boolean hasWork();
 
-    /* Has side effect of setting parameters */
+    /**
+     * Has side effect of setting parameters
+     */
     SimpleFilter getFilter(VariableMap variables);
     SimpleFilter getFilter(VariableMap variables, boolean deleting);
     @Nullable DeletedRowsSource getDeletedRowsSource();
@@ -54,4 +56,5 @@ public interface FilterStrategy
     @Nullable String getDeletedRowsKeyCol();
     @Nullable String getTargetDeletionKeyCol();
     void setTargetDeletionKeyCol(@Nullable String col);
+    String getLogMessage(@Nullable String filterValue);
 }

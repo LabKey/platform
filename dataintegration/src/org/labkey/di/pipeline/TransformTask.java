@@ -483,6 +483,9 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
     public boolean hasWork()
     {
+        // For many step types we can't tell if there's work to be done, so we were hardcoded to return true.
+        // Now if a stored proc is gating the etl, they'll report false and let the stored proc decide.
+        // Obviously this shouldn't be used in combination with steps that should always run.
         return !isEtlGatedByStep();
     }
 

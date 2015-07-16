@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Date;
 import java.util.Map;
@@ -45,6 +44,7 @@ public class TransformConfiguration extends Entity
     Date lastCompletion = null;
     Integer lastJobId = null;
     Integer lastCompletionJobId = null;
+    Integer lastRunId = null;
 
     JSONObject jsonState;
 
@@ -157,10 +157,25 @@ public class TransformConfiguration extends Entity
         this.lastCompletionJobId = lastCompletionJobId;
     }
 
+    public Integer getLastRunId()
+    {
+        return lastRunId;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setLastRunId(Integer lastRunId)
+    {
+        this.lastRunId = lastRunId;
+    }
+
     public String getLastStatusUrl()
     {
         if (null == getLastJobId())
-            return PageFlowUtil.filter(lastStatus);
+        {
+            if (null == getLastRunId())
+                return "";
+            return TransformManager.get().getRunDetailsLink(lookupContainer(), getLastRunId(), getLastStatus());
+        }
 
         return TransformManager.get().getJobDetailsLink(lookupContainer(), getLastJobId(), getLastStatus(), false);
     }
@@ -220,6 +235,7 @@ public class TransformConfiguration extends Entity
         map.put("lastStatus", getLastStatus());
         map.put("lastCompletionJobId", getLastCompletionJobId());
         map.put("lastCompletion", getLastCompletion());
+        map.put("lastRunId", getLastCompletion());
         return map;
     }
 }

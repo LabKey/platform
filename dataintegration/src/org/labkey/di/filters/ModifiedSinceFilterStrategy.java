@@ -313,4 +313,10 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             return true;
         }
     }
+
+    @Override
+    public String getLogMessage(@Nullable String filterValue)
+    {
+        return super.getLogMessage(filterValue) + "\n" + "The max filter value is the max value in the source time column when the job started.";
+    }
 }

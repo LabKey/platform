@@ -15,6 +15,7 @@
  */
 package org.labkey.di.filters;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -133,5 +134,11 @@ public abstract class FilterStrategyImpl implements FilterStrategy
     public SimpleFilter getFilter(VariableMap variables, boolean deleting)
     {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getLogMessage(@Nullable String filterValue)
+    {
+        return this.getClass().getSimpleName() + ": " + (null == filterValue ? "no filter" : filterValue);
     }
 }

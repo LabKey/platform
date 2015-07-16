@@ -15,6 +15,7 @@
  */
 package org.labkey.di.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.di.TaskRefTask;
@@ -42,7 +43,7 @@ public abstract class TaskRefTaskImpl implements TaskRefTask
         StringBuilder sb = new StringBuilder();
         for (String requiredSetting : getRequiredSettings())
         {
-            if (!xmlSettings.containsKey(requiredSetting))
+            if (StringUtils.isBlank(xmlSettings.get(requiredSetting)))
             {
                 if (sb.length() == 0)
                     sb.append(TaskRefTransformStepMeta.TASKREF_MISSING_REQUIRED_SETTING).append("\n");

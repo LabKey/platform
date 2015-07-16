@@ -22,12 +22,7 @@ import java.util.Map;
  */
 public class QueueJobTask extends TaskRefTaskImpl
 {
-    private String transformId;
-
-    public enum Setting
-    {
-        transformId
-    }
+    private String _transformId;
 
     @Override
     public RecordedActionSet run(@NotNull PipelineJob job) throws PipelineJobException
@@ -37,11 +32,11 @@ public class QueueJobTask extends TaskRefTaskImpl
         TransformPipelineJob transformJob = (TransformPipelineJob) job;
 
         // Default to requeue self if no transformId set
-        if (null == transformId)
-            transformId = transformJob.getTransformDescriptor().getId();
-        ScheduledPipelineJobDescriptor newEtl = TransformManager.get().getDescriptor(transformId);
+        if (null == _transformId)
+            _transformId = transformJob.getTransformDescriptor().getId();
+        ScheduledPipelineJobDescriptor newEtl = TransformManager.get().getDescriptor(_transformId);
         if (newEtl == null)
-            throw new NotFoundException(transformId);
+            throw new NotFoundException(_transformId);
         TransformJobContext context = transformJob.getTransformJobContext();
         if (newEtl.isPending(context))
         {
@@ -51,8 +46,8 @@ public class QueueJobTask extends TaskRefTaskImpl
         {
             Integer jobId = TransformManager.get().runNowPipeline(newEtl, context.getContainer(), context.getUser(), context.getParams(), transformJob.getParameters(), transformJob.getAnalysisDirectory(), transformJob.getBaseName());
             if (null == jobId)
-                transformJob.info("No work for queued ETL " + transformId);
-            else transformJob.info("Queued job " + jobId.toString() + " for ETL " + transformId);
+                transformJob.info("No work for queued ETL " + _transformId);
+            else transformJob.info("Queued job " + jobId.toString() + " for ETL " + _transformId);
         }
         return new RecordedActionSet(makeRecordedAction());
     }
@@ -61,8 +56,8 @@ public class QueueJobTask extends TaskRefTaskImpl
     public void setSettings(Map<String, String> xmlSettings) throws XmlException
     {
         super.setSettings(xmlSettings);
-        transformId = settings.get(Setting.transformId.name());
-        if (null != transformId && null == TransformManager.get().getDescriptor(transformId))
-            throw new XmlException(QueueJobTask.class.getName() + " can't find ETL to be queued: " + transformId);
+        _transformId = settings.get("transformId");
+        if (null != _transformId && null == TransformManager.get().getDescriptor(_transformId))
+            throw new XmlException(QueueJobTask.class.getName() + " can't find ETL to be queued: " + _transformId);
     }
 }

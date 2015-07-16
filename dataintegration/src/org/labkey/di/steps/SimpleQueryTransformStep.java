@@ -194,7 +194,7 @@ public class SimpleQueryTransformStep extends TransformTask
 
             try
             {
-                log.info(filterStrategy.getClass().getSimpleName() + ": " + (null == f ? "no filter"  : f.toSQLString(sourceSchema.getDbSchema().getSqlDialect())));
+                log.info(filterStrategy.getLogMessage(null == f ? null  : f.toSQLString(sourceSchema.getDbSchema().getSqlDialect())));
             }
             catch (UnsupportedOperationException|IllegalArgumentException x)
             {
