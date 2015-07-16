@@ -22,6 +22,8 @@ import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -36,6 +38,7 @@ import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ConfigurationException;
@@ -46,6 +49,7 @@ import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.filters.RunFilterStrategy;
+import org.labkey.di.filters.SelectAllFilterStrategy;
 import org.labkey.di.pipeline.TransformDescriptor;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
@@ -75,7 +79,8 @@ public class StoredProcedureStep extends TransformTask
 {
     private final StoredProcedureStepMeta _meta;
 
-    private QuerySchema procSchema;
+    private String procQuerySchemaName;
+    private String procDbSchemaName;
     private String procName;
     private DbScope procScope;
     private DbScope targetScope = null;
@@ -156,7 +161,7 @@ public class StoredProcedureStep extends TransformTask
 
         _meta.setUseFilterStrategy(false);
         if (_meta.isGating())
-            return checkWorkGatingParams();
+            return gateHasWork();
         else
             return !((TransformDescriptor)_context.getJobDescriptor()).isGatedByStep();
     }
@@ -167,8 +172,9 @@ public class StoredProcedureStep extends TransformTask
      * values be available to other gating stored procs for their own work checks.
      *
      */
-    private boolean checkWorkGatingParams()
+    private boolean gateHasWork()
     {
+        // TODO: Verify the proc exists
         boolean hasWork = false;
         try
         {
@@ -248,7 +254,7 @@ public class StoredProcedureStep extends TransformTask
         super.recordWork(action);
         try
         {
-            action.addInput(new URI(procSchema.getName() + "." + procName), TransformTask.INPUT_ROLE);
+            action.addInput(new URI(procQuerySchemaName + "." + procName), TransformTask.INPUT_ROLE);
         }
         catch (URISyntaxException ignore)
         {
@@ -268,19 +274,44 @@ public class StoredProcedureStep extends TransformTask
 
     private void setDbScopes(Container c, User u)
     {
-        procSchema = DefaultSchema.get(u, c, _meta.getProcedureSchema());
+        procQuerySchemaName =  _meta.getProcedureSchema().toString();
+        DbSchema procSchema = getSchema(c, u, _meta.getProcedureSchema());
         if (null == procSchema)
             throw new ConfigurationException("Could not resolve procedure schema " + _meta.getProcedureSchema());
+        procDbSchemaName = procSchema.getName();
         procName = _meta.getProcedure();
-        procScope = procSchema.getDbSchema().getScope();
+        procScope = procSchema.getScope();
         procDialect = procScope.getSqlDialect();
 
         if (_meta.getTargetSchema() != null && StringUtils.isNotEmpty(_meta.getTargetSchema().toString()))
         {
+            // Could resolve the target schema with the same method as the proc schema, but that's
+            // inconsistent with what SimpleQueryTransformStep does.
             QuerySchema targetQuerySchema = DefaultSchema.get(u, c, _meta.getTargetSchema());
+            if (null == targetQuerySchema)
+                throw new ConfigurationException("Could not resolve target schema " + _meta.getTargetSchema());
             if (!targetQuerySchema.getDbSchema().getScope().equals(procScope))
                 targetScope = targetQuerySchema.getDbSchema().getScope();
         }
+    }
+
+    private DbSchema getSchema(Container c, User u, SchemaKey querySchemaKey)
+    {
+        DbSchema schema = null;
+        try
+        {
+            schema = DbSchema.get(querySchemaKey.toString(), DbSchemaType.Module);
+        }
+        catch (Exception e)
+        {
+                /* oh well */
+        }
+        // This is probably the right way to try first, but at the moment it returns the wrong schema for Argos.
+        if (null == schema && null != DefaultSchema.get(u, c, querySchemaKey))
+            schema = DefaultSchema.get(u, c, querySchemaKey).getDbSchema();
+
+        // If it's still null, not much we can do.
+        return schema;
     }
 
     private boolean callProcedure(boolean checkingForWork) throws SQLException
@@ -290,7 +321,7 @@ public class StoredProcedureStep extends TransformTask
         boolean badReturn = false;
 
         try (Connection conn = procScope.getConnection();
-             CallableStatement stmt = conn.prepareCall(procDialect.buildProcedureCall(procSchema.getDbSchema().getName(), procName, metadataParameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET)));
+             CallableStatement stmt = conn.prepareCall(procDialect.buildProcedureCall(procDbSchemaName, procName, metadataParameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET)));
              DbScope.Transaction txProc = _meta.isUseProcTransaction() ?  procScope.ensureTransaction() : null;
              DbScope.Transaction txTarget = (targetScope != null && _meta.isUseTargetTransaction()) ? targetScope.ensureTransaction() : null
         )
@@ -298,7 +329,7 @@ public class StoredProcedureStep extends TransformTask
         {
             procDialect.registerParameters(procScope, stmt, metadataParameters, procReturns.equals(RETURN_TYPE.RESULTSET));
 
-            info("Executing stored procedure " + procSchema.getName() + "." + procName);
+            info("Executing stored procedure " + procQuerySchemaName + "." + procName);
             long start = System.currentTimeMillis();
 
             if (procReturns.equals(RETURN_TYPE.RESULTSET))
@@ -334,7 +365,7 @@ public class StoredProcedureStep extends TransformTask
             error("Error: Sproc exited with return code " + returnValue);
             return false;
         }
-        info("Stored procedure " + procSchema.getName() + "." + procName + " completed in " + DateUtil.formatDuration(duration));
+        info("Stored procedure " + procQuerySchemaName + "." + procName + " completed in " + DateUtil.formatDuration(duration));
         return true;
 
     }
@@ -375,7 +406,7 @@ public class StoredProcedureStep extends TransformTask
 
     private void getParametersFromDbMetadata() throws SQLException
     {
-        metadataParameters = procDialect.getParametersFromDbMetadata(procScope, procSchema.getDbSchema().getName(), procName);
+        metadataParameters = procDialect.getParametersFromDbMetadata(procScope, procDbSchemaName, procName);
 
         if (metadataParameters.containsKey(SPECIAL_PARAMS.return_status.name()))
             procReturns = RETURN_TYPE.INTEGER;
@@ -389,7 +420,7 @@ public class StoredProcedureStep extends TransformTask
 
         Map<String, StoredProcedureStepMeta.ETLParameterInfo> xmlParamInfos = _meta.getXmlParamInfos();
 
-        logFilterValues();
+        setAndLogFilterValues();
 
         for (Map.Entry<String, MetadataParameterInfo> parameter : metadataParameters.entrySet())
         {
@@ -484,11 +515,13 @@ public class StoredProcedureStep extends TransformTask
         return inputValue;
     }
 
-    private void logFilterValues()
+    private void setAndLogFilterValues()
     {
-        if (_meta.isUseFilterStrategy())
+        FilterStrategy filterStrategy = getFilterStrategy();
+        if (null != filterStrategy && !(filterStrategy instanceof SelectAllFilterStrategy))
         {
-            FilterStrategy filterStrategy = getFilterStrategy();
+
+            // This also sets the values
             SimpleFilter f = filterStrategy.getFilter(getVariableMap());
             try
             {
@@ -499,6 +532,8 @@ public class StoredProcedureStep extends TransformTask
                 /* oh well */
             }
         }
+        else
+            _meta.setUseFilterStrategy(false);
     }
 
     private void initSavedParamVals(boolean checkingForWork)
