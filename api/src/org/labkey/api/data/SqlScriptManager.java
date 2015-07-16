@@ -234,7 +234,7 @@ public abstract class SqlScriptManager
         SimpleFilter filter = new SimpleFilter();
         ColumnInfo fileNameColumn = tinfo.getColumn("FileName");
         filter.addCondition(tinfo.getColumn("ModuleName"), _provider.getProviderName());
-        filter.addCondition(tinfo.getColumn("FileName"), _schema.getDisplayName(), CompareType.STARTS_WITH);
+        filter.addCondition(tinfo.getColumn("FileName"), _schema.getResourcePrefix(), CompareType.STARTS_WITH);
 
         return new TableSelector(tinfo, Collections.singleton(fileNameColumn), filter, null).getCollection(String.class);
     }
