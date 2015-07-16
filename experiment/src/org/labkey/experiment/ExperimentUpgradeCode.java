@@ -18,23 +18,16 @@ package org.labkey.experiment;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ExceptionUtil;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,29 +41,7 @@ import java.util.List;
 @SuppressWarnings("UnusedDeclaration")
 public class ExperimentUpgradeCode implements UpgradeCode
 {
-    private static final String LIST_SEQUENCE_NAME = "org.labkey.list.Lists";    // Matches name in ListManager
     private static final Logger LOG = Logger.getLogger(ExperimentUpgradeCode.class);
-
-    /** Called from 13.10-14.10 **/
-    public void createListSequences(ModuleContext moduleContext)
-    {
-        String sql = "SELECT Container, MAX(ListId) AS Max FROM exp.List GROUP BY Container";
-        new SqlSelector(ExperimentService.get().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                Container c = ContainerManager.getForId(rs.getString(1));
-
-                if (null != c)
-                {
-                    int max = rs.getInt(2);
-                    DbSequence sequence = DbSequenceManager.get(c, LIST_SEQUENCE_NAME);
-                    sequence.ensureMinimum(max);
-                }
-            }
-        });
-    }
 
     /** Used for 13.31->14.1 **/
     public void resyncDomainProjects(ModuleContext context)

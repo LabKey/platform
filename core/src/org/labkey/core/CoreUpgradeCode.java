@@ -15,21 +15,11 @@
  */
 package org.labkey.core;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.DeferredUpgrade;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.Selector;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.UpgradeUtils;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -37,21 +27,12 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UsersDomainKind;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * User: adam
@@ -74,126 +55,6 @@ public class CoreUpgradeCode implements UpgradeCode
     public void handleUnknownModules(ModuleContext context)
     {
         ModuleLoader.getInstance().handleUnkownModules();
-    }
-
-    // invoked by core-13.13-13.14.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void setPortalPageUniqueIndexes(ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-            return;
-
-        DbSchema schema = CoreSchema.getInstance().getSchema();
-        Collection<String> containers = new SqlSelector(schema, "SELECT EntityId FROM core.Containers").getCollection(String.class);
-        for (String c : containers)
-        {
-            resetPageIndexes(schema, c);
-        }
-    }
-
-    public static class PortalUpgradePage
-    {
-        private GUID containerId;
-        private String pageId;
-        private int index;
-
-        public GUID getContainer()
-        {
-            return containerId;
-        }
-
-        public void setContainer(GUID containerId)
-        {
-            this.containerId = containerId;
-        }
-
-        public String getPageId()
-        {
-            return pageId;
-        }
-
-        public void setPageId(String pageId)
-        {
-            this.pageId = pageId;
-        }
-
-        public int getIndex()
-        {
-            return index;
-        }
-
-        public void setIndex(int index)
-        {
-            this.index = index;
-        }
-    }
-
-    private static void resetPageIndexes(DbSchema schema, String containerEntityId)
-    {
-        Filter filter = new SimpleFilter(FieldKey.fromString("Container"), containerEntityId);
-        Sort sort = new Sort("Index");
-        TableInfo portalTable = schema.getTable("PortalPages");
-        Set<String> columnNames = new HashSet<>(3);
-        columnNames.add("Container");
-        columnNames.add("Index");
-        columnNames.add("PageId");
-        TableSelector ts = new TableSelector(portalTable, columnNames, filter, sort);
-        Collection<PortalUpgradePage> pages = ts.getCollection(PortalUpgradePage.class);
-        if (pages.size() > 0)
-        {
-            int validPageIndex = 1;
-            for (PortalUpgradePage page : pages)
-            {
-                if (validPageIndex != page.getIndex())
-                {
-                    page.setIndex(validPageIndex);
-                    Table.update(null, portalTable, page, new Object[] {page.getContainer(), page.getPageId()});
-                }
-                validPageIndex++;
-            }
-        }
-    }
-
-
-    // invoked by core-13.14-13.15.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    @DeferredUpgrade
-    public void populateWorkbookSortOrderAndName(final ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-            return;
-
-        final DbSchema schema = CoreSchema.getInstance().getSchema();
-        final String updateSql = "UPDATE core.Containers SET SortOrder = ? WHERE Parent = ? AND RowId = ?";
-        final SqlExecutor updateExecutor = new SqlExecutor(schema);
-
-        String selectSql = "SELECT Parent, RowId FROM core.Containers WHERE Type = 'workbook' ORDER BY Parent, RowId";
-
-        new SqlSelector(schema, selectSql).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                Container parent = ContainerManager.getForId(rs.getString(1));
-
-                if (null != parent)
-                {
-                    int sortOrder = DbSequenceManager.get(parent, ContainerManager.WORKBOOK_DBSEQUENCE_NAME).next();
-
-                    int rowId = rs.getInt(2);
-                    Container workbook = ContainerManager.getForRowId(rowId);
-                    String oldName = workbook.getPath();
-                    // Do a standard rename
-                    ContainerManager.rename(workbook, moduleContext.getUpgradeUser(), Integer.toString(sortOrder));
-                    // Add an alias so that old URLs continue to work
-                    List<String> aliases = new ArrayList<>(Arrays.asList(ContainerManager.getAliasesForContainer(workbook)));
-                    aliases.add(oldName);
-                    ContainerManager.saveAliasesForContainer(workbook, aliases);
-                    // Do a direct SQL update to set the sort order
-                    updateExecutor.execute(updateSql, sortOrder, parent, rowId);
-                }
-            }
-        });
     }
 
     // invoked by core-13.31-13.32.sql and core-13.32-13.33.sql
