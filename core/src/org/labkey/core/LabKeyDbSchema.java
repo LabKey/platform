@@ -19,34 +19,22 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.resource.Resource;
 
-import java.io.IOException;
 import java.util.Map;
 
 // Special subclass to handle the peculiarities of the "labkey" schema that gets created in all module-required
-// external data sources. Key changes:
-// 1. Override getDisplayName() to eliminate the standard datasource prefix, so labkey-*-*.sql scripts are found
-// 2. Override getSchemaResource() to resolve labkey.xml
+// external data sources.
 public class LabKeyDbSchema extends DbSchema
 {
     public LabKeyDbSchema(DbScope scope, Map<String, String> metaDataTableNames)
     {
-        super("labkey", DbSchemaType.Module, scope, metaDataTableNames);
+        super("labkey", DbSchemaType.Module, scope, metaDataTableNames, ModuleLoader.getInstance().getCoreModule());
     }
 
-    @Override
-    public String getDisplayName()
+    // Used to retrieve schema XML file and scripts. Override so this is not datasource-qualified (we want to always resolve to labkey.xml, labkey-0.00-14.20.sql, etc.)
+    public String getResourcePrefix()
     {
         return "labkey";
-    }
-
-    @Override
-    public Resource getSchemaResource(String schemaName) throws IOException
-    {
-        // CoreModule does not claim the "labkey" schema because we don't want to install this schema in the labkey
-        // datasource. Override here so we find labkey.xml; this eliminates warnings and supports junit tests.
-        return getSchemaResource(ModuleLoader.getInstance().getCoreModule(), schemaName);
     }
 
     @Override
