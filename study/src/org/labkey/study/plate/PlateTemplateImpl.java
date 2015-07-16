@@ -177,6 +177,21 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return allGroupTemplates;
     }
 
+    public Map<WellGroup.Type, Map<String, WellGroupTemplate>> getWellGroupTemplateMap()
+    {
+        Map<WellGroup.Type, Map<String, WellGroupTemplate>> wellgroupTypeMap = new HashMap<>();
+        if (_groups != null)
+        {
+            for (Map.Entry<WellGroup.Type, Map<String, WellGroupTemplateImpl>> templateEntry : _groups.entrySet())
+            {
+                Map<String, WellGroupTemplate> templateMap = new HashMap<>();
+                templateMap.putAll(templateEntry.getValue());
+                wellgroupTypeMap.put(templateEntry.getKey(), templateMap);
+            }
+        }
+        return wellgroupTypeMap;
+    }
+
     public int getColumns()
     {
         return _columns;
