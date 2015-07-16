@@ -98,7 +98,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -529,7 +528,7 @@ public class ModuleLoader implements Filter
         {
             SqlScriptManager manager = SqlScriptManager.get(provider, schema);
 
-            if (schema.getSqlDialect().canExecuteUpgradeScripts() && manager.requiresUpgrade())
+            if (manager.requiresUpgrade())
                 schemaNames.add(schema.getDisplayName());
         }
 

@@ -73,7 +73,7 @@ public enum DbSchemaType
         DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException
         {
             Map<String, String> metaDataTableNames = DbSchema.loadTableNames(scope, metaDataName);
-            return new DbSchema(metaDataName, Bare, scope, metaDataTableNames);
+            return new DbSchema(metaDataName, Bare, scope, metaDataTableNames, module);
         }
     },
     All("", 0, false)

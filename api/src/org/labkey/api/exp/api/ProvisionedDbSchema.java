@@ -28,7 +28,7 @@ public class ProvisionedDbSchema extends DbSchema
 {
     public ProvisionedDbSchema(String name, DbScope scope)
     {
-        super(name, DbSchemaType.Provisioned, scope, null);
+        super(name, DbSchemaType.Provisioned, scope, null, null);
     }
 
     @Override

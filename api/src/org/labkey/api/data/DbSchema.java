@@ -22,7 +22,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -41,7 +40,6 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
 import java.io.IOException;
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -68,13 +66,15 @@ public class DbSchema
     private final DbScope _scope;
     private final Map<String, String> _metaDataTableNames;  // Union of all table names from database and schema.xml
     private final Map<String, TableType> _tableXmlMap = new CaseInsensitiveHashMap<>();
+    private final Module _module;
 
-    public DbSchema(String name, DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames)
+    public DbSchema(String name, DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames, Module module)
     {
         _name = name;
         _type = type;
         _scope = scope;
         _metaDataTableNames = metaDataTableNames;
+        _module = module;
     }
 
 
@@ -148,27 +148,13 @@ public class DbSchema
 
     public Resource getSchemaResource() throws IOException
     {
-        return getSchemaResource(getDisplayName());
+        return getSchemaResource(getResourcePrefix());
     }
 
 
-    public Resource getSchemaResource(String fullyQualifiedSchemaName) throws IOException
+    public Resource getSchemaResource(String xmlFilePrefix) throws IOException
     {
-        Module module = ModuleLoader.getInstance().getModuleForSchemaName(fullyQualifiedSchemaName);
-
-        if (null == module)
-        {
-            _log.debug("no module for schema '" + fullyQualifiedSchemaName + "'");
-            return null;
-        }
-
-        return getSchemaResource(module, fullyQualifiedSchemaName);
-    }
-
-
-    protected Resource getSchemaResource(Module module, String xmlFilePrefix) throws IOException
-    {
-        Resource r = module.getModuleResource("/schemas/" + xmlFilePrefix + ".xml");
+        Resource r = _module.getModuleResource("/schemas/" + xmlFilePrefix + ".xml");
         return null != r && r.isFile() ? r : null;
     }
 
@@ -246,32 +232,20 @@ public class DbSchema
         {
             final SqlDialect dialect = _locator.getScope().getSqlDialect();
 
-            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(_locator, new JdbcMetaDataResultSetFactory()
-            {
-                @Override
-                public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
-                {
-                    return dbmd.getTables(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), locator.getTableTypes());
-                }
-            });
+            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(_locator, (dbmd, locator) -> dbmd.getTables(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), locator.getTableTypes()));
 
-            selector.forEach(new ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    String tableName = rs.getString("TABLE_NAME").trim();
+            selector.forEach(rs -> {
+                String tableName = rs.getString("TABLE_NAME").trim();
 
-                    // Ignore system tables
-                    if (dialect.isSystemTable(tableName))
-                        return;
+                // Ignore system tables
+                if (dialect.isSystemTable(tableName))
+                    return;
 
-                    // skip if it looks like one of our temp table names: name$<32hexchars>
-                    if (_ignoreTemp && tableName.length() > 33 && tableName.charAt(tableName.length() - 33) == '$')
-                        return;
+                // skip if it looks like one of our temp table names: name$<32hexchars>
+                if (_ignoreTemp && tableName.length() > 33 && tableName.charAt(tableName.length() - 33) == '$')
+                    return;
 
-                    handleTable(tableName, rs);
-                }
+                handleTable(tableName, rs);
             });
 
             return getReturnValue();
@@ -399,14 +373,24 @@ public class DbSchema
         return getDisplayName(_scope, getName());
     }
 
+    /**
+     * Prefix used to retrieve resources such as schema XML files and SQL scripts. Usually identical to getDisplayName(),
+     * but subclasses can override.
+     *
+     * @return Resource prefix
+     */
+    public String getResourcePrefix()
+    {
+        return getDisplayName();
+    }
+
     // TODO: Provide mechanism to override this in schema.xml
     public String getQuerySchemaName()
     {
         return (_scope.isLabKeyScope() ? "" : _scope.getDisplayName() + "_") + getName();
     }
 
-    // Schema name qualified with data source display name (e.g., external.myschema). Resources like schema.xml files
-    // and sql scripts are found using this name.
+    // Schema name qualified with data source display name (e.g., external.myschema)
     public static String getDisplayName(DbScope scope, String name)
     {
         return (scope.isLabKeyScope() ? "" : scope.getDisplayName() + ".") + name;

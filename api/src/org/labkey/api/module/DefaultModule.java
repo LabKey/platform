@@ -85,11 +85,11 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -175,18 +175,38 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             Throwable t = DbScope.getDataSourceFailure(dsName);
 
-            if (null != t)
-                throw new ConfigurationException("This module requires a properly configured data source called \"" + dsName + "\"", t);
+            if (null == t)
+            {
+                if (null != DbScope.getDbScope(dsName))
+                    continue;
 
-            if (null == DbScope.getDbScope(dsName))
-                throw new ConfigurationException("This module requires a properly configured data source called \"" + dsName + "\"");
+                // A module data source is missing and we're in dev mode, so create a proxy data source that uses the labkey database.
+                // This can be helpful on test and dev machines. See #23730.
+                if (AppProps.getInstance().isDevMode())
+                {
+                    DbScope scope = DbScope.getLabkeyScope();
+
+                    try
+                    {
+                        _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\". It's not configured, so it will be created against the labkey database instead.");
+                        DbScope.addScope(dsName, scope.getDataSource(), scope.getProps());
+                        continue;
+                    }
+                    catch (SQLException | ServletException e)
+                    {
+                        // Fall through to throw ConfigurationException
+                    }
+                }
+            }
+
+            throw new ConfigurationException("This module requires a properly configured data source called \"" + dsName + "\"", t);
         }
 
         synchronized (INSTANTIATED_MODULES)
         {
             //simple modules all use the same Java class, so we need to also include
             //the module name in the instantiated modules set
-            Pair<Class, String> reg = new Pair<Class,String>(getClass(), getName());
+            Pair<Class, String> reg = new Pair<>(getClass(), getName());
             if (INSTANTIATED_MODULES.contains(reg))
                 throw new IllegalStateException("An instance of module " + getClass() +  " with name '" + getName() + "' has already been created. Modules should be singletons");
             else
@@ -202,29 +222,15 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         preloadReports();
     }
 
-    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<>(new Comparator<Resource>(){
-        @Override
-        public int compare(Resource o, Resource o1)
-        {
-            return o.getPath().compareTo(o1.getPath());
-        }
+    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<>((o, o1) -> {
+        return o.getPath().compareTo(o1.getPath());
     }));
 
-    public static final FilenameFilter moduleReportFilter = new FilenameFilter(){
-        public boolean accept(File dir, String name)
-        {
-            return ModuleRReportDescriptor.accept(name) ||
-                   StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
-        }
-    };
+    public static final FilenameFilter moduleReportFilter = (dir, name) -> ModuleRReportDescriptor.accept(name) ||
+           StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
 
-    protected static final FilenameFilter moduleReportFilterWithQuery = new FilenameFilter(){
-        public boolean accept(File dir, String name)
-        {
-            return moduleReportFilter.accept(dir, name) ||
-                    name.toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION);
-        }
-    };
+    protected static final FilenameFilter moduleReportFilterWithQuery = (dir, name) -> moduleReportFilter.accept(dir, name) ||
+            name.toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION);
 
     private void preloadReports()
     {
@@ -476,7 +482,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     protected void addWebPart(String name, Container c, @Nullable String location)
     {
-        addWebPart(name, c, location, -1, new HashMap<String, String>());
+        addWebPart(name, c, location, -1, new HashMap<>());
     }
 
     protected void addWebPart(String name, Container c, String location, Map<String, String> properties)
@@ -486,7 +492,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     protected void addWebPart(String name, Container c, String location, int partIndex)
     {
-        addWebPart(name, c, location, partIndex, new HashMap<String, String>());
+        addWebPart(name, c, location, partIndex, new HashMap<>());
     }
 
     protected void addWebPart(String name, Container c, @Nullable String location, int partIndex, Map<String, String> properties)
@@ -995,7 +1001,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         for (String script : dir.listNames())
         {
             // TODO: Ignore case to work around EHR case inconsistencies
-            if ( (script.endsWith(".sql") || script.endsWith(".jsp"))  && StringUtils.startsWithIgnoreCase(script, schema.getDisplayName() + "-"))
+            if ((script.endsWith(".sql") || script.endsWith(".jsp")) && StringUtils.startsWithIgnoreCase(script, schema.getResourcePrefix() + "-"))
                 fileNames.add(script);
         }
 
@@ -1510,7 +1516,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, String> metaDataTableNames)
     {
-        return new DbSchema(metaDataName, DbSchemaType.Module, scope, metaDataTableNames);
+        return new DbSchema(metaDataName, DbSchemaType.Module, scope, metaDataTableNames, this);
     }
 
     // for development mode info only
@@ -1538,5 +1544,4 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         if (_locked)
             throw new IllegalStateException("Module info setters can only be called in constructor.");
     }
-
 }

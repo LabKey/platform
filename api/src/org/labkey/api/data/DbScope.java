@@ -121,6 +121,7 @@ public class DbScope
     private final DbSchemaCache _schemaCache;
     private final SchemaTableInfoCache _tableCache;
     private final Map<Thread, List<TransactionImpl>> _transaction = new WeakHashMap<>();
+    private final DataSourceProperties _props;
 
     private SqlDialect _dialect;
 
@@ -198,6 +199,7 @@ public class DbScope
         _driverVersion = null;
         _schemaCache = null;
         _tableCache = null;
+        _props = null;
     }
 
 
@@ -274,6 +276,7 @@ public class DbScope
             _databaseProductVersion = dbmd.getDatabaseProductVersion();
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
+            _props = props;
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
         }
@@ -339,6 +342,10 @@ public class DbScope
         return _driverVersion;
     }
 
+    public DataSourceProperties getProps()
+    {
+        return _props;
+    }
 
     /**
      * Ensures that there is an active database transaction. If one is already in progress for this DbScope, it is
@@ -783,15 +790,19 @@ public class DbScope
 
     private void applyMetaDataXML(DbSchema schema, String schemaName) throws IOException, XmlException
     {
-        // Use the canonical schema name, not the requested name (which could differ in casing)
+        // First try the canonical schema name (which could differ in casing from the requested name)
         Resource resource = schema.getSchemaResource();
 
+        // TODO: What scenario does this address? Push this into getSchemaResource() or remove.
         if (null == resource)
         {
             String lowerName = schemaName.toLowerCase();
 
             if (!lowerName.equals(schema.getName()))
                 resource = schema.getSchemaResource(lowerName);
+
+            // TODO: Track down why this block exists
+            assert null == resource;
         }
 
         if (null == resource)
@@ -969,9 +980,7 @@ public class DbScope
                             dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
                     }
 
-                    DbScope scope = new DbScope(dsName, dataSources.get(dsName), DataSourceProperties.get(dsProperties));
-                    scope.getSqlDialect().prepare(scope);
-                    _scopes.put(dsName, scope);
+                    addScope(dsName, dataSources.get(dsName), DataSourceProperties.get(dsProperties));
                 }
                 catch (Exception e)
                 {
@@ -997,6 +1006,18 @@ public class DbScope
                 throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in labkey.xml. Server cannot start.");
 
             _labkeyScope.getSqlDialect().prepareNewLabKeyDatabase(_labkeyScope);
+        }
+    }
+
+
+    public static void addScope(String dsName, DataSource dataSource, DataSourceProperties props) throws ServletException, SQLException
+    {
+        DbScope scope = new DbScope(dsName, dataSource, props);
+        scope.getSqlDialect().prepare(scope);
+
+        synchronized (_scopes)
+        {
+            _scopes.put(dsName, scope);
         }
     }
 
