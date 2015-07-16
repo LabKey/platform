@@ -65,6 +65,8 @@ public class DilutionManager
      */
     public static final String CUTOFF_VALUE_TABLE_NAME = "CutoffValue";
     public static final String NAB_SPECIMEN_TABLE_NAME = "NAbSpecimen";
+    public static final String WELL_DATA_TABLE_NAME = "WellData";
+    public static final String DILUTION_DATA_TABLE_NAME = "DilutionData";
     public static final String VIRUS_TABLE_NAME = "Virus";
 
     public static final String NAB_DBSCHEMA_NAME = "nab";
@@ -85,8 +87,23 @@ public class DilutionManager
         return getSchema().getTable(CUTOFF_VALUE_TABLE_NAME);
     }
 
+    public static TableInfo getTableInfoWellData()
+    {
+        return getSchema().getTable(WELL_DATA_TABLE_NAME);
+    }
+
+    public static TableInfo getTableInfoDilutionData()
+    {
+        return getSchema().getTable(DILUTION_DATA_TABLE_NAME);
+    }
+
     public void deleteContainerData(Container container) throws SQLException
     {
+        // Remove rows from DilutionData and WellData
+        SimpleFilter wellDataFilter = SimpleFilter.createContainerFilter(container);
+        Table.delete(getSchema().getTable(DILUTION_DATA_TABLE_NAME), makeDilutionDataFilter(wellDataFilter));
+        Table.delete(getSchema().getTable(WELL_DATA_TABLE_NAME), wellDataFilter);
+
         // Remove rows from NAbSpecimen and CutoffValue tables
         SimpleFilter runIdFilter = makeNabSpecimenContainerClause(container);
 
@@ -168,6 +185,21 @@ public class DilutionManager
         return new SimpleFilter(new SimpleFilter.SQLClause(str, params));
     }
 
+    protected SimpleFilter makeDilutionDataFilter(SimpleFilter wellDataFilter)
+    {
+        TableInfo table = getSchema().getTable(WELL_DATA_TABLE_NAME);
+        String str = "RowId IN (SELECT DISTINCT DilutionDataId FROM " + table.getSelectName() + " " +
+                wellDataFilter.getWhereSQL(table) + ")";
+
+        List<Object> paramVals = wellDataFilter.getWhereParams(table);
+        Object[] params = new Object[paramVals.size()];
+        for (int i = 0; i < paramVals.size(); i += 1)
+            params[i] = paramVals.get(i);
+
+        return new SimpleFilter(new SimpleFilter.SQLClause(str, params));
+
+    }
+
     public static Set<Double> getCutoffValues(final ExpProtocol protocol)
     {
         SQLFragment sql = new SQLFragment("SELECT DISTINCT Cutoff FROM ");
@@ -190,10 +222,21 @@ public class DilutionManager
         {
             // Get dataIds that match the ObjectUri and make filter on NabSpecimen
             List<Integer> dataIDs = new ArrayList<>(datas.size());
+            Set<Integer> runIds = new HashSet<>();
             for (ExpData data : datas)
             {
                 dataIDs.add(data.getRowId());
+                if (null != data.getRunId())
+                    runIds.add(data.getRunId());
+
             }
+            if (!runIds.isEmpty())
+            {
+                SimpleFilter wellDataFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromString("RunId"), runIds));
+                Table.delete(getSchema().getTable(DILUTION_DATA_TABLE_NAME), makeDilutionDataFilter(wellDataFilter));
+                Table.delete(getSchema().getTable(WELL_DATA_TABLE_NAME), wellDataFilter);
+            }
+
             SimpleFilter dataIdFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromString("DataId"), dataIDs));
 
             // Now delete all rows in CutoffValue table that match those nabSpecimenIds

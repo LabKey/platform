@@ -19,6 +19,7 @@ package org.labkey.api.study;
 import org.labkey.api.attachments.AttachmentParent;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -35,9 +36,11 @@ public interface PlateTemplate extends PropertySet, AttachmentParent
 
     int getColumns();
 
-    public List<? extends WellGroupTemplate> getWellGroups();
+    List<? extends WellGroupTemplate> getWellGroups();
 
-    public List<? extends WellGroupTemplate> getWellGroups(Position position);
+    List<? extends WellGroupTemplate> getWellGroups(Position position);
+
+    Map<WellGroup.Type, Map<String, WellGroupTemplate>> getWellGroupTemplateMap();
 
     WellGroupTemplate addWellGroup(String name, WellGroup.Type type, Position upperLeft, Position lowerRight);
 
