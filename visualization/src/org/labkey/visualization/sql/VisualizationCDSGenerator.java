@@ -210,6 +210,7 @@ public class VisualizationCDSGenerator
         List<VisualizationSQLGenerator> generators = new ArrayList<>();
         List<String> generatedSql = new ArrayList<>();
         String subjectColumnName = "ParticipantId";
+        String sequenceNumColumnName = "SequenceNum";
         if (null != study)
             subjectColumnName = study.getSubjectColumnName();
 
@@ -241,7 +242,7 @@ public class VisualizationCDSGenerator
                 {
                     if (equalsIgnoreCase(mi.getMeasure().getName(),subjectColumnName))
                         participant = mi;
-                    else if (equalsIgnoreCase(mi.getMeasure().getName(), "SequenceNum"))
+                    else if (equalsIgnoreCase(mi.getMeasure().getName(), sequenceNumColumnName))
                         sequencenum = mi;
                     else
                         datasetMeasures.add(mi);
@@ -257,14 +258,14 @@ public class VisualizationCDSGenerator
             {
                 VisDataRequest.Measure subject = new VisDataRequest.Measure(datasetSchemaName, datasetQueryName, subjectColumnName)
                         .setAlias((datasetSchemaName + "_" + datasetQueryName + "_" + subjectColumnName).toLowerCase());
-                participant = new VisDataRequest.MeasureInfo(subject).setTime("visit");
+                participant = new VisDataRequest.MeasureInfo(subject).setTime("date");
             }
 
             if (null==sequencenum)
             {
-                VisDataRequest.Measure seqnum = new VisDataRequest.Measure(datasetSchemaName, datasetQueryName, "SequenceNum")
-                        .setAlias((datasetSchemaName + "_" + datasetQueryName + "_" + "sequencenum").toLowerCase());
-                sequencenum = new VisDataRequest.MeasureInfo(seqnum).setTime("visit");
+                VisDataRequest.Measure seqnum = new VisDataRequest.Measure(datasetSchemaName, datasetQueryName, sequenceNumColumnName)
+                        .setAlias((datasetSchemaName + "_" + datasetQueryName + "_" + sequenceNumColumnName).toLowerCase());
+                sequencenum = new VisDataRequest.MeasureInfo(seqnum).setTime("date");
             }
 
             // put the datasetMeasures first, so we can LEFT OUTER JOIN _starting_ from this dataset
@@ -305,7 +306,10 @@ public class VisualizationCDSGenerator
             for (Map<String, String> map : list)
             {
                 String a = map.get("alias");
-                if (!StringUtils.isEmpty(a))
+                if (StringUtils.isEmpty(a))
+                    a = map.get("columnName");
+
+                if (!StringUtils.isEmpty(a) && (!endsWithIgnoreCase(a, "_" + subjectColumnName) || endsWithIgnoreCase(a, "_" + sequenceNumColumnName)))
                     fullAliasList.add(a);
             }
             _log.debug(list);
@@ -323,28 +327,28 @@ public class VisualizationCDSGenerator
             for (Map<String,String> map : list)
             {
                 String a = map.get("alias");
-                if (!StringUtils.isEmpty(a))
-                    aliasSet.add(a);
+                if (StringUtils.isEmpty(a))
+                    a = map.get("columnName");
+
                 if (null == participantColumnAlias && endsWithIgnoreCase(a, "_" + subjectColumnName))
                     participantColumnAlias = a;
-                if (null == sequenceColumnAlias && endsWithIgnoreCase(a, "_sequencenum"))
+                else if (null == sequenceColumnAlias && endsWithIgnoreCase(a, "_" + sequenceNumColumnName))
                     sequenceColumnAlias = a;
+                else if (!StringUtils.isEmpty(a))
+                    aliasSet.add(a);
             }
 
             fullSQL.append(union); union = "\n  UNION ALL\n";
             fullSQL.append("SELECT ");
-            fullSQL.append(defaultString(participantColumnAlias,"NULL")).append(" AS \"http://cpas.labkey.com/Study#ParticipantId\"");
-            fullSQL.append(", ");
-            fullSQL.append(defaultString(sequenceColumnAlias, "NULL")).append(" AS \"http://cpas.labkey.com/Study#SequenceNum\"");
-            fullSQL.append(", ");
+            fullSQL.append(defaultString(participantColumnAlias,"NULL")).append(" AS \"http://cpas.labkey.com/Study#" + subjectColumnName + "\"").append(", ");
+            fullSQL.append(defaultString(sequenceColumnAlias, "NULL")).append(" AS \"http://cpas.labkey.com/Study#" + sequenceNumColumnName + "\"").append(", ");
             fullSQL.append(string_quote(datasetTables[i].getName())).append(" AS \"http://cpas.labkey.com/Study#Dataset\"");
             for (String alias : fullAliasList)
             {
-                fullSQL.append(", ");
                 if (aliasSet.contains(alias))
-                    fullSQL.append('"').append(alias).append('"');
+                    fullSQL.append(", ").append('"').append(alias).append('"');
                 else
-                    fullSQL.append("NULL AS \"").append(alias).append('"');
+                    fullSQL.append(", ").append("NULL AS \"").append(alias).append('"');
             }
             fullSQL.append(" FROM (").append(generatedSql.get(i)).append(") AS _").append(i);
         }
