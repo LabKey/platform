@@ -1505,6 +1505,33 @@ img.labkey-grid-filter-icon
     width: 100%;
     padding: 0;
     background-color: #F8F8F8;
+    display: table;
+    height: 100%;
+}
+
+.header-block
+{
+    display: table-row;
+    height: 1px;
+}
+
+.body-block
+{
+    display: table-row;
+    height: 1px;
+}
+
+.push-block
+{
+    height: auto;
+}
+
+.footer-block
+{
+    display: table-row;
+    height: 1px;
+    width:100%;
+    background:#FFFFFF;
 }
 
 /* For the wizard template*/

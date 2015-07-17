@@ -302,6 +302,7 @@ core/resources/scripts/labkey/adapter/ext4Bridge.js -text
 core/resources/scripts/labkey/init.js -text
 core/resources/views/ModulePropertyAdmin.html -text
 core/resources/views/ModulePropertyAdmin.view.xml -text
+core/resources/views/_footer.html -text
 core/script-fragments/Ext.footer.js -text
 core/script-fragments/Ext.header.js -text
 core/script-fragments/Ext.middle.js -text
