@@ -1271,9 +1271,15 @@
 
                 for (i = 0; i < measures.length; i++)
                 {
-                    label = measures[i].label;
-                    measureName = measures[i].measureName;
-                    r[label] = entry.value[i][measureName];
+                    if (measures[i]) {
+                        label = measures[i].label;
+                        measureName = measures[i].measureName;
+
+                        // TODO: the given measure might not be defined for all axes, should we set it to null or ...?
+                        if (entry.value[i]) {
+                            r[label] = entry.value[i][measureName];
+                        }
+                    }
                 }
 
                 return r;
