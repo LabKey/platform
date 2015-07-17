@@ -107,56 +107,65 @@
     }
 %>
 <div class="labkey-main <%= text(themeClass) %>" <% if (isPrint) { %>style="padding: 5px;"<% } %>>
-    <%
-        if (bean.showHeader() != PageConfig.TrueFalse.False)
-        {
-            me.include(me.getView("header"),out);
+    <div class="header-block">
+        <%
+            if (bean.showHeader() != PageConfig.TrueFalse.False)
+            {
+                me.include(me.getView("header"),out);
 
-            if (null != me.getView("topmenu"))
-                me.include(me.getView("topmenu"),out);
+                if (null != me.getView("topmenu"))
+                    me.include(me.getView("topmenu"),out);
 
-            if (null != me.getView("appbar"))
-                me.include(me.getView("appbar"), out);
-        }
-    %>
+                if (null != me.getView("appbar"))
+                    me.include(me.getView("appbar"), out);
+            }
+        %>
+    </div>
     <!--content area-->
-    <table class="labkey-proj">
-        <tr>
-            <%
-                if (null != me.getView("moduleNav"))
-                {
-            %>
-            <td align=left valign=top class=normal width="200px" height="100%" style="padding:5;">
+    <div class="body-block push-block">
+        <table class="labkey-proj">
+            <tr>
                 <%
-                    me.include(me.getView("moduleNav"), out);
+                    if (null != me.getView("moduleNav"))
+                    {
                 %>
-            </td>
-            <%
-                }
-            %>
-            <td id="bodypanel" class="labkey-body-panel" style="min-width:<%=bean.getMinimumWidth()%>px;">
-                <img height=1 width=<%=bean.getMinimumWidth()%> src="<%=getWebappURL("/_.gif")%>">
-                <br />
-                <!-- BODY -->
-                <% me.include(me.getBody(),out); %>
-                <!-- /BODY -->
-            </td>
-            <%
-                if (me.getView("right") instanceof HttpView && ((HttpView)me.getView("right")).isVisible())
-                {
-            %>
-            <!-- RIGHT -->
-            <td class="labkey-side-panel" style="min-width:240px;">
-                <img height=1 width=240 src="<%=getWebappURL("_.gif")%>"><br>
-                <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT),out); %>
-            </td>
-            <!-- /RIGHT -->
-            <%
-                }
-            %>
-        </tr>
-    </table>
+                <td align=left valign=top class=normal width="200px" height="100%" style="padding:5;">
+                    <%
+                        me.include(me.getView("moduleNav"), out);
+                    %>
+                </td>
+                <%
+                    }
+                %>
+                <td id="bodypanel" class="labkey-body-panel" style="min-width:<%=bean.getMinimumWidth()%>px;">
+                    <img height=1 width=<%=bean.getMinimumWidth()%> src="<%=getWebappURL("/_.gif")%>">
+                    <br />
+                    <!-- BODY -->
+                    <% me.include(me.getBody(),out); %>
+                    <!-- /BODY -->
+                </td>
+                <%
+                    if (me.getView("right") instanceof HttpView && ((HttpView)me.getView("right")).isVisible())
+                    {
+                %>
+                <!-- RIGHT -->
+                <td class="labkey-side-panel" style="min-width:240px;">
+                    <img height=1 width=240 src="<%=getWebappURL("_.gif")%>"><br>
+                    <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT),out); %>
+                </td>
+                <!-- /RIGHT -->
+                <%
+                    }
+                %>
+            </tr>
+        </table>
+    </div>
     <!--/content area-->
+    <div class="footer-block">
+        <%
+            me.include(me.getView("footer"), out);
+        %>
+    </div>
 </div>
 <%
     String anchor = bean.getAnchor();

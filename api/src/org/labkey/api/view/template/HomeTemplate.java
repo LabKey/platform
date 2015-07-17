@@ -17,8 +17,10 @@ package org.labkey.api.view.template;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.MultiPortalFolderType;
+import org.labkey.api.module.SimpleAction;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.HttpView;
@@ -32,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 public class HomeTemplate extends PrintTemplate
@@ -69,6 +72,7 @@ public class HomeTemplate extends PrintTemplate
 
         setBody(body);
         setView("appbar", getAppBarView(context, page));
+        setView("footer", getFooterView());
     }
 
 
@@ -115,6 +119,27 @@ public class HomeTemplate extends PrintTemplate
         return new TemplateHeaderView(upgradeMessage, moduleFailures, page);
     }
 
+    protected HttpView getFooterView()
+    {
+        Module coreModule = ModuleLoader.getInstance().getCoreModule();
+        WebPartView view = null;
+        Set<Module> modules = getContextContainer().getActiveModules();
+        for (Module module : modules)
+        {
+            if (module != coreModule)
+            {
+                view = SimpleAction.getModuleHtmlView(module, "_footer", null);
+                if (null != view)
+                    break;
+            }
+        }
+        if (null == view)
+        {
+            view = SimpleAction.getModuleHtmlView(coreModule, "_footer", null);
+        }
+        view.setFrame(FrameType.NONE);
+        return view;
+    }
 
     @Override
     public void prepareWebPart(PageConfig page)
