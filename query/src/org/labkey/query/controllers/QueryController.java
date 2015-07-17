@@ -6165,7 +6165,9 @@ public class QueryController extends SpringActionController
             // NOTE: should we add any kind of dialect tags to the importScript output?
             DbSchema sourceSchema = DbSchema.createFromMetaData(DbScope.getDbScope(form.getSourceDataSource()), form.getSourceSchema(), DbSchemaType.Bare);
             String targetSchema = StringUtils.isBlank(form.getTargetSchema()) ? form.getSourceSchema() : form.getTargetSchema();
-            String pathInScript = StringUtils.isBlank(form.getPathInScript()) ? "" : form.getPathInScript() + "/";
+            String pathInScript = StringUtils.isBlank(form.getPathInScript()) ? "" : form.getPathInScript();
+            if (!pathInScript.endsWith("/"))
+                pathInScript += "/";
             for (TableInfo table : TableSorter.sort(sourceSchema) )
             {
                 if (DatabaseTableType.TABLE.equals(table.getTableType()))
