@@ -373,7 +373,6 @@ LABKEY.vis.Geom.DataspaceBoxPlot.prototype.render = function(renderer, grid, sca
     this.shapeScale = scales.shape;
     this.sizeAes = layerAes.size ? layerAes.size : parentAes.size;
     this.sizeScale = scales.size;
-    this.pointClickFnAes = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
     this.mouseOverFnAes = layerAes.mouseOverFn ? layerAes.mouseOverFn : parentAes.mouseOverFn;
     this.mouseOutFnAes = layerAes.mouseOutFn ? layerAes.mouseOutFn : parentAes.mouseOutFn;
 
