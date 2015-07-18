@@ -309,7 +309,7 @@ public class VisualizationCDSGenerator
                 if (StringUtils.isEmpty(a))
                     a = map.get("columnName");
 
-                if (!StringUtils.isEmpty(a) && (!endsWithIgnoreCase(a, "_" + subjectColumnName) || endsWithIgnoreCase(a, "_" + sequenceNumColumnName)))
+                if (!StringUtils.isEmpty(a) && !endsWithIgnoreCase(a, "_" + subjectColumnName) && !endsWithIgnoreCase(a, "_" + sequenceNumColumnName))
                     fullAliasList.add(a);
             }
             _log.debug(list);
