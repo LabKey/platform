@@ -49,7 +49,7 @@ import java.util.TreeSet;
  * Date: 11/5/13
  * Time: 10:32 AM
  *
- * This is a datastructure used to represent an MDX query in a JSON-like way
+ * This is a data structure used to represent an MDX query in a JSON-like way
  */
 public class QubeQuery
 {

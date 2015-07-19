@@ -41,7 +41,7 @@ public class DataspaceVisualizationProvider extends StudyVisualizationProvider
     {
         List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinCols = super.getJoinColumns(factory, first, second, isGroupByQuery);
 
-        // prior to Dataspace we were always gettting data from a single study container, now we
+        // prior to Dataspace we were always getting data from a single study container, now we
         // need to include the container in the where clause to make sure
         Study firstStudy = StudyService.get().getStudy(first.getContainer());
         if (firstStudy != null && firstStudy.isDataspaceStudy())

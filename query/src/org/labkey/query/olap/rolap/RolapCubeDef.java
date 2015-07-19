@@ -213,7 +213,7 @@ public class RolapCubeDef
             Path a = j.left;
             Path b = j.right;
 
-            // is left table incldued already
+            // is left table included already
             if (!includedTables.contains(a.getParent().get(1)))
             {
                 if (includedTables.contains(b.getParent().get(1)))
