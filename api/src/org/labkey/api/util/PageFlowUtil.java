@@ -1074,14 +1074,14 @@ public class PageFlowUtil
     public static Content getViewContent(ModelAndView mv, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         final StringWriter writer = new StringWriter();
-        HttpServletResponse sresponse = new HttpServletResponseWrapper(response)
+        HttpServletResponse servletResponse = new HttpServletResponseWrapper(response)
+        {
+            public PrintWriter getWriter()
             {
-                public PrintWriter getWriter()
-                {
-                    return new PrintWriter(writer);
-                }
-            };
-        mv.getView().render(mv.getModel(), request, sresponse);
+                return new PrintWriter(writer);
+            }
+        };
+        mv.getView().render(mv.getModel(), request, servletResponse);
         String sheet = writer.toString();
         return new Content(sheet);
     }

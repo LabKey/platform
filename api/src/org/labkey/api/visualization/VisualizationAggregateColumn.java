@@ -17,7 +17,6 @@ package org.labkey.api.visualization;
 
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.view.ViewContext;
-import java.util.Map;
 
 /**
  * User: brittp

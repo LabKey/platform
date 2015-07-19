@@ -163,7 +163,7 @@ public class VisDataRequest
         List<String> filterArray = new ArrayList<>();
 
         // study specific
-        String time;                        // "DATE" or "VISIT"
+        String time = "DATE"; // "DATE" or "VISIT"
 
         public MeasureInfo()
         {

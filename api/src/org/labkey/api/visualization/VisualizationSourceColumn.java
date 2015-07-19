@@ -36,6 +36,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -58,7 +59,7 @@ public class VisualizationSourceColumn
     private Set<Object> _values = new LinkedHashSet<>();
 
 
-    public Map<String, String> toJSON(String measureName)
+    public Map<String, String> toJSON()
     {
         Map<String, String> info = new HashMap<>();
         info.put("measureName", getOriginalName());
@@ -112,16 +113,10 @@ public class VisualizationSourceColumn
             }
         }
 
+        // Consider: Builder?
         public VisualizationSourceColumn create(UserSchema schema, String queryName, String name, Boolean allowNullResults)
         {
             VisualizationSourceColumn col = new VisualizationSourceColumn(schema, queryName, name, allowNullResults, false);
-            return findOrAdd(col);
-        }
-
-        public VisualizationSourceColumn create(UserSchema schema, String queryName, String name, String alias, Boolean allowNullResults)
-        {
-            VisualizationSourceColumn col = new VisualizationSourceColumn(schema, queryName, name, allowNullResults, false);
-            col._alias = alias;
             return findOrAdd(col);
         }
 
@@ -172,17 +167,13 @@ public class VisualizationSourceColumn
         _clientAlias = measure.getAlias();
         if (values != null)
         {
-            for (int i = 0; i < values.size(); i++)
-                _values.add(values.get(i));
+            _values.addAll(values.stream().collect(Collectors.toList()));
         }
         String namedSetValue = measure.getNsvalues();
         if (namedSetValue != null)
         {
             List<String> namedSet = QueryService.get().getNamedSet(namedSetValue);
-            for (String ns : namedSet)
-            {
-                _values.add(ns);
-            }
+            _values.addAll(namedSet.stream().collect(Collectors.toList()));
         }
     }
 

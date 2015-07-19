@@ -90,22 +90,24 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
     public ArrayList<Map<String, Object>> getFieldsMetaData(Collection<DisplayColumn> displayColumns, boolean includeLookupInfo)
     {
         ArrayList<Map<String, Object>> fields = new ArrayList<>();
-        for (DisplayColumn dc : displayColumns)
-        {
-            if (dc.isQueryColumn())  // Don't put details or update columns into the field map
-            {
-                Map<String,Object> fmdata = ReportingWriter.getMetaData(dc, false, includeLookupInfo, false);
-                //if the column type is file, include an extra column for the url
-                if (dc.getColumnInfo() != null && "file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
+
+        displayColumns
+                .stream()
+                .filter(DisplayColumn::isQueryColumn) // Don't put details or update columns into the field map
+                .forEach(dc ->
                 {
-                    fmdata.put("file", true);
-                    Map<String,Object> urlmdata = getFileUrlMeta(dc);
-                    if (null != urlmdata)
-                        fields.add(urlmdata);
-                }
-                fields.add(fmdata);
-            }
-        }
+                    Map<String, Object> fieldMeta = ReportingWriter.getMetaData(dc, false, includeLookupInfo, false);
+                    //if the column type is file, include an extra column for the url
+                    if (dc.getColumnInfo() != null && "file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
+                    {
+                        fieldMeta.put("file", true);
+                        Map<String, Object> urlMeta = getFileUrlMeta(dc);
+                        if (null != urlMeta)
+                            fields.add(urlMeta);
+                    }
+                    fields.add(fieldMeta);
+                });
+
         return fields;
     }
 
@@ -134,7 +136,7 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
             row.put("links", new HashMap<>());
         }
         String url = dc.renderURL(getRenderContext());
-        if(null != url)
+        if (null != url)
         {
             Map<String,Object> urlMap = new HashMap<>();
             urlMap.put("href", url);
