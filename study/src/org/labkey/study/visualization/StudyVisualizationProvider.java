@@ -21,10 +21,13 @@ import org.json.JSONArray;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.*;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyEntity;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.Pair;
@@ -32,10 +35,15 @@ import org.labkey.api.visualization.IVisualizationSourceQuery;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationSourceColumn;
-import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.query.StudyQuerySchema;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -106,8 +114,6 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     {
         if (table instanceof DatasetTable)
         {
-            Dataset dataset = ((DatasetTable)table).getDataset();
-
             List<String> alternateKeys = new ArrayList<>();
             List<ColumnInfo> cols = table.getAlternateKeyColumns();
             for (ColumnInfo col: cols)
@@ -145,7 +151,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
                 sql.append(".");
                 sql.append(col.getSQLAlias());
                 if (null != col.getLabel())
-                    sql.append(" @title='" + StringUtils.replace(col.getLabel(),"'","''") + "'");
+                    sql.append(" @title='").append(StringUtils.replace(col.getLabel(), "'", "''")).append("'");
             }
         }
     }
@@ -225,16 +231,19 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
                     table.getColumnNameSet().contains(StudyService.get().getSubjectColumnName(query.getContainer())) &&
                     table.getColumnNameSet().contains(StudyService.get().getSubjectVisitColumnName(query.getContainer()));
         }
-        else
-            return super.isValid(table, query, type);
+
+        return super.isValid(table, query, type);
     }
 
     protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(Map<QueryDefinition, TableInfo> queries, ColumnMatchType type)
     {
         Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> matches = super.getMatchingColumns(queries, type);
+        StudyService.Service studyService = StudyService.get();
+        final Container schemaContainer = getSchema().getContainer();
+
         if (type == ColumnMatchType.DATETIME_COLS)
         {
-            Study study = StudyService.get().getStudy(getSchema().getContainer());
+            Study study = studyService.getStudy(schemaContainer);
             // for visit based studies, we will look for the participantVisit.VisitDate column and
             // if found, return that as a date measure
             if (study != null && study.getTimepointType().isVisitBased())
@@ -242,7 +251,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
                 for (Map.Entry<QueryDefinition, TableInfo> entry : queries.entrySet())
                 {
                     QueryDefinition queryDefinition = entry.getKey();
-                    String visitColName = StudyService.get().getSubjectVisitColumnName(getSchema().getContainer());
+                    String visitColName = studyService.getSubjectVisitColumnName(schemaContainer);
                     ColumnInfo visitCol = entry.getValue().getColumn(visitColName);
                     if (visitCol != null)
                     {
@@ -263,8 +272,8 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         else if (type == ColumnMatchType.All_VISIBLE)
         {
             List<Pair<FieldKey, ColumnInfo>> colsToRemove = new ArrayList<>();
-            String subjectColName = StudyService.get().getSubjectColumnName(getSchema().getContainer());
-            String visitColName = StudyService.get().getSubjectVisitColumnName(getSchema().getContainer());
+            String subjectColName = studyService.getSubjectColumnName(schemaContainer);
+            String visitColName = studyService.getSubjectVisitColumnName(schemaContainer);
 
             // for studies we want to exclude the subject and visit columns
             for (Pair<FieldKey, ColumnInfo> pair : matches.keySet())
@@ -275,8 +284,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
                     colsToRemove.add(pair);
             }
 
-            for (Pair<FieldKey, ColumnInfo> pair : colsToRemove)
-                matches.remove(pair);
+            colsToRemove.forEach(matches::remove);
         }
         return matches;
     }
@@ -297,22 +305,21 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         Study study = getSchema().getStudy();
         if (study != null)
         {
-            for (Dataset ds : study.getDatasets())
-            {
-                if (ds.isDemographicData() && ds.isShowByDefault())
-                {
-                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(ds.getName(), ColumnMatchType.DATETIME_COLS, false);
-                    if (entry != null)
+            study.getDatasets()
+                    .stream()
+                    .filter(Dataset::isDemographicData)
+                    .filter(Dataset::isShowByDefault)
+                    .forEach(ds ->
                     {
-                        QueryDefinition query = entry.getKey();
-                        for (ColumnInfo col : query.getColumns(null, entry.getValue()))
+                        Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(ds.getName(), ColumnMatchType.DATETIME_COLS, false);
+                        if (entry != null)
                         {
-                            if (col != null && ColumnMatchType.DATETIME_COLS.match(col))
-                               measures.put(Pair.of(col.getFieldKey(), col), query);
+                            QueryDefinition query = entry.getKey();
+                            query.getColumns(null, entry.getValue()).stream()
+                                    .filter(col -> col != null && ColumnMatchType.DATETIME_COLS.match(col))
+                                    .forEach(col -> measures.put(Pair.of(col.getFieldKey(), col), query));
                         }
-                    }
-                }
-            }
+                    });
         }
         return measures;
     }
@@ -327,8 +334,8 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             addDatasetQueryDefinitions(study, queries);
             return queries;
         }
-        else
-            return super.getQueryDefinitions(queryType, matchType);
+
+        return super.getQueryDefinitions(queryType, matchType);
     }
 
     @Override
@@ -363,25 +370,25 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             }
             return getMatchingColumns(queries, showHidden ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE);
         }
-        else
-            return super.getAllColumns(queryType, showHidden);
+
+        return super.getAllColumns(queryType, showHidden);
     }
 
     private void addDatasetQueryDefinitions(Study study, Map<QueryDefinition, TableInfo> queries)
     {
         if (study != null)
         {
-            for (Dataset ds : study.getDatasets())
-            {
-                if (ds.isShowByDefault())
-                {
-                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(ds.getName(), ColumnMatchType.All_VISIBLE, false);
-                    if (entry != null)
+            study.getDatasets()
+                    .stream()
+                    .filter(StudyEntity::isShowByDefault)
+                    .forEach(ds ->
                     {
-                        queries.put(entry.getKey(), entry.getValue());
-                    }
-                }
-            }
+                        Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(ds.getName(), ColumnMatchType.All_VISIBLE, false);
+                        if (entry != null)
+                        {
+                            queries.put(entry.getKey(), entry.getValue());
+                        }
+                    });
         }
     }
 
@@ -395,16 +402,17 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         String selectSql = "SELECT " + targetColumn + " as label, COUNT(DISTINCT " + distinctColumn + ") AS value FROM StudyData ";
         selectSql += getMemberWhereClause(members, distinctColumn);
 
-        String innerSql = "", sep = "";
-        if (members != null && sources.length() > 0)
-            innerSql = "AND ";
-        else if (sources.length() > 0)
-            innerSql = "WHERE ";
+        String innerSql;
+        String sep = "";
 
         if (sources.length() > 0)
         {
+            if (members != null)
+                innerSql = "AND ";
+            else
+                innerSql = "WHERE ";
+
             innerSql += targetColumn + " IN (";
-            sep = "";
             for (int i = 0; i < sources.length(); i++)
             {
                 innerSql += sep + toSqlString(sources.getString(i));
@@ -437,7 +445,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             }
             else
             {
-                // empty members array means that there are no patients that match the fitlers, so force empty results
+                // empty members array means that there are no patients that match the filters, so force empty results
                 sql += " WHERE 1=0 ";
             }
         }

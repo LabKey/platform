@@ -41,6 +41,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -138,7 +139,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         return _requireLeftJoin;
     }
 
-    // This can only be toggeled based on the set of columns/aggregates configurations, thus it is private
+    // This can only be toggled based on the set of columns/aggregates configurations, thus it is private
     private void setRequireLeftJoin(boolean requireLeftJoin)
     {
         _requireLeftJoin = requireLeftJoin;
@@ -242,9 +243,9 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         }
 
         @Override
-        public Map<String, String> toJSON(String measureName)
+        public Map<String, String> toJSON()
         {
-            Map<String, String> result = super.toJSON(measureName);
+            Map<String, String> result = super.toJSON();
             result.put("pivotValue", _pivotValue);
             return result;
         }
@@ -312,7 +313,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         ensureSameQuery(pivot);
         if (_pivot != null)
         {
-// SEE 12369
+            // See 12369
             if (_pivot.equals(pivot))
                 return;
             throw new IllegalArgumentException("Can't pivot a single dataset by more than one column.  Attempt to pivot " +
@@ -470,8 +471,8 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             pivotClause.append("\n");
             return pivotClause.toString();
         }
-        else
-            return "";
+
+        return "";
     }
 
     /**

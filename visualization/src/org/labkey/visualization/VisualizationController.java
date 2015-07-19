@@ -50,7 +50,6 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -136,7 +135,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /*
  * User: brittp
@@ -646,11 +644,11 @@ public class VisualizationController extends SpringActionController
 
             // Note: extra properties can only be gathered after the query has executed, since execution populates the name maps.
             Map<String, Object> extraProperties = new HashMap<>();
-            extraProperties.put("measureToColumn", sqlGenerator.getColumnMapping());
             extraProperties.put("columnAliases", sqlGenerator.getColumnAliases());
             sqlGenerator.getPrimarySchema().createVisualizationProvider().addExtraResponseProperties(extraProperties);
+
             String filterDescription = sqlGenerator.getFilterDescription();
-            if (filterDescription != null && filterDescription.length() > 0)
+            if (filterDescription.length() > 0)
                 extraProperties.put("filterDescription", filterDescription);
             response.setExtraReturnProperties(extraProperties);
 
@@ -753,8 +751,7 @@ public class VisualizationController extends SpringActionController
             HttpServletRequest request = getViewContext().getRequest();
             if (!StringUtils.isEmpty(request.getParameter("title")))
                 return request.getParameter("title");
-            else
-                return "visualization";
+            return "visualization";
         }
     }
 

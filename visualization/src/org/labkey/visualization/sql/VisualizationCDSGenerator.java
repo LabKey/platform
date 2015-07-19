@@ -2,8 +2,6 @@ package org.labkey.visualization.sql;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import static org.labkey.api.action.SpringActionController.ERROR_MSG;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
@@ -38,15 +36,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
-import static org.apache.commons.lang3.StringUtils.endsWithIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.defaultString;
+import static org.apache.commons.lang3.StringUtils.endsWithIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 /**
  * Created by matthew on 7/4/15.
  *
- * This class is a simplified versio of VisualizationSQLGenerator for CDS queries.  The ideas here may migrate to a new
- * implementaiton of visualization-getData.api.
+ * This class is a simplified version of VisualizationSQLGenerator for CDS queries.  The ideas here may migrate to a new
+ * implementation of visualization-getData.api.
  *
  * NOTE: initial prototype just wraps VisualizationSQLGenerator, but should probably generate SQL based on underlying
  * 'model' similar to who Rolap generates SQL from a model built from mondrian schema xml file.
@@ -58,12 +57,8 @@ public class VisualizationCDSGenerator
     ViewContext _viewContext;
     VisDataRequest _request;
     UserSchema _primarySchema = null;
+    List<Map<String, String>> _columnAliases;
 
-
-    public VisualizationCDSGenerator()
-    {
-
-    }
 
     public VisualizationCDSGenerator(ViewContext context, VisDataRequest req)
     {
@@ -121,17 +116,9 @@ public class VisualizationCDSGenerator
     }
 
 
-    public Map<String, String> getColumnMapping()
-    {
-        // TODO
-        return new HashMap<>();
-    }
-
-
     public List<Map<String, String>> getColumnAliases()
     {
-        // TODO
-        return new ArrayList<>();
+        return _columnAliases;
     }
 
 
@@ -183,28 +170,29 @@ public class VisualizationCDSGenerator
             errors.reject(ERROR_MSG, "NYI - filterUrl");
 
         // disallow pivot for now (might support for some properties eventually, e.g. products?)
-        for (VisDataRequest.MeasureInfo mi : _request.getMeasures())
-        {
-            if (null != mi.getDimension())
-                errors.reject(ERROR_MSG, "NYI - pivot");
-        }
+        _request.getMeasures().stream()
+                .filter(mi -> null != mi.getDimension())
+                .forEach(mi -> errors.reject(ERROR_MSG, "NYI - pivot"));
+
         // disallow grouping on dataset columns
         if (null != _request.getGroupBys())
-            for (VisDataRequest.Measure m : _request.getGroupBys())
-            {
-                if (datasetTablesSet.contains(new Path(m.getSchemaName(), m.getQueryName())))
-                    errors.reject(ERROR_MSG, "NYI - group on dataset column");
-            }
+        {
+            _request.getGroupBys().stream()
+                    .filter(m -> datasetTablesSet.contains(new Path(m.getSchemaName(), m.getQueryName())))
+                    .forEach(m -> errors.reject(ERROR_MSG, "NYI - group on dataset column"));
+        }
+
         if (errors.hasErrors())
             return null;
-
 
         if (datasetTablesSet.size() <= 1 || _request.isMetaDataOnly())
         {
             VisualizationSQLGenerator sqlGenerator = new VisualizationSQLGenerator(getViewContext(), _request);
-            String sql;
-            sql = sqlGenerator.getSQL();
-            return sql;
+
+            // use the default columnAliases
+            _columnAliases = sqlGenerator.getColumnAliases();
+
+            return sqlGenerator.getSQL();
         }
 
         List<VisualizationSQLGenerator> generators = new ArrayList<>();
@@ -220,7 +208,7 @@ public class VisualizationCDSGenerator
             String datasetQueryName = datasetPath.getName();
             String datasetSchemaName = datasetPath.getParent().getName();
 
-            Set<Path> blacklist = new HashSet<Path>(datasetTablesSet);
+            Set<Path> blacklist = new HashSet<>(datasetTablesSet);
             blacklist.remove(datasetPath);
             VisDataRequest subrequest = new VisDataRequest();
 
@@ -240,9 +228,9 @@ public class VisualizationCDSGenerator
                 boolean isDatasetMeasure = equalsIgnoreCase(m.getSchemaName(), datasetSchemaName) && equalsIgnoreCase(m.getQueryName(), datasetQueryName);
                 if (isDatasetMeasure)
                 {
-                    if (equalsIgnoreCase(mi.getMeasure().getName(),subjectColumnName))
+                    if (equalsIgnoreCase(m.getName(), subjectColumnName))
                         participant = mi;
-                    else if (equalsIgnoreCase(mi.getMeasure().getName(), sequenceNumColumnName))
+                    else if (equalsIgnoreCase(m.getName(), sequenceNumColumnName))
                         sequencenum = mi;
                     else
                         datasetMeasures.add(mi);
@@ -254,18 +242,23 @@ public class VisualizationCDSGenerator
                 }
             }
 
-            if (null==participant)
+            // Default to 'date' (same as Measure), but align ourselves with the measures if any are requested
+            String timeType = "date";
+            if (!datasetMeasures.isEmpty())
+                timeType = datasetMeasures.get(0).getTime();
+
+            if (null == participant)
             {
                 VisDataRequest.Measure subject = new VisDataRequest.Measure(datasetSchemaName, datasetQueryName, subjectColumnName)
                         .setAlias((datasetSchemaName + "_" + datasetQueryName + "_" + subjectColumnName).toLowerCase());
-                participant = new VisDataRequest.MeasureInfo(subject).setTime("date");
+                participant = new VisDataRequest.MeasureInfo(subject).setTime(timeType);
             }
 
-            if (null==sequencenum)
+            if (null == sequencenum)
             {
                 VisDataRequest.Measure seqnum = new VisDataRequest.Measure(datasetSchemaName, datasetQueryName, sequenceNumColumnName)
                         .setAlias((datasetSchemaName + "_" + datasetQueryName + "_" + sequenceNumColumnName).toLowerCase());
-                sequencenum = new VisDataRequest.MeasureInfo(seqnum).setTime("date");
+                sequencenum = new VisDataRequest.MeasureInfo(seqnum).setTime(timeType);
             }
 
             // put the datasetMeasures first, so we can LEFT OUTER JOIN _starting_ from this dataset
@@ -274,12 +267,9 @@ public class VisualizationCDSGenerator
             subrequest.addAll(datasetMeasures);
             subrequest.addAll(joinedMeasures);
 
-            for (VisDataRequest.Measure m : _request.getSorts())
-            {
-                if (blacklist.contains(new Path(m.getSchemaName(), m.getQueryName())))
-                    continue;
-                subrequest.addSort(m);
-            }
+            _request.getSorts().stream()
+                    .filter(m -> !blacklist.contains(new Path(m.getSchemaName(), m.getQueryName())))
+                    .forEach(subrequest::addSort);
 
             VisualizationSQLGenerator generator = new VisualizationSQLGenerator(getViewContext(), subrequest);
             generators.add(generator);
@@ -300,6 +290,7 @@ public class VisualizationCDSGenerator
         // now comes the annoying part
         // we can get the SQL for each part of the union, but we have to rearrange columns to line up, and pad with NULLs
         LinkedHashSet<String> fullAliasList = new LinkedHashSet<>();
+        List<Map<String, String>> columnAliases = new ArrayList<>();
         for (VisualizationSQLGenerator generator : generators)
         {
             List<Map<String, String>> list = generator.getColumnAliases();
@@ -310,13 +301,23 @@ public class VisualizationCDSGenerator
                     a = map.get("columnName");
 
                 if (!StringUtils.isEmpty(a) && !endsWithIgnoreCase(a, "_" + subjectColumnName) && !endsWithIgnoreCase(a, "_" + sequenceNumColumnName))
+                {
                     fullAliasList.add(a);
+                    columnAliases.add(map);
+                }
             }
             _log.debug(list);
         }
+
         StringBuilder fullSQL = new StringBuilder();
         String union = "";
-        for (int i=0 ; i<generators.size() ; i++)
+
+        // TODO: This doesn't seem right...shouldn't it be the actual third key's name?
+        String datasetTableColumnName = "Dataset";
+        String URI = "http://cpas.labkey.com/Study#";
+        List<Map<String, String>> keyColumnAlias = new ArrayList<>();
+
+        for (int i=0; i < generators.size(); i++)
         {
             VisualizationSQLGenerator generator = generators.get(i);
             String participantColumnAlias = null;
@@ -340,9 +341,29 @@ public class VisualizationCDSGenerator
 
             fullSQL.append(union); union = "\n  UNION ALL\n";
             fullSQL.append("SELECT ");
-            fullSQL.append(defaultString(participantColumnAlias,"NULL")).append(" AS \"http://cpas.labkey.com/Study#" + subjectColumnName + "\"").append(", ");
-            fullSQL.append(defaultString(sequenceColumnAlias, "NULL")).append(" AS \"http://cpas.labkey.com/Study#" + sequenceNumColumnName + "\"").append(", ");
-            fullSQL.append(string_quote(datasetTables[i].getName())).append(" AS \"http://cpas.labkey.com/Study#Dataset\"");
+
+            // subject column
+            fullSQL.append(defaultString(participantColumnAlias, "NULL")).append(" AS \"").append(URI).append(subjectColumnName).append("\"").append(", ");
+
+            // sequenceNum column
+            fullSQL.append(defaultString(sequenceColumnAlias, "NULL")).append(" AS \"").append(URI).append(sequenceNumColumnName).append("\"").append(", ");
+
+            // dataset name column
+            fullSQL.append(string_quote(datasetTables[i].getName())).append(" AS \"").append(URI).append(datasetTableColumnName).append("\"");
+
+            // only need to gather alias information for the initial generator
+            if (keyColumnAlias.isEmpty())
+            {
+                // subject column
+                keyColumnAlias.add(generateColumnAlias(URI + subjectColumnName, subjectColumnName));
+
+                // sequenceNum column
+                keyColumnAlias.add(generateColumnAlias(URI + sequenceNumColumnName, sequenceNumColumnName));
+
+                // dataset name column
+                keyColumnAlias.add(generateColumnAlias(URI + datasetTableColumnName, datasetTableColumnName));
+            }
+
             for (String alias : fullAliasList)
             {
                 if (aliasSet.contains(alias))
@@ -352,15 +373,20 @@ public class VisualizationCDSGenerator
             }
             fullSQL.append(" FROM (").append(generatedSql.get(i)).append(") AS _").append(i);
         }
+
         if (_log.isDebugEnabled())
         {
             _log.debug(fullSQL.toString());
-            try (ResultSet rs = QueryService.get().select(schema.getSchema("study"), fullSQL.toString());)
+            try (ResultSet rs = QueryService.get().select(schema.getSchema("study"), fullSQL.toString()))
             {
                 ResultSetUtil.logData(rs, _log);
                 _log.debug("\n\n");
             }
         }
+
+        // key columns should display first in the columnAlias list
+        keyColumnAlias.addAll(columnAliases);
+        _columnAliases = keyColumnAlias;
 
         // TODO stash metadata here...
 
@@ -368,6 +394,17 @@ public class VisualizationCDSGenerator
     }
 
 
+    private static Map<String, String> generateColumnAlias(String columnName, String measureName)
+    {
+        Map<String, String> colAlias = new HashMap<>();
+
+        colAlias.put("columnName", columnName);
+        colAlias.put("measureName", measureName);
+
+        return colAlias;
+    }
+
+    // TODO: Doesn't this method exist elsewhere?
     static private String string_quote(String s)
     {
         if (s.contains("'"))

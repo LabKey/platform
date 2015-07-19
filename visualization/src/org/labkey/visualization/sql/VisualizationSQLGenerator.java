@@ -28,7 +28,6 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -61,6 +60,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -144,11 +144,11 @@ public class VisualizationSQLGenerator implements HasViewContext
     }
 
 
-    public void fromVisDataRequest(VisDataRequest visreq)
+    public void fromVisDataRequest(VisDataRequest visDataRequest)
     {
         try
         {
-            _fromVisDataRequest(visreq);
+            _fromVisDataRequest(visDataRequest);
         }
         catch (IllegalArgumentException x)
         {
@@ -157,12 +157,12 @@ public class VisualizationSQLGenerator implements HasViewContext
         }
     }
 
-    private void _fromVisDataRequest(VisDataRequest visreq)
+    private void _fromVisDataRequest(VisDataRequest visDataRequest)
     {
-        _metaDataOnly = visreq.isMetaDataOnly();
-        _joinToFirst = visreq.isJoinToFirst();
+        _metaDataOnly = visDataRequest.isMetaDataOnly();
+        _joinToFirst = visDataRequest.isJoinToFirst();
 
-        List<VisDataRequest.MeasureInfo> measureInfos = visreq.getMeasures();
+        List<VisDataRequest.MeasureInfo> measureInfos = visDataRequest.getMeasures();
         if (measureInfos != null && !measureInfos.isEmpty())
         {
             VisualizationSourceQuery previous = null;
@@ -200,11 +200,11 @@ public class VisualizationSQLGenerator implements HasViewContext
 
                 String timeAxis = measureInfo.getTime();
                 VisualizationProvider.ChartType type;
-                if (timeAxis instanceof String)
+                if (timeAxis != null)
                 {
-                    if ("date".equalsIgnoreCase((String) timeAxis))
+                    if ("date".equalsIgnoreCase(timeAxis))
                         type = VisualizationProvider.ChartType.TIME_DATEBASED;
-                    else if ("visit".equalsIgnoreCase((String) timeAxis))
+                    else if ("visit".equalsIgnoreCase(timeAxis))
                         type = VisualizationProvider.ChartType.TIME_VISITBASED;
                     else
                         throw new IllegalArgumentException("Unknown time value: " + timeAxis);
@@ -291,33 +291,30 @@ public class VisualizationSQLGenerator implements HasViewContext
                         break;
                 }
 
-                List<String> filters = measureInfo.getFilterArray();
-                if (!filters.isEmpty())
+                for (String q : measureInfo.getFilterArray())
                 {
-                    for (int i = 0; i < filters.size(); i++)
+                    if (null != q)
                     {
-                        String q = filters.get(i);
-                        if (null != q)
+                        SimpleFilter filter = SimpleFilter.createFilterFromParameter(q);
+                        if (filter != null)
                         {
-                            SimpleFilter filter = SimpleFilter.createFilterFromParameter(q);
-                            if (filter != null)
-                            {
-                                FieldKey key = FieldKey.fromParts(newInterval != null ? newInterval.getFullAlias() : measureCol.getAlias());
+                            FieldKey key = FieldKey.fromParts(newInterval != null ? newInterval.getFullAlias() : measureCol.getAlias());
 
-                                // issue 21601: can't apply pivot query filters to outer query, they should be applied within the pivot query
-                                if (query.getPivot() != null)
+                            // issue 21601: can't apply pivot query filters to outer query, they should be applied within the pivot query
+                            if (query.getPivot() != null)
+                            {
+                                filter = SimpleFilter.createFilterFromParameter(q);
+                                if (filter != null)
+                                    query.addFilter(filter);
+                            }
+                            else
+                            {
+                                if (!_allFilters.containsKey(key))
                                 {
-                                    query.addFilter(SimpleFilter.createFilterFromParameter(q));
+                                    _allFilters.put(key, new LinkedHashSet<>());
+                                    _filterColTypes.put(key, measureCol.getColumnInfo());
                                 }
-                                else
-                                {
-                                    if (!_allFilters.containsKey(key))
-                                    {
-                                        _allFilters.put(key, new LinkedHashSet<String>());
-                                        _filterColTypes.put(key, measureCol.getColumnInfo());
-                                    }
-                                    _allFilters.get(key).add(q);
-                                }
+                                _allFilters.get(key).add(q);
                             }
                         }
                     }
@@ -330,7 +327,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             }
         }
 
-        List<VisDataRequest.Measure> sorts = visreq.getSorts();
+        List<VisDataRequest.Measure> sorts = visDataRequest.getSorts();
         if (null != sorts && !sorts.isEmpty())
         {
             for (VisDataRequest.Measure sortInfo : sorts)
@@ -340,11 +337,11 @@ public class VisualizationSQLGenerator implements HasViewContext
             }
         }
 
-        String filterUrlString = visreq.getFilterUrl();
+        String filterUrlString = visDataRequest.getFilterUrl();
         if (filterUrlString != null)
         {
-            ActionURL filterUrl = new ActionURL((String) filterUrlString);
-            String queryName = (String) visreq.getFilterQuery();
+            ActionURL filterUrl = new ActionURL(filterUrlString);
+            String queryName = visDataRequest.getFilterQuery();
             VisualizationSourceQuery query = _sourceQueries.get(queryName);
             if (query != null)
             {
@@ -353,18 +350,17 @@ public class VisualizationSQLGenerator implements HasViewContext
             }
         }
 
-        List<VisDataRequest.Measure> groupBys = visreq.getGroupBys();
+        List<VisDataRequest.Measure> groupBys = visDataRequest.getGroupBys();
         if (groupBys != null)
         {
-            for (VisDataRequest.Measure additionalSelectInfo : groupBys)
-            {
-                _groupBys.add(_columnFactory.create(getViewContext(), additionalSelectInfo));
-            }
+            _groupBys.addAll(groupBys.stream()
+                    .map(additionalSelectInfo -> _columnFactory.create(getViewContext(), additionalSelectInfo))
+                    .collect(Collectors.toList()));
         }
 
         ensureJoinColumns();
 
-        Integer limit = visreq.getLimit();
+        Integer limit = visDataRequest.getLimit();
         if (limit != null)
         {
             _limit = limit;
@@ -434,8 +430,6 @@ public class VisualizationSQLGenerator implements HasViewContext
 
     public String getSQL() throws SQLGenerationException
     {
-        SqlDialect dialect = getPrimarySchema().getDbSchema().getSqlDialect();
-
         Set<IVisualizationSourceQuery> outerJoinQueries = new LinkedHashSet<>();
         Set<VisualizationSourceQuery> innerJoinQueries = new LinkedHashSet<>();
         for (VisualizationSourceQuery query : _sourceQueries.values())
@@ -480,10 +474,7 @@ public class VisualizationSQLGenerator implements HasViewContext
 
         if (_limit != null)
         {
-            StringBuilder sb = new StringBuilder(sql);
-
-            sb.append(" LIMIT ").append(_limit);
-            sql = sb.toString();
+            sql = sql + " LIMIT " + _limit;
         }
 
         return sql;
@@ -532,17 +523,15 @@ public class VisualizationSQLGenerator implements HasViewContext
                 for (VisualizationSourceColumn col : entry.getValue())
                 {
                     String alias = col.getAlias();
-                    aggregatedSQL.append(", AVG(x.\"" + alias + "\") AS \"" + alias + "\"");
-                    aggregatedSQL.append(", STDDEV(x.\"" + alias + "\") AS \"" + alias + "_STDDEV\"");
-                    aggregatedSQL.append(", STDERR(x.\"" + alias + "\") AS \"" + alias + "_STDERR\"");
-                    aggregatedSQL.append("\n");
+                    aggregatedSQL.append(", AVG(x.\"").append(alias).append("\") AS \"").append(alias).append("\"")
+                            .append(", STDDEV(x.\"").append(alias).append("\") AS \"").append(alias).append("_STDDEV\"")
+                            .append(", STDERR(x.\"").append(alias).append("\") AS \"").append(alias).append("_STDERR\"")
+                            .append("\n");
                 }
             }
         }
 
-        aggregatedSQL.append("\n FROM (");
-        aggregatedSQL.append(sql);
-        aggregatedSQL.append(") x");
+        aggregatedSQL.append("\n FROM (").append(sql).append(") x");
 
         for (VisualizationSourceQuery groupByQuery : groupByQueries)
         {
@@ -609,7 +598,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                                    String joinOperator, boolean includeOrderBys, boolean hasRowLimit, boolean isOuterSelect) throws SQLGenerationException
     {
         // Reorder the queries in case one can join to the other, but not the reverse. For example,
-        // we can join from a standard particiapnt visit/date dataset to a demographic dataset, but not the reverse.
+        // we can join from a standard participant visit/date dataset to a demographic dataset, but not the reverse.
         List<IVisualizationSourceQuery> reorderedQueries = new ArrayList<>();
         for (IVisualizationSourceQuery query : queries)
         {
@@ -692,7 +681,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             {
                 VisualizationSourceColumn col = (VisualizationSourceColumn)pickFirst(selectAliases);
                 String label = col.getLabel();
-                selectAlias = col.getSQLAlias() + (null==label ? " @preservetitle" : " @title='" + StringUtils.replace(label,"'", "''") + "'");
+                selectAlias = col.getSQLAlias() + (null == label ? " @preservetitle" : " @title='" + StringUtils.replace(label,"'", "''") + "'");
                 if (col.isHidden())
                     selectAlias += " @hidden";
 
@@ -704,12 +693,12 @@ public class VisualizationSQLGenerator implements HasViewContext
             sep = ",\n\t";
         }
 
-        for (int i = 0, intervalsSize = intervals.size(); i < intervalsSize; i++)
+        int intervalsSize = intervals.size();
+        for (VisualizationIntervalColumn interval : intervals)
         {
-            VisualizationIntervalColumn interval = intervals.get(i);
             // if the end date has multiple aliases, set it to be the first
             Set<VisualizationSourceColumn> intervalAliases = allAliases.get(interval.getEndCol().getOriginalName());
-            if (intervalAliases != null && intervalAliases.size() > 1)
+            if (intervalAliases != null && intervalsSize > 1)
             {
                 interval.getEndCol().setOtherAlias(factory.getByAlias(intervalAliases.iterator().next().getAlias()).getAlias());
             }
@@ -921,15 +910,38 @@ public class VisualizationSQLGenerator implements HasViewContext
         throw new IllegalArgumentException("At least one column should have a schema");
     }
 
+
+//    public List<VisualizationSourceColumn> getColumns()
+//    {
+//        Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<>(_sourceQueries.values());
+//        Map<String, Set<VisualizationSourceColumn>> allAliases = getColumnMapping(_columnFactory, queries);
+//        Set<VisualizationSourceColumn> result = new LinkedHashSet<>();
+//
+//        // The default column mapping references the first available valid alias:
+//        for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
+//        {
+//            for (VisualizationSourceColumn col : entry.getValue())
+//            {
+//                VisualizationProvider provider = getVisualizationProvider(col.getSchemaName());
+//                if (!provider.isJoinColumn(col, getViewContext().getContainer()))
+//                    result.add(col);
+//            }
+//        }
+//
+//        return new ArrayList<>(result);
+//    }
+
+
     public List<Map<String, String>> getColumnAliases()
     {
-        Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<IVisualizationSourceQuery>(_sourceQueries.values());
+        Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<>(_sourceQueries.values());
         Map<String, Set<VisualizationSourceColumn>> allAliases = getColumnMapping(_columnFactory, queries);
         Set<Map<String, String>> result = new LinkedHashSet<>();
+
         // The default column mapping references the first available valid alias:
         for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
         {
-            result.add(entry.getValue().iterator().next().toJSON(entry.getKey()));
+            result.add(entry.getValue().iterator().next().toJSON());
 
             if (entry.getValue().size() > 1)
             {
@@ -937,7 +949,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 {
                     VisualizationProvider provider = getVisualizationProvider(select.getSchemaName());
                     if (!provider.isJoinColumn(select, getViewContext().getContainer()))
-                        result.add(select.toJSON(select.getAlias()));
+                        result.add(select.toJSON());
                 }
             }
         }
@@ -945,16 +957,17 @@ public class VisualizationSQLGenerator implements HasViewContext
         return new ArrayList<>(result);
     }
 
-    @Deprecated
     /**
      * This method and its usage should go away as soon as the client has been migrated to use the columnAliases JSON
      * values, since they contain everything this mapping does and more.
      */
+    @Deprecated
     public Map<String, String> getColumnMapping()
     {
-        Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<IVisualizationSourceQuery>(_sourceQueries.values());
+        Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<>(_sourceQueries.values());
         Map<String, Set<VisualizationSourceColumn>> allAliases = getColumnMapping(_columnFactory, queries);
         Map<String, String> colMap = new LinkedHashMap<>();
+
         // The default column mapping references the first available valid alias:
         for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
         {
@@ -970,30 +983,6 @@ public class VisualizationSQLGenerator implements HasViewContext
                 }
             }
         }
-
-        /*
-        // Now that we have the full set of columns, we can take a pass through to eliminate the columns on the right
-        // side of join clauses, since we know the columns contain duplicate data. We leave a key in the column map
-        // for the originally requested column name, but replace the value column, so the requestor can use whichever
-        // column name they like to find the results.
-        Map<String, String> selectAliasRemapping = new HashMap<String, String>();
-        for (IVisualizationSourceQuery query : queries)
-        {
-            if (query.getJoinConditions() != null)
-            {
-                for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : query.getJoinConditions())
-                    selectAliasRemapping.put(join.getKey().getAlias(), join.getValue().getAlias());
-            }
-        }
-
-        for (Map.Entry<String, String> mapping : colMap.entrySet())
-        {
-            String originalAlias = mapping.getValue();
-            String remappedAlias = selectAliasRemapping.get(originalAlias);
-            if (remappedAlias != null)
-                mapping.setValue(remappedAlias);
-        }
-        */
 
         return colMap;
     }
@@ -1247,7 +1236,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             q.addGroupBy(gender.getMeasure());
             try (ResultsImpl r = (ResultsImpl)getResults(q))
             {
-                // this is a surprise! we're implicitly groupoing by participant,visit as well as gender
+                // this is a surprise! we're implicitly grouping by participant,visit as well as gender
                 assertTrue(48 == r.getSize());        // Female, female, Male, male, null
                 assertEquals(8, r.getMetaData().getColumnCount());  ;  // gender, count(*), avg(), stddev(), stderr()
             }
