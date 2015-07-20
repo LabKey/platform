@@ -2134,6 +2134,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('x', xAcc).attr('y', yAcc)
                 .text(function(d) { return d.count; });
 
+        if (geom.clickFn) {
+            barWrappers.on('click', function(data) {
+                geom.clickFn(d3.event, data, layer);
+            });
+        }
+
         // add the bars and styling for the totals
         if (geom.showCumulativeTotals)
         {

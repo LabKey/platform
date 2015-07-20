@@ -399,7 +399,7 @@ LABKEY.vis.Geom.BarPlot = function(config){
     if(!config){
         config = {};
     }
-
+    this.clickFn = config.clickFn;
     this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
     this.colorTotal = ('colorTotal' in config && config.colorTotal != null && config.colorTotal != undefined) ? config.colorTotal : '#000000';
     this.fill = ('fill' in config && config.fill != null && config.fill != undefined) ? config.fill : '#c0c0c0';
