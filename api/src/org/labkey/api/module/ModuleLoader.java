@@ -75,6 +75,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.naming.Binding;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.Reference;
@@ -909,6 +910,10 @@ public class ModuleLoader implements Filter
                 dataSource = (DataSource)envCtx.lookup("jdbc/" + dsName);
                 break;
             }
+            catch (NameNotFoundException e)
+            {
+                // Name not found is fine (for now); keep looping through alternative names
+            }
             catch (NamingException e)
             {
                 String message = e.getMessage();
@@ -947,7 +952,7 @@ public class ModuleLoader implements Filter
                     break;
                 }
 
-                // Ignore any other NamingException... keep trying names until we find one defined.
+                throw new ConfigurationException("Failed to load DataSource \"" + dsName + "\" defined in labkey.xml.", e);
             }
         }
 

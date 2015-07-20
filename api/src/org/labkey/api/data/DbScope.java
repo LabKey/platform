@@ -723,6 +723,9 @@ public class DbScope
             throw new ConfigurationException("Can't create a database connection to " + _dataSource.toString(), e);
         }
 
+        if (!conn.getAutoCommit())
+            throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
+
         //
         // Handle one time per-connection setup
         // relies on pool implementation reusing same connection/wrapper instances
