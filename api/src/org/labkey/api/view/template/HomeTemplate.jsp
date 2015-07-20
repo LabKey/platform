@@ -163,7 +163,10 @@
     <!--/content area-->
     <div class="footer-block">
         <%
-            me.include(me.getView("footer"), out);
+            if (null != me.getView("footer"))
+            {
+                me.include(me.getView("footer"),out);
+            }
         %>
     </div>
 </div>
