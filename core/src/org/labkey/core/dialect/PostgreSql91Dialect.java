@@ -1599,9 +1599,8 @@ public class PostgreSql91Dialect extends SqlDialect
         }
         else
         {
-           // TODO: Temporary check to track down #21294
             if (Table.isSelect(sql.getSQL()) && !scope.isTransactionActive() && !connection.getAutoCommit())
-                throw new IllegalStateException("Why am I in a transaction?");
+                throw new IllegalStateException("A database connection is in a bad state: it's not in a transaction but auto-commit is false. This could indicate a configuration problem with the database connection pool.");
         }
     }
 
