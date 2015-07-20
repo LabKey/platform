@@ -37,6 +37,7 @@ import org.olap4j.metadata.Property;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collection;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -53,6 +54,7 @@ public class Olap4Js
     {
         boolean _includeLevelMembers = false;
         boolean _includeMemberProperties = true;
+        Collection<String> _memberExclusionFields = null;
         int _indent = 0;
         static String spaces = "                                                 ";
         TreeMap<String, String> _idMap = new TreeMap<>();
@@ -291,7 +293,7 @@ public class Olap4Js
             out.write("\"name\":" + valueToString(d.getName()) + ",");
             out.write("\"uniqueName\":" + valueToString(d.getUniqueName()) + ",");
             out.write("\"hierarchies\":");
-            indent(out,"[");
+            indent(out, "[");
             _indent++;
             String comma = "";
             for (Hierarchy h : d.getHierarchies())
@@ -340,7 +342,7 @@ public class Olap4Js
                 RolapCubeDef.LevelDef ldef = null;
                 if (null != rolap)
                     ldef = rolap.getLevel(l.getName());
-                write(l, ldef, showAll, out);
+                write(l, ldef, out);
             }
             _indent--;
             indent(out, "]");
@@ -360,14 +362,7 @@ public class Olap4Js
             out.write(valueToString("#" + id));
         }
 
-
-        void write(Level l, RolapCubeDef.LevelDef rolap, Writer out) throws IOException
-        {
-            write(l, rolap, _includeLevelMembers, out);
-        }
-
-
-        void write(Level l, RolapCubeDef.LevelDef rolap, boolean withMembers, Writer out) throws IOException
+        void write(Level l, RolapCubeDef.LevelDef rolap,  Writer out) throws IOException
         {
             out.write("{");
             out.write("\"id\":" + valueToString(idFor(Level.class, l, true)) + ",");
@@ -399,7 +394,7 @@ public class Olap4Js
                 out.write("]");
             }
 
-            if (withMembers)
+            if (_includeLevelMembers && (_memberExclusionFields == null || !_memberExclusionFields.contains(l.getUniqueName())))
             {
                 List<Member> members = null;
                 try
@@ -556,15 +551,16 @@ public class Olap4Js
 
     public static void convertCube(Cube cube, boolean includeMembers, Writer out) throws IOException
     {
-        convertCube(cube, null, includeMembers, true, out);
+        convertCube(cube, null, includeMembers, true, null, out);
     }
 
 
-    public static void convertCube(Cube cube, RolapCubeDef rolap, boolean includeMembers, boolean includeMemberProperties, Writer out) throws IOException
+    public static void convertCube(Cube cube, RolapCubeDef rolap, boolean includeMembers, boolean includeMemberProperties, Collection<String> memberExclusionFields, Writer out) throws IOException
     {
         CellSetWriter w = new CellSetWriter();
         w._includeLevelMembers = includeMembers;
         w._includeMemberProperties = includeMemberProperties;
+        w._memberExclusionFields = memberExclusionFields;
         w.write(cube, rolap, true, out);
     }
 }

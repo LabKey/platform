@@ -129,18 +129,18 @@
 
         var getCubeDefinition = function(config)
         {
-            if (!('includeMembers' in config))
-                config.includeMembers = true;
+            config.includeMembers = (config && 'includeMembers' in config) ? config.includeMembers : true;
 
             Ext4.Ajax.request({
-                url : LABKEY.ActionURL.buildURL("olap", "getCubeDefinition", config.containerPath),
+                url : LABKEY.ActionURL.buildURL('olap', 'getCubeDefinition.api', config.containerPath),
                 method : 'POST',
                 jsonData: {
                     cubeName:config.name,
                     configId:config.configId,
                     contextName:config.contextName,
                     schemaName:config.schemaName,
-                    includeMembers:config.includeMembers
+                    includeMembers:config.includeMembers,
+                    memberExclusionFields:config.memberExclusionFields
                 },
                 success: function(r){postProcessGetCubeDefinition(r, config);},
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
@@ -592,6 +592,7 @@
                     configId: this.configId,
                     schemaName: this.schemaName,
                     contextName: this.contextName,
+                    memberExclusionFields: this.memberExclusionFields,
                     success: this.onDefinition,
                     scope: this
                 };
@@ -651,6 +652,7 @@
             c.name = c.name || c.defaultCube.name;
             c.schemaName = c.schemaName || c.defaultCube.schemaName;
             c.configId = c.configId || c.defaultCube.configId;
+            c.memberExclusionFields = c.memberExclusionFields || c.defaultCube.memberExclusionFields;
 
             if (!c.name || !c.configId || !c.schemaName)
             {

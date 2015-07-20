@@ -120,6 +120,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Dictionary;
@@ -194,6 +195,7 @@ public class OlapController extends SpringActionController
     public static class CubeForm extends OlapForm
     {
         private boolean includeMembers = true;
+        private String[] memberExclusionFields = null;
         private String contextName;
 
         public boolean isIncludeMembers()
@@ -204,6 +206,16 @@ public class OlapController extends SpringActionController
         public void setIncludeMembers(boolean includeMembers)
         {
             this.includeMembers = includeMembers;
+        }
+
+        public String[] getMemberExclusionFields()
+        {
+            return memberExclusionFields;
+        }
+
+        public void setMemberExclusionFields(String[] memberExclusionFields)
+        {
+            this.memberExclusionFields = memberExclusionFields;
         }
 
         public String getContextName()
@@ -298,7 +310,12 @@ public class OlapController extends SpringActionController
             Writer writer = response.getWriter();
             writer.write("{");
             writer.write("\"cube\":");
-            Olap4Js.convertCube(cube, rolap, form.isIncludeMembers(), true, writer);
+            Collection<String> memberExclusionFields = null;
+            if (form.getMemberExclusionFields() != null)
+            {
+                memberExclusionFields = Arrays.asList(form.getMemberExclusionFields());
+            }
+            Olap4Js.convertCube(cube, rolap, form.isIncludeMembers(), true, memberExclusionFields, writer);
 
             if (context != null)
             {
