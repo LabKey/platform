@@ -169,13 +169,21 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     }
 
     @Override
+    public boolean cancel(boolean mayInterruptIfRunning)
+    {
+        super.cancel(mayInterruptIfRunning);
+        logRunFinish(TaskStatus.cancelled, null, null);
+        return true;
+    }
+
+    @Override
     protected void done(Throwable throwable)
     {
         super.done(throwable);
 
         TaskStatus status = TaskStatus.complete;
 
-        if (this.isCancelled())
+        if (this.isCancelled() || TaskStatus.cancelled.equals(this.getActiveTaskStatus()))
             status = TaskStatus.cancelled;
 
         if (this.getErrors() > 0)
