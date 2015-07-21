@@ -608,6 +608,7 @@ public class TransformManager implements DataIntegrationService.Interface
                 .append(" FROM dataintegration.transformrun WHERE endtime is not NULL)")
                 .append(" select c.*, runs.jobid as lastJobId, runs.transformrunid as lastRunId,")
                 .append(" CASE")
+                .append(" WHEN runs.status = 'ERROR' AND s.status = 'COMPLETE' THEN runs.status") // Have seen this mismatch in the wild
                 .append(" WHEN s.status = 'COMPLETE' OR s.status LIKE 'CANCEL%' THEN s.status")
                 .append(" WHEN runs.status != 'PENDING' OR s.Status = 'WAITING' THEN runs.status ELSE 'RUNNING' END as lastStatus,")
                 .append(" successRuns.jobid as lastCompletionJobId, successRuns.endtime as lastCompletion, workCheckedRuns.startTime as lastChecked from dataintegration.transformconfiguration c")
