@@ -269,7 +269,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 align    : 'center',
                 sortable : false,
                 items : [{
-                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_42 + '/resources/ext-theme-access/images/qtip/close.gif',
+                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_42 + '/resources/themes/images/access/qtip/close.gif',
                     tooltip : 'Delete'
                 }],
                 listeners : {
@@ -489,7 +489,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 align    : 'center',
                 sortable : false,
                 items : [{
-                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_42 + '/resources/ext-theme-access/images/qtip/close.gif',
+                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_42 + '/resources/themes/images/access/qtip/close.gif',
                     tooltip : 'Delete'
                 }],
                 listeners : {
