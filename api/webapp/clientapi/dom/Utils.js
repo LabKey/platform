@@ -388,7 +388,7 @@ LABKEY.Utils = new function(impl, $) {
         });
     };
 
-    impl.signalWebDriverTest = function(signalName)
+    impl.signalWebDriverTest = function(signalName, signalResult)
     {
         // Sends signals to be caught by BaseWebDriverTest#doAndWaitForPageSignal(..)
         const signalContainerId = 'testSignals';
@@ -405,6 +405,10 @@ LABKEY.Utils = new function(impl, $) {
 
         signalContainer.find('div[name=' + signalName + ']').remove();
         signalContainer.append('<div name="' + signalName + '" id="' + LABKEY.Utils.id() + '"/>');
+        if (signalResult)
+        {
+            signalContainer.find('div[name=' + signalName + ']').attr("value", signalResult);
+        }
     };
 
     return impl;
