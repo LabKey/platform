@@ -107,21 +107,21 @@
     }
 %>
 <div class="labkey-main <%= text(themeClass) %>" <% if (isPrint) { %>style="padding: 5px;"<% } %>>
-    <div class="header-block">
-        <%
-            if (bean.showHeader() != PageConfig.TrueFalse.False)
-            {
-                me.include(me.getView("header"),out);
+    <%
+        if (bean.showHeader() != PageConfig.TrueFalse.False)
+        {
+            out.println("<div class='header-block'>");
+            me.include(me.getView("header"),out);
 
-                if (null != me.getView("topmenu"))
-                    me.include(me.getView("topmenu"),out);
+            if (null != me.getView("topmenu"))
+                me.include(me.getView("topmenu"),out);
 
-                if (null != me.getView("appbar"))
-                    me.include(me.getView("appbar"), out);
-            }
-        %>
-    </div>
-    <!--content area-->
+            if (null != me.getView("appbar"))
+                me.include(me.getView("appbar"), out);
+            out.println("</div>");
+        }
+    %>
+     <!--content area-->
     <div class="body-block push-block">
         <table class="labkey-proj">
             <tr>
@@ -161,14 +161,14 @@
         </table>
     </div>
     <!--/content area-->
-    <div class="footer-block">
         <%
             if (null != me.getView("footer"))
             {
+                out.println("<div class='footer-block'>");
                 me.include(me.getView("footer"),out);
+                out.println("</div>");
             }
         %>
-    </div>
 </div>
 <%
     String anchor = bean.getAnchor();
