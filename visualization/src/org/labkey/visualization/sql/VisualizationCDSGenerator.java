@@ -63,7 +63,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
  * implementation of visualization-getData.api.
  *
  * NOTE: initial prototype just wraps VisualizationSQLGenerator, but should probably generate SQL based on underlying
- * 'model' similar to who Rolap generates SQL from a model built from mondrian schema xml file.
+ * 'model' similar to how Rolap generates SQL from a model built from mondrian schema xml file.
  */
 
 public class VisualizationCDSGenerator

@@ -248,9 +248,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                                 //  Issue 20459: handle 'Unaligned' (i.e. null zero day) case for calculating weeks/months
                                 if (null != dateOptions.getZeroDayVisitTag())
                                 {
-                                    String zeroDayVisitTag = dateOptions.getZeroDayVisitTag();
-                                    zeroDayCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "ZeroDay", false,
-                                            zeroDayVisitTag, useProtocolDay, interval);
+                                    zeroDayCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "ZeroDay", false, dateOptions);
                                     ensureSourceQuery(_viewContext.getContainer(), zeroDayCol, query).addSelect(zeroDayCol, false);
                                 }
 
@@ -1075,6 +1073,10 @@ public class VisualizationSQLGenerator implements HasViewContext
 
     private static String normalizeInterval(String interval)
     {
+        // default to "Days"
+        if (interval == null)
+            interval = "Days";
+
         if (interval.endsWith("s"))
             interval = interval.substring(0, interval.length() - 1);
         return interval;

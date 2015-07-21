@@ -763,8 +763,8 @@ public class StudyQuerySchema extends UserSchema
         }
         if (name.startsWith(VISUALIZATION_VISIT_TAG_TABLE_NAME))
         {
-            // Name is encoded with useProtocolDay boolean, interval, tag name
-            String params = name.replace(VISUALIZATION_VISIT_TAG_TABLE_NAME, "");
+            // Name is encoded with useProtocolDay boolean, tagName, and altQueryName
+            String params = name.substring(VISUALIZATION_VISIT_TAG_TABLE_NAME.length());
             boolean useProtocolDay;
             if (params.startsWith("-true"))
             {
@@ -777,10 +777,10 @@ public class StudyQuerySchema extends UserSchema
                 useProtocolDay = false;
             }
             int hyphenIndex = params.indexOf("-");
-            String interval = params.substring(0, hyphenIndex);
-            String tagName = params.substring(hyphenIndex + 1);
+            String tagName = hyphenIndex > -1 ? params.substring(0, hyphenIndex) : params;
+            String altQueryName = hyphenIndex > -1 ? params.substring(hyphenIndex + 1) : null;
 
-            return new VisualizationVisitTagTable(getStudy(), getUser(), tagName, useProtocolDay, interval);
+            return new VisualizationVisitTagTable(getStudy(), getUser(), tagName, useProtocolDay, altQueryName);
         }
 
         // Might be a dataset
