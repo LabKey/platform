@@ -126,10 +126,12 @@ public class VisualizationSourceColumn
             return findOrAdd(col);
         }
 
-        public VisualizationSourceColumn create(UserSchema schema, String queryName, String name, Boolean allowNullResults,
-                                                String visitTagName, boolean useProtocolDay, String interval)
+        public VisualizationSourceColumn create(UserSchema schema, String queryName, String name, Boolean allowNullResults, VisDataRequest.DateOptions dateOptions)
         {
-            String encodedQueryName = queryName + "-" + (useProtocolDay ? "true" : "false") + "-" + interval + "-" + visitTagName;
+            String encodedQueryName = queryName + "-" + (dateOptions.isUseProtocolDay() ? "true" : "false") + "-" + dateOptions.getZeroDayVisitTag();
+            if (dateOptions.getAltQueryName() != null)
+                encodedQueryName += "-" + dateOptions.getAltQueryName();
+
             VisualizationSourceColumn col = new VisualizationSourceColumn(schema, encodedQueryName, name, allowNullResults, false);
             return findOrAdd(col);
         }

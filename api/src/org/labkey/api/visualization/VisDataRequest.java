@@ -466,6 +466,7 @@ public class VisDataRequest
         String zeroDayVisitTag;
         boolean isZeroDayVisitTagSet=false;  // for json compatibility
         boolean useProtocolDay=true;
+        String altQueryName;
 
         public String getInterval()
         {
@@ -525,6 +526,17 @@ public class VisDataRequest
         public DateOptions setUseProtocolDay(boolean useProtocolDay)
         {
             this.useProtocolDay = useProtocolDay;
+            return this;
+        }
+
+        public String getAltQueryName()
+        {
+            return altQueryName;
+        }
+
+        public DateOptions setAltQueryName(String altQueryName)
+        {
+            this.altQueryName = altQueryName;
             return this;
         }
     }
