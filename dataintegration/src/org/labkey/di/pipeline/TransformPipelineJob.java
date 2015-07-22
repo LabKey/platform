@@ -186,7 +186,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         if (this.isCancelled() || TaskStatus.cancelled.equals(this.getActiveTaskStatus()))
             status = TaskStatus.cancelled;
 
-        if (this.getErrors() > 0)
+        if (TaskStatus.error.equals(this.getActiveTaskStatus()))
             status = TaskStatus.error;
 
         logRunFinish(status, _expRunId, _recordCount);
