@@ -122,6 +122,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -2111,7 +2112,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 if (getKeyManagementType() == KeyManagementType.RowId)
                 {
                     ColumnInfo key = new ColumnInfo(keyColumn);
-                    Callable call = new SimpleTranslator.AutoIncrementColumn()
+                    Supplier call = new SimpleTranslator.AutoIncrementColumn()
                     {
                         @Override
                         protected int getFirstValue()
