@@ -142,7 +142,7 @@ public class SwapQueue<T>
         @Test
         public void testTwoItems() throws Exception
         {
-            Throwable[] unexpectedException = new Throwable[] {null};
+            final Throwable[] unexpectedException = new Throwable[] {null};
             final AtomicInteger item1 = new AtomicInteger();
             final AtomicInteger item2 = new AtomicInteger();
             final AtomicInteger counter = new AtomicInteger();
@@ -208,7 +208,7 @@ public class SwapQueue<T>
         @Test
         public void testOneItem() throws Exception
         {
-            Throwable[] unexpectedException = new Throwable[] {null};
+            final Throwable[] unexpectedException = new Throwable[] {null};
             final AtomicInteger item1 = new AtomicInteger();
             final AtomicInteger counter = new AtomicInteger();
             final SwapQueue<AtomicInteger> _queue = new SwapQueue<>();
@@ -301,7 +301,7 @@ public class SwapQueue<T>
                     }
                     catch (InterruptedException x)
                     {
-                        return;
+                                /* */
                     }
                 }
             };
