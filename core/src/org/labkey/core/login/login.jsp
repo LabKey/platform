@@ -81,7 +81,6 @@
                 or <a href="mailto:<%= h(props.getSupportEmail()) %>?subject=Account request<%=h(StringUtils.isBlank(props.getShortName()) ? "" : " for " + props.getShortName())%>">Request an account</a>
                 <% } %>
             </div>
-
         </div>
 
         <%=generateReturnUrlFormField(returnURL)%>
@@ -91,21 +90,6 @@
         <% } %>
         <input type="hidden" id="urlhash" name="urlhash">
     </form>
-     <%--this should be controlled by the authentication provider--%>
-    <%--<%--%>
-        <%--if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-openid-google"))--%>
-        <%--{--%>
-            <%--boolean hasGoogle = false;--%>
-            <%--for (AuthenticationProvider ap : AuthenticationManager.getActiveProviders())--%>
-                <%--if (ap.getName().equals("Google"))--%>
-                    <%--hasGoogle = true;--%>
-            <%--if (hasGoogle)--%>
-            <%--{--%>
-                <%--ActionURL toGoogle = new ActionURL("oauth","redirect",ContainerManager.getRoot()).addParameter("provider","Google").addParameter("returnUrl",returnURL.getLocalURIString());--%>
-                <%--%><a href="<%=h(toGoogle)%>"><img class="auth-item" src="<%=getContextPath()%>/authentication/openid_google.png"></a><%--%>
-            <%--}--%>
-        <%--} --%>
-    <%--%>--%>
     <% String otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(bean.form.getReturnActionURL());
     if(StringUtils.isNotEmpty(otherLoginMechanisms))
     {
