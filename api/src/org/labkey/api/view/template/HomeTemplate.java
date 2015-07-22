@@ -33,8 +33,8 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
-import java.util.Set;
 
 
 public class HomeTemplate extends PrintTemplate
@@ -123,15 +123,12 @@ public class HomeTemplate extends PrintTemplate
     {
         Module coreModule = ModuleLoader.getInstance().getCoreModule();
         WebPartView view = null;
-        Set<Module> modules = getContextContainer().getActiveModules();
-        for (Module module : modules)
-        {
-            if (module != coreModule)
-            {
-                view = SimpleAction.getModuleHtmlView(module, "_footer", null);
+        List<Module> modules = ModuleLoader.getInstance().getModules();
+        ListIterator<Module> i = modules.listIterator(modules.size());
+        while (i.hasPrevious()) {
+                view = SimpleAction.getModuleHtmlView(i.previous(), "_footer", null);
                 if (null != view)
                     break;
-            }
         }
         if (null == view)
         {
