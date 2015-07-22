@@ -50,6 +50,7 @@ class StatementDataIterator extends AbstractDataIterator
     // coordinate asynchronous statement execution
     boolean _useAsynchronousExecute = false;
     SwapQueue<Parameter.ParameterMap> _queue = new SwapQueue<>();
+    final Thread _foregroundThread;
     Thread _asyncThread = null;
     AtomicReference<Exception> _backgroundException = new AtomicReference<>();
 
@@ -76,6 +77,7 @@ class StatementDataIterator extends AbstractDataIterator
         _data = data;
 
         _stmts = new Parameter.ParameterMap[] {map};
+        _foregroundThread = Thread.currentThread();
 
         _keyColumnInfo = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,(ColumnInfo)null));
         _keyValues = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,null));
@@ -142,7 +144,8 @@ class StatementDataIterator extends AbstractDataIterator
         _currentBinding = _bindings[0];
 
         if (_batchSize < 1 && null == _rowIdIndex && null == _objectIdIndex)
-            _batchSize = Math.max(10, 10000/Math.max(2,_bindings.length));
+            _batchSize = 2;
+            _batchSize = 2;
 
         Integer contextTxSize = null;
         if (_context.getConfigParameters() != null)
@@ -232,11 +235,9 @@ class StatementDataIterator extends AbstractDataIterator
             assert _elapsed.start();
         }
 
-        boolean hasNextRow = false;
-
         try
         {
-            hasNextRow = _data.next();
+            boolean hasNextRow = _data.next();
 
             if (hasNextRow)
             {
@@ -278,7 +279,9 @@ class StatementDataIterator extends AbstractDataIterator
             {
                 _currentTxSize = 0;
                 if (_currentBatchSize > 0) // flush the statement batch buffer
+                {
                     processBatch();
+                }
                 if (_log != null)
                     _log.info("Committing " + Integer.toString(_txSize) + " rows");
                 _currentStmt.getScope().getCurrentTransaction().commitAndKeepConnection();
@@ -314,9 +317,8 @@ class StatementDataIterator extends AbstractDataIterator
         }
     }
 
-    private void processBatch() throws SQLException
+    private void processBatch() throws SQLException, BatchValidationException
     {
-        _currentBatchSize = 0;
         assert _execute.start();
 
         if (_batchSize == 1)
@@ -326,13 +328,26 @@ class StatementDataIterator extends AbstractDataIterator
         // TODO: Re-enable this once the deadlock is resolved. See issue 23734
 //        else if (_useAsynchronousExecute && _stmts.length > 1 && _txSize==-1)
 //        {
-//            _currentStmt = _queue.swapFullForEmpty(_currentStmt);
-//            _currentBinding = (_currentStmt == _stmts[0] ? _bindings[0] : _bindings[1]);
+//            while (true)
+//            {
+//                try
+//                {
+//                    _currentStmt = _queue.swapFullForEmpty(_currentStmt);
+//                    break;
+//                }
+//                catch (InterruptedException x)
+//                {
+//                    checkBackgroundException();
+//                }
+//            }
 //        }
         else
         {
             _currentStmt.executeBatch();
         }
+
+        _currentBatchSize = 0;
+        _currentBinding = (_currentStmt == _stmts[0] ? _bindings[0] : _bindings[1]);
 
         assert _execute.stop();
     }
@@ -412,10 +427,11 @@ class StatementDataIterator extends AbstractDataIterator
             catch (Exception x)
             {
                 _backgroundException.set(x);
+                _foregroundThread.interrupt();
             }
         }
 
-        void executeStatmentsInBackground() throws BatchValidationException
+        void executeStatmentsInBackground() throws BatchValidationException, InterruptedException
         {
             Parameter.ParameterMap m = _firstEmpty;
 
@@ -431,12 +447,14 @@ class StatementDataIterator extends AbstractDataIterator
                         x = x.getNextException();
                     if (StringUtils.startsWith(x.getSQLState(), "22") || RuntimeSQLException.isConstraintException(x))
                     {
+                        //noinspection ThrowableResultOfMethodCallIgnored
                         getRowError().addGlobalError(x);
                         _context.checkShouldCancel();
                     }
                     throw new RuntimeSQLException(x);
                 }
             }
+            assert _queue.isClosed();
         }
     }
 }
