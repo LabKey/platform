@@ -34,6 +34,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 /**
  * User: kevink
@@ -55,7 +56,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.IMPORT, configParameters), extraScriptContext);
+        return _importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, InsertOption.IMPORT, configParameters), extraScriptContext);
     }
 
 
@@ -63,7 +64,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
+        return _importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
     }
 
 
@@ -100,23 +101,15 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
                     Map<String,Integer> colMap = DataIteratorUtil.createColumnNameMap(it);
                     Integer objectUriIndex = colMap.get(objectUriColumn.getName());
                     SimpleTranslator out = new SimpleTranslator(it, context);
-                    Callable call = new Callable()
-                    {
-                        @Override
-                        public Object call() throws Exception
-                        {
-                            return getQueryTable().createObjectURI();
-                        }
-                    };
                     for (int i=1 ; i<=it.getColumnCount() ; i++)
                     {
                         if (null != objectUriIndex && i == objectUriIndex)
-                            out.addCoaleseColumn(objectUriColumn.getName(), i, call);
+                            out.addCoaleseColumn(objectUriColumn.getName(), i, ()->getQueryTable().createObjectURI());
                         else
                             out.addColumn(i);
                     }
                     if (null == objectUriIndex)
-                        out.addColumn(objectUriColumn, call);
+                        out.addColumn(objectUriColumn, (Supplier)()->getQueryTable().createObjectURI());
                     return LoggingDataIterator.wrap(out);
                 }
             };

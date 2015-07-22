@@ -37,6 +37,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 
 class StatementDataIterator extends AbstractDataIterator
@@ -135,7 +136,7 @@ class StatementDataIterator extends AbstractDataIterator
                 {
                     FieldKey mvName = col.getMvColumnName();
                     Parameter mv = null==mvName ? null : stmt.getParameter(mvName.getName());
-                    bindings.add(new Triple(i, to, mv));
+                    bindings.add(new Triple(_data.getSupplier(i), to, mv));
                 }
             }
             _bindings[set] = bindings.toArray(new Triple[bindings.size()]);
@@ -144,8 +145,7 @@ class StatementDataIterator extends AbstractDataIterator
         _currentBinding = _bindings[0];
 
         if (_batchSize < 1 && null == _rowIdIndex && null == _objectIdIndex)
-            _batchSize = 2;
-            _batchSize = 2;
+            _batchSize = Math.max(10, 10000/Math.max(2,_bindings.length));
 
         Integer contextTxSize = null;
         if (_context.getConfigParameters() != null)
@@ -166,13 +166,13 @@ class StatementDataIterator extends AbstractDataIterator
 
     private static class Triple
     {
-        Triple(int from, Parameter to, Parameter mv)
+        Triple(Supplier from, Parameter to, Parameter mv)
         {
-            this.fromIndex = from;
+            this.from = from;
             this.to = to;
             this.mv = mv;
         }
-        int fromIndex;
+        Supplier from;
         Parameter to;
         Parameter mv;
     }
@@ -244,7 +244,7 @@ class StatementDataIterator extends AbstractDataIterator
                 _currentStmt.clearParameters();
                 for (Triple binding : _currentBinding)
                 {
-                    Object value = _data.get(binding.fromIndex);
+                    Object value = binding.from.get();
                     if (null == value)
                         continue;
                     if (value instanceof MvFieldWrapper)
@@ -279,9 +279,7 @@ class StatementDataIterator extends AbstractDataIterator
             {
                 _currentTxSize = 0;
                 if (_currentBatchSize > 0) // flush the statement batch buffer
-                {
                     processBatch();
-                }
                 if (_log != null)
                     _log.info("Committing " + Integer.toString(_txSize) + " rows");
                 _currentStmt.getScope().getCurrentTransaction().commitAndKeepConnection();

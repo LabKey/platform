@@ -58,6 +58,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 /**
  * User: matthewb
@@ -79,10 +80,10 @@ import java.util.concurrent.Callable;
 public class SimpleTranslator extends AbstractDataIterator implements DataIterator, ScrollableDataIterator
 {
     DataIterator _data;
-    protected final ArrayList<Pair<ColumnInfo, Callable>> _outputColumns = new ArrayList<Pair<ColumnInfo, Callable>>()
+    protected final ArrayList<Pair<ColumnInfo, Supplier>> _outputColumns = new ArrayList<Pair<ColumnInfo, Supplier>>()
     {
         @Override
-        public boolean add(Pair<ColumnInfo, Callable> columnInfoCallablePair)
+        public boolean add(Pair<ColumnInfo, Supplier> columnInfoCallablePair)
         {
             assert null == _row;
             return super.add(columnInfoCallablePair);
@@ -97,7 +98,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         super(context);
         _data = source;
-        _outputColumns.add(new Pair<ColumnInfo, Callable>(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
+        _outputColumns.add(new Pair<ColumnInfo, Supplier>(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
     }
 
     protected DataIterator getInput()
@@ -141,7 +142,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    protected class PassthroughColumn implements Callable
+    protected class PassthroughColumn implements Supplier
     {
         final int index;
 
@@ -151,7 +152,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
 
         @Override
-        public Object call() throws Exception
+        public Object get()
         {
             return _data.get(index);
         }
@@ -179,38 +180,38 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
 
     /** coalease, return the first column if non-null, else the second column */
-    protected class CoalesceColumn implements Callable
+    protected class CoalesceColumn implements Supplier
     {
-        final Callable _first;
-        final Callable _second;
+        final Supplier _first;
+        final Supplier _second;
 
-        CoalesceColumn(int first, Callable second)
+        CoalesceColumn(int first, Supplier second)
         {
             _first = new PassthroughColumn(first);
             _second = second;
         }
 
-        CoalesceColumn(Callable first, Callable second)
+        CoalesceColumn(Supplier first, Supplier second)
         {
             _first = first;
             _second = second;
         }
 
         @Override
-        public Object call() throws Exception
+        public Object get()
         {
-            Object v = _first.call();
+            Object v = _first.get();
             if (v instanceof String)
                 v = StringUtils.isEmpty((String)v) ? null : v;
             if (null != v)
                 return v;
-            return _second.call();
+            return _second.get();
         }
     }
 
 
 
-    private class SimpleConvertColumn implements Callable
+    private class SimpleConvertColumn implements Supplier<Object>
     {
         final int index;
         final JdbcType type;
@@ -224,7 +225,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
 
         @Override
-        final public Object call() throws Exception
+        final public Object get()
         {
             Object value = getSourceValue();
             try
@@ -249,17 +250,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    public static class GuidColumn implements Callable
+    public static class GuidColumn implements Supplier
     {
         @Override
-        public Object call() throws Exception
+        public Object get()
         {
             return GUID.makeGUID();
         }
     }
 
 
-    public static class ConstantColumn implements Callable
+    public static class ConstantColumn implements Supplier
     {
         final Object k;
 
@@ -269,14 +270,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
 
         @Override
-        public Object call() throws Exception
+        public Object get()
         {
             return k;
-        }
+    }
     }
 
 
-    public static class AutoIncrementColumn implements Callable
+    public static class AutoIncrementColumn implements Supplier
     {
         private int _autoIncrement = -1;
 
@@ -286,7 +287,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
 
         @Override
-        public Object call() throws Exception
+        public Object get()
         {
             if (_autoIncrement == -1)
                 _autoIncrement = getFirstValue();
@@ -450,10 +451,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     }
 
-    protected class RemapColumn implements Callable
+    protected class RemapColumn implements Supplier
     {
         //final int _index;
-        final Callable _inputColumn;
+        final Supplier _inputColumn;
         final Map<?, ?> _map;
         final boolean _strict;
 
@@ -461,18 +462,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         // string == false means incoming values without a map entry will pass through
         public RemapColumn(final int index, Map<?, ?> map, boolean strict)
         {
-            _inputColumn = new Callable(){
-                @Override
-                public Object call() throws Exception
-                {
-                    return _data.get(index);
-                }
-            };
+            _inputColumn = _data.getSupplier(index);
             _map = map;
             _strict = strict;
         }
 
-        public RemapColumn(Callable call, Map<?, ?> map, boolean strict)
+        public RemapColumn(Supplier call, Map<?, ?> map, boolean strict)
         {
             _inputColumn = call;
             _map = map;
@@ -480,9 +475,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
 
         @Override
-        public Object call() throws Exception
+        public Object get()
         {
-            Object k = _inputColumn.call();
+            Object k = _inputColumn.get();
             if (null == k)
                 return null;
             Object v = _map.get(k);
@@ -495,10 +490,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
     
 
-    protected class NullColumn implements Callable
+    protected class NullColumn implements Supplier
     {
         @Override
-        public Object call() throws Exception
+        public Object get()
         {
             return null;
         }
@@ -509,10 +504,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     /* use same value for all rows, set value on first usage */
     Timestamp _ts = null;
 
-    private class TimestampColumn implements Callable
+    private class TimestampColumn implements Supplier
     {
         @Override
-        public Object call() throws Exception
+        public Object get()
         {
             if (null == _ts)
                 _ts =  new NowTimestamp(System.currentTimeMillis());
@@ -521,7 +516,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    private class SharedTableLookupColumn implements Callable
+    private class SharedTableLookupColumn implements Supplier
     {
         final int _first;
         final Integer _second;
@@ -538,7 +533,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
 
         @Override
-        public Object call() throws Exception
+        public Object get()
         {
             Object value = _data.get(_first);
 
@@ -588,7 +583,27 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
+    /** use addColumn(ColumnInfo col, Supplier call) */
+    @Deprecated
     public int addColumn(ColumnInfo col, Callable call)
+    {
+        Supplier s = () ->
+        {
+            try
+            {
+                Object o = call.call();
+                return o;
+            }
+            catch (Exception x)
+            {
+                throw new RuntimeException(x);
+            }
+        };
+        _outputColumns.add(new Pair<>(col, s));
+        return _outputColumns.size()-1;
+    }
+
+    public int addColumn(ColumnInfo col, Supplier call)
     {
         _outputColumns.add(new Pair<>(col, call));
         return _outputColumns.size()-1;
@@ -703,7 +718,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    public int addCoaleseColumn(String name, int fromIndex, Callable second)
+    public int addCoaleseColumn(String name, int fromIndex, Supplier second)
     {
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
@@ -819,10 +834,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final String containerId = null == c ? null : c.getId();
         final Integer userId = null == user ? 0 : user.getUserId();
 
-        Callable containerCallable = new ConstantColumn(containerId);
-        Callable userCallable = new ConstantColumn(userId);
-        Callable tsCallable = new TimestampColumn();
-        Callable guidCallable = new Callable(){public Object call() {return GUID.makeGUID();}};
+        Supplier containerCallable = new ConstantColumn(containerId);
+        Supplier userCallable = new ConstantColumn(userId);
+        Supplier tsCallable = new TimestampColumn();
+        Supplier guidCallable = new GuidColumn();
 
         Map<String, Integer> inputCols = getColumnNameMap();
         Map<String, Integer> outputCols = new CaseInsensitiveHashMap<>();
@@ -839,7 +854,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    private int addBuiltinColumn(SpecialColumn e, boolean allowPassThrough, TableInfo target, Map<String,Integer> inputCols, Map<String,Integer> outputCols, Callable c)
+    private int addBuiltinColumn(SpecialColumn e, boolean allowPassThrough, TableInfo target, Map<String,Integer> inputCols, Map<String,Integer> outputCols, Supplier c)
     {
         String name = e.name();
         ColumnInfo col = target.getColumn(name);
@@ -905,7 +920,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _row[i] = null;
             try
             {
-                _row[i] = _outputColumns.get(i).getValue().call();
+                _row[i] = _outputColumns.get(i).getValue().get();
             }
             catch (ConversionException x)
             {
@@ -933,10 +948,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
     }
 
+
     @Override
     public Object get(int i)
     {
         return _row[i];
+    }
+
+
+    @Override
+    public Supplier<Object> getSupplier(int i)
+    {
+        return () -> _row[i];
     }
 
 
@@ -965,7 +988,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     @Override
     public boolean isConstant(int i)
     {
-        Callable c = _outputColumns.get(i).getValue();
+        Supplier c = _outputColumns.get(i).getValue();
         if (c instanceof ConstantColumn)
             return true;
         if (c instanceof PassthroughColumn)
@@ -983,7 +1006,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     @Override
     public Object getConstantValue(int i)
     {
-        Callable c = _outputColumns.get(i).getValue();
+        Supplier c = _outputColumns.get(i).getValue();
         if (c instanceof ConstantColumn)
             return ((ConstantColumn)c).k;
         if (c instanceof PassthroughColumn)

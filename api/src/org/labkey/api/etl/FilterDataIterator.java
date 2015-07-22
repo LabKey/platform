@@ -16,23 +16,30 @@
 
 package org.labkey.api.etl;
 
-import org.labkey.api.collections.CaseInsensitiveTreeSet;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 
-import java.io.IOException;
-import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * User: matthewb
  * Date: 2011-05-31
  * Time: 5:18 PM
  */
-public abstract class FilterDataIterator extends WrapperDataIterator
+public class FilterDataIterator extends WrapperDataIterator
 {
+    final Predicate<DataIterator> predicate;
+
+    // you can use this method if you override accept()
     protected FilterDataIterator(DataIterator in)
     {
         super(in);
+        predicate = (di) -> accept();
+    }
+
+    public FilterDataIterator(DataIterator in, Predicate<DataIterator> p)
+    {
+        super(in);
+        this.predicate = p;
     }
 
     @Override
@@ -40,11 +47,14 @@ public abstract class FilterDataIterator extends WrapperDataIterator
     {
         while (super.next())
         {
-            if (accept())
+            if (predicate.test(_delegate))
                 return true;
         }
         return false;
     }
 
-    protected abstract boolean accept();
+    protected boolean accept()
+    {
+        return true;
+    }
 }

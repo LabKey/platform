@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * User: matthewb
@@ -55,8 +56,6 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
         _data = data;
         validatorContext = new ValidatorContext(c, user);
     }
-
-
 
     public void addValidators(int i, List<? extends ColumnValidator> vs)
     {
@@ -215,6 +214,14 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
     {
         return _data.get(i);
     }
+
+
+    @Override
+    public Supplier<Object> getSupplier(int i)
+    {
+        return _data.getSupplier(i);
+    }
+
 
     @Override
     public void close() throws IOException

@@ -21,6 +21,7 @@ import org.labkey.api.query.BatchValidationException;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.function.Supplier;
 
 /**
  * User: matthewb
@@ -63,6 +64,11 @@ public interface DataIterator extends Closeable
      * MSInspectFeatursDataHandler uses error values as well, but that's what ValidationException is for
      */
     Object get(int i);
+
+    default Supplier<Object> getSupplier(final int i)
+    {
+        return () -> get(i);
+    }
 
     @Override
     void close() throws IOException;

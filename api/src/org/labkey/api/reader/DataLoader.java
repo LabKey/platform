@@ -57,6 +57,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * User: jgarms
@@ -926,6 +927,15 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             if (i == 0)
                 return _rowNumber;
             return _row.get(i-1);
+        }
+
+        @Override
+        public Supplier<Object> getSupplier(int i)
+        {
+            if (i==0)
+                return () -> _rowNumber;
+            else
+                return () -> _row.get(i-1);
         }
 
         @Override

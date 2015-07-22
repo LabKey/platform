@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 
 /**
  * User: matthewb
@@ -70,6 +71,12 @@ public abstract class WrapperDataIterator implements DataIterator, ScrollableDat
     public Object get(int i)
     {
         return _delegate.get(i);
+    }
+
+    @Override
+    public Supplier<Object> getSupplier(int i)
+    {
+        return _delegate.getSupplier(i);
     }
 
     @Override

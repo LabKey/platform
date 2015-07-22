@@ -26,6 +26,7 @@ import org.labkey.api.query.BatchValidationException;
 import java.io.IOException;
 import java.util.Formatter;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * User: matthewb
@@ -111,6 +112,12 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
     public Object get(int i)
     {
         return _data.get(i);
+    }
+
+    @Override
+    public Supplier<Object> getSupplier(int i)
+    {
+        return _data.getSupplier(i);
     }
 
     @Override
