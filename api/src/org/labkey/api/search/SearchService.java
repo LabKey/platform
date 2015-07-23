@@ -281,9 +281,9 @@ public interface SearchService
 
     void deleteContainer(String id);
 
-    void clear();                // delete index and reset lastIndexed values
+    void clear();                // delete index and reset lastIndexed values. must be callable before (and after) start() has been called.
     void upgradeIndex();         // upgrade to latest format. this must be called before the SearchService is started.
-    void clearLastIndexed();     // just reset lastIndexed values
+    void clearLastIndexed();     // just reset lastIndexed values. must be callable before (and after) start() has been called.
     void maintenance();
 
     //
