@@ -212,6 +212,7 @@ public class VisualizationCDSGenerator
 
         List<VisualizationSQLGenerator> generators = new ArrayList<>();
         List<String> generatedSql = new ArrayList<>();
+        String containerColumnName = "Container";
         String subjectColumnName = "ParticipantId";
         String sequenceNumColumnName = "SequenceNum";
         if (null != study)
@@ -228,6 +229,7 @@ public class VisualizationCDSGenerator
             VisDataRequest subrequest = new VisDataRequest();
 
             // let's collect the measures, by type
+            VisDataRequest.MeasureInfo container = null;
             VisDataRequest.MeasureInfo participant = null;
             VisDataRequest.MeasureInfo sequencenum = null;
             List<VisDataRequest.MeasureInfo> datasetMeasures = new ArrayList<>();
@@ -243,7 +245,9 @@ public class VisualizationCDSGenerator
                 boolean isDatasetMeasure = equalsIgnoreCase(m.getSchemaName(), datasetSchemaName) && equalsIgnoreCase(m.getQueryName(), datasetQueryName);
                 if (isDatasetMeasure)
                 {
-                    if (equalsIgnoreCase(m.getName(), subjectColumnName))
+                    if (equalsIgnoreCase(m.getName(), containerColumnName))
+                        container = mi;
+                    else if (equalsIgnoreCase(m.getName(), subjectColumnName))
                         participant = mi;
                     else if (equalsIgnoreCase(m.getName(), sequenceNumColumnName))
                         sequencenum = mi;
@@ -262,6 +266,13 @@ public class VisualizationCDSGenerator
             if (!datasetMeasures.isEmpty())
                 timeType = datasetMeasures.get(0).getTime();
 
+            if (null == container)
+            {
+                VisDataRequest.Measure cont = new VisDataRequest.Measure(datasetSchemaName, datasetQueryName, containerColumnName)
+                        .setAlias((datasetSchemaName + "_" + datasetQueryName + "_" + containerColumnName).toLowerCase());
+                container = new VisDataRequest.MeasureInfo(cont).setTime(timeType);
+            }
+
             if (null == participant)
             {
                 VisDataRequest.Measure subject = new VisDataRequest.Measure(datasetSchemaName, datasetQueryName, subjectColumnName)
@@ -277,6 +288,7 @@ public class VisualizationCDSGenerator
             }
 
             // put the datasetMeasures first, so we can LEFT OUTER JOIN _starting_ from this dataset
+            subrequest.addMeasure(container);
             subrequest.addMeasure(participant);
             subrequest.addMeasure(sequencenum);
             subrequest.addAll(datasetMeasures);
@@ -315,7 +327,8 @@ public class VisualizationCDSGenerator
                 if (StringUtils.isEmpty(a))
                     a = map.get("columnName");
 
-                if (!StringUtils.isEmpty(a) && !endsWithIgnoreCase(a, "_" + subjectColumnName) && !endsWithIgnoreCase(a, "_" + sequenceNumColumnName))
+                if (!StringUtils.isEmpty(a) && !endsWithIgnoreCase(a, "_" + containerColumnName)
+                        && !endsWithIgnoreCase(a, "_" + subjectColumnName) && !endsWithIgnoreCase(a, "_" + sequenceNumColumnName))
                 {
                     fullAliasList.add(a);
                     columnAliases.add(map);
@@ -335,6 +348,7 @@ public class VisualizationCDSGenerator
         for (int i=0; i < generators.size(); i++)
         {
             VisualizationSQLGenerator generator = generators.get(i);
+            String containerColumnAlias = null;
             String participantColumnAlias = null;
             String sequenceColumnAlias = null;
 
@@ -346,7 +360,9 @@ public class VisualizationCDSGenerator
                 if (StringUtils.isEmpty(a))
                     a = map.get("columnName");
 
-                if (null == participantColumnAlias && endsWithIgnoreCase(a, "_" + subjectColumnName))
+                if (null == containerColumnAlias && endsWithIgnoreCase(a, "_" + containerColumnName))
+                    containerColumnAlias = a;
+                else if (null == participantColumnAlias && endsWithIgnoreCase(a, "_" + subjectColumnName))
                     participantColumnAlias = a;
                 else if (null == sequenceColumnAlias && endsWithIgnoreCase(a, "_" + sequenceNumColumnName))
                     sequenceColumnAlias = a;
@@ -356,6 +372,9 @@ public class VisualizationCDSGenerator
 
             fullSQL.append(union); union = "\n  UNION ALL\n";
             fullSQL.append("SELECT ");
+
+            // container column
+            fullSQL.append(defaultString(containerColumnAlias, "NULL")).append(" AS \"").append(URI).append(containerColumnName).append("\"").append(", ");
 
             // subject column
             fullSQL.append(defaultString(participantColumnAlias, "NULL")).append(" AS \"").append(URI).append(subjectColumnName).append("\"").append(", ");
@@ -369,6 +388,9 @@ public class VisualizationCDSGenerator
             // only need to gather alias information for the initial generator
             if (keyColumnAlias.isEmpty())
             {
+                // container column
+                keyColumnAlias.add(generateColumnAlias(URI + containerColumnName, containerColumnName));
+
                 // subject column
                 keyColumnAlias.add(generateColumnAlias(URI + subjectColumnName, subjectColumnName));
 
