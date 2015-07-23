@@ -211,7 +211,7 @@ public class DavCrawler implements ShutdownListener
         if (null == path)
             path = WebdavService.get().getResolver().getRootPath();
 
-        // note use oldDate++ so that the crawler can schedule tasks ahead of these bulk updated colletions
+        // note use oldDate++ so that the crawler can schedule tasks ahead of these bulk updated collections
         _paths.updatePrefix(path, new Date(SavePaths.oldDate.getTime() + 24*60*60*1000), force);
 
         addPathToCrawl(path, SavePaths.oldDate);

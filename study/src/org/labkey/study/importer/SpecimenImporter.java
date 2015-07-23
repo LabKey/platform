@@ -198,7 +198,7 @@ public class SpecimenImporter
         private static Class determineJavaType(String dbType)
         {
             if (dbType.contains(DATETIME_TYPE))
-                throw new IllegalStateException("Java types for DateTime/Timestamp columns should be previously initalized.");
+                throw new IllegalStateException("Java types for DateTime/Timestamp columns should be previously initialized.");
 
             if (dbType.contains("VARCHAR"))
                 return String.class;

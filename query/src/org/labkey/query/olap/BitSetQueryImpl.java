@@ -259,7 +259,7 @@ public class BitSetQueryImpl
     {
         // return level if all members are in the same level, null otherwise
         @Nullable abstract Level getLevel();
-        // return heirarchy if all members are in the same heirarchy, null otherwise
+        // return hierarchy if all members are in the same hierarchy, null otherwise
         @Nullable abstract Hierarchy getHierarchy();
         abstract void toMdxSet(StringBuilder sb);
         @NotNull abstract Collection<Member> getCollection() throws OlapException;

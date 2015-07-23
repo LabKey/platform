@@ -16,7 +16,7 @@
 
 /* study-13.11-13.12.sql */
 
--- To change the PK, it is more efficeint to drop all other indexes (including unique constraints),
+-- To change the PK, it is more efficient to drop all other indexes (including unique constraints),
 -- drop and recreate PK, and then rebuild indexes
 
 ALTER TABLE study.ParticipantVisit DROP CONSTRAINT UQ_ParticipantVisit_ParticipantSequenceNum;

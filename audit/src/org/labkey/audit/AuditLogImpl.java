@@ -138,7 +138,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     {
         synchronized (STARTUP_LOCK)
         {
-            // Issue 20310: initalize AuditTypeProvider when registered during startup
+            // Issue 20310: initialize AuditTypeProvider when registered during startup
             // Ensure audit provider's domains have been initialized.  This must happen before flushing the temporary event queues.
             //initializeProviders();
 
