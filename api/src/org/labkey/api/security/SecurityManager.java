@@ -1098,7 +1098,7 @@ public class SecurityManager
         GroupMembershipCache.handleGroupChange(group, group);
 
         // NOTE: Most code can not tell the difference between a non-existant SecurityPolicy and an empty SecurityPolicy
-        // NOTE: Both are treated as meaning "inherit", we don't want to accidently create an empty security policy
+        // NOTE: Both are treated as meaning "inherit", we don't want to accidentally create an empty security policy
         // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
 
         SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ResourceId FROM " + core.getTableInfoRoleAssignments() + " WHERE UserId = ?",groupId);

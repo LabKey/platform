@@ -28,7 +28,7 @@ public class Wrapper<V>
 {
     @SuppressWarnings({"unchecked"})
     protected V value = (V) BlockingCache.UNINITIALIZED;
-    // weak reference, because I'm paranoid of accidently holding onto threads
+    // weak reference, because I'm paranoid of accidentally holding onto threads
     protected WeakReference<Thread> loadingThread;
 
     Object getLockObject()

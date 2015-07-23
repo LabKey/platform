@@ -283,9 +283,9 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
     /**
      * Returns an existing category or creates a new one.
-     * @param parts An array representing a path heirarchy. For example ["reports"] would represent a top level
+     * @param parts An array representing a path hierarchy. For example ["reports"] would represent a top level
      *              category named 'reports' whereas ["reports", "R"] would represent a subcategory named 'R' with
-     *              a parent named 'reports'. Current heirarchy depth is limited to one level deep.
+     *              a parent named 'reports'. Current hierarchy depth is limited to one level deep.
      * @return The requested ViewCategory
      */
 
@@ -319,7 +319,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
      * Used to encode a view category to a serializable form that can later be decoded by the decode(String)
      * method and then used in either getCategory or ensureViewCategory.
      *
-     * Parent child heirarchy is encoded into the string.
+     * Parent child hierarchy is encoded into the string.
      *
      * @return encoded String that can be serialized and then decoded using the decode(String) method.
      */
@@ -339,7 +339,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
     /**
      * Used to decode a view category from a serializable form and thenn used in either getCategory or ensureViewCategory.
      *
-     * Parent child heirarchy is encoded into the string.
+     * Parent child hierarchy is encoded into the string.
      *
      * @return String[] that represents the path heirarcy of the category.
      */
