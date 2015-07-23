@@ -215,13 +215,15 @@ LABKEY.Query = new function()
          *       If included, the column will have the name "~~Details~~". The underlying table/query must support details links
          *       or the column will be omitted in the response.
          * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
-         *        references underlying queries that are parameterized.
+         *        references underlying queries that are parameterized. For example, the following passes two parameters to the query: {'Gender': 'M', 'CD4': '400'}.
+         *        The parameters are written to the request URL as follows: query.param.Gender=M&query.param.CD4=400.  For details on parameterized SQL queries, see
+         *        <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql">Parameterized SQL Queries</a>.
          * @param {Double} [config.requiredVersion] If not set, or set to "8.3", the success handler will be passed a {@link LABKEY.Query.SelectRowsResults}
                  object. If set to "9.1" the success handler will be passed a {@link LABKEY.Query.ExtendedSelectRowsResults}
                  object. If set to "13.2" the success handler will be passed a {@link LABKEY.Query.Response} object.
                  The main difference between SelectRowsResults and ExtendedSelectRowsResults is that each column in each row
                  will be another object (not just a scalar value) with a "value" property as well as other related properties
-                 (url, mvValue, mvIndicator, etc.). In the LABKEY.Query.Response format each row will an instance of
+                 (url, mvValue, mvIndicator, etc.). In the LABKEY.Query.Response format each row will be an instance of
                  {@link LABKEY.Query.Row}.
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
@@ -344,8 +346,10 @@ LABKEY.Query = new function()
 				    <li><b>options:</b> the options used for the AJAX request</li>
 				</ul>
         * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
-        * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the
-        *        target query is a parameterized query.
+        * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
+        *        references underlying queries that are parameterized. For example, the following passes two parameters to the query: {'Gender': 'M', 'CD4': '400'}.
+        *        The parameters are written to the request URL as follows: query.param.Gender=M&query.param.CD4=400.  For details on parameterized SQL queries, see
+        *        <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql">Parameterized SQL Queries</a>.
         * @param {String} [config.sort]  String description of the sort.  It includes the column names
         *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
         *       descending order). In the case of a multi-column sort, up to three column names can be
@@ -539,7 +543,9 @@ LABKEY.Query = new function()
          *       the scope of this query. Defaults to containerFilter.current, and is interpreted relative to
          *       config.containerPath.
          * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
-         *        references underlying queries that are parameterized.
+         *        references underlying queries that are parameterized. For example, the following passes two parameters to the query: {'Gender': 'M', 'CD4': '400'}.
+         *        The parameters are written to the request URL as follows: query.param.Gender=M&query.param.CD4=400.  For details on parameterized SQL queries, see
+         *        <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql">Parameterized SQL Queries</a>.
          * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
          * @param {String} [config.viewName] Name of a view to use.  This is potentially important if this view contains filters on the data.
          * @param {Function} config.success

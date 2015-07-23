@@ -136,7 +136,10 @@
  * @param {Array} [config.removeableFilters] A set of filters to apply. This should be an array of {@link LABKEY.Filter} objects
  * each of which is created using the {@link LABKEY.Filter.create} method. These filters can be modified or removed by the user
  * interacting with the UI.
- * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the target query is a parameterized query
+ * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
+ * references underlying queries that are parameterized. For example, the following passes two parameters to the query: {'Gender': 'M', 'CD4': '400'}.
+ * The parameters are written to the request URL as follows: query.param.Gender=M&query.param.CD4=400.  For details on parameterized SQL queries, see
+ * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql">Parameterized SQL Queries</a>.
  * @param {Array} [config.aggregates] An array of aggregate definitions. The objects in this array should have the properties:
  * <ul>
  *     <li><b>column:</b> The name of the column to be aggregated.</li>

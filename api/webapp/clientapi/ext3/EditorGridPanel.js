@@ -41,6 +41,7 @@ Ext.namespace('LABKEY', 'LABKEY.ext');
  * @param {boolean} [config.lookups] Set to false if you do not want lookup foreign keys to be resolved to the
  * lookup values, and do not want dropdown lookup value pickers (default is true).
  * @param {integer} [config.pageSize] Defines how many rows are shown at a time in the grid (default is 20).
+ * If the EditorGridPanel is getting its data from Ext.Store, pageSize will override the value of maxRows on Ext.Store.
  * @param {boolean} [config.editable] Set to true if you want the user to be able to edit, insert, or delete rows (default is false).
  * @param {boolean} [config.autoSave] Set to false if you do not want changes automatically saved when the user leaves the row (default is true).
  * @param {boolean} [config.enableFilters] True to enable user-filtering of columns (default is false)
