@@ -374,14 +374,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public final void deleteContainer(final String id)
     {
-        Runnable r = new Runnable(){
-            public void run()
+        Runnable r = () -> {
+            deleteIndexedContainer(id);
+            synchronized (_commitLock)
             {
-                deleteIndexedContainer(id);
-                synchronized (_commitLock)
-                {
-                    _countIndexedSinceCommit++;
-                }
+                _countIndexedSinceCommit++;
             }
         };
         queueItem(new Item(defaultTask(), r, PRIORITY.background));
@@ -1260,7 +1257,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     protected abstract void deleteDocumentsForPrefix(String prefix);
     protected abstract void deleteIndexedContainer(String id);
     protected abstract void shutDown();
-    protected abstract void clearIndex();
+    protected abstract void clearIndex();  // must be callable before (and after) start() has been called.
 
 
     Map<?,?> preprocess(String id, WebdavResource r, Throwable[] handledException)

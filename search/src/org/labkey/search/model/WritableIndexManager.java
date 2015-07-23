@@ -46,4 +46,10 @@ public interface WritableIndexManager
     void close() throws IOException, InterruptedException;
 
     String getIndexFormatDescription();
+
+    /**
+     * Is this a real index manager?
+     * @return Whether this manager points to a real search index
+     */
+    boolean isReal();
 }

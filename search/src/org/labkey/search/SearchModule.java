@@ -22,7 +22,6 @@ import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.cache.CacheListener;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -87,7 +86,7 @@ public class SearchModule extends DefaultModule
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set("search", "umls");
+        return PageFlowUtil.set("search", "umls", "foobar.blick");
     }
 
 
@@ -104,7 +103,7 @@ public class SearchModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Collections.singletonList(new SearchWebPartFactory()));
+        return new ArrayList<>(Collections.singletonList(new SearchWebPartFactory()));
     }
 
     
@@ -159,7 +158,7 @@ public class SearchModule extends DefaultModule
             // Update the version number below to force an upgrade of the index to the latest format. This is used when we upgrade the indexing library to a new version.
             final boolean upgradeIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 15.12);
 
-            // don't start the crawler until all the modules are done starting up
+            // don't start the crawler or clear the index until all the modules are done starting up
             ContextListener.addStartupListener(new StartupListener()
             {
                 @Override
@@ -170,27 +169,26 @@ public class SearchModule extends DefaultModule
 
                 public void moduleStartupComplete(ServletContext servletContext)
                 {
-                    // Must call upgrade before the SearchService is started
+                    if (clearIndex)
+                    {
+                        // Legal to call clear() before we start the SearchService
+                        ss.clear();
+                    }
+
                     if (upgradeIndex)
+                    {
+                        // Must call upgradeIndex() before we start the SearchService
                         ss.upgradeIndex();
+                    }
 
                     ss.start();
-
-                    if (clearIndex)
-                        ss.clear();
-
                     DavCrawler.getInstance().start();
                 }
             });
 
-            CacheManager.addListener(new CacheListener()
-            {
-                @Override
-                public void clearCaches()
-                {
-                    Logger.getLogger(SearchService.class).info("Purging SearchService queues");
-                    ss.purgeQueues();
-                }
+            CacheManager.addListener(() -> {
+                Logger.getLogger(SearchService.class).info("Purging SearchService queues");
+                ss.purgeQueues();
             });
         }
 

@@ -93,6 +93,12 @@ public class NoopWritableIndex implements WritableIndexManager
         return "No-op index";
     }
 
+    @Override
+    public boolean isReal()
+    {
+        return false;
+    }
+
     private void log(String action)
     {
         if (0 == (_errors.get() % 10000))

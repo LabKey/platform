@@ -269,4 +269,10 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             return "Unknown";
         }
     }
+
+    @Override
+    public boolean isReal()
+    {
+        return true;
+    }
 }

@@ -269,16 +269,35 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     public void clearIndex()
     {
+        boolean serviceStarted = _indexManager.isReal();
+
         try
         {
-            _indexManager.clear();
+            // If the service hasn't been started yet then initialize the index and close it down in finally block below
+            if (!serviceStarted)
+                initializeIndex();
+
+            try
+            {
+                _indexManager.clear();
+            }
+            catch (Throwable t)
+            {
+                // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
+                // the IndexManager unusable.  Attempt to reset the index.
+                ExceptionUtil.logExceptionToMothership(null, t);
+
+                if (serviceStarted)
+                    initializeIndex();
+            }
         }
-        catch (Throwable t)
+        finally
         {
-            // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
-            // the IndexManager unusable.  Attempt to reset the index.
-            ExceptionUtil.logExceptionToMothership(null, t);
-            initializeIndex();
+            if (!serviceStarted)
+            {
+                closeIndex();
+                _indexManager = new NoopWritableIndex("the indexer has not been started yet", _log);
+            }
         }
     }
 
@@ -1338,16 +1357,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     protected void shutDown()
     {
-        commit();
-
-        try
-        {
-            _indexManager.close();
-        }
-        catch (Exception e)
-        {
-            _log.error("Closing index", e);
-        }
+        closeIndex();
 
         try
         {
@@ -1357,6 +1367,21 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         catch (Exception e)
         {
             _log.error("Closing external index", e);
+        }
+    }
+
+
+    private void closeIndex()
+    {
+        commit();
+
+        try
+        {
+            _indexManager.close();
+        }
+        catch (Exception e)
+        {
+            _log.error("Closing index", e);
         }
     }
 
