@@ -86,7 +86,7 @@ public class SearchModule extends DefaultModule
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set("search", "umls", "foobar.blick");
+        return PageFlowUtil.set("search", "umls");
     }
 
 
