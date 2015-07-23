@@ -1019,7 +1019,13 @@ public abstract class SqlDialect
     public void dropIfExists(DbSchema schema, String objectName, String objectType, @Nullable String subObjectName)
     {
         String sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", "?, ?, ?, ?");
-        new SqlExecutor(schema).execute(sql, objectName, schema.getName(), objectType, subObjectName);
+        String schemaName = schema.getName();
+        if (StringUtils.contains(objectName,".") && StringUtils.startsWith(objectName,getGlobalTempTablePrefix()))
+        {
+            schemaName = objectName.substring(0,objectName.indexOf("."));
+            objectName = objectName.substring(objectName.indexOf(".")+1);
+        }
+        new SqlExecutor(schema).execute(sql, objectName, schemaName, objectType, subObjectName);
     }
 
     /**
