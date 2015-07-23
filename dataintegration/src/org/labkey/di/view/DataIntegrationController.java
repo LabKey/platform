@@ -393,4 +393,67 @@ public class DataIntegrationController extends SpringActionController
             return new ApiSimpleResponse(ret);
         }
     }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class TruncateTransformStateAction extends MutatingApiAction<TransformConfigurationForm>
+    {
+        @Override
+        public ApiResponse execute(TransformConfigurationForm form, BindException errors) throws Exception
+        {
+            ScheduledPipelineJobDescriptor etl = getDescriptor(form);
+            JSONObject ret = new JSONObject();
+            ViewContext context = getViewContext();
+
+            if (null == etl)
+                throw new NotFoundException(form.getTransformId());
+
+            if (etl.isPending(context))
+            {
+                ret.put("success", false);
+                ret.put("error", "Not resetting ETL state because job is pending.");
+                LOG.info("Not resetting ETL state because job is pending.");
+            }
+            else
+            {
+                // Truncate target tables
+                Map<String, String> status = TransformManager.get().truncateTargets(form.getTransformId(), getUser(), getContainer());
+
+                // Reset state
+                TransformConfiguration config = null;
+                List<TransformConfiguration> configs = TransformManager.get().getTransformConfigurations(context.getContainer());
+                for (TransformConfiguration c : configs)
+                {
+                    if (c.getTransformId().equalsIgnoreCase(form.getTransformId()))
+                    {
+                        config = c;
+                        break;
+                    }
+                }
+
+                if (config != null)
+                {
+                    config.setTransformState(null);
+                    TransformManager.get().saveTransformConfiguration(context.getUser(), config);
+                }
+
+                // return status
+                String rows = status.get("rows");
+                if (rows != null)
+                {
+                    ret.put("success", !rows.equals("-1"));
+                    ret.put("deletedRows", rows);
+                }
+                else
+                {
+                    ret.put("success", false);
+                }
+
+                String error = status.get("error");
+                if (error != null)
+                    ret.put("error", error);
+            }
+
+            return new ApiSimpleResponse(ret);
+        }
+    }
 }

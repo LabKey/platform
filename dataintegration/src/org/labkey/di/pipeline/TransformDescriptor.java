@@ -175,6 +175,11 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         return _gatedByStep;
     }
 
+    public List<StepMeta> getStepMetaDatas()
+    {
+        return Collections.unmodifiableList(_stepMetaDatas);
+    }
+
     public int getVersion()
     {
         // TODO - add config for real version number

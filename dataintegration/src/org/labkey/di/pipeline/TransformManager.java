@@ -45,6 +45,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -55,7 +56,12 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -82,6 +88,7 @@ import org.labkey.di.filters.RunFilterStrategy;
 import org.labkey.di.filters.SelectAllFilterStrategy;
 import org.labkey.di.steps.ExternalPipelineTaskProvider;
 import org.labkey.di.steps.RemoteQueryTransformStepProvider;
+import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.di.steps.SimpleQueryTransformStepProvider;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.di.steps.StepProvider;
@@ -111,9 +118,12 @@ import org.quartz.impl.matchers.GroupMatcher;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -781,6 +791,54 @@ public class TransformManager implements DataIntegrationService.Interface
         }
 
         return null;
+    }
+
+    public Map<String, String> truncateTargets(String id, User user, Container c) throws BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        int deletedRows = 0;
+        TransformDescriptor etl = (TransformDescriptor)getDescriptor(id);
+        List<StepMeta> stepMetas = etl.getStepMetaDatas();
+        List<TableInfo> targets = new ArrayList<>();
+        Map<String, String> retMap = new HashMap<>();
+
+        for (StepMeta stepMeta : stepMetas) {
+            if(((SimpleQueryTransformStepMeta)stepMeta).getTargetType() == CopyConfig.TargetTypes.query)
+            {
+                QuerySchema querySchema = DefaultSchema.get(user, c, stepMeta.getTargetSchema());
+                if (null == querySchema || null == querySchema.getDbSchema())
+                {
+                    retMap.put("error", "Could not find schema: " + stepMeta.getTargetSchema());
+                    deletedRows = -1;
+                }
+                TableInfo targetTableInfo = querySchema.getTable(stepMeta.getTargetQuery());
+                if (null == targetTableInfo)
+                {
+                    retMap.put("error", "Could not find table: " + stepMeta.getTargetSchema() + '.' + stepMeta.getTargetQuery());
+                    deletedRows = -1;
+                }
+                targets.add(targetTableInfo);
+            }
+        }
+
+        if(deletedRows != -1)
+        {
+            Collections.reverse(targets);
+
+            for (TableInfo target : targets)
+            {
+                QueryUpdateService qus = target.getUpdateService();
+                if (qus != null)
+                {
+                    try (DbScope.Transaction transaction = target.getSchema().getScope().ensureTransaction())
+                    {
+                        deletedRows += qus.truncateRows(user, c, null, null);
+                        transaction.commit();
+                    }
+                }
+            }
+        }
+        retMap.put("rows", Integer.toString(deletedRows));
+        return retMap;
     }
 
     //

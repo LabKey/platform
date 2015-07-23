@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.MenuButton" %>
+<%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page import="org.labkey.api.di.ScheduledPipelineJobDescriptor" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
@@ -148,6 +150,37 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
         });
     }
 
+    function Transform_truncateResetState(transformId)
+    {
+        var params = {'transformId':transformId};
+        Ext4.MessageBox.confirm(
+            'Confirm',
+            'You are about to permanently delete the records associated with this ETL.  It cannot be undone.  Are you sure you want to do this?',
+            function(val){
+                if(val=='yes'){
+                    var waitMask = Ext4.Msg.wait('Deleting Rows...', 'Truncating tables');
+                    Ext4.Ajax.request({
+                        url : <%=q(buildURL(DataIntegrationController.TruncateTransformStateAction.class))%>,
+                        params : params,
+                        method : "POST",
+                        success : function(response)
+                        {
+                            waitMask.close();
+                            var data = Ext4.JSON.decode(response.responseText);
+                            Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
+                        },
+                        failure : function(response, opts)
+                        {
+                            waitMask.close();
+                            LABKEY.Utils.displayAjaxErrorResponse(response, opts);
+                        }
+                    });
+                }
+            },
+        this);
+
+    }
+
 
 // UI GLUE
 function getTransformId(srcEl)
@@ -178,6 +211,11 @@ function onRunNowClicked(el,id)
 function onResetStateClicked(el, id)
 {
     Transform_resetState(id);
+}
+
+function onTruncateAndReset(el, id)
+{
+    Transform_truncateResetState(id);
 }
 </script>
 
@@ -238,7 +276,12 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
         <td><%=text(configuration.getLastCompletionUrl())%></td>
         <td><%=text(configuration.getLastCheckedString())%></td>
         <td class="etl-action-col"><%= button("run now").href("#").onClick("onRunNowClicked(this," + q(descriptor.getId()) + "); return false;").enabled(enableControls) %></td>
-        <td class="etl-action-col"><%= button("reset state").href("#").onClick("onResetStateClicked(this," + q(descriptor.getId()) + "); return false;").enabled(enableControls && !configuration.getTransformState().contentEquals("{}")) %></td>
+        <td class="etl-action-col"><%
+            MenuButton reset = new MenuButton("ETL state...");
+            reset.addMenuItem("Reset", "#", "onResetStateClicked(this," + q(descriptor.getId()) + "); return false;");
+            reset.addMenuItem("Truncate and Reset", "#", "onTruncateAndReset(this," + q(descriptor.getId()) + "); return false;");
+            reset.render(new RenderContext(getViewContext()), out);
+        %></td>
         </tr><%
     }
     else
