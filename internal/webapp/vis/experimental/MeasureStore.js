@@ -506,6 +506,7 @@
             this._dimensions = {};
             this._records = config.records || [];
             this._columns = [countStar];
+            this._responseMetadata = config.responseMetadata;
             this._columnMap = {
                 '*': countStar
             };
@@ -553,8 +554,7 @@
 
             this._crossfilter = crossfilter(this._records);
             var dimensions = config.dimensions || [];
-            for (var i = 0; i < dimensions.length; i++)
-            {
+            for (var i = 0; i < dimensions.length; i++) {
                 this.getDimension(dimensions[i]);
             }
         };
@@ -565,12 +565,18 @@
             _dimensions: null,
             _measures: null,
             _records: null,
-            _columnsMap: null,      // column name to index
+            _responseMetadata: null, // schemaName, queryName, columnAliases, etc.
+            _columnMap: null,      // column alias to index
             _columns: null,         // {name:foo, index:i, aggregator:constructor}
 
             records : function()
             {
                 return this._records;
+            },
+
+            getResponseMetadata : function()
+            {
+                return this._responseMetadata;
             },
 
             _group : function(dim, keyFn)
@@ -861,7 +867,7 @@
         function _apiWrapper(originalConfig, apiFn, resultHandlerFn)
         {
             var apiConfig = {};
-            var onSuccess;
+            var onSuccess, onFailure, scope;
             var measures, dimensions;
 
             for (var p in originalConfig)
@@ -880,17 +886,28 @@
                     case "success":
                         onSuccess = originalConfig[p];
                         break;
+                    case "failure":
+                        onFailure = originalConfig[p];
+                        break;
+                    case "scope":
+                        scope = originalConfig[p];
+                        break;
                     default:
                         apiConfig[p] = originalConfig[p];
                 }
             }
 
-            // TODO: These do not apply scope properly, fix these wrappers
-            apiConfig.success = function(results)
-            {
+            apiConfig.success = function(results) {
                 var measureStore = resultHandlerFn(results, measures, dimensions);
-                if (onSuccess)
-                    onSuccess(measureStore);
+                if (onSuccess) {
+                    onSuccess.call(scope || this, measureStore, measures, dimensions);
+                }
+            };
+
+            apiConfig.failure = function(response) {
+                if (onFailure) {
+                    onFailure.call(scope || this, response);
+                }
             };
 
             apiFn(apiConfig);
@@ -922,7 +939,12 @@
             return new MeasureStore({
                 //dimensions: dimensions,
                 measures: measures,
-                records: results.rows
+                records: results.rows,
+                responseMetadata: {
+                    schemaName: results.schemaName,
+                    queryName: results.queryName,
+                    columnAliases: results.columnAliases
+                }
             });
         }
 
@@ -940,15 +962,21 @@
                 if (_measure.isMeasure === true) {
                     measures.push(name);
                 }
-                else if (_measure.isDimension === true) {
-                    dimensions.push(name);
-                }
-            });
-            return new MeasureStore({
                 // there's not really an advantage to pre constructing the dimensions
+                //else if (_measure.isDimension === true) {
+                //    dimensions.push(name);
+                //}
+            });
+
+            return new MeasureStore({
                 //dimensions: dimensions,
                 measures: measures,
-                records: results.rows
+                records: results.rows,
+                responseMetadata: {
+                    schemaName: results.schemaName,
+                    queryName: results.queryName,
+                    columnAliases: results.columnAliases
+                }
             });
         }
 
