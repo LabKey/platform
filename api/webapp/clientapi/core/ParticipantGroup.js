@@ -95,7 +95,7 @@ LABKEY.ParticipantGroup = new function()
             }
 
             sendJsonQueryRequest({
-                url : LABKEY.ActionURL.buildURL("participant-group", "updateParticipantGroup", config.containerPath),
+                url : LABKEY.ActionURL.buildURL("participant-group", "updateParticipantGroup.api", config.containerPath),
                 success: getSuccessCallbackWrapper(config.success, 'group'),
                 failure: LABKEY.Utils.getCallbackWrapper(config.failure, this, true),
                 jsonData : group

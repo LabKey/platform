@@ -113,6 +113,11 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         return "POST".equals(getViewContext().getRequest().getMethod());
     }
 
+    protected boolean isDelete()
+    {
+        return "DELETE".equals(getViewContext().getRequest().getMethod());
+    }
+
 
     public ModelAndView handleRequest() throws Exception
     {

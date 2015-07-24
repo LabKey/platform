@@ -33,6 +33,7 @@ abstract public class AbstractParticipantGroup<T> extends Entity
     private String _categoryLabel;
     private String _filters;
     private String _description;
+    private boolean _session;
 
     protected Set<T> _participantIds = new LinkedHashSet<>();
 
@@ -166,6 +167,16 @@ abstract public class AbstractParticipantGroup<T> extends Entity
         _categoryLabel = categoryLabel;
     }
 
+    public boolean isSession()
+    {
+        return _session;
+    }
+
+    public void setSession(boolean session)
+    {
+        _session = session;
+    }
+
     @Override
     public boolean equals(Object o)
     {
@@ -204,6 +215,7 @@ abstract public class AbstractParticipantGroup<T> extends Entity
         json.put("createdBy", getCreatedBy());
         json.put("modifiedBy", getModifiedBy());
         json.put("filters", getFilters());
+        json.put("session", isSession());
 
         return json;
     }
