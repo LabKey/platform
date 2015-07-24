@@ -255,6 +255,23 @@
     <td>&nbsp;</td>
 </tr>
 
+<%
+    String customLoginHelp = "The custom login page is specified as a string composed of the controller name and an action name in" +
+            " the format: <controller>-<action>.  For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
+            " an HTML page located at /labkey/build/deploy/modules/myModule/views/customLogin.html";
+%>
+<tr>
+    <td colspan=2>Provide a custom login page (<%=text(bean.helpLink)%>)</td>
+</tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
+<tr>
+    <td class="labkey-form-label">Alternative login action<%=PageFlowUtil.helpPopup("Custom Login Page", customLoginHelp, false)%></td>
+    <td><input type="text" name="customLogin" size="50" value="<%= h(laf.getCustomLogin()) %>"></td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+</tr>
+
 <tr>
     <td><%= button("Save").submit(true).onClick("_form.setClean();") %>&nbsp;<%= PageFlowUtil.button("Reset")
             .href(new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))

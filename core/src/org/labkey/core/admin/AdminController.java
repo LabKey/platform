@@ -1386,6 +1386,7 @@ public class AdminController extends SpringActionController
         private String _defaultDateFormat;
         private String _defaultNumberFormat;
         private boolean _restrictedColumnsEnabled;
+        private String _customLogin;
 
         public enum FileRootProp
         {
@@ -1513,6 +1514,17 @@ public class AdminController extends SpringActionController
         public void setCompanyName(String companyName)
         {
             _companyName = companyName;
+        }
+
+        public String getCustomLogin()
+        {
+            return _customLogin;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setCustomLogin(String customLogin)
+        {
+            _customLogin = customLogin;
         }
 
         public String getSystemEmailAddress()

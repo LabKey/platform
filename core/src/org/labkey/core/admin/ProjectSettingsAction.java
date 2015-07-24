@@ -189,6 +189,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         props.setLogoHref(form.getLogoHref());
         props.setSystemShortName(form.getSystemShortName());
         props.setReportAProblemPath(form.getReportAProblemPath());
+        props.setCustomLogin(form.getCustomLogin());
 
         if (!StringUtils.isBlank(form.getSupportEmail()))
         {
