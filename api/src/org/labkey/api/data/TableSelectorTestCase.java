@@ -19,7 +19,6 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Level;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
-import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
@@ -132,43 +131,20 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         assertEquals(count, selector.getCollection(User.class).size());
 
         final MutableInt forEachCount = new MutableInt(0);
-        selector.forEach(new Selector.ForEachBlock<User>()
-        {
-            @Override
-            public void exec(User user) throws SQLException
-            {
-                forEachCount.increment();
-            }
+        selector.forEach(user -> {
+            forEachCount.increment();
         }, User.class);
         assertEquals(count, forEachCount.intValue());
 
         final MutableInt forEachMapCount = new MutableInt(0);
-        selector.forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
-        {
-            @Override
-            public void exec(Map<String, Object> map) throws SQLException
-            {
-                forEachMapCount.increment();
-            }
-        });
+        selector.forEachMap(map -> forEachMapCount.increment());
         assertEquals(count, forEachMapCount.intValue());
 
         final MutableInt forEachBatchCount = new MutableInt(0);
-        selector.forEachBatch(new ForEachBatchBlock<User>()
-        {
-            @Override
-            public boolean accept(User element)
-            {
-                return true;
-            }
-
-            @Override
-            public void exec(List<User> batch) throws SQLException
-            {
-                assertFalse(batch.isEmpty());
-                assertTrue(batch.size() <= 3);
-                forEachBatchCount.add(batch.size());
-            }
+        selector.forEachBatch(batch -> {
+            assertFalse(batch.isEmpty());
+            assertTrue(batch.size() <= 3);
+            forEachBatchCount.add(batch.size());
         }, User.class, 3);
         assertEquals(count, forEachBatchCount.intValue());
 

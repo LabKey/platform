@@ -102,8 +102,14 @@ public interface Selector
     /** Callback interface for dealing with objects streamed from the database in batches */
     interface ForEachBatchBlock<T>
     {
-        /** Invoked once for each row returned by the selector. Return true to add element to the current batch, false to skip it. */
-        boolean accept(T element);
+        /**
+         * Invoked once for each row returned by the selector. Return true to add element to the current batch, false to skip it.
+         */
+        default boolean accept(T element)
+        {
+            return true;
+        }
+
         /** Invoked once for each batch of rows returned by the selector */
         void exec(List<T> batch) throws SQLException;
     }

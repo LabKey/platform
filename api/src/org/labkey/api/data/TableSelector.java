@@ -25,7 +25,6 @@ import org.labkey.api.query.QueryService;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -39,7 +38,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFactory, TableSelector>
 {
@@ -282,13 +280,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response);
         setAsyncRequest(asyncRequest);
 
-        return asyncRequest.waitForResult(new Callable<Results>()
-        {
-            public Results call() throws Exception
-            {
-                return getResults(cache, scrollable);
-            }
-        });
+        return asyncRequest.waitForResult(() -> getResults(cache, scrollable));
     }
 
     public TableSelector setForDisplay(boolean forDisplay)
@@ -376,36 +368,31 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         final AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, _columns);
         ResultSetFactory resultSetFactory = new ExecutingResultSetFactory(sqlFactory);
 
-        return handleResultSet(resultSetFactory, new ResultSetHandler<Map<String, List<Aggregate.Result>>>()
-        {
-            @Override
-            public Map<String, List<Aggregate.Result>> handle(@Nullable ResultSet rs, Connection conn) throws SQLException
+        return handleResultSet(resultSetFactory, (rs, conn) -> {
+            Map<String, List<Aggregate.Result>> results = new HashMap<>();
+
+            // null == rs is the short-circuit case... SqlFactory didn't find any aggregate columns, so
+            // query wasn't executed. Just return an empty map in this case.
+            if (null != rs)
             {
-                Map<String, List<Aggregate.Result>> results = new HashMap<>();
-
-                // null == rs is the short-circuit case... SqlFactory didn't find any aggregate columns, so
-                // query wasn't executed. Just return an empty map in this case.
-                if (null != rs)
+                // Issue 17536: Issue a warning instead of blowing up if there is no result row containing the aggregate values.
+                if (!rs.next())
                 {
-                    // Issue 17536: Issue a warning instead of blowing up if there is no result row containing the aggregate values.
-                    if (!rs.next())
+                    Logger.getLogger(TableSelector.class).warn("Expected a non-empty resultset from aggregate query.");
+                }
+                else
+                {
+                    for (Aggregate agg : aggregates)
                     {
-                        Logger.getLogger(TableSelector.class).warn("Expected a non-empty resultset from aggregate query.");
-                    }
-                    else
-                    {
-                        for (Aggregate agg : aggregates)
-                        {
-                            if (!results.containsKey(agg.getColumnName()))
-                                results.put(agg.getColumnName(), new ArrayList<Aggregate.Result>());
+                        if (!results.containsKey(agg.getColumnName()))
+                            results.put(agg.getColumnName(), new ArrayList<>());
 
-                            results.get(agg.getColumnName()).add(agg.getResult(rs, sqlFactory._columnMap));
-                        }
+                        results.get(agg.getColumnName()).add(agg.getResult(rs, sqlFactory._columnMap));
                     }
                 }
-
-                return results;
             }
+
+            return results;
         });
     }
 
@@ -417,13 +404,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
         try
         {
-            return asyncRequest.waitForResult(new Callable<Map<String, List<Aggregate.Result>>>()
-            {
-                public Map<String, List<Aggregate.Result>> call() throws Exception
-                {
-                    return getAggregates(aggregates);
-                }
-            });
+            return asyncRequest.waitForResult(() -> getAggregates(aggregates));
         }
         catch (SQLException e)
         {

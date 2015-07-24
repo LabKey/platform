@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -196,16 +197,11 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     protected void forEach(final ForEachBlock<ResultSet> block, ResultSetFactory factory)
     {
-        handleResultSet(factory, (new ResultSetHandler<Object>()
-        {
-            @Override
-            public Object handle(ResultSet rs, Connection conn) throws SQLException
-            {
-                while (rs.next())
-                    block.exec(rs);
+        handleResultSet(factory, ((rs, conn) -> {
+            while (rs.next())
+                block.exec(rs);
 
-                return null;
-            }
+            return null;
         }));
     }
 
@@ -217,18 +213,13 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     private void forEachMap(final ForEachBlock<Map<String, Object>> block, ResultSetFactory factory)
     {
-        handleResultSet(factory, new ResultSetHandler<Object>()
-        {
-            @Override
-            public Object handle(ResultSet rs, Connection conn) throws SQLException
-            {
-                ResultSetIterator iter = new ResultSetIterator(rs);
+        handleResultSet(factory, (rs, conn) -> {
+            ResultSetIterator iter = new ResultSetIterator(rs);
 
-                while (iter.hasNext())
-                    block.exec(iter.next());
+            while (iter.hasNext())
+                block.exec(iter.next());
 
-                return null;
-            }
+            return null;
         });
     }
 
@@ -290,26 +281,16 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
         // This is a simple object (Number, String, Date, etc.)
         if (null != getter)
         {
-            forEach(new ForEachBlock<ResultSet>() {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    //noinspection unchecked
-                    block.exec((T)getter.getObject(rs));
-                }
+            forEach(rs -> {
+                //noinspection unchecked
+                block.exec((T)getter.getObject(rs));
             }, resultSetFactory);
         }
         else
         {
             final ObjectFactory<T> factory = getObjectFactory(clazz);
 
-            ForEachBlock<Map<String, Object>> mapBlock = new ForEachBlock<Map<String, Object>>() {
-                @Override
-                public void exec(Map<String, Object> map) throws SQLException
-                {
-                    block.exec(factory.fromMap(map));
-                }
-            };
+            ForEachBlock<Map<String, Object>> mapBlock = map -> block.exec(factory.fromMap(map));
 
             forEachMap(mapBlock, resultSetFactory);
         }
@@ -369,7 +350,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
                 if (_batch.size() == _batchSize)
                 {
-                    _batchBlock.exec(_batch);
+                    _batchBlock.exec(new LinkedList<>(_batch));  // Make a defensive copy... _batchBlock might process _batch asynchronously
                     _batch.clear();
                 }
             }
@@ -397,25 +378,20 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     public @NotNull <K, V> Map<K, V> fillValueMap(@NotNull final Map<K, V> fillMap)
     {
         // Using a ResultSetIterator ensures that standard type conversion happens (vs. ResultSet enumeration and rs.getObject())
-        handleResultSet(getStandardResultSetFactory(), new ResultSetHandler<Object>()
-        {
-            @Override
-            public Object handle(ResultSet rs, Connection conn) throws SQLException
+        handleResultSet(getStandardResultSetFactory(), (rs, conn) -> {
+            if (rs.getMetaData().getColumnCount() < 2)
+                throw new IllegalStateException("Must select at least two columns to use fillValueMap() or getValueMap()");
+
+            ResultSetIterator iter = new ResultSetIterator(rs);
+
+            while (iter.hasNext())
             {
-                if (rs.getMetaData().getColumnCount() < 2)
-                    throw new IllegalStateException("Must select at least two columns to use fillValueMap() or getValueMap()");
-
-                ResultSetIterator iter = new ResultSetIterator(rs);
-
-                while (iter.hasNext())
-                {
-                    RowMap rowMap = (RowMap)iter.next();
-                    //noinspection unchecked
-                    fillMap.put((K)rowMap.get(1), (V)rowMap.get(2));
-                }
-
-                return null;
+                RowMap rowMap = (RowMap)iter.next();
+                //noinspection unchecked
+                fillMap.put((K)rowMap.get(1), (V)rowMap.get(2));
             }
+
+            return null;
         });
 
         return fillMap;
@@ -424,6 +400,6 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     @Override
     public @NotNull <K, V> Map<K, V> getValueMap()
     {
-        return fillValueMap(new HashMap<K, V>());
+        return fillValueMap(new HashMap<>());
     }
 }

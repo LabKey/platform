@@ -17,13 +17,9 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.Assert;
-import org.labkey.api.data.Selector.ForEachBatchBlock;
-import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.util.ResultSetUtil;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extends Assert
@@ -47,14 +43,7 @@ public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extend
         assertEquals(count, selector.getMapArray().length);
 
         rowCount.setValue(0);
-        selector.forEachMap(new ForEachBlock<Map<String, Object>>()
-        {
-            @Override
-            public void exec(Map object) throws SQLException
-            {
-                rowCount.increment();
-            }
-        });
+        selector.forEachMap(object -> rowCount.increment());
         assertEquals(count, rowCount.intValue());
 
         // Test bean operations
@@ -64,65 +53,29 @@ public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extend
         assertEquals(count, selector.getArray(clazz).length);
 
         rowCount.setValue(0);
-        selector.forEach(new ForEachBlock<K>()
-        {
-            @Override
-            public void exec(K bean) throws SQLException
-            {
-                rowCount.increment();
-            }
-        }, clazz);
+        selector.forEach(bean -> rowCount.increment(), clazz);
         assertEquals(count, rowCount.intValue());
 
         rowCount.setValue(0);
-        selector.forEachBatch(new ForEachBatchBlock<K>()
-        {
-            @Override
-            public boolean accept(K element)
-            {
-                return true;
-            }
-
-            @Override
-            public void exec(List<K> batch) throws SQLException
-            {
-                assertFalse(batch.isEmpty());
-                assertTrue(batch.size() <= 3);
-                rowCount.add(batch.size());
-            }
+        selector.forEachBatch(batch -> {
+            assertFalse(batch.isEmpty());
+            assertTrue(batch.size() <= 3);
+            rowCount.add(batch.size());
         }, clazz, 3);
         assertEquals(count, rowCount.intValue());
 
         rowCount.setValue(0);
-        selector.forEachMapBatch(new ForEachBatchBlock<Map<String, Object>>()
-        {
-            @Override
-            public boolean accept(Map<String, Object> element)
-            {
-                return true;
-            }
-
-            @Override
-            public void exec(List<Map<String, Object>> batch) throws SQLException
-            {
-                assertFalse(batch.isEmpty());
-                assertTrue(batch.size() <= 5);
-                rowCount.add(batch.size());
-            }
+        selector.forEachMapBatch(batch -> {
+            assertFalse(batch.isEmpty());
+            assertTrue(batch.size() <= 5);
+            rowCount.add(batch.size());
         }, 5);
         assertEquals(count, rowCount.intValue());
 
         // Test ResultSet operations
 
         rowCount.setValue(0);
-        selector.forEach(new ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet object) throws SQLException
-            {
-                rowCount.increment();
-            }
-        });
+        selector.forEach(object -> rowCount.increment());
         assertEquals(count, rowCount.intValue());
 
         verifyResultSets(selector, count, true);
