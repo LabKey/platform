@@ -47,6 +47,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     protected static final String REPORT_A_PROBLEM_PATH_PROP = "reportAProblemPath";
 
     protected static final String DATE_PARSING_MODE = "dateParsingMode";
+    protected static final String CUSTOM_LOGIN_PROP = "customLogin";
 
     private final Container _settingsContainer;
 
@@ -162,6 +163,11 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         }
 
         return path.replace("${contextPath}", AppProps.getInstance().getContextPath());
+    }
+
+    public String getCustomLogin()
+    {
+        return lookupStringValue(CUSTOM_LOGIN_PROP, "login-login");
     }
 
     public boolean isMenuUIEnabled()

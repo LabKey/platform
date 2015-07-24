@@ -101,4 +101,10 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
     {
         storeStringValue(REPORT_A_PROBLEM_PATH_PROP, reportAProblemPath);
     }
+
+    public void setCustomLogin(String customLogin)
+    {
+        storeStringValue(CUSTOM_LOGIN_PROP, customLogin);
+    }
+
 }
