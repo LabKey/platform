@@ -433,6 +433,7 @@ core/src/org/labkey/core/dialect/PostgreSql91Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql92Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql93Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql94Dialect.java -text
+core/src/org/labkey/core/dialect/PostgreSql95Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSqlDialectFactory.java -text
 core/src/org/labkey/core/dialect/PostgreSqlNonConformingStringHandler.java -text
 core/src/org/labkey/core/filters/SetCharacterEncodingFilter.java -text
