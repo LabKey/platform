@@ -661,7 +661,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         {
             FieldKey participantFieldKey = FieldKey.fromParts("ParticipantId");
             SimpleFilter filter;
-            if (group.isSession() || group.isNew() || (getUserSchema().getStudy() != null && getUserSchema().getStudy().isDataspaceStudy()))
+            if (group.isSession() || group.isNew() || !getContainer().equals(group.lookupContainer()) || (getUserSchema().getStudy() != null && getUserSchema().getStudy().isDataspaceStudy()))
             {
                 // Unsaved session group doesn't persist in participant group map table (yet) and the
                 // project-level shared study doesn't have maintain participant group maps so we need to
