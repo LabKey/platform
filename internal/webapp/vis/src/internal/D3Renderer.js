@@ -14,7 +14,7 @@ LABKEY.vis.internal.Axis = function() {
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
             tickRectCls, tickRectHeightOffset=6, tickRectWidthOffset=8, tickClick, axisSel, tickSel, textSel, gridLineSel,
             borderSel, grid, scalesList = [];
-    var tickColor = '#000000', tickTextColor = '#000000', tickTextBkgdColor = 'transparent', gridLineColor = '#DDDDDD',
+    var tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD',
             borderColor = '#000000', tickDigits;
     var tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1;
     var fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10;
@@ -189,7 +189,6 @@ LABKEY.vis.internal.Axis = function() {
                     .attr('y', function() { return this.nextSibling.getBBox().y - tickRectHeightOffset/2; })
                     .attr('width', function() { return this.nextSibling.getBBox().width + tickRectWidthOffset; })
                     .attr('height', function() { return this.nextSibling.getBBox().height + tickRectHeightOffset; })
-                    .attr('fill', tickTextBkgdColor)
                     .attr('fill-opacity', 0);
 
             addEvents(anchors.select('rect.' + (tickRectCls?tickRectCls:"tick-rect")));
@@ -205,7 +204,6 @@ LABKEY.vis.internal.Axis = function() {
                     .attr('y', function() { return this.nextSibling.getBBox().y - 3; })
                     .attr('width', function() { return this.nextSibling.getBBox().width + 8; })
                     .attr('height', function() { return this.nextSibling.getBBox().height + 6; })
-                    .attr('fill', tickTextBkgdColor)
                     .attr('fill-opacity', 0);
 
             addEvents(anchors.select('rect.highlight'));
