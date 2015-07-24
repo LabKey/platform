@@ -183,11 +183,6 @@ public class SharedStudyController extends BaseStudyController
             }
         }
 
-        protected boolean isDelete()
-        {
-            return "DELETE".equals(getViewContext().getRequest().getMethod());
-        }
-
         @Override
         public Object execute(SharedStudyContainerFilterForm form, BindException errors) throws Exception
         {

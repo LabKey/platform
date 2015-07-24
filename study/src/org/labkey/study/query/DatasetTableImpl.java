@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
@@ -73,6 +74,7 @@ import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
@@ -80,10 +82,12 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -595,8 +599,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @NotNull
     private SQLFragment _getFromSQL(String alias, boolean includeParticipantVisit)
     {
+        ParticipantGroup group = getUserSchema().getSessionParticipantGroup();
         DatasetDefinition.DataSharing sharing = ((DatasetDefinition)getDataset()).getDataSharingEnum();
-        if (!includeParticipantVisit && !_dsd.isAssayData() && sharing == DatasetDefinition.DataSharing.NONE)
+        if (!includeParticipantVisit && !_dsd.isAssayData() && sharing == DatasetDefinition.DataSharing.NONE && group == null)
             return super.getFromSQL(alias);
 
         String innerAlias = "__" +  alias;
@@ -619,6 +624,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
                     "    ON " + innerAlias + ".ParticipantId=PV.ParticipantId AND " + innerAlias + ".SequenceNum=PV.SequenceNum AND PV.Container =  " + innerAlias + ".Container");
         }
+
+        boolean hasWhere = false;
 
         // Datasets mostly ignore container filters because they usually belong to a single container.
         // In the dataspace case, they are unfiltered (no container filter).
@@ -644,7 +651,42 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                         throw new IllegalStateException("problem generating dataset SQL");
                     sqlf.append(" WHERE ").append(innerAlias).append(".").append(sqlCF);
                 }
+
+                hasWhere = true;
             }
+        }
+
+        // Add the session participant group filter
+        if (group != null)
+        {
+            FieldKey participantFieldKey = FieldKey.fromParts("ParticipantId");
+            SimpleFilter filter;
+            if (group.isSession() || group.isNew() || (getUserSchema().getStudy() != null && getUserSchema().getStudy().isDataspaceStudy()))
+            {
+                // Unsaved session group doesn't persist in participant group map table (yet) and the
+                // project-level shared study doesn't have maintain participant group maps so we need to
+                // expand into a "ParticipantId IN ..." filter.
+                // CONSIDER: Use a temp table for large participant group lists
+                filter = new SimpleFilter(participantFieldKey, Arrays.asList(group.getParticipantIds()), CompareType.IN);
+            }
+            else
+            {
+                // Expand into a "ParticipantId/group = category" filter
+                Pair<FieldKey, String> filterColValue = group.getFilterColAndValue(getContainer());
+                filter = new SimpleFilter("ParticipantId", filterColValue.second);
+            }
+
+            SQLFragment frag = filter.getSQLFragment(this, getColumns());
+
+            // Ugly. Remove leading WHERE from the generated sql frag.
+            String sql = frag.getRawSQL();
+            if (hasWhere && sql.startsWith("WHERE "))
+                sql = sql.replaceFirst("WHERE ", "AND ");
+
+            // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm string replacing and hoping...
+            sql = sql.replaceAll("ParticipantId", innerAlias + ".ParticipantId");
+            SQLFragment frag2 = new SQLFragment(sql, frag.getParams());
+            sqlf.append("\n").append(frag2);
         }
 
         sqlf.append(") AS ").append(alias);

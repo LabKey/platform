@@ -39,7 +39,7 @@ import java.util.List;
 
 public class DataspaceQuerySchema extends StudyQuerySchema
 {
-    public static final String SHARED_STUDY_CONTAINER_FILTER_KEY = "sharedStudyContainerFilter.";
+    public static final String SHARED_STUDY_CONTAINER_FILTER_KEY = "LABKEY.sharedStudyContainerFilter.";
 
     private final List<GUID> _sharedStudyContainerFilter;
 

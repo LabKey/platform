@@ -65,6 +65,8 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.lang.String;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -90,6 +92,8 @@ public class ParticipantGroupManager
     private static final List<ParticipantCategoryListener> _listeners = new CopyOnWriteArrayList<>();
     private static final Cache<String, ParticipantGroup[]> GROUP_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Group Cache");
     private static final Cache<Container, ParticipantCategoryImpl[]> CATEGORY_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Category Cache");
+
+    private static final String PARTICIPANT_GROUP_SESSION_KEY = "LABKEY.sharedStudyParticipantFilter.";
 
     private ParticipantGroupManager(){}
 
@@ -400,7 +404,7 @@ public class ParticipantGroupManager
         sb.append("         var dataRegionEl = Ext.get(").append(PageFlowUtil.jsString(dataRegionName)).append(");");
         sb.append("         dataRegionEl.mask('getting selections...', 'x-mask-loading');");
         sb.append("         Ext.Ajax.request({");
-        sb.append("             url: LABKEY.ActionURL.buildURL('participant-group', 'getParticipantsFromSelection', null, LABKEY.ActionURL.getParameters(dataRegion.requestURL)),");
+        sb.append("             url: LABKEY.ActionURL.buildURL('participant-group', 'getParticipantsFromSelection.api', null, LABKEY.ActionURL.getParameters(dataRegion.requestURL)),");
 
         // ask for either the selected participants or all the participants in the view
         if (fromSelection)
@@ -420,9 +424,10 @@ public class ParticipantGroupManager
         sb.append("                 var o = eval('var $=' + res.responseText + ';$;');");
         sb.append("                 if (o.success && o.ptids) {");
         sb.append("                     var stringPtids = '';");
-        sb.append("                       for(var i = 0; i < o.ptids.length; i++){" +
-                "                              if(i != o.ptids.length-1) stringPtids += o.ptids[i] + ', ';" +
-                "                              else stringPtids += o.ptids[i]; }");
+        sb.append("                     for (var i = 0; i < o.ptids.length; i++) {");
+        sb.append("                         if (i != o.ptids.length-1) { stringPtids += o.ptids[i] + ', '; }");
+        sb.append("                         else { stringPtids += o.ptids[i]; }");
+        sb.append("                     }");
         sb.append("                     var dlg = Ext4.create('Study.window.ParticipantGroup', {");
         sb.append("                             subject: {");
         sb.append("                                 nounSingular:").append(PageFlowUtil.jsString(study.getSubjectNounSingular())).append(',');
@@ -702,6 +707,55 @@ public class ParticipantGroupManager
         }
         return participantIdMap;
     }
+
+    public void setSessionParticipantGroup(Container c, User user, HttpServletRequest request, Integer groupRowId)
+    {
+        HttpSession session = request.getSession(true);
+        if (session == null)
+            return;
+
+        // XXX: Use current container if there is no shared study?
+        session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getProject().getRowId(), groupRowId);
+    }
+
+    public ParticipantGroup setSessionParticipantGroup(Container c, User user, HttpServletRequest request, ParticipantGroup group)
+    {
+        assert group.isSession();
+        HttpSession session = request.getSession(true);
+        if (session == null)
+            return null;
+
+        // XXX: Use current container if there is no shared study?
+        session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getProject().getRowId(), group);
+        return group;
+    }
+
+    public ParticipantGroup getSessionParticipantGroup(Container c, User user, HttpServletRequest request)
+    {
+        HttpSession session = request.getSession(true);
+        if (session == null)
+            return null;
+
+        // XXX: Use current container if there is no shared study?
+        ParticipantGroup group = null;
+        Object o = session.getAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getProject().getRowId());
+        if (o instanceof Integer)
+            group = getParticipantGroup(c, user, (Integer)o);
+        else if (o instanceof ParticipantGroup)
+            group = (ParticipantGroup)o;
+        return group;
+    }
+
+    public void deleteSessionParticipantGroup(Container c, User user, HttpServletRequest request)
+    {
+        HttpSession session = request.getSession(true);
+        if (session == null)
+            return;
+
+        // XXX: Use current container if there is no shared study?
+        session.removeAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getProject().getRowId());
+    }
+
 
     public ParticipantGroup setParticipantGroup(Container c, User user, ParticipantGroup group) throws SQLException, ValidationException
     {

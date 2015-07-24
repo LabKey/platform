@@ -25,6 +25,8 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -59,6 +61,7 @@ import org.labkey.study.query.DataspaceQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
+import javax.servlet.http.HttpSession;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -943,17 +946,17 @@ public class ParticipantGroupController extends BaseStudyController
         public void validateForm(ParticipantGroupSpecification form, Errors errors)
         {
             form.setContainerId(getContainer().getId());
-            if(!form.getParticipantCategorySpecification().isNew())
+            if (!form.getParticipantCategorySpecification().isNew())
             {
                 ParticipantGroup[] participantGroups = ParticipantGroupManager.getInstance().getParticipantGroups(getContainer(), getUser(), form.getParticipantCategorySpecification());
                 Set<String> formParticipants = new HashSet<>(Arrays.asList(form.getParticipantIds()));
 
-                for(ParticipantGroup group : participantGroups)
+                for (ParticipantGroup group : participantGroups)
                 {
                     if (group.getRowId() != form.getRowId())
                     {
                         String[] participants = group.getParticipantIds();
-                        for(String ptid : participants)
+                        for (String ptid : participants)
                         {
                             if (formParticipants.contains(ptid))
                             {
@@ -967,10 +970,9 @@ public class ParticipantGroupController extends BaseStudyController
             if (form.getRowId() != 0)
             {
                 // updating an existing group
-                //                
                 _prevGroup = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId());
                 if (_prevGroup == null)
-                    errors.reject(ERROR_MSG, "The group " + form.getLabel() + " no longer exists in the sytem, update failed.");
+                    errors.reject(ERROR_MSG, "The group " + form.getLabel() + " no longer exists in the system, update failed.");
             }
         }
 
@@ -993,7 +995,7 @@ public class ParticipantGroupController extends BaseStudyController
                 // this is a new category being created
                 if (form.getCategoryId() == 0)
                 {
-                    if (form.getCategoryType().equals("list"))
+                    if (form.getCategoryType().equals(ParticipantCategory.Type.list.name()))
                     {
                         // No category selected, create new category with type 'list'.
                         if (form.isNew())
@@ -1032,7 +1034,7 @@ public class ParticipantGroupController extends BaseStudyController
                     category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
 
                     // if the category shared bit has changed, resave the category
-                    if(form.getCategoryOwnerId() != category.getOwnerId())
+                    if (form.getCategoryOwnerId() != category.getOwnerId())
                     {
                         category.setOwnerId(form.getCategoryOwnerId());
                         ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), category);
@@ -1359,6 +1361,80 @@ public class ParticipantGroupController extends BaseStudyController
             return category;
         }
     }
+
+    // CONSIDER: Merge with UpdateParticipantGroupAction
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SessionParticipantGroupAction extends ApiAction<UpdateParticipantGroupForm>
+    {
+        public SessionParticipantGroupAction()
+        {
+            super();
+            setSupportedMethods(new String[] { "GET", "POST", "DELETE" });
+        }
+
+        @Override
+        public Object execute(UpdateParticipantGroupForm form, BindException errors) throws Exception
+        {
+            HttpSession session = getViewContext().getSession();
+            if (session == null)
+                throw new IllegalStateException("Session required");
+
+            ParticipantGroup group;
+            if (isPost())
+            {
+                if (form.getRowId() > 0)
+                {
+                    ParticipantGroup existing = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId());
+                    if (existing == null)
+                        throw new NotFoundException("Could not find participant group with rowId " + form.getRowId());
+
+                    ParticipantGroupManager.getInstance().setSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest(), existing.getRowId());
+                    return success(existing);
+                }
+                else
+                {
+                    group = ParticipantGroupManager.getInstance().getSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest());
+                    if (group == null)
+                    {
+                        group = new ParticipantGroup();
+                        group.setSession(true);
+                    }
+
+                    Set<String> participantIds = new HashSet<>(Arrays.asList(form.getParticipantIds() == null ? group.getParticipantIds() : form.getParticipantIds()));
+                    if (form.getEnsureParticipantIds() != null)
+                        participantIds.addAll(Arrays.asList(form.getEnsureParticipantIds()));
+                    if (form.getDeleteParticipantIds() != null)
+                        participantIds.removeAll(Arrays.asList(form.getDeleteParticipantIds()));
+
+                    group.setParticipantSet(participantIds);
+
+                    if (form.getDescription() != null)
+                        group.setDescription(form.getDescription());
+
+                    if (form.getLabel() != null)
+                        group.setLabel(form.getLabel());
+
+                    if (form.getFilters() != null)
+                        group.setFilters(form.getFilters());
+
+                    group = ParticipantGroupManager.getInstance().setSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest(), group);
+                    return success(group);
+                }
+            }
+            else if (isDelete())
+            {
+                ParticipantGroupManager.getInstance().deleteSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest());
+                return success();
+            }
+            else
+            {
+                group = ParticipantGroupManager.getInstance().getSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest());
+                return success(group);
+            }
+        }
+    }
+
 
 
     //// Study manager wrappers

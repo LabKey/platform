@@ -310,7 +310,7 @@ Ext4.define('Study.window.ParticipantGroup', {
         }
 
         Ext4.Ajax.request({
-            url : (LABKEY.ActionURL.buildURL("participant-group", "saveParticipantGroup")),
+            url : (LABKEY.ActionURL.buildURL("participant-group", "saveParticipantGroup.api")),
             method : 'POST',
             success : function(){
                 this.getEl().unmask();

@@ -43,6 +43,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -52,6 +53,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -146,11 +148,15 @@ public class StudyQuerySchema extends UserSchema
     public static final String QCSTATE_TABLE_NAME = "QCState";
     private Set<String> _tableNames;
 
+    private ParticipantGroup _sessionParticipantGroup;
+
     public StudyQuerySchema(StudyImpl study, User user, boolean mustCheckPermissions)
     {
         super(SCHEMA_NAME, SCHEMA_DESCRIPTION, user, study.getContainer(), StudySchema.getInstance().getSchema());
         _study = study;
         _mustCheckPermissions = mustCheckPermissions;
+
+        initSessionParticipantGroup(study, user);
     }
 
     /**
@@ -1035,6 +1041,33 @@ public class StudyQuerySchema extends UserSchema
     ContainerFilter getDefaultContainerFilter()
     {
         return ContainerFilter.CURRENT;
+    }
+
+    protected void initSessionParticipantGroup(StudyImpl study, User user)
+    {
+        if (study == null)
+            return;
+
+        ViewContext context = HttpView.hasCurrentView() ? HttpView.currentContext() : null;
+        if (context == null)
+            return;
+
+        Study sharedStudyOrCurrent = StudyManager.getInstance().getSharedStudyOrCurrent(study);
+        Container stickyParticipantContainer = sharedStudyOrCurrent.getContainer();
+        ParticipantGroup group = ParticipantGroupManager.getInstance().getSessionParticipantGroup(stickyParticipantContainer, user, context.getRequest());
+        if (group != null)
+            setSessionParticipantGroup(group);
+    }
+
+    /** for tables that have a participant, apply a session based "sticky" participant group filter. */
+    public void setSessionParticipantGroup(ParticipantGroup sessionParticipantGroup)
+    {
+        _sessionParticipantGroup = sessionParticipantGroup;
+    }
+
+    public ParticipantGroup getSessionParticipantGroup()
+    {
+        return _sessionParticipantGroup;
     }
 
     public boolean isDataspace()
