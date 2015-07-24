@@ -47,6 +47,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.SecurityManager;
@@ -235,14 +236,7 @@ public class IssueManager
         // Add all current issue comments
         commentLinkedList.addAll(issue.getComments());
 
-        Comparator<Issue.Comment> comparator = new Comparator<Issue.Comment>()
-        {
-            @Override
-            public int compare(Issue.Comment c1, Issue.Comment c2)
-            {
-                return c1.getCreated().compareTo(c2.getCreated());
-            }
-        };
+        Comparator<Issue.Comment> comparator = (c1, c2) -> c1.getCreated().compareTo(c2.getCreated());
         // Respect the configuration's sorting order - issue 23524
         Container issueContainer = issue.lookupContainer();
         if (Sort.SortDirection.DESC == getCommentSortDirection(issueContainer))
@@ -1219,7 +1213,7 @@ public class IssueManager
     }
     
 
-    public static void indexIssues(final SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
+    public static void indexIssues(final IndexTask task, @NotNull Container c, Date modifiedSince)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null == ss)
@@ -1251,14 +1245,17 @@ public class IssueManager
         });
 
         task.addRunnable(new IndexGroup(task, ids), SearchService.PRIORITY.group);
+
+// This batching code will replace the manual batching above in 15.3, after the next 15.2 merge
+//        new TableSelector(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null).forEachBatch(batch -> task.addRunnable(new IndexGroup(task, batch), SearchService.PRIORITY.group), Integer.class, 100);
     }
 
     private static class IndexGroup implements Runnable
     {
         private final List<Integer> _ids;
-        private final SearchService.IndexTask _task;
+        private final IndexTask _task;
         
-        IndexGroup(SearchService.IndexTask task, List<Integer> ids)
+        IndexGroup(IndexTask task, List<Integer> ids)
         {
             _ids = ids;
             _task = task;
@@ -1272,7 +1269,7 @@ public class IssueManager
 
 
     /* CONSIDER: some sort of generator interface instead */
-    public static void indexIssues(SearchService.IndexTask task, Collection<Integer> ids)
+    public static void indexIssues(IndexTask task, Collection<Integer> ids)
     {
         if (ids.isEmpty())
             return;
@@ -1331,7 +1328,7 @@ public class IssueManager
     }
 
 
-    static void indexIssue(@Nullable SearchService.IndexTask task, Issue issue)
+    static void indexIssue(@Nullable IndexTask task, Issue issue)
     {
         if (task == null)
         {
@@ -1349,7 +1346,7 @@ public class IssueManager
     }
 
 
-    static void queueIssue(SearchService.IndexTask task, int id, Map<String,Object> m, ArrayList<Issue.Comment> comments)
+    static void queueIssue(IndexTask task, int id, Map<String,Object> m, ArrayList<Issue.Comment> comments)
     {
         if (null == task || null == m)
             return;

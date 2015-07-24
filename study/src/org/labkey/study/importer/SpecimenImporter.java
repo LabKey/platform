@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
+import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -1794,14 +1795,8 @@ public class SpecimenImporter
             _iTimer.setPhase(ImportPhases.GetVialBatch);
             TableSelector vialSelector = new TableSelector(getTableInfoVial(), null, new Sort("RowId"));
 
-            vialSelector.forEachMapBatch(new Selector.ForEachBatchBlock<Map<String, Object>>()
+            vialSelector.forEachMapBatch(new ForEachBatchBlock<Map<String, Object>>()
             {
-                @Override
-                public boolean accept(Map<String, Object> element)
-                {
-                    return true;
-                }
-
                 @Override
                 public void exec(List<Map<String, Object>> vialBatch) throws SQLException
                 {
