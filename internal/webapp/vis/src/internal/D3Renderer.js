@@ -205,7 +205,8 @@ LABKEY.vis.internal.Axis = function() {
                     .attr('y', function() { return this.nextSibling.getBBox().y - 3; })
                     .attr('width', function() { return this.nextSibling.getBBox().width + 8; })
                     .attr('height', function() { return this.nextSibling.getBBox().height + 6; })
-                    .attr('fill', tickTextBkgdColor);
+                    .attr('fill', tickTextBkgdColor)
+                    .attr('fill-opacity', 0);
 
             addEvents(anchors.select('rect.highlight'));
         };
