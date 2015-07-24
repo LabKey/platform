@@ -293,13 +293,14 @@ public class VisTestSchema extends UserSchema
     {
         ColumnInfo[] cols = new ColumnInfo[]
         {
+                new ColumnInfo("container", JdbcType.VARCHAR),
                 new ColumnInfo("participantid", JdbcType.VARCHAR),
                 new ColumnInfo("sequencenum", JdbcType.INTEGER),
                 new ColumnInfo("antigen", JdbcType.VARCHAR),
                 new ColumnInfo("population", JdbcType.VARCHAR),
                 new ColumnInfo(measureName,JdbcType.DOUBLE)
         };
-        String[] keys = new String[] {"participantid","sequencenum","antigen","population"};
+        String[] keys = new String[] {"container", "participantid","sequencenum","antigen","population"};
         ArrayList<Object[]> data = new ArrayList<>();
         Random r = new Random();
         for (String participantid : Arrays.asList(
@@ -314,12 +315,12 @@ public class VisTestSchema extends UserSchema
                     if (scale.equals("log"))
                     {
                         for (String pop : Arrays.asList("C4", "C8"))
-                            data.add(new Object[]{participantid, visit, antigen, pop, Math.exp(r.nextDouble()*Math.log(range))});
+                            data.add(new Object[]{"TestContainer1", participantid, visit, antigen, pop, Math.exp(r.nextDouble()*Math.log(range))});
                     }
                     else
                     {
                         for (String pop : Arrays.asList("C4","C8"))
-                            data.add(new Object[]{participantid,visit,antigen,pop, Math.round(r.nextDouble()*range)});
+                            data.add(new Object[]{"TestContainer1", participantid,visit,antigen,pop, Math.round(r.nextDouble()*range)});
 
                     }
                 }
