@@ -11,7 +11,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.view.ViewContext;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
@@ -19,21 +18,18 @@ import java.util.List;
  * Created by davebradlee on 7/16/15.
  *
  */
-public class SecureDocumentParent implements AttachmentParent, SecurableResource, Serializable
+public class SecureDocumentParent implements AttachmentParent, SecurableResource
 {
-    private final String _name;
+    private static final String NAME = "SecureDocumentParent";
     private final String _entityId;
     private final String _containerId;
     private final String _sourceModule;
 
-    public SecureDocumentParent(String name, String entityId, Container container, @Nullable User user, Module sourceModule,
-                                @NotNull Class<? extends Role> roleClass, @NotNull Class<? extends Permission> permissionClass)
+    public SecureDocumentParent(String entityId, Container container, Module sourceModule)
     {
-        _name = name;
         _entityId = entityId;
         _containerId = container.getId();
         _sourceModule = sourceModule.getName();
-        setSecurityPolicy(user, roleClass, permissionClass);
     }
 
     public String getEntityId()
@@ -60,7 +56,7 @@ public class SecureDocumentParent implements AttachmentParent, SecurableResource
     @NotNull
     public String getResourceName()
     {
-        return _name;
+        return NAME;
     }
 
     @NotNull
@@ -101,36 +97,30 @@ public class SecureDocumentParent implements AttachmentParent, SecurableResource
         return false;
     }
 
-    public void addRoleAssignments(User user, @NotNull Class<? extends Role> roleClass, @NotNull Class<? extends Permission> permissionClass)
+    public void addRoleAssignment(User user, @NotNull Class<? extends Role> roleClass)
     {
-        if (getResourceContainer().hasPermission(user, permissionClass))
-        {
-            MutableSecurityPolicy securityPolicy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(this));
-            securityPolicy.addRoleAssignment(user, roleClass);
-            SecurityPolicyManager.savePolicy(securityPolicy);
-        }
+        MutableSecurityPolicy securityPolicy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(this));
+        securityPolicy.addRoleAssignment(user, roleClass);
+        SecurityPolicyManager.savePolicy(securityPolicy);
     }
 
-    public void setSecurityPolicy(@Nullable User user, @NotNull Class<? extends Role> roleClass, @NotNull Class<? extends Permission> permissionClass)
+    public void addRoleAssignments(@NotNull Class<? extends Role> roleClass, @NotNull Class<? extends Permission> permissionClass)
     {
+        // add role assignment for all users with permission to have roleClass role in container
         MutableSecurityPolicy securityPolicy = new MutableSecurityPolicy(this);
-        if (null == user)
+        for (User activeUser : UserManager.getActiveUsers())
         {
-            // add role assignment for all users with permission to have roleClass role in container
-            for (User activeUser : UserManager.getActiveUsers())
+            if (getResourceContainer().hasPermission(activeUser, permissionClass))
             {
-                if (getResourceContainer().hasPermission(activeUser, permissionClass))
-                {
-                    securityPolicy.addRoleAssignment(activeUser, roleClass);
-                }
+                securityPolicy.addRoleAssignment(activeUser, roleClass);
             }
-            SecurityPolicyManager.savePolicy(securityPolicy);
         }
-        else if (getResourceContainer().hasPermission(user, permissionClass))
-        {
-            securityPolicy.addRoleAssignment(user, roleClass);
-            SecurityPolicyManager.savePolicy(securityPolicy);
-        }
+        SecurityPolicyManager.savePolicy(securityPolicy);
+    }
+
+    public SecurityPolicy getSecurityPolicy()
+    {
+        return SecurityPolicyManager.getPolicy(this);
     }
 
 }

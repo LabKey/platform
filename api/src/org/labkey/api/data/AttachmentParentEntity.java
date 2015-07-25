@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.view.ViewContext;
 
 /**
@@ -28,6 +29,12 @@ public class AttachmentParentEntity extends Entity implements AttachmentParent
 {
     @Override
     public String getDownloadURL(ViewContext context, String name)
+    {
+        return null;
+    }
+
+    @Override
+    public SecurityPolicy getSecurityPolicy()
     {
         return null;
     }

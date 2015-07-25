@@ -1261,6 +1261,7 @@ api/src/org/labkey/api/security/MemberType.java -text
 api/src/org/labkey/api/security/MutableSecurityPolicy.java -text
 api/src/org/labkey/api/security/NestedGroupsTest.java -text
 api/src/org/labkey/api/security/PasswordExpiration.java -text
+api/src/org/labkey/api/security/PermissionException.java -text
 api/src/org/labkey/api/security/PrincipalType.java -text
 api/src/org/labkey/api/security/ProjectAndSiteGroupsCache.java -text
 api/src/org/labkey/api/security/RequiresAllOf.java -text

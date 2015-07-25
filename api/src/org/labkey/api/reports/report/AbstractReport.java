@@ -607,4 +607,10 @@ public abstract class AbstractReport implements Report
         }
         return false;
     }
+
+    @Override
+    public SecurityPolicy getSecurityPolicy()
+    {
+        return null;
+    }
 }

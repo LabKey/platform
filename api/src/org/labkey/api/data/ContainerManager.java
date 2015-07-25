@@ -1009,6 +1009,12 @@ public class ContainerManager
         {
             return null;
         }
+
+        @Override
+        public SecurityPolicy getSecurityPolicy()
+        {
+            return null;
+        }
     }
 
 
