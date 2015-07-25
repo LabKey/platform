@@ -24,6 +24,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
@@ -212,5 +213,11 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
         {
             FileContentServiceImpl._log.warn(e.getMessage());
         }
+    }
+
+    @Override
+    public SecurityPolicy getSecurityPolicy()
+    {
+        return null;
     }
 }

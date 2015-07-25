@@ -19,8 +19,8 @@ package org.labkey.list.view;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListItem;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.view.ViewContext;
-import org.labkey.list.model.ListItm;
 
 /**
  * User: adam
@@ -55,6 +55,12 @@ public class ListItemAttachmentParent implements AttachmentParent
 
     @Override
     public String getDownloadURL(ViewContext context, String name)
+    {
+        return null;
+    }
+
+    @Override
+    public SecurityPolicy getSecurityPolicy()
     {
         return null;
     }

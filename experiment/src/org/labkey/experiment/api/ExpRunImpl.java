@@ -42,6 +42,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
@@ -845,5 +846,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             }
         }
         return false;
+    }
+
+    @Override
+    public SecurityPolicy getSecurityPolicy()
+    {
+        return null;
     }
 }

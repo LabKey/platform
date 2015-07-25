@@ -16,6 +16,7 @@
 
 package org.labkey.study.plate;
 
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.Position;
 import org.labkey.api.study.PositionImpl;
@@ -318,6 +319,12 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
 
     @Override
     public String getDownloadURL(ViewContext context, String name)
+    {
+        return null;
+    }
+
+    @Override
+    public SecurityPolicy getSecurityPolicy()
     {
         return null;
     }

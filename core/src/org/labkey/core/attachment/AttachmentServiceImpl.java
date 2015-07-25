@@ -53,10 +53,12 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.PermissionException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerUtil;
@@ -164,13 +166,14 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
     @Override
-    public void download(HttpServletResponse response, AttachmentParent parent, String filename) throws ServletException, IOException
+    public void download(HttpServletResponse response, AttachmentParent parent, String filename) throws ServletException, IOException, PermissionException
     {
         if (null == filename || 0 == filename.length())
         {
             throw new NotFoundException();
         }
 
+        checkSecurityPolicy(parent);
         boolean isInlineImage = _mimeMap.isInlineImageFor(filename);
         boolean asAttachment = !isInlineImage;
 
@@ -1381,6 +1384,35 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(new SQLFragment(
                     "UPDATE core.Documents SET LastIndexed=? WHERE Parent=? and DocumentName=?",
                     new Date(ms), _parent.getEntityId(), _name));
+        }
+    }
+
+    private void checkSecurityPolicy(AttachmentParent attachmentParent) throws PermissionException
+    {
+        if (null != attachmentParent.getSecurityPolicy())
+        {
+            User user = null;
+            try
+            {
+                ViewContext context = HttpView.currentContext();
+                if (context != null)
+                    user = context.getUser();
+            }
+            catch (RuntimeException e)
+            {
+                throw new PermissionException("Cannot get user to check against secure resource's  policy.");       // We have a policy but can't get user, so fail
+            }
+            checkSecurityPolicy(user, attachmentParent);
+        }
+    }
+
+    private void checkSecurityPolicy(User user, AttachmentParent attachmentParent) throws PermissionException
+    {
+        SecurityPolicy securityPolicy = attachmentParent.getSecurityPolicy();
+        if (null != securityPolicy)
+        {
+            if (null == user || !securityPolicy.hasPermission(user, ReadPermission.class))
+                throw new PermissionException("User does not have permission to access this secure resource.");
         }
     }
 
