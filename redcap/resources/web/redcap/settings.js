@@ -204,7 +204,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
                                     html     : '<div style="padding: 15px;"><span class="labkey-message">' + 'REDCap configuration saved successfully' + '</span></div>'
                                 });
                                 msgbox.show();
-                                msgbox.getEl().fadeOut({duration : 3000, callback : function(){ msgbox.close(); LABKEY.Utils.signalWebDriverTest('redcapSave');}});
+                                msgbox.getEl().fadeOut({duration : 3000, callback : function(){ msgbox.close(); LABKEY.Utils.signalWebDriverTest('redcapSave', 'success');}});
 
                                 this.resetDirty();
                             }
@@ -212,7 +212,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
                         failure : function(response){
                             this.getEl().unmask();
                             Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
-                            LABKEY.Utils.signalWebDriverTest('redcapSave');
+                            LABKEY.Utils.signalWebDriverTest('redcapSave', 'failure');
                         },
                         scope : this
                     });
@@ -220,7 +220,7 @@ Ext4.define('LABKEY.ext4.RedcapSettings', {
                 else
                 {
                     Ext4.Msg.alert('Failure', 'Unable to save, the form is invalid. Please fill out all required fields before saving.');
-                    LABKEY.Utils.signalWebDriverTest('redcapSave');
+                    LABKEY.Utils.signalWebDriverTest('redcapSave', 'failure');
                 }
             },
             scope   : this

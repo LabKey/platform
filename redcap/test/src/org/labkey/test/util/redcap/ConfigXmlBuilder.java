@@ -101,6 +101,7 @@ public class ConfigXmlBuilder
             _serverUrl = serverUrl;
             _projectName = projectName;
             _subjectId = subjectId;
+            _forms = new ArrayList<>();
         }
 
         public RedCapProject withMatchSubjectIdByLabel(Boolean matchSubjectIdByLabel)

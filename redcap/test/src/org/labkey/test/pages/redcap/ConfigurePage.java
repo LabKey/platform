@@ -15,18 +15,18 @@
  */
 package org.labkey.test.pages.redcap;
 
-import com.google.common.base.Function;
+import org.junit.Assert;
 import org.labkey.test.BaseWebDriverTest;
+import org.labkey.test.Locator;
 import org.labkey.test.WebTestHelper;
+import org.labkey.test.components.ComponentElements;
+import org.labkey.test.pages.LabKeyPage;
 import org.labkey.test.selenium.EphemeralWebElement;
 import org.labkey.test.selenium.LazyWaitingWebElement;
 import org.labkey.test.selenium.LazyWebElement;
-import org.labkey.test.Locator;
-import org.labkey.test.components.ComponentElements;
-import org.labkey.test.pages.LabKeyPage;
 import org.labkey.test.util.Ext4Helper;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.SearchContext;
+import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.LoggedParam;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
@@ -35,12 +35,13 @@ import java.util.List;
 public class ConfigurePage extends LabKeyPage
 {
     private ConfigurePageTab _currentTab;
-    private Elements _elements;
+    private final Elements _elements;
     private int _tokenCount;
 
     public ConfigurePage(BaseWebDriverTest test)
     {
         super(test);
+        _elements = new Elements();
         _currentTab = new AuthenticationTab();
         List<WebElement> deleteButtons = elements().deleteTokenButtons();
         _tokenCount = deleteButtons.get(0).getAttribute("class").contains("disabled") ? 0 : deleteButtons.size();
@@ -52,34 +53,59 @@ public class ConfigurePage extends LabKeyPage
         return new ConfigurePage(test);
     }
 
-    /**
-     * Save config
-     * @return null for success, otherwise the failure message
-     */
-    public String save()
+    @LogMethod(quiet = true)
+    public SaveResult save()
     {
-        _test.doAndWaitForPageSignal(
-                elements().saveButton::click, "redcapSave");
+        return new SaveResult(_test.doAndWaitForPageSignal(elements().saveButton::click, "redcapSave"));
+    }
 
-        try
+    public class SaveResult
+    {
+        private boolean success;
+
+        protected SaveResult(String result)
         {
-            return elements().errorWindowMessage.getText();
+            switch (result)
+            {
+                case "failure":
+                    success = false;
+                    break;
+                case "success":
+                    success = true;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown redcap save result: " + result);
+            }
         }
-        catch (NoSuchElementException noError)
+
+        public ConfigurePage assertSuccess()
         {
-            return null;
+            if (!success)
+                Assert.fail(String.format("Save Failed: '%s'", elements().errorWindowMessage.getText()));
+
+            return ConfigurePage.this;
+        }
+
+        public ConfigurePage assertFailure(String errorMessage)
+        {
+            Assert.assertFalse("Save succeeded", success);
+            Assert.assertEquals("Wrong error", errorMessage, elements().errorWindowMessage.getText());
+            elements().errorWindowOkButton.click();
+
+            return ConfigurePage.this;
         }
     }
 
+    @LogMethod(quiet = true)
     public LabKeyPage reloadNow()
     {
         _test.clickAndWait(elements().reloadNowButton);
-        _elements = null;
 
         return new LabKeyPage(_test);
     }
 
-    public ConfigurePage deleteToken(int index)
+    @LogMethod(quiet = true)
+    public ConfigurePage deleteToken(@LoggedParam int index)
     {
         selectAuthenticationTab();
         if (index >= _tokenCount)
@@ -95,7 +121,8 @@ public class ConfigurePage extends LabKeyPage
         return this;
     }
 
-    public ConfigurePage addToken(String projectName, String token)
+    @LogMethod(quiet = true)
+    public ConfigurePage addToken(@LoggedParam String projectName, String token)
     {
         selectAuthenticationTab();
         if (_tokenCount > 0)
@@ -105,7 +132,8 @@ public class ConfigurePage extends LabKeyPage
         return setToken(_tokenCount - 1, projectName, token);
     }
 
-    public ConfigurePage setToken(int index, String projectName, String token)
+    @LogMethod(quiet = true)
+    public ConfigurePage setToken(@LoggedParam int index, @LoggedParam String projectName, String token)
     {
         selectAuthenticationTab();
         if (index >= _tokenCount)
@@ -117,6 +145,7 @@ public class ConfigurePage extends LabKeyPage
         return this;
     }
 
+    @LogMethod(quiet = true)
     public ConfigurePage setConfigurationXml(String xml)
     {
         selectConfigurationSettingTab();
@@ -142,28 +171,29 @@ public class ConfigurePage extends LabKeyPage
 
     private Elements elements()
     {
-        if (null == _elements)
-            _elements = new Elements(_test.getDriver());
-
         return _elements;
     }
 
     private class Elements extends ComponentElements
     {
-        protected Elements(SearchContext context)
+        protected Elements()
         {
-            super(context);
+            super(_test.getDriver());
         }
 
-        WebElement saveButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("Save"), context);
-        WebElement reloadNowButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("Reload Now"), context);
-        WebElement saveCompleteWindow = new LazyWaitingWebElement(Ext4Helper.Locators.window("Save Complete"), context);
-        WebElement errorWindow = new LazyWaitingWebElement(Ext4Helper.Locators.window("Failure"), context);
-        WebElement errorWindowMessage = new EphemeralWebElement(Locator.css("table.x4-window-text"), errorWindow);
-        WebElement errorWindowOkButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("OK"), errorWindow);
+        final WebElement saveButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("Save"), context);
+        final WebElement reloadNowButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("Reload Now"), context);
+        final WebElement saveCompleteWindow = new LazyWaitingWebElement(Ext4Helper.Locators.window("Save Complete"), context);
+        final WebElement errorWindow = new LazyWaitingWebElement(Ext4Helper.Locators.window("Failure"), context);
+        final WebElement errorWindowMessage = new EphemeralWebElement(Locator.css("table.x4-window-text"), errorWindow);
+        final WebElement errorWindowOkButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("OK"), errorWindow);
+
+        final WebElement authenticationTab = new LazyWebElement(Ext4Helper.Locators.ext4Tab("Authentication"), context);
+        final WebElement reloadingTab = new LazyWebElement(Ext4Helper.Locators.ext4Tab("Reloading"), context);
+        final WebElement configurationSettingTab = new LazyWebElement(Ext4Helper.Locators.ext4Tab("Configuration Setting"), context);
 
         //AuthenticationTab
-        WebElement addTokenButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("+"), context);
+        final WebElement addTokenButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("+"), context);
         List<WebElement> deleteTokenButtons()
         {
             return Ext4Helper.Locators.ext4Button("delete").waitForElements(context, BaseWebDriverTest.WAIT_FOR_JAVASCRIPT);
@@ -178,45 +208,32 @@ public class ConfigurePage extends LabKeyPage
         }
 
         //ReloadingTab
-        WebElement enableReloadCheckbox = new LazyWebElement(Locator.id("enableReload"), context);
-        WebElement reloadDate = new LazyWebElement(Locator.name("reloadDate"), context);
-        WebElement reloadInterval = new LazyWebElement(Locator.name("reloadInterval"), context);
+        final WebElement enableReloadCheckbox = new LazyWebElement(Locator.id("enableReload"), context);
+        final WebElement reloadDate = new LazyWebElement(Locator.name("reloadDate"), context);
+        final WebElement reloadInterval = new LazyWebElement(Locator.name("reloadInterval"), context);
 
         //ConfigurationSettingTab
-        WebElement metadataTextArea = new LazyWebElement(Locator.css("textarea[name=metadata]"), context);
+        final WebElement metadataTextArea = new LazyWebElement(Locator.css("textarea[name=metadata]"), context);
     }
 
     private abstract class ConfigurePageTab
     {
         void selectAuthenticationTab()
         {
-            _test.click(elements().authenticationTab);
+            elements().authenticationTab.click();
             _currentTab = new AuthenticationTab();
         }
 
         void selectReloadingTab()
         {
-            _test.click(elements().reloadingTab);
+            elements().reloadingTab.click();
             _currentTab = new ReloadingTab();
         }
 
         void selectConfigurationSettingTab()
         {
-            _test.click(elements().configurationSettingTab);
+            elements().configurationSettingTab.click();
             _currentTab = new ConfigurationSettingTab();
-        }
-
-        private Elements elements()
-        {
-            return new Elements();
-        }
-
-        private class Elements
-        {
-            private final Locator tab = Locator.tagWithClass("a", "x4-tab");
-            final Locator authenticationTab = tab.withText("Authentication");
-            final Locator reloadingTab = tab.withText("Reloading");
-            final Locator configurationSettingTab = tab.withText("Configuration Setting");
         }
     }
 
