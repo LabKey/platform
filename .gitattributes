@@ -106,6 +106,7 @@ api/src/org/labkey/api/analytics/AnalyticsService.java -text
 api/src/org/labkey/api/annotations/JavaRuntimeVersion.java -text
 api/src/org/labkey/api/annotations/RefactorIn15_1.java -text
 api/src/org/labkey/api/annotations/RefactorIn15_2.java -text
+api/src/org/labkey/api/annotations/TomcatVersion.java -text
 api/src/org/labkey/api/announcements/api/Announcement.java -text
 api/src/org/labkey/api/announcements/api/AnnouncementService.java -text
 api/src/org/labkey/api/announcements/api/Tour.java -text
