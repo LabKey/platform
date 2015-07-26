@@ -18,6 +18,7 @@ package org.labkey.api.jsp;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jasper.JspC;
 import org.apache.log4j.Logger;
+import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ResourceFinder;
 import org.labkey.api.settings.AppProps;
@@ -76,6 +77,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
     }
 
 
+    @JavaRuntimeVersion  // Change CompilerTargetVM and CompilerSourceVM settings below
     private Class getCompiledClassFile(File classFile, File jspTempBuildDirectory, ResourceFinder finder, String packageName, String jspFileName)
     {
         String relativePath = getSourceJspPath(packageName, jspFileName);
@@ -114,8 +116,8 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     jasper.setUriroot(jspTempBuildDirectory.getParent() + "/webapp");
                     jasper.setOutputDir(jspTempBuildDirectory.getAbsolutePath());
                     jasper.setPackage("org.labkey.jsp.compiled");
-                    jasper.setCompilerTargetVM("1.5");
-                    jasper.setCompilerSourceVM("1.5");
+                    jasper.setCompilerTargetVM("1.8");
+                    jasper.setCompilerSourceVM("1.8");
                     jasper.setTrimSpaces(false);
                     jasper.setCompile(false);
                     jasper.setListErrors(true);
