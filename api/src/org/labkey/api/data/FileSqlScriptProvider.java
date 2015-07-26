@@ -32,6 +32,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.JspTemplate;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.PrintWriters;
 
 import java.io.File;
@@ -75,7 +76,16 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         List<DbSchema> schemas = new LinkedList<>();
 
         for (String schemaName : moduleSchemaNames)
-            schemas.add(DbSchema.get(schemaName, DbSchemaType.Module));
+        {
+            try
+            {
+                schemas.add(DbSchema.get(schemaName, DbSchemaType.Module));
+            }
+            catch (NotFoundException nfe)
+            {
+                // Possibly a module data source that hasn't been configured
+            }
+        }
 
         for (String schemaName : _module.getProvisionedSchemaNames())
             schemas.add(DbSchema.get(schemaName, DbSchemaType.Provisioned));

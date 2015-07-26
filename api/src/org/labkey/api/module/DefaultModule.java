@@ -175,31 +175,35 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             Throwable t = DbScope.getDataSourceFailure(dsName);
 
-            if (null == t)
+            // Data source is defined but connection wasn't successful
+            if (null != t)
+                throw new ConfigurationException("This module requires a properly configured data source called \"" + dsName + "\"", t);
+
+            // Data source is defined and ready to go
+            if (null != DbScope.getDbScope(dsName))
+                continue;
+
+            if (AppProps.getInstance().isDevMode())
             {
-                if (null != DbScope.getDbScope(dsName))
-                    continue;
+                // A module data source is missing and we're in dev mode, so attempt to create a proxy data source that uses the labkey
+                // database. This can be helpful on test and dev machines. See #23730.
+                DbScope scope = DbScope.getLabkeyScope();
 
-                // A module data source is missing and we're in dev mode, so create a proxy data source that uses the labkey database.
-                // This can be helpful on test and dev machines. See #23730.
-                if (AppProps.getInstance().isDevMode())
+                try
                 {
-                    DbScope scope = DbScope.getLabkeyScope();
-
-                    try
-                    {
-                        _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\". It's not configured, so it will be created against the labkey database instead.");
-                        DbScope.addScope(dsName, scope.getDataSource(), scope.getProps());
-                        continue;
-                    }
-                    catch (SQLException | ServletException e)
-                    {
-                        // Fall through to throw ConfigurationException
-                    }
+                    _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\". It's not configured, so it will be created against the primary labkey database (\"" + scope.getDatabaseName() + "\") instead.");
+                    DbScope.addScope(dsName, scope.getDataSource(), scope.getProps());
+                }
+                catch (SQLException | ServletException e)
+                {
+                    throw new ConfigurationException("Failed to connect to data source \"" + dsName + "\", created against the labkey database (\"" + scope.getDatabaseName() + "\").", e);
                 }
             }
-
-            throw new ConfigurationException("This module requires a properly configured data source called \"" + dsName + "\"", t);
+            else
+            {
+                // A module data source is missing and we're in production mode, so issue a warning. The data source might be optional, e.g., on staging servers. See #23830
+                _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\" but it's not configured. This module will be loaded, but it might not operate correctly.");
+            }
         }
 
         synchronized (INSTANTIATED_MODULES)
@@ -365,7 +369,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
             for (DbSchema schema : provider.getSchemas())
             {
-
                 SqlScriptManager manager = SqlScriptManager.get(provider, schema);
                 List<SqlScript> scripts = manager.getRecommendedScripts(getVersion());
 

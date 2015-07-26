@@ -420,8 +420,8 @@ public class ModuleLoader implements Filter
     {
         for (String filepath : filepaths)
         {
-            String fullPath = _servletContext.getRealPath(filepath);
-            if (!new File(fullPath).isFile())
+            String fullPath = _servletContext.getRealPath("/" + filepath);   // Tomcat 8 changed to require "/" prefix, http://stackoverflow.com/questions/25555541
+            if (null == fullPath || !new File(fullPath).isFile())
                 return false;
         }
 
@@ -1040,7 +1040,7 @@ public class ModuleLoader implements Filter
             try
             {
                 DbScope scope = DbScope.getDbScope(name);
-                if (!scope.getSqlDialect().canExecuteUpgradeScripts())
+                if (null == scope || !scope.getSqlDialect().canExecuteUpgradeScripts())
                     continue;
 
                 // This should return a special DbSchema subclass (LabKeyDbSchema) that eliminates the data source prefix
