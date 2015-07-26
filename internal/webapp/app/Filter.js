@@ -170,7 +170,7 @@ Ext.define('LABKEY.app.model.Filter', {
         /**
          * Updates a participant group for non-study backed modules
          *
-         * @param config, an object which takes the following configuation properties.
+         * @param config, an object which takes the following configuration properties.
          * @param {Object} [config.mdx] mdx object against which participants are queried
          * @param {String} [config.subjectName] subject name for the cube
          * @param {Function} [config.failure] Optional.  Function called when the save action fails.  If not specified
@@ -785,6 +785,33 @@ Ext.define('LABKEY.app.model.Filter', {
         }
 
         return eq;
+    },
+
+    /**
+     * Complex comparator that says two filters can be merged. This should always be called
+     * in advance of calling merge() to be safe.
+     * @param f
+     */
+    canMerge : function(f) {
+        var data = this.data,
+            fdata = f.data,
+            _merge = false;
+
+        if (data.hierarchy && fdata.hierarchy && data.hierarchy === fdata.hierarchy &&
+            data.level && fdata.level && data.level === fdata.level) {
+            _merge = true;
+        }
+
+        return _merge;
+    },
+
+    merge : function(f) {
+        var members = this.data.members,
+            fmembers = f.data.members;
+
+        this.set('members', members.concat(fmembers));
+
+        return this;
     },
 
     isGrid : function() {

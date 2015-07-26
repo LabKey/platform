@@ -45,6 +45,13 @@ Ext.define('LABKEY.app.controller.State', {
 
     supportColumnServices: false,
 
+    /**
+     * Flag that determines if filters should use the merge strategy when joining groups of filters.
+     * This can be overridden by subclasses if different behavior is desired.
+     * @type {boolean} useMergeFilters
+     */
+    useMergeFilters: false,
+
     olap: undefined,
 
     init : function() {
@@ -429,10 +436,12 @@ Ext.define('LABKEY.app.controller.State', {
         if (!flat)
             return this.filters;
 
-        var flatFilters = [];
+        var flatFilters = [],
+            f = 0,
+            data;
 
-        for (var f=0; f < this.filters.length; f++) {
-            var data = Ext.clone(this.filters[f].data);
+        for (; f < this.filters.length; f++) {
+            data = Ext.clone(this.filters[f].data);
             flatFilters.push(data);
         }
 
@@ -446,19 +455,16 @@ Ext.define('LABKEY.app.controller.State', {
     _getFilterSet : function(filters) {
 
         var newFilters = [],
-                filterClass = this.getFilterModelName();
+            filterClass = this.getFilterModelName(),
+            f, s, data;
 
-        for (var s=0; s < filters.length; s++) {
-            var f = filters[s];
+        for (s = 0; s < filters.length; s++) {
+            f = filters[s];
 
             // decipher object structure
             if (!f.$className) {
-                if (f.data) {
-                    newFilters.push(Ext.create(filterClass, f.data));
-                }
-                else {
-                    newFilters.push(Ext.create(filterClass, f));
-                }
+                data = f.data ? f.data : f;
+                newFilters.push(Ext.create(filterClass, data));
             }
             else if (f.$className == filterClass) {
                 newFilters.push(f);
@@ -472,10 +478,25 @@ Ext.define('LABKEY.app.controller.State', {
         return this.filters.length > 0;
     },
 
+    /**
+     * Adds a LABKEY.app.model.Filter to the current state
+     * @param {LABKEY.app.model.Filter} filter Filter that will be added to the state
+     * @param {boolean} [skipState=false] Flag if this action should cause the state to update
+     * @returns {*}
+     */
     addFilter : function(filter, skipState) {
         return this.addFilters([filter], skipState);
     },
 
+    /**
+     * Adds the array of 'filters' to the current state
+     * @param {LABKEY.app.model.Filter[]} filters Filters that will be added to the state
+     * @param {boolean} [skipState=false] Flag if this action should cause the state to update
+     * @param {boolean} [clearSelection=false] Flag if adding filters should also clear the selection state
+     * @param callback
+     * @param scope
+     * @returns {*}
+     */
     addFilters : function(filters, skipState, clearSelection, callback, scope) {
         var _f = this.getFilters();
         if (!_f)
@@ -483,14 +504,14 @@ Ext.define('LABKEY.app.controller.State', {
 
         var newFilters = this._getFilterSet(filters);
 
-        // new filters are always appended
-        for (var f=0; f < newFilters.length; f++)
-            _f.push(newFilters[f]);
+        this.filters = this._mergeFilters(_f, newFilters);
 
-        this.filters = _f;
-
-        if (clearSelection)
-            this.clearSelections(true);
+        if (clearSelection) {
+            // explicitly skipState since only one state update should occur
+            // when modifying filters. Effectively merging the two actions
+            // of clearing selections and adding filters into one update
+            this.clearSelections(true /* skipState */);
+        }
 
         this.requestFilterUpdate(skipState, false, false, callback, scope);
 
@@ -499,6 +520,46 @@ Ext.define('LABKEY.app.controller.State', {
 
     prependFilter : function(filter, skipState, callback, scope) {
         this.setFilters([filter].concat(this.filters), skipState, callback, scope);
+    },
+
+    /**
+     * This helper function will merge or concatenate filters depending on the
+     * 'useMergeFilters' flag. Utilizes the LABKEY.app.model.Filter canMerge()
+     * and merge() functionality to merge like-filters.
+     * @param {LABKEY.app.model.Filter[]} oldFilters Filters that will be merged into
+     * @param {LABKEY.app.model.Filter[]} newFilters Filters that will be merged from
+     * @returns {LABKEY.app.model.Filter[]}
+     * @private
+     */
+    _mergeFilters : function(oldFilters, newFilters) {
+
+        var filters = oldFilters,
+            nf, merged;
+
+        if (this.useMergeFilters) {
+            // see if each new filter can be merged, if not just append it
+            for (var n=0; n < newFilters.length; n++) {
+                nf = newFilters[n];
+                merged = false;
+
+                for (var i=0; i < filters.length && !merged; i++) {
+                    if (nf.canMerge(filters[i])) {
+                        filters[i].merge(nf);
+                        merged = true;
+                    }
+                }
+
+                if (!merged) {
+                    filters.push(nf);
+                }
+            }
+        }
+        else {
+            // new filters are always appended
+            filters = filters.concat(newFilters);
+        }
+
+        return filters;
     },
 
     loadFilters : function(stateIndex) {
