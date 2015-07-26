@@ -164,6 +164,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             rowException = x;
         }
+        finally
+        {
+            DataIteratorUtil.closeQuietly(mapIterator);
+        }
         errors.addRowError(new ValidationException(rowException.getMessage()));
         return 0;
     }
