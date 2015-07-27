@@ -33,6 +33,7 @@ import org.labkey.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.authentication.ldap.LdapController;
 import org.labkey.authentication.oauth.GoogleOAuthProvider;
 import org.labkey.authentication.oauth.OAuthController;
+import org.labkey.authentication.saml.SamlController;
 import org.labkey.authentication.saml.SamlProvider;
 import org.labkey.authentication.test.TestSecondaryController;
 import org.labkey.authentication.test.TestSecondaryProvider;
@@ -72,6 +73,7 @@ public class AuthenticationModule extends DefaultModule
         addController("ldap", LdapController.class);
         addController("cas", CasController.class);
         addController("oauth", OAuthController.class);
+        addController("saml", SamlController.class);
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_OPENID_GOOGLE, "Login using your Google account", "Authenticate using Google and OAuth 2.0.", true);
 
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);

@@ -15,7 +15,20 @@
  */
 package org.labkey.authentication.saml;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.ValidEmail;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.ActionURL;
+import org.labkey.authentication.AuthenticationModule;
+import org.springframework.validation.BindException;
 
 /**
  * User: tgaluhn
@@ -31,8 +44,38 @@ public class SamlController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+    public static ActionURL getValidateURL()
+    {
+        return new ActionURL(ValidateAction.class, ContainerManager.getRoot());
+    }
+
+    @RequiresNoPermission
+    @AllowedDuringUpgrade
+    public class ValidateAction extends AuthenticationManager.BaseSsoValidateAction<ReturnUrlForm>
+    {
+
+        @NotNull
+        @Override
+        public String getProviderName()
+        {
+            return SamlProvider.NAME;
+        }
+
+        @Nullable
+        @Override
+        public ValidEmail validateAuthentication(ReturnUrlForm form, BindException errors) throws Exception
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(AuthenticationModule.EXPERIMENTAL_SAML_SERVICE_PROVIDER))
+                throw new IllegalStateException();
+
+            String email = SamlManager.getUserFromSamlResponse(getViewContext().getRequest());
+            if (StringUtils.isNotBlank(email))
+                return new ValidEmail(email);
+            else
+                return null;
+
+        }
+    }
+
     // TODO: Defering configuration for prototype
-
-    // This controller isn't being registered yet, as it doesn't do anything.
-
 }

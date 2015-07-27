@@ -20,11 +20,10 @@ import com.onelogin.AppSettings;
 import com.onelogin.saml.AuthRequest;
 import com.onelogin.saml.Response;
 import org.apache.log4j.Logger;
+import org.labkey.api.util.URLHelper;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.net.URISyntaxException;
 
 /**
  * User: tgaluhn
@@ -43,43 +42,51 @@ import java.nio.charset.StandardCharsets;
 public class SamlManager
 {
     public static final String SAML_RESPONSE_PARAMETER = "SAMLResponse";
+    public static final String SAML_REQUEST_PARAMETER = "SAMLRequest";
 
     private static final Logger LOG = Logger.getLogger(SamlManager.class);
 
-    static boolean sendSamlRequest(HttpServletRequest request, HttpServletResponse response)
+    public static URLHelper getLoginURL()
+    {
+        String baseURL = "https://app.onelogin.com/trust/saml2/http-post/sso/420876"; //TODO: needs config
+
+        try
+        {
+            URLHelper url = new URLHelper(baseURL);
+            url.addParameter(SAML_REQUEST_PARAMETER, getSamlRequestParameter());
+
+            return url;
+        }
+        catch (URISyntaxException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String getSamlRequestParameter()
     {
         // the appSettings object contain application specific settings used by the SAML library
         AppSettings appSettings = new AppSettings();
-
         // set the URL of the consume.jsp (or similar) file for this app. The SAML Response will be posted to this URL
-        // For LK purposes, we're allowing arbitrary URL's; whatever page the user hit that redirected to authentication
-        appSettings.setAssertionConsumerServiceUrl(request.getRequestURL().toString());
-
+        appSettings.setAssertionConsumerServiceUrl(SamlController.getValidateURL().getURIString());
         // set the issuer of the authentication request. This would usually be the URL of the issuing web application
         appSettings.setIssuer("http://localhost:8080/labkey");
         //appSettings.setIssuer("https://app.onelogin.com/saml/metadata/420876");
 
         // the accSettings object contains settings specific to the users account.
         // At this point, your application must have identified the users origin
-        AccountSettings accSettings = new AccountSettings();
-
-        // The URL at the Identity Provider where to the authentication request should be sent
-        accSettings.setIdpSsoTargetUrl("https://app.onelogin.com/trust/saml2/http-post/sso/420876"); // TODO: Hardcoded to test IdP, needs config
+        //AccountSettings accSettings = new AccountSettings();
 
         // Generate an AuthRequest and send it to the identity provider
-        AuthRequest authReq = new AuthRequest(appSettings, accSettings);
+        AuthRequest authReq = new AuthRequest(appSettings);
         try
         {
-            String reqString = accSettings.getIdp_sso_target_url()+"?SAMLRequest=" + URLEncoder.encode(authReq.getRequest(AuthRequest.base64), StandardCharsets.UTF_8.toString());
-            response.sendRedirect(reqString);
+            return authReq.getRequest(AuthRequest.base64);
         }
         catch (Exception e)
         {
-            LOG.error("Exception on SAML request", e);
-            return false;
+            throw new RuntimeException("Exception constructing SAML request", e);
         }
-
-        return true; // TODO: proper exception handling
     }
 
     static String getUserFromSamlResponse(HttpServletRequest request)

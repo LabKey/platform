@@ -15,18 +15,13 @@
  */
 package org.labkey.authentication.saml;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
-import org.labkey.api.security.ValidEmail;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.authentication.AuthenticationModule;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * User: tgaluhn
@@ -34,31 +29,9 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class SamlProvider implements SSOAuthenticationProvider
 {
+    public static final String NAME = "SAML";
     private final LinkFactory _linkFactory = new LinkFactory(this);
-
-    // TODO: Fix this... authenticate() is no longer called
-    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response) throws ValidEmail.InvalidEmailException
-    {
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(AuthenticationModule.EXPERIMENTAL_SAML_SERVICE_PROVIDER))
-            return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);
-
-        if (StringUtils.isBlank(request.getParameter(SamlManager.SAML_RESPONSE_PARAMETER))) // First time through this method
-        {
-            if (SamlManager.sendSamlRequest(request, response))
-                return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable); // TODO: What's the correct return here?
-            else
-                return AuthenticationResponse.createFailureResponse(FailureReason.configurationError);
-        }
-        else // Second time, hopefully POST'd by IdP
-        {
-            String email = SamlManager.getUserFromSamlResponse(request);
-            if (StringUtils.isNotBlank(email))
-                return AuthenticationResponse.createSuccessResponse(new ValidEmail(email));
-            else
-                return AuthenticationResponse.createFailureResponse(FailureReason.badCredentials); // TODO: or assume config error?
-        }
-    }
-
+    
     @Nullable
     @Override
     public ActionURL getConfigurationLink()
@@ -69,7 +42,7 @@ public class SamlProvider implements SSOAuthenticationProvider
     @Override
     public URLHelper getURL(String secret)
     {
-        return null;  // TODO!!
+        return SamlManager.getLoginURL();
     }
 
     @Override
@@ -77,11 +50,11 @@ public class SamlProvider implements SSOAuthenticationProvider
     {
         return _linkFactory;
     }
-
+    
     @Override
     public String getName()
     {
-        return "SAML";
+        return NAME;
     }
 
     @Override

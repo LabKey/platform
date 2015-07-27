@@ -23,6 +23,11 @@ public class AuthRequest {
 	public static final int base64 = 1;
 	private Deflater deflater;
 
+	public AuthRequest(AppSettings appSettings)
+	{
+		this(appSettings, null);
+	}
+
 	public AuthRequest(AppSettings appSettings, AccountSettings accountSettings){
 		this.appSettings = appSettings;
 		id="_"+UUID.randomUUID().toString();
