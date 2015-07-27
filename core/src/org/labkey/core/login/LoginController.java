@@ -40,7 +40,9 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Project;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.SimpleAction;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
@@ -88,6 +90,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -604,9 +607,48 @@ public class LoginController extends SpringActionController
         page.setIncludeLoginLink(false);
         page.setTitle("Sign In");
 
-        LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
-        vBox.addView(view);
-
+        // replace normal jsp login page with the page specified by controller-action in the Look and Feel Settings
+        // This is placed in showLogin() instead of the getLoginURL() to ensure that the logic above
+        // regarding 'server upgrade' and 'server startup' is executed regardless of the custom login action the user specified.
+        String loginController = "login";
+        String loginAction = "login";
+        String customLogin = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getCustomLogin();
+        if (null != customLogin)
+        {
+            ActionURL url = new ActionURL(customLogin);
+            String customLoginAction = url.getAction();
+            String customLoginController =  url.getController();
+            if (null != customLoginController && !customLoginController.equals("") && null != customLoginAction && !customLoginAction.equals(""))
+            {
+                loginController = customLoginController;
+                loginAction = customLoginAction;
+            }
+        }
+        if (!loginController.equals("login") || !loginAction.equals("login"))
+        {
+            Module loginModule = ModuleLoader.getInstance().getModule(loginController);
+            if (null != loginModule)
+            {
+                // custom login
+                WebPartView view = null;
+                view = SimpleAction.getModuleHtmlView(loginModule, loginAction, null);
+                view.setFrame(WebPartView.FrameType.NONE);
+                vBox.addView(view);
+            }
+            else
+            {
+                // default login with error message
+                errors.reject(ERROR_MSG, "Custom login page specified via Look and Feel Settings as: '" + customLogin + "' was not found. Default login page being used instead.");
+                LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
+                vBox.addView(view);
+            }
+        }
+        else
+        {
+            // default login
+            LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
+            vBox.addView(view);
+        }
         return vBox;
     }
 

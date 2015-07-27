@@ -1,0 +1,69 @@
+<!-- this is a test html file for exercising the custom login feature -->
+<!-- this test can be activated by setting the Look and Feel Settings property of Custom Login to the value 'core-testCustomLogin'. -->
+<!-- this file will be replaced this with the EXTJS version of the login like is used in the CDS project. -->
+
+<style type="text/css">
+    .labkey-error {
+        margin-top: 15px;
+    }
+</style>
+<div class="auth-form">
+    <div class="auth-header">Sign In</div>
+    <form name="login" method="POST" action="login.view?" accept-charset="UTF-8"><input type=hidden name='X-LABKEY-CSRF'>
+        <div class="auth-form-body">
+            <p>TEMPORARY CORE CONTROLLER ACTION HTML FOR TESTING CUSTOM HTML LOGIN FORM</p>
+            <p>This is a test html file for exercising the custom login feature.</p>
+            <p>This test can be activated by setting the Look and Feel Settings property of Custom Login to the value 'core-testCustomLogin'.</p>
+            <p>This file will be replaced with the EXTJS version of the login like is used in the CDS project.</p>
+            <label for="email">Email</label>
+            <input id="email" name="email" type="text" class="input-block" tabindex="1" >
+            <label for="password">
+                Password
+                <a href="resetPassword.view?">(forgot password)</a>
+            </label>
+            <input id="password" name="password" type="password" class="input-block" tabindex="2" autofocus>
+            <input type=checkbox name="remember" id="remember"  checked>
+            <label for="remember">Remember my email address</label>
+           <div class="auth-item">
+                <input type="submit" tab-index="-1" style="position: absolute; left: -9999px; width: 1px; height: 1px;" id="loginSubmitButton"/><a class="labkey-button" onClick="if (this.className.indexOf('labkey-disabled-button') != -1){ return false; }submitForm(document.getElementById('loginSubmitButton').form); return false;" ><span>Sign In</span></a>
+            </div>
+        </div>
+        <input type="hidden" name="returnUrl" value="/project/home/begin.view?">
+        <input type="hidden" id="urlhash" name="urlhash">
+    </form>
+</div>
+<script type="text/javascript">
+
+    (function() { if (window && window.location && window.location.hash) { var h = document.getElementById('urlhash'); if (h) { h.value = window.location.hash; } } })();
+
+    (function() {
+        var timeout = 86400000;
+        if (timeout > 0) {
+            var passwordField = document.getElementById('password');
+
+            var clearPasswordField = function ()
+            {
+                passwordField.value = '';
+            };
+
+            var timer = setInterval(clearPasswordField, timeout);
+
+            var changeListener = function ()
+            {
+                if (timer)
+                {
+                    clearInterval(timer);
+                }
+                timer = setInterval(clearPasswordField, timeout);
+            };
+
+            passwordField.onchange = changeListener;
+            passwordField.onkeypress = changeListener;
+        }
+    })();
+
+    (function() { var h = document.getElementById('email'); if (h) { h.value = Ext4.util.Cookies.get("email"); } })();
+    (function() { var h = document.getElementById('remember'); if (h && Ext4.util.Cookies.get("email") ) { h.checked = true; } else { h.checked = false; } })();
+
+</script>
+
