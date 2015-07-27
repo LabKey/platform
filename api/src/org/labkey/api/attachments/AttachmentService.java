@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.PermissionException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
@@ -58,7 +57,7 @@ public class AttachmentService
 
     public interface Service
     {
-        void download(HttpServletResponse response, AttachmentParent parent, String name) throws ServletException, IOException, PermissionException;
+        void download(HttpServletResponse response, AttachmentParent parent, String name) throws ServletException, IOException;
 
         // Use the void-returning methods addAttachments and deleteAttachments instead
         @Deprecated
