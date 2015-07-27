@@ -1213,7 +1213,7 @@ public class IssueManager
     }
     
 
-    public static void indexIssues(final IndexTask task, @NotNull Container c, Date modifiedSince)
+    public static void indexIssues(IndexTask task, @NotNull Container c, Date modifiedSince)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null == ss)
@@ -1226,28 +1226,9 @@ public class IssueManager
         if (f.getClauses().isEmpty())
             f = null;
 
-        final ArrayList<Integer> ids = new ArrayList<>(100);
-
-        new TableSelector(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                int id = rs.getInt(1);
-                ids.add(id);
-
-                if (ids.size() == 100)
-                {
-                    task.addRunnable(new IndexGroup(task, new LinkedList<>(ids)), SearchService.PRIORITY.group);
-                    ids.clear();
-                }
-            }
-        });
-
-        task.addRunnable(new IndexGroup(task, ids), SearchService.PRIORITY.group);
-
-// This batching code will replace the manual batching above in 15.3, after the next 15.2 merge
-//        new TableSelector(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null).forEachBatch(batch -> task.addRunnable(new IndexGroup(task, batch), SearchService.PRIORITY.group), Integer.class, 100);
+        // Index issues in batches of 100
+        new TableSelector(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null)
+                .forEachBatch(batch -> task.addRunnable(new IndexGroup(task, batch), SearchService.PRIORITY.group), Integer.class, 100);
     }
 
     private static class IndexGroup implements Runnable
