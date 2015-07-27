@@ -95,7 +95,7 @@ public class DbSchema
 
         if (-1 == dot)
         {
-            return DbScope.getLabkeyScope().getSchema(fullyQualifiedSchemaName, type);
+            return DbScope.getLabKeyScope().getSchema(fullyQualifiedSchemaName, type);
         }
         else
         {
@@ -112,7 +112,7 @@ public class DbSchema
      */
     public static @NotNull DbSchema getTemp()
     {
-        return DbScope.getLabkeyScope().getSchema(TEMP_SCHEMA_NAME, DbSchemaType.Provisioned);
+        return DbScope.getLabKeyScope().getSchema(TEMP_SCHEMA_NAME, DbSchemaType.Provisioned);
     }
 
     // "core" returns <<labkey scope>, "core">
@@ -124,7 +124,7 @@ public class DbSchema
 
         if (-1 == dot)
         {
-            return new Pair<>(DbScope.getLabkeyScope(), fullyQualifiedSchemaName);
+            return new Pair<>(DbScope.getLabKeyScope(), fullyQualifiedSchemaName);
         }
         else
         {
@@ -714,7 +714,7 @@ public class DbSchema
             executor.execute("CREATE TABLE testdrop3.T (c1 CHAR(10), fk_c0 INT REFERENCES testdrop2.T0(c0))");
             executor.execute("CREATE INDEX T_c1 ON testdrop2.T(c1)");
 
-            testSchema = DbSchema.createFromMetaData(DbScope.getLabkeyScope(), "testdrop", DbSchemaType.Bare);
+            testSchema = DbSchema.createFromMetaData(DbScope.getLabKeyScope(), "testdrop", DbSchemaType.Bare);
 
             //these exist; ensure they are dropped by re-creating them
             testSchema.dropIndexIfExists("T", "T_c1");
@@ -748,7 +748,7 @@ public class DbSchema
         public void testSchemaCasing() throws Exception
         {
             // If schema cache is case-sensitive then this should clear all capitalizations
-            DbScope.getLabkeyScope().invalidateSchema("core", DbSchemaType.Module);
+            DbScope.getLabKeyScope().invalidateSchema("core", DbSchemaType.Module);
 
             DbSchema core1 = DbSchema.get("Core", DbSchemaType.Module);
             DbSchema core2 = DbSchema.get("CORE", DbSchemaType.Module);

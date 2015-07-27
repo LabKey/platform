@@ -187,7 +187,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             {
                 // A module data source is missing and we're in dev mode, so attempt to create a proxy data source that uses the labkey
                 // database. This can be helpful on test and dev machines. See #23730.
-                DbScope scope = DbScope.getLabkeyScope();
+                DbScope scope = DbScope.getLabKeyScope();
 
                 try
                 {

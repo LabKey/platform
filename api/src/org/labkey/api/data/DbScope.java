@@ -1171,7 +1171,7 @@ public class DbScope
     }
 
 
-    public static DbScope getLabkeyScope()
+    public static DbScope getLabKeyScope()
     {
         synchronized (_scopes)
         {
@@ -1182,7 +1182,7 @@ public class DbScope
 
     public boolean isLabKeyScope()
     {
-        return this == getLabkeyScope();
+        return this == getLabKeyScope();
     }
 
     /** Gets a DbScope based on the data source name from the Tomcat deployment descriptor */
@@ -1731,7 +1731,7 @@ public class DbScope
         @Test
         public void testLabKeyScope() throws SQLException
         {
-            DbScope scope = getLabkeyScope();
+            DbScope scope = getLabKeyScope();
             SqlDialect dialect = scope.getSqlDialect();
 
             testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.DATE, 31);
@@ -1801,7 +1801,7 @@ public class DbScope
                     tablesToTest.add(tinfo);
             }
 
-            try (Transaction ignored = DbScope.getLabkeyScope().ensureTransaction())
+            try (Transaction ignored = DbScope.getLabKeyScope().ensureTransaction())
             {
                 // LabKey scope should have an active transaction, and all other scopes should not
                 for (DbScope scope : DbScope.getDbScopes())
@@ -1869,11 +1869,11 @@ public class DbScope
         @Test(expected = IllegalStateException.class)
         public void testExtraCloseException()
         {
-            try (Transaction t = getLabkeyScope().ensureTransaction())
+            try (Transaction t = getLabKeyScope().ensureTransaction())
             {
-                assertTrue(getLabkeyScope().isTransactionActive());
+                assertTrue(getLabKeyScope().isTransactionActive());
                 t.commit();
-                assertFalse(getLabkeyScope().isTransactionActive());
+                assertFalse(getLabKeyScope().isTransactionActive());
                 t.close();
                 t.close();
             }
@@ -1884,10 +1884,10 @@ public class DbScope
         {
             ReentrantLock lock = new ReentrantLock();
             ReentrantLock lock2 = new ReentrantLock();
-            try (Transaction t = getLabkeyScope().ensureTransaction(lock))
+            try (Transaction t = getLabKeyScope().ensureTransaction(lock))
             {
                 assertEquals("Lock should be singly held", 1, lock.getHoldCount());
-                try (Transaction t2 = getLabkeyScope().ensureTransaction(lock, lock2))
+                try (Transaction t2 = getLabKeyScope().ensureTransaction(lock, lock2))
                 {
                     assertEquals("Lock should be doubly held", 2, lock.getHoldCount());
                     assertEquals("Lock should be singly held", 1, lock2.getHoldCount());
@@ -1908,12 +1908,12 @@ public class DbScope
             ReentrantLock lock2 = new ReentrantLock();
             try
             {
-                try (Transaction t = getLabkeyScope().ensureTransaction(lock))
+                try (Transaction t = getLabKeyScope().ensureTransaction(lock))
                 {
                     try
                     {
                         assertEquals("Lock should be singly held", 1, lock.getHoldCount());
-                        try (Transaction t2 = getLabkeyScope().ensureTransaction(lock, lock2))
+                        try (Transaction t2 = getLabKeyScope().ensureTransaction(lock, lock2))
                         {
                             assertEquals("Lock should be doubly held", 2, lock.getHoldCount());
                             assertEquals("Lock should be singly held", 1, lock2.getHoldCount());
@@ -1938,39 +1938,39 @@ public class DbScope
         public void testNested()
         {
             // Create three nested transactions and make sure we don't really commit until the outermost one is complete
-            try (Transaction t = getLabkeyScope().ensureTransaction())
+            try (Transaction t = getLabKeyScope().ensureTransaction())
             {
                 Connection connection = t.getConnection();
-                assertTrue(getLabkeyScope().isTransactionActive());
-                try (Transaction t2 = getLabkeyScope().ensureTransaction())
+                assertTrue(getLabKeyScope().isTransactionActive());
+                try (Transaction t2 = getLabKeyScope().ensureTransaction())
                 {
-                    assertTrue(getLabkeyScope().isTransactionActive());
+                    assertTrue(getLabKeyScope().isTransactionActive());
                     assertSame(connection, t2.getConnection());
-                    try (Transaction t3 = getLabkeyScope().ensureTransaction())
+                    try (Transaction t3 = getLabKeyScope().ensureTransaction())
                     {
-                        assertTrue(getLabkeyScope().isTransactionActive());
+                        assertTrue(getLabKeyScope().isTransactionActive());
                         assertSame(connection, t3.getConnection());
                         t3.commit();
-                        assertTrue(getLabkeyScope().isTransactionActive());
+                        assertTrue(getLabKeyScope().isTransactionActive());
                     }
                     assertSame(connection, t2.getConnection());
                     t2.commit();
-                    assertTrue(getLabkeyScope().isTransactionActive());
+                    assertTrue(getLabKeyScope().isTransactionActive());
                 }
                 t.commit();
-                assertFalse(getLabkeyScope().isTransactionActive());
+                assertFalse(getLabKeyScope().isTransactionActive());
             }
-            assertFalse(getLabkeyScope().isTransactionActive());
+            assertFalse(getLabKeyScope().isTransactionActive());
         }
 
         @Test(expected = IllegalStateException.class)
         public void testExtraCommit()
         {
-            try (Transaction t = getLabkeyScope().ensureTransaction())
+            try (Transaction t = getLabKeyScope().ensureTransaction())
             {
-                assertTrue(getLabkeyScope().isTransactionActive());
+                assertTrue(getLabKeyScope().isTransactionActive());
                 t.commit();
-                assertFalse(getLabkeyScope().isTransactionActive());
+                assertFalse(getLabKeyScope().isTransactionActive());
                 // This call should cause an IllegalStateException, since we already committed the transaction
                 t.commit();
             }
@@ -1979,17 +1979,17 @@ public class DbScope
         @Test(expected = IllegalStateException.class)
         public void testNestedFailureCondition()
         {
-            try (Transaction t = getLabkeyScope().ensureTransaction())
+            try (Transaction t = getLabKeyScope().ensureTransaction())
             {
-                assertTrue(getLabkeyScope().isTransactionActive());
+                assertTrue(getLabKeyScope().isTransactionActive());
                 //noinspection EmptyTryBlock
-                try (Transaction t2 = getLabkeyScope().ensureTransaction())
+                try (Transaction t2 = getLabKeyScope().ensureTransaction())
                 {
                     // Intentionally miss a call to commit!
                 }
                 // Should be aborted because the inner transaction never called commit() before it was closed
-                assertTrue(getLabkeyScope().isTransactionActive());
-                assertTrue(getLabkeyScope().getCurrentTransactionImpl()._aborted);
+                assertTrue(getLabKeyScope().isTransactionActive());
+                assertTrue(getLabKeyScope().getCurrentTransactionImpl()._aborted);
                 // This call should cause an IllegalStateException
                 t.commit();
             }
@@ -2000,10 +2000,10 @@ public class DbScope
         {
             try
             {
-                try (Transaction t = getLabkeyScope().ensureTransaction())
+                try (Transaction t = getLabKeyScope().ensureTransaction())
                 {
-                    assertTrue(getLabkeyScope().isTransactionActive());
-                    Transaction t2 = getLabkeyScope().ensureTransaction();
+                    assertTrue(getLabKeyScope().isTransactionActive());
+                    Transaction t2 = getLabKeyScope().ensureTransaction();
                     t2.commit();
                     // Intentionally don't call t2.close(), make sure we blow up with an IllegalStateException
                     t.commit();
@@ -2011,7 +2011,7 @@ public class DbScope
             }
             finally
             {
-                assertFalse(getLabkeyScope().isTransactionActive());
+                assertFalse(getLabKeyScope().isTransactionActive());
             }
         }
 
@@ -2020,11 +2020,11 @@ public class DbScope
         {
             try
             {
-                try (Transaction t = getLabkeyScope().ensureTransaction())
+                try (Transaction t = getLabKeyScope().ensureTransaction())
                 {
                     Connection c = t.getConnection();
-                    assertTrue(getLabkeyScope().isTransactionActive());
-                    try (Transaction t2 = getLabkeyScope().ensureTransaction())
+                    assertTrue(getLabKeyScope().isTransactionActive());
+                    try (Transaction t2 = getLabKeyScope().ensureTransaction())
                     {
                         // Intentionally don't call t2.commit();
                     }
@@ -2043,21 +2043,21 @@ public class DbScope
             }
             finally
             {
-                assertFalse(getLabkeyScope().isTransactionActive());
+                assertFalse(getLabKeyScope().isTransactionActive());
             }
         }
 
         @Test
         public void testMultipleTransactionKinds()
         {
-            try (Transaction t = getLabkeyScope().ensureTransaction())
+            try (Transaction t = getLabKeyScope().ensureTransaction())
             {
                 Connection connection = t.getConnection();
-                assertTrue(getLabkeyScope().isTransactionActive());
-                try (Transaction t2 = getLabkeyScope().ensureTransaction())
+                assertTrue(getLabKeyScope().isTransactionActive());
+                try (Transaction t2 = getLabKeyScope().ensureTransaction())
                 {
                     assertSame(connection, t2.getConnection());
-                    try (Transaction t3 = getLabkeyScope().ensureTransaction(new TransactionKind()
+                    try (Transaction t3 = getLabKeyScope().ensureTransaction(new TransactionKind()
                     {
                         @NotNull
                         @Override
@@ -2073,19 +2073,19 @@ public class DbScope
                         }
                     }))
                     {
-                        assertTrue(getLabkeyScope().isTransactionActive());
+                        assertTrue(getLabKeyScope().isTransactionActive());
                         assertNotSame("Should have 2 connections", connection, t3.getConnection());
                         t3.commit();
-                        assertTrue(getLabkeyScope().isTransactionActive());
+                        assertTrue(getLabKeyScope().isTransactionActive());
                     }
-                    assertSame(getLabkeyScope().getCurrentTransaction(), t2);
+                    assertSame(getLabKeyScope().getCurrentTransaction(), t2);
                     t2.commit();
-                    assertTrue(getLabkeyScope().isTransactionActive());
+                    assertTrue(getLabKeyScope().isTransactionActive());
                 }
                 t.commit();
-                assertFalse(getLabkeyScope().isTransactionActive());
+                assertFalse(getLabKeyScope().isTransactionActive());
             }
-            assertFalse(getLabkeyScope().isTransactionActive());
+            assertFalse(getLabKeyScope().isTransactionActive());
         }
     }
 }

@@ -1017,7 +1017,7 @@ public class StorageProvisioner
                 try
                 {
                     // Provisioned tables are always in the labkey database (for now)
-                    schema = DbSchema.createFromMetaData(DbScope.getLabkeyScope(), domainReport.getSchemaName(), DbSchemaType.Bare);
+                    schema = DbSchema.createFromMetaData(DbScope.getLabKeyScope(), domainReport.getSchemaName(), DbSchemaType.Bare);
                     schemas.put(domainReport.getSchemaName(), schema);
                 }
                 catch (Exception e)
@@ -1538,7 +1538,7 @@ renaming a property AND toggling mvindicator on in the same change.
 
             try
             {
-                con = DbScope.getLabkeyScope().getConnection();
+                con = DbScope.getLabKeyScope().getConnection();
                 DatabaseMetaData dbmd = con.getMetaData();
                 rs = dbmd.getColumns(null, schema, table, column);
 

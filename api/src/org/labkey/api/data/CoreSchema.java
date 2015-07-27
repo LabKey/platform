@@ -44,7 +44,7 @@ public class CoreSchema
 
     public DbScope getScope()
     {
-        return DbScope.getLabkeyScope(); // Don't reference getSchema() here -- it can lead to recursion in certain bootstrap scenarios
+        return DbScope.getLabKeyScope(); // Don't reference getSchema() here -- it can lead to recursion in certain bootstrap scenarios
     }
 
     public DbSchema getSchema()

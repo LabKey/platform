@@ -47,7 +47,7 @@ class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
 
     public void run()
     {
-        DbScope scope = DbScope.getLabkeyScope();
+        DbScope scope = DbScope.getLabKeyScope();
         String url = null;
 
         try

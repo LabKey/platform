@@ -125,7 +125,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
                         + ".");
             }
 
-            String dialectWarning = DbScope.getLabkeyScope().getSqlDialect().getAdminWarningMessage();
+            String dialectWarning = DbScope.getLabKeyScope().getSqlDialect().getAdminWarningMessage();
 
             // Warn if running on a deprecated database version or some other non-fatal database configuration issue
             if (null != dialectWarning)
