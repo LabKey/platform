@@ -1238,7 +1238,7 @@ public class IssueManager
 
                 if (ids.size() == 100)
                 {
-                    task.addRunnable(new IndexGroup(task, ids), SearchService.PRIORITY.group);
+                    task.addRunnable(new IndexGroup(task, new LinkedList<>(ids)), SearchService.PRIORITY.group);
                     ids.clear();
                 }
             }
