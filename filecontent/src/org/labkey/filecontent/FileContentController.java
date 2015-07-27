@@ -105,6 +105,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
@@ -549,6 +550,10 @@ public class FileContentController extends SpringActionController
            catch (NotFoundException x)
            {
                 return ExceptionUtil.getErrorView(HttpServletResponse.SC_NOT_FOUND, x.getMessage(), x, getViewContext().getRequest(), false, true);
+           }
+           catch (UnauthorizedException x)
+           {
+                return ExceptionUtil.getErrorView(HttpServletResponse.SC_UNAUTHORIZED, x.getMessage(), x, getViewContext().getRequest(), false, true);
            }
        }
 

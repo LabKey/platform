@@ -53,7 +53,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.PermissionException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -75,6 +74,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.webdav.AbstractDocumentResource;
@@ -166,14 +166,13 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
     @Override
-    public void download(HttpServletResponse response, AttachmentParent parent, String filename) throws ServletException, IOException, PermissionException
+    public void download(HttpServletResponse response, AttachmentParent parent, String filename) throws ServletException, IOException
     {
         if (null == filename || 0 == filename.length())
         {
             throw new NotFoundException();
         }
 
-        checkSecurityPolicy(parent);
         boolean isInlineImage = _mimeMap.isInlineImageFor(filename);
         boolean asAttachment = !isInlineImage;
 
@@ -251,6 +250,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
             if (schema != null)
             {
+                checkSecurityPolicy(context.getUser(), parent);
                 QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
 
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(AttachmentAuditProvider.COLUMN_NAME_CONTAINER), parent.getContainerId());
@@ -273,6 +273,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors)
     {
+        checkSecurityPolicy(parent);
         HttpView view = new AddAttachmentView(parent, errors);
         DialogTemplate template = new DialogTemplate(view);
         template.getModelBean().setTitle("Add Attachment");
@@ -431,6 +432,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
         for (AttachmentParent parent : parents)
         {
+            checkSecurityPolicy(parent);
             List<Attachment> atts = getAttachments(parent);
 
             // No attachments, or perhaps container doesn't match entityid
@@ -451,6 +453,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser)
     {
+        checkSecurityPolicy(auditUser, parent);
         Attachment att = getAttachment(parent, name);
 
         if (null != att)
@@ -478,6 +481,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         File dest = null;
         File src = null;
 
+        checkSecurityPolicy(auditUser, parent);
         if (parent instanceof AttachmentDirectory)
         {
             dir = ((AttachmentDirectory)parent).getFileSystemDirectory();
@@ -511,6 +515,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException
     {
+        checkSecurityPolicy(auditUser, parent);
         a.setName(newName);
         DatabaseAttachmentFile file = new DatabaseAttachmentFile(a);
         addAttachments(parent, Collections.singletonList((AttachmentFile)file), auditUser);
@@ -522,6 +527,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         SearchService ss = ServiceRegistry.get(SearchService.class);
         for (AttachmentParent parent : parents)
         {
+            checkSecurityPolicy(auditUser, parent);
             int rowsChanged = new SqlExecutor(coreTables().getSchema()).execute(sqlMove(parent, newContainer));
             if (rowsChanged > 0)
             {
@@ -543,6 +549,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException
     {
+        checkSecurityPolicy(parent);
         List<AttachmentFile> files = new ArrayList<>(attachments.size());
 
         for (Attachment attachment : attachments)
@@ -590,6 +597,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public @NotNull List<Attachment> getAttachments(AttachmentParent parent)
     {
+        checkSecurityPolicy(parent);
         Map<String, Attachment> mapFromDatabase = AttachmentCache.getAttachments(parent);
         List<Attachment> attachmentsFromDatabase = Collections.unmodifiableList(new ArrayList<>(mapFromDatabase.values()));
 
@@ -677,6 +685,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     {
         // NOTE parent does not supply ACL, but should?
         // acl = parent.getAcl()
+        checkSecurityPolicy(parent);
         Container c = ContainerManager.getForId(parent.getContainerId());
         if (null == c)
             return null;
@@ -687,6 +696,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat)
     {
+        checkSecurityPolicy(parent);
         return new AttachmentResource(path, downloadURL, displayTitle, parent, name, cat);
     }
 
@@ -706,6 +716,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public @Nullable Attachment getAttachment(AttachmentParent parent, String name)
     {
+        checkSecurityPolicy(parent);
         if (parent instanceof AttachmentDirectory)
         {
             for (Attachment attachment : getAttachments(parent))
@@ -751,6 +762,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     // CONSIDER: Return success/failure notification so caller can take action (render a default document) in all the failure scenarios.
     public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException
     {
+        checkSecurityPolicy(parent);
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -830,6 +842,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @NotNull
     public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException
     {
+        checkSecurityPolicy(parent);
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -1387,7 +1400,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
     }
 
-    private void checkSecurityPolicy(AttachmentParent attachmentParent) throws PermissionException
+    private void checkSecurityPolicy(AttachmentParent attachmentParent) throws UnauthorizedException
     {
         if (null != attachmentParent.getSecurityPolicy())
         {
@@ -1400,19 +1413,19 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             }
             catch (RuntimeException e)
             {
-                throw new PermissionException("Cannot get user to check against secure resource's  policy.");       // We have a policy but can't get user, so fail
+                throw new UnauthorizedException("Cannot get user to check against secure resource's  policy.");       // We have a policy but can't get user, so fail
             }
             checkSecurityPolicy(user, attachmentParent);
         }
     }
 
-    private void checkSecurityPolicy(User user, AttachmentParent attachmentParent) throws PermissionException
+    private void checkSecurityPolicy(User user, AttachmentParent attachmentParent) throws UnauthorizedException
     {
         SecurityPolicy securityPolicy = attachmentParent.getSecurityPolicy();
         if (null != securityPolicy)
         {
             if (null == user || !securityPolicy.hasPermission(user, ReadPermission.class))
-                throw new PermissionException("User does not have permission to access this secure resource.");
+                throw new UnauthorizedException("User does not have permission to access this secure resource.");
         }
     }
 
