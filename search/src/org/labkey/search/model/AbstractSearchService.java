@@ -415,7 +415,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     private void queueItem(Item i)
     {
         // UNDONE: this is not 100% correct, consider passing in a scope with Item
-        DbScope s = DbScope.getLabkeyScope();
+        DbScope s = DbScope.getLabKeyScope();
 
         if (s.isTransactionActive())
         {

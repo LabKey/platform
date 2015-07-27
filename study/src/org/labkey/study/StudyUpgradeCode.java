@@ -400,7 +400,7 @@ public class StudyUpgradeCode implements UpgradeCode
             }
         }
 
-        DbScope.getLabkeyScope().invalidateSchema(StudySchema.getInstance().getDatasetSchema());
+        DbScope.getLabKeyScope().invalidateSchema(StudySchema.getInstance().getDatasetSchema());
     }
 
     private void uncacheDef(DatasetDefinition def)

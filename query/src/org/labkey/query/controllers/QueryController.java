@@ -4187,7 +4187,7 @@ public class QueryController extends SpringActionController
             ExternalSchemaDef def = getSchemaDef();
             DbScope scope = def.lookupDbScope();
             if (scope == null)
-                scope = DbScope.getLabkeyScope();
+                scope = DbScope.getLabKeyScope();
             return new DataSourceInfo(scope);
         }
 
