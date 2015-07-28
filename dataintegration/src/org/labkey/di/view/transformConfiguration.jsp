@@ -167,7 +167,12 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
                         {
                             waitMask.close();
                             var data = Ext4.JSON.decode(response.responseText);
-                            Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
+                            if(data.success === true && data.deletedRows)
+                                Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
+                            else if(data.error)
+                                Ext4.Msg.alert("Error", data.error);
+                            else
+                                Ext4.Msg.alert("Error", "Unable to complete operation.");
                         },
                         failure : function(response, opts)
                         {
@@ -277,7 +282,7 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
         <td><%=text(configuration.getLastCheckedString())%></td>
         <td class="etl-action-col"><%= button("run now").href("#").onClick("onRunNowClicked(this," + q(descriptor.getId()) + "); return false;").enabled(enableControls) %></td>
         <td class="etl-action-col"><%
-            MenuButton reset = new MenuButton("ETL state...");
+            MenuButton reset = new MenuButton("Reset State...");
             reset.addMenuItem("Reset", "#", "onResetStateClicked(this," + q(descriptor.getId()) + "); return false;");
             reset.addMenuItem("Truncate and Reset", "#", "onTruncateAndReset(this," + q(descriptor.getId()) + "); return false;");
             reset.render(new RenderContext(getViewContext()), out);

@@ -88,7 +88,6 @@ import org.labkey.di.filters.RunFilterStrategy;
 import org.labkey.di.filters.SelectAllFilterStrategy;
 import org.labkey.di.steps.ExternalPipelineTaskProvider;
 import org.labkey.di.steps.RemoteQueryTransformStepProvider;
-import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.di.steps.SimpleQueryTransformStepProvider;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.di.steps.StepProvider;
@@ -793,51 +792,80 @@ public class TransformManager implements DataIntegrationService.Interface
         return null;
     }
 
-    public Map<String, String> truncateTargets(String id, User user, Container c) throws BatchValidationException, QueryUpdateServiceException, SQLException
+    public Map<String, String> truncateTargets(String id, User user, Container c)
     {
         int deletedRows = 0;
         TransformDescriptor etl = (TransformDescriptor)getDescriptor(id);
-        List<StepMeta> stepMetas = etl.getStepMetaDatas();
-        List<TableInfo> targets = new ArrayList<>();
         Map<String, String> retMap = new HashMap<>();
-
-        for (StepMeta stepMeta : stepMetas) {
-            if(((SimpleQueryTransformStepMeta)stepMeta).getTargetType() == CopyConfig.TargetTypes.query)
-            {
-                QuerySchema querySchema = DefaultSchema.get(user, c, stepMeta.getTargetSchema());
-                if (null == querySchema || null == querySchema.getDbSchema())
-                {
-                    retMap.put("error", "Could not find schema: " + stepMeta.getTargetSchema());
-                    deletedRows = -1;
-                }
-                TableInfo targetTableInfo = querySchema.getTable(stepMeta.getTargetQuery());
-                if (null == targetTableInfo)
-                {
-                    retMap.put("error", "Could not find table: " + stepMeta.getTargetSchema() + '.' + stepMeta.getTargetQuery());
-                    deletedRows = -1;
-                }
-                targets.add(targetTableInfo);
-            }
-        }
-
-        if(deletedRows != -1)
+        StringBuilder sb = new StringBuilder();     // Error string
+        if(etl != null)
         {
-            Collections.reverse(targets);
+            List<StepMeta> stepMetas = etl.getStepMetaDatas();
+            List<TableInfo> targets = new ArrayList<>();
 
-            for (TableInfo target : targets)
+            // Iterate through steps to verify schemas and tables exist
+            for (StepMeta stepMeta : stepMetas)
             {
-                QueryUpdateService qus = target.getUpdateService();
-                if (qus != null)
+                if (stepMeta.isUseTarget() && ((CopyConfig)stepMeta).getTargetType() == CopyConfig.TargetTypes.query)
                 {
-                    try (DbScope.Transaction transaction = target.getSchema().getScope().ensureTransaction())
+                    QuerySchema querySchema = DefaultSchema.get(user, c, stepMeta.getTargetSchema());
+                    if (null == querySchema || null == querySchema.getDbSchema())
                     {
-                        deletedRows += qus.truncateRows(user, c, null, null);
-                        transaction.commit();
+                        sb.append("Could not find schema: ").append(stepMeta.getTargetSchema()).append("</br>");
+                        continue;
+                    }
+                    TableInfo targetTableInfo = querySchema.getTable(stepMeta.getTargetQuery());
+                    if (null == targetTableInfo)
+                    {
+                        sb.append("Could not find table: ").append(stepMeta.getTargetSchema()).append('.').append(stepMeta.getTargetQuery()).append("</br>");
+                        continue;
+                    }
+                    targets.add(targetTableInfo);
+                }
+            }
+
+            if(sb.length()<1)
+            {
+                // Reverse targets to delete in reverse order in case foreign keys exist between targets
+                Collections.reverse(targets);
+
+                // Truncate tables. This does not delete tables just rows.
+                for (TableInfo target : targets)
+                {
+                    QueryUpdateService qus = target.getUpdateService();
+                    if (qus != null)
+                    {
+                        try (DbScope.Transaction transaction = target.getSchema().getScope().ensureTransaction())
+                        {
+                            deletedRows += qus.truncateRows(user, c, null, null);
+                            transaction.commit();
+                        }
+                        catch(QueryUpdateServiceException e)
+                        {
+                            sb.append("Query Update Service Exception - ").append(target.toString()).append("</br>").append(e.toString());
+                            break;
+                        }
+                        catch(SQLException e)
+                        {
+                            sb.append("SQL Exception - ").append(target.toString()).append("</br>").append(e.toString());
+                            break;
+                        }
+                        catch(BatchValidationException e)
+                        {
+                            sb.append("Batch Validation Exception - ").append(target.toString()).append("</br>").append(e.toString());
+                            break;
+                        }
+                    } else
+                    {
+                        sb.append("Could not open query service. ").append(target.toString()).append(" not truncated.").append("</br>");
+                        break;
                     }
                 }
             }
+            if(sb.length()>0)
+                retMap.put("error", sb.toString());
+            retMap.put("rows", Integer.toString(deletedRows));
         }
-        retMap.put("rows", Integer.toString(deletedRows));
         return retMap;
     }
 

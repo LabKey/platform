@@ -395,7 +395,8 @@ public class DataIntegrationController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class TruncateTransformStateAction extends MutatingApiAction<TransformConfigurationForm>
+    public class TruncateTransformStateAction extends ResetTransformStateAction
+//    public class TruncateTransformStateAction extends MutatingApiAction<TransformConfigurationForm>
     {
         @Override
         public ApiResponse execute(TransformConfigurationForm form, BindException errors) throws Exception
@@ -419,38 +420,23 @@ public class DataIntegrationController extends SpringActionController
                 Map<String, String> status = TransformManager.get().truncateTargets(form.getTransformId(), getUser(), getContainer());
 
                 // Reset state
-                TransformConfiguration config = null;
-                List<TransformConfiguration> configs = TransformManager.get().getTransformConfigurations(context.getContainer());
-                for (TransformConfiguration c : configs)
-                {
-                    if (c.getTransformId().equalsIgnoreCase(form.getTransformId()))
-                    {
-                        config = c;
-                        break;
-                    }
-                }
-
-                if (config != null)
-                {
-                    config.setTransformState(null);
-                    TransformManager.get().saveTransformConfiguration(context.getUser(), config);
-                }
+                super.execute(form, errors);
 
                 // return status
+                String error = status.get("error");
                 String rows = status.get("rows");
-                if (rows != null)
+                if (error != null)
                 {
-                    ret.put("success", !rows.equals("-1"));
+                    ret.put("error", error);
+                    ret.put("status", "");
+                }
+                else if(rows != null)
+                {
+                    ret.put("success", true);
                     ret.put("deletedRows", rows);
                 }
                 else
-                {
                     ret.put("success", false);
-                }
-
-                String error = status.get("error");
-                if (error != null)
-                    ret.put("error", error);
             }
 
             return new ApiSimpleResponse(ret);
