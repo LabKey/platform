@@ -28,6 +28,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.attachments.SecureDocumentParent;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -48,12 +49,14 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
@@ -82,6 +85,7 @@ import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.core.CoreModule;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
@@ -447,6 +451,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             if (parent instanceof AttachmentDirectory)
                 ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
             AttachmentCache.removeAttachments(parent);
+            deleteSecurityPolicy(parent);
         }
     }
 
@@ -467,6 +472,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 ((AttachmentDirectory)parent).deleteAttachment(auditUser, name);
 
             AttachmentCache.removeAttachments(parent);
+            deleteSecurityPolicy(parent);
 
             if (null != auditUser)
                 addAuditEvent(auditUser, parent, name, "The attachment " + name + " was deleted");
@@ -743,6 +749,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public void containerDeleted(Container c, User user)
     {
+        // TODO: do we need to get each document and remove its security policy?
         ContainerUtil.purgeTable(coreTables().getTableInfoDocuments(), c, null);
         AttachmentCache.removeAttachments(c);
     }
@@ -1429,6 +1436,16 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
     }
 
+    private void deleteSecurityPolicy(AttachmentParent attachmentParent)
+    {
+        SecurityPolicy securityPolicy = attachmentParent.getSecurityPolicy();
+        if (null != securityPolicy)
+        {
+            SecureDocumentParent secureDocumentParent = new SecureDocumentParent(attachmentParent.getEntityId(),
+                    ContainerManager.getForId(attachmentParent.getContainerId()), ModuleLoader.getInstance().getModule(CoreModule.CORE_MODULE_NAME));
+            SecurityPolicyManager.deletePolicy(secureDocumentParent);
+        }
+    }
 
 
     //
