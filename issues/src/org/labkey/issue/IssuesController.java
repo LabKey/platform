@@ -709,7 +709,11 @@ public class IssuesController extends SpringActionController
         sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
         sb.append("</table></div>");
 
-        relatedIssue.addComment(user, sb.toString());
+        //Do not add comments to the related issue if once the relation is set and is not a new relation
+        //This is a fix to: Issue 23759: Updating an issue results in a new comment in every related issue
+        if(!prevRelated.equals(newRelated))
+            relatedIssue.addComment(user, sb.toString());
+
         relatedIssue.setRelatedIssues(newRelated);
         return relatedIssue;
     }
