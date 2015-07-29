@@ -2939,6 +2939,7 @@ div.note {
 body.print, table.labkey-main.print
 {
     background-color:#ffffff;
+    padding: 5px;
 }
 
 /* Get rid of the space to the left of radio buttons and checkboxes so that they match the spacing on other form elements */
