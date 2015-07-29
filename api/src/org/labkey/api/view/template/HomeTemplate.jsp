@@ -106,7 +106,7 @@
 <%
     }
 %>
-<div class="labkey-main <%= text(themeClass) %>" <% if (isPrint) { %>style="padding: 5px;"<% } %>>
+<div class="labkey-main <%= text(themeClass) %>">
     <%
         if (bean.showHeader() != PageConfig.TrueFalse.False)
         {
