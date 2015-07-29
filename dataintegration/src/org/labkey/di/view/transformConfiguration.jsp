@@ -170,7 +170,7 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
                             if(data.success === true && data.deletedRows)
                                 Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
                             else if(data.error)
-                                Ext4.Msg.alert("Error", data.error);
+                                Ext4.Msg.alert("Error", data.error.replace(/(?:\r\n|\r|\n)/g, '<br>'));
                             else
                                 Ext4.Msg.alert("Error", "Unable to complete operation.");
                         },

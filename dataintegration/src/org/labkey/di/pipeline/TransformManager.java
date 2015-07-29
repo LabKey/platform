@@ -811,13 +811,13 @@ public class TransformManager implements DataIntegrationService.Interface
                     QuerySchema querySchema = DefaultSchema.get(user, c, stepMeta.getTargetSchema());
                     if (null == querySchema || null == querySchema.getDbSchema())
                     {
-                        sb.append("Could not find schema: ").append(stepMeta.getTargetSchema()).append("</br>");
+                        sb.append("Could not find schema: ").append(stepMeta.getTargetSchema()).append("\n");
                         continue;
                     }
                     TableInfo targetTableInfo = querySchema.getTable(stepMeta.getTargetQuery());
                     if (null == targetTableInfo)
                     {
-                        sb.append("Could not find table: ").append(stepMeta.getTargetSchema()).append('.').append(stepMeta.getTargetQuery()).append("</br>");
+                        sb.append("Could not find table: ").append(stepMeta.getTargetSchema()).append('.').append(stepMeta.getTargetQuery()).append("\n");
                         continue;
                     }
                     targets.add(targetTableInfo);
@@ -840,25 +840,13 @@ public class TransformManager implements DataIntegrationService.Interface
                             deletedRows += qus.truncateRows(user, c, null, null);
                             transaction.commit();
                         }
-                        catch(QueryUpdateServiceException e)
+                        catch(QueryUpdateServiceException | SQLException | BatchValidationException e)
                         {
-                            sb.append("Query Update Service Exception - ").append(target.toString()).append("</br>").append(e.toString());
-                            break;
-                        }
-                        catch(SQLException e)
-                        {
-                            sb.append("SQL Exception - ").append(target.toString()).append("</br>").append(e.toString());
-                            break;
-                        }
-                        catch(BatchValidationException e)
-                        {
-                            sb.append("Batch Validation Exception - ").append(target.toString()).append("</br>").append(e.toString());
-                            break;
+                            throw new IllegalStateException("Unable to perform truncate transaction on " + target.toString());
                         }
                     } else
                     {
-                        sb.append("Could not open query service. ").append(target.toString()).append(" not truncated.").append("</br>");
-                        break;
+                        throw new IllegalStateException("Could not open query service for " + target.toString());
                     }
                 }
             }
