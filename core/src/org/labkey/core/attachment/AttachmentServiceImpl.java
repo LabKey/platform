@@ -459,7 +459,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     public void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser)
     {
         checkSecurityPolicy(auditUser, parent);
-        Attachment att = getAttachment(parent, name);
+        Attachment att = getAttachmentHelper(parent, name);
 
         if (null != att)
         {
@@ -583,7 +583,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     private boolean exists(AttachmentParent parent, String filename)
     {
-        return null != getAttachment(parent, filename);
+        return null != getAttachmentHelper(parent, filename);
     }
 
     private List<String> findDuplicates(List<AttachmentFile> files)
@@ -723,6 +723,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     public @Nullable Attachment getAttachment(AttachmentParent parent, String name)
     {
         checkSecurityPolicy(parent);
+        return getAttachmentHelper(parent, name);
+    }
+
+    private @Nullable Attachment getAttachmentHelper(AttachmentParent parent, String name)
+    {
         if (parent instanceof AttachmentDirectory)
         {
             for (Attachment attachment : getAttachments(parent))
@@ -1429,7 +1434,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     private void checkSecurityPolicy(User user, AttachmentParent attachmentParent) throws UnauthorizedException
     {
         SecurityPolicy securityPolicy = attachmentParent.getSecurityPolicy();
-        if (null != securityPolicy)
+        if (null != securityPolicy && !securityPolicy.isEmpty())
         {
             if (null == user || !securityPolicy.hasPermission(user, ReadPermission.class))
                 throw new UnauthorizedException("User does not have permission to access this secure resource.");
@@ -1439,7 +1444,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     private void deleteSecurityPolicy(AttachmentParent attachmentParent)
     {
         SecurityPolicy securityPolicy = attachmentParent.getSecurityPolicy();
-        if (null != securityPolicy)
+        if (null != securityPolicy && !securityPolicy.isEmpty())
         {
             SecureDocumentParent secureDocumentParent = new SecureDocumentParent(attachmentParent.getEntityId(),
                     ContainerManager.getForId(attachmentParent.getContainerId()), ModuleLoader.getInstance().getModule(CoreModule.CORE_MODULE_NAME));
