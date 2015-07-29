@@ -15,6 +15,7 @@
  */
 package org.labkey.di.steps;
 
+import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
@@ -57,6 +58,9 @@ public class SimpleQueryTransformStepProvider extends StepProviderImpl
     @Override
     public TransformTask createStepInstance(TransformTaskFactory f, PipelineJob job, StepMeta meta, TransformJobContext context)
     {
-        return new SimpleQueryTransformStep(f, job, (SimpleQueryTransformStepMeta)meta, context);
+        SimpleQueryTransformStepMeta stepMeta = (SimpleQueryTransformStepMeta)meta;
+        if (!stepMeta.isUseSource() && stepMeta.getTargetOptions() == CopyConfig.TargetOptions.truncate)
+            return new TruncateTransformStep(f, job, stepMeta, context);
+        return new SimpleQueryTransformStep(f, job, stepMeta, context);
     }
 }

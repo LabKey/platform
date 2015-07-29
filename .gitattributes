@@ -620,6 +620,7 @@ dataintegration/src/org/labkey/di/steps/TaskRefTransformStepProvider.java -text
 dataintegration/src/org/labkey/di/steps/TestTask.java -text
 dataintegration/src/org/labkey/di/steps/TestTaskProvider.java -text
 dataintegration/src/org/labkey/di/steps/TestTaskRefTask.java -text
+dataintegration/src/org/labkey/di/steps/TruncateTransformStep.java -text
 dataintegration/src/org/labkey/di/view/DataIntegrationController.java -text
 dataintegration/src/org/labkey/di/view/ProcessJobsView.java -text
 dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text

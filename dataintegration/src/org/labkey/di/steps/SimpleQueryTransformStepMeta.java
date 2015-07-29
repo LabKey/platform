@@ -24,13 +24,15 @@ import org.labkey.etl.xml.TransformType;
  * Date: 2013-04-03
  * Time: 2:22 PM
  *
- * Metadata for a simple query transform
+ * Metadata for a simple query transform, and truncate
  */
 public class SimpleQueryTransformStepMeta extends StepMetaImpl
 {
     @Override
     public String toString()
     {
+        if (getTargetOptions() == TargetOptions.truncate && !isUseSource())
+            return "truncate " + getFullTargetString();
         return getSourceSchema().toString() + "." + getSourceQuery() + " --> " +
                 getFullTargetString();
     }
@@ -41,9 +43,9 @@ public class SimpleQueryTransformStepMeta extends StepMetaImpl
         super.parseWorkOptions(transformXML);
 
         // Source and target are both required for simple query transform
-        if (!isUseSource())
-            throw new XmlException(TransformManager.INVALID_SOURCE);
         if (!isUseTarget())
             throw new XmlException(TransformManager.INVALID_DESTINATION);
+        if (getTargetOptions() != TargetOptions.truncate && !isUseSource())
+            throw new XmlException(TransformManager.INVALID_SOURCE);
     }
 }
