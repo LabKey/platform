@@ -138,11 +138,12 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                 }
                 catch (XmlValueOutOfRangeException e)
                 {
-                    throw new XmlException("Bad target type"); // TODO: error messsages in constants
+                    throw new XmlException("Bad target type"); // TODO: error messages in constants
                 }
 
                 Map<TargetFileProperties, String> fileProps = new LinkedHashMap<>();
-                fileProps.put(TargetFileProperties.dir, destination.getDir());
+                setTargetFileProperties(fileProps);
+                fileProps.put(TargetFileProperties.dir, StringUtils.trimToEmpty(destination.getDir()));
                 fileProps.put(TargetFileProperties.baseName, destination.getFileBaseName());
                 String extension = destination.getFileExtension();
                 if (StringUtils.startsWith(extension, "."))
@@ -154,8 +155,6 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                     fileProps.put(TargetFileProperties.rowDelimiter, StringEscapeUtils.unescapeJava(destination.getRowDelimiter()));
                 if (destination.getQuote() != null)
                     fileProps.put(TargetFileProperties.quote, StringEscapeUtils.unescapeJava(destination.getQuote()));
-
-                setTargetFileProperties(fileProps);
             }
             try
             {
