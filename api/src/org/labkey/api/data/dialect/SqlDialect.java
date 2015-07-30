@@ -1329,14 +1329,7 @@ public abstract class SqlDialect
         SQLFragment sqlf = new SQLFragment("SELECT 1 FROM information_schema.routines WHERE UPPER(specific_schema) = UPPER(?) AND UPPER(routine_name) = UPPER(?)");
         sqlf.add(schema);
         sqlf.add(name);
-        try (ResultSet rs = (new SqlSelector(scope,sqlf)).getResultSet())
-        {
-            return rs.next();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new SqlSelector(scope, sqlf).exists();
     }
 
     public boolean isProcedureSupportsInlineResults()
