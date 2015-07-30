@@ -499,6 +499,12 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
+    public boolean isProcedureExists(DbScope scope, String schema, String name)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
     {
         throw new UnsupportedOperationException();

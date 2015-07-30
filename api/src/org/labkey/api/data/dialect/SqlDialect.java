@@ -39,6 +39,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
@@ -1321,6 +1322,22 @@ public abstract class SqlDialect
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
 
     /* Procedure- / function-related methods */
+
+    public boolean isProcedureExists(DbScope scope, String schema, String name)
+    {
+        /* Does not handle overloaded functions for dialects that support them (Postgres) */
+        SQLFragment sqlf = new SQLFragment("SELECT 1 FROM information_schema.routines WHERE UPPER(specific_schema) = UPPER(?) AND UPPER(routine_name) = UPPER(?)");
+        sqlf.add(schema);
+        sqlf.add(name);
+        try (ResultSet rs = (new SqlSelector(scope,sqlf)).getResultSet())
+        {
+            return rs.next();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     public boolean isProcedureSupportsInlineResults()
     {
