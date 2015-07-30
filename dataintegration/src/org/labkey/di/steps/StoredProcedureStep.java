@@ -264,6 +264,8 @@ public class StoredProcedureStep extends TransformTask
     {
         if (!checkingForWork && !validate(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger())) return false;
         setDbScopes(_context.getContainer(), _context.getUser());
+        if (!procDialect.isProcedureExists(procScope, procDbSchemaName, procName))
+            throw new IllegalArgumentException("Could not find procedure " + procQuerySchemaName + "." + procName);
         getParametersFromDbMetadata();
         initSavedParamVals(checkingForWork);
         seedParameterValues(checkingForWork);
@@ -304,7 +306,7 @@ public class StoredProcedureStep extends TransformTask
         {
                 /* oh well */
         }
-        // This is probably the right way to try first, but at the moment it returns the wrong schema for Argos.
+        // This would be right way to try first, but for Argos it returns the underlying caisis db schema
         if (null == schema && null != DefaultSchema.get(u, c, querySchemaKey))
             schema = DefaultSchema.get(u, c, querySchemaKey).getDbSchema();
 

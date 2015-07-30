@@ -1334,7 +1334,7 @@ public class PostgreSql91Dialect extends SqlDialect
     @Override
     public Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
     {
-        CaseInsensitiveMapWrapper<MetadataParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, MetadataParameterInfo>());
+        CaseInsensitiveMapWrapper<MetadataParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
 
         // Get the parameters for the function and also a placeholder for the return if this function returns a resultset
         SQLFragment sqlf = new SQLFragment(
