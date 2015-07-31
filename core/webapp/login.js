@@ -3,10 +3,10 @@
  // bind triggers, page init, etc
  function onReady() {
   // on document ready
-  $('.auth-btn').click(acceptTermsOfUse);
   $('.signin-btn').click(authenticateUser);
+  $('.loginSubmitButton').click(authenticateUser);
+
   init();
-  isAgreeOnly();
   getTermsOfUse();
   getOtherLoginMechanisms();
  }
@@ -97,33 +97,6 @@
     if (response.otherLoginMechanismsContent == null)
     {
      document.getElementsByClassName('otherLoginMechanismsSection')[0].hidden = true;
-    }
-   }, this)
-  });
- }
-
- function isAgreeOnly()
- {
-  LABKEY.Ajax.request({
-   url: LABKEY.ActionURL.buildURL('login', 'isAgreeOnlyAPI.api', this.containerPath),
-   method: 'POST',
-   params: {
-    returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
-    urlHash: document.getElementById('urlhash'),
-    'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
-   },
-   success: LABKEY.Utils.getCallbackWrapper(function(response) {
-    if (response.isAgreeOnly == true)
-    {
-     document.getElementsByClassName('auth-credentials-form')[0].hidden = true;
-     document.getElementsByClassName('auth-credentials-submit')[0].hidden = true;
-     document.getElementsByClassName('agree-only-submit')[0].hidden = false;
-    }
-    else
-    {
-     document.getElementsByClassName('auth-credentials-form')[0].hidden = false;
-     document.getElementsByClassName('auth-credentials-submit')[0].hidden = false;
-     document.getElementsByClassName('agree-only-submit')[0].hidden = true;
     }
    }, this)
   });

@@ -4,12 +4,12 @@
     }
 </style>
 
-<div class="auth-form">
-    <div class="auth-header">Default Sign In With Ajax</div>
+<form class="auth-form" name="login" action="javascript:void(0)">
+    <div class="auth-header">Sign In</div>
+    <p>Default Sign In Using HTML and AJAX</p>
     <div class="labkey-error" id="errors"></div>
     <div class="auth-form-body">
-        <div class="auth-credentials-form">
-            <label for="email">Email</label>
+        <label for="email">Email</label>
             <input id="email" name="email" type="text" class="input-block" tabindex="1" >
             <label for="password">
                 Password <a href="resetPassword.view?">(forgot password)</a>
@@ -17,7 +17,6 @@
             <input id="password" name="password" type="password" class="input-block" tabindex="2" autofocus>
             <input type=checkbox name="remember" id="remember"  checked>
             <label for="remember">Remember my email address</label>
-        </div>
         <div class="termsOfUseSection">
             <div class="auth-header auth-item">Terms of Use</div>
             <div class="toucontent auth-item termsOfUseContent"></div>
@@ -26,19 +25,15 @@
                 <label for="approvedTermsOfUse">I agree to these terms</label>
             </div>
         </div>
-        <input type="hidden" name="termsOfUseType" id="termsOfUseType" value="NONE">
-
+        <input type="hidden" name="termsOfUseType" id="termsOfUseType">
         <div class="auth-item auth-credentials-submit">
-            <a class="labkey-button signin-btn" ><span>Sign In</span></a>
+            <input type="submit" tab-index="-1" style="position: absolute; left: -9999px; width: 1px; height: 1px;" class="loginSubmitButton"/><a class="labkey-button signin-btn" ><span>Sign In</span></a>
         </div>
-        <div class="auth-item agree-only-submit">
-            <a class="labkey-button auth-btn" ><span>Agree</span></a>
-        </div>
+        <input type="hidden" name="returnUrl">
+        <input type="hidden" id="urlhash" name="urlhash">
+        <input type=hidden name='X-LABKEY-CSRF'>
     </div>
-    <input type="hidden" name="returnUrl">
-    <input type="hidden" id="urlhash" name="urlhash">
-    <input type=hidden name='X-LABKEY-CSRF'>
-</div>
+</form>
 <div class="otherLoginMechanismsSection">
     <br><h3>Or</h3>
     <div class="auth-header">Sign In using:</div>

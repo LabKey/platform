@@ -690,12 +690,23 @@ public class LoginController extends SpringActionController
         page.setIncludeLoginLink(false);
         page.setTitle("Sign In");
 
+        // default login using JSP from LoginView can be removed after the new login.html ajax version is working
+        LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
+        // WebPartView view = getCustomLoginViewIfAvailable(errors, form, remember);
+
+        vBox.addView(view);
+
+        return vBox;
+    }
+
+    private WebPartView getCustomLoginViewIfAvailable(BindException errors, LoginForm form, boolean remember) {
         // replace normal jsp login page with the page specified by controller-action in the Look and Feel Settings
         // This is placed in showLogin() instead of the getLoginURL() to ensure that the logic above
         // regarding 'server upgrade' and 'server startup' is executed regardless of the custom login action the user specified.
         String loginController = "login";
         String loginAction = "login";
         String customLogin = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getCustomLogin();
+        WebPartView view = null;
         if (null != customLogin)
         {
             ActionURL url = new ActionURL(customLogin);
@@ -713,44 +724,23 @@ public class LoginController extends SpringActionController
             if (null != loginModule)
             {
                 // custom login
-                WebPartView view = null;
                 view = SimpleAction.getModuleHtmlView(loginModule, loginAction, null);
-                view.setFrame(WebPartView.FrameType.NONE);
-                vBox.addView(view);
             }
             else
             {
-                // default login using jsp with error message
+                // default login-login html with error message
                 errors.reject(ERROR_MSG, "Custom login page specified via Look and Feel Settings as: '" + customLogin + "' was not found. Default login page being used instead.");
-                LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
-                vBox.addView(view);
-
-                // default login using JSP can be removed after the new html ajax version is working
-                // WebPartView view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), loginAction, null);
-                // view.setFrame(WebPartView.FrameType.NONE);
-                // vBox.addView(view);
-
+                view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), loginAction, null);
             }
         }
         else
         {
-             // default login using jsp
-             LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
-             vBox.addView(view);
-
-            // default login using JSP can be removed after the new html ajax version is working
             // the login.html is in the core/resources/views
-            // todo: there is probably a better way to do this. What is the best way for Login controller to access the login.html and respect the login.view.xml js includes.
-            // Module loginModule = ModuleLoader.getInstance().getModule("core");
-            // WebPartView view = null;
-            // WebPartView view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), loginAction, null);
-            // view.setFrame(WebPartView.FrameType.NONE);
-            // vBox.addView(view);
-
+            view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), loginAction, null);
         }
-        return vBox;
+        view.setFrame(WebPartView.FrameType.NONE);
+        return view;
     }
-
 
     public boolean isAdminOnlyMode()
     {
@@ -788,7 +778,10 @@ public class LoginController extends SpringActionController
 
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors) throws Exception
         {
+            // default login using JSP from AgreeToTermsView can be removed after the new login.html ajax version is working
             AgreeToTermsView view = new AgreeToTermsView(form, errors);
+            // replace the getCustomLoginViewIfAvailable() with a getCustomAgreeToTermsViewIfAvailable() method that reads a custom agreeToTerms.html file
+            // WebPartView view = getCustomLoginViewIfAvailable(errors, form, false);
 
             PageConfig page = getPageConfig();
 
