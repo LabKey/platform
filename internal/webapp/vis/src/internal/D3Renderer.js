@@ -1934,6 +1934,17 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         medians.exit().remove();
         medians.enter().append('path').attr('class', 'box-mline');
         medians.attr('d', medianAcc).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
+
+        if (geom.boxMouseOverFnAes) {
+            boxWrappers.on('mouseover', function(data) {
+                geom.boxMouseOverFnAes.value(d3.event, this, data);
+            });
+        }
+        if (geom.boxMouseOutFnAes) {
+            boxWrappers.on('mouseout', function(data) {
+                geom.boxMouseOutFnAes.value(d3.event, this, data);
+            });
+        }
     };
 
     var renderDataspacePoints = function(selection, plot, geom, layer) {
@@ -2032,7 +2043,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    var renderDataspaceBoxGoups = function(layer, plot, geom, data, summaries) {
+    var renderDataspaceBoxGroups = function(layer, plot, geom, data, summaries) {
         var boxGroups;
         boxGroups = layer.selectAll('g.dataspace-box-group').data(summaries);
         boxGroups.exit().remove();
@@ -2055,7 +2066,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         summaries = prepBoxPlotData(data, geom);
 
         if (summaries.length > 0) {
-            layer.call(renderDataspaceBoxGoups, plot, geom, data, summaries);
+            layer.call(renderDataspaceBoxGroups, plot, geom, data, summaries);
         }
     };
 
