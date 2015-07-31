@@ -56,16 +56,17 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -436,13 +437,13 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
         for (AttachmentParent parent : parents)
         {
-            checkSecurityPolicy(parent);
             List<Attachment> atts = getAttachments(parent);
 
             // No attachments, or perhaps container doesn't match entityid
             if (atts.isEmpty())
                 continue;
 
+            checkSecurityPolicy(parent);   // Only check policy if there are attachments (a client may delete attachment and policy, but attempt to delete again)
             if (ss != null)
                 for (Attachment att : atts)
                     ss.deleteResource(makeDocId(parent, att.getName()));
@@ -451,18 +452,17 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             if (parent instanceof AttachmentDirectory)
                 ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
             AttachmentCache.removeAttachments(parent);
-            deleteSecurityPolicy(parent);
         }
     }
 
     @Override
     public void deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser)
     {
-        checkSecurityPolicy(auditUser, parent);
         Attachment att = getAttachmentHelper(parent, name);
 
         if (null != att)
         {
+            checkSecurityPolicy(auditUser, parent);   // Only check policy if there are attachments (a client may delete attachment and policy, but attempt to delete again)
             SearchService ss = ServiceRegistry.get(SearchService.class);
             if (ss != null)
                 ss.deleteResource(makeDocId(parent, att.getName()));
@@ -472,7 +472,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 ((AttachmentDirectory)parent).deleteAttachment(auditUser, name);
 
             AttachmentCache.removeAttachments(parent);
-            deleteSecurityPolicy(parent);
 
             if (null != auditUser)
                 addAuditEvent(auditUser, parent, name, "The attachment " + name + " was deleted");
@@ -1434,21 +1433,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     private void checkSecurityPolicy(User user, AttachmentParent attachmentParent) throws UnauthorizedException
     {
         SecurityPolicy securityPolicy = attachmentParent.getSecurityPolicy();
-        if (null != securityPolicy && !securityPolicy.isEmpty())
+        if (null != securityPolicy)
         {
             if (null == user || !securityPolicy.hasPermission(user, ReadPermission.class))
                 throw new UnauthorizedException("User does not have permission to access this secure resource.");
-        }
-    }
-
-    private void deleteSecurityPolicy(AttachmentParent attachmentParent)
-    {
-        SecurityPolicy securityPolicy = attachmentParent.getSecurityPolicy();
-        if (null != securityPolicy && !securityPolicy.isEmpty())
-        {
-            SecureDocumentParent secureDocumentParent = new SecureDocumentParent(attachmentParent.getEntityId(),
-                    ContainerManager.getForId(attachmentParent.getContainerId()), ModuleLoader.getInstance().getModule(CoreModule.CORE_MODULE_NAME));
-            SecurityPolicyManager.deletePolicy(secureDocumentParent);
         }
     }
 
@@ -1552,6 +1540,35 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             ContainerManager.deleteAll(proj, user);
         }
 
+/*        @Test                                               // TODO: in progress (dave 7/31/15)
+        public void testSecureDocuments() throws IOException
+        {
+            User user = TestContext.get().getUser();
+            assertNotNull("Should have access to a user", user);
+
+            // clean up if anything was left over from last time
+            if (null != ContainerManager.getForPath(_testDirName))
+                ContainerManager.deleteAll(ContainerManager.getForPath(_testDirName), user);
+
+            Container proj = ContainerManager.ensureContainer(_testDirName);
+            Container container = ContainerManager.ensureContainer(_testDirName + "/Test");
+            AttachmentService.Service service = AttachmentService.get();
+
+            String entityId = GUID.makeGUID();
+            SecureDocumentParent secureDocumentParent = new SecureDocumentParent(entityId, container, ModuleLoader.getInstance().getModule(CoreModule.CORE_MODULE_NAME));
+            secureDocumentParent.addRoleAssignments(ReaderRole.class, ReadPermission.class);
+
+            MultipartFile f = new MockMultipartFile("file.txt", "file.txt", "text/plain", "Hello World".getBytes());
+            Map<String, MultipartFile> fileMap = new HashMap<>();
+            fileMap.put("file.txt", f);
+            List<AttachmentFile> files = SpringAttachmentFile.createList(fileMap);
+            service.addAttachments(secureDocumentParent, files, user);
+
+            Attachment attachment = service.getAttachment(secureDocumentParent, "file.txt");
+            assertNotNull("Attachment not found", attachment);
+
+
+        }         */
 
 
         private void assertSameFile(File a, File b)
