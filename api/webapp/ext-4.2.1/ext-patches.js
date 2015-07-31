@@ -452,3 +452,16 @@ if (Ext4.isChrome) {
         }
     });
 }
+
+/**
+ * @Override
+ * Ext4.Ajax.timeout is not respected as a global for the Ext4 library. In order to have this work,
+ * several overrides need to be made.
+ * Issue 23920: Files web part times out too quickly
+ * Sencha issue: https://www.sencha.com/forum/showthread.php?188502&p=759207
+ * Version: 4.2.1
+ */
+Ext4.override(Ext4.data.Connection, { timeout: Ext4.Ajax.timeout });
+Ext4.override(Ext4.data.proxy.Server, { timeout: Ext4.Ajax.timeout });
+Ext4.override(Ext4.form.Basic, { timeout: Ext4.Ajax.timeout / 1000 });
+Ext4.override(Ext4.form.action.Action, { timeout: Ext4.Ajax.timeout / 1000 });
