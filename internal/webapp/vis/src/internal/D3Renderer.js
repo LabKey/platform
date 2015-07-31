@@ -2088,7 +2088,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var bindMouseEvents = function(selection, geom, layer) {
         if (geom.mouseOverFnAes) {
             selection.on('mouseover', function(data) {
-                geom.mouseOverFnAes.value(d3.event, data, layer);
+                geom.mouseOverFnAes.value(d3.event, data, layer, this);
             });
         }
         else {
@@ -2097,7 +2097,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         if (geom.mouseOutFnAes) {
             selection.on('mouseout', function(data) {
-                geom.mouseOutFnAes.value(d3.event, data, layer);
+                geom.mouseOutFnAes.value(d3.event, data, layer, this);
             });
         }
         else {
