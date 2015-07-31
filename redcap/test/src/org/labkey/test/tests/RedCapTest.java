@@ -18,18 +18,20 @@ package org.labkey.test.tests;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.Locators;
 import org.labkey.test.TestCredentials;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.InDevelopment;
+import org.labkey.test.components.study.StudyOverviewWebPart;
 import org.labkey.test.credentials.ApiKey;
 import org.labkey.test.pages.redcap.ConfigurePage;
 import org.labkey.test.util.redcap.ConfigXmlBuilder;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -115,9 +117,22 @@ public class RedCapTest extends BaseWebDriverTest
     {
         final String folderName = "testLongitudinal";
         ConfigXmlBuilder configBuilder = new ConfigXmlBuilder()
-                .withProjects(new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, SURVEY_NAME_LONGITUDINAL, "subject_id"));
+                .withProjects(new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, SURVEY_NAME_LONGITUDINAL, "participant_id"))
+                .withTimepointType("visit");;
 
-        setupRedCapFolderAndLoadData(folderName, TimepointType.DATE, configBuilder.build(), SURVEY_NAME_LONGITUDINAL);
+        setupRedCapFolderAndStartLoad(folderName, TimepointType.VISIT, configBuilder.build(), API_KEYS.get(SURVEY_NAME_LONGITUDINAL));
+        waitForPipelineJobsToComplete(1, "Import files", false);
+
+        clickTab("Overview");
+        StudyOverviewWebPart overview = new StudyOverviewWebPart(this);
+        Assert.assertTrue("No participants", overview.getParticipantCount() > 0);
+
+        clickTab("Manage");
+        clickAndWait(Locator.linkWithText("Manage Visits"));
+
+        List<String> expectedVisits = Arrays.asList("initial_data_arm_1", "week_1_arm_1", "week_2_arm_1", "week_3_arm_1", "week_4_arm_1", "final_data_arm_1");
+        List<String> visits = getTexts(Locator.css("#visits tr:not(:first-child) > th").findElements(getDriver()));
+        Assert.assertEquals("Wrong visits imported", expectedVisits, visits);
     }
 
     @Test
@@ -125,30 +140,104 @@ public class RedCapTest extends BaseWebDriverTest
     {
         final String folderName = "testVisitBased";
         ConfigXmlBuilder configBuilder = new ConfigXmlBuilder()
-                .withProjects(new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, SURVEY_NAME_CLASSIC, "subject_id"))
+                .withProjects(new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, SURVEY_NAME_CLASSIC, "participant_id"))
                 .withTimepointType("visit");
 
-        setupRedCapFolderAndLoadData(folderName, TimepointType.VISIT, configBuilder.build(), SURVEY_NAME_CLASSIC);
+        setupRedCapFolderAndStartLoad(folderName, TimepointType.VISIT, configBuilder.build(), API_KEYS.get(SURVEY_NAME_CLASSIC));
+        waitForPipelineJobsToComplete(1, "Import files", false);
+
+        clickTab("Manage");
+        clickAndWait(Locator.linkWithText("Manage Visits"));
+
+        List<String> expectedVisits = Collections.singletonList("Timepoint 1");
+        List<String> visits = getTexts(Locator.css("#visits tr:not(:first-child) > th").findElements(getDriver()));
+        Assert.assertEquals("Wrong visits imported", expectedVisits, visits);
     }
 
-    @Test
+    @Test //TODO: Insert more timepoints
     public void testDateBased() throws Exception
     {
         final String folderName = "testDateBased";
         ConfigXmlBuilder configBuilder = new ConfigXmlBuilder()
-                .withProjects(new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, SURVEY_NAME_CLASSIC, "subject_id"))
+                .withProjects(new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, SURVEY_NAME_CLASSIC, "participant_id"))
                 .withTimepointType("date");
 
-        setupRedCapFolderAndLoadData(folderName, TimepointType.DATE, configBuilder.build(), SURVEY_NAME_CLASSIC);
+        setupRedCapFolderAndStartLoad(folderName, TimepointType.DATE, configBuilder.build(), API_KEYS.get(SURVEY_NAME_CLASSIC));
+        waitForPipelineJobsToComplete(1, "Import files", false);
+
+        clickTab("Manage");
+        clickAndWait(Locator.linkWithText("Manage Timepoints"));
+        List<String> expectedVisits = Collections.singletonList("Timepoint 1");
+        List<String> visits = getTexts(Locator.css("#visits tr:not(:first-child) > th").findElements(getDriver()));
+        Assert.assertEquals("Wrong visits imported", expectedVisits, visits);
     }
 
-    @Test @Ignore
+    @Test
     public void testSeparateDemographicProject() throws Exception
-    {}
+    {
+        final String folderName = "testSeparateDemographicProject";
+        ConfigXmlBuilder configBuilder = new ConfigXmlBuilder()
+                .withProjects(
+                        new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, SURVEY_NAME_CLASSIC, "participant_id"),
+                        new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, SURVEY_NAME_DATA_TYPES, "subject_id")
+                                .withDemographic(true))
+                .withTimepointType("visit");
 
-    @Test @Ignore
+        setupRedCapFolderAndStartLoad(folderName, TimepointType.VISIT, configBuilder.build(), API_KEYS.get(SURVEY_NAME_CLASSIC), API_KEYS.get(SURVEY_NAME_DATA_TYPES));
+        waitForPipelineJobsToComplete(1, "Import files", false);
+
+        clickTab("Manage");
+        clickAndWait(Locator.linkWithText("Manage Datasets"));
+
+        assertElementPresent(Locator.id("dataregion_datasets").append("//td[8]").withText("demographic"), 1); // Only one demographic dataset
+
+        clickAndWait(Locator.linkWithText("datatypes"));
+        assertElementPresent(Locator.tag("tr").
+                withDescendant(Locator.tagWithClass("td", "labkey-form-label").containing("Demographic Data")).
+                withDescendant(Locator.tagWithText("td", "true")));
+    }
+
+    @Test
     public void testMergeDuplicateNames() throws Exception
-    {}
+    {
+        final String folderName = "testMergeDuplicateNames";
+        ApiKey keyCopy = new ApiKey();
+        String keyCopyName = SURVEY_NAME_CLASSIC + "2";
+        keyCopy.setName(keyCopyName);
+        keyCopy.setToken(API_KEYS.get(SURVEY_NAME_CLASSIC).getToken());
+        ConfigXmlBuilder configBuilder = new ConfigXmlBuilder()
+                .withProjects(
+                        new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, SURVEY_NAME_CLASSIC, "participant_id"),
+                        new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, keyCopyName, "participant_id")) // TODO: Create duplicate REDCap project
+                .withTimepointType("visit")
+                .withDuplicateNamePolicy("merge");
+
+        setupRedCapFolderAndStartLoad(folderName, TimepointType.VISIT, configBuilder.build(), API_KEYS.get(SURVEY_NAME_CLASSIC), keyCopy);
+        waitForPipelineJobsToComplete(1, "Import files", true);
+        clickAndWait(Locator.linkWithText("ERROR")); // Error, because of self-merge
+        assertElementPresent(Locators.labkeyError.containing("Only one row is allowed for each Participant/Visit"));
+    }
+
+    @Test
+    public void testFailDuplicateNames() throws Exception
+    {
+        final String folderName = "testFailDuplicateNames";
+        ApiKey keyCopy = new ApiKey();
+        String keyCopyName = SURVEY_NAME_CLASSIC + "2";
+        keyCopy.setName(keyCopyName);
+        keyCopy.setToken(API_KEYS.get(SURVEY_NAME_CLASSIC).getToken());
+        ConfigXmlBuilder configBuilder = new ConfigXmlBuilder()
+                .withProjects(
+                        new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, SURVEY_NAME_CLASSIC, "participant_id"),
+                        new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, keyCopyName, "participant_id"))
+                .withTimepointType("visit")
+                .withDuplicateNamePolicy("fail");
+
+        setupRedCapFolderAndStartLoad(folderName, TimepointType.VISIT, configBuilder.build(), API_KEYS.get(SURVEY_NAME_CLASSIC), keyCopy);
+        waitForPipelineJobsToComplete(1, "Import files", true);
+        clickAndWait(Locator.linkWithText("ERROR"));
+        assertElementPresent(Locators.labkeyError.containing("Collection instrument name collision found"));
+    }
 
     @Test
     public void testDataTypes() throws Exception
@@ -157,7 +246,7 @@ public class RedCapTest extends BaseWebDriverTest
         ConfigXmlBuilder configBuilder = new ConfigXmlBuilder()
                 .withProjects(new ConfigXmlBuilder.RedCapProject(REDCAP_HOST, SURVEY_NAME_DATA_TYPES, "record_id").withDemographic(true));
 
-        setupRedCapFolderAndLoadData(folderName, TimepointType.DATE, configBuilder.build(), SURVEY_NAME_DATA_TYPES);
+        setupRedCapFolderAndStartLoad(folderName, TimepointType.DATE, configBuilder.build(), API_KEYS.get(SURVEY_NAME_DATA_TYPES));
 
         clickTab("Manage");
         clickAndWait(Locator.linkWithText("Manage Datasets"));
@@ -169,7 +258,7 @@ public class RedCapTest extends BaseWebDriverTest
         expectedFieldTypes.put("paragraph_text", "Text (String)");
         expectedFieldTypes.put("integer", "Integer");
         expectedFieldTypes.put("number", "Number (Double)");
-        expectedFieldTypes.put("calc_field", "Text (String)"); // TODO: Should be double?
+        expectedFieldTypes.put("calc_field", "Text (String)");
         expectedFieldTypes.put("yes_no", "True/False (Boolean)");
         expectedFieldTypes.put("drop_down", "Integer");
         expectedFieldTypes.put("radio", "Integer");
@@ -203,10 +292,10 @@ public class RedCapTest extends BaseWebDriverTest
         Assert.assertEquals("Radio selection not imported correctly", 3, Integer.parseInt(data.get(8)));
         Assert.assertEquals("Slider not imported correctly", 80, Integer.parseInt(data.get(9)));
         Assert.assertEquals("File Upload not imported correctly", "[document]", data.get(10));
-        Assert.assertEquals("Multi-select not imported correctly", "Lunch, Dinner", data.get(11));
+//        Assert.assertEquals("Multi-select not imported correctly", "Lunch, Dinner", data.get(11));
     }
 
-    private void setupRedCapFolderAndLoadData(String folderName, TimepointType timepointType, String configXml, String... apiKeyNames)
+    private void setupRedCapFolderAndStartLoad(String folderName, TimepointType timepointType, String configXml, ApiKey... apiKeys)
     {
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), folderName, "Study", new String[]{"REDCap"});
         _studyHelper.startCreateStudy().
@@ -214,9 +303,8 @@ public class RedCapTest extends BaseWebDriverTest
                 createStudy();
 
         ConfigurePage configPage = ConfigurePage.beginAt(this, String.join("/", getProjectName(), folderName));
-        for (String name : apiKeyNames)
+        for (ApiKey apiKey : apiKeys)
         {
-            ApiKey apiKey = API_KEYS.get(name);
             configPage.addToken(apiKey.getName(), apiKey.getToken());
         }
         configPage
@@ -224,8 +312,6 @@ public class RedCapTest extends BaseWebDriverTest
                 .save()
                 .assertSuccess()
                 .reloadNow();
-
-        waitForPipelineJobsToComplete(1, "Import files", false);
     }
 
     @Override
