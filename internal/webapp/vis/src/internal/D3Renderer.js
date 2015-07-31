@@ -1795,11 +1795,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderHexBin = function(data, geom, points) {
-        var hexbin = d3.hexbin().radius(geom.size);
-        var binData = hexbin(points);
+        var hexbin = d3.hexbin().radius(geom.size),
+            binData = hexbin(points),
+            colorDomain = geom.colorDomain ? geom.colorDomain : [0, getMaxBinPointCount(binData)];
 
         var color = d3.scale.linear()
-                .domain([0, getMaxBinPointCount(binData)])
+                .domain(colorDomain)
                 .range(geom.colorRange)
                 .interpolate(d3.interpolateLab);
 
@@ -1826,11 +1827,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderSquareBin = function(data, geom, points) {
-        var sqbin = d3.sqbin().side(geom.size);
-        var binData = sqbin(points);
+        var sqbin = d3.sqbin().side(geom.size),
+            binData = sqbin(points),
+            colorDomain = geom.colorDomain ? geom.colorDomain : [0, getMaxBinPointCount(binData)];
 
         var color = d3.scale.linear()
-                .domain([0, getMaxBinPointCount(binData)])
+                .domain(colorDomain)
                 .range(geom.colorRange)
                 .interpolate(d3.interpolateLab);
 
