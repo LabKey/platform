@@ -557,6 +557,89 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    // @AllowedDuringUpgrade
+    public class AcceptTermsOfUseApiAction extends MutatingApiAction<LoginForm>
+    {
+        @Override
+        public Object execute(LoginForm form, BindException errors) throws Exception
+        {
+            Project project = getTermsOfUseProject(form);
+            if (!form.isApprovedTermsOfUse())
+            {
+                if (null != project)
+                {
+                    errors.reject(ERROR_MSG, "To use the " + project.getName() + " project, you must check the box to approve the terms of use.");
+                }
+                else
+                {
+                    errors.reject(ERROR_MSG, "To use this site, you must check the box to approve the terms of use.");
+                }
+                return false;
+            }
+            if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.PROJECT_LEVEL)
+                SecurityManager.setTermsOfUseApproved(getViewContext(), project, true);
+            else if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.SITE_WIDE)
+                SecurityManager.setTermsOfUseApproved(getViewContext(), null, true);
+
+            ApiSimpleResponse response = null;
+            response = new ApiSimpleResponse();
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    // @AllowedDuringUpgrade
+    public class GetTermsOfUseApiAction extends MutatingApiAction<LoginForm>
+    {
+        @Override
+        public Object execute(LoginForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = null;
+            response = new ApiSimpleResponse();
+            SecurityManager.TermsOfUse tou = SecurityManager.getTermsOfUse(getTermsOfUseProject(form));
+            response.put("termsOfUseContent", tou.getHtml());
+            response.put("termsOfUseType", tou.getType());
+            return response;
+        }
+    }
+
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    // @AllowedDuringUpgrade
+    public class GetLoginMechanismsAPIAction extends MutatingApiAction<LoginForm>
+    {
+        @Override
+        public Object execute(LoginForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = null;
+            response = new ApiSimpleResponse();
+            String otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(form.getReturnActionURL());
+            response.put("otherLoginMechanismsContent", otherLoginMechanisms);
+            return response;
+        }
+    }
+
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    // @AllowedDuringUpgrade
+    public class IsAgreeOnlyAPIAction extends MutatingApiAction<LoginForm>
+    {
+        @Override
+        public Object execute(LoginForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = null;
+            response = new ApiSimpleResponse();
+            boolean isGuest = getUser().isGuest();
+            if (!isGuest) {
+                response.put("isAgreeOnly", true);
+            }
+            return response;
+        }
+    }
 
     private HttpView showLogin(LoginForm form, BindException errors, HttpServletRequest request, PageConfig page) throws Exception
     {
@@ -637,17 +720,33 @@ public class LoginController extends SpringActionController
             }
             else
             {
-                // default login with error message
+                // default login using jsp with error message
                 errors.reject(ERROR_MSG, "Custom login page specified via Look and Feel Settings as: '" + customLogin + "' was not found. Default login page being used instead.");
                 LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
                 vBox.addView(view);
+
+                // default login using JSP can be removed after the new html ajax version is working
+                // WebPartView view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), loginAction, null);
+                // view.setFrame(WebPartView.FrameType.NONE);
+                // vBox.addView(view);
+
             }
         }
         else
         {
-            // default login
-            LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
-            vBox.addView(view);
+             // default login using jsp
+             LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
+             vBox.addView(view);
+
+            // default login using JSP can be removed after the new html ajax version is working
+            // the login.html is in the core/resources/views
+            // todo: there is probably a better way to do this. What is the best way for Login controller to access the login.html and respect the login.view.xml js includes.
+            // Module loginModule = ModuleLoader.getInstance().getModule("core");
+            // WebPartView view = null;
+            // WebPartView view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), loginAction, null);
+            // view.setFrame(WebPartView.FrameType.NONE);
+            // vBox.addView(view);
+
         }
         return vBox;
     }
@@ -742,6 +841,10 @@ public class LoginController extends SpringActionController
         private BaseLoginView(LoginForm form, BindException errors, boolean agreeOnly, boolean remember, boolean termsOfUseChecked)
         {
             super("/org/labkey/core/login/login.jsp", new LoginBean(form, agreeOnly, remember, termsOfUseChecked), errors);
+
+            // default login using JSP can be removed after the new html ajax version is working
+            // todo: loading login.html in this manner from the /src dir doesnt cause login.view.xml js includes to be respoected and it needs to be.
+            // super("/org/labkey/core/login/login.html", new LoginBean(form, agreeOnly, remember, termsOfUseChecked), errors);
             setFrame(FrameType.NONE);
         }
     }

@@ -1,0 +1,6 @@
+<view xmlns="http://labkey.org/data/xml/view">
+    <dependencies>
+        <dependency path="jQuery"/>
+        <dependency path="login.js"/>
+    </dependencies>
+</view>

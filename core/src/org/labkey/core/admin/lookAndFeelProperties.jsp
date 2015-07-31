@@ -258,7 +258,7 @@
 <%
     String customLoginHelp = "The custom login page is specified as a string composed of the controller name and an action name in" +
             " the format: <controller>-<action>.  For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
-            " an HTML page located at /labkey/build/deploy/modules/myModule/views/customLogin.html";
+            " an HTML page called customLogin.html located in the /resources/views directory of myModule.";
 %>
 <tr>
     <td colspan=2>Provide a custom login page (<%=text(bean.helpLink)%>)</td>

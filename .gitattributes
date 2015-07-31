@@ -303,7 +303,10 @@ core/resources/scripts/labkey/init.js -text
 core/resources/views/ModulePropertyAdmin.html -text
 core/resources/views/ModulePropertyAdmin.view.xml -text
 core/resources/views/_footer.html -text
+core/resources/views/login.html -text
+core/resources/views/login.view.xml -text
 core/resources/views/testCustomLogin.html -text
+core/resources/views/testCustomLogin.view.xml -text
 core/script-fragments/Ext.footer.js -text
 core/script-fragments/Ext.header.js -text
 core/script-fragments/Ext.middle.js -text
@@ -545,6 +548,7 @@ core/webapp/editInPlaceElement.css -text
 core/webapp/editInPlaceElement.js -text
 core/webapp/fileAddRemoveIcon.css -text
 core/webapp/fileBrowser.js -text
+core/webapp/login.js -text
 core/webapp/printStyle.css -text
 core/webapp/stylesheet.css -text
 dataintegration/Dataintegration.iml -text
