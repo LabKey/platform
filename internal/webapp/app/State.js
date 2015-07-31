@@ -425,7 +425,7 @@ Ext.define('LABKEY.app.controller.State', {
 
     updateFilterMembersComplete : function(skipState, callback, scope) {
         this.requestFilterUpdate(skipState, false, true, callback, scope);
-        // since it is silent we need to update the count seperately
+        // since it is silent we need to update the count separately
         this.updateFilterCount();
     },
 
