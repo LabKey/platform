@@ -699,5 +699,6 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="thumbnailator" level="project" />
   </component>
 </module>

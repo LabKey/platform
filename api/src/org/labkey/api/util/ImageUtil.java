@@ -15,6 +15,20 @@
  */
 package org.labkey.api.util;
 
+import com.sun.javafx.application.PlatformImpl;
+import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.concurrent.Worker;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.image.WritableImage;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import javafx.stage.Stage;
+import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
@@ -32,7 +46,7 @@ import org.xhtmlrenderer.util.XRLog;
 import org.xhtmlrenderer.util.XRLogger;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import javax.servlet.ServletContextEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +57,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 /**
@@ -111,35 +128,12 @@ public class ImageUtil
     /** Rewrite the output files so that they look nice and antialiased, and writes a PNG to the outputStream */
     public static double resizeImage(BufferedImage originalImage, OutputStream outputStream, double incrementalScale, int iterations, int imageType) throws IOException
     {
-        double finalScale = 1;
-
-        BufferedImage bufferedResizedImage = null;
-
-        // Unfortunately these images don't anti-alias well in a single resize using Java's default
-        // algorithm, but they look fine if you do it in incremental steps
-        for (int i = 0; i < iterations; i++)
-        {
-            finalScale *= incrementalScale;
-            int width = (int) (originalImage.getWidth() * incrementalScale);
-            int height = (int) (originalImage.getHeight() * incrementalScale);
-
-            // Create a new empty image buffer to render into
-            bufferedResizedImage = new BufferedImage(width, height, imageType);
-            Graphics2D g2d = bufferedResizedImage.createGraphics();
-
-            // Set up the hints to make it look decent
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-            g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
-            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-
-            // Draw the resized image
-            g2d.drawImage(originalImage, 0, 0, width, height, null);
-            g2d.dispose();
-            originalImage = bufferedResizedImage;
-        }
-
-        ImageIO.write(bufferedResizedImage, "png", outputStream);
+        double finalScale = Math.pow(incrementalScale, iterations);
+        Thumbnails.of(originalImage)
+                .scale(finalScale)
+                .imageType(imageType)
+                .outputFormat("png")
+                .toOutputStream(outputStream);
         return finalScale;
     }
 
@@ -172,7 +166,7 @@ public class ImageUtil
 
     public static Thumbnail webThumbnail(URL url) throws IOException
     {
-        return renderThumbnail(webImage(url));
+        return renderThumbnail(webImage(url, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT), ImageType.Large);
     }
 
     public static Thumbnail webThumbnail(ViewContext context, String html, URI baseURI) throws IOException
@@ -184,7 +178,7 @@ public class ImageUtil
         return renderThumbnail(webImage(context, document, baseURI, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT));
     }
 
-    // Default size for generating the web image.
+    // Default size for generating the web image -- using 1366x768 or 1440x900 might look nicer, but Monocle throws a BufferOverflowException while rendering
     private static final int WEB_IMAGE_WIDTH = 1024;
     private static final int WEB_IMAGE_HEIGHT = 768;
 
@@ -193,7 +187,7 @@ public class ImageUtil
         return webImage(url, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT);
     }
 
-    public static BufferedImage _webImage(URL url, int width, int height) throws IOException
+    private static BufferedImage _webImage(URL url, int width, int height) throws IOException
     {
         URI uri;
         try
@@ -262,7 +256,7 @@ public class ImageUtil
         }
     }
 
-    public static BufferedImage webImage(URL url, int width, int height) throws IOException
+    public static BufferedImage webImage(final URL url, int width, int height) throws IOException
     {
         URI uri;
         try
@@ -272,6 +266,18 @@ public class ImageUtil
         catch (URISyntaxException e)
         {
             throw new RuntimeException(e);
+        }
+
+        if (headlessJavaFX())
+        {
+            // Ensure the WebThumb JavaFX Application has started
+            WebThumb thumb = ensureWebThumbStarted();
+            if (thumb != null)
+            {
+                // Blocks until image is rendered
+                BufferedImage image = thumb.generateImage(url.toString(), width, height);
+                return image;
+            }
         }
 
         Pair<Document, URI> content = HttpUtil.getXHTML(uri);
@@ -301,7 +307,7 @@ public class ImageUtil
     }
 
     // DumbUserAgent is intended to be used by a Java2DRenderer that has been constructed with a Document.
-    // Java2DRenderer.getImage() tries to set the baseURL to null which breaks finding relative resouces.
+    // Java2DRenderer.getImage() tries to set the baseURL to null which breaks finding relative resources.
     // No tidying of HTML content is needed.
     private static class DumbUserAgent extends NaiveUserAgent
     {
@@ -374,6 +380,188 @@ public class ImageUtil
 
             return super.getImageResource(uri);
         }
+    }
+
+
+    private synchronized static WebThumb ensureWebThumbStarted()
+    {
+        if (WEB_THUMB.get() == null)
+        {
+            class AppLaunch extends Thread implements ShutdownListener
+            {
+                public AppLaunch()
+                {
+                    setName(getClass().getSimpleName());
+                    ContextListener.addShutdownListener(this);
+                }
+
+                @Override
+                public void run()
+                {
+                    // Force AWT to be initialized first, so we can run in headless mode
+                    // See: https://javafx-jira.kenai.com/browse/RT-20784
+                    java.awt.Toolkit.getDefaultToolkit();
+                    LOG.debug("WebThumb: toolkit initialized");
+
+                    // We have to burn a thread because Application.launch() blocks
+                    // until the WebThumb has exited, and we can't call Application.launch()
+                    // more than once, so we keep the app running.
+                    Application.launch(WebThumb.class);
+                }
+
+                @Override
+                public void shutdownPre(ServletContextEvent servletContextEvent)
+                                                                            {
+                                                                               PlatformImpl.exit();
+                                                                                                                                                          }
+
+                @Override
+                public void shutdownStarted(ServletContextEvent servletContextEvent)
+                {
+                }
+            }
+            new AppLaunch().start();
+
+            // Wait until WebThumb has initialized itself
+            try
+            {
+                WEB_THUMB_STARTUP_LATCH.await();
+            }
+            catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return WEB_THUMB.get();
+    }
+
+    protected static final AtomicReference<WebThumb> WEB_THUMB = new AtomicReference<>();
+    protected static final CountDownLatch WEB_THUMB_STARTUP_LATCH = new CountDownLatch(1);
+
+    private static Boolean _headlessJavaFX = null;
+
+    /**
+     * Checks Monocle is available and configured for headless rendering.
+     */
+    // Also consider forcing headless using reflection -- see https://gist.github.com/mojavelinux/593f5a56381507bca46f
+    private static boolean headlessJavaFX()
+    {
+        if (_headlessJavaFX == null)
+        {
+            if (System.getProperty("glass.platform") == null)
+                System.setProperty("glass.platform", "Monocle");
+
+            if (System.getProperty("monocle.platform") == null)
+                System.setProperty("monocle.platform", "Headless");
+
+            if (System.getProperty("prism.order") == null)
+                System.setProperty("prism.order", "sw");
+
+            if (System.getProperty("javafx.macosx.embedded") == null)
+                System.setProperty("javafx.macosx.embedded", "true");
+
+
+            try
+            {
+                Class.forName("com.sun.glass.ui.monocle.MonoclePlatformFactory");
+                _headlessJavaFX =
+                        "Monocle".equals(System.getProperty("glass.platform")) &&
+                        "Headless".equals(System.getProperty("monocle.platform")) &&
+                        "sw".equals(System.getProperty("prism.order"));
+            }
+            catch (ClassNotFoundException e)
+            {
+                LOG.debug("Monocle not on classpath");
+                _headlessJavaFX = false;
+            }
+        }
+
+        return _headlessJavaFX;
+    }
+
+    public static class WebThumb extends Application
+    {
+        private WebView _webView;
+
+        public WebThumb() { }
+
+        @Override
+        public void start(Stage stage) throws Exception
+        {
+            stage.setTitle("WebThumb");
+            final Group rootGroup = new Group();
+
+            _webView = new WebView();
+            _webView.setPrefHeight(WEB_IMAGE_HEIGHT);
+            _webView.setPrefWidth(WEB_IMAGE_WIDTH);
+
+            rootGroup.getChildren().add(_webView);
+
+            final Scene scene = new Scene(rootGroup, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT, javafx.scene.paint.Color.WHITE);
+            stage.setScene(scene);
+            stage.show();
+
+            // We can only create the app once so stash the WebThumb reference
+            // and notify the other thread the app has initialized.
+            WEB_THUMB.set(this);
+            WEB_THUMB_STARTUP_LATCH.countDown();
+            LOG.debug("WebThumb: started");
+        }
+
+        private BufferedImage renderToImage(Node node)
+        {
+            SnapshotParameters params = new SnapshotParameters();
+            WritableImage img = node.snapshot(params, null);
+            BufferedImage image = SwingFXUtils.fromFXImage(img, null);
+            return image;
+        }
+
+        // synchronized to only allow a single render request at a time
+        public synchronized BufferedImage generateImage(String url, int width, int height)
+        {
+            LOG.info("WebThumb: requesting web image: " + url);
+            final AtomicReference<BufferedImage> image = new AtomicReference<>();
+            final CountDownLatch renderLatch = new CountDownLatch(1);
+
+//            _webView.setPrefWidth(width);
+//            _webView.setPrefHeight(height);
+
+            final WebEngine webEngine = _webView.getEngine();
+            final ChangeListener<Worker.State> listener = (ov, oldState, newState) -> {
+                LOG.debug("WebThumb state: " + newState.name());
+                if (newState == Worker.State.SUCCEEDED)
+                {
+                    image.set(renderToImage(_webView));
+                    renderLatch.countDown();
+                }
+            };
+
+            PlatformImpl.runAndWait(() -> {
+                webEngine.getLoadWorker().stateProperty().addListener(listener);
+                _webView.getEngine().load(url);
+            });
+
+            try
+            {
+                renderLatch.await(5, TimeUnit.MINUTES);
+                LOG.info("WebThumb: rendered web image: " + url);
+            }
+            catch (InterruptedException e)
+            {
+                // failed to load or render within timeout
+                PlatformImpl.runLater(() -> webEngine.getLoadWorker().cancel());
+            }
+            finally
+            {
+                PlatformImpl.runAndWait(() -> {
+                    webEngine.getLoadWorker().stateProperty().removeListener(listener);
+                });
+            }
+
+            return image.get();
+        }
+
     }
 
     public static void main(String[] args) throws Exception
