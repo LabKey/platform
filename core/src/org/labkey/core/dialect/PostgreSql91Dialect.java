@@ -1408,16 +1408,18 @@ public class PostgreSql91Dialect extends SqlDialect
     {
         if (hasReturn || assignResult)
             paramCount--; // this param isn't included in the argument list of the CALL statement
-
-        StringBuilder parameters = new StringBuilder();
-        String comma = "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        if (assignResult)
+            sb.append("? = ");
+        sb.append("CALL " + procSchema + "." + procName +"(");
         for (int i = 0; i < paramCount; i++)
         {
-            parameters.append(comma).append("?");
-            comma = ",";
+            sb.append("?,");
         }
-
-        return "SELECT " + procSchema + "." + procName + "(" + parameters.toString() + ")";
+        sb.setLength(sb.length() - 1); // Postgres chokes on the trailing comma
+        sb.append(")}");
+        return sb.toString();
     }
 
     @Override
