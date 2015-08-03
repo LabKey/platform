@@ -96,6 +96,8 @@
         {
             if (!this.isUnique)
                 return this;
+            if (null == value)
+                return this;
             if (!this.valueHasBeenSet)
             {
                 this.value = value;
@@ -451,32 +453,63 @@
             var accumulators = new Array(columns.length);
             for (var i = 0; i < columns.length; i++)
             {
-                if (columns[i] && columns[i].aggregator)
-                    accumulators[i] = new columns[i].aggregator(columns[i]);
+                var column = columns[i];
+                if (column && column.aggregator)
+                {
+                    accumulators[i] = new column.aggregator(column);
+                    accumulators[i]._columnIndex = i;
+                    accumulators[i]._columnName = column.name;
+                }
             }
             return accumulators;
         }
 
-        function reduceAdd(columns, accumulators, row)
+        function reduceAdd(accumulators, row)
         {
             for (var i = 0; i < accumulators.length; i++)
             {
-                var v = row[columns[i].name];  // this might be an object depending on the response type
+                var accum = accumulators[i];
+                var v = row[accum._columnName];  // this might be an object depending on the response type
                 if (null != v && typeof v === "object" && 'value' in v)
                     v = v.value;
-                accumulators[i].addTo(v, row);
+                accum.addTo(v, row);
             }
             return accumulators;
         }
 
-        function reduceRemove(columns, accumulators, row)
+        function reduceAddSimpleValue(accumulators, row)
         {
             for (var i = 0; i < accumulators.length; i++)
             {
-                var v = row[columns[i].name];  // this might be an object depending on the response type
+                var accum = accumulators[i];
+                var v = row[accum._columnName];
+                accum.addTo(v, row);
+            }
+            return accumulators;
+        }
+
+        function reduceAddObjectValue(accumulators, row)
+        {
+            for (var i = 0; i < accumulators.length; i++)
+            {
+                var accum = accumulators[i];
+                var v = row[accum._columnName];
+                if (null != v)
+                    v = v.value;
+                accum.addTo(v, row);
+            }
+            return accumulators;
+        }
+
+        function reduceRemove(accumulators, row)
+        {
+            for (var i = 0; i < accumulators.length; i++)
+            {
+                var accum = accumulators[i];
+                var v = row[accum._columnName];
                 if (null != v && typeof v === "object" && 'value' in v)
                     v = v.value;
-                accumulators[i].removeFrom(v, row);
+                accum.removeFrom(v, row);
             }
             return accumulators;
         }
@@ -496,6 +529,7 @@
          */
         var MeasureStore = function(config)
         {
+            var name, rec;
             var columnNames = config.columns || [];
             var countStar = {
                 name: '*',
@@ -513,13 +547,28 @@
 
             if (!config.columns && 0 < config.records.length)
             {
-                var rec = config.records[0];
-                for (var name in rec)
+                rec = config.records[0];
+                for (name in rec)
                 {
                     if (rec.hasOwnProperty(name))
                         columnNames.push(name);
                 }
             }
+
+            // infer record format
+            var recordType = "SIMPLE";
+            if (0 < config.records.length)
+            {
+                rec = config.records[0];
+                for (name in rec)
+                {
+                    if (!rec.hasOwnProperty(name))
+                        continue;
+                    if ((typeof rec[name]) == "object")
+                        recordType = "OBJECT";
+                }
+            }
+            this._recordType = recordType;
 
             // consider using some sort of NamedList implementation
             var me = this;
@@ -565,9 +614,14 @@
             _dimensions: null,
             _measures: null,
             _records: null,
-            _responseMetadata: null, // schemaName, queryName, columnAliases, etc.
-            _columnMap: null,      // column alias to index
-            _columns: null,         // {name:foo, index:i, aggregator:constructor}
+            _responseMetadata: null,    // schemaName, queryName, columnAliases, etc.
+            _columnMap: null,           // column alias to index
+            _columns: null,             // {name:foo, index:i, aggregator:constructor}
+            // UNKNOWN: check at runtime
+            // SIMPLE : {key:'abc', x:4}
+            // OBJECT : {key:{value:'abc'}, x:{value:4}}
+            // ARRAY : ['abc', 4] (not yet supported)
+            _recordType : "UNKNOWN",
 
             records : function()
             {
@@ -582,8 +636,14 @@
             _group : function(dim, keyFn)
             {
                 var fnInit = reduceInit.bind(null, this._columns);
-                var fnAdd = reduceAdd.bind(null, this._columns);
-                var fnRemove = reduceRemove.bind(null, this._columns);
+                var fnAdd;
+                if (this._recordType==="OBJECT")
+                    fnAdd = reduceAddObjectValue;
+                else if (this._recordType==="SIMPLE")
+                    fnAdd = reduceAddSimpleValue;
+                else
+                    fnAdd = reduceAdd;
+                var fnRemove = reduceRemove;
 
                 var group;
                 if (null == dim)
@@ -1383,6 +1443,11 @@
                     return measureStore.select(dimArray);
                 });
 
+                //
+                // results is an array with one entry per input measure store
+                //   each entry is the result of grouping by dimArray
+                //
+
                 if (0 == results.length || !dim)
                     return null;
                 else if (1 == results.length)
@@ -1390,11 +1455,25 @@
                 else
                     results = this._join(dimArray, results);
 
+                //
+                // results is now one array of key-value pairs representing the joined result
+                // the key is the concatenated join key and value is an array with one entry per input measure store
+                //    each entry is a result from the previous grouping operation
+                //
+
                 var me = this;
-                return results.map(function(entry)
+                results = results.map(function(entry)
                 {
+                    // expand the key value, and select the x and y measure
                     return me.flattenJoinEntry(dim, entry);
                 });
+
+                //
+                // flatten un-concatenates the join key and creates a property for each component
+                // it also pulls out the aggregated results for the defined x,y,z value
+                //
+
+                return results;
             }
         };
 
