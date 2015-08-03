@@ -18,12 +18,14 @@ package org.labkey.api.util.emailTemplate;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
@@ -192,6 +194,12 @@ public abstract class EmailTemplate
     public Container getContainer(){return _container;}
     /* package */ void setContainer(Container c){_container = c;}
 
+    @NotNull
+    public ContentType getContentType()
+    {
+        return _contentType;
+    }
+
     public boolean isValid(String[] error)
     {
         try {
@@ -243,7 +251,7 @@ public abstract class EmailTemplate
         return paramNameAndFormat;
     }
 
-    private String getFormat(String paramNameAndFormat)
+    private String getTemplateFormat(String paramNameAndFormat)
     {
         int i = paramNameAndFormat.indexOf(FORMAT_DELIMITER);
         if (i != -1)
@@ -260,44 +268,7 @@ public abstract class EmailTemplate
         {
             if (param.getName().equalsIgnoreCase(paramName))
             {
-                String formattedValue;
-                Object value = param.getValue(c);
-                if (value == null || "".equals(value))
-                {
-                    formattedValue = "";
-                }
-                else
-                {
-                    if (value instanceof String)
-                    {
-                        // This may not be quite right, but seems OK given all of our current parameters
-                        // We format just the value itself, not any surrounding text, but we can only safely do
-                        // this for String values. That is the overwhelming majority of values, and the non-strings
-                        // are Dates which are unlikely to be rendered using a format that needs encoding.
-                        value = _contentType.format((String) value, param.getContentType());
-                    }
-
-                    String format = getFormat(paramNameAndFormat);
-                    if (format != null)
-                    {
-                        try
-                        {
-                            Formatter formatter = new Formatter();
-                            formatter.format(format, value);
-                            formattedValue = formatter.toString();
-                        }
-                        catch (MissingFormatArgumentException e)
-                        {
-                            LOG.warn("Unable to format value '" + value + "' using format string '" + format + "' in email template '" + getName() + "'");
-                            formattedValue = value.toString();
-                        }
-                    }
-                    else
-                    {
-                        formattedValue = value.toString();
-                    }
-                }
-                return formattedValue;
+                return param.getFormattedValue(c, getTemplateFormat(paramNameAndFormat), _contentType);
             }
         }
         return null;
@@ -360,6 +331,51 @@ public abstract class EmailTemplate
         @NotNull public String getName(){return _name;}
         public String getDescription(){return _description;}
         public abstract Type getValue(Container c);
+
+        public String getFormattedValue(Container c, @Nullable String templateFormat, ContentType emailFormat)
+        {
+            String formattedValue;
+            Object value = getValue(c);
+            if (value == null || "".equals(value))
+            {
+                formattedValue = "";
+            }
+            else
+            {
+                if (value instanceof String)
+                {
+                    // This may not be quite right, but seems OK given all of our current parameters
+                    // We format just the value itself, not any surrounding text, but we can only safely do
+                    // this for String values. That is the overwhelming majority of values, and the non-strings
+                    // are Dates which are unlikely to be rendered using a format that needs encoding.
+                    value = emailFormat.format((String) value, getContentType());
+                }
+
+                if (templateFormat != null)
+                {
+                    try
+                    {
+                        Formatter formatter = new Formatter();
+                        formatter.format(templateFormat, value);
+                        formattedValue = formatter.toString();
+                    }
+                    catch (MissingFormatArgumentException e)
+                    {
+                        LOG.warn("Unable to format value '" + value + "' using format string '" + templateFormat + "' in email template '" + getName() + "'");
+                        formattedValue = value.toString();
+                    }
+                }
+                else if (value instanceof Date)
+                {
+                    formattedValue = DateUtil.formatDateTime(c, (Date)value);
+                }
+                else
+                {
+                    formattedValue = value.toString();
+                }
+            }
+            return formattedValue;
+        }
 
         public Class<Type> getValueType()
         {
