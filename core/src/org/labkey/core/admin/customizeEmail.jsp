@@ -139,8 +139,8 @@
             out.write("\t\t\"paramName\":" + PageFlowUtil.jsString(param.getName()) + ",\n");
             out.write("\t\t\"valueType\":" + PageFlowUtil.jsString(param.getValueType().getSimpleName()) + ",\n");
             out.write("\t\t\"paramDesc\":" + PageFlowUtil.jsString(param.getDescription()) + ",\n");
-            Object value=param.getValue(c);
-            out.write("\t\t\"paramValue\":" + PageFlowUtil.jsString(value == null ? null : value.toString()) + "\n");
+            String formattedValue = param.getFormattedValue(c, null, et.getContentType());
+            out.write("\t\t\"paramValue\":" + PageFlowUtil.jsString(formattedValue) + "\n");
             out.write("}");
 
             innerSep = "\t,{";
