@@ -239,7 +239,7 @@ public class RedCapTest extends BaseWebDriverTest
         assertElementPresent(Locators.labkeyError.containing("Collection instrument name collision found"));
     }
 
-    @Test
+    @Test // TODO: Update with 23935: REDCap: Some field types not imported correctly
     public void testDataTypes() throws Exception
     {
         final String folderName = "testDataTypes";
@@ -258,13 +258,13 @@ public class RedCapTest extends BaseWebDriverTest
         expectedFieldTypes.put("paragraph_text", "Text (String)");
         expectedFieldTypes.put("integer", "Integer");
         expectedFieldTypes.put("number", "Number (Double)");
-        expectedFieldTypes.put("calc_field", "Text (String)");
+        expectedFieldTypes.put("calc_field", "Text (String)"); // TODO: should be Double?
         expectedFieldTypes.put("yes_no", "True/False (Boolean)");
         expectedFieldTypes.put("drop_down", "Integer");
         expectedFieldTypes.put("radio", "Integer");
         expectedFieldTypes.put("slider", "Text (String)"); // TODO: Should be int?
         expectedFieldTypes.put("file_upload", "Text (String)");
-        expectedFieldTypes.put("multi_select", "Text (String)");
+        expectedFieldTypes.put("multi_select", "Text (String)"); // TODO: Should be lookup?
 
         Map<String, String> actualFieldTypes = new HashMap<>();
         for (Map.Entry<String, String> fieldType : new HashSet<>(expectedFieldTypes.entrySet()))
