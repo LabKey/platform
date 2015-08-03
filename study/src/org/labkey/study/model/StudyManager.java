@@ -4610,9 +4610,6 @@ public class StudyManager
 
         final SearchService.IndexTask defaultTask = ServiceRegistry.get(SearchService.class).defaultTask();
         final SearchService.IndexTask task = null==t ? defaultTask : t;
-        final Study study = StudyManager.getInstance().getStudy(c);
-        if (null == study)
-            return;
 
         Runnable runEnumerate = new Runnable()
         {
@@ -4628,8 +4625,17 @@ public class StudyManager
                         _lastEnumerate.remove(c);
                     }
                 }
-                StudyManager.indexDatasets(task, c, null);
-                StudyManager.indexParticipants(task, c, null);
+
+                Study study = StudyManager.getInstance().getStudy(c);
+
+                if (null != study)
+                {
+                    StudyManager.indexDatasets(task, c, null);
+                    StudyManager.indexParticipants(task, c, null);
+                    // study protocol document
+                    _enumerateProtocolDocuments(task, study);
+                }
+
                 AssayService.get().indexAssays(task, c);
             }
         };
@@ -4643,9 +4649,6 @@ public class StudyManager
         }
         
         task.addRunnable(runEnumerate, SearchService.PRIORITY.crawl);
-
-        // study protocol document
-        _enumerateProtocolDocuments(task, study);
     }
 
 

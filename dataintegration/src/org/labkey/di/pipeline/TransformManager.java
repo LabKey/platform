@@ -36,6 +36,7 @@ import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.ParameterDescriptionImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
@@ -65,6 +66,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -674,6 +676,31 @@ public class TransformManager implements DataIntegrationService.Interface
         ActionURL detailsURL = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(c, jobId);
 
         return styled ? PageFlowUtil.textLink(text, detailsURL ) : PageFlowUtil.unstyledTextLink(text, detailsURL);
+    }
+
+    /* Should only be called once at startup */
+    public void startAllConfigurations()
+    {
+        DbSchema schema = DataIntegrationQuerySchema.getSchema();
+        SQLFragment sql = new SQLFragment("SELECT * FROM dataintegration.transformconfiguration WHERE enabled=?", true);
+
+        new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<TransformConfiguration>(){
+            @Override
+            public void exec(TransformConfiguration config) throws SQLException
+            {
+                // CONSIDER explicit runAs user
+                int runAsUserId = config.getModifiedBy();
+                User runAsUser = UserManager.getUser(runAsUserId);
+
+                ScheduledPipelineJobDescriptor descriptor = DESCRIPTOR_CACHE.getResource(config.getTransformId());
+                if (null == descriptor)
+                    return;
+                Container c = ContainerManager.getForId(config.getContainerId());
+                if (null == c)
+                    return;
+                schedule(descriptor, c, runAsUser, config.isVerboseLogging());
+            }
+        }, TransformConfiguration.class);
     }
 
     public String getRunDetailsLink(Container c, Integer runId, String text)
