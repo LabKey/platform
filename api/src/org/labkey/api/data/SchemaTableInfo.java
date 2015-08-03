@@ -61,7 +61,6 @@ import org.labkey.data.xml.ImportTemplateType;
 import org.labkey.data.xml.TableType;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -359,14 +358,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         final NamedObjectList newList = new NamedObjectList();
         String sql = "SELECT " + pkColumnSelect + " AS VALUE, " + titleColumn + " AS TITLE FROM " + _selectName.getSQL() + " ORDER BY " + titleColumn;
 
-        new SqlSelector(_parentSchema, sql).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                newList.put(new SimpleNamedObject(rs.getString(1), rs.getString(2)));
-            }
-        });
+        new SqlSelector(_parentSchema, sql).forEach(rs -> newList.put(new SimpleNamedObject(rs.getString(1), rs.getString(2))));
 
         DbCache.put(this, cacheKey, newList, getSelectListTimeout());
 

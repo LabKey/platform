@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
@@ -40,29 +39,15 @@ public abstract class NonSqlExecutingSelector<SELECTOR extends NonSqlExecutingSe
     {
         final MutableLong count = new MutableLong();
 
-        forEach(new ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                count.increment();
-            }
-        });
+        forEach(rs -> count.increment());
 
-        return count.getValue();
+        return count.getValue().longValue();
     }
 
     @Override
     public boolean exists()
     {
-        return handleResultSet(getStandardResultSetFactory(), new ResultSetHandler<Boolean>()
-        {
-            @Override
-            public Boolean handle(ResultSet rs, Connection conn) throws SQLException
-            {
-                return rs.next();
-            }
-        });
+        return handleResultSet(getStandardResultSetFactory(), (rs, conn) -> rs.next()).booleanValue();
     }
 
     // Different semantics... never grab a new connection
