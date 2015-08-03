@@ -1910,6 +1910,14 @@ redcap/src/org/labkey/redcap/RedcapManager.java -text
 redcap/src/org/labkey/redcap/RedcapModule.java -text
 redcap/src/org/labkey/redcap/RedcapReloadSource.java -text
 redcap/src/org/labkey/redcap/view/configure.jsp -text
+redcap/test/sampledata/redcap/projects/classic/Surveys_DATA.csv -text
+redcap/test/sampledata/redcap/projects/dataTypes/DataTypes.zip -text
+redcap/test/sampledata/redcap/projects/dataTypes/DataTypes_DATA.csv -text
+redcap/test/sampledata/redcap/projects/longitudinal/CompletionDataToBeEn.zip -text
+redcap/test/sampledata/redcap/projects/longitudinal/Longitudin_DATA.csv -text
+redcap/test/sampledata/redcap/projects/longitudinal/ParticipantInfoSurve.zip -text
+redcap/test/sampledata/redcap/projects/longitudinal/ParticipantMoraleQue.zip -text
+redcap/test/sampledata/redcap/projects/longitudinal/PreScreeningSurvey.zip -text
 redcap/test/sampledata/redcap/template.xml -text
 redcap/test/src/org/labkey/test/pages/redcap/ConfigurePage.java -text
 redcap/test/src/org/labkey/test/tests/RedCapTest.java -text
