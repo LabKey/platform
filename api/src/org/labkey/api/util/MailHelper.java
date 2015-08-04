@@ -296,6 +296,55 @@ public class MailHelper
         }
     }
 
+    // Extracts all body parts from the MimeMessage into a Map<ContentType, BodyContent>
+    public static Map<String, String> getBodyParts(MimeMessage mm) throws MessagingException, IOException
+    {
+        Map<String, String> map = new HashMap<>();
+
+        handleBodyParts(mm,
+            (contentType, part) -> map.put(contentType, PageFlowUtil.getStreamContentsAsString(part.getInputStream(), StringUtilsLabKey.DEFAULT_CHARSET)),
+                map::put);
+
+        return map;
+    }
+
+    // Extracts just the content types from the MimeMessage body parts
+    public static Set<String> getBodyPartContentTypes(MimeMessage mm) throws MessagingException, IOException
+    {
+        Set<String> set = new HashSet<>();
+
+        handleBodyParts(mm,
+            (contentType, part) -> set.add(contentType),
+            (contentType, content) -> set.add(contentType));
+
+        return set;
+    }
+
+    private static void handleBodyParts(MimeMessage mm, BodyPartHandler<BodyPart> multipartHandler, BodyPartHandler<String> stringHandler) throws MessagingException, IOException
+    {
+        Object content = mm.getContent();
+
+        if (content instanceof MimeMultipart)
+        {
+            MimeMultipart multipart = (MimeMultipart)content;
+
+            for (int i = 0; i < multipart.getCount(); i++)
+            {
+                BodyPart part = multipart.getBodyPart(i);
+                multipartHandler.handle(StringUtils.substringBefore(part.getContentType(), ";"), part);
+            }
+        }
+        else
+        {
+            stringHandler.handle(StringUtils.substringBefore(mm.getContentType(), ";"), content.toString());
+        }
+    }
+
+    private interface BodyPartHandler<T>
+    {
+        void handle(String contentType, T content) throws IOException, MessagingException;
+    }
+
     /**
      * Message with support for a view for message body.
      */
