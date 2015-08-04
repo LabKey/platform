@@ -132,6 +132,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 		this(query, query.getSchema(), null);
         this._query = query;
         this._inFromClause = inFromClause;
+        this._queryText = null;
 		initializeFromQQuery(root);
 		initializeSelect();
         MemTracker.getInstance().put(this);
@@ -770,7 +771,7 @@ groupByLoop:
                 return ret;
             }
 
-            FieldKey fullKey = FieldKey.fromParts(tableKey,declareKey);
+            FieldKey fullKey = FieldKey.fromParts(tableKey, declareKey);
             colTry = _declaredFields.get(fullKey);
             if (colTry != null)
             {
@@ -1447,27 +1448,32 @@ groupByLoop:
         ret.appendComment(comment);
         if (null != _queryText)
         {
-            String queryText = _queryText;
-            boolean truncated = false;
-            if (queryText.length() > 10_000)
-            {
-                queryText = queryText.substring(0,10_000);
-                truncated = true;
-            }
-            // Handle any combination of line endings - \n (Unix), \r (Mac), \r\n (Windows), \n\r (nobody)
-            for (String s : queryText.split("(\n\r?)|(\r\n?)"))
-            {
-                if (null != StringUtils.trimToNull(s))
-                    ret.appendComment("|         " + s);
-            }
-            if (truncated)
-                ret.appendComment("|         . . .");
+            appendLongComment(ret, _queryText);
         }
         ret.append(sql);
         ret.appendComment("</" + comment.substring(1));
         return ret;
     }
 
+
+    public static boolean appendLongComment(SqlBuilder sb, String queryText)
+    {
+        boolean truncated = false;
+        if (queryText.length() > 10_000)
+        {
+            queryText = queryText.substring(0,10_000);
+            truncated = true;
+        }
+        // Handle any combination of line endings - \n (Unix), \r (Mac), \r\n (Windows), \n\r (nobody)
+        for (String s : queryText.split("(\n\r?)|(\r\n?)"))
+        {
+            if (null != StringUtils.trimToNull(s))
+                sb.appendComment("|         " + s);
+        }
+        if (truncated)
+            sb.appendComment("|         . . .");
+        return true;
+    }
 
 	private void parseError(String message, QNode node)
 	{

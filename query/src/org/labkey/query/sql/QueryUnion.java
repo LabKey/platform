@@ -191,8 +191,11 @@ public class QueryUnion extends QueryRelation
             return null;
 
 		String unionOperator = "";
-        SQLFragment unionSql = new SQLFragment();
+        SqlBuilder unionSql = new SqlBuilder(dialect);
+
         assert unionSql.appendComment("<QueryUnion>", dialect);
+        if (null != _query._querySource)
+            assert QuerySelect.appendLongComment(unionSql, _query._querySource);
 
 		for (QueryRelation term : _termList)
 		{
@@ -232,7 +235,7 @@ public class QueryUnion extends QueryRelation
         
         if (null != sort && sort.size() > 0 || null != _limit)
         {
-            SQLFragment wrap = new SQLFragment();
+            SqlBuilder wrap = new SqlBuilder(dialect);
             wrap.append("SELECT * FROM (");
             wrap.append(unionSql);
             wrap.append(") u").append(unionSql.hashCode() & 0x7fffffff);
