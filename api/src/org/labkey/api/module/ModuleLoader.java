@@ -1626,6 +1626,18 @@ public class ModuleLoader implements Filter
         }
     }
 
+
+    /** This is not for static java controllers, only use for dynamically loaded controllers */
+    public void addControllerAlias(Module m, String name, Class clss)
+    {
+        synchronized (_controllerNameToModule)
+        {
+            _controllerNameToModule.put(name, m);
+            _controllerNameToModule.put(name.toLowerCase(), m);
+        }
+    }
+
+
     public Module getModuleForController(String controllerName)
     {
         synchronized(_controllerNameToModule)
