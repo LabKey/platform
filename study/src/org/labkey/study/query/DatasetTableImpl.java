@@ -659,34 +659,34 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         // Add the session participant group filter
         if (group != null)
         {
-            FieldKey participantFieldKey = FieldKey.fromParts("ParticipantId");
-            SimpleFilter filter;
-            if (group.isSession() || group.isNew() || !getContainer().equals(group.lookupContainer()) || (getUserSchema().getStudy() != null && getUserSchema().getStudy().isDataspaceStudy()))
+            SQLFragment frag;
+            if (group.isSession() || group.isNew())
             {
-                // Unsaved session group doesn't persist in participant group map table (yet) and the
-                // project-level shared study doesn't have maintain participant group maps so we need to
+                // Unsaved session group doesn't persist in participant group map table (yet) so we need to
                 // expand into a "ParticipantId IN ..." filter.
                 // CONSIDER: Use a temp table for large participant group lists
-                filter = new SimpleFilter(participantFieldKey, Arrays.asList(group.getParticipantIds()), CompareType.IN);
+                FieldKey participantFieldKey = FieldKey.fromParts("ParticipantId");
+                ColumnInfo participantCol = getColumn(participantFieldKey);
+                SimpleFilter.InClause clause = new SimpleFilter.InClause(participantFieldKey, group.getParticipantSet());
+                SQLFragment temp = clause.toSQLFragment(Collections.singletonMap(participantFieldKey, participantCol), getSqlDialect());
+
+                // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm string replacing and hoping...
+                String sql = temp.getRawSQL();
+                sql = sql.replaceAll("ParticipantId", innerAlias + ".ParticipantId");
+                frag = new SQLFragment(sql, temp.getParams());
             }
             else
             {
-                // Expand into a "ParticipantId/group = category" filter
-                Pair<FieldKey, String> filterColValue = group.getFilterColAndValue(getContainer());
-                filter = new SimpleFilter("ParticipantId", filterColValue.second);
+                // Filter using ParticipantGroupMap
+                // NOTE: Unlike the Participant table's ParticipantCategoryColumn as used by the normal
+                // participant group filter "ParticipantId/<category> = <group>" filter, we don't join on
+                // ParticipantGroupMap.Container to support project-level shared datasets.
+                frag = new SQLFragment();
+                frag.append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)");
+                frag.add(group.getRowId());
             }
 
-            SQLFragment frag = filter.getSQLFragment(this, getColumns());
-
-            // Ugly. Remove leading WHERE from the generated sql frag.
-            String sql = frag.getRawSQL();
-            if (hasWhere && sql.startsWith("WHERE "))
-                sql = sql.replaceFirst("WHERE ", "AND ");
-
-            // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm string replacing and hoping...
-            sql = sql.replaceAll("ParticipantId", innerAlias + ".ParticipantId");
-            SQLFragment frag2 = new SQLFragment(sql, frag.getParams());
-            sqlf.append("\n").append(frag2);
+            sqlf.append("\n").append(hasWhere ? "AND " : "WHERE ").append(frag);
         }
 
         sqlf.append(") AS ").append(alias);

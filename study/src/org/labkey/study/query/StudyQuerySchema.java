@@ -1052,9 +1052,8 @@ public class StudyQuerySchema extends UserSchema
         if (context == null)
             return;
 
-        Study sharedStudyOrCurrent = StudyManager.getInstance().getSharedStudyOrCurrent(study);
-        Container stickyParticipantContainer = sharedStudyOrCurrent.getContainer();
-        ParticipantGroup group = ParticipantGroupManager.getInstance().getSessionParticipantGroup(stickyParticipantContainer, user, context.getRequest());
+        // The session sticky participant filter only applies to the current container -- not across any child shared studies
+        ParticipantGroup group = ParticipantGroupManager.getInstance().getSessionParticipantGroup(study.getContainer(), user, context.getRequest());
         if (group != null)
             setSessionParticipantGroup(group);
     }

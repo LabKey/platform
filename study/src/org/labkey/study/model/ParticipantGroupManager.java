@@ -714,8 +714,7 @@ public class ParticipantGroupManager
         if (session == null)
             return;
 
-        // XXX: Use current container if there is no shared study?
-        session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getProject().getRowId(), groupRowId);
+        session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId(), groupRowId);
     }
 
     public ParticipantGroup setSessionParticipantGroup(Container c, User user, HttpServletRequest request, ParticipantGroup group)
@@ -725,8 +724,7 @@ public class ParticipantGroupManager
         if (session == null)
             return null;
 
-        // XXX: Use current container if there is no shared study?
-        session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getProject().getRowId(), group);
+        session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId(), group);
         return group;
     }
 
@@ -736,9 +734,8 @@ public class ParticipantGroupManager
         if (session == null)
             return null;
 
-        // XXX: Use current container if there is no shared study?
         ParticipantGroup group = null;
-        Object o = session.getAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getProject().getRowId());
+        Object o = session.getAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId());
         if (o instanceof Integer)
             group = getParticipantGroup(c, user, (Integer)o);
         else if (o instanceof ParticipantGroup)
@@ -752,8 +749,7 @@ public class ParticipantGroupManager
         if (session == null)
             return;
 
-        // XXX: Use current container if there is no shared study?
-        session.removeAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getProject().getRowId());
+        session.removeAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId());
     }
 
 
