@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
@@ -51,6 +52,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * User: adam
@@ -117,6 +119,8 @@ public class QueryImporter implements FolderImporter
                 String baseFilename = sqlFileName.substring(0, sqlFileName.length() - QueryWriter.FILE_EXTENSION.length());
                 String metaFileName = baseFilename + QueryWriter.META_FILE_EXTENSION;
                 QueryDocument queryDoc = metaFilesMap.get(metaFileName);
+                // Remove it from the map so we know it was consumed
+                metaFilesMap.remove(metaFileName);
 
                 if (null == queryDoc)
                     throw new ServletException("QueryImport: SQL file \"" + sqlFileName + "\" has no corresponding meta data file.");
@@ -125,6 +129,8 @@ public class QueryImporter implements FolderImporter
 
                 QueryType queryXml = queryDoc.getQuery();
 
+                String metadataXml = queryXml.getMetadata() == null ? null : queryXml.getMetadata().xmlText();
+
                 String queryName = queryXml.getName();
                 String schemaName = queryXml.getSchemaName();
                 SchemaKey schemaKey = SchemaKey.fromString(schemaName);
@@ -132,6 +138,26 @@ public class QueryImporter implements FolderImporter
                 // Reuse the existing queryDef so created or change events will be fired appropriately.
                 boolean created = false;
                 QueryDefinition queryDef = QueryService.get().getQueryDef(ctx.getUser(), ctx.getContainer(), schemaName, queryName);
+
+                if (queryDef != null && !queryDef.getDefinitionContainer().equals(ctx.getContainer()))
+                {
+                    // We have an query of the same name being inherited from another container
+
+                    // Use normalizeSpace() as there may be differences in line endings
+                    if (!Objects.equals(StringUtils.normalizeSpace(queryDef.getSql()), StringUtils.normalizeSpace(sql)) ||
+                            !Objects.equals(StringUtils.normalizeSpace(queryDef.getDescription()), StringUtils.normalizeSpace(queryXml.getDescription())) ||
+                            !Objects.equals(StringUtils.normalizeSpace(queryDef.getMetadataXml()), StringUtils.normalizeSpace(metadataXml)))
+                    {
+                        // Query is different, so we want to create a separate, local copy
+                        queryDef = null;
+                    }
+                    else
+                    {
+                        // We already have a matching query, so we can skip any additional processing
+                        continue;
+                    }
+                }
+
                 if (queryDef == null)
                 {
                     created = true;
@@ -140,9 +166,7 @@ public class QueryImporter implements FolderImporter
 
                 queryDef.setSql(sql);
                 queryDef.setDescription(queryXml.getDescription());
-
-                if (null != queryXml.getMetadata())
-                    queryDef.setMetadataXml(queryXml.getMetadata().xmlText());
+                queryDef.setMetadataXml(metadataXml);
 
                 Collection<QueryPropertyChange> changes = queryDef.save(ctx.getUser(), ctx.getContainer(), false);
                 if (created)
@@ -164,8 +188,6 @@ public class QueryImporter implements FolderImporter
                         changesBySchemaProperty.add(change);
                     }
                 }
-
-                metaFilesMap.remove(metaFileName);
             }
 
             // fire query created events (one set of changes per container/schema)
