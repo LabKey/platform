@@ -36,7 +36,7 @@ public class SamlProvider implements SSOAuthenticationProvider
     @Override
     public ActionURL getConfigurationLink()
     {
-        return new ActionURL(); // No config page yet
+        return SamlController.getConfigureURL();
     }
 
     @Override

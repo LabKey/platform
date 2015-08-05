@@ -161,6 +161,7 @@ authentication/src/org/labkey/authentication/opensso/view/referrerPrefix.jsp -te
 authentication/src/org/labkey/authentication/saml/SamlController.java -text
 authentication/src/org/labkey/authentication/saml/SamlManager.java -text
 authentication/src/org/labkey/authentication/saml/SamlProvider.java -text
+authentication/src/org/labkey/authentication/saml/configureSAML.jsp -text
 authentication/src/org/labkey/authentication/test/TestSecondaryController.java -text
 authentication/src/org/labkey/authentication/test/TestSecondaryProvider.java -text
 authentication/src/org/labkey/authentication/test/testSecondary.jsp -text

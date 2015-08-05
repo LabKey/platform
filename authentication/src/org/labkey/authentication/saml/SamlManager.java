@@ -19,11 +19,14 @@ import com.onelogin.AccountSettings;
 import com.onelogin.AppSettings;
 import com.onelogin.saml.AuthRequest;
 import com.onelogin.saml.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.util.URLHelper;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 /**
  * User: tgaluhn
@@ -43,12 +46,24 @@ public class SamlManager
 {
     public static final String SAML_RESPONSE_PARAMETER = "SAMLResponse";
     public static final String SAML_REQUEST_PARAMETER = "SAMLRequest";
+    protected static final String SAML_PROPERTIES_NORMAL_CATEGORY_KEY= "SAMLNormalProperties";
+    protected static final String SAML_PROPERTIES_ENCRYPTED_CATEGORY_KEY= "SAMLEncryptedProperties";
 
     private static final Logger LOG = Logger.getLogger(SamlManager.class);
 
+    public enum Key {
+        Certificate, // X.509 Certificate
+        IdPSsoUrl, // IdP SSO URL
+        IssuerUrl, //Issuer URL
+        SamlRequestParamName, //SAML Provider specific Request Parameter Name
+        SamlResponseParamName; //SAML Provider specific Response Parameter Name
+
+        public String getDefault(){return "";}
+    }
+
     public static URLHelper getLoginURL()
     {
-        String baseURL = "https://app.onelogin.com/trust/saml2/http-post/sso/420876"; //TODO: needs config
+        String baseURL = getIdPSsoUrl();
 
         try
         {
@@ -70,7 +85,10 @@ public class SamlManager
         // set the URL of the consume.jsp (or similar) file for this app. The SAML Response will be posted to this URL
         appSettings.setAssertionConsumerServiceUrl(SamlController.getValidateURL().getURIString());
         // set the issuer of the authentication request. This would usually be the URL of the issuing web application
-        appSettings.setIssuer("http://localhost:8080/labkey");
+
+        String issuerUrl = getIssuerUrl();
+        appSettings.setIssuer(issuerUrl == null ? "http://localhost:8080/labkey" : issuerUrl);
+
         //appSettings.setIssuer("https://app.onelogin.com/saml/metadata/420876");
 
         // the accSettings object contains settings specific to the users account.
@@ -91,30 +109,7 @@ public class SamlManager
 
     static String getUserFromSamlResponse(HttpServletRequest request)
     {
-        // TODO: this should be kept in the encrypted property store, and configured on config page
-        String certificateS ="MIIELDCCAxSgAwIBAgIUBhIs1cNyHTg44KJJf6RN0Q5c/r0wDQYJKoZIhvcNAQEF" +
-                "BQAwXzELMAkGA1UEBhMCVVMxGDAWBgNVBAoMD0xhYktleSBTb2Z0d2FyZTEVMBMG" +
-                "A1UECwwMT25lTG9naW4gSWRQMR8wHQYDVQQDDBZPbmVMb2dpbiBBY2NvdW50IDU1" +
-                "MTY0MB4XDTE1MDExODAzMjU0NVoXDTIwMDExOTAzMjU0NVowXzELMAkGA1UEBhMC" +
-                "VVMxGDAWBgNVBAoMD0xhYktleSBTb2Z0d2FyZTEVMBMGA1UECwwMT25lTG9naW4g" +
-                "SWRQMR8wHQYDVQQDDBZPbmVMb2dpbiBBY2NvdW50IDU1MTY0MIIBIjANBgkqhkiG" +
-                "9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4iwRTz4stzwT/i9uUdglnOwJv2pCC92kSnBE" +
-                "O3Mtr7Z4Jo0E3P5oytPIhbnNdRHWVmymoSpi9wU6jjYGkb33GjY640IqfLRNPOHF" +
-                "XVYl6BWV6r6b6hELktRwXlMAwptcYt568juIadFuHb2iOyezz3/bnJHBNORN5DlY" +
-                "h1N7bO6ehI/gQIdHQopADKz9ITKqkuVoSPKNJk/fj0gkoIgwtY+3EI1PG5duTD+W" +
-                "DDy7J8rqWu0j7z6l9h4asnQph2i3rwdPnIRlPFyrZxHmzYpLa1fu14ZHMjVK7PT+" +
-                "KGxgBnBxPTu/y/YKKp/wg61/zSc6ptFL5RteI3bP6GqzIARiwwIDAQABo4HfMIHc" +
-                "MAwGA1UdEwEB/wQCMAAwHQYDVR0OBBYEFJT1WdWvG0gdRxJoiV5Z9Xuo/V4cMIGc" +
-                "BgNVHSMEgZQwgZGAFJT1WdWvG0gdRxJoiV5Z9Xuo/V4coWOkYTBfMQswCQYDVQQG" +
-                "EwJVUzEYMBYGA1UECgwPTGFiS2V5IFNvZnR3YXJlMRUwEwYDVQQLDAxPbmVMb2dp" +
-                "biBJZFAxHzAdBgNVBAMMFk9uZUxvZ2luIEFjY291bnQgNTUxNjSCFAYSLNXDch04" +
-                "OOCiSX+kTdEOXP69MA4GA1UdDwEB/wQEAwIHgDANBgkqhkiG9w0BAQUFAAOCAQEA" +
-                "P8yelgNlYbTYV8tvjdbqT9CcsGGLpZywlwI6Va441EhfKmxqLRatRZGHfsNXAxSl" +
-                "jVbamBr6ed28+Q6GVxgMj5i3QPMdv33M4cybN37cKScLotLiYtRBR3CF/TYsjOZ3" +
-                "rV1saLK6gls1O/ej6iS3Xa/ofLpGJ/jayqKKIcn11J/HfFTH3dbbLr7qzrF9EwNr" +
-                "awELWlfffWlTBp+3QzrENTIW/9j9rXR61UCXCIGn+9oJw2netqKgnQJhIxrV/Xm8" +
-                "l7lQm1rJX2A2XoZg45arPiE1GbtxrvTPdZVhsisKxjkxloMRmJ3Fz562zt6sDVKJ" +
-                "KNOiY77XiBuV/LjOfykulg==";
+        String certificateS = getCertificate();
 
         // user account specific settings. Import the certificate here
         AccountSettings accountSettings = new AccountSettings();
@@ -139,5 +134,75 @@ public class SamlManager
             LOG.error("Exception processing SAML response", e); // TODO: Proper exception handling
             return null;
         }
+    }
+
+    public static void saveCertificate(byte[] certBytes)
+    {
+        PropertyManager.PropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(SAML_PROPERTIES_ENCRYPTED_CATEGORY_KEY, true);
+        String cert = new String(certBytes);
+        map.put(Key.Certificate.toString(), cert);
+        map.save();
+    }
+
+    public static void saveCertificate(String certificate)
+    {
+        PropertyManager.PropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(SAML_PROPERTIES_ENCRYPTED_CATEGORY_KEY, true);
+        map.put(Key.Certificate.toString(), certificate);
+        map.save();
+    }
+
+    public static void saveProperties(SamlController.Config config)
+    {
+        PropertyManager.PropertyMap map = PropertyManager.getNormalStore().getWritableProperties(SAML_PROPERTIES_NORMAL_CATEGORY_KEY, true);
+        map.clear();
+        map.put(Key.IdPSsoUrl.toString(), config.getIdPSsoUrl());
+        map.put(Key.IssuerUrl.toString(), config.getIssuerUrl());
+        map.put(Key.SamlRequestParamName.toString(), config.getRequestParamName());
+        map.put(Key.SamlResponseParamName.toString(), config.getResponseParamName());
+        map.save();
+    }
+
+    private static String getProperty(Key key, boolean encrypted)
+    {
+        Map<String, String> props = getProperties(encrypted);
+
+        String value = props.get(key.toString());
+        if (StringUtils.isBlank(value))
+            value = key.getDefault();
+
+        return value;
+    }
+
+    private static Map<String, String> getProperties(boolean encrypted)
+    {
+        if(encrypted)
+            return PropertyManager.getEncryptedStore().getProperties(SAML_PROPERTIES_ENCRYPTED_CATEGORY_KEY);
+
+        return PropertyManager.getNormalStore().getProperties(SAML_PROPERTIES_NORMAL_CATEGORY_KEY);
+    }
+
+    protected static String getIdPSsoUrl()
+    {
+        return getProperty(Key.IdPSsoUrl, false);
+    }
+
+    protected static String getIssuerUrl()
+    {
+        return getProperty(Key.IssuerUrl, false);
+    }
+
+    protected static String getSamlRequestParamName()
+    {
+        return getProperty(Key.SamlRequestParamName, false);
+    }
+
+    protected static String getSamlResponseParamName()
+    {
+        return getProperty(Key.SamlResponseParamName, false);
+    }
+
+    protected static String getCertificate()
+    {
+        return getProperty(Key.Certificate, true);
     }
 }
