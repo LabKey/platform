@@ -502,7 +502,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
-    // @AllowedDuringUpgrade
+    @AllowedDuringUpgrade
     public class LoginApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
@@ -541,6 +541,11 @@ public class LoginController extends SpringActionController
                     response = new ApiSimpleResponse();
                     response.put("success", true);
                     response.put("user", User.getUserProps(user, getContainer()));
+                    if( null == form.getReturnUrl() || form.getReturnUrl().length() == 0)  {
+                        response.put("returnUrl",  "/labkey/project/home/begin.view?");
+                    } else {
+                        response.put("returnUrl", form.getReturnUrl());
+                    }
 
                     if (form.isApprovedTermsOfUse())
                     {
@@ -559,7 +564,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
-    // @AllowedDuringUpgrade
+    @AllowedDuringUpgrade
     public class AcceptTermsOfUseApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
@@ -582,7 +587,10 @@ public class LoginController extends SpringActionController
                 SecurityManager.setTermsOfUseApproved(getViewContext(), project, true);
             else if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.SITE_WIDE)
                 SecurityManager.setTermsOfUseApproved(getViewContext(), null, true);
-
+            else
+            {
+                errors.reject(ERROR_MSG, "Unable to determine the terms of use type from the information submitted on the form.");
+            }
             ApiSimpleResponse response = null;
             response = new ApiSimpleResponse();
             response.put("success", true);
@@ -592,7 +600,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
-    // @AllowedDuringUpgrade
+    @AllowedDuringUpgrade
     public class GetTermsOfUseApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
@@ -609,8 +617,8 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
-    // @AllowedDuringUpgrade
-    public class GetLoginMechanismsAPIAction extends MutatingApiAction<LoginForm>
+    @AllowedDuringUpgrade
+    public class GetLoginMechanismsApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
         public Object execute(LoginForm form, BindException errors) throws Exception
@@ -626,7 +634,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     // @AllowedDuringUpgrade
-    public class IsAgreeOnlyAPIAction extends MutatingApiAction<LoginForm>
+    public class IsAgreeOnlyApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
         public Object execute(LoginForm form, BindException errors) throws Exception
@@ -691,8 +699,8 @@ public class LoginController extends SpringActionController
         page.setTitle("Sign In");
 
         // default login using JSP from LoginView can be removed after the new login.html ajax version is working
-        LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
-        // WebPartView view = getCustomLoginViewIfAvailable(errors, form, remember);
+        // LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
+        WebPartView view = getCustomLoginViewIfAvailable(errors, form, remember);
 
         vBox.addView(view);
 
