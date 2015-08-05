@@ -9,6 +9,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
@@ -17,19 +19,16 @@ import java.util.zip.DeflaterOutputStream;
 
 public class AuthRequest {
 
-	private final String id;
-	private final String issueInstant;
-	private final AppSettings appSettings;
-	public static final int base64 = 1;
-	private Deflater deflater;
+	protected final String id;
+	protected final String issueInstant;
+	protected final AppSettings appSettings;
+	protected AccountSettings accountSettings;
+	protected static final int base64 = 1;
+	protected Deflater deflater;
 
-	public AuthRequest(AppSettings appSettings)
-	{
-		this(appSettings, null);
-	}
-
-	public AuthRequest(AppSettings appSettings, AccountSettings accountSettings){
+	public AuthRequest(AppSettings appSettings, AccountSettings accSettings){
 		this.appSettings = appSettings;
+		this.accountSettings = accSettings;
 		id="_"+UUID.randomUUID().toString();
 		SimpleDateFormat simpleDf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 		issueInstant = simpleDf.format(new Date());
@@ -80,7 +79,7 @@ public class AuthRequest {
 		return result;
 	}
 
-	private String encodeSAMLRequest(byte[] pSAMLRequest) throws RuntimeException {
+	protected String encodeSAMLRequest(byte[] pSAMLRequest) throws RuntimeException {
 
 		Base64 base64Encoder = new Base64();
 
@@ -100,4 +99,20 @@ public class AuthRequest {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	
+	public String getSSOurl(String relayState) throws UnsupportedEncodingException, XMLStreamException, IOException{
+		
+		String ssourl = getSSOurl();
+		if(relayState != null && !relayState.isEmpty()){
+			ssourl = ssourl + "&RelayState=" + relayState;
+		}
+		return ssourl;
+	}
+	
+	public String getSSOurl() throws UnsupportedEncodingException, XMLStreamException, IOException{
+		String ssourl = accountSettings.getIdp_sso_target_url()+"?SAMLRequest=" + URLEncoder.encode(getRequest(base64),"UTF-8");
+		return ssourl;
+	}
+	
 }

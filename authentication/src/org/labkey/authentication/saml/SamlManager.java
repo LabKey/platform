@@ -25,6 +25,8 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.util.URLHelper;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.stream.XMLStreamException;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Map;
 
@@ -63,22 +65,17 @@ public class SamlManager
 
     public static URLHelper getLoginURL()
     {
-        String baseURL = getIdPSsoUrl();
-
         try
         {
-            URLHelper url = new URLHelper(baseURL);
-            url.addParameter(SAML_REQUEST_PARAMETER, getSamlRequestParameter());
-
-            return url;
+            return new URLHelper(getSamlUrl());
         }
         catch (URISyntaxException e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Exception making SAML request", e);
         }
     }
 
-    private static String getSamlRequestParameter()
+    private static String getSamlUrl()
     {
         // the appSettings object contain application specific settings used by the SAML library
         AppSettings appSettings = new AppSettings();
@@ -88,20 +85,24 @@ public class SamlManager
 
         String issuerUrl = getIssuerUrl();
         appSettings.setIssuer(issuerUrl == null ? "http://localhost:8080/labkey" : issuerUrl);
-
-        //appSettings.setIssuer("https://app.onelogin.com/saml/metadata/420876");
-
+        
         // the accSettings object contains settings specific to the users account.
         // At this point, your application must have identified the users origin
-        //AccountSettings accSettings = new AccountSettings();
+        AccountSettings accSettings = new AccountSettings();
+
+        // The URL at the Identity Provider where to the authentication request should be sent
+        accSettings.setIdpSsoTargetUrl(getIdPSsoUrl());
 
         // Generate an AuthRequest and send it to the identity provider
-        AuthRequest authReq = new AuthRequest(appSettings);
+        AuthRequest authReq = new AuthRequest(appSettings, accSettings);
+
+        // Omitting setting "relaystate" parameter
+
         try
         {
-            return authReq.getRequest(AuthRequest.base64);
+            return authReq.getSSOurl();
         }
-        catch (Exception e)
+        catch (IOException | XMLStreamException e)
         {
             throw new RuntimeException("Exception constructing SAML request", e);
         }
@@ -122,12 +123,12 @@ public class SamlManager
             samlResponse.loadXmlFromBase64(request.getParameter(SAML_RESPONSE_PARAMETER));
             samlResponse.setDestinationUrl(request.getRequestURL().toString());
 
-            if (samlResponse.isValid(false)) // allowing arbitrary destination URL
+            if (samlResponse.isValid())
             {
                 return samlResponse.getNameId();
             }
             else
-                return null;
+                return null; // TODO: Log an invalid SAML login attempt?
         }
         catch (Exception e)
         {
