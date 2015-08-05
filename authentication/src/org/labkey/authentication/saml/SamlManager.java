@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.stream.XMLStreamException;
@@ -84,7 +85,7 @@ public class SamlManager
         // set the issuer of the authentication request. This would usually be the URL of the issuing web application
 
         String issuerUrl = getIssuerUrl();
-        appSettings.setIssuer(issuerUrl == null ? "http://localhost:8080/labkey" : issuerUrl);
+        appSettings.setIssuer(issuerUrl == null ? ActionURL.getBaseServerURL() : issuerUrl);
         
         // the accSettings object contains settings specific to the users account.
         // At this point, your application must have identified the users origin

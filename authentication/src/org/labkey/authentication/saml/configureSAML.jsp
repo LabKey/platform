@@ -37,7 +37,7 @@
     JspView<SamlController.Config> me = (JspView<SamlController.Config>)HttpView.currentView();
     SamlController.Config bean = me.getModelBean();
 %>
-<labkey:form action="configure.post" method="post">
+<labkey:form action="configure.post" id="configureSAML" method="post">
     <table>
 
         <%=formatMissedErrorsInTable("form", 2)%>
@@ -51,9 +51,9 @@
             <%--<td><textarea id="certTextArea" name="certificate" rows="25" cols="120" value="<%=h(bean.getCertificate())%>" onkeyup=Expand(this)></textarea></td>--%>
             <td class="labkey-form-label">Cert Upload Type</td>
             <td>
-                <input type="radio" name="certUploadType" value="paste" checked="checked">Cut/Paste
-            <%--<input type="radio" name="certUploadType" value="paste" checked="checked" onchange="disableFileUpload()">Cut/Paste--%>
-                <%--<input type="radio" name="certUploadType" value="file" onchange="enableFileUpload()">File--%>
+                <%--<input type="radio" name="certUploadType" value="paste" checked="checked">Cut/Paste--%>
+            <input type="radio" name="certUploadType" value="paste" checked="checked" onchange="disableFileUpload()">Cut/Paste
+                <input type="radio" name="certUploadType" value="file" onchange="enableFileUpload()">File
             </td>
         </tr>
         <tr id="file-field" style="display: none;">
@@ -94,82 +94,66 @@
 </labkey:form>
 
 <script type="text/javascript">
-    function Expand(obj){
 
+    function Expand(obj){
         if (!obj.savesize)
-        {
-            obj.savesize=obj.size;
-        }
+            obj.savesize = obj.size;
         obj.size=Math.max(obj.savesize, obj.value.length);
     }
 
-//    function disableFileUpload() {
-//        Ext4.get('file-field').setDisplayed('none');
-//        Ext4.get('certificate').setDisplayed('table-row');
-//        Ext4.getCmp('upload-run-field').disable();
-//    }
-//
-//    function enableFileUpload() {
-//        Ext4.get('file-field').setDisplayed('table-row');
-//        Ext4.get('certificate').setDisplayed('none');
-//        var fileUpload = Ext4.getCmp('upload-run-field');
-//        if (fileUpload)
-//            fileUpload.enable();
-//    }
+    function disableFileUpload() {
+        Ext4.get('file-field').setDisplayed('none');
+        Ext4.get('certificate').setDisplayed('table-row');
+        Ext4.getCmp('upload-run-field').disable();
+    }
 
-//    function init() {
-//        new Ext4.form.FileUploadField({
-//            id: "upload-run-field",
-//            renderTo: 'upload-field',
-//            name: 'file',
-//            buttonText: 'Upload X.509 Cert File',
-//            buttonOnly: true,
-//            disabled: true,
-//            buttonCfg: {cls: 'labkey-button'}
-//        });
-//        Ext4.create('Ext.form.Panel', {
-//            width: 400,
-//            renderTo: 'upload-field',
-//            buttonOnly: true,
-//            items: [{
-//                xtype: 'filefield',
-//            }],
-//
-//            buttons: [{
-//                text: 'Upload X.509 Cert File',
-//                handler: function() {
-////                    var form = this.up('form').getForm();
-////                    if(form.isValid()){
-////                        form.submit({
-////                            waitMsg: 'Uploading your photo...',
-////                            success: function(fp, o)
-////                            {
-//                                Ext.Msg.alert('Success', o.result.file + '" has been uploaded.');
-////                            }
-//                }
-//            }]
-//        });
+    function enableFileUpload() {
+        Ext4.get('file-field').setDisplayed('table-row');
+        Ext4.get('certificate').setDisplayed('none');
+        Ext4.getCmp('upload-run-field').enable();
+    }
 
-//        new Ext4.create('Ext.form.FileUploadField', {
-//            title: id: "upload-run-field",
-//            renderTo: 'upload-field',
-//            name: 'file',
-//            buttonText: 'Upload X.509 Cert File',
-//            buttonOnly: true,
-//            disabled: true,
-//            buttonCfg: {cls: 'labkey-button'},
-//            listeners: {
-//                fileselected: function (fb, v) {
-//
-////                        if (v && v.length > 0 && v.indexOf('\\') >= 0) {
-////                            var path = v.split('\\');
-////                            fb.button.setText(path[path.length-1]);
-////                        }
-//                }
-//            }
-//        });
-//    }
-//    Ext4.onReady(init);
+    function init() {
+        Ext4.create('Ext4.form.field.File', {
+            buttonText: 'Upload X.509 Cert File',
+            id: 'upload-run-field',
+            width: 175,
+            renderTo: 'upload-field',
+            buttonOnly: true,
+            disabled    : true,
+            scope       : this,
+            listeners   : {
+                scope : this,
+                change : function(cmp, value){
+                    console.log("cmp", cmp);
+                    console.log("value", value);
+//                this.southPanel.getComponent('specimenUploadButton').enable();
+                    var form = new Ext4.form.BasicForm(Ext4.get('configureSAML'), {
+                        url: LABKEY.ActionURL.buildURL('saml', 'parseCert'),
+                        fileUpload: true
+                    });
+
+                    var processResponse = function(form, action)
+                    {
+                        var fileContents = Ext4.decode(action.response.responseText);
+                    }
+
+                    if(form.isValid()) {
+                        form.submit({
+                            success: function(fp, o) {
+                                Ext4.Msg.alert('Success', 'Your Certificate "' + o.result.file + '" has been uploaded.');
+                                processResponse;
+                            },
+                            failure: function(fp, o) {
+                                Ext4.Msg.alert('Failed', 'Failed to upload file.');
+                            }
+                        });
+                    }
+             }
+            }
+        });
+    }
+    Ext4.onReady(init);
 
 </script>
 

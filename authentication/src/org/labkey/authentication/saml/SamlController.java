@@ -19,6 +19,7 @@ import com.onelogin.saml.Certificate;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
@@ -40,11 +41,15 @@ import org.labkey.authentication.AuthenticationModule;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: tgaluhn
@@ -197,19 +202,14 @@ public class SamlController extends SpringActionController
 
         public MultipartFile getCertFile()
         {
-          return certFile;
+            return certFile;
         }
 
-//        @SuppressWarnings("UnusedDeclaration")
-//        public void setCertFile(MultipartFile file, ViewContext viewContext)
-//        {
-//            Map<String, MultipartFile> files = Collections.emptyMap();
-//
-//            if (viewContext.getRequest() instanceof MultipartHttpServletRequest)
-//                files = (Map<String, MultipartFile>)((MultipartHttpServletRequest)viewContext.getRequest()).getFileMap();
-//
-//            certFile = files.get("certFile");
-//        }
+        @SuppressWarnings("UnusedDeclaration")
+        public void setCertFile(String cert)
+        {
+            this.certificate = cert;
+        }
 
         @SuppressWarnings("UnusedDeclaration")
         public void setCertificate(String cert)
@@ -220,12 +220,6 @@ public class SamlController extends SpringActionController
         public String getCertificate()
         {
             return certificate;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public void setCertFile(String cert)
-        {
-            this.certificate = cert;
         }
 
         public String getIdPSsoUrl()
@@ -270,6 +264,45 @@ public class SamlController extends SpringActionController
         public void setResponseParamName(String responseParamName)
         {
             this.responseParamName = responseParamName;
+        }
+
+    }
+
+    @CSRF
+    @AdminConsoleAction
+    public class ParseCertAction extends ApiAction<ParseCertForm>
+    {
+        @Override
+        public Object execute(ParseCertForm form, BindException errors) throws Exception
+        {
+
+            Map<String, MultipartFile> files = Collections.emptyMap();
+
+            final HttpServletRequest request = getViewContext().getRequest();
+            if (request instanceof MultipartHttpServletRequest)
+                files = (Map<String, MultipartFile>)((MultipartHttpServletRequest) request).getFileMap();
+
+            MultipartFile certFile = files.get("certFile");
+            byte[] certBytes = null;
+            if(certFile != null)
+                certBytes = certFile.getBytes();
+
+            return new String(certBytes);
+        }
+    }
+
+    public static class ParseCertForm
+    {
+        String format = ".pem";
+
+        public String getFormat()
+        {
+            return format;
+        }
+
+        public void setFormat(String format)
+        {
+            this.format = format;
         }
 
     }
