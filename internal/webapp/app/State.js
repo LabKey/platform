@@ -51,6 +51,7 @@ Ext.define('LABKEY.app.controller.State', {
      * @type {boolean} useMergeFilters
      */
     useMergeFilters: false,
+    useMergeSelections: false,
 
     olap: undefined,
 
@@ -361,7 +362,7 @@ Ext.define('LABKEY.app.controller.State', {
 
                 filter.commit();
 
-                this.requestFilterUpdate(false);
+                this.updateMDXFilter();
             }
         }, this);
     },
@@ -409,22 +410,8 @@ Ext.define('LABKEY.app.controller.State', {
         return this._is(this.selections, id);
     },
 
-    /**
-     * You must call updateFilterMembersComplete() once done updating filter members
-     * @param id
-     * @param members
-     */
-    updateFilterMembers : function(id, members) {
-        for (var f=0; f < this.filters.length; f++) {
-            if (this.filters[f].id == id)
-            {
-                this.filters[f].set('members', members);
-            }
-        }
-    },
-
-    updateFilterMembersComplete : function(skipState, callback, scope) {
-        this.requestFilterUpdate(skipState, false, true, callback, scope);
+    updateFilterMembersComplete : function(skipState) {
+        this.updateMDXFilter(skipState, false, true);
         // since it is silent we need to update the count separately
         this.updateFilterCount();
     },
@@ -482,50 +469,48 @@ Ext.define('LABKEY.app.controller.State', {
      * Adds a LABKEY.app.model.Filter to the current state
      * @param {LABKEY.app.model.Filter} filter Filter that will be added to the state
      * @param {boolean} [skipState=false] Flag if this action should cause the state to update
+     * @param {boolean} [merge=undefined] Will default to useMergeFilter flag
      * @returns {*}
      */
-    addFilter : function(filter, skipState) {
-        return this.addFilters([filter], skipState);
+    addFilter : function(filter, skipState, merge) {
+        return this.addFilters([filter], skipState, merge);
     },
 
     /**
      * Adds the array of 'filters' to the current state
      * @param {LABKEY.app.model.Filter[]} filters Filters that will be added to the state
      * @param {boolean} [skipState=false] Flag if this action should cause the state to update
-     * @param {boolean} [clearSelection=false] Flag if adding filters should also clear the selection state
-     * @param callback
-     * @param scope
+     * @param {boolean} [merge=undefined] Will default to useMergeFilter flag
      * @returns {*}
      */
-    addFilters : function(filters, skipState, clearSelection, callback, scope) {
+    addFilters : function(filters, skipState, merge) {
         var _f = this.getFilters();
-        if (!_f)
-            _f = [];
-
         var newFilters = this._getFilterSet(filters);
 
-        this.filters = this._mergeFilters(_f, newFilters);
-
-        if (clearSelection) {
-            // explicitly skipState since only one state update should occur
-            // when modifying filters. Effectively merging the two actions
-            // of clearing selections and adding filters into one update
-            this.clearSelections(true /* skipState */);
+        var _merge = this.useMergeFilters;
+        if (Ext.isBoolean(merge)) {
+            _merge = merge;
         }
 
-        this.requestFilterUpdate(skipState, false, false, callback, scope);
+        if (_merge) {
+            this.filters = this._mergeFilters(_f, newFilters);
+        }
+        else {
+            this.filters = _f.concat(newFilters);
+        }
+
+        this.updateMDXFilter(skipState);
 
         return newFilters;
     },
 
-    prependFilter : function(filter, skipState, callback, scope) {
-        this.setFilters([filter].concat(this.filters), skipState, callback, scope);
+    prependFilter : function(filter, skipState) {
+        this.setFilters([filter].concat(this.filters), skipState);
     },
 
     /**
-     * This helper function will merge or concatenate filters depending on the
-     * 'useMergeFilters' flag. Utilizes the LABKEY.app.model.Filter canMerge()
-     * and merge() functionality to merge like-filters.
+     * This helper function will merge LABKEY.app.model.Filters.
+     * Utilizes the LABKEY.app.model.Filter canMerge() and merge() functionality to merge like-filters.
      * @param {LABKEY.app.model.Filter[]} oldFilters Filters that will be merged into
      * @param {LABKEY.app.model.Filter[]} newFilters Filters that will be merged from
      * @returns {LABKEY.app.model.Filter[]}
@@ -536,27 +521,22 @@ Ext.define('LABKEY.app.controller.State', {
         var filters = oldFilters,
             nf, merged;
 
-        if (this.useMergeFilters) {
-            // see if each new filter can be merged, if not just append it
-            for (var n=0; n < newFilters.length; n++) {
-                nf = newFilters[n];
-                merged = false;
+        // see if each new filter can be merged, if not just append it
+        for (var n=0; n < newFilters.length; n++) {
+            nf = newFilters[n];
+            merged = false;
 
-                for (var i=0; i < filters.length && !merged; i++) {
-                    if (nf.canMerge(filters[i])) {
-                        filters[i].merge(nf);
-                        merged = true;
-                    }
-                }
-
-                if (!merged) {
-                    filters.push(nf);
+            for (var i=0; i < filters.length; i++) {
+                if (nf.canMerge(filters[i])) {
+                    LABKEY.app.model.Filter.mergeRanges(filters[i], nf);
+                    filters[i].merge(nf);
+                    merged = true;
                 }
             }
-        }
-        else {
-            // new filters are always appended
-            filters = filters.concat(newFilters);
+
+            if (!merged) {
+                filters.push(nf);
+            }
         }
 
         return filters;
@@ -573,14 +553,14 @@ Ext.define('LABKEY.app.controller.State', {
         }
     },
 
-    setFilters : function(filters, skipState, callback, scope) {
+    setFilters : function(filters, skipState) {
         this.filters = this._getFilterSet(filters);
-        this.requestFilterUpdate(skipState, false, false, callback, scope);
+        this.updateMDXFilter(skipState);
     },
 
     clearFilters : function(skipState) {
         this.filters = [];
-        this.requestFilterUpdate(skipState, false);
+        this.updateMDXFilter(skipState);
     },
 
     _removeHelper : function(target, filterId, hierarchyName, uniqueName) {
@@ -628,10 +608,10 @@ Ext.define('LABKEY.app.controller.State', {
         var ss = this._removeHelper(this.selections, filterId, hierarchyName, uniqueName);
 
         if (ss.length > 0) {
-            this.addSelection(ss, false, true, true);
+            this.addSelections(ss, false, true, true);
         }
         else {
-            this.clearSelections(false);
+            this.clearSelections();
         }
 
         this.fireEvent('selectionremove', this.getSelections());
@@ -659,24 +639,19 @@ Ext.define('LABKEY.app.controller.State', {
         for (s=0; s < this.filters.length; s++) {
             if (this.filters[s].id == filterId) {
                 this.filters[s].set('operator', value);
-                this.requestFilterUpdate(false, true);
+                this.updateMDXFilter(false, true);
                 return;
             }
         }
     },
 
-    configureCacheListener : function(mdx) {
-        if (mdx.allowMemberCaching()) {
-            this.on('filterclear', function() {
-                var sets = mdx.serverGetNamedSets();
-                Ext.iterate(sets, function(key) {
-                    mdx.serverDeleteNamedSet(key);
-                }, this);
-            });
-        }
-    },
-
-    requestFilterUpdate : function(skipState, opChange, silent, callback, scope) {
+    /**
+     * Updates the filter set for MDX
+     * @param {boolean} [skipState=false]
+     * @param {boolean} [opChange=false]
+     * @param {boolean} [silent=false]
+     */
+    updateMDXFilter : function(skipState, opChange, silent) {
 
         this.onReady(function() { // wtb promises
             this.onMDXReady(function(mdx) {
@@ -702,31 +677,17 @@ Ext.define('LABKEY.app.controller.State', {
                         mdx.setNamedFilter(LABKEY.app.constant.STATE_FILTER, olapFilters);
                     }
 
-                    this._filterUpdateHelper(skipState, silent, callback, scope);
+                    if (!skipState) {
+                        this.updateState();
+                    }
+
+                    if (!silent) {
+                        this.fireEvent('filterchange', this.filters, opChange);
+                    }
                 }
 
             }, this);
         }, this);
-    },
-
-    /**
-     * @private
-     */
-    _filterUpdateHelper : function(skipState, silent, callback, scope) {
-        if (!skipState) {
-            this.updateState();
-        }
-
-        if (Ext.isFunction(callback)) {
-            callback.call(scope || this);
-        }
-
-        if (!silent) {
-            this.fireEvent('filterchange', this.filters);
-            if (this.filters.length == 0) {
-                this.fireEvent('filterclear');
-            }
-        }
     },
 
     getSelections : function(flat) {
@@ -746,88 +707,6 @@ Ext.define('LABKEY.app.controller.State', {
 
     hasSelections : function() {
         return this.selections.length > 0;
-    },
-
-    mergeFilters : function(newFilters, oldFilters, opFilters) {
-
-        var match;
-        for (var n=0; n < newFilters.length; n++) {
-
-            match = false;
-            for (var i=0; i < oldFilters.length; i++) {
-
-                if (this.shouldMergeFilters(oldFilters[i], newFilters[n])) {
-
-                    this.handleMergeRangeFilters(oldFilters[i], newFilters[n]);
-
-                    for (var j=0; j < newFilters[n].data.members.length; j++) {
-
-                        match = true;
-
-                        if (!this.isExistingMemberByUniqueName(oldFilters[i].data.members, newFilters[n].data.members[j]))
-                            oldFilters[i].data.members.push(newFilters[n].data.members[j]);
-                    }
-                }
-            }
-
-            // did not find match
-            if (!match) {
-                oldFilters.push(newFilters[n]);
-            }
-        }
-
-        // Issue: 15359
-        if (Ext.isArray(opFilters)) {
-
-            for (n=0; n < opFilters.length; n++) {
-
-                for (var i=0; i < oldFilters.length; i++) {
-
-                    if (oldFilters[i].getHierarchy() == opFilters[n].getHierarchy()) {
-                        var op = opFilters[n].data;
-                        if (!LABKEY.app.model.Filter.dynamicOperatorTypes) {
-                            op = LABKEY.app.model.Filter.lookupOperator(op);
-                        }
-                        else {
-                            op = op.operator;
-                        }
-                        oldFilters[i].set('operator', op);
-                    }
-                }
-            }
-        }
-
-        return oldFilters;
-    },
-
-    shouldMergeFilters : function(oldFilter, newFilter) {
-        return (oldFilter.data.hierarchy == newFilter.data.hierarchy);
-    },
-
-    handleMergeRangeFilters : function(oldFilter, newFilter) {
-        // if the old filter is a member list and the new filter is a range, drop the range from new filter and merge will be a member list
-        // if the old filter is a range and the new filter is a member list, drop the range from old filter and merge will be a member list
-        // else concatenate the array of range filters for the old and new filters (note: most cases will result in empty array)
-        if (oldFilter.getRanges().length == 0 && newFilter.getRanges().length > 0)
-            newFilter.set('ranges', []);
-        else if (oldFilter.getRanges().length > 0 && newFilter.getRanges().length == 0)
-            oldFilter.set('ranges', []);
-        else
-            oldFilter.set('ranges', oldFilter.getRanges().concat(newFilter.getRanges()));
-    },
-
-    isExistingMemberByUniqueName : function(memberArray, newMember) {
-        // issue 19999: don't push duplicate member if reselecting
-        for (var k = 0; k < memberArray.length; k++)
-        {
-            if (!memberArray[k].hasOwnProperty("uniqueName") || !newMember.hasOwnProperty("uniqueName"))
-                continue;
-
-            if (memberArray[k].uniqueName == newMember.uniqueName)
-                return true;
-        }
-
-        return false;
     },
 
     /**
@@ -853,22 +732,31 @@ Ext.define('LABKEY.app.controller.State', {
         return prunedSelections;
     },
 
-    addSelection : function(selections, skipState, merge, clear) {
+    addSelection : function(selection, skipState, merge, clear) {
+        return this.addSelections([selection], skipState, merge, clear);
+    },
 
-        var newSelectors = this._getFilterSet(selections);
-        var oldSelectors = this.selections;
+    addSelections : function(selections, skipState, merge, clear) {
 
-        /* First check if a clear is requested*/
+        // First check if a clear is requested
         if (clear) {
             this.selections = [];
         }
 
-        /* Second Check if a merge is requested */
-        if (merge) {
-            this.selections = this.mergeFilters(newSelectors, this.selections, oldSelectors);
+        var _s = this.getSelections(),
+            newSelectors = this._getFilterSet(selections);
+
+        var _merge = this.useMergeSelections;
+        if (Ext.isBoolean(merge)) {
+            _merge = merge;
+        }
+
+        if (_merge) {
+            console.log('merging selections!');
+            this.selections = this._mergeFilters(_s, newSelectors);
         }
         else {
-            this.selections = newSelectors;
+            this.selections = _s.concat(newSelectors);
         }
 
         this.requestSelectionUpdate(skipState, false);
@@ -906,7 +794,9 @@ Ext.define('LABKEY.app.controller.State', {
 
     // NOTE: This is overridden in subclasses
     moveSelectionToFilter : function() {
-        this.addFilters(this.pruneFilters(this.selections, this.filters), false, true);
+        var selections = this.selections;
+        this.clearSelections(true);
+        this.addFilters(this.pruneFilters(selections, this.filters), false);
     },
 
     getPrivateSelection : function(name) {
@@ -951,7 +841,7 @@ Ext.define('LABKEY.app.controller.State', {
             }
 
             if (Ext.isFunction(callback)) {
-                callback.call(scope || this);
+                callback.call(scope || this, mdx);
             }
 
         }, this);
@@ -968,15 +858,27 @@ Ext.define('LABKEY.app.controller.State', {
         }, this);
     },
 
+    /**
+     * Clears the selection.
+     * @param {boolean} [skipState=false]
+     */
     clearSelections : function(skipState) {
+        var _skip = skipState === true;
         if (this.selections.length > 0) {
             this.selections = [];
-            this.requestSelectionUpdate(skipState, false);
+            this.requestSelectionUpdate(_skip, false);
         }
     },
 
+    /**
+     * Set the selections. Implicitly, clears previous selections.
+     * @param selections
+     * @param {boolean} [skipState=false]
+     */
     setSelections : function(selections, skipState) {
-        this.addSelection(selections, skipState);
+        var _skip = skipState === true;
+        this.selections = this._getFilterSet(selections);
+        this.requestSelectionUpdate(_skip, false);
     },
 
     /*** Column Services ***/

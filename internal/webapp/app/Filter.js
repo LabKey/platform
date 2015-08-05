@@ -110,7 +110,7 @@ Ext.define('LABKEY.app.model.Filter', {
          * @param {Object} [config.group] group definition.  The group object should have the following fields
          *         label - name of the group
          *         participantIds - array of participant Ids
-         *         description - optional description for the gruop
+         *         description - optional description for the group
          *         filters - array of LABKEY.app.model.Filter instances to apply
          *         isLive - boolean, true if this is a query or false if just a group of participant ids.
          */
@@ -180,7 +180,7 @@ Ext.define('LABKEY.app.model.Filter', {
          *         rowId - the id of the category.  Assumes a 1:1 mapping between the group and category
          *         label - name of the group
          *         participantIds - array of participant Ids
-         *         description - optional description for the gruop
+         *         description - optional description for the group
          *         filters - array of LABKEY.app.model.Filter instances to apply
          *         isLive - boolean, true if this is a query or false if just a group of participant ids.
          */
@@ -234,7 +234,7 @@ Ext.define('LABKEY.app.model.Filter', {
         /**
          * Updates a participant group's visibility option for non-study backed modules
          *
-         * @param config, an object which takes the following configuation properties.
+         * @param config, an object which takes the following configuration properties.
          * @param {Function} [config.success] Function called when the update action is successful
          * @param {Function} [config.failure] Function called when the update action fails.  If not specified
          *        then a default function will be provided
@@ -300,7 +300,7 @@ Ext.define('LABKEY.app.model.Filter', {
         /**
          * Deletes participant categories
          *
-         * @param config an object which takes the following configuation properties.
+         * @param config an object which takes the following configuration properties.
          * @param {Array} [config.categoryIds] array of rowids for each category to delete
          * @param {Function} [config.failure] Optional.  Function called when the save action fails.  If not specified
          *        then a default function will be provided
@@ -713,6 +713,32 @@ Ext.define('LABKEY.app.model.Filter', {
                         return false;
                 }
             }
+        },
+
+        mergeRanges : function(filterA, filterB) {
+
+            // If filterA is a member list and the new filter is a range, drop the range from filterB and merge will be a member list
+            // if filterA is a range and the filterB is a member list, drop the range from filterA and merge will be a member list
+            // else concatenate the ranges filters
+
+            var numRangesA = filterA.getRanges().length,
+                numRangesB = filterB.getRanges().length;
+
+            // no ranges to merge
+            if (numRangesA === 0 && numRangesB === 0) {
+                return;
+            }
+
+            if (numRangesA === 0 && numRangesB > 0) {
+                filterB.set('ranges', []);
+            }
+            else if (numRangesA > 0 && numRangesB === 0) {
+                filterA.set('ranges', []);
+            }
+            else {
+                // They both contain ranges
+                filterA.set('ranges', filterA.getRanges().concat(filterB.getRanges()));
+            }
         }
     },
 
@@ -797,8 +823,8 @@ Ext.define('LABKEY.app.model.Filter', {
             fdata = f.data,
             _merge = false;
 
-        if (data.hierarchy && fdata.hierarchy && data.hierarchy === fdata.hierarchy &&
-            data.level && fdata.level && data.level === fdata.level) {
+        if (data.isPlot === fdata.isPlot && data.isGrid === fdata.isGrid &&
+            data.hierarchy && fdata.hierarchy && data.hierarchy === fdata.hierarchy) {
             _merge = true;
         }
 
@@ -806,12 +832,37 @@ Ext.define('LABKEY.app.model.Filter', {
     },
 
     merge : function(f) {
-        var members = this.data.members,
-            fmembers = f.data.members;
 
-        this.set('members', members.concat(fmembers));
+        var newMembers = this._mergeMembers(this.data.members, f.data.members);
+
+        this.set({
+            members: newMembers
+        });
 
         return this;
+    },
+
+    _mergeMembers : function(aMembers, bMembers) {
+        var _members = Ext.Array.clone(aMembers);
+        for (var i=0; i < bMembers.length; i++) {
+            if (!this._hasMember(_members, bMembers[i])) {
+                _members.push(bMembers[i]);
+            }
+        }
+        return _members;
+    },
+
+    _hasMember : function(memberArray, newMember) {
+        // issue 19999: don't push duplicate member if re-selecting
+        for (var k = 0; k < memberArray.length; k++) {
+            if (!memberArray[k].hasOwnProperty('uniqueName') || !newMember.hasOwnProperty('uniqueName'))
+                continue;
+
+            if (memberArray[k].uniqueName == newMember.uniqueName)
+                return true;
+        }
+
+        return false;
     },
 
     isGrid : function() {
