@@ -75,6 +75,7 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
@@ -642,38 +643,51 @@ public class DatasetQueryView extends StudyQueryView
             ContainerFilter cf = dqs.getDefaultContainerFilter();
             if (!(cf instanceof DataspaceContainerFilter))
                 return;
-            DataspaceContainerFilter dcf = (DataspaceContainerFilter)cf;
-            if (!dcf.isSubsetOfStudies())
-                return;
-
-            // DISPLAY the current subset
-            Collection<GUID> ids = dcf.getIds(dqs.getContainer(),ReadPermission.class,null);
-            ArrayList<String> labels = new ArrayList<>(ids.size());
-            for (GUID id : ids)
-            {
-                Container c = ContainerManager.getForId(id);
-                if (null == c)
-                    continue;
-                labels.add(c.getName());
-            }
-            sortLabels(labels);
 
             StringBuilder msg = new StringBuilder();
-            msg.append("<div><span class=\"labkey-strong\">Selected Studies:</span>&nbsp;");
-            String comma = "";
-            for (String label : labels)
+            DataspaceContainerFilter dcf = (DataspaceContainerFilter)cf;
+            if (dcf.isSubsetOfStudies())
             {
-                msg.append(comma).append(PageFlowUtil.filter(label));
-                comma = ", ";
+                // DISPLAY the current subset
+                Collection<GUID> ids = dcf.getIds(dqs.getContainer(), ReadPermission.class, null);
+                ArrayList<String> labels = new ArrayList<>(ids.size());
+                for (GUID id : ids)
+                {
+                    Container c = ContainerManager.getForId(id);
+                    if (null == c)
+                        continue;
+                    labels.add(c.getName());
+                }
+                sortLabels(labels);
+
+                msg.append("<div><span class=\"labkey-strong\">Selected Studies:</span>&nbsp;");
+                String comma = "";
+                for (String label : labels)
+                {
+                    msg.append(comma).append(PageFlowUtil.filter(label));
+                    comma = ", ";
+                }
             }
+
+            ParticipantGroup sessionGroup = ParticipantGroupManager.getInstance().getSessionParticipantGroup(dqs.getContainer(), dqs.getUser(), ctx.getViewContext().getRequest());
+            if (sessionGroup != null)
+            {
+                if (msg.length() > 0)
+                    msg.append("&nbsp;&nbsp;");
+                msg.append("<span class=\"labkey-strong\">Selected Subjects:</span>&nbsp;");
+                msg.append(sessionGroup.getParticipantIds().length);
+            }
+
+            if (msg.length() == 0)
+                return;
 
             // HACK -- link to immport/studyFinder.view
             Module immport = ModuleLoader.getInstance().getModule("immport");
             Container project = ctx.getContainer().getProject();
             if (immport != null && project != null && project.getActiveModules().contains(immport))
             {
-                ActionURL editSharedStudyURL = new ActionURL("immport", "studyFinder.view", project);
-                msg.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Edit").href(editSharedStudyURL.toString()));
+                ActionURL subjectFinderURL = new ActionURL("immport", "subjectFinder.view", project);
+                msg.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Edit").href(subjectFinderURL.toString()));
             }
             msg.append("</div>");
 

@@ -29,6 +29,8 @@
 <%@ page import="org.labkey.study.query.DataspaceQuerySchema" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
+<%@ page import="org.labkey.study.model.ParticipantGroup" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -49,9 +51,9 @@
 
     Module immport = ModuleLoader.getInstance().getModule("immport");
     Container project = getContainer().getProject();
-    ActionURL editSharedStudyURL = null;
+    ActionURL subjectFinderURL = null;
     if (immport != null && project != null && project.getActiveModules().contains(immport))
-        editSharedStudyURL = new ActionURL("immport", "studyFinder.view", project);
+        subjectFinderURL = new ActionURL("immport", "subjectFinder.view", project);
 
     String key = DataspaceQuerySchema.SHARED_STUDY_CONTAINER_FILTER_KEY + getContainer().getProject().getRowId();
     Object o = getViewContext().getSession().getAttribute(key);
@@ -67,8 +69,11 @@
                 studies.add(s);
         }
     }
+
+    ParticipantGroup sessionGroup = ParticipantGroupManager.getInstance().getSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest());
+
 %>
-<h4 style="margin-top:0px; margin-bottom:8px; border-bottom:1px solid #e5e5e5;">Selected Studies</h4>
+<h4 style="margin-top:0px; margin-bottom:8px; border-bottom:1px solid #e5e5e5;">Selected Subjects</h4>
 
 <% if (!hasStudy) { %>
     <div>No study found in this folder</div>
@@ -77,11 +82,18 @@
 <% } else if (studies.size() == 0) { %>
     <div>All studies</div>
 <% } else { %>
+    Studies:<ul style="list-style-type:none;padding-left:1em;margin:4px;">
     <% for (Study s : studies) { %>
-    <div data-container="<%=s.getContainer().getEntityId()%>"><%=h(s.getLabel())%></div>
+        <li data-container="<%=s.getContainer().getEntityId()%>"><%=h(s.getLabel())%></li>
     <% } %>
+    </ul>
+<% } %>
+
+
+<% if (sessionGroup != null) { %>
+    <div>Participants: <%=sessionGroup.getParticipantIds().length%></div>
 <% } %>
 
 <br>
-<% if (editSharedStudyURL != null) { %><%=this.textLink("study finder", editSharedStudyURL)%><% } %>
+<% if (subjectFinderURL != null) { %><%=this.textLink("subject finder", subjectFinderURL)%><% } %>
 
