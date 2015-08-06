@@ -361,34 +361,7 @@ public class QueryWebPart extends VBox
             if (_extendedProperties.get("filters") instanceof JSONObject)
             {
                 JSONObject filters = (JSONObject)_extendedProperties.get("filters");
-                if (filters.size() > 0)
-                {
-                    // UNDONE: there should be an easier way to convert into a Filter than having to serialize them onto an ActionUrl and back out.
-                    // Issue 17411: Support multiple filters and aggregates on the same column.
-                    // If the value is a JSONArray of values, add each filter or aggregate as an additional URL parameter.
-                    ActionURL url = new ActionURL();
-                    for (String paramName : filters.keySet())
-                    {
-                        JSONArray arr = filters.optJSONArray(paramName);
-                        if (arr != null)
-                            for (Object value : arr.toArray())
-                                url.addParameter(paramName, String.valueOf(value));
-                        else
-                            url.addParameter(paramName, String.valueOf(filters.get(paramName)));
-                    }
-
-                    // NOTE: Creating filters may throw IllegalArgumentException or ConversionException.  See Issue 22456.
-                    SimpleFilter filter = _settings.getBaseFilter();
-                    filter.addUrlFilters(url, queryView.getDataRegionName());
-
-                    Sort sort = _settings.getBaseSort();
-                    sort.addURLSort(url, queryView.getDataRegionName());
-
-                    List<Aggregate> aggregates = _settings.getAggregates();
-                    aggregates.addAll(Aggregate.fromURL(url, queryView.getDataRegionName()));
-
-                    // XXX: containerFilter
-                }
+                _settings.addSortFilters(filters);
             }
         }
 

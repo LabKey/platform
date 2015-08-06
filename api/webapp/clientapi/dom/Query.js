@@ -86,7 +86,14 @@ LABKEY.Query = new function(impl, $) {
      *    schemas: {
      *
      *      // export the named queries from schema "A" using the default view or the named view
-     *      "A": [ {queryName: "a"}, {queryName: "b", viewName: "b-view"}, ... ]
+     *      "A": [{
+     *          queryName: "a"
+     *          filters: [ LABKEY.Filters.create("Name", "bob", LABKEY.Filter.Types.NEQ) ],
+     *          sort: "Name"
+     *      },{
+     *          queryName: "b",
+     *          viewName: "b-view"
+     *      }]
      *
      *    }
      * }
@@ -101,7 +108,34 @@ LABKEY.Query = new function(impl, $) {
         if (config.headerType)
             formData.headerType = config.headerType;
 
-        formData.schemas = JSON.stringify(config.schemas);
+        // Create a copy of the schema config that we can mutate
+        var schemas = LABKEY.Utils.merge({}, config.schemas);
+        for (var schemaName in schemas)
+        {
+            if (!schemas.hasOwnProperty(schemaName))
+                continue;
+
+            var queryList = schemas[schemaName];
+            for (var i = 0; i < queryList.length; i++)
+            {
+                var querySettings = queryList[i];
+                var o = LABKEY.Utils.merge({}, querySettings);
+
+                delete o.filter;
+                delete o.filterArray;
+                delete o.sort;
+
+                // Turn the filters array into a filters map similar to QueryWebPart.js
+                o.filters = LABKEY.Filter.appendFilterParams(null, querySettings.filters || querySettings.filterArray);
+
+                if (querySettings.sort)
+                    o.filters["query.sort"] = querySettings.sort;
+
+                queryList[i] = o;
+            }
+        }
+
+        formData.schemas = JSON.stringify(schemas);
 
         var url = LABKEY.ActionURL.buildURL("query", "exportTables.view");
         submitForm(url, formData);

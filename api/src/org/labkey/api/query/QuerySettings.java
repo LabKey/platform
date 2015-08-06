@@ -20,6 +20,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.reports.Report;
@@ -626,6 +627,44 @@ public class QuerySettings
         url.deleteParameters();
         url.setPropertyValues(_filterSort);
         return url;
+    }
+
+    public void addSortFilters(Map<String, Object> filters)
+    {
+        if (filters != null && filters.size() > 0)
+        {
+            // UNDONE: there should be an easier way to convert into a Filter than having to serialize them onto an ActionUrl and back out.
+            // Issue 17411: Support multiple filters and aggregates on the same column.
+            // If the value is a JSONArray of values, add each filter or aggregate as an additional URL parameter.
+            ActionURL url = new ActionURL();
+            for (String paramName : filters.keySet())
+            {
+                Object o = filters.get(paramName);
+                Object[] values = null;
+                if (o instanceof Object[])
+                    values = (Object[])o;
+                else if (o instanceof JSONArray)
+                    values = ((JSONArray)o).toArray();
+
+                if (values != null)
+                    for (Object value : values)
+                        url.addParameter(paramName, String.valueOf(value));
+                else
+                    url.addParameter(paramName, String.valueOf(filters.get(paramName)));
+            }
+
+            // NOTE: Creating filters may throw IllegalArgumentException or ConversionException.  See Issue 22456.
+            SimpleFilter filter = getBaseFilter();
+            filter.addUrlFilters(url, getDataRegionName());
+
+            Sort sort = getBaseSort();
+            sort.addURLSort(url, getDataRegionName());
+
+            List<Aggregate> aggregates = getAggregates();
+            aggregates.addAll(Aggregate.fromURL(url, getDataRegionName()));
+
+            // XXX: containerFilter
+        }
     }
 
     public boolean isAllowCustomizeView()
