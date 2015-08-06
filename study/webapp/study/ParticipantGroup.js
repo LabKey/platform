@@ -312,13 +312,13 @@ Ext4.define('Study.window.ParticipantGroup', {
         Ext4.Ajax.request({
             url : (LABKEY.ActionURL.buildURL("participant-group", "saveParticipantGroup.api")),
             method : 'POST',
-            success : function(){
+            success : LABKEY.Utils.getCallbackWrapper(function(data) {
                 this.getEl().unmask();
-                me.fireEvent('aftersave');
+                me.fireEvent('aftersave', data);
                 if(me.grid){
                     me.grid.getStore().load();
                 }
-            },
+            }),
             failure : function(response, options){
                 this.getEl().unmask();
                 LABKEY.Utils.displayAjaxErrorResponse(response, options, false);
