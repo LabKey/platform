@@ -27,6 +27,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
@@ -129,6 +130,7 @@ public class TableWriter
                     String queryName = pair.first;
                     String viewName = pair.second;
                     QuerySettings settings = schema.getSettings(new MutablePropertyValues(), QueryView.DATAREGIONNAME_DEFAULT, queryName, viewName);
+                    settings.setShowRows(ShowRows.ALL);
                     QueryView view = new QueryView(schema, settings, null);
                     views.add(view);
                 }
