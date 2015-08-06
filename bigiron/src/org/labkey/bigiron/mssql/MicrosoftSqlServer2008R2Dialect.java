@@ -36,6 +36,7 @@ import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.InlineInClauseGenerator;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
@@ -1272,17 +1273,24 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public Collection<String> getQueryExecutionPlan(DbScope scope, SQLFragment sql)
     {
-        try
+        try (Connection conn = scope.getConnection())
         {
-            new SqlExecutor(scope).execute("SET SHOWPLAN_ALL ON");
+            try
+            {
+                new SqlExecutor(scope, conn).execute("SET SHOWPLAN_ALL ON");
 
-            // I don't want to inline all the parameters... but SQL Server / jTDS blow up with some (not all)
-            // prepared statements with parameters.
-            return new SqlSelector(scope, sql.toDebugString()).getCollection(String.class);
+                // I don't want to inline all the parameters... but SQL Server / jTDS blow up with some (not all)
+                // prepared statements with parameters.
+                return new SqlSelector(scope, conn, sql.toDebugString()).getCollection(String.class);
+            }
+            finally
+            {
+                new SqlExecutor(scope, conn).execute("SET SHOWPLAN_ALL OFF");
+            }
         }
-        finally
+        catch (SQLException e)
         {
-            new SqlExecutor(scope).execute("SET SHOWPLAN_ALL OFF");
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -1297,7 +1305,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         CaseInsensitiveMapWrapper<MetadataParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
 
         try (Connection conn = scope.getConnection();
-             ResultSet rs = conn.getMetaData().getProcedureColumns(scope.getDatabaseName(),procSchema, procName, null))
+             ResultSet rs = conn.getMetaData().getProcedureColumns(scope.getDatabaseName(), procSchema, procName, null))
         {
             while (rs.next())
             {

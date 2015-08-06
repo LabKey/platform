@@ -115,7 +115,7 @@ import java.util.concurrent.Callable;
 /**
  * User: brittp
  * Date: Mar 13, 2006
- * Time: 2:18:48 PM
+ * Time: 2:18:48
  */
 @SuppressWarnings({"AssertWithSideEffects", "ConstantConditions"})
 public class SpecimenImporter

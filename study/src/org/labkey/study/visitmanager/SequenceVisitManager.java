@@ -447,7 +447,10 @@ public class SequenceVisitManager extends VisitManager
         if (!updateAll)
             sqlUpdateVisitRowId.append(" AND VisitRowId=-1");
 
-        new SqlExecutor(schema).execute(sqlUpdateVisitRowId);
+        SqlExecutor executor = new SqlExecutor(schema);
+        // Temporary logging to track down performance issues with this query on SQL Server
+        executor.logExecutionPlan(logger, sqlUpdateVisitRowId);
+        executor.execute(sqlUpdateVisitRowId);
     }
 
 
