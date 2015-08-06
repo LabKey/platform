@@ -98,7 +98,7 @@ public class TableWriter
         }
         else
         {
-            Map<String, List<Map<String, String>>> schemaMap = form.getSchemas();
+            Map<String, List<Map<String, Object>>> schemaMap = form.getSchemas();
 
             for (String schemaName : schemaMap.keySet())
             {
@@ -106,31 +106,32 @@ public class TableWriter
                 if (null == schema)
                     continue;
 
-                List<Pair<String, String>> queryNames = new ArrayList<>();
-                List<Map<String, String>> queryMaps = schemaMap.get(schemaName);
-                if (queryMaps == null)
+                List<Map<String, Object>> querySettingsMapList = schemaMap.get(schemaName);
+                if (querySettingsMapList == null)
                 {
                     // Export all queries in schema
-                    for (String queryName : schema.getTableAndQueryNames(false))
-                        queryNames.add(Pair.<String, String>of(queryName, null));
-                }
-                else
-                {
-                    for (Map<String, String> queryMap : queryMaps)
+                    List<String> names = schema.getTableAndQueryNames(false);
+                    querySettingsMapList = new ArrayList<>(names.size());
+                    for (String queryName : names)
                     {
-                        String queryName = queryMap.get(QueryParam.queryName.name());
-                        String viewName = queryMap.get(QueryParam.viewName.name());
-                        queryNames.add(Pair.of(queryName, viewName));
+                        querySettingsMapList.add(Collections.singletonMap(QueryParam.queryName.name(), queryName));
                     }
                 }
 
                 // Create QueryViews
-                for (Pair<String, String> pair : queryNames)
+                for (Map<String, Object> querySettingsMap : querySettingsMapList)
                 {
-                    String queryName = pair.first;
-                    String viewName = pair.second;
-                    QuerySettings settings = schema.getSettings(new MutablePropertyValues(), QueryView.DATAREGIONNAME_DEFAULT, queryName, viewName);
+                    String queryName = (String)querySettingsMap.get(QueryParam.queryName.name());
+                    String viewName = (String)querySettingsMap.get(QueryParam.viewName.name());
+                    Map<String, Object> filters = (Map<String, Object>)querySettingsMap.get("filters");
+
+                    MutablePropertyValues pvs = new MutablePropertyValues(querySettingsMap);
+                    QuerySettings settings = schema.getSettings(pvs, QueryView.DATAREGIONNAME_DEFAULT, queryName, viewName);
+                    if (filters != null)
+                        settings.addSortFilters(filters);
+
                     settings.setShowRows(ShowRows.ALL);
+
                     QueryView view = new QueryView(schema, settings, null);
                     views.add(view);
                 }
@@ -303,10 +304,19 @@ public class TableWriter
         {
             TestContext testContext = TestContext.get();
             ExportTablesForm form = new ExportTablesForm();
-            List<Map<String, String>> queries = new ArrayList<>();
+            List<Map<String, Object>> queries = new ArrayList<>();
             queries.add(Collections.singletonMap(QueryParam.queryName.name(), "Containers"));
-            queries.add(Collections.singletonMap(QueryParam.queryName.name(), "Users"));
-            Map<String, List<Map<String, String>>> schemas = new HashMap<>();
+
+            Map<String, Object> users = new HashMap<>();
+            users.put(QueryParam.queryName.name(), "Users");
+            Map<String, Object> filterMap = new HashMap<>();
+            filterMap.put("query.Email~doesnotcontain", "example.com");
+            filterMap.put("query.sort", "DisplayName");
+            users.put("filters", filterMap);
+
+            queries.add(users);
+
+            Map<String, List<Map<String, Object>>> schemas = new HashMap<>();
             schemas.put("core", queries);
             form.setSchemas(schemas);
 

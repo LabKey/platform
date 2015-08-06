@@ -5964,7 +5964,7 @@ public class QueryController extends SpringActionController
     public static class ExportTablesForm implements HasBindParameters
     {
         ColumnHeaderType _headerType = ColumnHeaderType.DisplayFieldKey;
-        Map<String, List<Map<String, String>>> _schemas = new HashMap<>();
+        Map<String, List<Map<String, Object>>> _schemas = new HashMap<>();
 
         public ColumnHeaderType getHeaderType()
         {
@@ -5976,12 +5976,12 @@ public class QueryController extends SpringActionController
             _headerType = headerType;
         }
 
-        public Map<String, List<Map<String, String>>> getSchemas()
+        public Map<String, List<Map<String, Object>>> getSchemas()
         {
             return _schemas;
         }
 
-        public void setSchemas(Map<String, List<Map<String, String>>> schemas)
+        public void setSchemas(Map<String, List<Map<String, Object>>> schemas)
         {
             _schemas = schemas;
         }
