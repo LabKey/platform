@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.junit.Test;
 
 import java.sql.SQLException;
+import java.util.Collection;
 
 /**
  * User: adam
@@ -41,6 +42,10 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         {
             assertTrue(e.getMessage().startsWith("Must select at least two columns"));
         }
+
+        // Verify that we can generate some execution plan
+        Collection<String> executionPlan = selector.getExecutionPlan();
+        assertTrue(!executionPlan.isEmpty());
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
@@ -27,6 +28,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -70,7 +72,30 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
 
     public int execute(SQLFragment sql)
     {
-        return execute(sql, NORMAL_EXECUTOR, null);
+        return execute(sql, NORMAL_EXECUTOR, null).intValue();
+    }
+
+    public Collection<String> getExecutionPlan(SQLFragment sql)
+    {
+        SqlDialect dialect = getScope().getSqlDialect();
+
+        if (dialect.canShowExecutionPlan())
+        {
+            return dialect.getExecutionPlan(getScope(), sql);
+        }
+        else
+        {
+            throw new IllegalStateException("Can't obtain execution plan from scope \"" + getScope().getDisplayName() + "\" (" + dialect.getProductName() + ")");
+        }
+    }
+
+    /**
+     *  Convenience method that logs the plan to the passed in Logger (if non-null)
+     */
+    public void logExecutionPlan(@Nullable Logger logger, SQLFragment sql)
+    {
+        if (null != logger)
+            logger.info(String.join("\n", getExecutionPlan(sql)));
     }
 
     public <T> T executeWithResults(SQLFragment sql, ResultSetHandler<T> handler)
@@ -111,7 +136,7 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
 
     // StatementExecutor is a bit convoluted, but the implementations allow normal and results-returning executions
     // to share the same code path.
-    private static interface StatementExecutor<T, C>
+    private interface StatementExecutor<T, C>
     {
         T execute(Connection conn, SqlDialect dialect, SQLFragment sqlFragment, @Nullable C context) throws SQLException;
     }

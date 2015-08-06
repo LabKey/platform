@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -29,6 +30,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -95,6 +97,35 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         return getThis();
     }
 
+    /**
+     *  Generates the current select SQL and returns the execution plan. SQL is generated as if getResultSet() had been
+     *  called, which means that TableSelector limit, offset, sort, filter, etc. are all respected.
+     */
+    public Collection<String> getExecutionPlan()
+    {
+        SqlDialect dialect = getScope().getSqlDialect();
+
+        if (dialect.canShowExecutionPlan())
+        {
+            return dialect.getExecutionPlan(getScope(), getSqlFactory(true).getSql());
+        }
+        else
+        {
+            throw new IllegalStateException("Can't obtain execution plan from scope \"" + getScope().getDisplayName() + "\" (" + dialect.getProductName() + ")");
+        }
+    }
+
+    /**
+     *  Convenience method that generates the select SQL and logs the execution plan to the passed in Logger (if non-null)
+     */
+    public SELECTOR logExecutionPlan(@Nullable Logger logger)
+    {
+        if (null != logger)
+            logger.info(String.join("\n", getExecutionPlan()));
+
+        return getThis();
+    }
+
     @Override
     @NotNull
     public QueryLogging getQueryLogging()
@@ -106,26 +137,14 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     {
         if (cache)
         {
-            return handleResultSet(factory, new ResultSetHandler<TableResultSet>()
-            {
-                @Override
-                public TableResultSet handle(ResultSet rs, Connection conn) throws SQLException
-                {
-                    // We're handing back a ResultSet, so cache the meta data
-                    return CachedResultSets.create(rs, true, _maxRows, _loggingStacktrace, getQueryLogging());
-                }
+            return handleResultSet(factory, (rs, conn) -> {
+                // We're handing back a ResultSet, so cache the meta data
+                return CachedResultSets.create(rs, true, _maxRows, _loggingStacktrace, getQueryLogging());
             });
         }
         else
         {
-            return handleResultSet(factory, new ResultSetHandler<TableResultSet>()
-            {
-                @Override
-                public TableResultSet handle(ResultSet rs, Connection conn) throws SQLException
-                {
-                    return new ResultSetImpl(conn, getScope(), rs, _maxRows, getQueryLogging());
-                }
-            });
+            return handleResultSet(factory, (rs, conn) -> new ResultSetImpl(conn, getScope(), rs, _maxRows, getQueryLogging()));
         }
     }
 
@@ -172,15 +191,10 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         {
             try
             {
-                return handleResultSet(rowCountResultSetFactory, new ResultSetHandler<Long>()
-                {
-                    @Override
-                    public Long handle(ResultSet rs, Connection conn) throws SQLException
-                    {
-                        rs.next();
-                        return rs.getLong(1);
-                    }
-                });
+                return handleResultSet(rowCountResultSetFactory, (rs, conn) -> {
+                    rs.next();
+                    return rs.getLong(1);
+                }).longValue();
             }
             catch (RuntimeSQLException|ConcurrencyFailureException x)
             {
@@ -203,15 +217,10 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     {
         ResultSetFactory existsResultSetFactory = new ExecutingResultSetFactory(new ExistsSqlFactory(factory));
 
-        return handleResultSet(existsResultSetFactory, new ResultSetHandler<Boolean>()
-        {
-            @Override
-            public Boolean handle(ResultSet rs, Connection conn) throws SQLException
-            {
-                rs.next();
-                return rs.getBoolean(1);
-            }
-        });
+        return handleResultSet(existsResultSetFactory, (rs, conn) -> {
+            rs.next();
+            return rs.getBoolean(1);
+        }).booleanValue();
     }
 
 
@@ -395,9 +404,9 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         private void initializeStatement(Statement statement, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementMaxRows) throws SQLException
         {
             // Don't set max rows if null or special ALL_ROWS value (we're assuming statement.getMaxRows() defaults to 0, though this isn't actually documented...)
-            if (null != statementMaxRows && Table.ALL_ROWS != statementMaxRows)
+            if (null != statementMaxRows && Table.ALL_ROWS != statementMaxRows.intValue())
             {
-                statement.setMaxRows(statementMaxRows == Table.NO_ROWS ? 1 : statementMaxRows);
+                statement.setMaxRows(statementMaxRows.intValue() == Table.NO_ROWS ? 1 : statementMaxRows.intValue());
             }
 
             if (asyncRequest != null)

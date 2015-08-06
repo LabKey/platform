@@ -31,6 +31,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -234,6 +235,10 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
 
         test(selector, clazz);
         testOffsetAndLimit(selector, clazz);
+
+        // Verify that we can generate some execution plan
+        Collection<String> executionPlan = selector.getExecutionPlan();
+        assertTrue(!executionPlan.isEmpty());
     }
 
     @Override

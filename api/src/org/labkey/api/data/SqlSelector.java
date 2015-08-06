@@ -38,6 +38,12 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
         this(scope, conn, sql, new QueryLogging());
     }
 
+    // Execute select SQL against a scope and a specific Connection
+    public SqlSelector(DbScope scope, @Nullable Connection conn, CharSequence sql)
+    {
+        this(scope, conn, new SQLFragment(sql));
+    }
+
     public SqlSelector(DbScope scope, SQLFragment sql, @NotNull QueryLogging queryLogging)
     {
         this(scope, null, sql, queryLogging);
@@ -52,7 +58,7 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
     // Execute select SQL against a scope
     public SqlSelector(DbScope scope, CharSequence sql)
     {
-        this(scope, new SQLFragment(sql));
+        this(scope, null, sql);
     }
 
     // Execute select SQL against a schema
