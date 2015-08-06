@@ -528,7 +528,7 @@ Ext.define('LABKEY.app.model.Filter', {
         getShortFilter : function(displayText) {
             switch (displayText) {
                 case "Does Not Equal":
-                    return '!='; // &#8800;
+                    return '&#8800;';
                 case "Equals":
                     return '=';
                 case "Is Greater Than":
@@ -536,9 +536,9 @@ Ext.define('LABKEY.app.model.Filter', {
                 case "Is Less Than":
                     return '<';
                 case "Is Greater Than or Equal To":
-                    return '>='; // &#8805;
+                    return '&#8805;';
                 case "Is Less Than or Equal To":
-                    return '<='; // &#8804;
+                    return '&#8804;';
                 default:
                     return displayText;
             }
