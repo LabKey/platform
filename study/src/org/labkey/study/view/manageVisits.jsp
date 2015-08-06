@@ -15,15 +15,20 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.study.controllers.StudyController.*" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.CreateVisitAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ImportVisitMapAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ShowVisitImportMappingAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.UpdateParticipantVisitsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.VisitOrderAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.VisitSummaryAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.VisitVisibilityAction" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -33,7 +38,7 @@
 %>
 <table>
     <tr>
-        <td>View study schedule.</td>
+        <td>View study schedule</td>
         <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
     </tr>
 <%
@@ -41,18 +46,18 @@
     {
 %>
     <tr>
-        <td>Visit ordering affects the study view, reports, and cohort determinations.</td>
+        <td>Visit ordering affects the study view, reports, and cohort determinations</td>
         <td><%= textLink("Change Visit Order", VisitOrderAction.class)%></td>
     </tr>
     <tr>
-        <td>Visit visibility and label can be changed.</td>
+        <td>Visit visibility and label can be changed</td>
         <td><%= textLink("Change Properties", VisitVisibilityAction.class)%></td>
     </tr>
 <%
     }
 %>
     <tr>
-        <td>New visits can be defined for this study at any time.</td>
+        <td>New visits can be defined for this study at any time</td>
         <td><%= textLink("Create New Visit", CreateVisitAction.class)%></td>
     </tr>
     <tr>
@@ -67,7 +72,10 @@
         <td>Visit import mapping allows data containing visit names instead of numbers</td>
         <td><%= textLink("Visit Import Mapping", ShowVisitImportMappingAction.class) %></td>
     </tr>
-
+    <tr>
+        <td>Delete unused visits</td>
+        <td><%= textLink("Delete Unused Visits", StudyController.DeleteUnusedVisitsAction.class) %></td>
+    </tr>
 </table>
 
 <%

@@ -76,7 +76,6 @@
     Container c = getContainer();
 
     Study sharedStudy = StudyManager.getInstance().getSharedStudyOrCurrent(study);
-    Boolean sharedDatasets = sharedStudy != null && sharedStudy.getShareDatasetDefinitions();
     Boolean sharedVisits = sharedStudy != null && sharedStudy.getShareVisitDefinitions();
 
     String visitLabel = StudyManager.getInstance().getVisitManager(study).getPluralLabel();

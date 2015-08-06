@@ -2104,15 +2104,21 @@ public class StudyController extends BaseStudyController
             }
             else
             {
-                sb.append("Delete visits:<br><br>");
+                // Put them in a table to help with StudyTest verification
+                sb.append("<table id=\"visitsToDelete\">\n");
+                sb.append("<tr><td>Are you sure you want to delete the unused visits listed below?</td></tr>\n<tr><td>&nbsp;</td></tr>\n");
 
                 for (VisitImpl visit : visits)
                 {
+                    sb.append("<tr><td>");
                     sb.append(PageFlowUtil.filter(visit.getLabel())).append(" (").append(visit.getSequenceNumMin());
                     if (visit.getSequenceNumMax() != visit.getSequenceNumMin())
                         sb.append("-").append(visit.getSequenceNumMax());
-                    sb.append(")<br>");
+                    sb.append(")");
+                    sb.append("</td></tr>\n");
                 }
+
+                sb.append("</table>\n");
             }
 
             return new HtmlView(sb.toString());
