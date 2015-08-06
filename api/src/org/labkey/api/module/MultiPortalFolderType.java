@@ -193,7 +193,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
 
         // If we didn't find a match, and there is a tab that should be the default, and we're on the generic portal page
-        if (_activePortalPage == null && !navMap.isEmpty() && ctx.getActionURL().equals(PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ctx.getContainer())))
+        if (_activePortalPage == null && !navMap.isEmpty() &&
+            ctx.getActionURL().clone().deleteParameters().equals(PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ctx.getContainer())) &&
+            null == ctx.getActionURL().getParameter("pageId"))
         {
             for (Map.Entry<String, NavTree> entry : navMap.entrySet())
             {
