@@ -729,16 +729,14 @@ public class LoginController extends SpringActionController
         if (!loginController.equals("login") || !loginAction.equals("login"))
         {
             Module loginModule = ModuleLoader.getInstance().getModule(loginController);
+            // custom login
             if (null != loginModule)
-            {
-                // custom login
                 view = SimpleAction.getModuleHtmlView(loginModule, loginAction, null);
-            }
-            else
+            if (null == view )
             {
-                // default login-login html with error message
+                // custom failed so default to login-login html with error message
                 errors.reject(ERROR_MSG, "Custom login page specified via Look and Feel Settings as: '" + customLogin + "' was not found. Default login page being used instead.");
-                view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), loginAction, null);
+                view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), "login", null);
             }
         }
         else
