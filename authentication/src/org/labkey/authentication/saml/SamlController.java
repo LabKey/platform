@@ -111,7 +111,7 @@ public class SamlController extends SpringActionController
         @Override
         public void validateCommand(Config config, Errors errors)
         {
-            if(StringUtils.isBlank(config.getCertificate()))
+            if(StringUtils.isBlank(config.getCertData()))
                 errors.reject(ERROR_MSG, "X.509 Certificate File cannot be blank.");
             if(StringUtils.isBlank(config.getIdPSsoUrl()))
                 errors.reject(ERROR_MSG, "IdP SSO URL cannot be blank.");
@@ -119,7 +119,7 @@ public class SamlController extends SpringActionController
             Certificate cert = new Certificate();
             try
             {
-                cert.loadCertificate(config.getCertificate()); //check to see if its a valid certificate
+                cert.loadCertificate(config.getCertData()); //check to see if its a valid certificate
             }
             catch (CertificateException e)
             {
@@ -139,14 +139,7 @@ public class SamlController extends SpringActionController
         {
             List<String> dirtyProps = new ArrayList<>();
 
-//            byte[] certBytes = null;
-//            if(config.getCertFile() != null)
-//                certBytes = config.getCertFile().getBytes();
-//            String certi = new String(certBytes);
-//            if(certi.equalsIgnoreCase(SamlManager.getCertificate()))
-//                dirtyProps.add(SamlManager.Key.Certificate.toString());
-
-            if (!config.getCertificate().equalsIgnoreCase(SamlManager.getCertificate()))
+            if (!config.getCertData().equalsIgnoreCase(SamlManager.getCertificate()))
                 dirtyProps.add(SamlManager.Key.Certificate.toString());
             if (!config.getIdPSsoUrl().equalsIgnoreCase(SamlManager.getIdPSsoUrl()))
                 dirtyProps.add(SamlManager.Key.IdPSsoUrl.toString());
@@ -159,8 +152,7 @@ public class SamlController extends SpringActionController
 
             if (!dirtyProps.isEmpty())
             {
-//                SamlManager.saveCertificate(certBytes);
-                SamlManager.saveCertificate(config.getCertificate());
+                SamlManager.saveCertificate(config.getCertData());
                 SamlManager.saveProperties(config);
                 StringBuilder sb = new StringBuilder();
                 for (String prop : dirtyProps)
@@ -193,33 +185,21 @@ public class SamlController extends SpringActionController
 
     public static class Config extends ReturnUrlForm
     {
-        private MultipartFile certFile;
-        private String certificate = SamlManager.getCertificate();//get X.509 Certificate - required
+        private String certData = SamlManager.getCertificate();//get X.509 Certificate - required
         private String idPSsoUrl = SamlManager.getIdPSsoUrl();//get IdP SSO Url - required
         private String issuerUrl = SamlManager.getIssuerUrl(); //get Issuer Url - optional
         private String requestParamName = SamlManager.getSamlRequestParamName();//Saml Provider Specific Request Param - optional
         private String responseParamName = SamlManager.getSamlResponseParamName();//Saml Provider Specific Response Param - optional
 
-        public MultipartFile getCertFile()
-        {
-            return certFile;
-        }
-
         @SuppressWarnings("UnusedDeclaration")
-        public void setCertFile(String cert)
+        public void setCertData(String cert)
         {
-            this.certificate = cert;
+            certData = cert;
         }
 
-        @SuppressWarnings("UnusedDeclaration")
-        public void setCertificate(String cert)
+        public String getCertData()
         {
-            certificate = cert;
-        }
-
-        public String getCertificate()
-        {
-            return certificate;
+            return getParsedCertData(certData);
         }
 
         public String getIdPSsoUrl()
@@ -266,6 +246,14 @@ public class SamlController extends SpringActionController
             this.responseParamName = responseParamName;
         }
 
+        private String getParsedCertData(String cert)
+        {
+            String newCertStr = new String (cert);
+            String replacedStr = newCertStr.replace("-----BEGIN CERTIFICATE-----", "");
+            replacedStr = replacedStr.replace("-----END CERTIFICATE-----", "");
+            return replacedStr.trim();
+        }
+
     }
 
     @CSRF
@@ -282,7 +270,7 @@ public class SamlController extends SpringActionController
             if (request instanceof MultipartHttpServletRequest)
                 files = (Map<String, MultipartFile>)((MultipartHttpServletRequest) request).getFileMap();
 
-            MultipartFile certFile = files.get("certFile");
+            MultipartFile certFile = files.get("file");
             byte[] certBytes = null;
             if(certFile != null)
                 certBytes = certFile.getBytes();

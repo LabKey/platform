@@ -37,22 +37,19 @@
     JspView<SamlController.Config> me = (JspView<SamlController.Config>)HttpView.currentView();
     SamlController.Config bean = me.getModelBean();
 %>
-<labkey:form action="configure.post" id="configureSAML" method="post">
+<labkey:form action="configure.post" id="configureSAML" method="post" enctype="multipart/form-data">
     <table>
 
         <%=formatMissedErrorsInTable("form", 2)%>
 
         <tr>
-            <%--<td class="labkey-form-label-nowrap">X.509 Certificate (Required)<%= PageFlowUtil.helpPopup("X.509 Certificate",--%>
-                    <%--"This is typically stored in a file with a .pem extension. It should contain your BASE64 encoded " +--%>
-                            <%--"X.509 certificate in a PKCS#8 file format. If you open the file in a text editor, it should " +--%>
-                            <%--"contain:-----BEGIN CERTIFICATE-----.")%></td>--%>
-            <%--<td><input type="file" size="70" name="certFile" value="<%=h(bean.getCertFile())%>"></td>--%>
-            <%--<td><textarea id="certTextArea" name="certificate" rows="25" cols="120" value="<%=h(bean.getCertificate())%>" onkeyup=Expand(this)></textarea></td>--%>
-            <td class="labkey-form-label">Cert Upload Type</td>
+            <td class="labkey-form-label">Cert Upload Type  <%= PageFlowUtil.helpPopup("Cert Upload Type", "Select " +
+                    "'Copy/Paste' to Copy & Paste the content of the " +
+                    "X.509 certificate file. Select 'File' to upload a X.509 certificate file. " +
+                    "A X.509 certificate file is typically a file with a .pem extension ")%></td>
             <td>
                 <%--<input type="radio" name="certUploadType" value="paste" checked="checked">Cut/Paste--%>
-            <input type="radio" name="certUploadType" value="paste" checked="checked" onchange="disableFileUpload()">Cut/Paste
+            <input type="radio" name="certUploadType" value="paste" checked="checked" onchange="disableFileUpload()">Copy/Paste
                 <input type="radio" name="certUploadType" value="file" onchange="enableFileUpload()">File
             </td>
         </tr>
@@ -63,7 +60,7 @@
         <tr id="certificate">
             <td class="labkey-form-label">Certificate</td>
             <td>
-                <textarea id="textbox" rows=25 cols="120" style="width: 100%;" name="data" wrap="off"><%=h(bean.getCertificate())%></textarea>
+                <textarea id="textbox" rows=25 cols="120" style="width: 100%;" name="certData" wrap="on"><%=h(bean.getCertData())%></textarea>
             </td>
         </tr>
         <tr>
@@ -114,43 +111,42 @@
     }
 
     function init() {
-        Ext4.create('Ext4.form.field.File', {
+        var fileField = Ext4.create('Ext4.form.field.File', {
             buttonText: 'Upload X.509 Cert File',
             id: 'upload-run-field',
-            width: 175,
-            renderTo: 'upload-field',
+            name: 'file',
             buttonOnly: true,
             disabled    : true,
             scope       : this,
             listeners   : {
                 scope : this,
                 change : function(cmp, value){
-                    console.log("cmp", cmp);
-                    console.log("value", value);
-//                this.southPanel.getComponent('specimenUploadButton').enable();
-                    var form = new Ext4.form.BasicForm(Ext4.get('configureSAML'), {
-                        url: LABKEY.ActionURL.buildURL('saml', 'parseCert'),
-                        fileUpload: true
-                    });
 
-                    var processResponse = function(form, action)
-                    {
+                    var form = new Ext4.form.BasicForm(formPanel);
+
+                    var processResponse = function(form, action) {
                         var fileContents = Ext4.decode(action.response.responseText);
+                        document.forms['configureSAML'].elements['certData'].value = fileContents;
                     }
 
                     if(form.isValid()) {
                         form.submit({
-                            success: function(fp, o) {
-                                Ext4.Msg.alert('Success', 'Your Certificate "' + o.result.file + '" has been uploaded.');
-                                processResponse;
-                            },
-                            failure: function(fp, o) {
-                                Ext4.Msg.alert('Failed', 'Failed to upload file.');
-                            }
+                            url: LABKEY.ActionURL.buildURL('saml', 'parseCert'),
+                            success: processResponse,
+                            failure: processResponse
                         });
                     }
-             }
+                }
             }
+        });
+
+        var formPanel = Ext4.create('Ext.form.Panel', {
+            renderTo: 'upload-field',
+            border: false,
+            bodyStyle: 'background: transparent',
+            width: 200,
+            height: 27,
+            items: [{xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF}, fileField]
         });
     }
     Ext4.onReady(init);
