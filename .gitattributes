@@ -1023,6 +1023,8 @@ api/src/org/labkey/api/query/PerlExportScriptModel.java -text
 api/src/org/labkey/api/query/PropertyColumnDecorator.java -text
 api/src/org/labkey/api/query/PropertyForeignKey.java -text
 api/src/org/labkey/api/query/PropertyValidationError.java -text
+api/src/org/labkey/api/query/PythonExportScriptFactory.java -text
+api/src/org/labkey/api/query/PythonExportScriptModel.java -text
 api/src/org/labkey/api/query/QcAwarePropertyForeignKey.java -text
 api/src/org/labkey/api/query/QueryAction.java -text
 api/src/org/labkey/api/query/QueryChangeListener.java -text
