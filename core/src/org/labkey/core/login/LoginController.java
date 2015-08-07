@@ -518,11 +518,27 @@ public class LoginController extends SpringActionController
                     // Determine if the user is already logged in
                     if (!getUser().isGuest())
                     {
-                        errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must approve the terms of use.");
+                        if (null != termsProject)
+                        {
+                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must approve the terms of use.");
+                        }
+                        else
+                        {
+                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use this site, you must check the box to approve the terms of use.");
+                        }
+                        return false;
                     }
                     else
                     {
-                        errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must log in and approve the terms of use.");
+                        if (null != termsProject)
+                        {
+                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must log in and approve the terms of use.");
+                        }
+                        else
+                        {
+                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use this site, you must check the box to approve the terms of use.");
+                        }
+                        return false;
                     }
                 }
             }
