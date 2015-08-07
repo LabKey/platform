@@ -752,7 +752,6 @@ Ext.define('LABKEY.app.controller.State', {
         }
 
         if (_merge) {
-            console.log('merging selections!');
             this.selections = this._mergeFilters(_s, newSelectors);
         }
         else {
