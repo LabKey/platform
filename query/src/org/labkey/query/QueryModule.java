@@ -44,6 +44,7 @@ import org.labkey.api.query.RExportScriptFactory;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.URLExportScriptFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.query.PythonExportScriptFactory;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -193,6 +194,7 @@ public class QueryModule extends DefaultModule
         QueryView.register(new PerlExportScriptFactory());
         QueryView.register(new JavaExportScriptFactory());
         QueryView.register(new URLExportScriptFactory());
+        QueryView.register(new PythonExportScriptFactory());
 
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());
