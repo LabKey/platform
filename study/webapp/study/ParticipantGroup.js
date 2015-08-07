@@ -205,6 +205,11 @@ Ext4.define('Study.window.ParticipantGroup', {
                     labelAlign : 'top',
                     width: defaultWidth
                 },
+                {
+                    xtype: 'hiddenfield',
+                    name : 'filters',
+                    value: JSON.stringify(this.filters)
+                },
                 categoryCombo,
                 {
                     xtype : 'checkboxfield',
@@ -372,6 +377,9 @@ Ext4.define('Study.window.ParticipantGroup', {
             categoryType : categoryType
             //categoryShared : Ext4.getCmp('sharedBox').getValue()
         };
+
+        if (fieldValues["filters"] != undefined)
+            groupData["filters"] = fieldValues["filters"];
 
         if (!Ext4.getCmp('sharedBox').getValue())
             groupData['categoryOwnerId'] = LABKEY.user.id;
