@@ -16,14 +16,22 @@
 
 package org.labkey.api.util;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.settings.AppProps;
 
-import javax.net.ssl.*;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URL;
-import java.security.SecureRandom;
-import java.security.NoSuchAlgorithmException;
 import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 /**
  * User: jeckels
@@ -31,15 +39,10 @@ import java.security.KeyManagementException;
  */
 public class HttpsUtil
 {
+    private static final Logger LOG = Logger.getLogger(HttpsUtil.class);
+    private static final HostnameVerifier _hostnameVerifier = (urlHostName, session) -> true;
 
     private static SSLSocketFactory _socketFactory;
-    private static HostnameVerifier _hostnameVerifier = new HostnameVerifier()
-    {
-        public boolean verify(String urlHostName, SSLSession session)
-        {
-            return true;
-        }
-    };
 
     /**
      * Disables host name validation, as well as certificate trust chain
@@ -113,5 +116,49 @@ public class HttpsUtil
             }
         }
         return _socketFactory;
+    }
+
+
+    /**
+     *  Called just before the first HTTP -> HTTPS redirect to check whether the SSL redirect port is open and responding.
+     *  If not, a warning is logged once, but the server continues to function. Check is currently done in dev mode only, but
+     *  recent improvements (using a known test action and making failures non-fatal) may make a production mode check viable.
+     *
+     *  This check has been the subject of quite a few issues, see #10968, #11103, #19628, #23878.
+     */
+    public static void checkSslRedirectConfiguration(HttpServletRequest request, int redirectPort)
+    {
+        if (AppProps.getInstance().isDevMode())
+        {
+            try
+            {
+                // Attempt to invoke GuidAction via SSL on the configured port. This is a simple action that doesn't require
+                // permissions and is available during upgrade, which should leave SSL connection as the sole failure case.
+
+                // Use a URLHelper to assemble the test URL. Note: Can't use ActionURL here, since AppProps might not have been initiated yet.
+                URLHelper helper = new URLHelper(request);
+                helper.setScheme("https");
+                helper.setPort(redirectPort);
+                helper.setContextPath(request.getContextPath());
+                helper.setPath("guid.view");
+
+                // Now switch to a URL, since that's what testSslUrl() requires
+                URL testURL = new URL(helper.getURIString());
+                Pair<String, Integer> sslResult = HttpsUtil.testSslUrl(testURL,
+                    "This LabKey Server instance is configured to require secure connections on port " + redirectPort + ", but it does not appear to be responding " +
+                    "to HTTPS requests at " + testURL + ". Please see https://www.labkey.org/wiki/home/Documentation/page.view?name=stagingServerTips for " +
+                    "details about how to turn off the SSL redirect settings in the database.");
+
+                // Non-null indicates that some problem occurred... throw it so we log it
+                if (null != sslResult)
+                {
+                    throw new ConfigurationException(sslResult.first);
+                }
+            }
+            catch (Throwable t)
+            {
+                LOG.warn("Could not connect to the configured SSL redirect port", t);
+            }
+        }
     }
 }

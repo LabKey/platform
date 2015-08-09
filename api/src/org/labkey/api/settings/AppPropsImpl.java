@@ -188,8 +188,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         _serverPort = request.getServerPort();
         _scheme = request.getScheme();
         _serverName = request.getServerName();
-
-
     }
 
 

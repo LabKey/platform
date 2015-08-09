@@ -24,10 +24,8 @@ import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpsUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.Filter;
@@ -96,43 +94,21 @@ public class AuthFilter implements Filter
             }
             URL url = new URL(originalURL.toString());
             int port = AppProps.getInstance().getSSLPort();
+
+            // Check the SSL configuration if this is the first time doing an SSL redirect. Note: The redirect and check must
+            // happen before ensureFirstRequestHandled() so AppProps gets initialized with the SSL scheme & port. That means
+            // this check can't be handled in a FirstRequestListener.
+            if (!_sslChecked)
+            {
+                HttpsUtil.checkSslRedirectConfiguration(req, port);
+                _sslChecked = true;
+            }
+
             if (port == 443)
             {
                 port = -1;
             }
             url = new URL("https", url.getHost(), port, url.getFile());
-
-            // If this is the first time redirecting to SSL, attempt a direct connection to the SSL URL first.
-            // If connection fails, treat it like a startup failure. #10968 & #11103.
-            if (!_sslChecked)
-            {
-                if (AppProps.getInstance().isDevMode())
-                {
-                    Pair<String, Integer> sslResult = HttpsUtil.testSslUrl(url, "This LabKey Server instance is configured to require secure connections, but it does not appear to be responding to HTTPS requests at " + url + "  Please see https://www.labkey.org/wiki/home/Documentation/page.view?name=stagingServerTips for details on how to turn off the setting without having to log into the server.");
-
-                    // Non-null indicates that some problem occurred...
-                    if (null != sslResult)
-                    {
-                        String message = sslResult.first;
-                        Integer responseCode = sslResult.second;
-
-                        // No response code means we couldn't connect to SSL, so display a configuration exception.
-                        // Any other reponse (401, 404, etc.) means we were able to connect via SSL and it's just a
-                        // bad URL or unauthorized or something normal. This addresses #19628
-                        if (null == responseCode)
-                        {
-                            //noinspection ThrowableInstanceNeverThrown
-                            ConfigurationException ce = new ConfigurationException(message);
-                            ModuleLoader.getInstance().setStartupFailure(ce);
-                            ExceptionUtil.handleException(req, resp, ce, null, true);
-                            return;
-                        }
-                    }
-                }
-
-                _sslChecked = true;
-            }
-
             resp.sendRedirect(url.toString());
             return;
         }
