@@ -140,7 +140,7 @@ public class HttpsUtil
                 helper.setScheme("https");
                 helper.setPort(redirectPort);
                 helper.setContextPath(request.getContextPath());
-                helper.setPath("guid.view");
+                helper.setPath("admin/guid.view");
 
                 // Now switch to a URL, since that's what testSslUrl() requires
                 URL testURL = new URL(helper.getURIString());
