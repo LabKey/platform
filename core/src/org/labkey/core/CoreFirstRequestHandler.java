@@ -15,10 +15,10 @@
  */
 package org.labkey.core;
 
-import org.labkey.api.view.ViewServlet;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.FirstRequestHandler;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.http.HttpServletRequest;
 

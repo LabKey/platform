@@ -723,6 +723,7 @@ public class AdminController extends SpringActionController
 
 
     @RequiresNoPermission
+    @AllowedDuringUpgrade  // This action is invoked by HttpsUtil.checkSslRedirectConfiguration(), often while upgrade is in progress
     public class GuidAction extends ExportAction
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
