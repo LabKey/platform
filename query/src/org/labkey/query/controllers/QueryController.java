@@ -1273,14 +1273,8 @@ public class QueryController extends SpringActionController
 
             try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _schemaName, null))
             {
-                JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
-                {
-                    @Override
-                    public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
-                    {
-                        return dbmd.getTables(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), null);
-                    }
-                });
+                JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator,
+                    (dbmd, locator1) -> dbmd.getTables(locator1.getCatalogName(), locator1.getSchemaName(), locator1.getTableName(), null));
 
                 ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
                 url.addParameter("schemaName", _schemaName);
