@@ -489,6 +489,11 @@ public class FileContentController extends SpringActionController
                 {
                 }
             }
+            if (null != form.getFolderTreeVisible())
+            {
+                part.getModelBean().setFolderTreeCollapsed(!form.getFolderTreeVisible());
+            }
+
             part.setFrame(WebPartView.FrameType.NONE);
             part.setWide(true);
             part.getModelBean().setAutoResize(true);
@@ -1561,6 +1566,7 @@ public class FileContentController extends SpringActionController
         private String message;
         private String fileSetName;
         private String path;
+        private Boolean folderTreeVisible;
 
         public String getRootPath()
         {
@@ -1610,6 +1616,16 @@ public class FileContentController extends SpringActionController
         public void setRootOffset(String rootOffset)
         {
             this.rootOffset = rootOffset;
+        }
+
+        public Boolean getFolderTreeVisible()
+        {
+            return folderTreeVisible;
+        }
+
+        public void setFolderTreeVisible(Boolean folderTreeVisible)
+        {
+            this.folderTreeVisible = folderTreeVisible;
         }
     }
 
