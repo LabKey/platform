@@ -86,6 +86,7 @@ public class RedcapExport
     private Map<String, List<Map<String, Object>>> _lookups = new HashMap<>();
     private Map<String, ColumnInfo> _columnInfoMap = new HashMap<>();
     private Map<String, ColumnInfo> _multiValueColumns = new HashMap<>();
+    private Map<String, Map<String, String>> _multiValueLookups = new HashMap<>();
     private Map<String, Integer> _datasetNameToId = new HashMap<>();
     private Map<String, String> _subjectIdFieldMap = new HashMap<>();
     private boolean _createDefaultTimepoint;
@@ -544,7 +545,7 @@ public class RedcapExport
                         if (mvCol != null)
                         {
                             String delim = ",";
-                            String displayValue = parseDisplayValue(col, entry.getValue());
+                            String displayValue = parseMVDisplayValue(mvCol, entry.getKey(), entry.getValue().toString());
                             if (displayValue != null)
                             {
                                 if (!multiValueFields.containsKey(mvCol.getName()))
@@ -602,20 +603,32 @@ public class RedcapExport
         return null;
     }
 
-    private String parseDisplayValue(ColumnInfo col, Object value)
+    /**
+     * Parses the display value for a multi-value field (checkbox). For REDCap multi value instruments
+     * the field name has the encoded key value and the field value is a boolean to indicate whether
+     * it is selected or not.
+     * @param col
+     * @param value
+     * @return
+     */
+    private String parseMVDisplayValue(ColumnInfo col, String key, String value)
     {
-        try {
-            if (value != null)
+        try
+        {
+            if ("1".equals(value))
             {
-                String[] parts = value.toString().split(",");
-
-                if (parts.length == 2)
-                    return parts[1].trim();
+                Map<String, String> lookup = _multiValueLookups.get(col.getName());
+                if (lookup != null)
+                {
+                    String lkKey = key.substring(key.length() - 1);
+                    if (lookup.containsKey(lkKey))
+                        return lookup.get(lkKey);
+                }
             }
         }
         catch (Exception e)
         {
-            _job.error("Error occurred parsing column display values", e);
+            _job.error("Error occurred parsing multivalue column display values", e);
         }
         return null;
     }
@@ -889,6 +902,22 @@ public class RedcapExport
             {
                 col.setJdbcType(JdbcType.VARCHAR);
                 _multiValueColumns.put(col.getName(), col);
+
+                Map<String, String> lookup = new HashMap<>();
+                for (String choice : choices.split("\\|"))
+                {
+                    String[] lu = choice.split(",");
+                    if (lu.length == 2)
+                    {
+                        Map<String, Object> row = new HashMap<>();
+                        String key = lu[0].trim();
+                        String value = lu[1].trim();
+
+                        lookup.put(key, value);
+                    }
+                }
+                if (!lookup.isEmpty())
+                    _multiValueLookups.put(col.getName(), lookup);
             }
             else if ("file".equalsIgnoreCase(fieldType))
             {
