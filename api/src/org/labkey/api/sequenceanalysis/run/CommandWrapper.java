@@ -36,4 +36,6 @@ public interface CommandWrapper
     String execute(List<String> params) throws PipelineJobException;
 
     String execute(List<String> params, File stdout) throws PipelineJobException;
+
+    List<String> getCommandsExecuted();
 }

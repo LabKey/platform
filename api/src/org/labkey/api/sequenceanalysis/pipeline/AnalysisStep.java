@@ -45,7 +45,7 @@ public interface AnalysisStep extends PipelineStep
     /**
      * Will perform analysis steps on the local webserver
      */
-    public Output performAnalysisPerSampleLocal(AnalysisModel model, File inputBam, File referenceFasta) throws PipelineJobException;
+    public Output performAnalysisPerSampleLocal(AnalysisModel model, File inputBam, File referenceFasta, File outDir) throws PipelineJobException;
 
     public interface Output extends PipelineStepOutput
     {

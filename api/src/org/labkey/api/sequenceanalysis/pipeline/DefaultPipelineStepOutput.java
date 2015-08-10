@@ -35,6 +35,7 @@ public class DefaultPipelineStepOutput implements PipelineStepOutput
     private List<File> _intermediateFiles = new ArrayList<>();
     private List<File> _deferredDeleteFiles = new ArrayList<>();
     private List<SequenceOutput> _sequenceOutputs = new ArrayList<>();
+    private List<String> _commands = new ArrayList<>();
 
     public DefaultPipelineStepOutput()
     {
@@ -117,5 +118,21 @@ public class DefaultPipelineStepOutput implements PipelineStepOutput
     public void addDeferredDeleteIntermediateFile(File file)
     {
         _deferredDeleteFiles.add(file);
+    }
+
+    @Override
+    public List<String> getCommandsExecuted()
+    {
+        return _commands;
+    }
+
+    public void addCommandsExecuted(List<String> commands)
+    {
+        _commands.addAll(commands);
+    }
+
+    public void addCommandExecuted(String command)
+    {
+        _commands.add(command);
     }
 }

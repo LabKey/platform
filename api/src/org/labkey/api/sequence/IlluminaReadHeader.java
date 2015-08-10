@@ -35,13 +35,12 @@ public class IlluminaReadHeader
 
     public IlluminaReadHeader(String header) throws IllegalArgumentException
     {
+        String[] h = header.split(":| ");
+        if(h.length < 11)
+            throw new IllegalArgumentException("Improperly formatted header: " + header);
+
         try
         {
-            String[] h = header.split(":| ");
-
-            if(h.length < 10)
-                throw new IllegalArgumentException("Improperly formatted header: " + header);
-
             _instrument = h[0];
             _runId = Integer.parseInt(h[1]);
             _flowCellId = h[2];
@@ -52,11 +51,20 @@ public class IlluminaReadHeader
             _pairNumber = Integer.parseInt(h[7]);
             setFailedFilter(h[8]);
             _controlBits = Integer.parseInt(h[9]);
-            _sampleNum = Integer.parseInt(h[10]);
         }
         catch (NumberFormatException e)
         {
             throw new IllegalArgumentException(e.getMessage());
+        }
+
+        //Note: if this read was not demultiplexed by illumina, the index sequence may appear in this position
+        try
+        {
+            _sampleNum = Integer.parseInt(h[10]);
+        }
+        catch (NumberFormatException e)
+        {
+            _sampleNum = -1;
         }
     }
 
@@ -165,6 +173,9 @@ public class IlluminaReadHeader
         _controlBits = controlBits;
     }
 
+    /**
+     * @return Sample index, as assigned by illumina.  -1 indicates this is part of non-assigned reads.
+     */
     public int getSampleNum()
     {
         return _sampleNum;

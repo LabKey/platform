@@ -64,6 +64,11 @@ public interface PipelineStepOutput
 
     public List<SequenceOutput> getSequenceOutputs();
 
+    /**
+     * Returns a list of any commands executed by this step
+     */
+    public List<String> getCommandsExecuted();
+
     public static class SequenceOutput
     {
         private File _file;

@@ -22,6 +22,7 @@ import org.labkey.api.data.UserDefinedButtonConfig;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.ClientDependency;
@@ -43,6 +44,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
     private DetailsURL _url = null;
     private String _jsHandler = null;
     private Integer _insertPosition = null;
+    private Class<? extends Permission> _permission = null;
     private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     public SimpleButtonConfigFactory(Module owner, String text, DetailsURL url)
@@ -89,6 +91,9 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
 
         if (_insertPosition != null)
             btn.setInsertPosition(_insertPosition);
+
+        if (_permission != null)
+            btn.setPermission(_permission);
 
         return btn;
     }
@@ -140,5 +145,10 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
     public void setClientDependencies(Collection<ClientDependency> clientDependencies)
     {
         _clientDependencies.addAll(clientDependencies);
+    }
+
+    public void setPermission(Class<? extends Permission> permission)
+    {
+        _permission = permission;
     }
 }

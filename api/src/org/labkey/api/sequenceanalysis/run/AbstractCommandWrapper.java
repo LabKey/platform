@@ -27,6 +27,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,7 @@ abstract public class AbstractCommandWrapper implements CommandWrapper
     private boolean _warnNonZeroExits = true;
     private boolean _throwNonZeroExits = true;
     private Map<String, String> _environment = new HashMap<>();
+    protected List<String> _commandsExecuted = new ArrayList<>();
 
     public AbstractCommandWrapper(@Nullable Logger logger)
     {
@@ -62,10 +64,17 @@ abstract public class AbstractCommandWrapper implements CommandWrapper
     }
 
     @Override
+    public List<String> getCommandsExecuted()
+    {
+        return _commandsExecuted;
+    }
+
+    @Override
     public String execute(List<String> params, File stdout) throws PipelineJobException
     {
         StringBuffer output = new StringBuffer();
         getLogger().info("\t" + StringUtils.join(params, " "));
+        _commandsExecuted.add(StringUtils.join(params, " "));
 
         ProcessBuilder pb = new ProcessBuilder(params);
         setPath(pb);

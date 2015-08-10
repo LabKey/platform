@@ -46,6 +46,8 @@ public interface AlignmentStep extends PipelineStep
 
     public boolean doSortIndexBam();
 
+    public boolean supportsGzipFastqs();
+
     public static interface AlignmentOutput extends PipelineStepOutput
     {
         /**
