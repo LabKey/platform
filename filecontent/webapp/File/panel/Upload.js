@@ -671,9 +671,11 @@ Ext4.define('File.panel.Upload', {
     },
 
     updateDropzoneEnabled : function () {
-        var record = this.dropzone.uploadPanel.getWorkingDirectory('model');
-        var canWrite = this.dropzone.uploadPanel.fileSystem.canWrite(record);
-        this.dropzone.setEnabled(canWrite);
+        if (this.dropzone) {
+            var record = this.dropzone.uploadPanel.getWorkingDirectory('model');
+            var canWrite = this.dropzone.uploadPanel.fileSystem.canWrite(record);
+            this.dropzone.setEnabled(canWrite);
+        }
     },
 
     getWorkingDirectory : function(variable) {
