@@ -390,11 +390,10 @@ LABKEY.Utils = new function(impl, $) {
 
     impl.signalWebDriverTest = function(signalName, signalResult)
     {
-        // Sends signals to be caught by BaseWebDriverTest#doAndWaitForPageSignal(..)
-        const signalContainerId = 'testSignals';
-        const signalContainerSelector = '#' + signalContainerId;
+        var signalContainerId = 'testSignals';
+        var signalContainerSelector = '#' + signalContainerId;
         var signalContainer = $(signalContainerSelector);
-        const formHTML = '<div id="' + signalContainerId + '"></div>';
+        var formHTML = '<div id="' + signalContainerId + '"></div>';
 
         if (!signalContainer.length)
         {
