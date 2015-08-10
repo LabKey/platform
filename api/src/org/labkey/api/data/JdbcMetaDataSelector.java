@@ -47,28 +47,16 @@ public class JdbcMetaDataSelector
 
     public TableResultSet getResultSet() throws SQLException
     {
-        return handleResultSet(new ResultSetHandler<TableResultSet>()
-        {
-            @Override
-            public TableResultSet handle(ResultSet rs) throws SQLException
-            {
-                return new ResultSetImpl(rs, QueryLogging.emptyQueryLogging());
-            }
-        });
+        return handleResultSet(rs -> new ResultSetImpl(rs, QueryLogging.emptyQueryLogging()));
     }
 
     public void forEach(final ForEachBlock<ResultSet> block) throws SQLException
     {
-        handleResultSet(new ResultSetHandler<Object>()
-        {
-            @Override
-            public Object handle(ResultSet rs) throws SQLException
-            {
-                while (rs.next())
-                    block.exec(rs);
+        handleResultSet(rs -> {
+            while (rs.next())
+                block.exec(rs);
 
-                return null;
-            }
+            return null;
         });
     }
 

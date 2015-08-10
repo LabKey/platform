@@ -80,24 +80,14 @@ public class SchemaNameCache
 
         try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, null, null))
         {
-            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
-            {
-                @Override
-                public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
-                {
-                    // Most dialects support schemas, but MySQL treats them as catalogs
-                    return locator.supportsSchemas() ? dbmd.getSchemas() : dbmd.getCatalogs();
-                }
+            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, (dbmd, locator1) -> {
+                // Most dialects support schemas, but MySQL treats them as catalogs
+                return locator1.supportsSchemas() ? dbmd.getSchemas() : dbmd.getCatalogs();
             });
 
-            selector.forEach(new Selector.ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    String name = rs.getString(1).trim();
-                    schemaNameMap.put(name, name);
-                }
+            selector.forEach(rs -> {
+                String name = rs.getString(1).trim();
+                schemaNameMap.put(name, name);
             });
         }
 

@@ -116,7 +116,7 @@ public enum DbSchemaType
     {
         // DbSchema caching needs to know which schema types to invalidate when a schema.xml file changes... determine
         // that once, based on applyXmlMetaData setting of each type, and stash it. (At the moment, only module schemas
-        // use XML metadata, but this generalization accomodates future types.)
+        // use XML metadata, but this generalization accommodates future types.)
         Collection<DbSchemaType> metaDataTypes = new LinkedList<>();
 
         for (DbSchemaType type : values())

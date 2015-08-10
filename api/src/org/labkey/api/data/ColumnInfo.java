@@ -1577,14 +1577,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 }
             }
 
-            JdbcMetaDataSelector keySelector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
-            {
-                @Override
-                public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
-                {
-                    return dbmd.getImportedKeys(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName());
-                }
-            });
+            JdbcMetaDataSelector keySelector = new JdbcMetaDataSelector(locator, (dbmd, locator1) -> dbmd.getImportedKeys(locator1.getCatalogName(), locator1.getSchemaName(), locator1.getTableName()));
 
             // load keys in two phases
             // 1) combine multi column keys

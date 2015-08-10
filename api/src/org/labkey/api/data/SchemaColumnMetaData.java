@@ -177,13 +177,8 @@ public class SchemaColumnMetaData
 
         try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
         {
-            JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory(){
-                @Override
-                public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
-                {
-                    return dbmd.getPrimaryKeys(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName());
-                }
-            });
+            JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator,
+                (dbmd, locator1) -> dbmd.getPrimaryKeys(locator1.getCatalogName(), locator1.getSchemaName(), locator1.getTableName()));
 
             try (ResultSet rs = pkSelector.getResultSet())
             {

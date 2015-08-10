@@ -95,17 +95,12 @@ public class SchemaTableInfoCache
 
 
     // Ask the DbSchemaType how long to cache each table
-    private static final CacheTimeChooser<String> TABLE_CACHE_TIME_CHOOSER = new CacheTimeChooser<String>()
-        {
-            @Override
-            public Long getTimeToLive(String key, Object argument)
-            {
-                @SuppressWarnings({"unchecked"})
-                DbScope.SchemaTableOptions options = (DbScope.SchemaTableOptions)argument;
+    private static final CacheTimeChooser<String> TABLE_CACHE_TIME_CHOOSER = (key, argument) -> {
+        @SuppressWarnings({"unchecked"})
+        DbScope.SchemaTableOptions options = (DbScope.SchemaTableOptions)argument;
 
-                return options.getSchema().getType().getCacheTimeToLive();
-            }
-        };
+        return options.getSchema().getType().getCacheTimeToLive();
+    };
 
     private static class SchemaTableInfoBlockingCache extends BlockingStringKeyCache<SchemaTableInfo>
     {

@@ -37,16 +37,11 @@ public class DbSchemaCache
     private final BlockingStringKeyCache<DbSchema> _cache;
 
     // Ask the DbSchemaType how long to cache each schema
-    private final CacheTimeChooser<String> SCHEMA_CACHE_TIME_CHOOSER = new CacheTimeChooser<String>()
-        {
-            @Override
-            public Long getTimeToLive(String key, Object argument)
-            {
-                @SuppressWarnings({"unchecked"})
-                DbSchemaCache.SchemaDetails details = (DbSchemaCache.SchemaDetails)argument;
-                return details.getType().getCacheTimeToLive();
-            }
-        };
+    private final CacheTimeChooser<String> SCHEMA_CACHE_TIME_CHOOSER = (key, argument) -> {
+        @SuppressWarnings({"unchecked"})
+        SchemaDetails details = (SchemaDetails)argument;
+        return details.getType().getCacheTimeToLive();
+    };
 
     public DbSchemaCache(DbScope scope)
     {
