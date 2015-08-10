@@ -789,7 +789,15 @@ public class RedcapExport
         columnXml.setDatatype(t.getSqlTypeName());
 
         if (null != col.getLabel())
-            columnXml.setColumnTitle(col.getLabel());
+        {
+            String label = col.getLabel();
+            if (label.length() > 200)
+            {
+                _job.warn("Label for column : " + col.getName() + " exceeded 200 characters, truncating.");
+                label = label.substring(0, 199);
+            }
+            columnXml.setColumnTitle(label);
+        }
 
         if (null != col.getDescription())
             columnXml.setDescription(col.getDescription());
@@ -874,6 +882,10 @@ public class RedcapExport
             {
                 col.setJdbcType(JdbcType.VARCHAR);
                 col.setInputType("textarea");
+            }
+            else if ("slider".equalsIgnoreCase(fieldType))
+            {
+                col.setJdbcType(JdbcType.INTEGER);
             }
             else if ("truefalse".equalsIgnoreCase(fieldType) || "yesno".equalsIgnoreCase(fieldType))
             {
