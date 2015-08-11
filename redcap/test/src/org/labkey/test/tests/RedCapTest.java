@@ -239,7 +239,7 @@ public class RedCapTest extends BaseWebDriverTest
         assertElementPresent(Locators.labkeyError.containing("Collection instrument name collision found"));
     }
 
-    @Test // TODO: Update with 23935: REDCap: Some field types not imported correctly
+    @Test
     public void testDataTypes() throws Exception
     {
         final String folderName = "testDataTypes";
@@ -258,13 +258,13 @@ public class RedCapTest extends BaseWebDriverTest
         expectedFieldTypes.put("paragraph_text", "Text (String)");
         expectedFieldTypes.put("integer", "Integer");
         expectedFieldTypes.put("number", "Number (Double)");
-        expectedFieldTypes.put("calc_field", "Text (String)"); // TODO: should be Double?
+        expectedFieldTypes.put("calc_field", "Text (String)");
         expectedFieldTypes.put("yes_no", "True/False (Boolean)");
         expectedFieldTypes.put("drop_down", "Integer");
         expectedFieldTypes.put("radio", "Integer");
-        expectedFieldTypes.put("slider", "Text (String)"); // TODO: Should be int?
+        expectedFieldTypes.put("slider", "Integer");
         expectedFieldTypes.put("file_upload", "Text (String)");
-        expectedFieldTypes.put("multi_select", "Text (String)"); // TODO: Should be lookup?
+        expectedFieldTypes.put("multi_select", "Text (String)");
 
         Map<String, String> actualFieldTypes = new HashMap<>();
         for (Map.Entry<String, String> fieldType : new HashSet<>(expectedFieldTypes.entrySet()))
@@ -292,7 +292,7 @@ public class RedCapTest extends BaseWebDriverTest
         Assert.assertEquals("Radio selection not imported correctly", 3, Integer.parseInt(data.get(8)));
         Assert.assertEquals("Slider not imported correctly", 80, Integer.parseInt(data.get(9)));
         Assert.assertEquals("File Upload not imported correctly", "[document]", data.get(10));
-//        Assert.assertEquals("Multi-select not imported correctly", "Lunch, Dinner", data.get(11));
+        Assert.assertEquals("Multi-select not imported correctly", "Dinner,Lunch", data.get(11));
     }
 
     private void setupRedCapFolderAndStartLoad(String folderName, TimepointType timepointType, String configXml, ApiKey... apiKeys)
