@@ -19,10 +19,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -30,17 +38,20 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.GUID;
 
 import java.io.IOException;
 import java.sql.BatchUpdateException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 
-class StatementDataIterator extends AbstractDataIterator
+public class StatementDataIterator extends AbstractDataIterator
 {
     Parameter.ParameterMap[] _stmts;
     Triple[][] _bindings = null;
@@ -84,6 +95,25 @@ class StatementDataIterator extends AbstractDataIterator
         _keyValues = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,null));
     }
 
+    protected StatementDataIterator(DataIterator data, DataIteratorContext context, Parameter.ParameterMap... maps)
+    {
+        super(context);
+
+        _data = data;
+
+        _stmts = maps;
+        _foregroundThread = Thread.currentThread();
+
+        _keyColumnInfo = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,(ColumnInfo)null));
+        _keyValues = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,null));
+    }
+
+
+    void setUseAsynchronousExecute(boolean b)
+    {
+        _useAsynchronousExecute = b && null == _rowIdIndex && null == _objectIdIndex;
+    }
+
 
     // configure columns returned by statement, e.g. rowid
     // index > 0 to override an existing column
@@ -98,6 +128,7 @@ class StatementDataIterator extends AbstractDataIterator
         }
         _keyColumnInfo.set(index,col);
         _rowIdIndex = index;
+        _useAsynchronousExecute = false;
     }
 
 
@@ -111,6 +142,7 @@ class StatementDataIterator extends AbstractDataIterator
         }
         _keyColumnInfo.set(index,col);
         _objectIdIndex = index;
+        _useAsynchronousExecute = false;
     }
 
 
@@ -321,24 +353,24 @@ class StatementDataIterator extends AbstractDataIterator
 
         if (_batchSize == 1)
         {
+            /* use .execute() for handling keys */
             _currentStmt.execute();
         }
-        // TODO: Re-enable this once the deadlock is resolved. See issue 23734
-//        else if (_useAsynchronousExecute && _stmts.length > 1 && _txSize==-1)
-//        {
-//            while (true)
-//            {
-//                try
-//                {
-//                    _currentStmt = _queue.swapFullForEmpty(_currentStmt);
-//                    break;
-//                }
-//                catch (InterruptedException x)
-//                {
-//                    checkBackgroundException();
-//                }
-//            }
-//        }
+        else if (_useAsynchronousExecute && _stmts.length > 1 && _txSize==-1)
+        {
+            while (true)
+            {
+                try
+                {
+                    _currentStmt = _queue.swapFullForEmpty(_currentStmt);
+                    break;
+                }
+                catch (InterruptedException x)
+                {
+                    checkBackgroundException();
+                }
+            }
+        }
         else
         {
             _currentStmt.executeBatch();
@@ -453,6 +485,141 @@ class StatementDataIterator extends AbstractDataIterator
                 }
             }
             assert _queue.isClosed();
+        }
+    }
+
+
+
+
+    public static class TestCase extends Assert
+    {
+        DataIterator getSource(DataIteratorContext context, final int rowlimit)
+        {
+            return new DataIterator()
+            {
+                int row=0;
+
+                @Override
+                public String getDebugName()
+                {
+                    return null;
+                }
+
+                @Override
+                public int getColumnCount()
+                {
+                    return 1;
+                }
+
+                @Override
+                public ColumnInfo getColumnInfo(int i)
+                {
+                    return i==0 ?
+                        new ColumnInfo("rownumber",JdbcType.INTEGER) :
+                        new ColumnInfo("I",JdbcType.INTEGER);
+                }
+
+                @Override
+                public boolean isConstant(int i)
+                {
+                    return false;
+                }
+
+                @Override
+                public Object getConstantValue(int i)
+                {
+                    return null;
+                }
+
+                @Override
+                public boolean next() throws BatchValidationException
+                {
+                    return row++ < rowlimit;
+                }
+
+                @Override
+                public Object get(int i)
+                {
+                    return 0==i ? row : i;
+                }
+
+                @Override
+                public void close() throws IOException
+                {
+
+                }
+            };
+        }
+
+
+        @Test
+        public void testAsyncStatements() throws Exception
+        {
+            _testAsyncStatements(0,2);
+            _testAsyncStatements(1,2);
+            _testAsyncStatements(2,2);
+            _testAsyncStatements(3,2);
+            _testAsyncStatements(4,2);
+            _testAsyncStatements(5,2);
+
+            _testAsyncStatements(1000,5);
+            _testAsyncStatements(499,7);
+        }
+
+
+        void _testAsyncStatements(int rowCount, final int batchSize) throws Exception
+        {
+            DbSchema tempdb = DbSchema.getTemp();
+            String tableName = tempdb.getName() + ".junit" + GUID.makeHash();
+            DbScope scope = tempdb.getScope();
+            Connection conn = null;
+
+            try
+            {
+                conn = scope.getConnection();
+                new SqlExecutor(tempdb).execute("CREATE TABLE " + tableName + " (X INT, Y INT)");
+                new SqlExecutor(tempdb).execute("INSERT INTO " + tableName + " (X,Y) VALUES (0,0)");
+
+
+                SQLFragment updateX = new SQLFragment("UPDATE " + tableName + " SET X=X+?");
+                updateX.add(new Parameter("I", JdbcType.INTEGER));
+                Parameter.ParameterMap pm1 = new Parameter.ParameterMap(tempdb.getScope(), conn, updateX, null);
+
+                SQLFragment updateY = new SQLFragment("UPDATE " + tableName + " SET Y=Y+?");
+                updateY.add(new Parameter("I", JdbcType.INTEGER));
+                Parameter.ParameterMap pm2 = new Parameter.ParameterMap(tempdb.getScope(), conn, updateY, null);
+
+                DataIteratorContext context = new DataIteratorContext();
+                DataIterator source = getSource(context, rowCount);
+                StatementDataIterator sdi = new StatementDataIterator(source, context, pm1, pm2)
+                {
+                    @Override
+                    void init()
+                    {
+                        super.init();
+                        _batchSize = batchSize;
+                    }
+                };
+                sdi._useAsynchronousExecute = true;
+
+                new Pump(sdi,context).run();
+
+                Map<String,Object> result = new SqlSelector(tempdb,"SELECT X, Y FROM " + tableName).getMap();
+                assertNotNull(result.get("X"));
+                assertNotNull(result.get("Y"));
+                int x = ((Number)result.get("X")).intValue();
+                int y = ((Number)result.get("Y")).intValue();
+                assertEquals(rowCount, x+y);
+                if (0 == rowCount % (2*batchSize))
+                    assertEquals(x,y);
+                assertTrue(Math.abs(x-y) <= batchSize);
+            }
+            finally
+            {
+                if (null != conn)
+                    scope.releaseConnection(conn);
+                new SqlExecutor(tempdb).execute("DROP TABLE " + tableName);
+            }
         }
     }
 }

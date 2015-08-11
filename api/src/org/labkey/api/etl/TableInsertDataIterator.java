@@ -176,11 +176,12 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             if (_context.getInsertOption().batch && null == _rowIdIndex && null == _objectIdIndex)
             {
                 _stmts = new Parameter.ParameterMap[]{stmt, stmt.copy()};
-                _useAsynchronousExecute = true;
+                setUseAsynchronousExecute(true);
             }
             else
             {
                 _stmts = new Parameter.ParameterMap[]{stmt};
+                setUseAsynchronousExecute(false);
             }
 
             super.init();
