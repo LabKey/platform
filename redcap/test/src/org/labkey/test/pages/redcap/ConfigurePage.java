@@ -27,6 +27,7 @@ import org.labkey.test.selenium.LazyWebElement;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
+import org.openqa.selenium.SearchContext;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
@@ -176,44 +177,45 @@ public class ConfigurePage extends LabKeyPage
 
     private class Elements extends ComponentElements
     {
-        protected Elements()
+        @Override
+        protected SearchContext getContext()
         {
-            super(_test.getDriver());
+            return getDriver();
         }
 
-        final WebElement saveButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("Save"), context);
-        final WebElement reloadNowButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("Reload Now"), context);
-        final WebElement saveCompleteWindow = new LazyWaitingWebElement(Ext4Helper.Locators.window("Save Complete"), context);
-        final WebElement errorWindow = new LazyWaitingWebElement(Ext4Helper.Locators.window("Failure"), context);
+        final WebElement saveButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("Save"), this);
+        final WebElement reloadNowButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("Reload Now"), this);
+        final WebElement saveCompleteWindow = new LazyWaitingWebElement(Ext4Helper.Locators.window("Save Complete"), this);
+        final WebElement errorWindow = new LazyWaitingWebElement(Ext4Helper.Locators.window("Failure"), this);
         final WebElement errorWindowMessage = new EphemeralWebElement(Locator.css("table.x4-window-text"), errorWindow);
         final WebElement errorWindowOkButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("OK"), errorWindow);
 
-        final WebElement authenticationTab = new LazyWebElement(Ext4Helper.Locators.ext4Tab("Authentication"), context);
-        final WebElement reloadingTab = new LazyWebElement(Ext4Helper.Locators.ext4Tab("Reloading"), context);
-        final WebElement configurationSettingTab = new LazyWebElement(Ext4Helper.Locators.ext4Tab("Configuration Setting"), context);
+        final WebElement authenticationTab = new LazyWebElement(Ext4Helper.Locators.ext4Tab("Authentication"), this);
+        final WebElement reloadingTab = new LazyWebElement(Ext4Helper.Locators.ext4Tab("Reloading"), this);
+        final WebElement configurationSettingTab = new LazyWebElement(Ext4Helper.Locators.ext4Tab("Configuration Setting"), this);
 
         //AuthenticationTab
-        final WebElement addTokenButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("+"), context);
+        final WebElement addTokenButton = new LazyWebElement(Ext4Helper.Locators.ext4Button("+"), this);
         List<WebElement> deleteTokenButtons()
         {
-            return Ext4Helper.Locators.ext4Button("delete").waitForElements(context, BaseWebDriverTest.WAIT_FOR_JAVASCRIPT);
+            return Ext4Helper.Locators.ext4Button("delete").waitForElements(this, BaseWebDriverTest.WAIT_FOR_JAVASCRIPT);
         }
         List<WebElement> projectNameFields()
         {
-            return findElements(Locator.tagWithName("input", "projectname"));
+            return Locator.tagWithName("input", "projectname").findElements(this);
         }
         List<WebElement> tokenFields()
         {
-            return findElements(Locator.tagWithName("input", "token"));
+            return Locator.tagWithName("input", "token").findElements(this);
         }
 
         //ReloadingTab
-        final WebElement enableReloadCheckbox = new LazyWebElement(Locator.id("enableReload"), context);
-        final WebElement reloadDate = new LazyWebElement(Locator.name("reloadDate"), context);
-        final WebElement reloadInterval = new LazyWebElement(Locator.name("reloadInterval"), context);
+        final WebElement enableReloadCheckbox = new LazyWebElement(Locator.id("enableReload"), this);
+        final WebElement reloadDate = new LazyWebElement(Locator.name("reloadDate"), this);
+        final WebElement reloadInterval = new LazyWebElement(Locator.name("reloadInterval"), this);
 
         //ConfigurationSettingTab
-        final WebElement metadataTextArea = new LazyWebElement(Locator.css("textarea[name=metadata]"), context);
+        final WebElement metadataTextArea = new LazyWebElement(Locator.css("textarea[name=metadata]"), this);
     }
 
     private abstract class ConfigurePageTab
