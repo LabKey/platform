@@ -44,6 +44,7 @@ import org.labkey.api.etl.CachingDataIterator;
 import org.labkey.api.etl.RemoveDuplicatesDataIterator;
 import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
+import org.labkey.api.etl.StatementDataIterator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.PropertyService;
@@ -799,6 +800,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 DbSequenceManager.TestCase.class,
                 //RateLimiter.TestCase.class,
                 StatementUtils.TestCase.class,
+                StatementDataIterator.TestCase.class,
                 Encryption.TestCase.class
         ));
 
