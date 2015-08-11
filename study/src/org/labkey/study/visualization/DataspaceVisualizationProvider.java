@@ -59,6 +59,12 @@ public class DataspaceVisualizationProvider extends StudyVisualizationProvider
     {
         // issue 20689 : always join by visit sequencenum for Dataspace
         String subjectVisit = subjectNounSingular + "Visit";
+
+        if ("GridBase".equals(query.getQueryName()))
+        {
+            return factory.create(query.getSchema(), query.getQueryName(), "sequencenum", true);
+        }
+
         String colName = (query.getQueryName().equalsIgnoreCase(subjectVisit) ? "" : subjectVisit + "/") + "sequencenum";
         return factory.create(query.getSchema(), query.getQueryName(), colName, true);
     }
