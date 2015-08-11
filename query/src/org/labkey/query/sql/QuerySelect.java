@@ -132,7 +132,6 @@ public class QuerySelect extends QueryRelation implements Cloneable
 		this(query, query.getSchema(), null);
         this._query = query;
         this._inFromClause = inFromClause;
-        this._queryText = null;
 		initializeFromQQuery(root);
 		initializeSelect();
         MemTracker.getInstance().put(this);
@@ -1458,6 +1457,8 @@ groupByLoop:
 
     public static boolean appendLongComment(SqlBuilder sb, String queryText)
     {
+        if (!AppProps.getInstance().isDevMode())
+            return true;
         boolean truncated = false;
         if (queryText.length() > 10_000)
         {

@@ -88,7 +88,8 @@ public class QueryUnion extends QueryRelation
 			}
             else if (n instanceof QQuery)
             {
-                QuerySelect select = new QuerySelect(_query, (QQuery)n, false);
+                // NOTE inFromClause==true because we want 'nested' behavior (especially wrt comments)
+                QuerySelect select = new QuerySelect(_query, (QQuery)n, true);
                 select._parent = this;
                 select.markAllSelected(qunion);
                 _termList.add(select);
