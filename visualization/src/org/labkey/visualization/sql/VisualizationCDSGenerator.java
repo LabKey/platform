@@ -200,7 +200,7 @@ public class VisualizationCDSGenerator
         if (errors.hasErrors())
             return null;
 
-        if (datasetTablesSet.size() <= 1 || _request.isMetaDataOnly())
+        if (datasetTablesSet.size() <= 1)
         {
             VisualizationSQLGenerator sqlGenerator = new VisualizationSQLGenerator(getViewContext(), _request);
 
