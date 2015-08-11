@@ -550,12 +550,14 @@ public class LoginController extends SpringActionController
 
             if (success)
             {
-                User user = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer()).getUser();
-
+                AuthenticationManager.AuthenticationResult authResult = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
+                // gerUser will return null if authentication is incomplete as is the case when secondary authentication is required
+                User user = authResult.getUser();
+                URLHelper redirectUrl = authResult.getRedirectURL();
+                response = new ApiSimpleResponse();
+                response.put("success", true);
                 if (null != user)
                 {
-                    response = new ApiSimpleResponse();
-                    response.put("success", true);
                     response.put("user", User.getUserProps(user, getContainer()));
                     if( null == form.getReturnUrl() || form.getReturnUrl().length() == 0)  {
                         response.put("returnUrl",  "/labkey/project/home/begin.view?");
@@ -571,6 +573,20 @@ public class LoginController extends SpringActionController
                             SecurityManager.setTermsOfUseApproved(getViewContext(), null, true);
                         response.put("approvedTermsOfUse", true);
                     }
+                }
+                else
+                {
+                    // AuthenticationResult returned by AuthenticationManager.handleAuthentication indicated that a secondary authentication is needed
+                    if (form.isApprovedTermsOfUse())
+                    {
+                        if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.PROJECT_LEVEL)
+                            SecurityManager.setTermsOfUseApproved(getViewContext(), termsProject, true);
+                        else if (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.SITE_WIDE)
+                            SecurityManager.setTermsOfUseApproved(getViewContext(), null, true);
+                        response.put("approvedTermsOfUse", true);
+                    }
+                    // in the ajax response inform js handler to load page from secondary authenticator url
+                    response.put("returnUrl", redirectUrl.toString());
                 }
             }
 
