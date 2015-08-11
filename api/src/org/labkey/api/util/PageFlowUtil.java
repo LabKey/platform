@@ -1636,6 +1636,9 @@ public class PageFlowUtil
             F.format(link, Path.parse(AppProps.getInstance().getContextPath() + resolveExtThemePath(c)));
         }
 
+        String fontAwesomeCss = AppProps.getInstance().isDevMode() ? "font-awesome.css" : "font-awesome.min.css";
+        F.format(link, PageFlowUtil.filter(new ResourceURL("/internal/font-awesome-4.4.0/css/" + fontAwesomeCss)));
+
         F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
 
         ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
