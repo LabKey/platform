@@ -93,9 +93,12 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
         // - http://www.sqlteam.com/article/sql-server-versions
         // - http://sqlserverbuilds.blogspot.se/
 
-        // As of 13.1, we support only 2008 R2 and higher
+        // We support only 2008 R2 and higher
         if (version >= 105)
         {
+            if (version >= 130)
+                return new MicrosoftSqlServer2016Dialect();
+
             if (version >= 120)
                 return new MicrosoftSqlServer2014Dialect();
 
@@ -141,7 +144,10 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
             good("Microsoft SQL Server", 11.0, 12.0, "", MicrosoftSqlServer2012Dialect.class);
 
             // >= 12.0 should result in MicrosoftSqlServer2014Dialect
-            good("Microsoft SQL Server", 12.0, 14.0, "", MicrosoftSqlServer2014Dialect.class);
+            good("Microsoft SQL Server", 12.0, 13.0, "", MicrosoftSqlServer2014Dialect.class);
+
+            // >= 13.0 should result in MicrosoftSqlServer2016Dialect
+            good("Microsoft SQL Server", 13.0, 15.0, "", MicrosoftSqlServer2016Dialect.class);
         }
     }
 

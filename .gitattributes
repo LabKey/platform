@@ -193,6 +193,7 @@ bigiron/src/org/labkey/bigiron/mssql/GroupConcatInstallationManager.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2008R2Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2012Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2014Dialect.java -text
+bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2016Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServerDialectFactory.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySql56Dialect.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySqlDialect.java -text
