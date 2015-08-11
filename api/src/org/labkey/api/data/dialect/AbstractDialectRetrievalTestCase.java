@@ -57,12 +57,12 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
             {
                 SqlDialect dialect = SqlDialectManager.getFromProductName(databaseName, majorVersion + "." + minorVersion, jdbcDriverVersion, false);
                 assertNotNull(description + " returned " + dialect.getClass().getSimpleName() + "; expected failure", expectedDialectClass);
-                assertEquals(description + " returned " + dialect.getClass().getSimpleName() + "; expected " + expectedDialectClass.getSimpleName(), dialect.getClass(), expectedDialectClass);
+                assertEquals(description, expectedDialectClass, dialect.getClass());
             }
             catch (Exception e)
             {
                 assertTrue(description + " failed; expected success", null == expectedDialectClass);
-                assertEquals(description + " resulted in a " + e.getClass().getSimpleName() + "; expected " + expectedExceptionClass, e.getClass(), expectedExceptionClass);
+                assertEquals(description, expectedExceptionClass, e.getClass());
             }
         }
     }
