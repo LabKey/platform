@@ -58,7 +58,7 @@ public class ManageAssayScheduleTester
     public void setAssayPlan(String assayPlan)
     {
         _test.setFormElement(Locator.name("assayPlan"), assayPlan);
-        _test.clickButton("Save");
+        _test.waitAndClickAndWait(Ext4Helper.Locators.ext4ButtonEnabled("Save"));
         _test._ext4Helper.waitForMaskToDisappear();
     }
 
