@@ -7635,6 +7635,7 @@ internal/webapp/internal/ViewDesigner/tab/SortTab.js -text
 internal/webapp/internal/ViewDesigner/ux/ComponentDataView.js -text
 internal/webapp/internal/font-awesome-4.4.0/css/font-awesome.css -text
 internal/webapp/internal/font-awesome-4.4.0/css/font-awesome.min.css -text
+internal/webapp/internal/font-awesome-4.4.0/css/labkey-font-awesome.css -text
 internal/webapp/internal/font-awesome-4.4.0/fonts/FontAwesome.otf -text
 internal/webapp/internal/font-awesome-4.4.0/fonts/fontawesome-webfont.eot -text
 internal/webapp/internal/font-awesome-4.4.0/fonts/fontawesome-webfont.svg -text
