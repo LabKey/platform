@@ -1421,4 +1421,28 @@ public abstract class SqlDialect
      */
     public abstract String translateParameterName(String name, boolean dialectSpecific);
 
+
+    public SQLFragment formatFunction(SQLFragment target, String fn, SQLFragment... arguments)
+    {
+        target.append(fn);
+        target.append("(");
+        String comma = "";
+        for (SQLFragment argument : arguments)
+        {
+            target.append(comma);
+            comma = ",";
+            target.append(argument);
+        }
+        target.append(")");
+        return target;
+    }
+
+    public SQLFragment formatJdbcFunction(String fn, SQLFragment... arguments)
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.append("{fn ");
+        formatFunction(ret, fn, arguments);
+        ret.append("}");
+        return ret;
+    }
 }

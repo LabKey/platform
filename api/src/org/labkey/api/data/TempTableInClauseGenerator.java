@@ -16,67 +16,86 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.util.GUID;
 
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.TreeSet;
 
 /**
  * Created by davebradlee on 6/5/15.
+ *
+ * Generator for very long in-clauses
  */
 public class TempTableInClauseGenerator implements InClauseGenerator
 {
     private static final StringKeyCache<TempTableInfo> _tempTableCache =
         CacheManager.getBlockingStringKeyCache(100, CacheManager.MINUTE * 5, "InClauseTempTableCache", null);
 
+    /**
+     * @param sql fragment to append to
+     * @param params list of values
+     * @return null if can't use TempTableInClauseGenerator, therefore requires a fallback generator
+     */
     @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, final @NotNull Collection<?> params)
     {
-        // TODO: should we sort the params
-        assert params.iterator().next() instanceof Integer;
-        String cacheKey = getCacheKey(params);
-        TempTableInfo tempTableInfo = _tempTableCache.get(cacheKey, null, new CacheLoader<String, TempTableInfo>()
+        Object first = params.iterator().next();
+        if (first instanceof Integer)
+            return appendInClauseSql(sql, params, JdbcType.INTEGER);
+        else if (first instanceof String)
+            return appendInClauseSql(sql, params, JdbcType.VARCHAR);
+        return null;
+    }
+
+    private SQLFragment appendInClauseSql(SQLFragment sql, final @NotNull Collection<?> paramsCollection, JdbcType jdbcType)
+    {
+        ArrayList<Object> sortedParameters = null;
+        if (jdbcType == JdbcType.INTEGER)
         {
-            @Override
-            public TempTableInfo load(String key, @Nullable Object argument)
+            sortedParameters = collectIntegers(paramsCollection);
+        }
+        else if (jdbcType == JdbcType.VARCHAR)
+        {
+            sortedParameters = collectStrings(paramsCollection);
+        }
+        if (null == sortedParameters)
+            return null;
+
+        String cacheKey = getCacheKey(jdbcType, sortedParameters);
+        TempTableInfo tempTableInfo = _tempTableCache.get(cacheKey, sortedParameters, (key, argument) ->
+        {
+            TempTableInfo tempTableInfo1 = new TempTableInfo("InClause", Collections.singletonList(new ColumnInfo("Id", jdbcType, 0, false)), null);
+            String tableName = tempTableInfo1.getSelectName();
+            SQLFragment sqlCreate = new SQLFragment("CREATE TABLE ");
+            sqlCreate.append(tableName)
+                    .append("\n(Id ")
+                    .append(DbSchema.getTemp().getSqlDialect().sqlTypeNameFromSqlType(jdbcType.sqlType))
+                    .append(");");
+
+            new SqlExecutor(DbSchema.getTemp()).execute(sqlCreate);
+            tempTableInfo1.track();
+
+            String sql1 = "INSERT INTO " + tableName + " (Id) VALUES (?)";
+            try
             {
-                TempTableInfo tempTableInfo = new TempTableInfo("InClause", Collections.singletonList(new ColumnInfo("Id", JdbcType.INTEGER, 0, false)), null);
-                String tableName = tempTableInfo.getSelectName();
-                SQLFragment sqlCreate = new SQLFragment("CREATE TABLE ");
-                sqlCreate.append(tableName)
-                         .append("\n(Id ")
-                         .append(DbSchema.getTemp().getSqlDialect().sqlTypeNameFromSqlType(Types.INTEGER))
-                         .append(");");
-
-                new SqlExecutor(DbSchema.getTemp()).execute(sqlCreate);
-                tempTableInfo.track();
-
-                List<List<?>> paramList = new ArrayList<>();
-                for (Object param : params)
-                    paramList.add(Collections.singletonList(param));
-
-                String sql = "INSERT INTO " + tableName + " (Id) VALUES (?)";
-                try
-                {
-                    Table.batchExecute(DbSchema.getTemp(), sql, paramList);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
-
-                String indexSql = "CREATE INDEX IX_Id" + new GUID().toStringNoDashes() + " ON " + tableName + "(Id)";
-                new SqlExecutor(DbSchema.getTemp()).execute(indexSql);
-                return tempTableInfo;
+                if (jdbcType == JdbcType.VARCHAR)
+                    Table.batchExecute1String(DbSchema.getTemp(), sql1, (ArrayList<String>)argument);
+                else
+                    Table.batchExecute1Integer(DbSchema.getTemp(), sql1, (ArrayList<Integer>)argument);
             }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+
+            String indexSql = "CREATE INDEX IX_Id" + new GUID().toStringNoDashes() + " ON " + tableName + "(Id)";
+            new SqlExecutor(DbSchema.getTemp()).execute(indexSql);
+            return tempTableInfo1;
         });
 
         sql.append("IN (SELECT Id FROM ").append(tempTableInfo.getSelectName()).append(")");
@@ -84,9 +103,50 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         return sql;
     }
 
-    private String getCacheKey(@NotNull Collection<?> params)
+
+    // unique and ordered list
+    private  ArrayList<Object> collectStrings(@NotNull Collection<?> paramsCollection)
     {
-        StringBuilder key = new StringBuilder("ttkey");
+        boolean hasNull = false;
+        TreeSet<String> ts = new TreeSet<>();
+        for (Object S : paramsCollection)
+        {
+            if (null == S)
+                hasNull = true;
+            else if (!(S instanceof String))
+                return null;
+            else
+                ts.add((String)S);
+        }
+        ArrayList<Object> params = new ArrayList<>(ts);
+        if (hasNull)
+            params.add(null);
+        return params;
+    }
+
+    // unique and ordered list
+    private ArrayList<Object> collectIntegers(@NotNull Collection<?> paramsCollection)
+    {
+        boolean hasNull = false;
+        TreeSet<Integer> ts = new TreeSet<>();
+        for (Object I : paramsCollection)
+        {
+            if (null == I)
+                hasNull = true;
+            else if (!(I instanceof Integer))
+                return null;
+            else
+                ts.add((Integer)I);
+        }
+        ArrayList<Object> params = new ArrayList<>(ts);
+        if (hasNull)
+            params.add(null);
+        return params;
+    }
+
+    private String getCacheKey(@NotNull JdbcType jdbcType, @NotNull Collection<?> params)
+    {
+        StringBuilder key = new StringBuilder(jdbcType.name());
         for (Object param : params)
             key.append("_").append(param);
 

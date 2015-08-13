@@ -60,6 +60,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -241,6 +242,88 @@ public class Table
         }
     }
 
+    public static void batchExecute1String(DbSchema schema, String sql, Iterable<String> paramList) throws SQLException
+    {
+        Connection conn = schema.getScope().getConnection();
+        PreparedStatement stmt = null;
+
+        try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
+        {
+            stmt = conn.prepareStatement(sql);
+            int paramCounter = 0;
+            for (String s : paramList)
+            {
+                stmt.setString(1, s);
+                stmt.addBatch();
+                paramCounter++;
+                if (paramCounter > 2000)
+                {
+                    paramCounter = 0;
+                    stmt.executeBatch();
+                    jdbcParameters.close();
+                }
+            }
+            stmt.executeBatch();
+        }
+        catch (SQLException e)
+        {
+            if (e instanceof BatchUpdateException)
+            {
+                if (null != e.getNextException())
+                    e = e.getNextException();
+            }
+
+            logException(new SQLFragment(sql), conn, e, Level.WARN);
+            throw(e);
+        }
+        finally
+        {
+            doClose(null, stmt, conn, schema.getScope());
+        }
+    }
+
+    public static void batchExecute1Integer(DbSchema schema, String sql, Iterable<Integer> paramList) throws SQLException
+    {
+        Connection conn = schema.getScope().getConnection();
+        PreparedStatement stmt = null;
+
+        try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
+        {
+            stmt = conn.prepareStatement(sql);
+            int paramCounter = 0;
+            for (Integer I : paramList)
+            {
+                if (null == I)
+                    stmt.setNull(1, Types.INTEGER);
+                else
+                    stmt.setInt(1, I.intValue());
+                stmt.addBatch();
+                paramCounter++;
+                if (paramCounter > 2000)
+                {
+                    paramCounter = 0;
+                    stmt.executeBatch();
+                    jdbcParameters.close();
+                }
+            }
+            stmt.executeBatch();
+        }
+        catch (SQLException e)
+        {
+            if (e instanceof BatchUpdateException)
+            {
+                if (null != e.getNextException())
+                    e = e.getNextException();
+            }
+
+            logException(new SQLFragment(sql), conn, e, Level.WARN);
+            throw(e);
+        }
+        finally
+        {
+            doClose(null, stmt, conn, schema.getScope());
+        }
+    }
 
     private static Map<Class, Getter> _getterMap = new HashMap<>(10);
 
