@@ -386,7 +386,7 @@ Ext4.define('File.panel.Upload', {
         });
 
         var closeBtn = Ext4.create('Ext.button.Button', {
-            iconCls: 'iconClose',
+            iconCls: 'fa fa-times',
             tooltip: 'Close the file upload panel',
             style: 'background-color: transparent;',
             scope: this,
@@ -397,7 +397,7 @@ Ext4.define('File.panel.Upload', {
         });
 
         var helpBtn = Ext4.create('Ext.button.Button', {
-            iconCls: 'iconHelp',
+            iconCls: 'fa fa-info-circle',
             tooltip: 'File upload help',
             style: 'background-color: transparent;',
             allowDepress: false,
