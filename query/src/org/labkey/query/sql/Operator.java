@@ -347,6 +347,7 @@ public enum Operator
                 ((QExpr) operands.get(0)).appendSql(builder, query);
                 if (paren)
                     builder.append(")");
+                builder.append(" ");
                 builder.getDialect().appendInClauseSql(builder, constants);
                 return;
             }
