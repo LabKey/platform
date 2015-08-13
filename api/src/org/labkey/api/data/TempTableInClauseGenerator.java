@@ -98,7 +98,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             return tempTableInfo1;
         });
 
-        sql.append("IN (SELECT Id FROM ").append(tempTableInfo.getSelectName()).append(")");
+        sql.append(" IN (SELECT Id FROM ").append(tempTableInfo.getSelectName()).append(")");
         sql.addTempToken(tempTableInfo);
         return sql;
     }

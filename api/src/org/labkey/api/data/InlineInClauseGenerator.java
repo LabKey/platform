@@ -62,7 +62,7 @@ public class InlineInClauseGenerator implements InClauseGenerator
     private SQLFragment createInlineInClause(SQLFragment sql, Collection<?> params)
     {
         String separator = "";
-        sql.append("IN (");
+        sql.append(" IN (");
 
         for (Object param : params)
         {
