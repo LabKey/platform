@@ -49,8 +49,12 @@ public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Diale
     @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
-        if (params.size() >= TEMPTABLE_GENERATOR_MINSIZE && (params.iterator().next() instanceof Integer))
-            return _tempTableInClauseGenerator.appendInClauseSql(sql, params);
+        if (params.size() >= TEMPTABLE_GENERATOR_MINSIZE)
+        {
+            SQLFragment ret = _tempTableInClauseGenerator.appendInClauseSql(sql, params);
+            if (null != ret)
+                return ret;
+        }
         return super.appendInClauseSql(sql, params);
     }
 

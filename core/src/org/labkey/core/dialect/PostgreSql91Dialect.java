@@ -19,6 +19,8 @@ package org.labkey.core.dialect;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
@@ -39,6 +41,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.DialectStringHandler;
@@ -51,6 +54,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -63,6 +67,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
@@ -85,6 +90,10 @@ public class PostgreSql91Dialect extends SqlDialect
 {
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
+
+    private static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
+
+    private final InClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
 
     private InClauseGenerator _inClauseGenerator = null;
 
@@ -283,6 +292,12 @@ public class PostgreSql91Dialect extends SqlDialect
     @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
+        if (params.size() >= TEMPTABLE_GENERATOR_MINSIZE)
+        {
+            SQLFragment ret = _tempTableInClauseGenerator.appendInClauseSql(sql, params);
+            if (null != ret)
+                return ret;
+        }
         return _inClauseGenerator.appendInClauseSql(sql, params);
     }
 
@@ -1436,7 +1451,7 @@ public class PostgreSql91Dialect extends SqlDialect
             if (paramInfo.getParamTraits().get(ParamTraits.direction) != DatabaseMetaData.procedureColumnOut)
             {
                 position++;
-                stmt.setObject(position, paramInfo.getParamValue() ,paramInfo.getParamTraits().get(ParamTraits.datatype));
+                stmt.setObject(position, paramInfo.getParamValue(), paramInfo.getParamTraits().get(ParamTraits.datatype));
             }
         }
     }
@@ -1451,10 +1466,10 @@ public class PostgreSql91Dialect extends SqlDialect
         {
             String paramName = parameter.getKey();
             MetadataParameterInfo paramInfo = parameter.getValue();
-            int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
+            int direction = paramInfo.getParamTraits().get(ParamTraits.direction).intValue();
             if (direction == DatabaseMetaData.procedureColumnInOut)
                 paramInfo.setParamValue(rs.getObject(paramName));
-            else if (direction == DatabaseMetaData.procedureColumnOut && paramInfo.getParamTraits().get(ParamTraits.datatype) == Types.INTEGER)
+            else if (direction == DatabaseMetaData.procedureColumnOut && paramInfo.getParamTraits().get(ParamTraits.datatype).intValue() == Types.INTEGER)
                 returnVal = rs.getInt(paramName);
         }
         return returnVal;
@@ -1532,7 +1547,7 @@ public class PostgreSql91Dialect extends SqlDialect
                 }
             }
 
-            return scale;
+            return scale.intValue();
         }
 
         // Domain could be defined in the current schema or in the "public" schema
@@ -1604,29 +1619,6 @@ public class PostgreSql91Dialect extends SqlDialect
         }
     }
 
-    // TODO: Move to special test case for PostgreSQL
-    public void testParameterSubstitution()
-    {
-        if (_standardConformingStrings)
-        {
-            assert "'this'".equals(getStringHandler().quoteStringLiteral("this"));
-            assert "'th\\is'".equals(getStringHandler().quoteStringLiteral("th\\is"));
-            assert "'th\\''is'".equals(getStringHandler().quoteStringLiteral("th\\'is"));
-
-            // Backslashes are normal characters in standard SQL, so we have five question marks outside of string literals here
-//            testParameterSubstitution(new SQLFragment("'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'", 1, 2, 3, 4, 5), "'this\\??\\\\''\\'\\\\'1''2''3''4'\\'5'''\\'??\\\\?\\\\?''?''?\\'\\'\\?'");
-        }
-        else
-        {
-            assert "'this'".equals(getStringHandler().quoteStringLiteral("this"));
-            assert "'th\\\\is'".equals(getStringHandler().quoteStringLiteral("th\\is"));
-            assert "'th\\\\''is'".equals(getStringHandler().quoteStringLiteral("th\\'is"));
-
-            // Backslashes are escape characters in non-conforming strings mode, so we have no question marks outside of string literals here
-//            testParameterSubstitution(new SQLFragment("'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'"), "'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'");
-        }
-    }
-
 
     @Override
     public SQLFragment getISOFormat(SQLFragment date)
@@ -1653,4 +1645,103 @@ public class PostgreSql91Dialect extends SqlDialect
 
         return new SqlSelector(scope, copy).getCollection(String.class);
     }
+
+
+    // This list is definitely not exhaustive, can be used for any function where the parameter count and
+    // order are exactly the same as the JDBC equivalent
+    static final CaseInsensitiveHashMap<String> passthroughFn = new CaseInsensitiveHashMap<>();
+    static
+    {
+        passthroughFn.put("floor","floor");
+        passthroughFn.put("lcase","lower");
+        passthroughFn.put("ucase","upper");
+        passthroughFn.put("now","now");
+    }
+
+    @Override
+    public SQLFragment formatJdbcFunction(String fn, SQLFragment... arguments)
+    {
+        SQLFragment call = new SQLFragment();
+        String nativeFn = passthroughFn.get(fn);
+        if (null != nativeFn)
+            return formatFunction(call, nativeFn, arguments);
+        else
+            return super.formatJdbcFunction(fn, arguments);
+    }
+
+
+
+
+
+
+    public static class TestCase extends Assert
+    {
+        PostgreSql91Dialect getDialect()
+        {
+            DbSchema core = CoreSchema.getInstance().getSchema();
+            SqlDialect d = core.getSqlDialect();
+            if (d instanceof PostgreSql91Dialect)
+                return (PostgreSql91Dialect)d;
+            return null;
+        }
+
+        @Test
+        public void testParameterSubstitution()
+        {
+            PostgreSql91Dialect d = getDialect();
+            if (null == d)
+                return;
+
+            if (Boolean.TRUE == d._standardConformingStrings)
+            {
+                assert "'this'".equals(d.getStringHandler().quoteStringLiteral("this"));
+                assert "'th\\is'".equals(d.getStringHandler().quoteStringLiteral("th\\is"));
+                assert "'th\\''is'".equals(d.getStringHandler().quoteStringLiteral("th\\'is"));
+
+                // Backslashes are normal characters in standard SQL, so we have five question marks outside of string literals here
+    //            testParameterSubstitution(new SQLFragment("'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'", 1, 2, 3, 4, 5), "'this\\??\\\\''\\'\\\\'1''2''3''4'\\'5'''\\'??\\\\?\\\\?''?''?\\'\\'\\?'");
+            }
+            else
+            {
+                assert "'this'".equals(d.getStringHandler().quoteStringLiteral("this"));
+                assert "'th\\\\is'".equals(d.getStringHandler().quoteStringLiteral("th\\is"));
+                assert "'th\\\\''is'".equals(d.getStringHandler().quoteStringLiteral("th\\'is"));
+
+                // Backslashes are escape characters in non-conforming strings mode, so we have no question marks outside of string literals here
+    //            testParameterSubstitution(new SQLFragment("'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'"), "'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'");
+            }
+        }
+
+        @Test
+        public void testInClause()
+        {
+            PostgreSql91Dialect d = getDialect();
+            if (null == d)
+                return;
+            DbSchema core = CoreSchema.getInstance().getSchema();
+
+            SQLFragment shortSql = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE userid ");
+            d.appendInClauseSql(shortSql, Arrays.asList(1, 2, 3));
+            assertEquals(1, new SqlSelector(core, shortSql).getRowCount());
+
+            ArrayList<Object> l = new ArrayList<>();
+            for (int i=1 ; i<=TEMPTABLE_GENERATOR_MINSIZE+1 ; i++)
+                l.add(i);
+            SQLFragment longSql = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE userid ");
+            d.appendInClauseSql(longSql, l);
+            assertEquals(1, new SqlSelector(core, longSql).getRowCount());
+
+            SQLFragment shortSqlStr = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE displayname ");
+            d.appendInClauseSql(shortSqlStr, Arrays.asList("1", "2", "3"));
+            assertEquals(1, new SqlSelector(core, shortSqlStr).getRowCount());
+
+            l = new ArrayList<>();
+            for (int i=1 ; i<=TEMPTABLE_GENERATOR_MINSIZE+1 ; i++)
+                l.add(String.valueOf(i));
+            SQLFragment longSqlStr = new SQLFragment("SELECT COUNT(*) FROM core.usersdata WHERE displayname ");
+            d.appendInClauseSql(longSqlStr, l);
+            assertEquals(1, new SqlSelector(core, longSqlStr).getRowCount());
+        }
+    }
+
 }

@@ -73,7 +73,7 @@ public class ArrayParameterInClauseGenerator implements InClauseGenerator
 
         for (Object param : elements)
             if (param.getClass() != firstParamClass)
-                throw new IllegalArgumentException("Unexpected mixed types in a single IN clause: " + firstParamClass.getName() + " and " + param.getClass().getName());
+                return false;
 
         return true;
     }

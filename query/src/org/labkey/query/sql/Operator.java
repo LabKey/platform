@@ -22,6 +22,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 
@@ -36,136 +38,143 @@ public enum Operator
     is(" IS ", Precedence.comparison, IS, ResultType.bool),
     is_not(" IS NOT ", Precedence.comparison, IS_NOT, ResultType.bool),
     between(" BETWEEN ", Precedence.comparison, BETWEEN, ResultType.bool)
-    {
-        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
-        {
-            builder.pushPrefix("");
-            int i=0;
-            for (QNode operand : operands)
             {
-                boolean paren = needsParentheses((QExpr)operand, true);
-                if (paren)
-                    builder.pushPrefix("(");
-                ((QExpr)operand).appendSql(builder, query);
-                if (paren)
-                    builder.popPrefix(")");
-                if (i==0)
-                    builder.append(" BETWEEN ");
-                else if (i==1)
-                    builder.append(" AND ");
-                ++i;
-            }
-            builder.popPrefix("");
-        }
-    },
+                public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+                {
+                    builder.pushPrefix("");
+                    int i = 0;
+                    for (QNode operand : operands)
+                    {
+                        boolean paren = needsParentheses((QExpr) operand, true);
+                        if (paren)
+                            builder.pushPrefix("(");
+                        ((QExpr) operand).appendSql(builder, query);
+                        if (paren)
+                            builder.popPrefix(")");
+                        if (i == 0)
+                            builder.append(" BETWEEN ");
+                        else if (i == 1)
+                            builder.append(" AND ");
+                        ++i;
+                    }
+                    builder.popPrefix("");
+                }
+            },
     notBetween(" NOT BETWEEN ", Precedence.comparison, NOT_BETWEEN, ResultType.bool)
-    {
-        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
-        {
-            builder.pushPrefix("");
-            int i=0;
-            for (QNode operand : operands)
             {
-                boolean paren = needsParentheses((QExpr)operand, true);
-                if (paren)
-                    builder.pushPrefix("(");
-                ((QExpr)operand).appendSql(builder, query);
-                if (paren)
-                    builder.popPrefix(")");
-                if (i==0)
-                    builder.append(" NOT BETWEEN ");
-                else if (i==1)
-                    builder.append(" AND ");
-                ++i;
-            }
-            builder.popPrefix("");
-        }
-    },
+                public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+                {
+                    builder.pushPrefix("");
+                    int i = 0;
+                    for (QNode operand : operands)
+                    {
+                        boolean paren = needsParentheses((QExpr) operand, true);
+                        if (paren)
+                            builder.pushPrefix("(");
+                        ((QExpr) operand).appendSql(builder, query);
+                        if (paren)
+                            builder.popPrefix(")");
+                        if (i == 0)
+                            builder.append(" NOT BETWEEN ");
+                        else if (i == 1)
+                            builder.append(" AND ");
+                        ++i;
+                    }
+                    builder.popPrefix("");
+                }
+            },
     add("+", Precedence.addition, PLUS, ResultType.arg, Associativity.full),
     subtract("-", Precedence.addition, MINUS, ResultType.arg),
     plus("+", Precedence.unary, UNARY_PLUS, ResultType.arg)
-    {
-        public String getPrefix()
-        {
-            return "+";
-        }
-    },
+            {
+                public String getPrefix()
+                {
+                    return "+";
+                }
+            },
     minus("-", Precedence.unary, UNARY_MINUS, ResultType.arg)
-    {
-        public String getPrefix()
-        {
-            return "-";
-        }
-    },
+            {
+                public String getPrefix()
+                {
+                    return "-";
+                }
+            },
     multiply("*", Precedence.multiplication, STAR, ResultType.arg, Associativity.full),
     divide("/", Precedence.multiplication, DIV, ResultType.arg),
     modulo("%", Precedence.multiplication, MODULO, ResultType.arg),
     concat("||", Precedence.addition, CONCAT, ResultType.string)
-    {
-        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
-        {
-            ArrayList<SQLFragment> terms = new ArrayList<>();
-            for (QNode operand : operands)
             {
-                SQLFragment sqlf = ((QExpr)operand).getSqlFragment(builder.getDbSchema(), query);
-                JdbcType type = ((QExpr)operand).getSqlType();
-                if (null != builder.getDialect())
-                    sqlf = builder.getDialect().implicitConvertToString(type, sqlf);
-                terms.add(sqlf);
-            }
-            SqlDialect d = builder.getDialect();
-            if (null == d)
-                throw new NullPointerException();
-            SQLFragment f = builder.getDialect().concatenate(terms.toArray(new SQLFragment[terms.size()]));
-            builder.append(f);
-        }
-    },
+                public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+                {
+                    ArrayList<SQLFragment> terms = new ArrayList<>();
+                    for (QNode operand : operands)
+                    {
+                        SQLFragment sqlf = ((QExpr) operand).getSqlFragment(builder.getDbSchema(), query);
+                        JdbcType type = ((QExpr) operand).getSqlType();
+                        if (null != builder.getDialect())
+                            sqlf = builder.getDialect().implicitConvertToString(type, sqlf);
+                        terms.add(sqlf);
+                    }
+                    SqlDialect d = builder.getDialect();
+                    if (null == d)
+                        throw new NullPointerException();
+                    SQLFragment f = builder.getDialect().concatenate(terms.toArray(new SQLFragment[terms.size()]));
+                    builder.append(f);
+                }
+            },
     not(" NOT ", Precedence.not, NOT, ResultType.bool)
-    {
-        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
-        {
-            appendSqlUnary(builder,query,operands);
-        }
-    },
+            {
+                public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+                {
+                    appendSqlUnary(builder, query, operands);
+                }
+            },
     and(" AND ", Precedence.and, AND, ResultType.bool, Associativity.full),
     or(" OR ", Precedence.like, OR, ResultType.bool, Associativity.full),
     like(" LIKE ", Precedence.like, LIKE, ResultType.bool)
-    {
-        @Override
-        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
-        {
-            Iterator<QNode> i = operands.iterator();
-            assert i.hasNext();
-            ((QExpr)i.next()).appendSql(builder, query);
-            builder.append(" LIKE ");
-            assert i.hasNext();
-            ((QExpr)i.next()).appendSql(builder, query);
-            if (i.hasNext())
             {
-                builder.append(" ESCAPE ");
-                ((QExpr)i.next()).appendSql(builder, query);
-            }
-        }
-    },
+                @Override
+                public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+                {
+                    Iterator<QNode> i = operands.iterator();
+                    assert i.hasNext();
+                    ((QExpr) i.next()).appendSql(builder, query);
+                    builder.append(" LIKE ");
+                    assert i.hasNext();
+                    ((QExpr) i.next()).appendSql(builder, query);
+                    if (i.hasNext())
+                    {
+                        builder.append(" ESCAPE ");
+                        ((QExpr) i.next()).appendSql(builder, query);
+                    }
+                }
+            },
     notLike(" NOT LIKE ", Precedence.like, NOT_LIKE, ResultType.bool)
-    {
-        @Override
-        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
-        {
-            Iterator<QNode> i = operands.iterator();
-            assert i.hasNext();
-            ((QExpr)i.next()).appendSql(builder, query);
-            builder.append(" NOT LIKE ");
-            assert i.hasNext();
-            ((QExpr)i.next()).appendSql(builder, query);
-            if (i.hasNext())
             {
-                builder.append(" ESCAPE ");
-                ((QExpr)i.next()).appendSql(builder, query);
-            }
-        }
-    },
-    in(" IN ", Precedence.like, IN, ResultType.bool),
+                @Override
+                public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+                {
+                    Iterator<QNode> i = operands.iterator();
+                    assert i.hasNext();
+                    ((QExpr) i.next()).appendSql(builder, query);
+                    builder.append(" NOT LIKE ");
+                    assert i.hasNext();
+                    ((QExpr) i.next()).appendSql(builder, query);
+                    if (i.hasNext())
+                    {
+                        builder.append(" ESCAPE ");
+                        ((QExpr) i.next()).appendSql(builder, query);
+                    }
+                }
+            },
+    in(" IN ", Precedence.like, IN, ResultType.bool)
+            {
+                @Override
+                public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+                {
+                    appendSqlIN(builder, query, operands);
+                }
+            },
     notIn(" NOT IN ", Precedence.like, NOT_IN, ResultType.bool),
     bit_and("&", Precedence.bitwiseand, BIT_AND, ResultType.arg, Associativity.full, true),
     bit_or("|", Precedence.bitwiseor, BIT_OR, ResultType.arg, Associativity.full, true),
@@ -181,33 +190,33 @@ public enum Operator
             },
 
     exists(" EXISTS ", Precedence.unary, EXISTS, ResultType.bool)
-    {
-        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
-        {
-            appendSqlUnary(builder,query,operands);
-        }
-    },
+            {
+                public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+                {
+                    appendSqlUnary(builder, query, operands);
+                }
+            },
     some(" SOME ", Precedence.unary, SOME, ResultType.bool)
-    {
-        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
-        {
-            appendSqlUnary(builder,query,operands);
-        }
-    },
+            {
+                public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+                {
+                    appendSqlUnary(builder, query, operands);
+                }
+            },
     any(" ANY ", Precedence.unary, ANY, ResultType.bool)
-    {
-        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
-        {
-            appendSqlUnary(builder,query,operands);
-        }
-    },
+            {
+                public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+                {
+                    appendSqlUnary(builder, query, operands);
+                }
+            },
     all(" ALL ", Precedence.unary, ALL, ResultType.bool)
-    {
-        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
-        {
-            appendSqlUnary(builder,query,operands);
-        }
-    };
+            {
+                public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+                {
+                    appendSqlUnary(builder, query, operands);
+                }
+            };
 
     public enum ResultType
     {
@@ -221,7 +230,8 @@ public enum Operator
         full
     }
 
-    static HashMap<Integer,Operator> tokenTypeOperatorMap;
+    static HashMap<Integer, Operator> tokenTypeOperatorMap;
+
     static
     {
         tokenTypeOperatorMap = new HashMap<>();
@@ -248,10 +258,12 @@ public enum Operator
         _forceParens = forceParens;
         _associativity = assoc;
     }
+
     private Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType, Associativity assoc)
     {
         this(strOp, precedence, tokenType, resultType, assoc, false);
     }
+
     private Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType)
     {
         this(strOp, precedence, tokenType, resultType, Associativity.left, false);
@@ -274,6 +286,11 @@ public enum Operator
     }
 
     public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+    {
+        _appendSql(builder,query,operands);
+    }
+
+    private final void _appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
     {
         builder.pushPrefix(getPrefix());
         boolean first = true;
@@ -307,6 +324,38 @@ public enum Operator
         assert !i.hasNext();
         builder.append(")");
     }
+
+    public void appendSqlIN(SqlBuilder builder, Query query, Iterable<QNode> operandsIN)
+    {
+        ArrayList<QNode> operands = new ArrayList<>(2);
+        for (QNode node : operandsIN)
+            operands.add(node);
+
+        if (operands.size() == 2 || operands.get(1).getTokenType() == IN_LIST)
+        {
+            QExpr inlist = (QExpr)operands.get(1);
+            List<QNode> childList = inlist.childList();
+            // check that all members have the same class and are constants=
+            Set<Class> classes = childList.stream().map(Object::getClass).collect(Collectors.toSet());
+            if (classes.size() == 1 && childList.get(0) instanceof IConstant)
+            {
+                // additional check, are all the types the same class in addition to being constant?
+                List<Object> constants = childList.stream().map((qn) -> ((IConstant) qn).getValue()).collect(Collectors.toList());
+                boolean paren = needsParentheses(((QExpr) operands.get(0)), true);
+                if (paren)
+                    builder.append("(");
+                ((QExpr) operands.get(0)).appendSql(builder, query);
+                if (paren)
+                    builder.append(")");
+                builder.getDialect().appendInClauseSql(builder, constants);
+                return;
+            }
+        }
+
+        // fall through
+        _appendSql(builder, query, operands);
+    }
+
 
 
     public boolean needsParentheses(QExpr child, boolean isFirstChild)
