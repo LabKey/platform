@@ -46,10 +46,10 @@ public class ManageAssayScheduleTester
 
         _test.click(insertNewConfigButton);
         _test.waitForElement(addAssayConfigWindow);
-        if (name != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("AssayName"), true, name);
+        if (name != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("AssayName"), Ext4Helper.TextMatchTechnique.CONTAINS, name);
         if (description != null) _test.setFormElement(Locator.name("Description"), description);
-        if (lab != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("Lab"), true, lab);
-        if (sampleType != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("SampleType"), true, sampleType);
+        if (lab != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("Lab"), Ext4Helper.TextMatchTechnique.CONTAINS, lab);
+        if (sampleType != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("SampleType"), Ext4Helper.TextMatchTechnique.CONTAINS, sampleType);
 
         _test.clickAndWait(addAssayConfigWindow.append(Ext4Helper.Locators.ext4Button("Submit")));
         _test.waitForElement(Locators.assayGridRow(name));

@@ -44,7 +44,7 @@ public class ManageStudyProductsTester
         _test.click(insertNewImmunogenButton);
         _test.waitForElement(Ext4Helper.Locators.window("Insert Immunogen"));
         _test.setFormElement(Locator.name("Label"), label);
-        _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithLabel("Type:"), true, type);
+        _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithLabel("Type:"), Ext4Helper.TextMatchTechnique.CONTAINS, type);
         _test.clickButton("Submit", 0);
         _test._ext4Helper.waitForMaskToDisappear();
     }
@@ -59,9 +59,11 @@ public class ManageStudyProductsTester
     @LogMethod
     public void insertNewAntigen(@LoggedParam String immunogen, String gene, String subType, String genBankId, String sequence)
     {
+        if (genBankId != null || sequence != null)
+            throw new IllegalArgumentException("genBankId and sequence are not yet supported");
         _test.click(Ext4Helper.Locators.window("Edit HIV Antigens for " + immunogen).append(Ext4Helper.Locators.ext4Button("Insert New")));
-        if (gene != null) _test._ext4Helper.selectComboBoxItem(Locators.antigenComboBox("Gene"), true, gene);
-        if (subType != null) _test._ext4Helper.selectComboBoxItem(Locators.antigenComboBox("SubType"), true, subType);
+        if (gene != null) _test._ext4Helper.selectComboBoxItem(Locators.antigenComboBox("Gene"), Ext4Helper.TextMatchTechnique.CONTAINS, gene);
+        if (subType != null) _test._ext4Helper.selectComboBoxItem(Locators.antigenComboBox("SubType"), Ext4Helper.TextMatchTechnique.CONTAINS, subType);
         _test.click(Ext4Helper.Locators.ext4Button("Update"));
     }
 

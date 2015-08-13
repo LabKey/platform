@@ -56,7 +56,7 @@ public class ManageTreatmentsTester
                     .withPredicate(Locator.tagWithClass("label", "x4-form-cb-label").withText(component.getLabel()));
             _test._ext4Helper.checkCheckbox(component.getLabel());
             _test.setFormElement(componentRow.append(Locator.tagWithName("input", "Dose")), component.getDoseAndUnits());
-            _test._ext4Helper.selectComboBoxItem(componentRow.append(Locator.tag("table").withClass("x4-box-item").withPredicate(Locator.tagWithName("input", "Route"))), true, component.getRoute());
+            _test._ext4Helper.selectComboBoxItem(componentRow.append(Locator.tag("table").withClass("x4-box-item").withPredicate(Locator.tagWithName("input", "Route"))), Ext4Helper.TextMatchTechnique.CONTAINS, component.getRoute());
         }
         _test.clickButton("Submit", 0);
         _test._ext4Helper.waitForMaskToDisappear();
@@ -119,7 +119,7 @@ public class ManageTreatmentsTester
                 addVisitToSchedule(treatmentVisit.getVisit(), treatmentVisit.isNewVisit());
 
             _test.waitForElement(treatmentComboForVisit);
-            _test._ext4Helper.selectComboBoxItem(treatmentComboForVisit, true, treatmentVisit.getTreatment());
+            _test._ext4Helper.selectComboBoxItem(treatmentComboForVisit, Ext4Helper.TextMatchTechnique.CONTAINS, treatmentVisit.getTreatment());
         }
 
         _test.click(editCohortWindow.append(Ext4Helper.Locators.ext4Button("Submit")));
@@ -150,7 +150,7 @@ public class ManageTreatmentsTester
         }
         else
         {
-            _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("existingVisit"), true, visit.getLabel());
+            _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("existingVisit"), Ext4Helper.TextMatchTechnique.CONTAINS, visit.getLabel());
             _test.click(addVisitWindow.append(Ext4Helper.Locators.ext4Button("Select")));
         }
 
