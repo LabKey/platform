@@ -46,7 +46,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -54,7 +53,6 @@ import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -1736,94 +1734,6 @@ public class ReportsController extends BaseStudyController
             Object model = getModelBean();
             if (model instanceof StudyManageReportsBean)
                 ((StudyManageReportsBean) model).setAdminView(mode);
-        }
-    }
-
-    public static class StudyRReportViewFactory implements ReportService.ViewFactory
-    {
-        @Override
-        public String getExtraFormHtml(ViewContext ctx, ScriptReportBean bean) throws ServletException
-        {
-            Report report;
-
-            try
-            {
-                report = bean.getReport(ctx);
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
-
-            if (null == getStudy(ctx.getContainer()) || !RReport.class.isAssignableFrom(report.getClass()))
-                return null;
-
-            boolean hasQuery = bean.getQueryName() != null || bean.getSchemaName() != null || bean.getViewName() != null;
-
-            StringBuilder html = new StringBuilder();
-            html.append("<tr class=\"labkey-wp-header\"><th align=\"left\" colspan=\"2\">Study Module Options</th></tr>");
-
-            if (hasQuery)
-            {
-                String subjectNoun = StudyService.get().getSubjectNounSingular(ctx.getContainer());
-                html.append("<tr><td>");
-                html.append("<input type=\"checkbox\" value=\"participantId\" name=\"");
-                html.append(ReportDescriptor.Prop.filterParam);
-                html.append("\"");
-                html.append("participantId".equals(bean.getFilterParam()) ? "checked" : "");
-                html.append(" onchange=\"LABKEY.setDirty(true);return true;\"> ");
-                html.append(PageFlowUtil.filter(subjectNoun));
-                html.append(" chart&nbsp;");
-                html.append(PageFlowUtil.helpPopup(subjectNoun + " chart", subjectNoun +
-                        " chart views show measures for only one " + subjectNoun + " at a time. " + subjectNoun +
-                        " chart views allow the user to step through charts for each " + subjectNoun + " shown in any dataset grid."));
-                html.append("</td></tr>");
-            }
-
-            html.append("<tr><td><input type=\"checkbox\" name=\"cached\"");
-            html.append(bean.isCached() ? " checked" : "");
-            html.append(" onchange=\"LABKEY.setDirty(true);return true;\"");
-            html.append("> Automatically cache this report for faster reloading</td></tr>");
-            html.append("<tr><td>&nbsp;</td></tr>");
-
-            return html.toString();
-        }
-    }
-
-    private static class StudyRReportView extends WebPartView
-    {
-        public StudyRReportView(RReportBean bean)
-        {
-            super(bean);
-            this.setTitle("Study module options");
-        }
-
-        protected void renderView(Object model, PrintWriter out) throws Exception
-        {
-            if (model instanceof RReportBean)
-            {
-                RReportBean bean = (RReportBean) model;
-                boolean hasQuery = bean.getQueryName() != null || bean.getSchemaName() != null || bean.getViewName() != null;
-                out.print("<table>");
-
-                if (hasQuery)
-                {
-                    String subjectNoun = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
-                    out.print("<tr><td>");
-                    out.print("<input type=\"checkbox\" value=\"participantId\" name=\"");
-                    out.print(ReportDescriptor.Prop.filterParam);
-                    out.print("\"");
-                    out.print("participantId".equals(bean.getFilterParam()) ? "checked" : "");
-                    out.print(" onchange=\"LABKEY.setDirty(true);return true;\">");
-                    out.print(PageFlowUtil.filter(subjectNoun) + " chart.&nbsp;" + PageFlowUtil.helpPopup(subjectNoun + " chart", subjectNoun +
-                            " chart views show measures for only one " + subjectNoun + " at a time. " + subjectNoun +
-                            " chart views allow the user to step through charts for each " + subjectNoun + " shown in any dataset grid."));
-                    out.print("</td></tr>");
-                }
-
-                out.print("<tr><td><input type=\"checkbox\" name=\"cached\" " + (bean.isCached() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Automatically cache this report for faster reloading.</td></tr>");
-                out.print("</table>");
-            }
         }
     }
 

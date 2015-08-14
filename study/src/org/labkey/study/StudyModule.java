@@ -421,7 +421,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerDescriptor(new CrosstabReportDescriptor());
         ReportService.get().registerDescriptor(new ParticipantReportDescriptor());
 
-        ReportService.get().addViewFactory(new ReportsController.StudyRReportViewFactory());
         ReportService.get().addUIProvider(new StudyReportUIProvider());
 
         StudyReload.initializeAllTimers();

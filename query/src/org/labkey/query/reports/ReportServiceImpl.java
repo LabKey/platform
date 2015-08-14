@@ -26,11 +26,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SQLFragment;
@@ -88,9 +88,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportDescriptorType;
 import org.labkey.security.xml.GroupRefType;
-import org.labkey.security.xml.GroupRefsType;
 import org.labkey.security.xml.UserRefType;
-import org.labkey.security.xml.UserRefsType;
 import org.labkey.security.xml.roleAssignment.RoleAssignmentType;
 import org.labkey.security.xml.roleAssignment.RoleAssignmentsType;
 
@@ -107,6 +105,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: Karl Lum
@@ -117,9 +116,8 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
     private static final String SCHEMA_NAME = "core";
     private static final String TABLE_NAME = "Report";
     private static final Logger _log = Logger.getLogger(ReportService.class);
-    private static List<ReportService.ViewFactory> _viewFactories = new ArrayList<>();
-    private static List<ReportService.UIProvider> _uiProviders = new ArrayList<>();
-    private static Map<String, ReportService.UIProvider> _typeToProviderMap = new HashMap<>();
+    private static final List<ReportService.UIProvider> _uiProviders = new CopyOnWriteArrayList<>();
+    private static final Map<String, ReportService.UIProvider> _typeToProviderMap = new ConcurrentHashMap<>();
 
     private static final Cache<Integer, ReportDB> REPORT_DB_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database Report Cache");
 
@@ -129,21 +127,20 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
     /** maps report types to implementations */
     private final ConcurrentMap<String, Class> _reports = new ConcurrentHashMap<>();
 
-    private final ReportQueryChangeListener _listener = new ReportQueryChangeListener();
-
     public ReportServiceImpl()
     {
         ContainerManager.addContainerListener(this);
         ConvertUtils.register(new ReportIdentifierConverter(), ReportIdentifier.class);
-        QueryService.get().addQueryListener(_listener);
-        QueryService.get().addCustomViewListener(_listener);
+        ReportQueryChangeListener listener = new ReportQueryChangeListener();
+        QueryService.get().addQueryListener(listener);
+        QueryService.get().addCustomViewListener(listener);
         SystemMaintenance.addTask(new ReportServiceMaintenanceTask());
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
     }
 
     private DbSchema getSchema()
     {
-        return DbSchema.get(SCHEMA_NAME);
+        return DbSchema.get(SCHEMA_NAME, DbSchemaType.Module);
     }
 
     public void registerDescriptor(ReportDescriptor descriptor)
@@ -275,7 +272,6 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         // Check if it is a file
         if (!reportDirectory.isFile())
         {
-
             // Not a file so must be within the valid module report path
             if (!reportDirectory.getPath().startsWith(moduleReportDirectory))
                 return Collections.emptyList();
@@ -707,14 +703,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
 
     public Report getReport(int reportId)
     {
-        ReportDB reportDB = REPORT_DB_CACHE.get(reportId, null, new CacheLoader<Integer, ReportDB>()
-        {
-            @Override
-            public ReportDB load(Integer key, @Nullable Object argument)
-            {
-                return new TableSelector(getTable(), new SimpleFilter(FieldKey.fromParts("RowId"), key), null).getObject(ReportDB.class);
-            }
-        });
+        ReportDB reportDB = REPORT_DB_CACHE.get(reportId, null, (key, argument) -> new TableSelector(getTable(), new SimpleFilter(FieldKey.fromParts("RowId"), key), null).getObject(ReportDB.class));
 
         return _getInstance(reportDB);
     }
@@ -832,19 +821,6 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         if (reports.length > 0)
             return reports[0];
         return null;
-    }
-
-    /**
-     * Provides a module specific way to add ui to the report designers.
-     */
-    public void addViewFactory(ReportService.ViewFactory vf)
-    {
-        _viewFactories.add(vf);
-    }
-
-    public List<ReportService.ViewFactory> getViewFactories()
-    {
-        return _viewFactories;
     }
 
     public void addUIProvider(ReportService.UIProvider provider)
