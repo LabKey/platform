@@ -321,6 +321,7 @@ public class VisualizationCDSGenerator
         // we can get the SQL for each part of the union, but we have to rearrange columns to line up, and pad with NULLs
         LinkedHashSet<String> fullAliasList = new LinkedHashSet<>();
         List<Map<String, String>> columnAliases = new ArrayList<>();
+
         for (VisualizationSQLGenerator generator : generators)
         {
             List<VisualizationSourceColumn> list = generator.getColumns();
@@ -332,7 +333,10 @@ public class VisualizationCDSGenerator
                 String columnName = vcol.getOriginalName();
                 Path queryPath = new Path(vcol.getSchemaName(), vcol.getQueryName());
 
-                if (!datasetTablesSet.contains(queryPath) || (!equalsIgnoreCase(columnName, containerColumnName) && !equalsIgnoreCase(columnName, subjectColumnName) && !equalsIgnoreCase(columnName, sequenceNumColumnName)))
+                if (!datasetTablesSet.contains(queryPath) || (
+                        !equalsIgnoreCase(columnName, containerColumnName) &&
+                        !equalsIgnoreCase(columnName, subjectColumnName) &&
+                        !equalsIgnoreCase(columnName, sequenceNumColumnName)))
                 {
                     if (fullAliasList.add(alias))
                         columnAliases.add(vcol.toJSON());
@@ -342,8 +346,6 @@ public class VisualizationCDSGenerator
 
         StringBuilder fullSQL = new StringBuilder();
         String union = "";
-
-        // TODO: This doesn't seem right...shouldn't it be the actual third key's name?
         String datasetTableColumnName = "Dataset";
         String URI = "http://cpas.labkey.com/Study#";
         List<Map<String, String>> keyColumnAlias = new ArrayList<>();

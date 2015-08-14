@@ -17,6 +17,7 @@ package org.labkey.study.visualization;
 
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
+import org.labkey.api.data.Container;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
@@ -79,5 +80,13 @@ public class DataspaceVisualizationProvider extends StudyVisualizationProvider
             sql += " UNION SELECT 'SubjectVisit', COUNT(DISTINCT ParticipantId) FROM SubjectVisit " + getMemberWhereClause(members, "ParticipantId");
 
         return sql;
+    }
+
+    @Override
+    public boolean isJoinColumn(VisualizationSourceColumn column, Container container)
+    {
+        if ("GridBase".equalsIgnoreCase(column.getQueryName()))
+            return false;
+        return super.isJoinColumn(column, container);
     }
 }
