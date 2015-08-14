@@ -1533,9 +1533,9 @@ public class ListManager implements SearchService.DocumentProvider
 
         }
 
-        private Container setupWorkbook(String name)
+        private Container setupWorkbook(String title)
         {
-            return ContainerManager.createContainer(c, name, name, null, Container.TYPE.workbook, u);
+            return ContainerManager.createContainer(c, null, title, null, Container.TYPE.workbook, u);
         }
 
         private void checkListItemScoping(Container wb1, Container wb2) throws Exception
