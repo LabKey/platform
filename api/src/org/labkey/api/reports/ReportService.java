@@ -28,7 +28,6 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlValidationException;
@@ -37,7 +36,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -71,101 +69,91 @@ public class ReportService
         /**
          * Registers a report type, reports must be registered in order to be created.
          */
-        public void registerReport(Report report);
+        void registerReport(Report report);
 
         /**
          * A descriptor class must be registered with the service in order to be valid.
          */
-        public void registerDescriptor(ReportDescriptor descriptor);
+        void registerDescriptor(ReportDescriptor descriptor);
 
         /**
          * creates new descriptor or report instances.
          */
-        public ReportDescriptor createDescriptorInstance(String typeName);
-        public ReportDescriptor getModuleReportDescriptor(Module module, Container container, User user, String path);
-        public List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path);
+        ReportDescriptor createDescriptorInstance(String typeName);
+        ReportDescriptor getModuleReportDescriptor(Module module, Container container, User user, String path);
+        List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path);
 
-        public Report createReportInstance(String typeName);
-        public Report createReportInstance(ReportDescriptor descriptor);
+        Report createReportInstance(String typeName);
+        Report createReportInstance(ReportDescriptor descriptor);
 
-        public void deleteReport(ContainerUser context, Report report);
+        void deleteReport(ContainerUser context, Report report);
 
         /**
          * Note: almost all cases of saveReport will want to use the version that does not skip validation.
          *       One example of where we skip validation is in the StudyUpgradeCode which has a method to fix report properties
          *       across all reports in the database (regardless of user)
          */
-        public int saveReport(ContainerUser context, String key, Report report, boolean skipValidation);
-        public int saveReport(ContainerUser context, String key, Report report);
+        int saveReport(ContainerUser context, String key, Report report, boolean skipValidation);
+        int saveReport(ContainerUser context, String key, Report report);
 
-        public Report getReport(int reportId);
-        public Report getReportByEntityId(Container c, String entityId);
-        public ReportIdentifier getReportIdentifier(String reportId);
-        public Report[] getReports(User user, Container c);
-        public Report[] getReports(User user, Container c, String key);
-        public Report[] getReports(User user, Container c, String key, int flagMask, int flagValue);
-        public Report[] getReports(Filter filter);
-        @Nullable public Report getReport(ReportDB reportDB);
+        Report getReport(int reportId);
+        Report getReportByEntityId(Container c, String entityId);
+        ReportIdentifier getReportIdentifier(String reportId);
+        Report[] getReports(User user, Container c);
+        Report[] getReports(User user, Container c, String key);
+        Report[] getReports(User user, Container c, String key, int flagMask, int flagValue);
+        Report[] getReports(Filter filter);
+        @Nullable
+        Report getReport(ReportDB reportDB);
 
-        /**
-         * Provides a module specific way to add ui to the report designers.
-         */
-        public void addViewFactory(ViewFactory vf);
-        public List<ViewFactory> getViewFactories();
+        void addUIProvider(UIProvider provider);
+        List<UIProvider> getUIProviders();
 
-        public void addUIProvider(UIProvider provider);
-        public List<UIProvider> getUIProviders();
+        Report createFromQueryString(String queryString) throws Exception;
 
-        public Report createFromQueryString(String queryString) throws Exception;
-
-        public @NotNull String getIconPath(Report report);
+        @NotNull String getIconPath(Report report);
 
         /**
          * Imports a serialized report into the database using the specified user and container
          * parameters. Imported reports are always treated as new reports even if they were exported from
          * the same container.
          */
-        public Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException;
+        Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException;
 
         /**
          * Runs maintenance on the report service.
          */
-        public void maintenance();
+        void maintenance();
 
         /**
          * Validates whether a user has the appropriate permissions to save the report with the changed
          * settings.  Use tryValidateReportPermissions if you don't want to throw a runtime exception
          * on permissions failure
          */
-        public void validateReportPermissions(ContainerUser context, Report report);
-        public boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors);
-    }
-
-    public interface ViewFactory
-    {
-        public String getExtraFormHtml(ViewContext ctx, ScriptReportBean bean) throws ServletException;
+        void validateReportPermissions(ContainerUser context, Report report);
+        boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors);
     }
 
     public interface DesignerInfo
     {
         /** the report type this builder is associated with */
-        public String getReportType();
+        String getReportType();
 
-        public ActionURL getDesignerURL();
+        ActionURL getDesignerURL();
 
         /** the label to appear on any UI */
-        public String getLabel();
+        String getLabel();
 
-        public String getDescription();
+        String getDescription();
 
-        public boolean isDisabled();
+        boolean isDisabled();
 
         /** returns an id for automated testing purposes */
-        public String getId();
+        String getId();
 
-        public @Nullable URLHelper getIconURL();
+        @Nullable URLHelper getIconURL();
 
-        public DesignerType getType();
+        DesignerType getType();
     }
 
     public enum DesignerType
@@ -178,25 +166,25 @@ public class ReportService
         /**
          * Allows providers to add UI for creating reports not associated with a query
          */
-        public List<DesignerInfo> getDesignerInfo(ViewContext context);
+        List<DesignerInfo> getDesignerInfo(ViewContext context);
 
         /**
          * Allows providers to add UI for creating reports that may be associated with a query
          * (eg: the view/create button on a queryView).
          */
-        public List<DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings);
+        List<DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings);
 
         /**
          * Returns simple path to browser accessible static icon image in the webapp, e.g., "/reports/chart.gif". Callers must
          * turn this into a valid URL by pre-pending context path and adding look-and-feel revision (e.g., use ResourceURL).
          * Returns null if this UIProvider does not support this report.
          */
-        public @Nullable String getIconPath(Report report);
+        @Nullable String getIconPath(Report report);
     }
 
     public interface ItemFilter
     {
-        public boolean accept(String type, String label);
+        boolean accept(String type, String label);
     }
 
     public static ItemFilter EMPTY_ITEM_LIST = new ItemFilter() {
