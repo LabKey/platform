@@ -152,7 +152,7 @@ public class SimpleFilter implements Filter
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             int fromIndex = sb.length();
-            appendSqlText(sb, formatter);
+            appendFilterValueText(sb, formatter);
             replaceParamValues(sb, fromIndex);
         }
 
@@ -198,7 +198,7 @@ public class SimpleFilter implements Filter
             return null;
         }
 
-        protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             SQLFragment sqlf = toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), null);
             if (sqlf.isEmpty())

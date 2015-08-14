@@ -546,9 +546,9 @@ public enum CompareType
 
             // For display purposes, we want this to say blank not null
             @Override
-            public String getDisplaySql()
+            public String getFilterValueText()
             {
-                return " " + super.getDisplayValue().toLowerCase();
+                return " " + getDisplayValue().toLowerCase();
             }
         },
     NONBLANK("Is Not Blank", "isnonblank", "NOT_MISSING", false, " IS NOT NULL", OperatorType.ISNONBLANK)
@@ -566,9 +566,9 @@ public enum CompareType
 
             // For display purposes, we want this to say blank not null
             @Override
-            public String getDisplaySql()
+            public String getFilterValueText()
             {
-                return " " + super.getDisplayValue().toLowerCase();
+                return " " + getDisplayValue().toLowerCase();
             }
         },
 
@@ -747,7 +747,7 @@ public enum CompareType
         return _sql;
     }
 
-    public String getDisplaySql()
+    public String getFilterValueText()
     {
         return _sql;
     }
@@ -874,10 +874,10 @@ public enum CompareType
         }
 
         @Override
-        protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
-            sb.append(_comparison.getDisplaySql());
+            sb.append(_comparison.getFilterValueText());
         }
 
         protected boolean isNull(Object value)
@@ -1388,7 +1388,7 @@ public enum CompareType
         }
 
         @Override
-        protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
             sb.append(" LIKE ?");
@@ -1425,7 +1425,7 @@ public enum CompareType
         }
 
         @Override
-        protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
             sb.append(" STARTS WITH ?");
@@ -1452,7 +1452,7 @@ public enum CompareType
         }
 
         @Override
-        protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
             sb.append(" DOES NOT START WITH ?");
@@ -1528,7 +1528,7 @@ public enum CompareType
         }
 
         @Override
-        protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
             sb.append(" CONTAINS ?");
@@ -1555,7 +1555,7 @@ public enum CompareType
         }
 
         @Override
-        protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
             sb.append(" DOES NOT CONTAIN ?");
