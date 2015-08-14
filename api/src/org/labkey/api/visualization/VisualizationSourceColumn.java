@@ -68,6 +68,9 @@ public class VisualizationSourceColumn
             info.put("alias", getClientAlias());
         }
         info.put("columnName", getAlias());
+        info.put("schemaName", getSchemaName());
+        info.put("queryName", getQueryName());
+
         return info;
     }
 
