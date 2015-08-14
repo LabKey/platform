@@ -709,29 +709,6 @@ Ext.define('LABKEY.app.controller.State', {
         return this.selections.length > 0;
     },
 
-    /**
-     * Returns the set of filters found in newFilters that were not present in oldFilters.
-     * Think of it as newFilters LEFT OUTER JOIN oldFilters
-     * @param newFilters
-     * @param oldFilters
-     */
-    pruneFilters : function(newFilters, oldFilters) {
-        // 15464
-        var prunedSelections = [], found;
-        for (var s=0; s < newFilters.length; s++) {
-            found = false;
-            for (var f=0; f < oldFilters.length; f++) {
-                if (newFilters[s].isEqual(oldFilters[f])) {
-                    found = true;
-                }
-            }
-            if (!found) {
-                prunedSelections.push(newFilters[s]);
-            }
-        }
-        return prunedSelections;
-    },
-
     addSelection : function(selection, skipState, merge, clear) {
         return this.addSelections([selection], skipState, merge, clear);
     },
@@ -795,7 +772,7 @@ Ext.define('LABKEY.app.controller.State', {
     moveSelectionToFilter : function() {
         var selections = this.selections;
         this.clearSelections(true);
-        this.addFilters(this.pruneFilters(selections, this.filters), false);
+        this.addFilters(selections);
     },
 
     getPrivateSelection : function(name) {

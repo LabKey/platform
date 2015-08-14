@@ -823,8 +823,75 @@ Ext.define('LABKEY.app.model.Filter', {
             fdata = f.data,
             _merge = false;
 
-        if (data.isPlot === fdata.isPlot && data.isGrid === fdata.isGrid &&
-            data.hierarchy && fdata.hierarchy && data.hierarchy === fdata.hierarchy) {
+        // If any plot/grid settings are configured to true
+        if (data.isPlot || fdata.isPlot || data.isGrid || fdata.isGrid) {
+            if (data.isPlot === fdata.isPlot && data.isGrid === fdata.isGrid) {
+
+                // if plot, check plotMeasures and gridFilter properties
+                if (data.isPlot) {
+
+                    var _mergeMeasures = true, pm, fpm;
+
+                    for (var i=0; i < data.plotMeasures.length; i++) {
+                        pm = data.plotMeasures[i];
+                        fpm = fdata.plotMeasures[i];
+
+                        if (pm === null) {
+                            if (fpm !== null) {
+                                _mergeMeasures = false;
+                                break;
+                            }
+
+                            // they are both null, OK
+                        }
+                        else {
+                            // equivalent if they have the same alias
+                            if (pm.measure && fpm.measure) {
+                                if (pm.measure.alias !== fpm.measure.alias) {
+                                    _mergeMeasures = false;
+                                    break;
+                                }
+                            }
+                            else {
+                                console.warn('Unknown plot measure configuration. Expected to have \'measure\' property on each \'plotMeasure\'. Unable to determine merge strategy.');
+                                _mergeMeasures = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (_mergeMeasures) {
+                        // check gridFilters
+                        for (i=0; i < data.gridFilter.length; i++) {
+                            pm = data.gridFilter[i];
+                            fpm = fdata.gridFilter[i];
+
+                            if (pm === null) {
+                                if (fpm !== null) {
+                                    _mergeMeasures = false;
+                                    break;
+                                }
+
+                                // they are both null, OK
+                            }
+                            else {
+                                // equivalent if they have the same URL prefix -- value can change
+                                if (pm.getURLParameterName().toLowerCase() !== fpm.getURLParameterName().toLowerCase()) {
+                                    _mergeMeasures = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    _merge = _mergeMeasures;
+                }
+                else {
+                    _merge = true;
+                }
+            }
+        }
+        else if (data.hierarchy && fdata.hierarchy && data.hierarchy === fdata.hierarchy) {
             _merge = true;
         }
 
@@ -833,11 +900,15 @@ Ext.define('LABKEY.app.model.Filter', {
 
     merge : function(f) {
 
-        var newMembers = this._mergeMembers(this.data.members, f.data.members);
+        var update = {
+            members: this._mergeMembers(this.data.members, f.data.members)
+        };
 
-        this.set({
-            members: newMembers
-        });
+        if (this.data.isPlot) {
+            update.gridFilter = this._mergeGridFilters(this.data.gridFilter, f.data.gridFilter);
+        }
+
+        this.set(update);
 
         return this;
     },
@@ -850,6 +921,16 @@ Ext.define('LABKEY.app.model.Filter', {
             }
         }
         return _members;
+    },
+
+    _mergeGridFilters : function(aGridFilters, bGridFilters) {
+        var _measures = Ext.Array.clone(aGridFilters);
+
+        for (var i=0; i < bGridFilters.length; i++) {
+            _measures[i] = Ext.clone(bGridFilters[i]);
+        }
+
+        return _measures;
     },
 
     _hasMember : function(memberArray, newMember) {
