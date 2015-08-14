@@ -444,20 +444,9 @@ public abstract class Method
 
         public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
         {
-            SQLFragment ret = new SQLFragment();
-            ret.append("{fn ");
-            ret.append(_name);
-            ret.append("(");
-            String comma = "";
-            for (SQLFragment argument : arguments)
-            {
-                ret.append(comma);
-                comma = ",";
-                ret.append(argument);
+            SqlDialect dialect = schema.getSqlDialect();
+            return dialect.formatJdbcFunction(_name, arguments);
             }
-            ret.append(")}");
-            return ret;
-        }
     }
 
 
