@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -38,6 +39,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.SQLGenerationException;
 import org.labkey.api.visualization.VisDataRequest;
+import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.labkey.visualization.test.VisTestSchema;
 import org.springframework.validation.BindException;
 
@@ -50,10 +52,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import static org.apache.commons.lang3.StringUtils.defaultString;
-import static org.apache.commons.lang3.StringUtils.endsWithIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 /**
@@ -320,21 +323,21 @@ public class VisualizationCDSGenerator
         List<Map<String, String>> columnAliases = new ArrayList<>();
         for (VisualizationSQLGenerator generator : generators)
         {
-            List<Map<String, String>> list = generator.getColumnAliases();
-            for (Map<String, String> map : list)
+            List<VisualizationSourceColumn> list = generator.getColumns();
+            for (VisualizationSourceColumn vcol : list)
             {
-                String a = map.get("alias");
-                if (StringUtils.isEmpty(a))
-                    a = map.get("columnName");
+                String alias = StringUtils.defaultString(vcol.getClientAlias(), vcol.getAlias());
+                if (isEmpty(alias))
+                    continue;
+                String columnName = vcol.getOriginalName();
+                Path queryPath = new Path(vcol.getSchemaName(), vcol.getQueryName());
 
-                if (!StringUtils.isEmpty(a) && !endsWithIgnoreCase(a, "_" + containerColumnName)
-                        && !endsWithIgnoreCase(a, "_" + subjectColumnName) && !endsWithIgnoreCase(a, "_" + sequenceNumColumnName))
+                if (!datasetTablesSet.contains(queryPath) || (!equalsIgnoreCase(columnName, containerColumnName) && !equalsIgnoreCase(columnName, subjectColumnName) && !equalsIgnoreCase(columnName, sequenceNumColumnName)))
                 {
-                    fullAliasList.add(a);
-                    columnAliases.add(map);
+                    if (fullAliasList.add(alias))
+                        columnAliases.add(vcol.toJSON());
                 }
             }
-            _log.debug(list);
         }
 
         StringBuilder fullSQL = new StringBuilder();
@@ -353,21 +356,28 @@ public class VisualizationCDSGenerator
             String sequenceColumnAlias = null;
 
             Set<String> aliasSet = new HashSet<>();
-            List<Map<String,String>> list = generator.getColumnAliases();
-            for (Map<String,String> map : list)
+            List<VisualizationSourceColumn> list = generator.getColumns();
+            for (VisualizationSourceColumn vcol : list)
             {
-                String a = map.get("alias");
-                if (StringUtils.isEmpty(a))
-                    a = map.get("columnName");
+                String alias = StringUtils.defaultString(vcol.getClientAlias(), vcol.getAlias());
+                if (isEmpty(alias))
+                    continue;
+                String columnName = vcol.getOriginalName();
+                Path queryPath = new Path(vcol.getSchemaName(), vcol.getQueryName());
 
-                if (null == containerColumnAlias && endsWithIgnoreCase(a, "_" + containerColumnName))
-                    containerColumnAlias = a;
-                else if (null == participantColumnAlias && endsWithIgnoreCase(a, "_" + subjectColumnName))
-                    participantColumnAlias = a;
-                else if (null == sequenceColumnAlias && endsWithIgnoreCase(a, "_" + sequenceNumColumnName))
-                    sequenceColumnAlias = a;
-                else if (!StringUtils.isEmpty(a))
-                    aliasSet.add(a);
+                if (!datasetTablesSet.contains(queryPath))
+                    aliasSet.add(alias);
+                else
+                {
+                    if (null == containerColumnAlias && equalsIgnoreCase(columnName, containerColumnName))
+                        containerColumnAlias = alias;
+                    else if (null == participantColumnAlias && equalsIgnoreCase(columnName, subjectColumnName))
+                        participantColumnAlias = alias;
+                    else if (null == sequenceColumnAlias && equalsIgnoreCase(columnName, sequenceNumColumnName))
+                        sequenceColumnAlias = alias;
+                    else
+                        aliasSet.add(alias);
+                }
             }
 
             fullSQL.append(union); union = "\n  UNION ALL\n";
@@ -422,10 +432,9 @@ public class VisualizationCDSGenerator
         }
 
         // key columns should display first in the columnAlias list
-        keyColumnAlias.addAll(columnAliases);
-        _columnAliases = keyColumnAlias;
-
-        // TODO stash metadata here...
+        _columnAliases = new ArrayList<>();
+        _columnAliases.addAll(keyColumnAlias);
+        _columnAliases.addAll(columnAliases);
 
         return fullSQL.toString();
     }
@@ -435,18 +444,20 @@ public class VisualizationCDSGenerator
     {
         Map<String, String> colAlias = new HashMap<>();
 
+        colAlias.put("alias", columnName);
         colAlias.put("columnName", columnName);
         colAlias.put("measureName", measureName);
 
         return colAlias;
     }
 
-    // TODO: Doesn't this method exist elsewhere?
-    static private String string_quote(String s)
+    DialectStringHandler sh = null;
+
+    private String string_quote(String s)
     {
-        if (s.contains("'"))
-            s = s.replace("'","''");
-        return "'" + s + "'";
+        if (null == sh)
+            sh = getPrimarySchema().getDbSchema().getSqlDialect().getStringHandler();
+        return sh.quoteStringLiteral(s);
     }
 
 
@@ -472,6 +483,15 @@ public class VisualizationCDSGenerator
             return QueryService.get().selectResults(schema, sql, null, null, true, true);
         }
 
+        List<Map<String,String>> getColumnAliases(VisDataRequest q) throws SQLGenerationException, SQLException
+        {
+            VisualizationCDSGenerator gen = new VisualizationCDSGenerator(context, q);
+            UserSchema schema = new VisTestSchema(context.getUser(), context.getContainer());
+            BindException errors = new NullSafeBindException(q,"query");
+            gen.getSQL(errors);
+            assertFalse(errors.hasErrors());
+            return gen.getColumnAliases();
+        }
 
         void dump(ResultSet rs) throws SQLException
         {
@@ -508,6 +528,20 @@ public class VisualizationCDSGenerator
             {
                 assertEquals(384, r.getSize()); /* 2*192 */
             }
+
+            List<Map<String,String>> metadata = getColumnAliases(q);
+            Map<String,Map<String,String>> metaMap = new TreeMap<>();
+            metadata.stream().forEach(map -> metaMap.put(StringUtils.defaultString(map.get("alias"),map.get("columnName")), map));
+            assertEquals(9, metaMap.size());
+            assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Container"));
+            assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#ParticipantId"));
+            assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#SequenceNum"));
+            assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Dataset"));
+            assertTrue(metaMap.containsKey("vis_junit_demographics_participantid"));
+            assertTrue(metaMap.containsKey("vis_junit_flow_cellcount"));
+            assertTrue(metaMap.containsKey("vis_junit_demographics_study"));
+            assertTrue(metaMap.containsKey("vis_junit_demographics_gender"));
+            assertTrue(metaMap.containsKey("vis_junit_ics_mfi"));
         }
     }
 }

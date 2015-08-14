@@ -909,25 +909,25 @@ public class VisualizationSQLGenerator implements HasViewContext
     }
 
 
-//    public List<VisualizationSourceColumn> getColumns()
-//    {
-//        Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<>(_sourceQueries.values());
-//        Map<String, Set<VisualizationSourceColumn>> allAliases = getColumnMapping(_columnFactory, queries);
-//        Set<VisualizationSourceColumn> result = new LinkedHashSet<>();
-//
-//        // The default column mapping references the first available valid alias:
-//        for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
-//        {
-//            for (VisualizationSourceColumn col : entry.getValue())
-//            {
-//                VisualizationProvider provider = getVisualizationProvider(col.getSchemaName());
-//                if (!provider.isJoinColumn(col, getViewContext().getContainer()))
-//                    result.add(col);
-//            }
-//        }
-//
-//        return new ArrayList<>(result);
-//    }
+    public List<VisualizationSourceColumn> getColumns()
+    {
+        Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<>(_sourceQueries.values());
+        Map<String, Set<VisualizationSourceColumn>> allAliases = getColumnMapping(_columnFactory, queries);
+        Set<VisualizationSourceColumn> result = new LinkedHashSet<>();
+
+        // The default column mapping references the first available valid alias:
+        for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
+        {
+            for (VisualizationSourceColumn col : entry.getValue())
+            {
+                VisualizationProvider provider = getVisualizationProvider(col.getSchemaName());
+                if (!provider.isJoinColumn(col, getViewContext().getContainer()))
+                    result.add(col);
+            }
+        }
+
+        return new ArrayList<>(result);
+    }
 
 
     public List<Map<String, String>> getColumnAliases()
@@ -939,11 +939,12 @@ public class VisualizationSQLGenerator implements HasViewContext
         // The default column mapping references the first available valid alias:
         for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
         {
-            result.add(entry.getValue().iterator().next().toJSON());
+            Set<VisualizationSourceColumn> columnSet = entry.getValue();
+            result.add(columnSet.iterator().next().toJSON());
 
-            if (entry.getValue().size() > 1)
+            if (columnSet.size() > 1)
             {
-                for (VisualizationSourceColumn select : entry.getValue())
+                for (VisualizationSourceColumn select : columnSet)
                 {
                     VisualizationProvider provider = getVisualizationProvider(select.getSchemaName());
                     if (!provider.isJoinColumn(select, getViewContext().getContainer()))
