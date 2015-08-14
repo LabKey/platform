@@ -543,6 +543,13 @@ public enum CompareType
             {
                 return value == null;
             }
+
+            // For display purposes, we want this to say blank not null
+            @Override
+            public String getDisplaySql()
+            {
+                return " " + super.getDisplayValue().toLowerCase();
+            }
         },
     NONBLANK("Is Not Blank", "isnonblank", "NOT_MISSING", false, " IS NOT NULL", OperatorType.ISNONBLANK)
         {
@@ -555,6 +562,13 @@ public enum CompareType
             public boolean meetsCriteria(Object value, Object[] filterValues)
             {
                 return value != null;
+            }
+
+            // For display purposes, we want this to say blank not null
+            @Override
+            public String getDisplaySql()
+            {
+                return " " + super.getDisplayValue().toLowerCase();
             }
         },
 
@@ -733,6 +747,11 @@ public enum CompareType
         return _sql;
     }
 
+    public String getDisplaySql()
+    {
+        return _sql;
+    }
+
     public String getScriptName()
     {
         return _scriptName;
@@ -858,7 +877,7 @@ public enum CompareType
         protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
-            sb.append(_comparison.getSql());
+            sb.append(_comparison.getDisplaySql());
         }
 
         protected boolean isNull(Object value)
