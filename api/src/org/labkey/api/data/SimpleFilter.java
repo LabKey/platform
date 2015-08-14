@@ -773,7 +773,6 @@ public class SimpleFilter implements Filter
                 in.append("NOT ");
 
             in.append(alias);
-            in.append(" ");
 
             // Dialect may want to generate database-specific SQL, especially for very large IN clauses
             dialect.appendInClauseSql(in, Arrays.asList(convertedParams));
