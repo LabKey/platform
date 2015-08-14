@@ -136,7 +136,7 @@ public class ReportViewProvider implements DataViewProvider
 
         List<DataViewInfo> views = new ArrayList<>();
 
-        for (Report r : ReportUtil.getReports(c, user, reportKey, true))
+        for (Report r : ReportUtil.getReportsIncludingInherited(c, user, reportKey))
         {
             if (!filter.accept(r, c, user))
                 continue;

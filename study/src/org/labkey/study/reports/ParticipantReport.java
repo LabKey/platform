@@ -223,7 +223,7 @@ public class ParticipantReport extends AbstractReport
         String origGroupsConfig = null;
         if (getReportId() != null)
         {
-            Report origReport = ReportService.get().getReport(getReportId().getRowId());
+            Report origReport = ReportService.get().getReport(context.getContainer(), getReportId().getRowId());
             origMeasuresConfig = origReport != null  ? origReport.getDescriptor().getProperty(ParticipantReport.MEASURES_PROP) : null;
             origGroupsConfig = origReport != null  ? origReport.getDescriptor().getProperty(ParticipantReport.GROUPS_PROP) : null;
         }

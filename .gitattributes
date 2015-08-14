@@ -1697,6 +1697,7 @@ query/src/org/labkey/query/reports/AttachmentReport.java -text
 query/src/org/labkey/query/reports/BaseRedirectReport.java -text
 query/src/org/labkey/query/reports/LinkReport.java -text
 query/src/org/labkey/query/reports/ReportAndDatasetChangeDigestProviderImpl.java -text
+query/src/org/labkey/query/reports/ReportCache.java -text
 query/src/org/labkey/query/reports/ReportImporter.java -text
 query/src/org/labkey/query/reports/ReportNotificationInfoProvider.java -text
 query/src/org/labkey/query/reports/ReportQueryChangeListener.java -text

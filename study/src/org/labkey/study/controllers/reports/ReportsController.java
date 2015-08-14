@@ -497,7 +497,7 @@ public class ReportsController extends BaseStudyController
                 return new ActionURL(form.getRedirectUrl());
 
             // after the save just redirect to the newly created view, ask the report for its run URL
-            Report r = ReportService.get().getReport(_savedReportId);
+            Report r = ReportService.get().getReport(getContainer(), _savedReportId);
             if (r != null)
                 return r.getRunReportURL(getViewContext());
             else

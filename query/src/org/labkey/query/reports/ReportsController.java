@@ -384,13 +384,13 @@ public class ReportsController extends SpringActionController
             Report report = null;
 
             if (null != form.getReportId())
-                report = form.getReportId().getReport(getViewContext());
+                report = form.getReportId().getReport(context);
 
             if (report == null)
             {
                 List<String> reportIds = context.getList("reportId");
                 if (reportIds != null && !reportIds.isEmpty())
-                    report = ReportService.get().getReport(NumberUtils.toInt(reportIds.get(0)));
+                    report = ReportService.get().getReport(getContainer(), NumberUtils.toInt(reportIds.get(0)));
             }
 
             if (report == null)
@@ -400,7 +400,7 @@ public class ReportsController extends SpringActionController
                 {
                     // set the container in case we need to get a securable resource for the report descriptor
                     if (report.getDescriptor().lookupContainer() == null)
-                        report.getDescriptor().setContainer(context.getContainer().getId());
+                        report.getDescriptor().setContainer(getContainer().getId());
                 }
             }
 
@@ -490,7 +490,7 @@ public class ReportsController extends SpringActionController
             Report report = null;
 
             if (reportId != null)
-                report = ReportService.get().getReport(NumberUtils.toInt(reportId));
+                report = ReportService.get().getReport(getContainer(), NumberUtils.toInt(reportId));
 
             if (report != null)
             {
@@ -1453,7 +1453,7 @@ public class ReportsController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             int newId = ReportService.get().saveReport(getViewContext(), ReportUtil.getReportQueryKey(report.getDescriptor()), report);
-            report = ReportService.get().getReport(newId);  // Re-select saved report so we get EntityId, etc.
+            report = ReportService.get().getReport(getContainer(), newId);  // Re-select saved report so we get EntityId, etc.
 
             ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 
@@ -1838,7 +1838,7 @@ public class ReportsController extends SpringActionController
 
                 int id = ReportService.get().saveReport(getViewContext(), getReportKey(report, form), report);
 
-                report = (R)ReportService.get().getReport(id);
+                report = (R)ReportService.get().getReport(getContainer(), id);
 
                 afterReportSave(form, report);
 

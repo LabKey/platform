@@ -494,7 +494,7 @@ public class AttachmentReport extends BaseRedirectReport
 
         if (getReportId() != null)
         {
-            AttachmentReport origReport = (AttachmentReport) ReportService.get().getReport(getReportId().getRowId());
+            AttachmentReport origReport = (AttachmentReport) ReportService.get().getReport(context.getContainer(), getReportId().getRowId());
             String origFilePath = origReport != null ? origReport.getFilePath() : null;
 
             if (newFilePath != null)

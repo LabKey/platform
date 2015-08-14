@@ -106,7 +106,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
 
         if (getReportId() != null)
         {
-            Report origReport = ReportService.get().getReport(getReportId().getRowId());
+            Report origReport = ReportService.get().getReport(context.getContainer(), getReportId().getRowId());
             String origJson = origReport != null  ? origReport.getDescriptor().getProperty(ReportDescriptor.Prop.json) : null;
 
             JSONObject origChartConfig = new JSONObject(origJson).getJSONObject("chartConfig");

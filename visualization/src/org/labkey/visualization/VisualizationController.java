@@ -1160,7 +1160,7 @@ public class VisualizationController extends SpringActionController
             int reportId = ReportService.get().saveReport(getViewContext(), vizDescriptor.getReportKey(), _currentReport);
 
             // Re-select the saved report to make sure it has an entityId
-            Report report = ReportService.get().getReport(reportId);
+            Report report = ReportService.get().getReport(getContainer(), reportId);
 
             if (report instanceof SvgThumbnailGenerator)
             {
@@ -1329,7 +1329,7 @@ public class VisualizationController extends SpringActionController
 
             int rowId = ReportService.get().saveReport(getViewContext(), key, report);
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId));
-            report = ReportService.get().getReport(rowId);
+            report = ReportService.get().getReport(getContainer(), rowId);
             saveSVGThumbnail((SvgThumbnailGenerator) report, form.getSvg(), form.getThumbnailType());
             response.put("success", true);
             response.put("reportId", reportId);

@@ -51,7 +51,7 @@
     User u = getUser();
     boolean showHidden = c.hasPermission(u, AdminPermission.class);
 
-    for (Report report : ReportUtil.getReports(c, u, null, true))
+    for (Report report : ReportUtil.getReportsIncludingInherited(c, u, null))
     {
         if (!filter.accept(report, c, u) || (report.getDescriptor().isHidden() && !showHidden))
             continue;

@@ -29,11 +29,10 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.ContainerManager.AbstractContainerListener;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -46,6 +45,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.ReportService.UIProvider;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
@@ -69,6 +69,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
@@ -100,34 +101,40 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * User: Karl Lum
  * Date: Dec 21, 2007
  */
-public class ReportServiceImpl extends ContainerManager.AbstractContainerListener implements ReportService.I
+public class ReportServiceImpl extends AbstractContainerListener implements ReportService.I
 {
-    private static final String SCHEMA_NAME = "core";
-    private static final String TABLE_NAME = "Report";
     private static final Logger _log = Logger.getLogger(ReportService.class);
-    private static final List<ReportService.UIProvider> _uiProviders = new CopyOnWriteArrayList<>();
-    private static final Map<String, ReportService.UIProvider> _typeToProviderMap = new ConcurrentHashMap<>();
+    private static final List<UIProvider> _uiProviders = new CopyOnWriteArrayList<>();
+    private static final Map<String, UIProvider> _typeToProviderMap = new ConcurrentHashMap<>();
 
     private static final Cache<Integer, ReportDB> REPORT_DB_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database Report Cache");
 
     /** maps descriptor types to providers */
-    private final ConcurrentMap<String, Class> _descriptors = new ConcurrentHashMap<>();
+    private final Map<String, Class> _descriptors = new ConcurrentHashMap<>();
 
     /** maps report types to implementations */
-    private final ConcurrentMap<String, Class> _reports = new ConcurrentHashMap<>();
+    private final Map<String, Class> _reports = new ConcurrentHashMap<>();
 
-    public ReportServiceImpl()
+    private final static ReportServiceImpl INSTANCE = new ReportServiceImpl();
+
+    public static ReportServiceImpl getInstance()
+    {
+        return INSTANCE;
+    }
+
+    private ReportServiceImpl()
     {
         ContainerManager.addContainerListener(this);
         ConvertUtils.register(new ReportIdentifierConverter(), ReportIdentifier.class);
@@ -136,11 +143,6 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         QueryService.get().addCustomViewListener(listener);
         SystemMaintenance.addTask(new ReportServiceMaintenanceTask());
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
-    }
-
-    private DbSchema getSchema()
-    {
-        return DbSchema.get(SCHEMA_NAME, DbSchemaType.Module);
     }
 
     public void registerDescriptor(ReportDescriptor descriptor)
@@ -198,11 +200,8 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         // Keep files that might be Query reports (end in .xml);
         // below we'll remove ones that are associated with R or JS reports
         HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
-        for (Resource file : reportFiles)
-        {
-            if (file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
-                possibleQueryReportFiles.put(file.getName(), file);
-        }
+        reportFiles.stream().filter(file -> file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
+            .forEach(file -> possibleQueryReportFiles.put(file.getName(), file));
 
         for (Resource file : reportFiles)
         {
@@ -287,11 +286,8 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         }
 
         HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
-        for (Resource file : reportDirectory.list())
-        {
-            if (file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
-                possibleQueryReportFiles.put(file.getName(), file);
-        }
+        reportDirectory.list().stream().filter(file -> file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
+            .forEach(file -> possibleQueryReportFiles.put(file.getName(), file));
 
         List<ReportDescriptor> reportDescriptors = new ArrayList<>();
         ReportDescriptor descriptor;
@@ -475,13 +471,14 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
 
     public TableInfo getTable()
     {
-        return getSchema().getTable(TABLE_NAME);
+        return CoreSchema.getInstance().getTableInfoReport();
     }
 
     public void containerDeleted(Container c, User user)
     {
         ContainerUtil.purgeTable(getTable(), c, "ContainerId");
         REPORT_DB_CACHE.clear();
+        ReportCache.uncache(c);
     }
 
     public Report createFromQueryString(String queryString) throws Exception
@@ -530,6 +527,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         filter.addCondition(FieldKey.fromParts("RowId"), reportId);
         Table.delete(getTable(), filter);
         REPORT_DB_CACHE.remove(reportId);
+        ReportCache.uncache(c);
     }
 
     @Override
@@ -616,7 +614,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
 
     private ReportDB _saveReport(User user, Container c, String key, ReportDescriptor descriptor)
     {
-        ReportDB reportDB = new ReportDB(c, user.getUserId(), key, descriptor);
+        ReportDB reportDB = new ReportDB(c, key, descriptor);
 
         //ensure that descriptor id is a DbReportIdentifier
         DbReportIdentifier reportId;
@@ -636,6 +634,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
             reportDB = Table.insert(user, getTable(), reportDB);
 
         REPORT_DB_CACHE.remove(reportDB.getRowId());
+        ReportCache.uncache(c);
 
         return reportDB;
     }
@@ -656,7 +655,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         }
     }
 
-    private Report _getInstance(ReportDB r)
+    public Report _getInstance(ReportDB r)
     {
         if (r != null)
         {
@@ -694,18 +693,13 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
 
     public Report getReportByEntityId(Container c, String entityId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
-        filter.addCondition(FieldKey.fromParts("EntityId"), entityId);
-
-        ReportDB report = new TableSelector(getTable(), filter, null).getObject(ReportDB.class);
-        return _getInstance(report);
+        return ReportCache.getReportByEntityId(c, entityId);
     }
 
-    public Report getReport(int reportId)
+    @Override
+    public Report getReport(Container c, int rowId)
     {
-        ReportDB reportDB = REPORT_DB_CACHE.get(reportId, null, (key, argument) -> new TableSelector(getTable(), new SimpleFilter(FieldKey.fromParts("RowId"), key), null).getObject(ReportDB.class));
-
-        return _getInstance(reportDB);
+        return ReportCache.getReport(c, rowId);
     }
 
     public ReportIdentifier getReportIdentifier(String reportId)
@@ -739,13 +733,12 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         return EMPTY_REPORT;
     }
 
-    public Report[] getReports(User user, Container c)
+    public Report[] getReports(@Nullable User user, @NotNull Container c)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
-        return _getReports(user, filter);
+        return getReadableReports(ReportCache.getReports(c), user);
     }
 
-    public Report[] getReports(User user, Container c, String key)
+    public Report[] getReports(@Nullable User user, @NotNull Container c, @Nullable String key)
     {
         List<ReportDescriptor> moduleReportDescriptors = new ArrayList<>();
 
@@ -779,33 +772,59 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
             }
         }
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
+        if (key == null)
+        {
+            reports.addAll(ReportCache.getReports(c));
+        }
+        else
+        {
+            reports.addAll(ReportCache.getReportsByReportKey(c, key));
+        }
 
-        if (key != null)
-            filter.addCondition(FieldKey.fromParts("ReportKey"), key);
-
-        reports.addAll(Arrays.asList(_getReports(user, filter)));
-        return reports.toArray(new Report[reports.size()]);
+        return getReadableReports(reports, user);
     }
 
-    public Report[] getReports(User user, Container c, String key, int flagMask, int flagValue)
+    @Deprecated
+    public Report[] getInheritableReports(User user, Container c, @Nullable String reportKey)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
+        Collection<Report> inheritable = ReportCache.getInheritableReports(c);
 
-        if (key != null)
-            filter.addCondition(FieldKey.fromParts("ReportKey"), key);
+        // If reportKey is specified then filter the inheritable reports
+        if (null != reportKey)
+        {
+            inheritable = inheritable.stream()
+                .filter(report -> reportKey.equals(report.getDescriptor().getReportKey()))
+                .collect(Collectors.toList());
+        }
 
-        SQLFragment ret = new SQLFragment("(((Flags");
-        ret.append(") &");
-        ret.append(flagMask);
-        ret.append(") = ");
-        ret.append(flagValue);
-        ret.append(")");
-        filter.addWhereClause(ret.getSQL(), ret.getParams().toArray(), FieldKey.fromParts("Flag"));
-
-        return _getReports(user, filter);
+        return getReadableReports(inheritable, user);
     }
 
+    private Report[] getReadableReports(Collection<Report> reports, @Nullable User user)
+    {
+        Collection<Report> readableReports;
+
+        if (null == user)
+        {
+            readableReports = reports;
+        }
+        else
+        {
+            readableReports = new LinkedList<>();
+
+            for (Report report : reports)
+            {
+                if (report.hasPermission(user, report.getDescriptor().getResourceContainer(), ReadPermission.class))
+                {
+                    readableReports.add(report);
+                }
+            }
+        }
+
+        return readableReports.toArray(new Report[readableReports.size()]);
+    }
+
+    @Deprecated
     public Report[] getReports(Filter filter)
     {
         ReportDB[] reports = new TableSelector(getTable(), filter, null).getArray(ReportDB.class);
@@ -823,12 +842,12 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         return null;
     }
 
-    public void addUIProvider(ReportService.UIProvider provider)
+    public void addUIProvider(UIProvider provider)
     {
         _uiProviders.add(provider);
     }
 
-    public List<ReportService.UIProvider> getUIProviders()
+    public List<UIProvider> getUIProviders()
     {
         return Collections.unmodifiableList(_uiProviders);
     }
@@ -839,7 +858,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         {
             String reportType = report.getType();
 
-            ReportService.UIProvider claimingProvider = _typeToProviderMap.get(reportType);
+            UIProvider claimingProvider = _typeToProviderMap.get(reportType);
 
             if (null != claimingProvider)
             {
@@ -851,7 +870,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
                 return iconPath;
             }
 
-            for (ReportService.UIProvider provider : _uiProviders)
+            for (UIProvider provider : _uiProviders)
             {
                 String iconPath = provider.getIconPath(report);
 
@@ -979,7 +998,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
             descriptor.setReportId(new DbReportIdentifier(rowId));
 
             // re-load the report to get the updated property information (i.e container, etc.)
-            report = ReportService.get().getReport(rowId);
+            report = ReportService.get().getReport(ctx.getContainer(), rowId);
 
             // copy over the serialized report name
             report.getDescriptor().setProperty(ReportDescriptor.Prop.serializedReportName,

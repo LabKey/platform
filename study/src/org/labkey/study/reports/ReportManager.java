@@ -15,7 +15,6 @@
  */
 package org.labkey.study.reports;
 
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -39,8 +38,6 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
@@ -55,7 +52,6 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetManager;
-import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -206,7 +202,7 @@ public class ReportManager implements DatasetManager.DatasetListener
 
     public Report getReport(Container c, int reportId) throws Exception
     {
-        return ReportService.get().getReport(reportId);
+        return ReportService.get().getReport(c, reportId);
     }
     
     public void deleteReport(ViewContext context, Report report) throws Exception
@@ -400,7 +396,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         {
             _log.debug("Cache cleared notification on dataset : " + def.getDatasetId());
             String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getName());
-            for (Report report : ReportUtil.getReports(def.getContainer(), null, reportKey, true))
+            for (Report report : ReportUtil.getReportsIncludingInherited(def.getContainer(), null, reportKey))
             {
                 report.clearCache();
             }

@@ -778,7 +778,7 @@ public class StudyController extends BaseStudyController
 
             if (NumberUtils.isDigits(viewName))
             {
-                Report report = ReportService.get().getReport(NumberUtils.toInt(viewName));
+                Report report = ReportService.get().getReport(getContainer(), NumberUtils.toInt(viewName));
                 if (report != null)
                     ReportService.get().deleteReport(getViewContext(), report);
             }
