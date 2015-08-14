@@ -25,7 +25,6 @@ import org.labkey.api.data.Results;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptOutput;
-import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -90,7 +89,7 @@ public interface Report extends AttachmentParent, ThumbnailProvider
     boolean canDelete(User user, Container container);
     boolean canDelete(User user, Container container, List<ValidationError> errors);
 
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container container, @NotNull Class<? extends Permission> perm);
+    boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container container, @NotNull Class<? extends Permission> perm);
 
     /**
      * Called before the report is saved to allow any additional save tasks by
@@ -174,10 +173,10 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      * generate the result set from which results are rendered.
      */
 
-    public interface ResultSetGenerator
+    interface ResultSetGenerator
     {
        // public ResultSet generateResultSet(ViewContext context) throws Exception;
-        public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception;
+       Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception;
     }
 
     /**
@@ -185,42 +184,42 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      * of rendering into html.  The list of script outputs may include errors, console output
      * or output parameters.
      */
-    public interface ScriptExecutor
+    interface ScriptExecutor
     {
-        public List<ScriptOutput> executeScript(ViewContext context, Map<String, Object> inputParameters) throws Exception;
+        List<ScriptOutput> executeScript(ViewContext context, Map<String, Object> inputParameters) throws Exception;
     }
 
     /**
      * Chart based reports that support HTML image map generation can implement this
      * interface.
      */
-    public interface ImageMapGenerator
+    interface ImageMapGenerator
     {
         /**
          * Creates an image map with a standard tooltip, no urls are generated.
          * @param id - the image map id value.
          */
-        public String generateImageMap(ViewContext context, String id) throws Exception;
+        String generateImageMap(ViewContext context, String id) throws Exception;
 
         /**
          * Creates an image map with a standard tooltip, and urls derived from the specified callback.
          * @param imageMapCallback - the name of a javascript function to be called in the url's for the
          * image map. Standard params will be used in the callback: (key, x, y).
          */
-        public String generateImageMap(ViewContext context, String id, String imageMapCallback) throws Exception;
+        String generateImageMap(ViewContext context, String id, String imageMapCallback) throws Exception;
 
         /**
          * Creates an image map with a standard tooltip, and urls derived from the specified callback.
          * @param imageMapCallback - the name of a javascript function to be called in the url's for the
          * image map. Standard params plus the specified column names (if available) will be used in the callback.
          */
-        public String generateImageMap(ViewContext context, String id, String imageMapCallback, String[] callbackParams) throws Exception;
+        String generateImageMap(ViewContext context, String id, String imageMapCallback, String[] callbackParams) throws Exception;
     }
 
     // implemented by reports that render images
-    public interface ImageReport
+    interface ImageReport
     {
-        public void renderImage(ViewContext context) throws Exception;        
+        void renderImage(ViewContext context) throws Exception;
     }
 
     enum renderParam

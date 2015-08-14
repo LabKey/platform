@@ -50,7 +50,6 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -321,23 +320,21 @@ public class ReportUtil
         outputStream.flush();
     }
 
-    public static List<Report> getReports(Container c, User user, String reportKey, boolean inherited)
+    public static List<Report> getReportsIncludingInherited(Container c, User user, @Nullable String reportKey)
     {
         List<Report> reports = new ArrayList<>();
         reports.addAll(Arrays.asList(ReportService.get().getReports(user, c, reportKey)));
 
-        if (inherited)
+        while (!c.isRoot())
         {
-            while (!c.isRoot())
-            {
-                c = c.getParent();
-                reports.addAll(Arrays.asList(ReportService.get().getReports(user, c, reportKey, ReportDescriptor.FLAG_INHERITABLE, 1)));
-            }
-
-            // look for any reports in the shared project
-            if (!ContainerManager.getSharedContainer().equals(c))
-                reports.addAll(Arrays.asList(ReportService.get().getReports(user, ContainerManager.getSharedContainer(), reportKey)));
+            c = c.getParent();
+            reports.addAll(Arrays.asList(ReportService.get().getInheritableReports(user, c, reportKey)));
         }
+
+        // look for any reports in the shared project
+        if (!ContainerManager.getSharedContainer().equals(c))
+            reports.addAll(Arrays.asList(ReportService.get().getReports(user, ContainerManager.getSharedContainer(), reportKey)));
+
         return reports;
     }
 
@@ -578,7 +575,7 @@ public class ReportUtil
     public static Report getReportByName(ViewContext viewContext, String reportName, String reportKey)
     {
         // try to match by report name including any explicitly shared reports in parent folders or reports in the shared container
-        for (Report rpt : ReportUtil.getReports(viewContext.getContainer(), viewContext.getUser(), reportKey, true))
+        for (Report rpt : ReportUtil.getReportsIncludingInherited(viewContext.getContainer(), viewContext.getUser(), reportKey))
         {
             if (reportName.equals(rpt.getDescriptor().getReportName()))
                 return rpt;

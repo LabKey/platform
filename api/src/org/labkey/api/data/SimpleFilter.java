@@ -63,11 +63,16 @@ public class SimpleFilter implements Filter
 
     public static SimpleFilter createContainerFilter(Container c)
     {
-        return new SimpleFilter(new FieldKey(null, "Container"), c);
+        return createContainerFilter(c, "Container");
+    }
+
+    public static SimpleFilter createContainerFilter(Container c, String columnName)
+    {
+        return new SimpleFilter(new FieldKey(null, columnName), c);
     }
 
     /**
-     * Creates a SimpleFilter from a queryParmeter.
+     * Creates a SimpleFilter from a queryParameter.
      * @param queryParameter A query parameter, as would be found on a URL. e.g. 'query.Column~gt=value'
      * @return The SimpleFilter that was created. If the string is not formatted correctly, will return null.
      */

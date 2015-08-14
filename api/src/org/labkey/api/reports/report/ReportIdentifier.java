@@ -15,12 +15,9 @@
  */
 package org.labkey.api.reports.report;
 
-import org.labkey.api.reports.Report;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.security.User;
+import org.labkey.api.reports.Report;
 import org.labkey.api.writer.ContainerUser;
-
-import java.util.Comparator;
 
 /*
 * User: Dave
@@ -33,6 +30,6 @@ import java.util.Comparator;
  */
 public interface ReportIdentifier
 {
-    public @Nullable Report getReport(ContainerUser cu);
-    public int getRowId();
+    @Nullable Report getReport(ContainerUser cu);
+    int getRowId();
 }

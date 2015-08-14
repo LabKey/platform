@@ -570,7 +570,7 @@ public class RReport extends ExternalScriptEngineReport
         String reportName = bean.getReportName();
         Container c = getOwningContainer(context);
 
-        for (Report r : ReportUtil.getReports(c, context.getUser(), StringUtils.isBlank(reportKey) ? null : reportKey, true))
+        for (Report r : ReportUtil.getReportsIncludingInherited(c, context.getUser(), StringUtils.isBlank(reportKey) ? null : reportKey))
         {
             // List only R scripts.  TODO: Need better, more general mechanism for this
             if (!RReportDescriptor.class.isAssignableFrom(r.getDescriptor().getClass()))

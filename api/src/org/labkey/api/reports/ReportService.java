@@ -96,15 +96,23 @@ public class ReportService
         int saveReport(ContainerUser context, String key, Report report, boolean skipValidation);
         int saveReport(ContainerUser context, String key, Report report);
 
-        Report getReport(int reportId);
+        Report getReport(Container c, int reportId);
         Report getReportByEntityId(Container c, String entityId);
-        ReportIdentifier getReportIdentifier(String reportId);
-        Report[] getReports(User user, Container c);
+
+        // TODO: Return Collections not arrays
+        Report[] getReports(@Nullable User user, @NotNull Container c);
         Report[] getReports(User user, Container c, String key);
-        Report[] getReports(User user, Container c, String key, int flagMask, int flagValue);
+
+        // TODO: This is only used by ReportUtils... remove from interface?
+        Report[] getInheritableReports(User user, Container c, String reportKey);
+
+        @Deprecated
         Report[] getReports(Filter filter);
+
         @Nullable
         Report getReport(ReportDB reportDB);
+
+        ReportIdentifier getReportIdentifier(String reportId);
 
         void addUIProvider(UIProvider provider);
         List<UIProvider> getUIProviders();

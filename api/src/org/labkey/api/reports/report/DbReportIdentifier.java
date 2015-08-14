@@ -86,7 +86,7 @@ public class DbReportIdentifier extends AbstractReportIdentifier
         if(_id == -1)
             return null;
 
-        Report report = ReportService.get().getReport(getRowId());
+        Report report = ReportService.get().getReport(cu.getContainer(), getRowId());
         return (report != null && report.hasPermission(cu.getUser(), cu.getContainer(), ReadPermission.class)) ? report : null;
     }
 }

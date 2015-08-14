@@ -45,7 +45,7 @@ public class ReportDB
 
     public ReportDB(){}
 
-    public ReportDB(Container c, int userId, String key, ReportDescriptor descriptor)
+    public ReportDB(Container c, String key, ReportDescriptor descriptor)
     {
         try
         {

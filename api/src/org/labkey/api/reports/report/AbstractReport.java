@@ -113,7 +113,7 @@ public abstract class AbstractReport implements Report
         String origPropStr = null;
         if (getReportId() != null)
         {
-            Report origReport = ReportService.get().getReport(getReportId().getRowId());
+            Report origReport = ReportService.get().getReport(ContainerManager.getForId(getContainerId()), getReportId().getRowId());
             origPropStr = origReport != null  ? origReport.getDescriptor().getProperty(descriptorPropName) : null;
         }
 

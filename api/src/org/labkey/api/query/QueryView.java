@@ -97,7 +97,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public class QueryView extends WebPartView<Object>
@@ -1569,7 +1568,7 @@ public class QueryView extends WebPartView<Object>
         // Ask the schema for the report keys so that we get legacy ones for backwards compatibility too
         for (String reportKey : getSchema().getReportKeys(getSettings().getQueryName()))
         {
-            allReports.addAll(ReportUtil.getReports(getContainer(), getUser(), reportKey, true));
+            allReports.addAll(ReportUtil.getReportsIncludingInherited(getContainer(), getUser(), reportKey));
         }
         Map<String, List<Report>> views = new TreeMap<>();
         ReportService.ItemFilter viewItemFilter = getItemFilter();
@@ -1631,7 +1630,7 @@ public class QueryView extends WebPartView<Object>
         // Ask the schema for the report keys so that we get legacy ones for backwards compatibility too
         for (String reportKey : getSchema().getReportKeys(getSettings().getQueryName()))
         {
-            reports.addAll(ReportUtil.getReports(getContainer(), getUser(), reportKey, true));
+            reports.addAll(ReportUtil.getReportsIncludingInherited(getContainer(), getUser(), reportKey));
         }
         Map<String, List<Report>> views = new TreeMap<>();
         ReportService.ItemFilter viewItemFilter = getItemFilter();
