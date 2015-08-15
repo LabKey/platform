@@ -59,6 +59,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 
@@ -287,11 +288,11 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
     {
         if (study != null)
         {
-            Report[] reports = ReportService.get().getReports(user, study.getContainer(), "enrollmentReport");
-            if (reports.length > 0)
+            Collection<Report> reports = ReportService.get().getReports(user, study.getContainer(), "enrollmentReport");
+            if (!reports.isEmpty())
             {
-                assert (reports.length == 1);
-                return reports[0];
+                assert (reports.size() == 1);
+                return reports.iterator().next();
             }
             if (create)
                 return ReportService.get().createReportInstance(EnrollmentReport.TYPE);

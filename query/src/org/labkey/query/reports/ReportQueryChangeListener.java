@@ -128,7 +128,8 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
         // passing in null for the user should get all reports (private and public, independent of the owner)
         for (Report report : ReportService.get().getReports(null, container))
         {
-            try {
+            try
+            {
                 boolean hasUpdates = false;
                 ReportDescriptor descriptor = report.getDescriptor();
 

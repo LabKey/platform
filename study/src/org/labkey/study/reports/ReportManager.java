@@ -59,6 +59,7 @@ import org.labkey.study.model.VisitImpl;
 import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -375,19 +376,19 @@ public class ReportManager implements DatasetManager.DatasetListener
      */
     public interface ReportView extends Report
     {
-        public void init(ViewContext context);
-        public void deleteView(ViewContext context) throws Exception;
-        public void saveView(ViewContext context) throws Exception;
+        void init(ViewContext context);
+        void deleteView(ViewContext context) throws Exception;
+        void saveView(ViewContext context) throws Exception;
 
-        public Integer getShowWithDataset();
-        public void setShowWithDataset(Integer dataset);
-        public Container getContainer();
-        public void setContainer(Container c);
-        public String getParams();
-        public void setParams(String params);
-        public String getReportViewType();
+        Integer getShowWithDataset();
+        void setShowWithDataset(Integer dataset);
+        Container getContainer();
+        void setContainer(Container c);
+        String getParams();
+        void setParams(String params);
+        String getReportViewType();
 
-        public void setReports(Report[] reports);
+        void setReports(Collection<Report> reports);
     }
 
     public void datasetChanged(final Dataset def)

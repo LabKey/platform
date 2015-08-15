@@ -25,8 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.AbstractContainerListener;
@@ -96,7 +94,6 @@ import org.labkey.security.xml.roleAssignment.RoleAssignmentsType;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -118,8 +115,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     private static final Logger _log = Logger.getLogger(ReportService.class);
     private static final List<UIProvider> _uiProviders = new CopyOnWriteArrayList<>();
     private static final Map<String, UIProvider> _typeToProviderMap = new ConcurrentHashMap<>();
-
-    private static final Cache<Integer, ReportDB> REPORT_DB_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database Report Cache");
 
     /** maps descriptor types to providers */
     private final Map<String, Class> _descriptors = new ConcurrentHashMap<>();
@@ -477,7 +472,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     public void containerDeleted(Container c, User user)
     {
         ContainerUtil.purgeTable(getTable(), c, "ContainerId");
-        REPORT_DB_CACHE.clear();
         ReportCache.uncache(c);
     }
 
@@ -526,7 +520,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
         filter.addCondition(FieldKey.fromParts("RowId"), reportId);
         Table.delete(getTable(), filter);
-        REPORT_DB_CACHE.remove(reportId);
         ReportCache.uncache(c);
     }
 
@@ -633,7 +626,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         else
             reportDB = Table.insert(user, getTable(), reportDB);
 
-        REPORT_DB_CACHE.remove(reportDB.getRowId());
         ReportCache.uncache(c);
 
         return reportDB;
@@ -707,14 +699,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return AbstractReportIdentifier.fromString(reportId);
     }
 
-    private Report[] _getReports(User user, SimpleFilter filter)
-    {
-        if (filter != null && user != null)
-            filter.addWhereClause("ReportOwner IS NULL OR CreatedBy = ?", new Object[]{user.getUserId()});
-
-        return getReports(filter);
-    }
-
     private Report[] _createReports(ReportDB[] rawReports)
     {
         if (rawReports.length > 0)
@@ -733,12 +717,12 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return EMPTY_REPORT;
     }
 
-    public Report[] getReports(@Nullable User user, @NotNull Container c)
+    public Collection<Report> getReports(@Nullable User user, @NotNull Container c)
     {
         return getReadableReports(ReportCache.getReports(c), user);
     }
 
-    public Report[] getReports(@Nullable User user, @NotNull Container c, @Nullable String key)
+    public Collection<Report> getReports(@Nullable User user, @NotNull Container c, @Nullable String key)
     {
         List<ReportDescriptor> moduleReportDescriptors = new ArrayList<>();
 
@@ -785,11 +769,11 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @Deprecated
-    public Report[] getInheritableReports(User user, Container c, @Nullable String reportKey)
+    public Collection<Report> getInheritableReports(User user, Container c, @Nullable String reportKey)
     {
         Collection<Report> inheritable = ReportCache.getInheritableReports(c);
 
-        // If reportKey is specified then filter the inheritable reports
+        // If reportKey is specified then grab just those from the inheritable reports
         if (null != reportKey)
         {
             inheritable = inheritable.stream()
@@ -800,7 +784,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return getReadableReports(inheritable, user);
     }
 
-    private Report[] getReadableReports(Collection<Report> reports, @Nullable User user)
+    private Collection<Report> getReadableReports(Collection<Report> reports, @Nullable User user)
     {
         Collection<Report> readableReports;
 
@@ -821,7 +805,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             }
         }
 
-        return readableReports.toArray(new Report[readableReports.size()]);
+        return readableReports;
     }
 
     @Deprecated
@@ -954,7 +938,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             }
 
             List<Report> existingReports = new ArrayList<>();
-            existingReports.addAll(Arrays.asList(getReports(ctx.getUser(), ctx.getContainer(), key)));
+            existingReports.addAll(getReports(ctx.getUser(), ctx.getContainer(), key));
 
             // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
             // so if we are importing an older study archive, we need to also check for existing reports using the query name (i.e. dataset name)
@@ -970,7 +954,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                     if (dataset != null && !dataset.getName().equals(dataset.getLabel()))
                     {
                         String newKey = ReportUtil.getReportKey(schema, dataset.getName());
-                        existingReports.addAll(Arrays.asList(getReports(ctx.getUser(), ctx.getContainer(), newKey)));
+                        existingReports.addAll(getReports(ctx.getUser(), ctx.getContainer(), newKey));
                     }
                 }
             }
@@ -1115,15 +1099,16 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         @Override
         public void categoryUpdated(User user, ViewCategory category) throws Exception {}
 
-        private Report[] getReportsForCategory(ViewCategory category)
+        private Collection<Report> getReportsForCategory(ViewCategory category)
         {
             if (category != null)
             {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), category.getContainerId());
-                filter.addCondition(FieldKey.fromParts("CategoryId"), category.getRowId());
-                return _instance.getReports(filter);
+                return ReportCache.getReports(category.lookupContainer())
+                    .stream()
+                    .filter(report -> report.getDescriptor().getCategory().equals(category))
+                    .collect(Collectors.toList());
             }
-            return new Report[0];
+            return Collections.emptyList();
         }
     }
 

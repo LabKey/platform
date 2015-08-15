@@ -100,7 +100,8 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
 
     private boolean reportNameExists(ViewContext context, String reportName, String key)
     {
-        try {
+        try
+        {
             for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
             {
                 if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))

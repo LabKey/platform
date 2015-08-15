@@ -1619,17 +1619,15 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
         {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), getContainer().getId());
-            filter.addCondition(FieldKey.fromParts("EntityId"), form.getEntityId());
+            Report report = ReportService.get().getReportByEntityId(getContainer(), form.getEntityId());
 
-            Report[] report = ReportService.get().getReports(filter);
-            if (report.length != 1)
+            if (null == report)
             {
                 throw new NotFoundException("Unable to find report");
             }
 
-            if (report[0] instanceof RReport || report[0] instanceof AttachmentReport)
-                AttachmentService.get().download(getViewContext().getResponse(), report[0], form.getName());
+            if (report instanceof RReport || report instanceof AttachmentReport)
+                AttachmentService.get().download(getViewContext().getResponse(), report, form.getName());
 
             return null;
         }

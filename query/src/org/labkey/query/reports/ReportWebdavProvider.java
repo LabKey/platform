@@ -73,7 +73,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
 
     private boolean hasViews(User user, Container c)
     {
-        return ReportService.get().getReports(user, c).length > 0;
+        return !ReportService.get().getReports(user, c).isEmpty();
     }
 
     static class ViewProviderResource extends AbstractWebdavResourceCollection

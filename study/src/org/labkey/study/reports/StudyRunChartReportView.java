@@ -28,6 +28,8 @@ import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -37,16 +39,16 @@ import java.util.List;
 public class StudyRunChartReportView extends RunChartReportView
 {
     public static final String PARTICIPANT_KEY = "participantId";
-    private Report[] _reports;
+    private Collection<Report> _reports;
 
     StudyRunChartReportView(Report report)
     {
         super(report);
     }
 
-    StudyRunChartReportView(Report[] reports)
+    StudyRunChartReportView(Collection<Report> reports)
     {
-        super(reports[0]);
+        super(reports.iterator().next());
         _reports = reports;
     }
 
@@ -55,7 +57,7 @@ public class StudyRunChartReportView extends RunChartReportView
         if (TAB_VIEW.equals(tabId))
         {
             VBox view = new VBox();
-            Report[] reports = _reports != null ? _reports : new Report[]{getReport()};
+            Collection<Report> reports = _reports != null ? _reports : Collections.singleton(getReport());
             boolean isParticipantChart = PARTICIPANT_KEY.equals(getReport().getDescriptor().getProperty(ReportDescriptor.Prop.filterParam));
             if (isParticipantChart)
             {
@@ -81,7 +83,7 @@ public class StudyRunChartReportView extends RunChartReportView
         return super.getTabView(tabId);
     }
 
-    private void addChartView(VBox view, Report[] reports, String participantId)
+    private void addChartView(VBox view, Collection<Report> reports, String participantId)
     {
         for (Report report : reports)
         {

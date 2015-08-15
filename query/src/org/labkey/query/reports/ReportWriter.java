@@ -29,7 +29,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.ExportDirType;
 import org.labkey.folder.xml.FolderDocument;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -51,7 +50,7 @@ public class ReportWriter extends BaseFolderWriter
     @Override
     public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
-        Set<Report> reports = new LinkedHashSet<>(Arrays.asList(ReportService.get().getReports(ctx.getUser(), ctx.getContainer())));
+        Set<Report> reports = new LinkedHashSet<>(ReportService.get().getReports(ctx.getUser(), ctx.getContainer()));
 
         if (ctx.getClass().equals(FolderExportContext.class))
         {

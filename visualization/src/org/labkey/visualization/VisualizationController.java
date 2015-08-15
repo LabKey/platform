@@ -130,6 +130,8 @@ import java.io.StringReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -996,7 +998,7 @@ public class VisualizationController extends SpringActionController
             }
 
             // try to match on report name if we don't have a valid report identifier
-            Report[] currentReports;
+            Collection<Report> currentReports;
 
             if (form.getSchemaName() != null && form.getQueryName() != null)
                 currentReports = ReportService.get().getReports(getUser(), getContainer(), getReportKey(form));

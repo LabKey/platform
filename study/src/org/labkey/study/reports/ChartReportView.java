@@ -54,6 +54,7 @@ import org.labkey.study.model.DatasetDefinition;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -140,14 +141,14 @@ public class ChartReportView extends AbstractReportView
 
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
-        Report[] reports = getChildReports(context);
+        Collection<Report> reports = getChildReports(context);
 
-        if (reports.length == 1)
-            return reports[0].getRunReportView(context);
+        if (reports.size() == 1)
+            return reports.iterator().next().getRunReportView(context);
         // Issue #5634, Backwards compatibility for when multiple charts could be embedded into a parent chart.
         // this is no longer supported directly in the designer, instead the multi chart option is used.
         //
-        else if (reports.length > 1)
+        else if (reports.size() > 1)
             return new StudyRunChartReportView(reports);
 
         return super.getRunReportView(context);
@@ -234,7 +235,7 @@ public class ChartReportView extends AbstractReportView
         return super.renderDataView(context);
     }
 
-    Report[] getChildReports(ContainerUser context)
+    Collection<Report> getChildReports(ContainerUser context)
     {
         if (_reports == null)
         {
@@ -254,10 +255,10 @@ public class ChartReportView extends AbstractReportView
 
     public HttpView renderReport(ViewContext context)
     {
-        Report[] reports = getChildReports(context);
-        if (reports.length > 0)
+        Collection<Report> reports = getChildReports(context);
+        if (!reports.isEmpty())
         {
-            final Report report = reports[0];
+            final Report report = reports.iterator().next();
             final String dataset = report.getDescriptor().getProperty("datasetId");
             final String chartsPerRow = report.getDescriptor().getProperty("chartsPerRow");
             String participantId = context.getActionURL().getParameter("participantId");
@@ -267,7 +268,7 @@ public class ChartReportView extends AbstractReportView
             {
                 final ReportsController.PlotForm form = new ReportsController.PlotForm();
                 form.setDatasetId(Integer.parseInt(dataset));
-                form.setReports(reports);
+                form.setReports(reports.toArray(new Report[reports.size()]));
                 form.setAction("datasetView.plot");
                 if (participantId != null)
                     form.setParticipantId(participantId);

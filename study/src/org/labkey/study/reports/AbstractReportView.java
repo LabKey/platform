@@ -20,6 +20,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.AbstractReport;
 
+import java.util.Collection;
+
 /**
  * User: Karl Lum
  * Date: Nov 17, 2006
@@ -29,7 +31,7 @@ public abstract class AbstractReportView extends AbstractReport implements Repor
     private Integer _showWithDataset;
     private String _params;
     protected String _reportType;
-    protected Report[] _reports;
+    protected Collection<Report> _reports;
     protected Container _container;
 
     public Integer getShowWithDataset() {return _showWithDataset;}
@@ -42,5 +44,5 @@ public abstract class AbstractReportView extends AbstractReport implements Repor
     public void setParams(String params) {_params = params;}
 
     public String getReportViewType(){return _reportType;}
-    public void setReports(Report[] reports){_reports = reports;}
+    public void setReports(Collection<Report> reports){_reports = reports;}
 }
