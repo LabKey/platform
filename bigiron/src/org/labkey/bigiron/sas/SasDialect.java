@@ -28,7 +28,9 @@ import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
+import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.data.dialect.StatementWrapper;
+import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
@@ -318,17 +320,25 @@ public abstract class SasDialect extends SimpleSqlDialect
     }
 
 
-    @Override
-    public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable final String schemaName, @Nullable String tableName) throws SQLException
-    {
-        return new StandardJdbcMetaDataLocator(scope, schemaName, tableName)
+    private static final TableResolver TABLE_RESOLVER = new StandardTableResolver() {
+        @Override
+        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
         {
-            @Override
-            public String getCatalogName()
+            return new StandardJdbcMetaDataLocator(scope, schemaName, tableName)
             {
-                return schemaName;
-            }
-        };
+                @Override
+                public String getCatalogName()
+                {
+                    return schemaName;
+                }
+            };
+        }
+    };
+
+    @Override
+    protected TableResolver getTableResolver()
+    {
+        return TABLE_RESOLVER;
     }
 
 

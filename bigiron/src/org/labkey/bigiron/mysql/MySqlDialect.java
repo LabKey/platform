@@ -17,6 +17,7 @@ package org.labkey.bigiron.mysql;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DatabaseTableType;
@@ -32,6 +33,8 @@ import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
 import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
+import org.labkey.api.data.dialect.StandardTableResolver;
+import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.sql.ResultSet;
@@ -129,24 +132,32 @@ public class MySqlDialect extends SimpleSqlDialect
         return "SELECT connection_id();";
     }
 
-    @Override
-    public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, final String schemaName, String tableName) throws SQLException
-    {
-        // MySQL treats catalogs as schemas... i.e., getSchemaName() needs to return null and getCatalogName() needs to return the schema name
-        return new StandardJdbcMetaDataLocator(scope, null, tableName)
+    private static final TableResolver TABLE_RESOLVER = new StandardTableResolver() {
+        @Override
+        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
         {
-            @Override
-            public String getCatalogName()
+            // MySQL treats catalogs as schemas... i.e., getSchemaName() needs to return null and getCatalogName() needs to return the schema name
+            return new StandardJdbcMetaDataLocator(scope, null, tableName)
             {
-                return schemaName;
-            }
+                @Override
+                public String getCatalogName()
+                {
+                    return schemaName;
+                }
 
-            @Override
-            public boolean supportsSchemas()
-            {
-                return false;
-            }
-        };
+                @Override
+                public boolean supportsSchemas()
+                {
+                    return false;
+                }
+            };
+        }
+    };
+
+    @Override
+    protected TableResolver getTableResolver()
+    {
+        return TABLE_RESOLVER;
     }
 
     @Override

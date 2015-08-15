@@ -195,6 +195,9 @@ bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2012Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2014Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2016Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServerDialectFactory.java -text
+bigiron/src/org/labkey/bigiron/mssql/SynonymManager.java -text
+bigiron/src/org/labkey/bigiron/mssql/SynonymTableResolver.java -text
+bigiron/src/org/labkey/bigiron/mssql/SynonymTestCase.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySql56Dialect.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySqlDialect.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySqlDialectFactory.java -text
