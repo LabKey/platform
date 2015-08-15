@@ -16,7 +16,6 @@
 package org.labkey.api.message.digest;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
@@ -50,7 +49,7 @@ public abstract class MessageDigest
          * Returns the list of containers that have messages within the date ranges to
          * include in the digest.
          */
-        public void sendDigestForAllContainers(Date start, Date end) throws Exception;
+        void sendDigestForAllContainers(Date start, Date end) throws Exception;
     }
 
     public void addProvider(Provider provider)
