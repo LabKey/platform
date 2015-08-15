@@ -38,6 +38,7 @@ import org.labkey.api.writer.VirtualFile;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -99,12 +100,12 @@ public class ReportService
         Report getReport(Container c, int reportId);
         Report getReportByEntityId(Container c, String entityId);
 
-        // TODO: Return Collections not arrays
-        Report[] getReports(@Nullable User user, @NotNull Container c);
-        Report[] getReports(User user, Container c, String key);
+        Collection<Report> getReports(@Nullable User user, @NotNull Container c);
+
+        Collection<Report> getReports(User user, Container c, String key);
 
         // TODO: This is only used by ReportUtils... remove from interface?
-        Report[] getInheritableReports(User user, Container c, String reportKey);
+        Collection<Report> getInheritableReports(User user, Container c, String reportKey);
 
         @Deprecated
         Report[] getReports(Filter filter);

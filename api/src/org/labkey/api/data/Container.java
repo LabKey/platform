@@ -456,8 +456,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         //add report descriptors
         //this seems much more cumbersome than it should be
-        Report[] reports = ReportService.get().getReports(user, this);
-        for (Report report : reports)
+        for (Report report : ReportService.get().getReports(user, this))
         {
             SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor());
             if (policy.hasPermission(user, AdminPermission.class))

@@ -323,17 +323,17 @@ public class ReportUtil
     public static List<Report> getReportsIncludingInherited(Container c, User user, @Nullable String reportKey)
     {
         List<Report> reports = new ArrayList<>();
-        reports.addAll(Arrays.asList(ReportService.get().getReports(user, c, reportKey)));
+        reports.addAll(ReportService.get().getReports(user, c, reportKey));
 
         while (!c.isRoot())
         {
             c = c.getParent();
-            reports.addAll(Arrays.asList(ReportService.get().getInheritableReports(user, c, reportKey)));
+            reports.addAll(ReportService.get().getInheritableReports(user, c, reportKey));
         }
 
         // look for any reports in the shared project
         if (!ContainerManager.getSharedContainer().equals(c))
-            reports.addAll(Arrays.asList(ReportService.get().getReports(user, ContainerManager.getSharedContainer(), reportKey)));
+            reports.addAll(ReportService.get().getReports(user, ContainerManager.getSharedContainer(), reportKey));
 
         return reports;
     }
