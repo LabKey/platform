@@ -435,9 +435,12 @@ api/src/org/labkey/api/data/dialect/SqlDialectFactory.java -text
 api/src/org/labkey/api/data/dialect/SqlDialectManager.java -text
 api/src/org/labkey/api/data/dialect/SqlDialectNotSupportedException.java -text
 api/src/org/labkey/api/data/dialect/StandardDialectStringHandler.java -text
+api/src/org/labkey/api/data/dialect/StandardForeignKeyResolver.java -text
 api/src/org/labkey/api/data/dialect/StandardJdbcHelper.java -text
 api/src/org/labkey/api/data/dialect/StandardJdbcMetaDataLocator.java -text
+api/src/org/labkey/api/data/dialect/StandardTableResolver.java -text
 api/src/org/labkey/api/data/dialect/StatementWrapper.java -text
+api/src/org/labkey/api/data/dialect/TableResolver.java -text
 api/src/org/labkey/api/data/dialect/TestUpgradeCode.java -text
 api/src/org/labkey/api/data/dialect/sql2003Keywords.txt -text
 api/src/org/labkey/api/data/dialect/sqlKeywords.txt -text

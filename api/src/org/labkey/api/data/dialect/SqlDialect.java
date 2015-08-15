@@ -25,7 +25,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnInfo.ImportedKey;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
@@ -874,33 +873,29 @@ public abstract class SqlDialect
         return Collections.emptyList();
     }
 
-    // Do nothing by default
-    public void addTableNames(Map<String, String> map, DbScope scope, String schemaName)
+    private static final TableResolver STANDARD_TABLE_RESOLVER = new StandardTableResolver();
+
+    protected TableResolver getTableResolver()
     {
+        return STANDARD_TABLE_RESOLVER;
     }
 
-    public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
+    public final void addTableNames(Map<String, String> map, DbScope scope, String schemaName)
     {
-        return new StandardJdbcMetaDataLocator(scope, schemaName, tableName);
+        getTableResolver().addTableNames(map, scope, schemaName);
     }
 
-    private static final ForeignKeyResolver STANDARD_RESOLVER = new StandardForeignKeyResolver();
-
-    public ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)
+    public final JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
     {
-        return STANDARD_RESOLVER;
+        return getTableResolver().getJdbcMetaDataLocator(scope, schemaName, tableName);
+    }
+
+    public final ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)
+    {
+        return getTableResolver().getForeignKeyResolver(scope, schemaName, tableName);
     }
 
     public abstract boolean canExecuteUpgradeScripts();
-
-    protected static class StandardForeignKeyResolver implements ForeignKeyResolver
-    {
-        @Override
-        public ImportedKey getImportedKey(String fkName, String pkSchemaName, String pkTableName, String pkColumnName, String colName)
-        {
-            return new ImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
-        }
-    }
 
     protected class SQLSyntaxException extends SQLException
     {
