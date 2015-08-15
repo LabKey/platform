@@ -242,12 +242,13 @@ public class Table
         }
     }
 
+
     public static void batchExecute1String(DbSchema schema, String sql, Iterable<String> paramList) throws SQLException
     {
         Connection conn = schema.getScope().getConnection();
         PreparedStatement stmt = null;
 
-        try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
+        try
         {
             stmt = conn.prepareStatement(sql);
             int paramCounter = 0;
@@ -260,7 +261,6 @@ public class Table
                 {
                     paramCounter = 0;
                     stmt.executeBatch();
-                    jdbcParameters.close();
                 }
             }
             stmt.executeBatch();
@@ -287,7 +287,7 @@ public class Table
         Connection conn = schema.getScope().getConnection();
         PreparedStatement stmt = null;
 
-        try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
+        try
         {
             stmt = conn.prepareStatement(sql);
             int paramCounter = 0;
@@ -303,7 +303,6 @@ public class Table
                 {
                     paramCounter = 0;
                     stmt.executeBatch();
-                    jdbcParameters.close();
                 }
             }
             stmt.executeBatch();
@@ -324,6 +323,7 @@ public class Table
             doClose(null, stmt, conn, schema.getScope());
         }
     }
+
 
     private static Map<Class, Getter> _getterMap = new HashMap<>(10);
 

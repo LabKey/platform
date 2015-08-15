@@ -61,6 +61,9 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         }
         else if (jdbcType == JdbcType.VARCHAR)
         {
+            // https://technet.microsoft.com/en-US/library/ms191241(v=SQL.105).aspx
+            if (paramsCollection.stream().mapToInt(s->null==s?0:((String)s).length()).max().orElse(0) >= 450)
+                return null;
             sortedParameters = collectStrings(paramsCollection);
         }
         if (null == sortedParameters)
@@ -75,6 +78,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             sqlCreate.append(tableName)
                     .append("\n(Id ")
                     .append(DbSchema.getTemp().getSqlDialect().sqlTypeNameFromSqlType(jdbcType.sqlType))
+                    .append(jdbcType==JdbcType.VARCHAR?"(450)":"")
                     .append(");");
 
             new SqlExecutor(DbSchema.getTemp()).execute(sqlCreate);
