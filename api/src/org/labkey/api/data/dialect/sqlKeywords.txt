@@ -560,6 +560,7 @@ openxml
 operation
 operator
 optimize
+optimizer_costs
 option
 optionally
 options
@@ -589,6 +590,7 @@ parameter_specific_name
 parameter_specific_schema
 parameters
 parser
+parse_gcol_expr
 partial
 partition
 pascal
@@ -786,6 +788,7 @@ stddev_samp
 stdin
 stdout
 storage
+stored
 store
 straight_join
 strict
@@ -915,6 +918,7 @@ variadic
 varying
 verbose
 version
+virtual
 view
 volatile
 waitfor
