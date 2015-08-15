@@ -699,24 +699,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return AbstractReportIdentifier.fromString(reportId);
     }
 
-    private Report[] _createReports(ReportDB[] rawReports)
-    {
-        if (rawReports.length > 0)
-        {
-            List<Report> reports = new ArrayList<>();
-            for (ReportDB r : rawReports)
-            {
-                Report report = _getInstance(r);
-                if (report != null)
-                    reports.add(report);
-            }
-            if (reports.size() > 0)
-                Collections.sort(reports, ReportComparator.getInstance());
-            return reports.toArray(new Report[reports.size()]);
-        }
-        return EMPTY_REPORT;
-    }
-
     public Collection<Report> getReports(@Nullable User user, @NotNull Container c)
     {
         return getReadableReports(ReportCache.getReports(c), user);
@@ -808,22 +790,31 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return readableReports;
     }
 
-    @Deprecated
+    @Deprecated  // Use a getReports() method that uses the cache instead!
     public Report[] getReports(Filter filter)
     {
-        ReportDB[] reports = new TableSelector(getTable(), filter, null).getArray(ReportDB.class);
-        return _createReports(reports);
+        List<Report> reports = new ArrayList<>();
+
+        for (ReportDB r : new TableSelector(getTable(), filter, null).getArray(ReportDB.class))
+        {
+            Report report = _getInstance(r);
+            if (report != null)
+                reports.add(report);
+        }
+
+        if (!reports.isEmpty())
+        {
+            Collections.sort(reports, ReportComparator.getInstance());
+            return reports.toArray(new Report[reports.size()]);
+        }
+
+        return EMPTY_REPORT_ARRAY;
     }
 
     @Nullable
     public Report getReport(ReportDB reportDB)
     {
-        ReportDB[] rawReportDBs = new ReportDB[1];
-        rawReportDBs[0] = reportDB;
-        Report[] reports = _createReports(rawReportDBs);
-        if (reports.length > 0)
-            return reports[0];
-        return null;
+        return _getInstance(reportDB);
     }
 
     public void addUIProvider(UIProvider provider)
@@ -870,7 +861,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return "/_.gif";
     }
 
-    private static final Report[] EMPTY_REPORT = new Report[0];
+    private static final Report[] EMPTY_REPORT_ARRAY = new Report[0];
 
     private boolean reportExists(int reportId)
     {
@@ -1125,7 +1116,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
         public int compare(Report o1, Report o2)
         {
-
             return o1.getDescriptor().getReportId().toString().compareToIgnoreCase(o2.getDescriptor().getReportId().toString());
         }
     }
