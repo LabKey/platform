@@ -51,6 +51,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
         this.month = 1;
         this.day = 1;
         this.year = config.defaultYear;
+        this.date = Ext4.Date.parse(this.year + '-' + this.month + '-' + this.day, 'Y-n-j');
 
         this.callParent([config]);
     },
@@ -148,10 +149,10 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
         },{
             xtype   : 'hidden',
             name    : this.name,
+            value   : this.date,
             itemId  : 'dateField'
 
         }];
-        this.on('render', function(){this.updateDate();}, this);
         this.callParent();
     },
 
@@ -188,7 +189,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
     updateDate : function() {
         this.date = Ext4.Date.parse(this.year + '-' + this.month + '-' + this.day, 'Y-n-j');
         var field = this.getComponent('dateField');
-        if (field){
+        if (this.date && field){
             field.setValue(this.date.toDateString());
         }
     }

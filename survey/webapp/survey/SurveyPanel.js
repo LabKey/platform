@@ -14,12 +14,15 @@ Ext4.define('LABKEY.ext4.SurveyDisplayPanel', {
 
     constructor : function(config){
 
-        Ext4.apply(config, {
-            border: false,
-            bodyStyle : 'background-color: transparent;',
-            autoHeight: true,
-            items: []
-        });
+        Ext4.applyIf(config, {
+            border      : false,
+            bodyStyle   : 'background-color: transparent;',
+            autoHeight  : true,
+            items       : [],
+            updateUrl   : LABKEY.ActionURL.buildURL('survey', 'updateSurveyResponse.api'),
+            getResponsesUrl : LABKEY.ActionURL.buildURL('survey', 'getSurveyResponse.api'),
+            forceLowerCaseNames : true
+    });
 
         this.callParent([config]);
     },
@@ -38,7 +41,10 @@ Ext4.define('LABKEY.ext4.SurveyDisplayPanel', {
             canEdit         : this.canEdit,
             returnURL       : this.returnURL,
             autosaveInterval: this.autosaveInterval,
-            disableAutoSave : false
+            disableAutoSave : this.disableAutoSave,
+            updateUrl       : this.updateUrl,
+            getResponsesUrl : this.getResponsesUrl,
+            forceLowerCaseNames : this.forceLowerCaseNames
         });
         this.items = [this.surveyFormPanel];
 
@@ -189,7 +195,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         {
             // query the DB for the survey responses for the given rowId
             Ext4.Ajax.request({
-                url     : LABKEY.ActionURL.buildURL('survey', 'getSurveyResponse.api'),
+                url     : this.getResponsesUrl,
                 method  : 'POST',
                 jsonData: {rowId : this.rowId},
                 success : function(resp){
@@ -325,7 +331,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     {
         // send the survey rowId, surveyDesignId, and responsesPk as params to the API call
         Ext4.Ajax.request({
-            url     : LABKEY.ActionURL.buildURL('survey', 'updateSurveyResponse.api'),
+            url     : this.updateUrl,
             method  : 'POST',
             jsonData: {
                 surveyDesignId : this.surveyDesignId,

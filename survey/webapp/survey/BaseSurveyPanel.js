@@ -298,7 +298,8 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             config.readOnly = true;
 
         // make the name lowercase for consistency
-        this.convertNamesToLowerCase(config);
+        if (this.forceLowerCaseNames)
+            this.convertNamesToLowerCase(config);
 
         // apply lookup filter for non-admins in edit mode (currently only supports "ISBLANK" filter type)
         if (!LABKEY.user.isAdmin && this.canEdit && question.lookup && question.lookup.filterColumn)
@@ -960,23 +961,46 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         return this.getDirtyValues(this.getForm());
     },
 
-    getDirtyValues : function(form)
-    {
+    getDirtyValues : function(form) {
         var values = {};
         Ext4.each(form.getFields().items, function(field){
             if (field.submitValue && field.isDirty() && (field.isHidden() || field.isValid()))
             {
-                // special casing for radiogroups and radiofields, i.e. skip the group field and use the individual radiofeilds
-                if (field.getXType() == "radiogroup")
+                // special casing for radiogroups and radiofields, i.e. skip the group field and use the individual radio fields
+                if (field.getXType() == 'radiogroup')
                 {} // skip the radiogroup itself in favor of the radiofields
+                else if (field.getXType() == 'checkboxgroup') {
+                    if (field.getName())
+                        values[field.getName()] = field.getValue();
+                }
                 else if (field.getXType() == "radiofield")
-                    values[field.getName()] = field.getGroupValue();
+                    this.addFieldValue(values, field.getName(), field.getGroupValue());
                 else
-                    values[field.getName()] = field.getSubmitValue();
+                    this.addFieldValue(values, field.getName(), field.getSubmitValue());
             }
         }, this);
 
         return values;
+    },
+
+    addFieldValue : function(values, name, value) {
+
+        // multi select values are encoded as an array
+        if (values[name]) {
+            if (Ext4.isArray(values[name])){
+                values[name].push(value);
+            }
+            else {
+                var valueArr = [];
+                valueArr.push(values[name]);
+                valueArr.push(value);
+
+                values[name] = valueArr;
+            }
+        }
+        else {
+            values[name] = value;
+        }
     },
 
     /*
