@@ -593,6 +593,7 @@ public class SecurityApiActions
     public static class PolicyIdForm
     {
         private String _resourceId;
+        private boolean _findNearest = true;
 
         public String getResourceId()
         {
@@ -602,6 +603,16 @@ public class SecurityApiActions
         public void setResourceId(String resourceId)
         {
             _resourceId = resourceId;
+        }
+
+        public boolean getFindNearest()
+        {
+            return _findNearest;
+        }
+
+        public void setFindNearest(boolean findNearest)
+        {
+            _findNearest = findNearest;
         }
     }
 
@@ -622,7 +633,7 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("The requested resource does not exist within this container!");
 
             //get the policy
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource, form.getFindNearest());
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
             //FIX: 8077 - if this is a subfolder and the policy is inherited from the project
