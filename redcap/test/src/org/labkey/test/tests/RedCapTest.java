@@ -25,7 +25,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.Locators;
 import org.labkey.test.TestCredentials;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.InDevelopment;
+import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.study.StudyOverviewWebPart;
 import org.labkey.test.credentials.ApiKey;
 import org.labkey.test.pages.redcap.ConfigurePage;
@@ -40,7 +40,7 @@ import java.util.Map;
 
 import static org.labkey.test.util.StudyHelper.TimepointType;
 
-@Category({InDevelopment.class})
+@Category({DailyA.class})
 public class RedCapTest extends BaseWebDriverTest
 {
     public static final String SURVEY_NAME_LONGITUDINAL = "Longitudinal";
