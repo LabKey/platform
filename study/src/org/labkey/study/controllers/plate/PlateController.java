@@ -18,9 +18,11 @@ package org.labkey.study.controllers.plate;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
+import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.User;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.*;
 import org.labkey.api.study.*;
@@ -196,7 +198,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public class DesignerAction extends SimpleViewAction<DesignerForm>
     {
         public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
@@ -240,7 +242,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public class DeleteAction extends SimpleViewAction<NameForm>
     {
         public ModelAndView getView(NameForm form, BindException errors) throws Exception
@@ -272,6 +274,8 @@ public class PlateController extends SpringActionController
         {
             _templateName = templateName;
             _selectedDestination = selectedDestination;
+
+            //Copy and Add to another folder requires InsertPermissions
             ContainerTree tree = new ContainerTree("/", user, InsertPermission.class, null)
             {
                 @Override
@@ -326,7 +330,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public class CopyTemplateAction extends FormViewAction<CopyForm>
     {
         public void validateCommand(CopyForm form, Errors errors)
@@ -358,7 +362,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public class HandleCopyAction extends CopyTemplateAction
     {
         public void validateCommand(CopyForm form, Errors errors)

@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.study.controllers.plate.PlateController" %>
 <%@ page import="org.labkey.study.plate.PlateManager" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.permissions.DesignAssayPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PlateController.PlateTemplateListBean> me = (JspView<PlateController.PlateTemplateListBean>) HttpView.currentView();
@@ -38,26 +39,32 @@
 <h4>Available Plate Templates</h4>
 <table>
 <%
+    boolean isAssayDesigner = c.hasPermission(getUser(), DesignAssayPermission.class);
     for (PlateTemplate template : plateTemplates)
     {
 %>
     <tr>
         <td><%= h(template.getName()) %></td>
         <%
-            if (c.hasPermission(getUser(), UpdatePermission.class))
+            if (isAssayDesigner || c.hasPermission(getUser(), UpdatePermission.class))
             {
         %>
         <td><%= textLink("edit", buildURL(PlateController.DesignerAction.class, "templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
         <%
             }
-            if (c.hasPermission(getUser(), InsertPermission.class))
+            if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
             {
         %>
         <td><%= textLink("edit a copy", buildURL(PlateController.DesignerAction.class, "copy=true&templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
+        <%
+            }
+            if (c.hasPermission(getUser(), InsertPermission.class))
+            {
+        %>
         <td><%= textLink("copy to another folder", buildURL(PlateController.CopyTemplateAction.class, "templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
         <%
             }
-            if (c.hasPermission(getUser(), DeletePermission.class))
+            if (isAssayDesigner || c.hasPermission(getUser(), DeletePermission.class))
             {
         %>
         <td><%= text(((plateTemplates.size() > 1) ?
@@ -70,7 +77,7 @@
     </tr>
 <%
     }
-    if (c.hasPermission(getUser(), InsertPermission.class))
+    if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
     {
 %>
     <tr><td><br></td></tr>
