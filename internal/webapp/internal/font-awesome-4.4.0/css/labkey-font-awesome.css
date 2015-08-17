@@ -10,13 +10,12 @@
 .labkey-fa-plus-circle-folder{
     color: green;
     margin-left: 0.25em;
-    margin-top: 0.2em;
 }
 
 .labkey-fa-upload-files{
     color: blue;
-    margin-left: 0.15em;
-    margin-top: 0.35em;
+    margin-left: 0.05em;
+    margin-top: 0.20em;
 }
 
 .labkey-fa-upload-files-text{
@@ -24,7 +23,9 @@
     margin-top: 0.35em;
 }
 
-
+.labkey-fa-stacked-wrapper{
+    font-size: 9px;
+}
 
 
 
