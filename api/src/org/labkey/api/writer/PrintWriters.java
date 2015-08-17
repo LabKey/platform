@@ -26,7 +26,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
 /**
- * Factory methods to create PrintWriters, ensuring standard charater sets and buffering by default.
+ * Factory methods to create PrintWriters, ensuring standard character sets and buffering by default.
  *
  * Created by adam on 6/6/2015.
  */

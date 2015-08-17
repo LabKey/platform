@@ -26,7 +26,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 
 /**
- *  Factory methods to create Readers, ensuring standard charater sets and buffering by default.
+ *  Factory methods to create Readers, ensuring standard character sets and buffering by default.
  *
  *  Created by adam on 5/30/2015.
  */

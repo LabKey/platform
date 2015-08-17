@@ -252,14 +252,14 @@ public class StandardDialectStringHandler implements DialectStringHandler
             assertEquals(15, handler.findEndOfStringLiteral("'foo bar blick'", 1));     // Terminated at end of string should be end of string
             assertEquals(15, handler.findEndOfStringLiteral("'foo bar blick''", 1));    // Terminated should be at character after ending quote
             assertEquals(8, handler.findEndOfStringLiteral("'foo ba''r blick''", 1));   // Escaped quotes are treated as two strings in a row
-            assertEquals(17, handler.findEndOfStringLiteral("'foo ba''r blick''", 9));  // Second string should be at charater after ending quote
+            assertEquals(17, handler.findEndOfStringLiteral("'foo ba''r blick''", 9));  // Second string should be at character after ending quote
             assertEquals(16, handler.findEndOfStringLiteral("'foo ba''r blick", 9));    // Non-terminated should be end of string
 
             assertEquals(7, handler.findEndOfQuotedIdentifier("\"foobar", 1));                  // Non-terminated should be end of string
             assertEquals(8, handler.findEndOfQuotedIdentifier("\"foobar\"", 1));                // Terminated at end of string should be end of string
             assertEquals(8, handler.findEndOfQuotedIdentifier("\"foobar\"\"", 1));              // Terminated should be at character after ending quote
             assertEquals(8, handler.findEndOfQuotedIdentifier("\"foobar\"\"rblick\"", 1));      // Escaped quotes are treated as two strings in a row
-            assertEquals(15, handler.findEndOfQuotedIdentifier("\"foobar\"\"blick\"''", 9));    // Second string should be at charater after ending quote
+            assertEquals(15, handler.findEndOfQuotedIdentifier("\"foobar\"\"blick\"''", 9));    // Second string should be at character after ending quote
             assertEquals(14, handler.findEndOfQuotedIdentifier("\"foobar\"\"blick", 9));        // Non-terminated should be end of string
 
             assertEquals(16, handler.findEndOfBlockComment("/* foo bar blick", 1));

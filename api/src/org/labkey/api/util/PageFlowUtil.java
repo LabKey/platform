@@ -48,6 +48,7 @@ import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -96,7 +97,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -977,7 +977,7 @@ public class PageFlowUtil
     {
         StringBuilder contents = new StringBuilder();
 
-        try (BufferedReader input = new BufferedReader(new FileReader(aFile)))
+        try (BufferedReader input = Readers.getReader(aFile))
         {
             String line;
             while ((line = input.readLine()) != null)
@@ -1184,6 +1184,7 @@ public class PageFlowUtil
 
 
     // Fetch the contents of an input stream, and return it in a list.
+    // Assumes stream is encoded using the LabKey standard character set
     public static List<String> getStreamContentsAsList(InputStream is) throws IOException
     {
         return getStreamContentsAsList(is, false);
@@ -1191,11 +1192,12 @@ public class PageFlowUtil
 
 
     // Fetch the contents of an input stream, and return it in a list, skipping comment lines is skipComments == true.
+    // Assumes stream is encoded using the LabKey standard character set
     public static List<String> getStreamContentsAsList(InputStream is, boolean skipComments) throws IOException
     {
         List<String> contents = new ArrayList<>();
 
-        try (BufferedReader input = new BufferedReader(new InputStreamReader(is)))
+        try (BufferedReader input = Readers.getReader(is))
         {
             String line;
             while ((line = input.readLine()) != null)
