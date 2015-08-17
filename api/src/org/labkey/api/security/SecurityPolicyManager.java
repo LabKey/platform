@@ -16,9 +16,7 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -61,24 +59,19 @@ public class SecurityPolicyManager
     @NotNull
     public static SecurityPolicy getPolicy(@NotNull final SecurableResource resource, boolean findNearest)
     {
-        SecurityPolicy policy = CACHE.get(cacheKey(resource), resource, new CacheLoader<String, SecurityPolicy>()
-        {
-            @Override
-            public SecurityPolicy load(String key, @Nullable Object argument)
+        SecurityPolicy policy = CACHE.get(cacheKey(resource), resource, (key, argument) -> {
+            SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies()).getObject(resource.getResourceId(), SecurityPolicyBean.class);
+
+            RoleAssignment[] assignments = NO_ROLES;
+
+            if (null != policyBean)
             {
-                SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies()).getObject(resource.getResourceId(), SecurityPolicyBean.class);
-
-                RoleAssignment[] assignments = NO_ROLES;
-
-                if (null != policyBean)
-                {
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());
-                    Selector selector = new TableSelector(core.getTableInfoRoleAssignments(), filter, new Sort("UserId"));
-                    assignments = selector.getArray(RoleAssignment.class);
-                }
-
-                return new SecurityPolicy(resource, assignments, null != policyBean ? policyBean.getModified() : new Date());
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());
+                Selector selector = new TableSelector(core.getTableInfoRoleAssignments(), filter, new Sort("UserId"));
+                assignments = selector.getArray(RoleAssignment.class);
             }
+
+            return new SecurityPolicy(resource, assignments, null != policyBean ? policyBean.getModified() : new Date());
         });
 
         if (findNearest && policy.isEmpty() && resource.mayInheritPolicy())
