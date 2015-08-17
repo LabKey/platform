@@ -37,7 +37,7 @@ public abstract class DefaultPropertyValidator implements ValidatorKind
 
     protected void createErrorMessage(IPropertyValidator validator, PropertyDescriptor field, Object value, List<ValidationError> errors)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         sb.append("Value '");
         sb.append(value);
