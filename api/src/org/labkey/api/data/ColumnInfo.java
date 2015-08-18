@@ -1029,6 +1029,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             if (!StringUtils.isEmpty(url))
                 setURL(StringExpressionFactory.createURLSilent(url));
         }
+        if (xmlCol.isSetUrlTarget())
+            setURLTargetWindow(xmlCol.getUrlTarget());
         if (xmlCol.isSetIsAutoInc())
             isAutoIncrement = xmlCol.getIsAutoInc();
         if (xmlCol.isSetIsReadOnly())

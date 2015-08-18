@@ -356,7 +356,7 @@ public class ActionURL extends URLHelper implements Cloneable
         {
             return new URLHelper(returnURLStr);
         }
-        catch (URISyntaxException e)
+        catch (IllegalArgumentException | URISyntaxException e)
         {
             return null;
         }
