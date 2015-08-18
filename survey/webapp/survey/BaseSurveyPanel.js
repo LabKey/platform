@@ -9,6 +9,9 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     extend : 'Ext.form.Panel',
 
     constructor : function(config){
+        Ext4.applyIf(config, {
+            forceLowerCaseNames  : true
+        });
         this.callParent([config]);
     },
 

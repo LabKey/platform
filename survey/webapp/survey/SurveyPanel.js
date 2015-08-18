@@ -18,11 +18,8 @@ Ext4.define('LABKEY.ext4.SurveyDisplayPanel', {
             border      : false,
             bodyStyle   : 'background-color: transparent;',
             autoHeight  : true,
-            items       : [],
-            updateUrl   : LABKEY.ActionURL.buildURL('survey', 'updateSurveyResponse.api'),
-            getResponsesUrl : LABKEY.ActionURL.buildURL('survey', 'getSurveyResponse.api'),
-            forceLowerCaseNames : true
-    });
+            items       : []
+        });
 
         this.callParent([config]);
     },
@@ -41,10 +38,7 @@ Ext4.define('LABKEY.ext4.SurveyDisplayPanel', {
             canEdit         : this.canEdit,
             returnURL       : this.returnURL,
             autosaveInterval: this.autosaveInterval,
-            disableAutoSave : this.disableAutoSave,
-            updateUrl       : this.updateUrl,
-            getResponsesUrl : this.getResponsesUrl,
-            forceLowerCaseNames : this.forceLowerCaseNames
+            disableAutoSave : this.disableAutoSave
         });
         this.items = [this.surveyFormPanel];
 
@@ -122,6 +116,11 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
     extend : 'LABKEY.ext4.BaseSurveyPanel',
 
     constructor : function(config){
+
+        Ext4.applyIf(config, {
+            updateUrl   : LABKEY.ActionURL.buildURL('survey', 'updateSurveyResponse.api'),
+            getResponsesUrl : LABKEY.ActionURL.buildURL('survey', 'getSurveyResponse.api')
+        });
 
         Ext4.apply(config, {
             border: true,
