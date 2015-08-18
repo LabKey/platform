@@ -359,27 +359,21 @@ public class VisualizationCDSGenerator
 
             Set<String> aliasSet = new HashSet<>();
             List<VisualizationSourceColumn> list = generator.getColumns();
-            for (VisualizationSourceColumn vcol : list)
+            for (VisualizationSourceColumn sourceColumn : list)
             {
-                String alias = StringUtils.defaultString(vcol.getClientAlias(), vcol.getAlias());
+                String alias = StringUtils.defaultString(sourceColumn.getClientAlias(), sourceColumn.getAlias());
                 if (isEmpty(alias))
                     continue;
-                String columnName = vcol.getOriginalName();
-                Path queryPath = new Path(vcol.getSchemaName(), vcol.getQueryName());
+                String columnName = sourceColumn.getOriginalName();
 
-                if (!datasetTablesSet.contains(queryPath))
-                    aliasSet.add(alias);
-                else
-                {
-                    if (null == containerColumnAlias && equalsIgnoreCase(columnName, containerColumnName))
-                        containerColumnAlias = alias;
-                    else if (null == participantColumnAlias && equalsIgnoreCase(columnName, subjectColumnName))
-                        participantColumnAlias = alias;
-                    else if (null == sequenceColumnAlias && equalsIgnoreCase(columnName, sequenceNumColumnName))
-                        sequenceColumnAlias = alias;
-                    else
-                        aliasSet.add(alias);
-                }
+                if (null == containerColumnAlias && equalsIgnoreCase(columnName, containerColumnName))
+                    containerColumnAlias = alias;
+                else if (null == participantColumnAlias && equalsIgnoreCase(columnName, subjectColumnName))
+                    participantColumnAlias = alias;
+                else if (null == sequenceColumnAlias && equalsIgnoreCase(columnName, sequenceNumColumnName))
+                    sequenceColumnAlias = alias;
+
+                aliasSet.add(alias);
             }
 
             fullSQL.append(union); union = "\n  UNION ALL\n";
