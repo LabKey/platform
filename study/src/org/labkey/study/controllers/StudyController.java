@@ -4344,7 +4344,7 @@ public class StudyController extends BaseStudyController
 
             return new HtmlView(
                     "<div>" + count + " rows were updated.<p/>" +
-                    PageFlowUtil.button("Done").href("manageVisits.view") +
+                    PageFlowUtil.button("Done").href(new ActionURL(ManageVisitsAction.class,getContainer())) +
                     "</div>");
         }
 
