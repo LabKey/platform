@@ -423,7 +423,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Nullable
     public String getParticipantCohortProperty()
     {
-        return _participantCohortProperty;
+        if (null != _participantCohortProperty)
+            return _participantCohortProperty;
+        Study shared = StudyManager.getInstance().getSharedStudy(this);
+        if (null != shared)
+            return ((StudyImpl)shared).getParticipantCohortProperty();
+        return null;
     }
 
     public void setParticipantCohortProperty(@Nullable String participantCohortProperty)
@@ -434,7 +439,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Nullable
     public Integer getParticipantCohortDatasetId()
     {
-        return _participantCohortDatasetId;
+        if (null != _participantCohortDatasetId)
+            return _participantCohortDatasetId;
+        Study shared = StudyManager.getInstance().getSharedStudy(this);
+        if (null != shared)
+            return ((StudyImpl)shared).getParticipantCohortDatasetId();
+        return null;
     }
 
     public void setParticipantCohortDatasetId(@Nullable Integer participantCohortDatasetId)
