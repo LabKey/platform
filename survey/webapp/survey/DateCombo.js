@@ -65,7 +65,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
         for (var key in this.monthMap){
             if (this.monthMap.hasOwnProperty(key)){
 
-                months. push({name : key, value : monthNumber++});
+                months.push({name : key, value : monthNumber++});
             }
         }
 
@@ -77,7 +77,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
         this.items = [{
             xtype   : 'combo',
             itemId  : 'monthCombo',
-            value   : 1,
+            emptyText : months[0].name,
             store : {
                 fields  : ['name', 'value'],
                 data    : months
@@ -107,7 +107,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
             },
             submitValue     : false,
             valueField      : 'value',
-            value           : 1,
+            emptyText       : '1',
             displayField    : 'name',
             editable        : false,
             width           : 60,
@@ -130,7 +130,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
             submitValue     : false,
             valueField      : 'name',
             displayField    : 'name',
-            value           : this.defaultYear,
+            emptyText       : '' + this.defaultYear,
             editable        : false,
             flex            : 1.1,
             scope           : this,

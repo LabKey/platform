@@ -349,6 +349,8 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         this.rowId = o.survey["rowId"];
                     if (o.survey["responsesPk"])
                         this.responsesPk = o.survey["responsesPk"];
+                    if (o.survey['successUrl'])
+                        successUrl = o.survey.successUrl;
 
                     // save any attachments added to this survey
                     this.saveSurveyAttachments();
@@ -395,11 +397,13 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         this.autosaveInfo.update("<span style='font-style: italic; font-size: 90%'>Responses automatically saved at " + Ext4.util.Format.date(new Date(), 'g:i:s A') + "</span>");
                     }
 
-                    if (successUrl && idParamName)
-                    {
+                    if (successUrl && idParamName) {
                         var params = {};
                         params[idParamName] = this.rowId;
                         window.location = successUrl + "&" + LABKEY.ActionURL.queryString(params);
+                    }
+                    else if (successUrl) {
+                        window.location = successUrl;
                     }
                 }
                 else
