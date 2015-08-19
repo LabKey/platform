@@ -34,4 +34,6 @@ public interface Plate extends PlateTemplate
     List<? extends WellGroup> getWellGroups(Position position);
 
     List<? extends WellGroup> getWellGroups();
+
+    int getPlateNumber();
 }

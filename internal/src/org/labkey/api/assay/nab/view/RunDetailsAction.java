@@ -15,7 +15,9 @@
  */
 package org.labkey.api.assay.nab.view;
 
+import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
@@ -93,22 +95,29 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
             elevatedUser = new LimitedUser(currentUser, currentUser.getGroups(), contextualRoles, false);
         }
 
-        DilutionAssayRun assay = getNabAssayRun(run, form.getFitTypeEnum(), elevatedUser);
-        _protocol = run.getProtocol();
-        AbstractPlateBasedAssayProvider provider = (AbstractPlateBasedAssayProvider) AssayService.get().getProvider(_protocol);
+        try
+        {
+            DilutionAssayRun assay = getNabAssayRun(run, form.getFitTypeEnum(), elevatedUser);
+            _protocol = run.getProtocol();
+            AbstractPlateBasedAssayProvider provider = (AbstractPlateBasedAssayProvider) AssayService.get().getProvider(_protocol);
 
-        form.setContext(getViewContext());
-        form.setAssay(assay);
+            form.setContext(getViewContext());
+            form.setAssay(assay);
 
-        RunDetailsHeaderView headerView = new RunDetailsHeaderView(getContainer(), _protocol, provider, _runRowId, assay.getSampleResults());
-        if (headerView.isShowGraphLayoutOptions())
-            assay.updateRenderAssayBean(form);
+            RunDetailsHeaderView headerView = new RunDetailsHeaderView(getContainer(), _protocol, provider, _runRowId, assay.getSampleResults());
+            if (headerView.isShowGraphLayoutOptions())
+                assay.updateRenderAssayBean(form);
+            HttpView view = new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/runDetails.jsp", form);
+            if (!isPrint())
+                view = new VBox(headerView, view);
 
-        HttpView view = new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/runDetails.jsp", form);
-        if (!isPrint())
-            view = new VBox(headerView, view);
-
-        return view;
+            return view;
+        }
+        catch (ExperimentException e)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            return new SimpleErrorView(errors);
+        }
     }
 
     protected DilutionAssayRun getNabAssayRun(ExpRun run, StatsService.CurveFitType fit, User user) throws ExperimentException

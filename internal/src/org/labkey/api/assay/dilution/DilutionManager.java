@@ -34,6 +34,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -101,8 +102,8 @@ public class DilutionManager
     {
         // Remove rows from DilutionData and WellData
         SimpleFilter wellDataFilter = SimpleFilter.createContainerFilter(container);
-        Table.delete(getSchema().getTable(DILUTION_DATA_TABLE_NAME), makeDilutionDataFilter(wellDataFilter));
         Table.delete(getSchema().getTable(WELL_DATA_TABLE_NAME), wellDataFilter);
+        Table.delete(getSchema().getTable(DILUTION_DATA_TABLE_NAME), wellDataFilter);
 
         // Remove rows from NAbSpecimen and CutoffValue tables
         SimpleFilter runIdFilter = makeNabSpecimenContainerClause(container);
@@ -129,6 +130,39 @@ public class DilutionManager
     {
         TableInfo tableInfo = getSchema().getTable(CUTOFF_VALUE_TABLE_NAME);
         Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
+    }
+
+    public static int insertDilutionDataRow(User user, Map<String, Object> fields) throws SQLException
+    {
+        TableInfo tableInfo = getSchema().getTable(DILUTION_DATA_TABLE_NAME);
+        Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
+        return (Integer)newFields.get("RowId");
+    }
+
+    public static List<DilutionDataRow> getDilutionDataRows(int runId, int plateNumber, String name, Container container, boolean filterReplicate)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromString("runId"), runId);
+        filter.addCondition(FieldKey.fromString("plateNumber"), plateNumber);
+        if (filterReplicate)
+            filter.addCondition(FieldKey.fromString("replicateName"), name);
+        else
+            filter.addCondition(FieldKey.fromString("wellgroupName"), name);
+        return new TableSelector(getSchema().getTable(DILUTION_DATA_TABLE_NAME), filter, null).getArrayList(DilutionDataRow.class);
+    }
+
+    public static int insertWellDataRow(User user, Map<String, Object> fields) throws SQLException
+    {
+        TableInfo tableInfo = getSchema().getTable(WELL_DATA_TABLE_NAME);
+        Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
+        return (Integer)newFields.get("RowId");
+    }
+
+    public static List<WellDataRow> getWellDataRows(ExpRun run)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(run.getContainer());
+        filter.addCondition(FieldKey.fromString("runId"), run.getRowId());
+        return new TableSelector(getSchema().getTable(WELL_DATA_TABLE_NAME), filter, null).getArrayList(WellDataRow.class);
     }
 
     @Nullable
@@ -233,8 +267,8 @@ public class DilutionManager
             if (!runIds.isEmpty())
             {
                 SimpleFilter wellDataFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromString("RunId"), runIds));
-                Table.delete(getSchema().getTable(DILUTION_DATA_TABLE_NAME), makeDilutionDataFilter(wellDataFilter));
                 Table.delete(getSchema().getTable(WELL_DATA_TABLE_NAME), wellDataFilter);
+                Table.delete(getSchema().getTable(DILUTION_DATA_TABLE_NAME), makeDilutionDataFilter(wellDataFilter));
             }
 
             SimpleFilter dataIdFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromString("DataId"), dataIDs));

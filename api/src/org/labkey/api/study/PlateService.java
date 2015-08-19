@@ -40,6 +40,8 @@ import java.util.List;
  */
 public class PlateService
 {
+    public static final int NO_RUNID = -1;
+
     private static Service _serviceImpl = null;
 
     /**
@@ -58,6 +60,16 @@ public class PlateService
 
     public interface Service
     {
+        /**
+         * Creates a new plate instance based on the specified plate template and well data.
+         * @param template The template that this instance is based upon.
+         * @param wellValues A two-dimentional arary of the machine data.
+         * @param runId Id of the run, if already exists, otherwise -1
+         * @param plateNumber Plate number (1-based)
+         * @return A plate instance object.
+         */
+        Plate createPlate(PlateTemplate template, double[][] wellValues, int runId, int plateNumber);
+
         /**
          * Creates a new plate instance based on the specified plate template and well data.
          * @param template The template that this instance is based upon.

@@ -32,6 +32,8 @@ import java.io.File;
  */
 public interface PlateBasedAssayProvider extends AssayProvider
 {
+    String VIRUS_NAME_PROPERTY_NAME = "VirusName";
+
     public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template);
     public PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol);
     public File getSampleMetadataFile(Container container, int runId);

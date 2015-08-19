@@ -6723,6 +6723,7 @@ internal/src/org/labkey/api/assay/dilution/DilutionAssayProvider.java -text
 internal/src/org/labkey/api/assay/dilution/DilutionAssayRun.java -text
 internal/src/org/labkey/api/assay/dilution/DilutionDataExchangeHandler.java -text
 internal/src/org/labkey/api/assay/dilution/DilutionDataHandler.java -text
+internal/src/org/labkey/api/assay/dilution/DilutionDataRow.java -text
 internal/src/org/labkey/api/assay/dilution/DilutionManager.java -text
 internal/src/org/labkey/api/assay/dilution/DilutionMaterialKey.java -text
 internal/src/org/labkey/api/assay/dilution/DilutionRunUploadForm.java -text
@@ -6730,6 +6731,7 @@ internal/src/org/labkey/api/assay/dilution/DilutionSummary.java -text
 internal/src/org/labkey/api/assay/dilution/SafeTextConverter.java -text
 internal/src/org/labkey/api/assay/dilution/SampleInfo.java -text
 internal/src/org/labkey/api/assay/dilution/SampleProperty.java -text
+internal/src/org/labkey/api/assay/dilution/WellDataRow.java -text
 internal/src/org/labkey/api/assay/dilution/query/DilutionProviderSchema.java -text
 internal/src/org/labkey/api/assay/dilution/query/DilutionResultsQueryView.java -text
 internal/src/org/labkey/api/assay/nab/GraphForm.java -text

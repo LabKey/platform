@@ -183,7 +183,7 @@ public class RenderAssayBean extends RenderAssayForm
         if (_dupFile == null)
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProtocolLsid"), _assay.getProtocol().getLSID());
-            filter.addCondition(FieldKey.fromParts("Name"), _assay.getDataFile().getName());
+            filter.addCondition(FieldKey.fromParts("Name"), _assay.getRunName());
             filter.addCondition(FieldKey.fromParts("RowId"), _assay.getRun().getRowId(), CompareType.NEQ);
 
             _dupFile = new TableSelector(ExperimentService.get().getTinfoExperimentRun(), filter, null).exists();

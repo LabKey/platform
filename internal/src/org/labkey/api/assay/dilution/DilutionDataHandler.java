@@ -17,6 +17,7 @@ package org.labkey.api.assay.dilution;
 
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.OORDisplayColumnFactory;
@@ -38,13 +39,17 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Plate;
+import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
+import org.labkey.api.study.Position;
+import org.labkey.api.study.Well;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -53,11 +58,11 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: klum
@@ -65,6 +70,8 @@ import java.util.Map;
  */
 public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 {
+    public static final Logger LOG = Logger.getLogger(DilutionDataHandler.class);
+
     public static final String NAB_PROPERTY_LSID_PREFIX = "NabProperty";
 
     public static final String DILUTION_INPUT_MATERIAL_DATA_PROPERTY = "SpecimenLsid";
@@ -103,7 +110,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             try
             {
                 ExpRun run = _data.getRun();
-                DilutionAssayRun assayResults = getAssayResults(run, _info.getUser(), _dataFile, null);
+                DilutionAssayRun assayResults = getAssayResults(run, _info.getUser(), _dataFile, null, false);
                 List<Map<String, Object>> results = new ArrayList<>();
 
                 for (int summaryIndex = 0; summaryIndex < assayResults.getSummaries().length; summaryIndex++)
@@ -246,10 +253,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     public DilutionAssayRun getAssayResults(ExpRun run, User user, @Nullable StatsService.CurveFitType fit) throws ExperimentException
     {
-        File dataFile = getDataFile(run);
-        if (dataFile == null)
-            throw new MissingDataFileException(getResourceName(run) +  " data file could not be found for run " + run.getName() + ".  Deleted from file system?");
-        return getAssayResults(run, user, dataFile, fit);
+        return getAssayResults(run, user, null, fit, true);
     }
 
     public File getDataFile(ExpRun run)
@@ -265,7 +269,8 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return dataFile;
     }
 
-    protected String getResourceName(ExpRun run)
+    // public for upgrade
+    public String getResourceName(ExpRun run)
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -273,64 +278,45 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return provider != null ? provider.getResourceName() : "Assay";
     }
 
-    protected abstract List<Plate> createPlates(File dataFile, PlateTemplate template) throws ExperimentException;
+    protected List<Plate> createPlates(File dataFile, PlateTemplate template) throws ExperimentException
+    {
+        return Collections.singletonList(PlateService.get().createPlate(template, getCellValues(dataFile, template), -1, 1));
+    }
 
-    protected DilutionAssayRun getAssayResults(ExpRun run, User user, File dataFile, @Nullable StatsService.CurveFitType fit) throws ExperimentException
+    protected List<Plate> createPlates(ExpRun run, PlateTemplate template) throws ExperimentException
+    {
+        double[][] cellValues = new double[template.getRows()][template.getColumns()];
+        List<WellDataRow> wellDataRows = DilutionManager.getWellDataRows(run);
+        if (wellDataRows.isEmpty())
+            throw new ExperimentException("Well data could not be found for run " + run.getName() + ". Run details are not available.");
+
+        for (WellDataRow wellDataRow : wellDataRows)
+            cellValues[wellDataRow.getRow()][wellDataRow.getColumn()] = wellDataRow.getValue();
+
+        Plate plate = PlateService.get().createPlate(template, cellValues, run.getRowId(), 1);
+        return Collections.singletonList(plate);
+    }
+
+    protected abstract double[][] getCellValues(final File dataFile, PlateTemplate nabTemplate) throws ExperimentException;
+
+    protected DilutionAssayRun getAssayResults(ExpRun run, User user, File dataFile, @Nullable StatsService.CurveFitType fit, boolean useRunForPlates) throws ExperimentException
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
         Container container = run.getContainer();
         DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
         PlateTemplate nabTemplate = provider.getPlateTemplate(container, protocol);
 
-        Map<String, DomainProperty> runProperties = new HashMap<>();
-        for (DomainProperty column : provider.getRunDomain(protocol).getProperties())
-            runProperties.put(column.getName(), column);
-        for (DomainProperty column : provider.getBatchDomain(protocol).getProperties())
-            runProperties.put(column.getName(), column);
+        Map<String, DomainProperty> runProperties = getRunProperties(provider, protocol);
 
         Map<Integer, String> cutoffs = getCutoffFormats(protocol, run);
-        List<Integer> sortedCutoffs = new ArrayList<>(cutoffs.keySet());
-        Collections.sort(sortedCutoffs);
 
-        List<Plate> plates = createPlates(dataFile, nabTemplate);
+        List<Plate> plates = useRunForPlates ? createPlates(run, nabTemplate) : createPlates(dataFile, nabTemplate);
 
         // Copy all properties from the input materials on the appropriate sample wellgroups; the NAb data processing
         // code uses well-group properties internally.
         Map<ExpMaterial, List<WellGroup>> inputs = getMaterialWellGroupMapping(provider, plates, run.getMaterialInputs());
 
-        List<? extends DomainProperty> sampleProperties = provider.getSampleWellGroupDomain(protocol).getProperties();
-        Map<String, DomainProperty> samplePropertyMap = new HashMap<>();
-        for (DomainProperty sampleProperty : sampleProperties)
-            samplePropertyMap.put(sampleProperty.getName(), sampleProperty);
-        for (Map.Entry<ExpMaterial, List<WellGroup>> entry : inputs.entrySet())
-            prepareWellGroups(entry.getValue(), entry.getKey(), samplePropertyMap);
-
-        DomainProperty curveFitPd = runProperties.get(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
-        if (fit == null)
-        {
-            fit = StatsService.CurveFitType.FIVE_PARAMETER;
-            if (curveFitPd != null)
-            {
-                Object value = run.getProperty(curveFitPd);
-                if (value != null)
-                    fit = StatsService.CurveFitType.fromLabel((String) value);
-            }
-        }
-        boolean lockAxes = false;
-        DomainProperty lockAxesProperty = runProperties.get(DilutionAssayProvider.LOCK_AXES_PROPERTY_NAME);
-        if (lockAxesProperty != null)
-        {
-            Boolean lock = (Boolean) run.getProperty(lockAxesProperty);
-            if (lock != null)
-                lockAxes = lock;
-        }
-
-        DilutionAssayRun assay = createDilutionAssayRun(provider, run, plates, user, sortedCutoffs, fit);
-        assay.setCutoffFormats(cutoffs);
-        assay.setMaterialWellGroupMapping(inputs);
-        assay.setDataFile(dataFile);
-        assay.setLockAxes(lockAxes);
-        return assay;
+        return createDilutionAssayRun(provider, run, plates, user, cutoffs, fit, runProperties, inputs);
     }
 
     /**
@@ -412,7 +398,8 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return mapping;
     }
 
-    protected abstract DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider provider, ExpRun run, List<Plate> plates, User user, List<Integer> sortedCutoffs, StatsService.CurveFitType fit);
+    protected abstract DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider provider, ExpRun run, List<Plate> plates, User user,
+                                                               List<Integer> sortedCutoffs, StatsService.CurveFitType fit);
 
     public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, int... dataObjectIds) throws ExperimentException, SQLException;
 
@@ -427,7 +414,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         ExpProtocol protocol = run.getProtocol();
         DilutionDataFileParser parser = getDataFileParser(data, dataFile, info);
 
-        importRows(data, run, protocol, parser.getResults());
+        importRows(data, run, protocol, parser.getResults(), context.getUser());
     }
 
     public static final String POLY_SUFFIX = "_poly";
@@ -435,7 +422,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     public static final String PL4_SUFFIX = "_4pl";
     public static final String PL5_SUFFIX = "_5pl";
 
-    protected abstract void importRows(ExpData data, ExpRun run, ExpProtocol protocol, List<Map<String, Object>> rawData) throws ExperimentException;
+    protected abstract void importRows(ExpData data, ExpRun run, ExpProtocol protocol, List<Map<String, Object>> rawData, User user) throws ExperimentException;
 
     protected ObjectProperty getObjectProperty(Container container, ExpProtocol protocol, String objectURI, String propertyName, Object value, Map<Integer, String> cutoffFormats)
     {
@@ -629,5 +616,334 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             virusWellGroupName = AbstractPlateBasedAssayProvider.VIRUS_NAME_PROPERTY_NAME;
 
         return new Lsid(outputData.getLSID() + "-" + virusWellGroupName);
+    }
+
+    protected DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider provider, ExpRun run, List<Plate> plates, User user,
+                                          Map<Integer, String> cutoffs, StatsService.CurveFitType fit,
+                                          Map<String, DomainProperty> runProperties, Map<ExpMaterial, List<WellGroup>> inputs)
+                                          throws ExperimentException
+    {
+        List<? extends DomainProperty> sampleProperties = provider.getSampleWellGroupDomain(run.getProtocol()).getProperties();
+        Map<String, DomainProperty> samplePropertyMap = new HashMap<>();
+        for (DomainProperty sampleProperty : sampleProperties)
+            samplePropertyMap.put(sampleProperty.getName(), sampleProperty);
+        for (Map.Entry<ExpMaterial, List<WellGroup>> entry : inputs.entrySet())
+            prepareWellGroups(entry.getValue(), entry.getKey(), samplePropertyMap);
+
+        List<Integer> sortedCutoffs = new ArrayList<>(cutoffs.keySet());
+        Collections.sort(sortedCutoffs);
+
+        DomainProperty curveFitPd = runProperties.get(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
+        if (fit == null)
+        {
+            fit = StatsService.CurveFitType.FIVE_PARAMETER;
+            if (curveFitPd != null)
+            {
+                Object value = run.getProperty(curveFitPd);
+                if (value != null)
+                    fit = StatsService.CurveFitType.fromLabel((String) value);
+            }
+        }
+        boolean lockAxes = false;
+        DomainProperty lockAxesProperty = runProperties.get(DilutionAssayProvider.LOCK_AXES_PROPERTY_NAME);
+        if (lockAxesProperty != null)
+        {
+            Boolean lock = (Boolean) run.getProperty(lockAxesProperty);
+            if (lock != null)
+                lockAxes = lock;
+        }
+
+        DilutionAssayRun assay = createDilutionAssayRun(provider, run, plates, user, sortedCutoffs, fit);
+        assay.setCutoffFormats(cutoffs);
+        assay.setMaterialWellGroupMapping(inputs);
+        assay.setLockAxes(lockAxes);
+        return assay;
+    }
+
+    // Public for upgrade code
+    public void populateWellData(ExpProtocol protocol, ExpRun run, User user, Map<Integer, String> cutoffs,
+                                    Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen) throws ExperimentException, SQLException
+    {
+        DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
+        if (null == provider)
+            throw new IllegalStateException("Assay provider not found.");
+
+        File dataFile = getDataFile(run);
+        if (null == dataFile)
+            throw new ExperimentException("Data file not found.");
+
+        Map<String, DomainProperty> runProperties = getRunProperties(provider, protocol);
+        StatsService.CurveFitType fit = StatsService.CurveFitType.FIVE_PARAMETER;
+        DomainProperty curveFitPd = runProperties.get(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
+        if (curveFitPd != null)
+        {
+            Object value = run.getProperty(curveFitPd);
+            if (value != null)
+                fit = StatsService.CurveFitType.fromLabel((String) value);
+        }
+
+        PlateTemplate nabTemplate = provider.getPlateTemplate(run.getContainer(), protocol);
+        List<Plate> plates = createPlates(dataFile, nabTemplate);
+        Map<String, Plate> virusNameToPlateMap = new HashMap<>();
+        for (Plate plate : plates)
+        {
+            virusNameToPlateMap.put((String)plate.getProperty(DilutionAssayProvider.VIRUS_NAME_PROPERTY_NAME), plate);
+        }
+
+        Map<String, Map<WellData, Integer>> virusToWellDataToDilutionDataMap = new HashMap<>();     // Map actual WellDatas (not groups)
+
+        Map<ExpMaterial, List<WellGroup>> inputs = getMaterialWellGroupMapping(provider, plates, run.getMaterialInputs());
+
+        DilutionAssayRun assay = createDilutionAssayRun(provider, run, plates, user, cutoffs, fit, runProperties, inputs);
+
+        for (DilutionAssayRun.SampleResult result : assay.getSampleResults())
+        {
+            DilutionSummary summary = result.getDilutionSummary();
+            String virusName = (String) summary.getFirstWellGroup().getProperty(DilutionAssayProvider.VIRUS_NAME_PROPERTY_NAME);
+            if (!virusToWellDataToDilutionDataMap.containsKey(virusName))
+                virusToWellDataToDilutionDataMap.put(virusName, new HashMap<>());
+            Map<WellData, Integer> wellDataToDilutionDataMap = virusToWellDataToDilutionDataMap.get(virusName);
+            Plate plate = virusNameToPlateMap.get(virusName);
+
+            Map<String, Object> dilutionRow = new HashMap<>();
+            setDilutionDataFields(run, summary.getFirstWellGroup().getName(), plate.getPlateNumber(), dilutionRow);
+
+            Pair<Integer, String> pair = wellgroupNameToNabSpecimen.get(summary.getFirstWellGroup().getName());
+            dilutionRow.put("runDataId", pair.first);
+
+            try
+            {
+                dilutionRow.put("minDilution", summary.getMinDilution(fit));
+                dilutionRow.put("maxDilution", summary.getMaxDilution(fit));
+
+                Map<WellData, Integer> wellDataOrder = new HashMap<>();
+                List<WellData> dataList = summary.getWellData();        // use this to establish the order
+                for (int dataIndex = dataList.size() - 1; dataIndex >= 0; dataIndex--)
+                {
+                    wellDataOrder.put(dataList.get(dataIndex), dataList.size() - dataIndex);
+                }
+
+                for (WellGroup sampleGroup : summary.getWellGroups())
+                {
+                    for (WellGroup wellGroup : sampleGroup.getOverlappingGroups(WellGroup.Type.REPLICATE))
+                    {
+                        dilutionRow.put("dilution", wellGroup.getDilution());
+                        dilutionRow.put("percentNeutralization", summary.getPercent(wellGroup));
+                        dilutionRow.put("neutralizationPlusMinus", summary.getPlusMinus(wellGroup));
+                        setGroupStats(wellGroup, dilutionRow);
+                        dilutionRow.put("replicateName", wellGroup.getName());
+
+                        Integer order = wellDataOrder.get(wellGroup);
+                        dilutionRow.put("dilutionOrder", null != order ? order : 0);
+
+                        int rowId = DilutionManager.insertDilutionDataRow(user, dilutionRow);
+                        for (WellData wellData : wellGroup.getWellData(false))
+                            wellDataToDilutionDataMap.put(wellData, rowId);
+                    }
+                }
+            }
+            catch (FitFailedException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        Map<String, Object> virusNames = assay.getVirusNames();
+        for (Plate plate : plates)
+        {
+            String plateVirusName = (String)plate.getProperty(PlateBasedAssayProvider.VIRUS_NAME_PROPERTY_NAME);
+            if (!virusToWellDataToDilutionDataMap.containsKey(plateVirusName))
+                virusToWellDataToDilutionDataMap.put(plateVirusName, new HashMap<>());
+            Map<WellData, Integer> wellDataToDilutionDataMap = virusToWellDataToDilutionDataMap.get(plateVirusName);
+
+            if (virusNames.isEmpty())
+            {
+                WellGroup cellControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.CELL_CONTROL_SAMPLE);
+                Map<String, Object> cellControlRow = new HashMap<>();
+                setDilutionDataFields(run, cellControl.getName(), plate.getPlateNumber(), cellControlRow);
+                setGroupStats(cellControl, cellControlRow);
+                int cellControlRowId = DilutionManager.insertDilutionDataRow(user, cellControlRow);
+                for (WellData wellData : cellControl.getWellData(false))
+                    wellDataToDilutionDataMap.put(wellData, cellControlRowId);
+
+                WellGroup virusControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.VIRUS_CONTROL_SAMPLE);
+                Map<String, Object> virusControlRow = new HashMap<>();
+                setDilutionDataFields(run, virusControl.getName(), plate.getPlateNumber(), virusControlRow);
+                setGroupStats(virusControl, virusControlRow);
+                int virusControlRowId = DilutionManager.insertDilutionDataRow(user, virusControlRow);
+                for (WellData wellData : virusControl.getWellData(false))
+                    wellDataToDilutionDataMap.put(wellData, virusControlRowId);
+            }
+            else
+            {
+                for (Map.Entry<String, Object> virusEntry : virusNames.entrySet())
+                {
+                    WellGroup cellControl = assay.getCellControlWellGroup(plate, virusEntry.getKey());
+                    if (null != cellControl)
+                    {
+                        Map<String, Object> cellControlRow = new HashMap<>();
+
+                        setDilutionDataFields(run, cellControl.getName(), plate.getPlateNumber(), cellControlRow);
+                        setGroupStats(cellControl, cellControlRow);
+                        int cellControlRowId = DilutionManager.insertDilutionDataRow(user, cellControlRow);
+                        for (WellData wellData : cellControl.getWellData(false))
+                            wellDataToDilutionDataMap.put(wellData, cellControlRowId);
+                    }
+
+                    WellGroup virusControl = assay.getVirusControlWellGroup(plate, virusEntry.getKey());
+                    if (null != virusControl)
+                    {
+                        Map<String, Object> virusControlRow = new HashMap<>();
+                        setDilutionDataFields(run, virusControl.getName(), plate.getPlateNumber(), virusControlRow);
+                        setGroupStats(virusControl, virusControlRow);
+                        int virusControlRowId = DilutionManager.insertDilutionDataRow(user, virusControlRow);
+                        for (WellData wellData : virusControl.getWellData(false))
+                            wellDataToDilutionDataMap.put(wellData, virusControlRowId);
+                    }
+                }
+            }
+        }
+
+
+        int plateNum = 0;
+        for (Plate plate : plates)
+        {
+            plateNum += 1;      // 1-based
+            Map<Well, Map<String, Object>> wellDataRows = new HashMap<>();
+            String plateVirusName = (String)plate.getProperty(PlateBasedAssayProvider.VIRUS_NAME_PROPERTY_NAME);
+            Map<WellData, Integer> wellDataToDilutionDataMap = virusToWellDataToDilutionDataMap.get(plateVirusName);
+
+            // To calculate replicate number
+            Map<String, Integer> replicateWellgroupToReplicateNumber = new HashMap<>();
+            for (WellGroup wellGroup : plate.getWellGroups())
+            {
+                for (Position position : wellGroup.getPositions())
+                {
+                    Well well = plate.getWell(position.getRow(), position.getColumn());
+                    if (!wellDataRows.containsKey(well))
+                    {
+                        Map<String, Object> wellDataRow = new HashMap<>();
+                        wellDataRow.put("runId", run.getRowId());
+                        wellDataRow.put("dilutionDataId", wellDataToDilutionDataMap.get(well));
+                        wellDataRow.put("protocolId", protocol.getRowId());
+                        wellDataRow.put("row", position.getRow());
+                        wellDataRow.put("column", position.getColumn());
+                        wellDataRow.put("value", well.getValue());
+                        wellDataRow.put("container", run.getContainer());
+                        wellDataRow.put("plateNumber", plateNum);
+                        wellDataRow.put("plateVirusName", plateVirusName);
+                        wellDataRows.put(well, wellDataRow);
+                    }
+
+                    Map<String, Object> wellDataRow = wellDataRows.get(well);
+                    if (WellGroup.Type.CONTROL.equals(wellGroup.getType()))
+                        wellDataRow.put("controlWellgroup", wellGroup.getName());
+                    else if (WellGroup.Type.REPLICATE.equals(wellGroup.getType()))
+                    {
+                        wellDataRow.put("replicateWellgroup", wellGroup.getName());
+                        Integer replicateNumber = replicateWellgroupToReplicateNumber.get(wellGroup.getName());
+                        if (null == replicateNumber)
+                            replicateNumber = 0;
+                        replicateNumber += 1;
+                        wellDataRow.put("replicateNumber", replicateNumber);
+                        replicateWellgroupToReplicateNumber.put(wellGroup.getName(), replicateNumber);
+                    }
+                }
+            }
+
+            for (WellGroup specimenWellgroup : plate.getWellGroups(WellGroup.Type.SPECIMEN))
+            {
+                Set<WellGroup> virusWellgroups = specimenWellgroup.getOverlappingGroups(WellGroup.Type.VIRUS);
+                if (!virusWellgroups.isEmpty())
+                {
+                    for (WellGroup virusWellgroup : virusWellgroups)
+                    {
+                        String specimenVirusLookupName = getSpecimenVirusWellgroupName(specimenWellgroup, virusWellgroup);
+                        for (Position position : virusWellgroup.getPositions())
+                        {
+                            if (specimenWellgroup.contains(position))
+                            {
+                                Well well = plate.getWell(position.getRow(), position.getColumn());
+                                Map<String, Object> wellDataRow = wellDataRows.get(well);
+                                setSpecimenFields(wellDataRow, specimenWellgroup.getName(), specimenVirusLookupName,
+                                        wellgroupNameToNabSpecimen);
+                                wellDataRow.put("virusWellgroup", virusWellgroup.getName());
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (Position position : specimenWellgroup.getPositions())
+                    {
+                        Well well = plate.getWell(position.getRow(), position.getColumn());
+                        setSpecimenFields(wellDataRows.get(well), specimenWellgroup.getName(), specimenWellgroup.getName(),
+                                wellgroupNameToNabSpecimen);
+                    }
+                }
+            }
+
+            for (Map<String, Object> wellDataRow : wellDataRows.values())
+            {
+                validateWellDataRow(wellDataRow);
+                DilutionManager.insertWellDataRow(user, wellDataRow);
+            }
+        }
+    }
+
+    private void setSpecimenFields(Map<String, Object> wellDataRow, String wellGroupName, String wellGroupLookupName,
+                                   Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen)
+    {
+        Pair<Integer, String> pair = wellgroupNameToNabSpecimen.get(wellGroupLookupName);
+        wellDataRow.put("specimenWellgroup", wellGroupName);
+        wellDataRow.put("runDataId", pair.first);
+        wellDataRow.put("specimenLsid", pair.second);
+    }
+
+    protected Map<String, DomainProperty> getRunProperties(DilutionAssayProvider provider, ExpProtocol protocol)
+    {
+        Map<String, DomainProperty> runProperties = new HashMap<>();
+        for (DomainProperty column : provider.getRunDomain(protocol).getProperties())
+            runProperties.put(column.getName(), column);
+        for (DomainProperty column : provider.getBatchDomain(protocol).getProperties())
+            runProperties.put(column.getName(), column);
+        return runProperties;
+    }
+
+    protected void setGroupStats(WellGroup group, Map<String, Object> properties)
+    {
+        properties.put("min", group.getMin());
+        properties.put("max", group.getMax());
+        properties.put("mean", group.getMean());
+        properties.put("stddev", group.getStdDev());
+    }
+
+    protected void setDilutionDataFields(ExpRun run, String wellgroupName, int plateNumber, Map<String, Object> dilutionRow)
+    {
+        dilutionRow.put("wellgroupName", wellgroupName);
+        dilutionRow.put("container", run.getContainer());
+        dilutionRow.put("runId", run.getRowId());
+        dilutionRow.put("protocolId", run.getProtocol().getRowId());
+        dilutionRow.put("plateNumber", plateNumber);
+    }
+
+    private void validateWellDataRow(Map<String, Object> wellDataRow)
+    {
+        if (null == wellDataRow.get("runId") ||
+            null == wellDataRow.get("protocolId") ||
+            null == wellDataRow.get("container"))
+        {
+            throw new IllegalStateException("Well data row is missing necessary field.");
+        }
+    }
+
+    public static String getSpecimenVirusWellgroupName(@NotNull WellGroup specimenGroup, @Nullable WellGroup virusGroup)
+    {
+        return specimenGroup.getName() + (null != virusGroup ? ":" + virusGroup.getName() : "");
+    }
+
+    public static String getWellgroupNameVirusNameCombo(String wellgroupName, String virusName)
+    {
+        return wellgroupName + ":" + virusName;
     }
 }
