@@ -29,16 +29,23 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
     //UNDONE: Really just array of ints/values in this case, but
     //may be extended in the future
     private WellImpl[][] _wells;
+    private final int _runId;      // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
+    private final int _plateNumber;
 
     public PlateImpl()
     {
         // no-param constructor for reflection
+        _wells = null;
+        _runId = PlateService.NO_RUNID;
+        _plateNumber = 1;
     }
 
-    public PlateImpl(PlateTemplateImpl template, double[][] wellValues)
+    public PlateImpl(PlateTemplateImpl template, double[][] wellValues, int runId, int plateNumber)
     {
         super(template.getContainer(), template.getName(), template.getType(), template.getRows(), template.getColumns());
         _wells = new WellImpl[template.getRows()][template.getColumns()];
+        _runId = runId;
+        _plateNumber = plateNumber;
         for (int row = 0; row < template.getRows(); row++)
         {
             for (int col = 0; col < template.getColumns(); col++)
@@ -119,5 +126,20 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
     public boolean isTemplate()
     {
         return false;
+    }
+
+    public int getRunId()
+    {
+        return _runId;
+    }
+
+    public boolean mustCalculateStats()
+    {
+        return _runId == PlateService.NO_RUNID;
+    }
+
+    public int getPlateNumber()
+    {
+        return _plateNumber;
     }
 }

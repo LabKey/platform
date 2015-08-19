@@ -17,8 +17,12 @@
 package org.labkey.study.plate;
 
 import org.labkey.api.assay.dilution.DilutionCurve;
+import org.labkey.api.assay.dilution.DilutionDataRow;
+import org.labkey.api.assay.dilution.DilutionManager;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.*;
 
 import java.util.*;
@@ -37,6 +41,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
     private Double _max;
     private Set<WellGroup> _overlappingGroups;
     private List<WellData> _replicateWellData;
+    private DilutionDataRow _dilutionDataRow = null;
 
     public WellGroupImpl()
     {
@@ -164,6 +169,9 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
 
     public Double getDilution()
     {
+        if (null != _dilutionDataRow)
+            return _dilutionDataRow.getDilution();
+
         Double dilution = null;
         for (Position position: _positions)
         {
@@ -189,6 +197,9 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
 
     public Double getMaxDilution()
     {
+        if (null != _dilutionDataRow)
+            return _dilutionDataRow.getMaxDilution();
+
         List<? extends WellData> datas = getWellData(true);
         Double max = null;
         for (WellData data : datas)
@@ -202,6 +213,9 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
 
     public Double getMinDilution()
     {
+        if (null != _dilutionDataRow)
+            return _dilutionDataRow.getMinDilution();
+
         List<? extends WellData> datas = getWellData(true);
         Double min = null;
         for (WellData data : datas)
@@ -226,7 +240,12 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
     private synchronized void computeStats()
     {
         if (null == _stdDev)
-            recomputeStats();
+        {
+            if (_plate.mustCalculateStats())
+                recomputeStats();
+            else
+                populateStatsFromTable();
+        }
     }
 
     private synchronized void recomputeStats()
@@ -285,5 +304,20 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
             sum += v * v;
         }
         _stdDev = Math.sqrt(sum / (n - 1));
+    }
+
+    private void populateStatsFromTable()
+    {
+        ExpRun run = ExperimentService.get().getExpRun(_plate.getRunId());
+        List<DilutionDataRow> dilutionDataRows = DilutionManager.getDilutionDataRows(_plate.getRunId(),
+                _plate.getPlateNumber(), getName(), run.getContainer(),
+                Type.REPLICATE.equals(getType()));
+        if (1 != dilutionDataRows.size())
+            throw new IllegalStateException("Expected DilutionData row to calculate wellgroup stats.");
+        _dilutionDataRow = dilutionDataRows.get(0);
+        _mean = _dilutionDataRow.getMean();
+        _min = _dilutionDataRow.getMin();
+        _max = _dilutionDataRow.getMax();
+        _stdDev = _dilutionDataRow.getStddev();
     }
 }

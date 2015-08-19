@@ -127,13 +127,20 @@ public class PlateManager implements PlateService.Service
         });
     }
 
+    @Override
     public Plate createPlate(PlateTemplate template, double[][] wellValues)
+    {
+        return createPlate(template, wellValues, PlateService.NO_RUNID, 1);
+    }
+
+    @Override
+    public Plate createPlate(PlateTemplate template, double[][] wellValues, int runId, int plateNumber)
     {
         if (template == null)
             return null;
         if (!(template instanceof PlateTemplateImpl))
             throw new IllegalArgumentException("Only plate templates retrieved from the plate service can be used to create plate instances.");
-        return new PlateImpl((PlateTemplateImpl) template, wellValues);
+        return new PlateImpl((PlateTemplateImpl) template, wellValues, runId, plateNumber);
     }
 
     @Override
