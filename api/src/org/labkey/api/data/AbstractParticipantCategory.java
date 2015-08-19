@@ -283,7 +283,7 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
 
     public boolean canRead(Container c, User user)
     {
-        return canRead(c, user, new ArrayList<ValidationError>());
+        return canRead(c, user, new ArrayList<>());
     }
 
     public boolean canRead(Container c, User user, List<ValidationError> errors)
