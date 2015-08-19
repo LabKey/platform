@@ -22,7 +22,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 
@@ -326,6 +325,12 @@ public enum Operator
 
     public void appendSqlIN(SqlBuilder builder, Query query, Iterable<QNode> operandsIN)
     {
+        _appendSql(builder, query, operandsIN);
+
+        /*
+           Using Dialect.appendInClauseSql() may generate SQL that is more type sensitive than writing the IN clause values in-line.
+           We might be able to re-enable by adding some additional type consistency checks (LHS vs IN_LIST).
+
         ArrayList<QNode> operands = new ArrayList<>(2);
         for (QNode node : operandsIN)
             operands.add(node);
@@ -354,6 +359,7 @@ public enum Operator
 
         // fall through
         _appendSql(builder, query, operands);
+        */
     }
 
 
