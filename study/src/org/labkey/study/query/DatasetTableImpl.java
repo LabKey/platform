@@ -983,7 +983,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
                 // but we need to pass arguments to ParticipantTable constructor to hide datasets.
                 _tableInfo = new ParticipantTable(_userSchema, true);
-                _tableInfo.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), _userSchema, new ArrayList<QueryException>());
+                _tableInfo.setIgnoreSessionParticipantGroup();
+                _tableInfo.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), _userSchema, new ArrayList<>());
                 _tableInfo.afterConstruct();
             }
             return _tableInfo;

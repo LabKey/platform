@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
@@ -28,6 +29,7 @@ import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
@@ -47,10 +49,12 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantCategoryImpl;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
+import java.util.Collections;
 import java.util.Set;
 
 public class ParticipantTable extends BaseStudyTable
@@ -343,5 +347,57 @@ public class ParticipantTable extends BaseStudyTable
             }
             return result;
         }
+    }
+
+
+    /* You would usually want to turn off session participantgroup for the whole schema,
+     * however, you might want to also turn off just for ParticpantTable when this table
+     * is being used as a lookup (especially for a table that is already filtered)
+     */
+    boolean _ignoreSessionParticipantGroup = false;
+
+    public void setIgnoreSessionParticipantGroup()
+    {
+        _ignoreSessionParticipantGroup = true;
+    }
+
+    protected SimpleFilter getFilter()
+    {
+        SimpleFilter sf;
+        sf = super.getFilter();
+
+        ParticipantGroup group = _ignoreSessionParticipantGroup ? null : getUserSchema().getSessionParticipantGroup();
+        if (null == group)
+            return sf;
+
+        if (null == sf)
+            sf = new SimpleFilter();
+
+        FieldKey participantFieldKey = FieldKey.fromParts("ParticipantId");
+
+        if (group.isSession() || group.isNew())
+        {
+            SimpleFilter.InClause clause = new SimpleFilter.InClause(participantFieldKey, group.getParticipantSet());
+            sf.addClause(clause);
+        }
+        else
+        {
+            SimpleFilter.SQLClause clause = new SimpleFilter.SQLClause(
+                    "ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)",
+                    new Object[] {group.getRowId()},
+                    participantFieldKey);
+            sf.addClause(clause);
+        }
+        return sf;
+    }
+
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        SQLFragment ret;
+        ret = super.getFromSQL(alias);
+        return ret;
     }
 }
