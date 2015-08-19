@@ -31,6 +31,7 @@ import org.labkey.test.credentials.ApiKey;
 import org.labkey.test.pages.redcap.ConfigurePage;
 import org.labkey.test.util.redcap.ConfigXmlBuilder;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,14 +59,14 @@ public class RedCapTest extends BaseWebDriverTest
     }
 
     @BeforeClass
-    public static void setupProject()
+    public static void setupProject() throws Exception
     {
         RedCapTest init = (RedCapTest) getCurrentTest();
 
         init.doSetup();
     }
 
-    private void doSetup()
+    private void doSetup() throws IOException
     {
         REDCAP_HOST = TestCredentials.getServer(SERVER_CREDENTIALS_KEY).getHost();
         API_KEYS = new HashMap<>();
