@@ -1073,10 +1073,12 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             {
                 tabs.add(new TabInfo("Search", "fullTextSearch", url));
                 if (!_container.isContainerTab())
-                {
                     tabs.add(new TabInfo("Notifications", "messages", url));
-                    tabs.add(new TabInfo("Export", "export", url));
-                    tabs.add(new TabInfo("Import", "import", url));
+
+                tabs.add(new TabInfo("Export", "export", url));
+                tabs.add(new TabInfo("Import", "import", url));
+                if (!_container.isContainerTab())
+                {
                     tabs.add(new TabInfo("Files", "files", url));
 
                     // Projects allow editing via the projectSettings action, so only display these settings in non-project
