@@ -665,7 +665,7 @@ public class DomainImpl implements Domain
             }
             for (DomainPropertyImpl dp : this.getProperties())
             {
-                if (null != dp._pd && null != dp._pd.getStorageColumnName())
+                if (null != dp._pd && !dp._deleted && null != dp._pd.getStorageColumnName())    // Don't claim deleted names (#23295)
                     _aliasManager.claimAlias(dp._pd.getStorageColumnName(), dp.getName());
             }
         }
