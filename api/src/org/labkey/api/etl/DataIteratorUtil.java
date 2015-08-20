@@ -18,6 +18,7 @@ package org.labkey.api.etl;
 
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
+import org.apache.tools.ant.filters.StringInputStream;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.ScrollableDataIterator;
@@ -43,6 +44,10 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * User: matthewb
@@ -330,13 +335,86 @@ public class DataIteratorUtil
     }
 
 
+    public static class DataSpliterator implements Spliterator<Map<String,Object>>
+    {
+        private final MapDataIterator maps;
+
+        DataSpliterator(MapDataIterator maps)
+        {
+            this.maps = maps;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super Map<String, Object>> action)
+        {
+            try
+            {
+                if (!maps.next())
+                    return false;
+                Map<String,Object> m = maps.getMap();
+                action.accept(m);
+                return true;
+            }
+            catch (BatchValidationException x)
+            {
+                return false;
+            }
+        }
+
+        @Override
+        public Spliterator<Map<String, Object>> trySplit()
+        {
+            return null;
+        }
+
+        @Override
+        public long estimateSize()
+        {
+            return maps.estimateSize();
+        }
+
+        @Override
+        public int characteristics()
+        {
+            return 0;
+        }
+    }
+
+
+    public static Stream<Map<String,Object>> stream(DataIterator in, boolean mutable)
+    {
+        final MapDataIterator maps = wrapMap(in,mutable);
+        Stream<Map<String,Object>> s = StreamSupport.stream(new DataSpliterator(maps),false);
+        s.onClose(() -> {
+            try
+            {
+                maps.close();
+            }
+            catch (IOException x)
+            {
+                /* */
+            }
+        });
+        return s;
+    }
+
 
     public static class TestCase extends Assert
     {
-        @Test
-        void testMatchColumns()
-        {
+        String csv = "a,b,c\n1,2,3\n4,5,6\n";
 
+        DataIterator data() throws Exception
+        {
+            DataLoader dl = new TabLoader.CsvFactory().createLoader(new StringInputStream(csv),true);
+            DataIteratorContext c = new DataIteratorContext();
+            return dl.getDataIterator(c);
+        }
+        @Test
+        public void testStream() throws Exception
+        {
+            assertEquals(2, data().stream().count());
+            assertEquals(5, data().stream().mapToInt(m -> Integer.parseInt((String) m.get("a"))).sum());
+            assertEquals(9, data().stream().mapToInt(m -> Integer.parseInt((String) m.get("c"))).sum());
         }
     }
 }

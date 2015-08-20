@@ -21,7 +21,9 @@ import org.labkey.api.query.BatchValidationException;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * User: matthewb
@@ -72,4 +74,14 @@ public interface DataIterator extends Closeable
 
     @Override
     void close() throws IOException;
+
+    default long estimateSize()
+    {
+        return Long.MAX_VALUE;
+    }
+
+    default Stream<Map<String,Object>> stream()
+    {
+        return DataIteratorUtil.stream(this,false);
+    }
 }
