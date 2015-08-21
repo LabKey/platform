@@ -65,11 +65,11 @@ Ext4.define('File.panel.Toolbar', {
                 {id : 'renamePath', hideText : true, hideIcon : false},
                 {id : 'movePath', hideText : true, hideIcon : false},
                 {id : 'editFileProps', hideText : true, hideIcon : false},
-                {id : 'upload', hideText : false, hideIcon : false},
-                {id : 'importData', hideText : false, hideIcon : false},
+                {id : 'upload', hideText : true, hideIcon : false},
+                {id : 'importData', hideText : true, hideIcon : false},
                 {id : 'emailPreferences', hideText : true, hideIcon : false},
-                {id : 'auditLog', hideText : false, hideIcon : false},
-                {id : 'customize', hideText : false, hideIcon : false}
+                {id : 'auditLog', hideText : true, hideIcon : false},
+                {id : 'customize', hideText : true, hideIcon : false}
             ],
             gridConfigs : {
                 columns : [

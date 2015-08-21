@@ -5,9 +5,22 @@
  */
 
 Ext4.define('File.panel.Action', {
-    extend: 'Ext.Action',
+
+    extend: 'Ext.button.Button',
+
+    alias: 'widget.iconbtn',
+
+    closable: false,
+
+    stacked: false,
 
     actionType: null,
+
+    hideIcon: false,
+
+    hideText: false,
+
+    padding: '2px 6px',
 
     statics: {
         Type: {
@@ -25,9 +38,23 @@ Ext4.define('File.panel.Action', {
         }
     },
 
-    hideIcon: false,
-
-    hideText: false,
+    renderTpl: [
+        '<span id="{id}-btnEl" class="iconbtn">',
+            '<tpl if="stacked">',
+                '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper">',
+                    '<span class="fa {fontCls} fa-stack-2x"></span>',
+                    '<span class="fa fa-stack-1x {stackedCls}"></span>',
+                '</span>',
+            '<tpl else>',
+                '<span class="fa {fontCls}"></span>',
+            '</tpl>',
+            '<span id="{id}-btnInnerEl" class="iconbtn-label">',
+                '<tpl if="text.length &gt; 0 && !hideText">',
+                    '&nbsp;{text:htmlEncode}',
+                '</tpl>',
+            '</span>',
+        '</span>'
+    ],
 
     constructor : function(config) {
 
@@ -35,8 +62,7 @@ Ext4.define('File.panel.Action', {
             config.cls = config.itemId + "Btn";
 
         Ext4.apply(this, {
-            hardText: config.hardText,
-            hardIconCls: config.hardIconCls
+            hardText: config.hardText
         });
 
         this.resetProps = {
@@ -45,6 +71,16 @@ Ext4.define('File.panel.Action', {
         };
 
         this.callParent([config]);
+    },
+
+    getTemplateArgs : function() {
+        return {
+            text: this.text || '',
+            stacked: this.stacked === true,
+            stackedCls: this.stackedCls,
+            fontCls: this.fontCls,
+            hideText: this.hideText === true
+        };
     },
 
     updateEnabled : function (fileSystem, selection) {

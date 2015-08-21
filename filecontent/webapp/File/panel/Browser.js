@@ -4,7 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 LABKEY.requiresCss("_images/icons.css");
-LABKEY.requiresCss("internal/font-awesome-4.4.0/css/labkey-font-awesome.css");
 LABKEY.requiresCss("dataview/DataViewsPanel.css");
 
 Ext4.define('File.panel.Browser', {
@@ -389,8 +388,9 @@ Ext4.define('File.panel.Browser', {
 
         this.items = this.getItems();
 
-        if (this.showToolbar)
-            this.initializeToolbar();
+        if (this.showToolbar) {
+            this.isWebDav ? this.configureWebDavToolbar() : this.configureActions();
+        }
 
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
@@ -409,9 +409,7 @@ Ext4.define('File.panel.Browser', {
                 hardText: 'Parent Folder',
                 itemId: 'parentFolder',
                 tooltip: 'Navigate to parent folder',
-                iconCls: 'fa fa-level-up',
-                hardIconCls: 'fa fa-level-up',
-                disabledClass: 'x-button-disabled',
+                fontCls: 'fa-arrow-up',
                 handler: this.onNavigateParent,
                 actionType: File.panel.Action.Type.NOMIN,
                 scope: this,
@@ -423,9 +421,7 @@ Ext4.define('File.panel.Browser', {
                 hardText: 'Refresh',
                 itemId: 'refresh',
                 tooltip: 'Refresh the contents of the current folder',
-                iconCls: 'fa fa-refresh',
-                hardIconCls: 'fa fa-refresh',
-                disabledClass: 'x-button-disabled',
+                fontCls: 'fa-refresh',
                 handler : this.onRefresh,
                 actionType : File.panel.Action.Type.NOMIN,
                 scope: this,
@@ -436,9 +432,10 @@ Ext4.define('File.panel.Browser', {
                 text: 'Create Folder',
                 hardText: 'Create Folder',
                 itemId: 'createDirectory',
-                html: '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper"><span class="fa fa-folder-o fa-stack-2x"></span><span class="fa fa-plus-circle fa-stack-1x labkey-fa-plus-circle-folder"></span></span>',
                 tooltip: 'Create a new folder on the server',
-                disabledClass: 'x-button-disabled',
+                fontCls: 'fa-folder-o',
+                stacked: true,
+                stackedCls: 'fa-plus-circle labkey-fa-plus-circle-folder',
                 handler : this.onCreateDirectory,
                 actionType : File.panel.Action.Type.NOMIN,
                 scope: this,
@@ -450,12 +447,10 @@ Ext4.define('File.panel.Browser', {
                 hardText: 'Download',
                 itemId: 'download',
                 tooltip: 'Download the selected files or folders',
-                iconCls: 'fa fa-download',
-                hardIconCls: 'fa fa-download',
-                disabledClass: 'x-button-disabled',
+                fontCls: 'fa-download',
                 disabled: true,
                 handler: this.onDownload,
-                actionType : File.panel.Action.Type.ATLEASTONE,
+                actionType: File.panel.Action.Type.ATLEASTONE,
                 scope: this,
                 hideText: true
             });
@@ -465,7 +460,6 @@ Ext4.define('File.panel.Browser', {
                 hardText: 'View File',
                 itemId: 'viewFile',
                 tooltip: 'View file in new window',
-                disabledClass: 'x-button-disabled',
                 disabled: true,
                 handler: this.onViewFile,
                 actionType : File.panel.Action.Type.ONLYONE,
@@ -478,9 +472,7 @@ Ext4.define('File.panel.Browser', {
                 hardText: 'Delete',
                 itemId: 'deletePath',
                 tooltip: 'Delete the selected files or folders',
-                iconCls: 'fa fa-trash-o',
-                hardIconCls: 'fa fa-trash-o',
-                disabledClass: 'x-button-disabled',
+                 fontCls: 'fa-trash-o',
                 handler: this.onDelete,
                 actionType : File.panel.Action.Type.ATLEASTONE,
                 scope: this,
@@ -496,9 +488,7 @@ Ext4.define('File.panel.Browser', {
                 hardText: 'Rename',
                 itemId: 'renamePath',
                 tooltip: 'Rename the selected file or folder',
-                iconCls: 'fa fa-pencil',
-                hardIconCls: 'fa fa-pencil',
-                disabledClass: 'x-button-disabled',
+                fontCls: 'fa-pencil',
                 handler : this.onRename,
                 actionType : File.panel.Action.Type.ONLYONE,
                 scope: this,
@@ -514,9 +504,7 @@ Ext4.define('File.panel.Browser', {
                 hardText: 'Move',
                 itemId: 'movePath',
                 tooltip: 'Move the selected file or folder',
-                iconCls: 'fa fa-sign-out',
-                hardIconCls: 'fa fa-sign-out',
-                disabledClass: 'x-button-disabled',
+                fontCls: 'fa-sign-out',
                 handler : this.onMovePath,
                 actionType : File.panel.Action.Type.ATLEASTONE,
                 scope: this,
@@ -542,12 +530,13 @@ Ext4.define('File.panel.Browser', {
                 text: 'Upload Files',
                 hardText: 'Upload Files',
                 itemId: 'upload',
-                html: '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper"><span class="fa fa-file-o fa-stack-2x"></span><span class="fa fa-arrow-circle-o-up fa-stack-1x labkey-fa-upload-files"></span></span><span class="labkey-fa-upload-files-text">Upload Files</span>',
+                fontCls: 'fa-file-o',
+                stacked: true,
+                stackedCls: 'fa-arrow-circle-o-up labkey-fa-upload-files',
                 enableToggle: true,
                 pressed: this.showUpload && this.expandUpload,
                 handler : this.onUpload,
                 scope: this,
-                disabledClass:'x-button-disabled',
                 hideText: true,
                 tooltip: 'Upload files or folders from your local machine to the server'
             });
@@ -557,9 +546,7 @@ Ext4.define('File.panel.Browser', {
                 hardText: 'Toggle Folder Tree',
                 itemId: 'folderTreeToggle',
                 enableToggle: true,
-                iconCls: 'fa fa-sitemap',
-                hardIconCls: 'fa fa-sitemap',
-                disabledClass:'x-button-disabled',
+                fontCls: 'fa-sitemap',
                 tooltip: 'Show or hide the folder tree',
                 hideText: true,
                 handler : function() { this.tree.toggleCollapse(); },
@@ -572,23 +559,20 @@ Ext4.define('File.panel.Browser', {
                 hardText: 'Import Data',
                 itemId: 'importData',
                 handler: this.onImportData,
-                iconCls: 'fa fa-database',
-                hardIconCls: 'fa fa-database',
-                disabledClass:'x-button-disabled',
+                fontCls: 'fa-database',
                 tooltip: 'Import data from files into the database, or analyze data files',
                 actionType : File.panel.Action.Type.NOMIN,
-                scope: this
+                scope: this,
+                hideText: true
             });
 
             this.actions.customize = Ext4.create('File.panel.Action', {
                 text: 'Admin',
                 hardText: 'Admin',
                 itemId: 'customize',
-                iconCls: 'fa fa-cog',
-                hardIconCls: 'fa fa-cog',
-                disabledClass:'x-button-disabled',
+                fontCls: 'fa-cog',
                 tooltip: 'Configure the buttons shown on the toolbar',
-                actionType : File.panel.Action.Type.NOMIN,
+                actionType: File.panel.Action.Type.NOMIN,
                 handler: this.showAdminWindow,
                 scope: this
             });
@@ -597,12 +581,10 @@ Ext4.define('File.panel.Browser', {
                 text: 'Edit Properties',
                 hardText: 'Edit Properties',
                 itemId: 'editFileProps',
-                iconCls: 'fa fa-cog',
-                hardIconCls: 'fa fa-cog',
-                disabledClass:'x-button-disabled',
+                fontCls: 'fa-pencil',
                 tooltip: 'Edit properties on the selected file(s)',
-                actionType : File.panel.Action.Type.ATLEASTONE,
-                handler : this.onEditFileProps,
+                actionType: File.panel.Action.Type.ATLEASTONE,
+                handler: this.onEditFileProps,
                 disabled : true,
                 hideText: true,
                 scope: this
@@ -612,13 +594,11 @@ Ext4.define('File.panel.Browser', {
                 text: 'Email Preferences',
                 hardText: 'Email Preferences',
                 itemId: 'emailPreferences',
-                iconCls: 'fa fa-envelope-o',
-                hardIconCls: 'fa fa-envelope-o',
-                disabledClass:'x-button-disabled',
+                fontCls: 'fa-envelope',
                 tooltip: 'Configure email notifications on file actions.',
                 hideText: true,
-                actionType : File.panel.Action.Type.NOMIN,
-                handler : this.onEmailPreferences,
+                actionType: File.panel.Action.Type.NOMIN,
+                handler: this.onEmailPreferences,
                 scope: this
             });
 
@@ -626,59 +606,18 @@ Ext4.define('File.panel.Browser', {
                 text: 'Audit History',
                 hardText: 'Audit History',
                 itemId: 'auditLog',
-                iconCls: 'fa fa-users',
-                hardIconCls: 'fa fa-users',
-                disabledClass:'x-button-disabled',
+                fontCls: 'fa fa-users',
                 tooltip: 'View the files audit log for this folder.',
                 actionType : File.panel.Action.Type.NOMIN,
                 handler : function() {
                     window.location = LABKEY.ActionURL.buildURL('filecontent', 'showFilesHistory', this.containerPath);
                 },
+                hideText: true,
                 scope: this
             });
         }
 
         return this.actions;
-    },
-
-    /**
-     * Initialze the set of actions to set their text/icon state.
-     * @param {Object} [actionConfigs] Optionally specify a set of actions to update their initialConfig.
-     */
-    initializeActions : function(actionConfigs) {
-        var actions = this.getActions(),
-            reset = false;
-
-        if (Ext4.isArray(actionConfigs)) {
-            // initialize only actions specified in these configs
-            Ext4.each(actionConfigs, function(config) {
-                var action = actions[config.id];
-                if (action) {
-                    action.hideText = config.hideText;
-                    action.hideIcon = config.hideIcon;
-                }
-                else {
-                    console.warn('Unable to find action for: ', config.id + '. Skipping configuration.');
-                }
-            });
-        }
-        else {
-            reset = true;
-        }
-
-        // initialize all actions
-        Ext4.iterate(actions, function(key, action) {
-            if (reset) {
-                action.hideText = action.resetProps.hideText;
-                action.hideIcon = action.resetProps.hideIcon;
-            }
-            action.setText(action.hideText ? undefined : action.hardText);
-            action.setIconCls(action.hideIcon ? undefined : action.hardIconCls);
-        });
-    },
-
-    initializeToolbar : function() {
-        this.isWebDav ? this.configureWebDavActions() : this.configureActions();
     },
 
     /**
@@ -691,13 +630,12 @@ Ext4.define('File.panel.Browser', {
             var configure = function(response) {
                 var json = Ext4.decode(response.responseText);
                 if (json.config) {
-                    this.initializeActions(json.config.tbarActions);
-                    this.updateActions();
                     // Configure the actions on the toolbar based on whether they should be shown
-                    this.configureTbarActions({
+                    this.initializeToolbar({
                         tbarActions: json.config.tbarActions,
                         actions: json.config.actions
                     });
+                    this.updateActions();
                 }
             };
 
@@ -708,7 +646,7 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
-    configureWebDavActions : function() {
+    configureWebDavToolbar : function() {
         var baseItems = [],
             actions = this.getActions();
 
@@ -740,22 +678,55 @@ Ext4.define('File.panel.Browser', {
         }];
     },
 
-    configureTbarActions : function(config) {
+    initializeToolbar : function(config) {
         if (Ext4.isArray(config)) {
             config = config[0];
         }
 
-        var tbarConfig = config.tbarActions,
+        var toolbar = this.getDockedItems()[0],
+            tbarConfig = config.tbarActions,
             actionButtons = config.actions,
-            toolbar = this.getDockedItems()[0],
             buttons = [], i, action,
             // Use as a lookup
             mapTbarItems = {};
 
         if (toolbar) {
-            // Remove the current toolbar in case we just customized it.
+            // remove docked items, and reset actions
             this.removeDocked(toolbar);
+            this.actions = undefined;
         }
+
+        var actions = this.getActions(),
+            reset = false;
+
+        if (Ext4.isArray(tbarConfig)) {
+            // initialize only actions specified in these configs
+            Ext4.each(tbarConfig, function(config) {
+                var action = actions[config.id];
+                if (action) {
+                    action.hideText = config.hideText;
+                    action.hideIcon = config.hideIcon;
+                }
+                else {
+                    console.warn('Unable to find action for: ', config.id + '. Skipping configuration.');
+                }
+            });
+        }
+        else {
+            reset = true;
+        }
+
+        // initialize all actions
+        Ext4.iterate(actions, function(key, action) {
+            if (reset) {
+                action.hideText = action.resetProps.hideText;
+                action.hideIcon = action.resetProps.hideIcon;
+            }
+            action.setText(action.hideText ? undefined : action.hardText);
+            if (action.hideIcon) {
+                action.fontCls = undefined;
+            }
+        });
 
         if (this.tbarItems) {
             for (i=0; i < this.tbarItems.length; i++) {
@@ -764,8 +735,7 @@ Ext4.define('File.panel.Browser', {
         }
 
         if (tbarConfig) {
-            var actionConfig,
-                actions = this.getActions();
+            var actionConfig;
 
             // Iterate across tbarConfig as button ordering is determined by array order
             for (i=0; i < tbarConfig.length; i++) {
@@ -2050,7 +2020,7 @@ Ext4.define('File.panel.Browser', {
                 },
                 show : function() {
                     Ext4.defer(function() {
-                        var btn = this.actions.upload.items[0];
+                        var btn = this.actions.upload;
                         if (!btn.pressed) {
                             btn.toggle(true);
                         }
@@ -2058,7 +2028,7 @@ Ext4.define('File.panel.Browser', {
                 },
                 hide : function() {
                     Ext4.defer(function() {
-                        var btn = this.actions.upload.items[0];
+                        var btn = this.actions.upload;
                         if (btn.pressed) {
                             btn.toggle(false);
                         }
