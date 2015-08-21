@@ -834,7 +834,11 @@ public class ListController extends SpringActionController
 
                         // list audit events
                         QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                        SimpleFilter eventFilter = new SimpleFilter();
+                        eventFilter.addCondition(FieldKey.fromParts(ListManager.LISTID_FIELD_NAME), _list.getListId());
+                        settings.setBaseFilter(eventFilter);
                         settings.setQueryName(ListManager.LIST_AUDIT_EVENT);
+
                         QueryView view = schema.createView(getViewContext(), settings, errors);
                         view.setTitle("List Events");
                         box.addView(view);
@@ -844,8 +848,8 @@ public class ListController extends SpringActionController
 
                         SimpleFilter domainFilter = new SimpleFilter();
                         domainFilter.addCondition(FieldKey.fromParts(DomainAuditProvider.COLUMN_NAME_DOMAIN_URI), domainUri);
-
                         domainSettings.setBaseFilter(domainFilter);
+
                         domainSettings.setQueryName(DomainAuditProvider.EVENT_TYPE);
                         QueryView domainView = schema.createView(getViewContext(), domainSettings, errors);
 

@@ -88,6 +88,7 @@ public class ListManager implements SearchService.DocumentProvider
     private static final ListManager INSTANCE = new ListManager();
 
     public static final String LIST_AUDIT_EVENT = "ListAuditEvent";
+    public static final String LISTID_FIELD_NAME = "listId";
 
     public static ListManager get()
     {
