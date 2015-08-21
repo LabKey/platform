@@ -397,8 +397,9 @@ Ext4.define('Study.window.ParticipantGroup', {
 
         if (!this.hideDataRegion) {
 
+
             //QueryWebPart is an Ext 3 based component, so we need to include Ext 3 here.
-            if (Ext) {
+            LABKEY.requiresExt3ClientAPI(function() {
 
                 Ext.onReady(function() {
 
@@ -430,7 +431,7 @@ Ext4.define('Study.window.ParticipantGroup', {
 
                 }, this);
 
-            }
+            }, this);
         }
     },
 
