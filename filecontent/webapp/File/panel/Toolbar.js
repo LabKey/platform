@@ -98,20 +98,20 @@ Ext4.define('File.panel.Toolbar', {
     initComponent : function() {
 
         var baseData = {
-            auditLog         : {icon : 'audit_log.png',   text : 'Audit Log', used : false},
-            createDirectory  : {icon : 'folder_new.png',  text : 'Create Folder', used : false},
-            customize        : {icon : 'configure.png',   text : 'Admin', used : false},
-            deletePath       : {icon : 'delete.png',      text : 'Delete', used : false},
-            download         : {icon : 'download.png',    text : 'Download', used : false},
-            editFileProps    : {icon : 'editprops.png',   text : 'Edit Properties', used : false},
-            emailPreferences : {icon : 'email.png',       text : 'Email Preferences', used : false},
-            importData       : {icon : 'db_commit.png',   text : 'Import Data', used : false},
-            movePath         : {icon : 'move.png',        text : 'Move', used : false},
-            parentFolder     : {icon : 'up.png',          text : 'Parent Folder', used : false},
-            refresh          : {icon : 'reload.png',      text : 'Refresh', used : false},
-            renamePath       : {icon : 'rename.png',      text : 'Rename', used : false},
-            folderTreeToggle : {icon : 'folder_tree.png', text : 'Toggle Folder Tree', used : false},
-            upload           : {icon : 'upload.png',      text : 'Upload Files', used : false}
+            auditLog         : {icon : 'fa-users',   text : 'Audit Log', used : false},
+            createDirectory  : {icon : 'fa-folder-o fa-plus-circle',  text : 'Create Folder', used : false},
+            customize        : {icon : 'fa-cog',   text : 'Admin', used : false},
+            deletePath       : {icon : 'fa-trash-o',      text : 'Delete', used : false},
+            download         : {icon : 'fa-download',    text : 'Download', used : false},
+            editFileProps    : {icon : 'fa-pencil',   text : 'Edit Properties', used : false},
+            emailPreferences : {icon : 'fa-envelope',       text : 'Email Preferences', used : false},
+            importData       : {icon : 'fa-database',   text : 'Import Data', used : false},
+            movePath         : {icon : 'fa-sign-out',        text : 'Move', used : false},
+            parentFolder     : {icon : 'fa-arrow-up',          text : 'Parent Folder', used : false},
+            refresh          : {icon : 'fa-refresh',      text : 'Refresh', used : false},
+            renamePath       : {icon : 'fa-pencil',      text : 'Rename', used : false},
+            folderTreeToggle : {icon : 'fa-sitemap', text : 'Toggle Folder Tree', used : false},
+            upload           : {icon : 'fa-file-o fa-arrow-circle-o-up',      text : 'Upload Files', used : false}
         };
 
         var processedData = [];
@@ -279,8 +279,14 @@ Ext4.define('File.panel.Toolbar', {
                     scope : this
                 }},
                 {header : 'Icon', dataIndex: 'icon', flex : 1, renderer : function(value){
-                    var path = LABKEY.contextPath + '/_images/' + value;
-                    return '<img src = "'+path+'" />';
+                    // var path = LABKEY.contextPath + '/_images/' + value;
+                    // return '<img src = "'+path+'" />';
+                    var fontClasses = value.split(' ');
+                    if (fontClasses.length > 1) {
+                        return '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper"><span class="fa '+fontClasses[0]+' fa-stack-2x"></span><span class="fa '+fontClasses[1]+' fa-stack-1x"></span></span>';
+                    } else {
+                        return '<span class="fa '+value+'"></span>';
+                    }
                 }},
                 {header : 'Text', dataIndex : 'text', flex : 2}
             ]

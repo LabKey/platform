@@ -472,7 +472,7 @@ Ext4.define('File.panel.Browser', {
                 hardText: 'Delete',
                 itemId: 'deletePath',
                 tooltip: 'Delete the selected files or folders',
-                 fontCls: 'fa-trash-o',
+                fontCls: 'fa-trash-o',
                 handler: this.onDelete,
                 actionType : File.panel.Action.Type.ATLEASTONE,
                 scope: this,
@@ -606,7 +606,7 @@ Ext4.define('File.panel.Browser', {
                 text: 'Audit History',
                 hardText: 'Audit History',
                 itemId: 'auditLog',
-                fontCls: 'fa fa-users',
+                fontCls: 'fa-users',
                 tooltip: 'View the files audit log for this folder.',
                 actionType : File.panel.Action.Type.NOMIN,
                 handler : function() {
