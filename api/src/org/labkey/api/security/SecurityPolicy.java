@@ -56,33 +56,41 @@ import java.util.TreeSet;
 public class SecurityPolicy implements HasPermission
 {
     protected final SortedSet<RoleAssignment> _assignments = new TreeSet<>();
-    protected String _resourceId;
-    protected String _containerId;
-    protected String _resourceClass;
+    protected final String _resourceId;
+    protected final String _containerId;
+    protected final String _resourceClass;
+
     protected Date _modified;
 
-    public SecurityPolicy(@NotNull SecurableResource resource)
+    public SecurityPolicy(@NotNull String resourceId, @NotNull String resourceClass, @NotNull String containerId, @NotNull Collection<RoleAssignment> assignments, @Nullable Date lastModified)
     {
-        _resourceId = resource.getResourceId();
-        _resourceClass = resource.getClass().getName();
-        _containerId = resource.getResourceContainer().getId();
-    }
+        _resourceId = resourceId;
+        _resourceClass = resourceClass;
+        _containerId = containerId;
 
-    public SecurityPolicy(@NotNull SecurableResource resource, @NotNull RoleAssignment[] assignments)
-    {
-        this(resource);
         for (RoleAssignment ra : assignments)
         {
             if (null == ra.getRole())
                 continue;
             _assignments.add(ra);
         }
+
+        _modified = lastModified;
     }
 
-    public SecurityPolicy(@NotNull SecurableResource resource, @NotNull RoleAssignment[] assignments, Date lastModified)
+    public SecurityPolicy(@NotNull SecurableResource resource, @NotNull Collection<RoleAssignment> assignments, @Nullable Date lastModified)
     {
-        this(resource, assignments);
-        _modified = lastModified;
+        this(resource.getResourceId(), resource.getClass().getName(), resource.getResourceContainer().getId(), assignments, lastModified);
+    }
+
+    public SecurityPolicy(@NotNull SecurableResource resource, @NotNull Collection<RoleAssignment> assignments)
+    {
+        this(resource, assignments, null);
+    }
+
+    public SecurityPolicy(@NotNull SecurableResource resource)
+    {
+        this(resource, Collections.emptyList());
     }
 
     /**
@@ -93,15 +101,7 @@ public class SecurityPolicy implements HasPermission
      */
     public SecurityPolicy(@NotNull SecurableResource resource, @NotNull SecurityPolicy otherPolicy)
     {
-        this(resource);
-        for (RoleAssignment assignment : otherPolicy.getAssignments())
-        {
-            RoleAssignment newAssignment = new RoleAssignment();
-            newAssignment.setResourceId(resource.getResourceId());
-            newAssignment.setUserId(assignment.getUserId());
-            newAssignment.setRole(assignment.getRole());
-            _assignments.add(newAssignment);
-        }
+        this(resource, copyAssignments(otherPolicy, resource.getResourceId()));
     }
 
     /**
@@ -110,18 +110,23 @@ public class SecurityPolicy implements HasPermission
      */
     public SecurityPolicy(@NotNull SecurityPolicy otherPolicy)
     {
-        _resourceId = otherPolicy._resourceId;
-        _resourceClass = otherPolicy._resourceClass;
-        _containerId = otherPolicy._containerId;
-        _modified = otherPolicy._modified;
+        this(otherPolicy.getResourceId(), otherPolicy.getResourceClass(), otherPolicy.getContainerId(), copyAssignments(otherPolicy, otherPolicy.getResourceId()), otherPolicy.getModified());
+    }
+
+    private static List<RoleAssignment> copyAssignments(@NotNull SecurityPolicy otherPolicy, @NotNull String newResourceId)
+    {
+        List<RoleAssignment> assignments = new ArrayList<>();
+
         for (RoleAssignment assignment : otherPolicy.getAssignments())
         {
             RoleAssignment newAssignment = new RoleAssignment();
-            newAssignment.setResourceId(_resourceId);
+            newAssignment.setResourceId(newResourceId);
             newAssignment.setUserId(assignment.getUserId());
             newAssignment.setRole(assignment.getRole());
-            _assignments.add(newAssignment);
+            assignments.add(newAssignment);
         }
+
+        return assignments;
     }
 
     @NotNull
@@ -459,7 +464,7 @@ public class SecurityPolicy implements HasPermission
     @NotNull
     public Map<String, Map<PrincipalType, List<UserPrincipal>>> getAssignmentsAsMap()
     {
-        Map<String, Map<PrincipalType, List<UserPrincipal>>> assignmentsMap = new HashMap<String, Map<PrincipalType, List<UserPrincipal>>>();
+        Map<String, Map<PrincipalType, List<UserPrincipal>>> assignmentsMap = new HashMap<>();
         for (RoleAssignment assignment : getAssignments())
         {
             // userId may be the id of either a group or a user.  Find out which.
@@ -471,10 +476,10 @@ public class SecurityPolicy implements HasPermission
             if (principal != null)
             {
                 if (!assignmentsMap.containsKey(assignment.getRole().getUniqueName()))
-                    assignmentsMap.put(assignment.getRole().getUniqueName(), new HashMap<PrincipalType, List<UserPrincipal>>());
+                    assignmentsMap.put(assignment.getRole().getUniqueName(), new HashMap<>());
                 Map<PrincipalType, List<UserPrincipal>> assignees = assignmentsMap.get(assignment.getRole().getUniqueName());
                 if (!assignees.containsKey(principal.getPrincipalType()))
-                    assignees.put(principal.getPrincipalType(), new ArrayList<UserPrincipal>());
+                    assignees.put(principal.getPrincipalType(), new ArrayList<>());
                 List<UserPrincipal> principalsList = assignees.get(principal.getPrincipalType());
                 principalsList.add(principal);
             }

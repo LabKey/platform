@@ -16,6 +16,7 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
@@ -34,7 +35,8 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -54,34 +56,48 @@ public class SecurityPolicyManager
         return getPolicy(resource, true);
     }
 
-    private static final RoleAssignment[] NO_ROLES = new RoleAssignment[0];
+    /**
+     *  Retrieve the SecurityPolicy directly associated with this resource, if any. Does not check inheritance.
+     *  @return The SecurityPolicy, if one exists, otherwise null
+     */
+    @Nullable
+    public static SecurityPolicy getPolicy(@NotNull Container c, @NotNull String resourceId)
+    {
+        return CACHE.get(cacheKey(resourceId), null, (key, argument) -> {
+            SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies(), SimpleFilter.createContainerFilter(c), null).getObject(resourceId, SecurityPolicyBean.class);
+
+            if (null != policyBean)
+            {
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resourceId);
+                Selector selector = new TableSelector(core.getTableInfoRoleAssignments(), filter, new Sort("UserId"));
+                Collection<RoleAssignment> assignments = selector.getCollection(RoleAssignment.class);
+
+                return new SecurityPolicy(policyBean.getResourceId(), policyBean.getResourceClass(), policyBean.getContainer().getId(), assignments, policyBean.getModified());
+            }
+
+            return null;
+        });
+    }
 
     @NotNull
     public static SecurityPolicy getPolicy(@NotNull final SecurableResource resource, boolean findNearest)
     {
-        SecurityPolicy policy = CACHE.get(cacheKey(resource), resource, (key, argument) -> {
-            SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies()).getObject(resource.getResourceId(), SecurityPolicyBean.class);
+        SecurityPolicy policy = getPolicy(resource.getResourceContainer(), resource.getResourceId());
 
-            RoleAssignment[] assignments = NO_ROLES;
-
-            if (null != policyBean)
-            {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());
-                Selector selector = new TableSelector(core.getTableInfoRoleAssignments(), filter, new Sort("UserId"));
-                assignments = selector.getArray(RoleAssignment.class);
-            }
-
-            return new SecurityPolicy(resource, assignments, null != policyBean ? policyBean.getModified() : new Date());
-        });
-
-        if (findNearest && policy.isEmpty() && resource.mayInheritPolicy())
+        if (null == policy && findNearest && resource.mayInheritPolicy())
         {
             SecurableResource parent = resource.getParentResource();
             if (null != parent)
                 return getPolicy(parent, true);
         }
 
-        return policy;
+        return null != policy ? policy : new SecurityPolicy(resource, Collections.emptyList());
+    }
+
+    // Just for consistency
+    public static String cacheKey(String resourceId)
+    {
+        return resourceId;
     }
 
     public static String cacheKey(SecurableResource resource)
@@ -89,9 +105,9 @@ public class SecurityPolicyManager
         return resource.getResourceId();
     }
 
-    private static String cacheKey(SecurityPolicy resource)
+    private static String cacheKey(SecurityPolicy policy)
     {
-        return resource.getResourceId();
+        return policy.getResourceId();
     }
 
     public static void savePolicy(@NotNull MutableSecurityPolicy policy)
