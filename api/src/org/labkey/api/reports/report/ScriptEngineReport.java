@@ -41,6 +41,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -50,6 +51,7 @@ import org.labkey.api.reports.report.r.view.FileOutput;
 import org.labkey.api.reports.report.r.view.HrefOutput;
 import org.labkey.api.reports.report.r.view.HtmlOutput;
 import org.labkey.api.reports.report.r.view.ImageOutput;
+import org.labkey.api.reports.report.r.view.JsonOutput;
 import org.labkey.api.reports.report.r.view.KnitrOutput;
 import org.labkey.api.reports.report.r.view.PdfOutput;
 import org.labkey.api.reports.report.r.view.PostscriptOutput;
@@ -57,7 +59,6 @@ import org.labkey.api.reports.report.r.view.ROutputView;
 import org.labkey.api.reports.report.r.view.SvgOutput;
 import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
-import org.labkey.api.reports.report.r.view.JsonOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -75,7 +76,6 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.ResultSetMetaData;
@@ -108,8 +108,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     public static final String SUBSTITUTION_MAP = "substitutionMap.txt";
     public static final String CONSOLE_OUTPUT = "console.txt";
 
-    private File _tempFolder;
-    private boolean _tempFolderPipeline;
     private static Logger _log = Logger.getLogger(ScriptEngineReport.class);
 
     static
@@ -267,47 +265,40 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      *
      * @param executingContainerId id of the container in which the report is running
      * @return directory, which has been created, to contain the generated report
+     *
+     * Note: This method used to stash results in members (_tempFolder and _tempFolderPipeline), but that no longer works
+     * now that we cache reports between threads (e.g., Thread.currentThread().getId() is part of the path).
      */
     public File getReportDir(@NotNull String executingContainerId)
     {
         boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
 
-        if (_tempFolder == null || _tempFolderPipeline != isPipeline)
-        {
-            File tempRoot = getTempRoot(getDescriptor());
-            String reportId = FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())).replaceAll(" ", "_");
+        File tempRoot = getTempRoot(getDescriptor());
+        String reportId = FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())).replaceAll(" ", "_");
 
-            if (isPipeline)
-                _tempFolder = new File(tempRoot, executingContainerId + File.separator + "Report_" + reportId);
-            else
-                _tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + executingContainerId + File.separator + "Report_" + reportId, String.valueOf(Thread.currentThread().getId()));
+        File tempFolder;
 
-            _tempFolderPipeline = isPipeline;
+        if (isPipeline)
+            tempFolder = new File(tempRoot, executingContainerId + File.separator + "Report_" + reportId);
+        else
+            tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + executingContainerId + File.separator + "Report_" + reportId, String.valueOf(Thread.currentThread().getId()));
 
-            if (!_tempFolder.exists())
-                _tempFolder.mkdirs();
-        }
+        if (!tempFolder.exists())
+            tempFolder.mkdirs();
 
-        return _tempFolder;
+        return tempFolder;
     }
 
     public void deleteReportDir(@NotNull ContainerUser context)
     {
         boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
 
-        try
-        {
-            File dir = getReportDir(context.getContainer().getId());
+        File dir = getReportDir(context.getContainer().getId());
 
-            if (!isPipeline)
-                dir = dir.getParentFile();
+        if (!isPipeline)
+            dir = dir.getParentFile();
 
-            FileUtil.deleteDir(dir);
-        }
-        finally
-        {
-            _tempFolder = null;
-        }
+        FileUtil.deleteDir(dir);
     }
 
     /**
@@ -750,12 +741,10 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
             if (scriptFile.exists())
             {
-                BufferedReader br = null;
+                StringBuilder sb = new StringBuilder();
 
-                try
+                try (BufferedReader br = Readers.getReader(scriptFile))
                 {
-                    StringBuilder sb = new StringBuilder();
-                    br = new BufferedReader(new FileReader(scriptFile));
                     String l;
 
                     while ((l = br.readLine()) != null)
@@ -765,11 +754,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                     }
 
                     getDescriptor().setProperty(ScriptReportDescriptor.Prop.script, sb.toString());
-                }
-                finally
-                {
-                    if (br != null)
-                        try {br.close();} catch(IOException ioe) {}
                 }
             }
         }

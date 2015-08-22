@@ -47,15 +47,14 @@ import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
+import org.labkey.api.writer.PrintWriters;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -418,7 +417,7 @@ public class RReport extends ExternalScriptEngineReport
 
                     String includedScript = processScript(engine, context, rScript, inputData, outputSubst, inputParameters);
 
-                    try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(rScriptFile))))
+                    try (PrintWriter pw = PrintWriters.getPrintWriter(rScriptFile))
                     {
                         pw.write(includedScript);
                     }
