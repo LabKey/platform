@@ -69,6 +69,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -627,13 +628,33 @@ public class SecurityApiActions
             Container container = getContainer();
             User user = getUser();
 
-            //resolve the resource
-            SecurableResource resource = container.findSecurableResource(form.getResourceId(), user);
-            if(null == resource)
-                throw new IllegalArgumentException("The requested resource does not exist within this container!");
+            SecurableResource resource;
+            SecurityPolicy policy;
 
-            //get the policy
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource, form.getFindNearest());
+            // try to resolve the resource -- at the moment, we can only resolve SOME resources, see #24103
+            resource = container.findSecurableResource(form.getResourceId(), user);
+
+            if (null != resource)
+            {
+                // get the policy associated with the resource
+                policy = SecurityPolicyManager.getPolicy(resource, form.getFindNearest());
+            }
+            else if (!form.getFindNearest())
+            {
+                // Backup approach for finding the policy directly associated with a ResourceId (no inheritance), without a SecurableResource... this is temporary!
+                policy = SecurityPolicyManager.getPolicy(container, form.getResourceId());
+
+                if (null == policy)
+                {
+                    // I don't like this, but we should send back an empty policy...
+                    policy = new SecurityPolicy(form.getResourceId(), null, container.getId(), Collections.emptyList(), null);
+                }
+            }
+            else
+            {
+                throw new IllegalArgumentException("The requested resource does not exist within this container!");
+            }
+
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
             //FIX: 8077 - if this is a subfolder and the policy is inherited from the project
@@ -658,23 +679,28 @@ public class SecurityApiActions
             else
                 resp.put("policy", policy.toMap());
 
-            List<String> relevantRoles = new ArrayList<>();
+            // If we don't have a resource we can't resolve roles. This is temporary... until we have a real way to resolve all SecurableResources
+            if (null != resource)
+            {
+                List<String> relevantRoles = new ArrayList<>();
 
-            if (container.isRoot() && !resource.equals(container))
-            {
-                // ExternalIndex case
-                relevantRoles.add(RoleManager.getRole(ReaderRole.class).getUniqueName());
-            }
-            else
-            {
-                for (Role role : RoleManager.getAllRoles())
+                if (container.isRoot() && !resource.equals(container))
                 {
-                    if (role.isAssignable() && role.isApplicable(policy, resource))
-                        relevantRoles.add(role.getUniqueName());
+                    // ExternalIndex case
+                    relevantRoles.add(RoleManager.getRole(ReaderRole.class).getUniqueName());
                 }
+                else
+                {
+                    for (Role role : RoleManager.getAllRoles())
+                    {
+                        if (role.isAssignable() && role.isApplicable(policy, resource))
+                            relevantRoles.add(role.getUniqueName());
+                    }
+                }
+
+                resp.put("relevantRoles", relevantRoles);
             }
 
-            resp.put("relevantRoles", relevantRoles);
             return resp;
         }
     }
