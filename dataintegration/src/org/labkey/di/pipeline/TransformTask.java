@@ -572,7 +572,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 TableInfo targetTable = targetSchema.getTable(meta.getTargetQuery());
                 if (null == targetTable)
                 {
-                    log.error("Target query not found: " + meta.getTargetQuery());
+                    log.error("Target query '" + meta.getTargetQuery() + "' not found in schema '" + meta.getTargetSchema() + "'");
                     return false;
                 }
                 if (null != getFilterStrategy().getDeletedRowsSource())
