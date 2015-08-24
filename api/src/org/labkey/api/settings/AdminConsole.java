@@ -26,7 +26,7 @@ import java.util.*;
  */
 public class AdminConsole
 {
-    public static enum SettingsLinkType {Configuration, Management, Diagnostics}
+    public enum SettingsLinkType {Configuration, Management, Diagnostics}
 
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
     private static final List<ExperimentalFeatureFlag> _experimentalFlags = new ArrayList<>();
@@ -34,7 +34,7 @@ public class AdminConsole
     static
     {
         for (SettingsLinkType type : SettingsLinkType.values())
-            _links.put(type, new TreeSet<AdminLink>());
+            _links.put(type, new TreeSet<>());
     }
 
     public static void addLink(SettingsLinkType type, AdminLink link)
