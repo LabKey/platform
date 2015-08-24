@@ -26,7 +26,7 @@ import java.util.*;
  */
 public class AdminConsole
 {
-    public enum SettingsLinkType {Configuration, Management, Diagnostics}
+    public enum SettingsLinkType {Premium, Configuration, Management, Diagnostics}
 
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
     private static final List<ExperimentalFeatureFlag> _experimentalFlags = new ArrayList<>();
