@@ -217,7 +217,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return createProtocolInstance(parser);
     }
 
-    public String getDefaultParametersXML(PipeRoot root) throws FileNotFoundException, IOException
+    public String getDefaultParametersXML(PipeRoot root) throws IOException
     {
         File fileDefault = getDefaultParametersFile(root);
         if (!fileDefault.exists())

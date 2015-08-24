@@ -72,6 +72,11 @@ public abstract class PipelineProtocol
     
     public void validate(PipeRoot root) throws PipelineValidationException
     {
+        validateProtocolName();
+    }
+
+    protected void validateProtocolName() throws PipelineValidationException
+    {
         if (name == null || name.trim().length() == 0)
             throw new PipelineValidationException("Missing protocol name.");
         else if (!getFactory().isValidProtocolName(name))
