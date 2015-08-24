@@ -201,9 +201,10 @@ div.icon img
     margin-top: 0.20em;
 }
 
-.labkey-fa-upload-files-text {
+.labkey-fa-icon-text {
     margin-left: 0.25em;
     margin-top: 0.35em;
+    text-transform: uppercase;
 }
 
 .labkey-fa-stacked-wrapper {

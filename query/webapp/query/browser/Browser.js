@@ -139,14 +139,28 @@ Ext4.define('LABKEY.query.browser.Browser', {
         var tbar = [{
             text: 'Refresh',
             handler: this.onRefresh,
-            iconCls: 'iconReload',
             tooltip: 'Refreshes the tree of schemas and queries, or a particular schema if one is selected.',
+            renderTpl: [
+            '<span id="{id}-btnEl" class="iconbtn">',
+                '<span class="fa fa-refresh"></span>',
+                '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
+                    '{text:htmlEncode}',
+                '</span>',
+            '</span>'
+            ],
             scope: this
         },{
             text: 'Validate Queries',
             handler: function() { this.showPanel('lk-vq-panel'); },
-            iconCls: 'iconCheck',
             tooltip: 'Opens the validate queries tab where you can validate all the queries defined in this folder.',
+            renderTpl: [
+            '<span id="{id}-btnEl" class="iconbtn">',
+                '<span class="fa fa-check-circle"></span>',
+                '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
+                    '{text:htmlEncode}',
+                '</span>',
+            '</span>'
+            ],
             scope: this
         }];
 
@@ -156,15 +170,35 @@ Ext4.define('LABKEY.query.browser.Browser', {
                 handler: function() {
                     window.location = LABKEY.ActionURL.buildURL('query', 'admin');
                 },
-                iconCls: 'iconFolderNew',
                 tooltip: 'Create or modify external schemas.',
+                renderTpl: [
+                    '<span id="{id}-btnEl" class="iconbtn">',
+                        '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper">',
+                            '<span class="fa fa-folder-o fa-stack-2x"></span>',
+                            '<span class="fa fa-stack-1x fa-plus-circle labkey-fa-plus-circle-folder"></span>',
+                        '</span>',
+                        '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
+                            '{text:htmlEncode}',
+                        '</span>',
+                    '</span>'
+                ],
                 scope: this
             });
             tbar.push({
                 text: 'Create New Query',
                 handler: this.onCreateQueryClick,
-                iconCls: 'iconFileNew',
                 tooltip: 'Create a new query in the selected schema (requires that you select a particular schema or query within that schema).',
+                renderTpl: [
+                    '<span id="{id}-btnEl" class="iconbtn">',
+                        '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper">',
+                            '<span class="fa fa-folder-o fa-stack-2x"></span>',
+                            '<span class="fa fa-stack-1x fa-plus-circle labkey-fa-plus-circle-folder"></span>',
+                        '</span>',
+                        '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
+                            '{text:htmlEncode}',
+                        '</span>',
+                    '</span>'
+                ],
                 scope: this
             });
             tbar.push({
@@ -172,8 +206,18 @@ Ext4.define('LABKEY.query.browser.Browser', {
                 handler: function() {
                     window.location = LABKEY.ActionURL.buildURL('query', 'manageRemoteConnections');
                 },
-                iconCls: 'iconFileNew',
                 tooltip: 'Manage remote connection credentials for remote LabKey server authentication.',
+                renderTpl: [
+                    '<span id="{id}-btnEl" class="iconbtn">',
+                        '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper">',
+                            '<span class="fa fa-folder-o fa-stack-2x"></span>',
+                            '<span class="fa fa-stack-1x fa-plus-circle labkey-fa-plus-circle-folder"></span>',
+                        '</span>',
+                        '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
+                            '{text:htmlEncode}',
+                        '</span>',
+                    '</span>'
+                ],
                 scope: this
             });
             tbar.push({
@@ -181,8 +225,18 @@ Ext4.define('LABKEY.query.browser.Browser', {
                 handler: function() {
                     location.href = LABKEY.ActionURL.buildURL('query', 'generateSchema', null, {returnUrl: window.location});
                 },
-                iconCls: 'iconFileNew',
                 tooltip: 'Generate schema export sql script for migrating a schema.',
+                renderTpl: [
+                    '<span id="{id}-btnEl" class="iconbtn">',
+                        '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper">',
+                            '<span class="fa fa-folder-o fa-stack-2x"></span>',
+                            '<span class="fa fa-stack-1x fa-plus-circle labkey-fa-plus-circle-folder"></span>',
+                        '</span>',
+                        '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
+                            '{text:htmlEncode}',
+                        '</span>',
+                    '</span>'
+                ],
                 scope: this
             });
         }

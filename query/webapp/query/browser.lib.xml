@@ -13,5 +13,6 @@
         <dependency path="clientapi/ext4" /> <!-- needed for resizeToViewport -->
         <dependency path="query/schemaBrowser.css" />
         <dependency path="_images/icons.css" />
+        <dependency path="dataview/DataViewsPanel.css" />
     </dependencies>
 </libraries>
