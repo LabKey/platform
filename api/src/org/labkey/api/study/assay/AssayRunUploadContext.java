@@ -53,7 +53,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
     Map<DomainProperty, String> getRunProperties() throws ExperimentException;
 
     /** @return values of batch fields to be inserted as part of the import */
-    Map<DomainProperty, String> getBatchProperties();
+    Map<DomainProperty, String> getBatchProperties() throws ExperimentException;
 
     String getComments();
 

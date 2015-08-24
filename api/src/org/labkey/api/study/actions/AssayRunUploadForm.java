@@ -64,7 +64,6 @@ import java.net.BindException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,7 +114,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     }
 
     /** @return property descriptor to value */
-    public Map<DomainProperty, String> getBatchProperties()
+    public Map<DomainProperty, String> getBatchProperties() throws ExperimentException
     {
         if (_uploadSetProperties == null)
         {
@@ -125,7 +124,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return Collections.unmodifiableMap(_uploadSetProperties);
     }
 
-    protected Map<DomainProperty, String> getPropertyMapFromRequest(List<? extends DomainProperty> columns)
+    protected Map<DomainProperty, String> getPropertyMapFromRequest(List<? extends DomainProperty> columns) throws ExperimentException
     {
         Map<DomainProperty, String> properties = new LinkedHashMap<>();
         Map<DomainProperty, File> additionalFiles = getAdditionalPostedFiles(columns);
@@ -235,7 +234,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return _uploadedData;
     }
 
-    public Map<DomainProperty, File> getAdditionalPostedFiles(List<? extends DomainProperty> pds)
+    public Map<DomainProperty, File> getAdditionalPostedFiles(List<? extends DomainProperty> pds) throws ExperimentException
     {
         if (_additionalFiles == null)
         {
@@ -256,7 +255,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     for (Map.Entry<String, File> entry : postedFiles.entrySet())
                         _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
                 }
-                catch (ExperimentException | IOException e)
+                catch (IOException e)
                 {
                     throw new RuntimeException(e);
                 }

@@ -288,7 +288,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             inputNameToValue.put(propName, propValue);
     }
 
-    private ModelAndView getBatchPropertiesView(FormType runForm, boolean errorReshow, BindException errors) throws ServletException
+    private ModelAndView getBatchPropertiesView(FormType runForm, boolean errorReshow, BindException errors) throws ServletException, ExperimentException
     {
         // Check if the user is trying to replace a run that's already been replaced
         if (runForm.getReRun() != null)
@@ -370,7 +370,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 "lsid", propertySet, errorReshow, RunStepHandler.NAME, newRunForm, errors);
     }
 
-    protected InsertView createBatchInsertView(FormType runForm, boolean reshow, BindException errors)
+    protected InsertView createBatchInsertView(FormType runForm, boolean reshow, BindException errors) throws ExperimentException
     {
         List<DomainProperty> propertySet = new ArrayList<>(runForm.getBatchProperties().keySet());
         return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
@@ -442,7 +442,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return resultsDomain == null || !resultsDomain.getProperties().isEmpty();
     }
 
-    protected void addHiddenBatchProperties(FormType newRunForm, InsertView insertView)
+    protected void addHiddenBatchProperties(FormType newRunForm, InsertView insertView) throws ExperimentException
     {
         addHiddenProperties(newRunForm.getBatchProperties(), insertView);
     }
@@ -689,7 +689,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     }
 
     @Nullable
-    protected ParticipantVisitResolverType getSelectedParticipantVisitResolverType(AssayProvider provider, AssayRunUploadForm<? extends AssayProvider> newRunForm)
+    protected ParticipantVisitResolverType getSelectedParticipantVisitResolverType(AssayProvider provider, AssayRunUploadForm<? extends AssayProvider> newRunForm) throws ExperimentException
     {
         String participantVisitResolverName = null;
         for (Map.Entry<DomainProperty, String> batchProperty : newRunForm.getBatchProperties().entrySet())
