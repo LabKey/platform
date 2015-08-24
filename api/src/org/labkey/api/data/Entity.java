@@ -143,14 +143,14 @@ public class Entity implements java.io.Serializable, Ownable
 
     public void setContainerId(String containerId)
     {
-        this.containerId = new GUID(containerId);
+        this.containerId = containerId == null ? null : new GUID(containerId);
     }
 
 
     // for Table layer
     public void setContainer(String containerId)
     {
-        this.containerId = new GUID(containerId);
+        setContainerId(containerId);
     }
 
     @Nullable

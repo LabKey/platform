@@ -84,7 +84,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             icon.append("\" alt=\"icon\"");
             icon.append("/>&nbsp;").append(PageFlowUtil.filter(displayName));
 
-            if (thumbnail && _map.isInlineImageFor(new File(filename)))
+            if (url != null && thumbnail && _map.isInlineImageFor(new File(filename)))
             {
                 StringBuilder thumbnailHtml = new StringBuilder();
                 thumbnailHtml.append("<img style=\"max-width:300px; height:auto;\" src=\"");

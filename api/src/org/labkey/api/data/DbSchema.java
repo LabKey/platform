@@ -172,6 +172,19 @@ public class DbSchema
         String metaDataName = schemaNameMap.get(schemaName);
 
         return type.createDbSchema(scope, null == metaDataName ? requestedSchemaName : metaDataName, module);
+//        Module module = type.getModule(requestedSchemaName);
+//
+//        if (null != module)
+//            requestedSchemaName = module.getDatabaseSchemaName(requestedSchemaName);
+//
+//        Map<String, String> schemaNameMap = SchemaNameCache.get().getSchemaNameMap(scope);
+//        String metaDataName = schemaNameMap.get(requestedSchemaName);
+//
+//        // TODO: mark this schema as not in the database
+//        if (null == metaDataName)
+//            return new DbSchema(requestedSchemaName, type, scope, new HashMap<String, String>());
+//
+//        return type.createDbSchema(scope, metaDataName, module);
     }
 
 

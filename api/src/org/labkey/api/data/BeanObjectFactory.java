@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.beans.PropertyDescriptor;
@@ -145,7 +146,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             }
             catch (IllegalAccessException | InvocationTargetException x)
             {
-                assert null == "unexpected exception";
+                throw new UnexpectedException(x);
             }
             catch (IllegalArgumentException x)
             {
