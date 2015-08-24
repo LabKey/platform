@@ -136,6 +136,11 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
+    public boolean hasURLExpression() {
+        return _column.hasURLExpression();
+    }
+
+    @Override
     public StringExpression compileExpression(ViewContext context)
     {
         return _column.compileExpression(context);
