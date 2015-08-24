@@ -26,7 +26,6 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AuthenticationManager.BaseSsoValidateAction;
-import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
