@@ -478,9 +478,12 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                         {
                             errors.append(error).append("\n");
                         }
+
+                        // Need to bail out inside of the loop because some errors may have left the DB connection in
+                        // an unusable state.
+                        if (errors.length() > 0)
+                            throw new AssayException(errors.toString());
                     }
-                    if (errors.length() > 0)
-                        throw new AssayException(errors.toString());
 
                     transaction.commit();
                     AssayManager.get().clearProtocolCache();

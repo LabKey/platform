@@ -294,6 +294,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 Integer datasetProtocolId = dataset.getProtocolId();
                 if (datasetProtocolId == null)
                 {
+                    dataset = dataset.createMutable();
                     dataset.setProtocolId(protocol.getRowId());
                     StudyManager.getInstance().updateDatasetDefinition(user, dataset, errors);
                 }
@@ -307,6 +308,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 // or the dataset data row won't have a link back to the assay data row
                 if (!keyPropertyName.equals(dataset.getKeyPropertyName()))
                 {
+                    dataset = dataset.createMutable();
                     dataset.setKeyPropertyName(keyPropertyName);
                     StudyManager.getInstance().updateDatasetDefinition(user, dataset, errors);
                 }
