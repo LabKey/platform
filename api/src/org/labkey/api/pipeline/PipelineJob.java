@@ -1303,7 +1303,14 @@ abstract public class PipelineJob extends Job implements Serializable
             if (message != null)
             {
                 sb.append(": ");
-                sb.append(message);
+                String stringMessage = message.toString();
+                // Limit the maximum line length
+                final int maxLength = 10000;
+                if (stringMessage.length() > maxLength)
+                {
+                    stringMessage = stringMessage.substring(0, maxLength) + "...";
+                }
+                sb.append(stringMessage);
             }
             sb.append(")");
             return sb.toString();

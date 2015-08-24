@@ -789,8 +789,10 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      * It might be nice to go one level lower in the parser
      * (pre conversion, missing value) but this is a quick way to
      * get all the DataLoaders to play with the newer ETL code
+     * @return null if there was an IOException trying to parse the input
      */
     @Override
+    @Nullable
     public DataIterator getDataIterator(final DataIteratorContext context)
     {
         setInferTypes(false);
