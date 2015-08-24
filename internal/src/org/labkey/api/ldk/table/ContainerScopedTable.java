@@ -270,14 +270,15 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
                         {
                             if (_context.getInsertOption() != QueryUpdateService.InsertOption.MERGE && keyManager.rowExists(c, pesudoPkVal))
                             {
-                                throw new ValidationException("A record is already present with value: " + pesudoPkVal);
+                                _context.getErrors().addRowError(new ValidationException("A record is already present with value: " + pesudoPkVal));
                             }
                         }
 
                         return pesudoPkVal;
                     }
 
-                    throw new ValidationException("Record is missing the keyfield");
+                    _context.getErrors().addRowError(new ValidationException("Record is missing the keyfield"));
+                    return null;
                 }
             });
 
