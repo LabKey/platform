@@ -3622,9 +3622,13 @@ public class AdminController extends SpringActionController
             navTrail.add(new NavTree("Install Modules"));
             navTrail.add(new NavTree("Set Defaults"));
         }
-        else
+        else if (ModuleLoader.getInstance().isUpgradeRequired() || ModuleLoader.getInstance().isUpgradeInProgress())
         {
             navTrail.add(new NavTree("Upgrade Modules"));
+        }
+        else
+        {
+            navTrail.add(new NavTree("Startup Modules"));
         }
         navTrail.add(new NavTree("Complete"));
         return navTrail;
