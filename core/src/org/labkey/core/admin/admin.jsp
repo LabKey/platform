@@ -32,6 +32,7 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.module.DefaultModule" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
@@ -41,20 +42,23 @@
 %>
 <table class="labkey-admin-console"><tr>
 <td>
-
     <table><%
     for (SettingsLinkType type : SettingsLinkType.values())
-    { %>
+    {
+        Collection<AdminLink> links = AdminConsole.getLinks(type);
+
+        if (!links.isEmpty())
+        { %>
 
     <tr><td colspan="2"><b><%=h(type.name())%></b></td></tr><%
-        for (AdminLink link : AdminConsole.getLinks(type))
+        for (AdminLink link : links)
         { %>
     <tr><td colspan="2"><%=textLink(link.getText(), link.getUrl())%></td></tr><%
         } %>
     <tr><td colspan="2">&nbsp;</td></tr><%
+        }
     } %>
     </table>
-
 </td>
 <td>
 
