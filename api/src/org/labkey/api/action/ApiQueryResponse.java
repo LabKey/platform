@@ -461,7 +461,7 @@ public class ApiQueryResponse implements ApiResponse
         //if the display column has a url, include that as another row property
         //with the name "<URL_COL_PREFIX><colname>"
         //Issue 23773: even for null urls include it so as not to cause ordering to change.
-        if (dc.hasURLExpression())
+        if (dc.includeURL())
         {
             String url = dc.renderURL(_ctx);
             row.put(URL_COL_PREFIX + colName, url);

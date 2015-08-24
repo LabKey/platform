@@ -124,8 +124,8 @@ public abstract class DisplayColumn extends RenderColumn
         return _urlExpression;
     }
 
-    public boolean hasURLExpression() {
-        return _urlExpression != null;
+    public boolean includeURL() {
+        return _urlExpression != null || _url != null;
     }
 
     public StringExpression compileExpression(ViewContext context)

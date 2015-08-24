@@ -136,8 +136,8 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public boolean hasURLExpression() {
-        return _column.hasURLExpression();
+    public boolean includeURL() {
+        return _column.includeURL();
     }
 
     @Override
