@@ -93,14 +93,6 @@ public class RedcapExport
     private Set<String> _mergedDatasets = new HashSet<>();
     private PipelineJob _job;
 
-    public enum LogLevel
-    {
-        INFO,
-        DEBUG,
-        WARN,
-        ERROR,
-    };
-
     public RedcapExport()
     {
     }
@@ -542,7 +534,7 @@ public class RedcapExport
                     else
                     {
                         ColumnInfo mvCol = findMultiValueColumn(entry.getKey());
-                        if (mvCol != null)
+                        if (mvCol != null && entry.getValue() != null)
                         {
                             String delim = ",";
                             String displayValue = parseMVDisplayValue(mvCol, entry.getKey(), entry.getValue().toString());
