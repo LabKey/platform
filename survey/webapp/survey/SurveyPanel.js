@@ -403,6 +403,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         window.location = successUrl + "&" + LABKEY.ActionURL.queryString(params);
                     }
                     else if (successUrl) {
+                        this.getForm().reset();
                         window.location = successUrl;
                     }
                 }

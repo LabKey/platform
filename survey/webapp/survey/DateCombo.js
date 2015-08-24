@@ -77,6 +77,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
         this.items = [{
             xtype   : 'combo',
             itemId  : 'monthCombo',
+            cls     : 'mpower-month-combo',
             emptyText : months[0].name,
             store : {
                 fields  : ['name', 'value'],
@@ -101,6 +102,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
         },{
             xtype   : 'combo',
             itemId  : 'dayCombo',
+            cls     : 'mpower-day-combo',
             store : {
                 fields  : ['name', 'value'],
                 data    : this.createDayStore('January')
@@ -127,6 +129,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
                 fields  : ['name', 'value'],
                 data    : years
             },
+            cls             : 'mpower-year-combo',
             submitValue     : false,
             valueField      : 'name',
             displayField    : 'name',

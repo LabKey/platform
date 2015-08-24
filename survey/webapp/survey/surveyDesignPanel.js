@@ -355,7 +355,7 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
             items   : [this.formPanel, this.configOptionsPanel]
         });
 
-        return this.formPanel;
+        //return this.formPanel;
     },
 
     generateSurveyQuestions : function(schemaName, queryName) {
