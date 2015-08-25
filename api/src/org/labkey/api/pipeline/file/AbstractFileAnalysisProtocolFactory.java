@@ -27,7 +27,7 @@ import java.io.*;
 import java.util.List;
 
 /**
- * <code>AbstractFileAnalysisProtocolFactory</code>
+ * Base class for protocol factories that are primarily focused on analyzing data files (as opposed to other types of resources)
  */
 abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFileAnalysisProtocol> extends PipelineProtocolFactory<T>
 {
@@ -36,7 +36,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     public static final String DEFAULT_PARAMETERS_NAME = "default";
 
     /**
-     * Get the file name used for MS2 search parameters in analysis directories.
+     * Get the file name used for parameter files in analysis directories.
      *
      * @return file name
      */

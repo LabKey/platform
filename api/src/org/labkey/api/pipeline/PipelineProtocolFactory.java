@@ -15,14 +15,16 @@
  */
 package org.labkey.api.pipeline;
 
-import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.apache.xmlbeans.XmlOptions;
+import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 /**
  * PipelineProtocolType class
@@ -76,11 +78,11 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
                     doc.getPipelineProtocolProps();
             String type = ppp.getType();
 
+            // Recognize very old files
             if (type.startsWith("org.fhcrc.cpas.ms2."))
             {
                 type = type.replace("org.fhcrc.cpas.ms2.", "org.labkey.ms2.");
             }
-
             if (type.startsWith("org.labkey.ms2.protocol."))
             {
                 type = type.replace("org.labkey.ms2.protocol.", "org.labkey.ms2.pipeline.");
@@ -140,13 +142,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         HashSet<String> setNames = new HashSet<>();
 
         // Add <protocol-name>.xml files
-        File[] files = getProtocolDir(root).listFiles(new FileFilter()
-        {
-            public boolean accept(File f)
-            {
-                return f.getName().endsWith(".xml") && !f.isDirectory();
-            }
-        });
+        File[] files = getProtocolDir(root).listFiles(f -> f.getName().endsWith(".xml") && !f.isDirectory());
         if (files != null)
         {
             for (File file : files)
@@ -159,12 +155,8 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         // Add all directories that already exist in the analysis root.
         if (dirData != null)
         {
-            files = new File(dirData, getName()).listFiles(new FileFilter() {
-                public boolean accept(File f)
-                {
-                    return f.isDirectory();
-                }
-            });
+            files = new File(dirData, getName()).listFiles(File::isDirectory);
+
             if (files != null)
             {
                 for (File file : files)
