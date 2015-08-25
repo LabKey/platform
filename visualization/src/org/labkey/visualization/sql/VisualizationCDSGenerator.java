@@ -331,12 +331,10 @@ public class VisualizationCDSGenerator
                 if (isEmpty(alias))
                     continue;
                 String columnName = vcol.getOriginalName();
-                Path queryPath = new Path(vcol.getSchemaName(), vcol.getQueryName());
 
-                if (!datasetTablesSet.contains(queryPath) || (
-                        !equalsIgnoreCase(columnName, containerColumnName) &&
-                        !equalsIgnoreCase(columnName, subjectColumnName) &&
-                        !equalsIgnoreCase(columnName, sequenceNumColumnName)))
+                if (!equalsIgnoreCase(columnName, containerColumnName)
+                    && !equalsIgnoreCase(columnName, subjectColumnName)
+                    && !equalsIgnoreCase(columnName, sequenceNumColumnName))
                 {
                     if (fullAliasList.add(alias))
                         columnAliases.add(vcol.toJSON());
@@ -528,12 +526,11 @@ public class VisualizationCDSGenerator
             List<Map<String,String>> metadata = getColumnAliases(q);
             Map<String,Map<String,String>> metaMap = new TreeMap<>();
             metadata.stream().forEach(map -> metaMap.put(StringUtils.defaultString(map.get("alias"),map.get("columnName")), map));
-            assertEquals(9, metaMap.size());
+            assertEquals(8, metaMap.size());
             assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Container"));
             assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#ParticipantId"));
             assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#SequenceNum"));
             assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Dataset"));
-            assertTrue(metaMap.containsKey("vis_junit_demographics_participantid"));
             assertTrue(metaMap.containsKey("vis_junit_flow_cellcount"));
             assertTrue(metaMap.containsKey("vis_junit_demographics_study"));
             assertTrue(metaMap.containsKey("vis_junit_demographics_gender"));
