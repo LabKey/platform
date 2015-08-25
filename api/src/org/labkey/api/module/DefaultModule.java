@@ -1197,6 +1197,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
             response.setContentType("text/html;charset=UTF-8");
             response.setHeader("Expires", "Sun, 01 Jan 2000 00:00:00 GMT");
+            response.setHeader("Cache-Control", "no-store");
+            response.setHeader("Pragma", "no-cache");
 
             HttpView.initForRequest(rootContext, request, response);
             assert rootContext == HttpView.currentContext();
