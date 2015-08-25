@@ -64,7 +64,7 @@ import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -159,7 +159,7 @@ public class PipelineController extends SpringActionController
         return p;
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o)
@@ -425,7 +425,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BrowseAction extends SimpleViewAction<PathForm>
     {
         public BrowseAction()
@@ -518,7 +518,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ActionsAction extends ApiAction<PipelineActionsForm>
     {
         public ApiResponse execute(PipelineActionsForm form, BindException errors) throws Exception
@@ -591,7 +591,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UpdatePipelineActionConfigAction extends MutatingApiAction<SaveOptionsForm>
     {
         public ApiResponse execute(SaveOptionsForm form, BindException errors) throws Exception
@@ -607,7 +607,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetPipelineActionConfigAction extends ApiAction
     {
         public ApiResponse execute(Object form, BindException errors) throws Exception
@@ -636,7 +636,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetPipelineFilePropertiesAction extends ApiAction
     {
         public ApiResponse execute(Object form, BindException errors) throws Exception
@@ -814,7 +814,7 @@ public class PipelineController extends SpringActionController
     /////////////////////////////////////////////////////////////////////////
     //  Email notifications
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UpdateEmailNotificationAction extends AbstractSetupAction<EmailNotificationForm>
     {
         protected SetupField getFormField()
@@ -1057,7 +1057,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ResetEmailNotificationAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -1068,7 +1068,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CompleteUserAction extends ApiAction<CompleteUserForm>
     {
         @Override
@@ -1163,7 +1163,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class CancelJobAction extends SimpleRedirectAction<StatusController.RowIdForm>
     {
         public ActionURL getRedirectURL(StatusController.RowIdForm form) throws Exception
@@ -1201,7 +1201,7 @@ public class PipelineController extends SpringActionController
 /////////////////////////////////////////////////////////////////////////////
 //  File download support
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends SimpleViewAction<PathForm>
     {
         public ModelAndView getView(PathForm form, BindException errors) throws Exception
@@ -1249,7 +1249,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetPipelineContainerAction extends ApiAction
     {
         public ApiResponse execute(Object form, BindException errors) throws Exception
@@ -1262,7 +1262,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ImportFolderFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
     {
         public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
@@ -1288,7 +1288,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     /**
      * Landing page for ImportFolderFromPipelineAction
      */
@@ -1471,7 +1471,7 @@ public class PipelineController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PipelineConfigurationAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()

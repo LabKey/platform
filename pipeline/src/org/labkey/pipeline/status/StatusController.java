@@ -26,7 +26,7 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -111,7 +111,7 @@ public class StatusController extends SpringActionController
         return c;
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -232,7 +232,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowListAction extends ShowListBaseAction<ReturnUrlWithErrorForm>
     {
         public void validateCommand(ReturnUrlWithErrorForm target, Errors errors)
@@ -246,7 +246,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowListRegionAction extends ApiAction<ReturnUrlForm>
     {
         public ApiResponse execute(ReturnUrlForm form, BindException errors) throws Exception
@@ -261,7 +261,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowPartRegionAction extends ApiAction<ReturnUrlForm>
     {
         public ApiResponse execute(ReturnUrlForm form, BindException errors) throws Exception
@@ -363,7 +363,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DetailsAction extends DetailsBaseAction<RowIdForm>
     {
         public void validateCommand(RowIdForm target, Errors errors)
@@ -405,7 +405,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowDataAction extends SimpleRedirectAction<RowIdForm>
     {
         public ActionURL getRedirectURL(RowIdForm form) throws Exception
@@ -427,7 +427,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowFolderAction extends SimpleRedirectAction<RowIdForm>
     {
         public ActionURL getRedirectURL(RowIdForm form) throws Exception
@@ -450,7 +450,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ProviderActionAction extends DetailsBaseAction<ProviderActionForm>
     {
         ActionURL _urlSuccess;
@@ -523,7 +523,7 @@ public class StatusController extends SpringActionController
                 .addParameter(ShowFileForm.Params.filename, filename);
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowFileAction extends SimpleStreamAction<ShowFileForm>
     {
         public void render(ShowFileForm form, BindException errors, PrintWriter out) throws Exception
@@ -649,7 +649,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class RunActionAction extends PerformStatusActionBase<ActionForm>
     {
         public boolean handlePost(ActionForm form, BindException errors) throws Exception
@@ -729,7 +729,7 @@ public class StatusController extends SpringActionController
     }
 
     // DeletePermission will be checked in PipelineStatusManager.deleteStatus()
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DeleteStatusAction extends FormViewAction<ConfirmDeleteStatusForm>
     {
         @Override
@@ -785,7 +785,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class CancelStatusAction extends PerformStatusActionBase
     {
         public void handleSelect(SelectStatusForm form) throws PipelineProvider.HandlerException
@@ -794,7 +794,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class CompleteStatusAction extends PerformStatusActionBase
     {
         public void handleSelect(SelectStatusForm form) throws PipelineProvider.HandlerException
@@ -804,7 +804,7 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresLogin
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class EscalateJobFailureAction extends SimpleViewAction<RowIdForm>
     {
         public ModelAndView getView(RowIdForm form, BindException errors) throws Exception
@@ -841,7 +841,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class EscalateAction extends ShowListBaseAction<EscalateMessageForm>
     {
         public void validateCommand(EscalateMessageForm target, Errors errors)

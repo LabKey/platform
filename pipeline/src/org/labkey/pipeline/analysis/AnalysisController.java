@@ -47,7 +47,7 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -93,7 +93,7 @@ public class AnalysisController extends SpringActionController
                 .addParameter(AnalyzeForm.Params.path, path);
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class AnalyzeAction extends SimpleViewAction<AnalyzeForm>
     {
         private TaskPipeline _taskPipeline;
@@ -182,7 +182,7 @@ public class AnalysisController extends SpringActionController
     /**
      * Called from LABKEY.Pipeline.startAnalysis()
      */
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class StartAnalysisAction extends AbstractAnalysisApiAction
     {
         protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory) throws IOException, PipelineValidationException
@@ -287,7 +287,7 @@ public class AnalysisController extends SpringActionController
     /**
      * Called from LABKEY.Pipeline.getFileStatus().
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetFileStatusAction extends AbstractAnalysisApiAction
     {
         protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory)
@@ -349,7 +349,7 @@ public class AnalysisController extends SpringActionController
     /**
      * Called from LABKEY.Pipeline.getProtocols().
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetSavedProtocolsAction extends AbstractAnalysisApiAction
     {
         protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory)
@@ -587,7 +587,7 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class FileNotificationAction extends ApiAction<Object>
     {
         @Override
@@ -624,7 +624,7 @@ public class AnalysisController extends SpringActionController
     /**
      * Used for debugging task registration.
      */
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class InternalListTasksAction extends SimpleViewAction<Object>
     {
         @Override
@@ -643,7 +643,7 @@ public class AnalysisController extends SpringActionController
     /**
      * Used for debugging pipeline registration.
      */
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class InternalListPipelinesAction extends SimpleViewAction<Object>
     {
         @Override
@@ -677,7 +677,7 @@ public class AnalysisController extends SpringActionController
     /**
      * Used for debugging task registration.
      */
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class InternalDetailsAction extends SimpleViewAction<TaskForm>
     {
         @Override
