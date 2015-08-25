@@ -70,7 +70,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
         }
 
         var years = [];
-        for (var year = this.startYear; year < this.endYear; year++){
+        for (var year = this.startYear; year <= this.endYear; year++){
             years.push({name : year, value : year});
         }
 
