@@ -663,7 +663,15 @@
 
             filter : function(dimName, range)
             {
-                return this.getDimension(dimName).filter(range);
+                // issue 24008: use filterFunction if filtering by an array of values
+                if (toString.call(range) === '[object Array]') {
+                    return this.getDimension(dimName).filterFunction(function(dimVal) {
+                        return range.indexOf(dimVal) > -1;
+                    });
+                }
+                else {
+                    return this.getDimension(dimName).filter(range);
+                }
             },
 
             /**
