@@ -29,7 +29,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
@@ -38,7 +38,7 @@ import org.springframework.validation.BindException;
  * User: kevink
  * Date: Feb 11, 2009
  */
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAction.AssayBatchDetailsForm>
 {
     public static class AssayBatchDetailsForm extends ProtocolIdForm

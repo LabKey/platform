@@ -33,7 +33,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
@@ -58,7 +58,7 @@ import java.util.Map;
  * Time: 4:52:21 PM
  */
 
-@RequiresPermissionClass(AdminPermission.class)
+@RequiresPermission(AdminPermission.class)
 public class SetDefaultValuesAction<FormType extends DomainIdForm> extends DefaultValuesAction<FormType>
 {
     private URLHelper _returnUrl;

@@ -17,7 +17,7 @@ package org.labkey.api.security.roles;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 
 import java.util.Set;
 

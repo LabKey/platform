@@ -18,7 +18,7 @@ package org.labkey.api.study.actions;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
@@ -35,7 +35,7 @@ import java.util.Map;
  * Date: 10/9/12
  */
 
-@RequiresPermissionClass(InsertPermission.class)
+@RequiresPermission(InsertPermission.class)
 public abstract class PlateBasedUploadWizardAction <FormType extends PlateUploadFormImpl<ProviderType>, ProviderType extends PlateBasedAssayProvider> extends UploadWizardAction<FormType, ProviderType>
 {
     @Override

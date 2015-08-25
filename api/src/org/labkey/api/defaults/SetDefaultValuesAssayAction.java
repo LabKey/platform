@@ -20,7 +20,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
 import org.labkey.api.study.actions.StudyPickerColumn;
 import org.labkey.api.study.assay.AbstractAssayProvider;
@@ -46,7 +46,7 @@ import java.util.Map;
  * Time: 4:20:14 PM
  */
 
-@RequiresPermissionClass(DesignAssayPermission.class)
+@RequiresPermission(DesignAssayPermission.class)
 public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefaultValuesAssayAction.AssayDomainIdForm>
 {
     private AssayProvider _provider;

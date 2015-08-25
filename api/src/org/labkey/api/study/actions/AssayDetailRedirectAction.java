@@ -15,7 +15,7 @@
  */
 package org.labkey.api.study.actions;
 
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.exp.LsidManager;
@@ -31,7 +31,7 @@ import org.springframework.web.servlet.ModelAndView;
  * Time: 1:47:38 PM
  */
 
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 public class AssayDetailRedirectAction extends SimpleRedirectAction<AssayDetailRedirectAction.AssayDetailsForm>
 {
     public static class AssayDetailsForm

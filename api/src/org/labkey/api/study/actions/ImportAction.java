@@ -19,7 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.permissions.DesignAssayPermission;
@@ -43,7 +43,7 @@ import java.util.Map;
  * Date: Dec 10, 2010
  * Time: 2:16:07 PM
  */
-@RequiresPermissionClass(DesignAssayPermission.class)
+@RequiresPermission(DesignAssayPermission.class)
 public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
 {
     public static class ImportForm extends ProtocolIdForm

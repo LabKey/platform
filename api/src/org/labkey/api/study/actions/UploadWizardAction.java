@@ -42,7 +42,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayDataCollector;
@@ -92,7 +92,7 @@ import java.util.Set;
 * Date: Jul 26, 2007
 * Time: 7:01:17 PM
 */
-@RequiresPermissionClass(InsertPermission.class)
+@RequiresPermission(InsertPermission.class)
 public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType>, ProviderType extends AssayProvider> extends BaseAssayAction<FormType>
 {
     protected ExpProtocol _protocol;

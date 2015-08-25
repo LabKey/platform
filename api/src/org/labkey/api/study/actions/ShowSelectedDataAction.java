@@ -18,7 +18,7 @@ package org.labkey.api.study.actions;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayUrls;
@@ -33,7 +33,7 @@ import java.util.Set;
  * User: jeckels
 * Date: Dec 30, 2008
 */
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataAction.ShowSelectedForm>
 {
     public static class ShowSelectedForm extends ProtocolIdForm

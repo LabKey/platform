@@ -33,7 +33,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
@@ -66,7 +66,7 @@ import java.util.Set;
 * Date: Jul 26, 2007
 * Time: 7:09:28 PM
 */
-@RequiresPermissionClass(InsertPermission.class)
+@RequiresPermission(InsertPermission.class)
 public class PublishStartAction extends BaseAssayAction<PublishStartAction.PublishForm>
 {
     private ExpProtocol _protocol;

@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -38,7 +38,7 @@ import org.springframework.web.servlet.ModelAndView;
  * User: kevink
  * Date: Feb 11, 2009
  */
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 public class AssayRunDetailsAction extends BaseAssayAction<AssayRunDetailsAction.AssayRunDetailsForm>
 {
     public static class AssayRunDetailsForm extends ProtocolIdForm

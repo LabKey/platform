@@ -25,7 +25,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -46,7 +46,7 @@ import java.util.Map;
  * User: jeckels
  * Date: Apr 13, 2009
  */
-@RequiresPermissionClass(InsertPermission.class)
+@RequiresPermission(InsertPermission.class)
 public class PipelineDataCollectorRedirectAction extends SimpleViewAction<PipelineDataCollectorRedirectAction.UploadRedirectForm>
 {
     public ModelAndView getView(UploadRedirectForm form, BindException errors) throws Exception

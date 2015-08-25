@@ -17,7 +17,7 @@
 package org.labkey.api.study.actions;
 
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.HelpTopic;
@@ -32,7 +32,7 @@ import org.springframework.web.servlet.ModelAndView;
  * Date: Jul 26, 2007
  * Time: 7:30:05 PM
  */
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 public class AssayBatchesAction extends BaseAssayAction<AssayRunsAction.AssayRunsForm>
 {
     private ExpProtocol _protocol;

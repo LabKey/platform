@@ -15,7 +15,7 @@
  */
 package org.labkey.api.study.actions;
 
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.view.ActionURL;
@@ -32,7 +32,7 @@ import java.util.Set;
  * User: jeckels
 * Date: Dec 30, 2008
 */
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 public class ShowSelectedRunsAction extends RedirectAction<ShowSelectedRunsAction.ShowSelectedForm>
 {
     public static class ShowSelectedForm extends ProtocolIdForm

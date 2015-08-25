@@ -91,7 +91,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -803,7 +802,7 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
 
         if (permissionsRequired.isEmpty() && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !adminConsoleAction && permissionsAnyOf.isEmpty())
         {
-            throw new ConfigurationException("@RequiresPermission, @RequiresPermissionClass, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
+            throw new ConfigurationException("@RequiresPermission, @RequiresPermission, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
         }
 
         // All permission checks have succeeded.  Now check for deprecated action.

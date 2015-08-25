@@ -16,14 +16,14 @@
 package org.labkey.api.defaults;
 
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 
 /*
 * User: Dave
 * Date: May 20, 2009
 * Time: 12:04:54 PM
 */
-@RequiresPermissionClass(AdminPermission.class)
+@RequiresPermission(AdminPermission.class)
 public class SetDefaultValuesDatasetAction extends SetDefaultValuesAction
 {
 }

@@ -26,7 +26,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -41,7 +41,7 @@ import java.util.Map;
 * Date: Jul 26, 2007
 * Time: 7:23:37 PM
 */
-@RequiresPermissionClass(InsertPermission.class)
+@RequiresPermission(InsertPermission.class)
 public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
 {
     ExpProtocol _protocol;

@@ -15,7 +15,7 @@
  */
 package org.labkey.api.defaults;
 
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.lists.permissions.DesignListPermission;
 
 /*
@@ -24,7 +24,7 @@ import org.labkey.api.lists.permissions.DesignListPermission;
 * Time: 12:04:03 PM
 */
 
-@RequiresPermissionClass(DesignListPermission.class)
+@RequiresPermission(DesignListPermission.class)
 public class SetDefaultValuesListAction extends SetDefaultValuesAction
 {
 }

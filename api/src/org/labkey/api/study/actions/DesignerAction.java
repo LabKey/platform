@@ -19,7 +19,7 @@ package org.labkey.api.study.actions;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -41,7 +41,7 @@ import java.util.Map;
 * Date: Jul 26, 2007
 * Time: 7:22:50 PM
 */
-@RequiresPermissionClass(DesignAssayPermission.class)
+@RequiresPermission(DesignAssayPermission.class)
 public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
 {
     public static class DesignerForm extends ProtocolIdForm

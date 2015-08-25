@@ -19,7 +19,7 @@ import org.labkey.api.action.RedirectAction;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.util.URLHelper;
@@ -34,7 +34,7 @@ import java.util.Set;
  * User: jeckels
  * Date: 8/24/12
  */
-@RequiresPermissionClass(InsertPermission.class)
+@RequiresPermission(InsertPermission.class)
 public class ReimportRedirectAction extends RedirectAction<ProtocolIdForm>
 {
     @Override
