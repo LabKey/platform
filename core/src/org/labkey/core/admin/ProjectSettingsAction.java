@@ -33,7 +33,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
@@ -81,7 +81,7 @@ import java.util.Map;
  */
 
 @ActionNames("projectSettings, lookAndFeelSettings")
-@RequiresPermissionClass(AdminPermission.class)
+@RequiresPermission(AdminPermission.class)
 public class ProjectSettingsAction extends FormViewAction<AdminController.ProjectSettingsForm>
 {
     public void checkPermissions() throws UnauthorizedException

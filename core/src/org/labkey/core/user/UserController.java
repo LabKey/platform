@@ -66,7 +66,7 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -349,7 +349,7 @@ public class UserController extends SpringActionController
     /**
      * This method represents the point of entry into the pageflow
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -567,7 +567,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)   // Root requires site admin; any other container requires PERM_ADMIN (see below)
+    @RequiresPermission(AdminPermission.class)   // Root requires site admin; any other container requires PERM_ADMIN (see below)
     public class ShowUsersAction extends QueryViewAction<ShowUsersForm, QueryView>
     {
         private static final String DATA_REGION_NAME = "Users";
@@ -711,7 +711,7 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ShowUserHistoryAction extends SimpleViewAction
     {
         @Override
@@ -1194,7 +1194,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UserAccessAction extends QueryViewAction<UserAccessForm, QueryView>
     {
         private boolean _showNavTrail;
@@ -1784,7 +1784,7 @@ public class UserController extends SpringActionController
     }
 
     @RequiresLogin
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetUsersAction extends ApiAction<GetUsersForm>
     {
         protected static final String PROP_USER_ID = "userId";
@@ -1906,7 +1906,7 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class GetImpersonationUsersAction extends ApiAction
     {
         @Override
@@ -1979,7 +1979,7 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class) @CSRF
+    @RequiresPermission(AdminPermission.class) @CSRF
     public class ImpersonateUserAction extends ImpersonateApiAction<ImpersonateUserForm>
     {
         @Override
@@ -2012,7 +2012,7 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class GetImpersonationGroupsAction extends ApiAction
     {
         @Override
@@ -2056,7 +2056,7 @@ public class UserController extends SpringActionController
 
     // TODO: Better instructions
     // TODO: Messages for no groups, no users
-    @RequiresPermissionClass(AdminPermission.class) @CSRF
+    @RequiresPermission(AdminPermission.class) @CSRF
     public class ImpersonateGroupAction extends ImpersonateApiAction<ImpersonateGroupForm>
     {
         @Override
@@ -2091,7 +2091,7 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class GetImpersonationRolesAction extends ApiAction
     {
         @Override
@@ -2133,7 +2133,7 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class) @CSRF
+    @RequiresPermission(AdminPermission.class) @CSRF
     public class ImpersonateRolesAction extends ImpersonateApiAction<ImpersonateRolesForm>
     {
         @Nullable

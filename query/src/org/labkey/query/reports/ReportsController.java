@@ -110,7 +110,7 @@ import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -341,7 +341,7 @@ public class ReportsController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "views and scripting", new ActionURL(ConfigureReportsAndScriptsAction.class, ContainerManager.getRoot()));
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>
     {
@@ -364,7 +364,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class ChartServiceAction extends GWTServiceAction
     {
@@ -374,7 +374,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class PlotChartAction extends SimpleViewAction<ChartDesignerBean>
     {
@@ -418,7 +418,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PlotChartApiAction extends ApiAction<ChartDesignerBean>
     {
         public ApiResponse execute(ChartDesignerBean form, BindException errors) throws Exception
@@ -480,7 +480,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DeleteReportAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -508,7 +508,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ConfigureReportsAndScriptsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -524,7 +524,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ScriptEnginesSummaryAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
@@ -583,7 +583,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ScriptEnginesSaveAction extends ExtFormAction<LabkeyScriptEngineManager.EngineDefinition>
     {
         @Override
@@ -634,7 +634,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ScriptEnginesDeleteAction extends ApiAction<LabkeyScriptEngineManager.EngineDefinition>
     {
         public ApiResponse execute(LabkeyScriptEngineManager.EngineDefinition def, BindException errors) throws Exception
@@ -659,7 +659,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class CreateSessionAction extends MutatingApiAction<CreateSessionForm>
     {
         public ApiResponse execute(CreateSessionForm form, BindException errors) throws Exception
@@ -702,7 +702,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DeleteSessionAction extends MutatingApiAction<DeleteSessionForm>
     {
         public ApiResponse execute(DeleteSessionForm form , BindException errors) throws Exception
@@ -829,7 +829,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class ExecuteAction extends MutatingApiAction<ExecuteScriptForm>
     {
@@ -986,7 +986,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class getSessionsAction extends MutatingApiAction
     {
         public static final String REPORT_SESSIONS = "reportSessions";
@@ -1054,7 +1054,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)  // Need insert AND developer (checked below)
+    @RequiresPermission(InsertPermission.class)  // Need insert AND developer (checked below)
     public class CreateScriptReportAction extends FormViewAction<ScriptReportBean>
     {
         private Report _report;
@@ -1103,7 +1103,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class ViewScriptReportAction extends ApiAction<ScriptReportBean>
     {
@@ -1181,7 +1181,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetBackgroundReportResultsAction extends ApiAction<ScriptReportBean>
     {
         @Override
@@ -1234,7 +1234,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class RunReportAction extends SimpleViewAction<ReportDesignBean>
     {
         Report _report;
@@ -1279,7 +1279,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DetailsAction extends SimpleViewAction<ReportDesignBean>
     {
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
@@ -1305,7 +1305,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ReportInfoAction extends SimpleViewAction<ReportDesignBean>
     {
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
@@ -1502,7 +1502,7 @@ public class ReportsController extends SpringActionController
     /**
      * Ajax action to start a pipeline-based R view.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class StartBackgroundRReportAction extends ApiAction<RReportBean>
     {
         public ApiResponse execute(RReportBean form, BindException errors) throws Exception
@@ -1540,7 +1540,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DownloadInputDataAction extends SimpleViewAction<RReportBean>
     {
         public ModelAndView getView(RReportBean form, BindException errors) throws Exception
@@ -1571,7 +1571,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class StreamFileAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1614,7 +1614,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends SimpleViewAction<AttachmentForm>
     {
         public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
@@ -1873,7 +1873,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public abstract class BaseAttachmentReportAction extends BaseReportAction<AttachmentReportForm, AttachmentReport>
     {
         @Override
@@ -1979,7 +1979,7 @@ public class ReportsController extends SpringActionController
 
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class CreateAttachmentReportAction extends BaseAttachmentReportAction
     {
         @Override
@@ -2004,7 +2004,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class UpdateAttachmentReportAction extends BaseAttachmentReportAction
     {
         @Override
@@ -2082,7 +2082,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DownloadReportFileAction extends SimpleViewAction<AttachmentReportForm>
     {
         public ModelAndView getView(AttachmentReportForm form, BindException errors) throws Exception
@@ -2149,7 +2149,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public abstract class BaseLinkReportAction extends BaseReportAction<LinkReportForm, LinkReport>
     {
         public ModelAndView getView(LinkReportForm form, boolean reshow, BindException errors) throws Exception
@@ -2219,7 +2219,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class CreateLinkReportAction extends BaseLinkReportAction
     {
         public NavTree appendNavTrail(NavTree root)
@@ -2228,7 +2228,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class UpdateLinkReportAction extends BaseLinkReportAction
     {
         @Override
@@ -2294,7 +2294,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class CreateQueryReportAction extends BaseReportAction<QueryReportForm, QueryReport>
     {
         public ModelAndView getView(QueryReportForm form, boolean reshow, BindException errors) throws Exception
@@ -2359,7 +2359,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ManageViewsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object form, BindException errors) throws Exception
@@ -2401,7 +2401,7 @@ public class ReportsController extends SpringActionController
         return form;
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class RenameReportAction extends FormViewAction<ReportDesignBean>
     {
         private String _newReportName;
@@ -2487,7 +2487,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ReportSectionsAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
@@ -2560,7 +2560,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class CrosstabExportAction extends SimpleViewAction<ReportDesignBean>
     {
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
@@ -2585,7 +2585,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ThumbnailAction extends BaseThumbnailAction<ThumbnailForm>
     {
         @Override
@@ -2633,7 +2633,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class RenderQueryReport extends SimpleViewAction<ReportDesignBean>
     {
@@ -2766,7 +2766,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BrowseDataAction extends ApiAction<BrowseDataForm>
     {
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
@@ -2983,7 +2983,7 @@ public class ReportsController extends SpringActionController
         return props;
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
     public class BrowseDataTreeAction extends ApiAction<BrowseDataForm>
     {
@@ -3303,7 +3303,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetCategoriesAction extends ApiAction<BrowseDataForm>
     {
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
@@ -3421,7 +3421,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SaveCategoriesAction extends MutatingApiAction<CategoriesForm>
     {
         public ApiResponse execute(CategoriesForm form, BindException errors) throws Exception
@@ -3448,7 +3448,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteCategoriesAction extends MutatingApiAction<CategoriesForm>
     {
         @Override
@@ -3532,7 +3532,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class EditViewAction extends MutatingApiAction<EditViewsForm>
     {
         private DataViewProvider _provider;
@@ -3623,7 +3623,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DeleteViewsAction extends MutatingApiAction<DeleteDataViewsForm>
     {
         @Override
@@ -3700,7 +3700,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetReportAction extends ApiAction<ReportForm>
     {
         @Override
@@ -3723,7 +3723,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ManageNotificationsAction extends SimpleViewAction<NotificationsForm>
     {
         public ModelAndView getView(NotificationsForm form, BindException errors) throws Exception
@@ -3769,7 +3769,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SaveCategoryNotificationsAction extends MutatingApiAction<SaveCategoryNotificationsForm>
     {
         @Override

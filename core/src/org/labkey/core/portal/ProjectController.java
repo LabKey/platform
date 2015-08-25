@@ -46,7 +46,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -278,7 +278,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class BeginAction extends SimpleViewAction<PageForm>
     {
@@ -445,7 +445,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @IgnoresTermsOfUse
     public class DownloadProjectIconAction extends ExportAction<Object>
     {
@@ -473,7 +473,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class HidePortalPageAction extends FormViewAction<CustomizePortletForm>
     {
         public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors) throws Exception
@@ -512,7 +512,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeletePortalPageAction extends FormViewAction<CustomizePortletForm>
     {
         public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors) throws Exception
@@ -554,7 +554,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class MoveWebPartAction extends FormViewAction<MovePortletForm>
     {
         public void validateCommand(MovePortletForm target, Errors errors)
@@ -586,7 +586,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class AddWebPartAction extends FormViewAction<AddWebPartForm>
     {
         WebPartFactory _desc = null;
@@ -691,7 +691,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @ApiVersion(10.2)
     public class DeleteWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
     {
@@ -706,7 +706,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @ApiVersion(10.2)
     public class MoveWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
     {
@@ -721,7 +721,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @ApiVersion(10.2)
     public class GetWebPartsAction extends ApiAction<CustomizePortletApiForm>
     {
@@ -830,7 +830,7 @@ public class ProjectController extends SpringActionController
         return true;
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteWebPartAction extends FormViewAction<CustomizePortletForm>
     {
         public void validateCommand(CustomizePortletForm target, Errors errors)
@@ -968,7 +968,7 @@ public class ProjectController extends SpringActionController
         }        
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @ApiVersion(11.3)
     public class CustomizeWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
     {
@@ -992,7 +992,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CustomizeWebPartAction extends FormViewAction<CustomizePortletForm>
     {
         Portal.WebPart _webPart;
@@ -1217,7 +1217,7 @@ public class ProjectController extends SpringActionController
     // Something to think about: This forces all web parts that want to use GetWebPartAction as the method of
     // being served up to be readable in the current container. Might be worth delegating permissions to the
     // webparts and defaulting to a state of ReadPermission.
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class GetWebPartAction extends ApiAction<GetWebPartForm>
     {
@@ -1542,7 +1542,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SetWebPartPermissionsAction extends ApiAction<WebPartPermissionsForm>
     {
         @Override
@@ -1655,7 +1655,7 @@ public class ProjectController extends SpringActionController
     }
 
     // Only needed for the Combined Navigation Experimental Feature
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class getFolderNavigationAction extends ApiAction<GetWebPartForm>
     {
         @Override

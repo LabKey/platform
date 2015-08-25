@@ -47,7 +47,7 @@ import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFormatException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -175,7 +175,7 @@ public class PropertyController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PropertyServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -184,7 +184,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CreateDomainAction extends ApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm getForm, BindException errors) throws Exception
@@ -215,7 +215,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetDomainAction extends ApiAction<GetForm>
     {
         public ApiResponse execute(GetForm form, BindException errors) throws Exception
@@ -227,7 +227,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SaveDomainAction extends ApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm getForm, BindException errors) throws Exception
@@ -254,7 +254,7 @@ public class PropertyController extends SpringActionController
      * Stores a file sent by the client in a temp file and puts it in the session
      * for later use by gwt services
      */
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UploadFileForInferencingAction extends AbstractFileUploadAction<AbstractFileUploadAction.FileUploadForm>
     {
         private static final String SESSION_ATTR_NAME = "org.labkey.domain.tempFile";
@@ -311,7 +311,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class InferPropertiesAction extends ExportAction<InferForm>
     {
         public void export(InferForm inferForm, HttpServletResponse response, BindException errors) throws Exception

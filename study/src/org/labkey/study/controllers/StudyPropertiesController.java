@@ -24,7 +24,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -61,7 +61,7 @@ public class StudyPropertiesController extends BaseStudyController
     {
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UpdateAction extends FormViewAction<StudyProperties>
     {
         public ModelAndView getView(StudyProperties studyPropertiesForm, boolean reshow, BindException errors) throws Exception

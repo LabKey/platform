@@ -17,7 +17,7 @@ package org.labkey.study.controllers.specimen;
 
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
@@ -31,7 +31,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm>
 {
     private Study _study;

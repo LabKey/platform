@@ -25,7 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.DatasetTable;
@@ -43,7 +43,7 @@ import java.util.*;
  * This class is used by the schema explorer query tree only
  */
 
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 @Action(ActionType.SelectMetaData.class)
 public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction.Form>
 {

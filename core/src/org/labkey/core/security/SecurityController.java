@@ -282,7 +282,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @ActionNames("permissions,project")
     public class PermissionsAction extends SimpleViewAction<PermissionsForm>
     {
@@ -397,7 +397,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class) @CSRF
+    @RequiresPermission(AdminPermission.class) @CSRF
     public class StandardDeleteGroupAction extends FormHandlerAction<GroupForm>
     {
         public void validateCommand(GroupForm form, Errors errors) {}
@@ -529,7 +529,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UpdateMembersAction extends SimpleViewAction<UpdateMembersForm>
     {
         private Group _group;
@@ -848,7 +848,7 @@ public class SecurityController extends SpringActionController
         return view;
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class GroupAction extends SimpleViewAction<GroupForm>
     {
         private Group _group;
@@ -909,7 +909,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CompleteMemberAction extends ApiAction<CompleteMemberForm>
     {
         @Override
@@ -948,7 +948,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CompleteUserAction extends ApiAction<CompleteUserForm>
     {
         @Override
@@ -966,7 +966,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class GroupExportAction extends ExportAction<GroupForm>
     {
         public void export(GroupForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -1033,7 +1033,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class GroupPermissionAction extends SimpleViewAction<GroupAccessForm>
     {
         private Group _requestedGroup;
@@ -1150,7 +1150,7 @@ public class SecurityController extends SpringActionController
         toInherited,
     }
    
-    @RequiresPermissionClass(AdminPermission.class) @CSRF
+    @RequiresPermission(AdminPermission.class) @CSRF
     public class UpdatePermissionsAction extends FormHandlerAction
     {
         public void validateCommand(Object target, Errors errors) {}
@@ -1532,7 +1532,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ShowRegistrationEmailAction extends AbstractEmailAction
     {
         protected SecurityMessage createMessage(EmailForm form) throws Exception
@@ -1694,7 +1694,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class GroupDiagramAction extends ApiAction<GroupDiagramForm>
     {
         @Override
@@ -1767,7 +1767,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class FolderAccessAction extends SimpleViewAction<FolderAccessForm>
     {
         @Override

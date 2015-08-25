@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.User;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.HelpTopic;
@@ -71,7 +71,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -100,7 +100,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PlateTemplateListAction extends SimpleViewAction<ReturnUrlForm>
     {
         public ModelAndView getView(ReturnUrlForm plateTemplateListForm, BindException errors) throws Exception
@@ -117,7 +117,7 @@ public class PlateController extends SpringActionController
         }           
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DesignerServiceAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -148,7 +148,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PlateDetailsAction extends SimpleViewAction<RowIdForm>
     {
         public ModelAndView getView(RowIdForm form, BindException errors) throws Exception

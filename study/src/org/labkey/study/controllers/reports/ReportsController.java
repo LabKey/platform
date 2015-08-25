@@ -55,7 +55,7 @@ import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -137,7 +137,7 @@ public class ReportsController extends BaseStudyController
     /**
      * This method represents the point of entry into the pageflow
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         private Study _study;
@@ -158,7 +158,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class DeleteReportAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -188,7 +188,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteCustomQueryAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -220,7 +220,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class EnrollmentReportAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -244,7 +244,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ConfigureEnrollmentReportAction extends FormViewAction<ColumnPickerForm>
     {
         public ModelAndView getView(ColumnPickerForm form, boolean reshow, BindException errors) throws Exception
@@ -299,7 +299,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class RenderConfigureEnrollmentReportAction extends ConfigureEnrollmentReportAction
     {
         public ModelAndView getView(ColumnPickerForm form, boolean reshow, BindException errors) throws Exception
@@ -308,7 +308,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ExternalReportAction extends FormViewAction<ExternalReportForm>
     {
         public ModelAndView getView(ExternalReportForm form, boolean reshow, BindException errors) throws Exception
@@ -362,7 +362,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class StreamFileAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -389,7 +389,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @Deprecated // there should no longer be any UI that refers to this action
     public class ConvertQueryToReportAction extends ApiAction<SaveReportViewForm>
     {
@@ -420,7 +420,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresLogin
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     /**
      * Action for non-query based views (static, xls export, advanced)
      */
@@ -465,7 +465,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresLogin
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SaveReportViewAction extends FormViewAction<SaveReportViewForm>
     {
         int _savedReportId = -1;
@@ -528,7 +528,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowReportAction extends SimpleViewAction<ShowReportForm>
     {
         public ModelAndView getView(ShowReportForm form, BindException errors) throws Exception
@@ -638,7 +638,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class ParticipantCrosstabAction extends FormViewAction<CrosstabDesignBean>
     {
@@ -757,7 +757,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ExportExcelConfigureAction extends SimpleViewAction
     {
 
@@ -774,7 +774,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ExportExcelAction extends SimpleViewAction<ExportForm>
     {
         public ModelAndView getView(ExportForm form, BindException errors) throws Exception
@@ -808,7 +808,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CreateQueryReportAction extends SimpleViewAction<QueryReportForm>
     {
         public ModelAndView getView(QueryReportForm form, BindException errors) throws Exception
@@ -1425,7 +1425,7 @@ public class ReportsController extends BaseStudyController
     }
 */
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>
     {
         int _datasetId = 0;
@@ -1466,7 +1466,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ChartServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -1475,7 +1475,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PlotChartAction extends SimpleViewAction<PlotForm>
     {
         public ModelAndView getView(PlotForm form, BindException errors) throws Exception
@@ -1540,7 +1540,7 @@ public class ReportsController extends BaseStudyController
         return view;
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class RunRReportAction extends SimpleViewAction<RReportBean>
     {
         protected Report _report;
@@ -1738,7 +1738,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresLogin
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ParticipantReportAction extends SimpleViewAction<ParticipantReportForm>
     {
         public ModelAndView getView(ParticipantReportForm form, BindException errors) throws Exception
@@ -1778,7 +1778,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresLogin
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SaveParticipantReportAction extends ApiAction<ParticipantReportForm>
     {
         @Override

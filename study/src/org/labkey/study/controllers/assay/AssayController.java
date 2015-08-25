@@ -65,7 +65,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -179,7 +179,7 @@ public class AssayController extends SpringActionController
     /**
      * This method represents the point of entry into the pageflow
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends BaseAssayAction<ProtocolIdForm>
     {
         public ModelAndView getView(ProtocolIdForm o, BindException errors) throws Exception
@@ -240,7 +240,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public static class AssayListAction extends ApiAction<AssayListForm>
     {
         public ApiResponse execute(AssayListForm form, BindException errors) throws Exception
@@ -396,7 +396,7 @@ public class AssayController extends SpringActionController
         return propertyList;
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ChooseCopyDestinationAction extends BaseAssayAction<ProtocolIdForm>
     {
         private ExpProtocol _protocol;
@@ -443,7 +443,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SummaryRedirectAction extends BaseAssayAction<ProtocolIdForm>
     {
         ExpProtocol _protocol;
@@ -459,7 +459,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class AssayBeginAction extends BaseAssayAction<ProtocolIdForm>
     {
         ExpProtocol _protocol;
@@ -545,7 +545,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DesignAssayPermission.class)
+    @RequiresPermission(DesignAssayPermission.class)
     public class ChooseAssayTypeAction extends FormViewAction<CreateAssayForm>
     {
         Container createIn;
@@ -588,7 +588,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DesignAssayPermission.class)
+    @RequiresPermission(DesignAssayPermission.class)
     public class ServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -597,7 +597,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PublishHistoryAction extends BaseAssayAction<PublishHistoryForm>
     {
         private ExpProtocol _protocol;
@@ -644,7 +644,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class AssayFileDuplicateCheckAction extends ApiAction<SimpleApiJsonForm>
     {
         @Override
@@ -704,7 +704,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class AssayFileUploadAction extends AbstractFileUploadAction<AssayFileUploadForm>
     {
         public AssayFileUploadAction()
@@ -796,7 +796,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class ModuleAssayUploadAction extends BaseAssayAction<AssayRunUploadForm>
     {
         private ExpProtocol _protocol;
@@ -828,7 +828,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class DownloadSampleQCDataAction extends SimpleViewAction<ProtocolIdForm>
     {
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
@@ -1125,7 +1125,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DesignAssayPermission.class)
+    @RequiresPermission(DesignAssayPermission.class)
     public class AssayImportServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -1134,7 +1134,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowUploadJobsAction extends BaseAssayAction<ProtocolIdForm>
     {
         private ExpProtocol _protocol;
@@ -1243,7 +1243,7 @@ public class AssayController extends SpringActionController
      * This is different from ExperimentController$SetFlagAction since Result Rows are not ExpObjects,
      * and we store flag directly in the materialized table
      */
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class SetResultFlagAction extends MutatingApiAction<SetResultFlagForm>
     {
         @Override

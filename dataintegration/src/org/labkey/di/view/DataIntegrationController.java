@@ -29,7 +29,7 @@ import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.di.DataIntegrationUrls;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.pipeline.PipelineStatusUrls;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -75,7 +75,7 @@ public class DataIntegrationController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         @Override
@@ -94,7 +94,7 @@ public class DataIntegrationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class viewJobsAction extends SimpleViewAction
     {
         @Override
@@ -111,7 +111,7 @@ public class DataIntegrationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class viewTransformHistoryAction extends SimpleViewAction<TransformViewForm>
     {
         private String _displayName;
@@ -154,7 +154,7 @@ public class DataIntegrationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class viewTransformDetailsAction extends viewTransformHistoryAction
     {
         @Override
@@ -243,7 +243,7 @@ public class DataIntegrationController extends SpringActionController
         return TransformManager.get().getDescriptor(form.getTransformId());
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UpdateTransformConfigurationAction extends MutatingApiAction<TransformConfigurationForm>
     {
         @Override
@@ -307,7 +307,7 @@ public class DataIntegrationController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class RunTransformAction extends MutatingApiAction<TransformConfigurationForm>
     {
         @Override
@@ -349,7 +349,7 @@ public class DataIntegrationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ResetTransformStateAction extends MutatingApiAction<TransformConfigurationForm>
     {
         @Override
@@ -394,7 +394,7 @@ public class DataIntegrationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class TruncateTransformStateAction extends ResetTransformStateAction
 //    public class TruncateTransformStateAction extends MutatingApiAction<TransformConfigurationForm>
     {

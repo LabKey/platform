@@ -309,7 +309,7 @@ public class WikiController extends SpringActionController
     /**
      * This method represents the point of entry into the pageflow
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         @SuppressWarnings("UnusedDeclaration")
@@ -365,7 +365,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class) //will test explicitly below
+    @RequiresPermission(ReadPermission.class) //will test explicitly below
     public class DeleteAction extends ConfirmAction<WikiNameForm>
     {
         private Wiki _wiki = null;
@@ -455,7 +455,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) //will test explicitly below
+    @RequiresPermission(ReadPermission.class) //will test explicitly below
     public class ManageAction extends FormViewAction<WikiManageForm>
     {
         private Wiki _wiki = null;
@@ -696,7 +696,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends AttachmentAction
     {
         public ModelAndView getAttachmentView(final AttachmentForm form, final Wiki wiki) throws Exception
@@ -711,7 +711,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PrintAllAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -733,7 +733,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PrintBranchAction extends SimpleViewAction<WikiNameForm>
     {
         private Wiki _rootWiki;
@@ -778,7 +778,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PrintRawAction extends SimpleViewAction<WikiNameForm>
     {
         private HString _name;
@@ -808,7 +808,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PrintAllRawAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -954,7 +954,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CopyWikiAction extends FormViewAction<CopyWikiForm>
     {
         public ModelAndView getView(CopyWikiForm copyWikiForm, boolean reshow, BindException errors) throws Exception
@@ -1039,7 +1039,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CopySinglePageAction extends SimpleRedirectAction<CopyWikiForm>
     {
         @Override
@@ -1077,7 +1077,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CopyWikiLocationAction extends SimpleViewAction<CopyWikiForm>
     {
         public ModelAndView getView(CopyWikiForm form, BindException errors) throws Exception
@@ -1129,7 +1129,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SourceAction extends PageAction
     {
         public SourceAction()
@@ -1140,7 +1140,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PageAction extends SimpleViewAction<WikiNameForm>
     {
         boolean _source = false;
@@ -1285,7 +1285,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class VersionAction extends SimpleViewAction<WikiNameForm>
     {
         private Wiki _wiki = null;
@@ -1401,7 +1401,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class CompareVersionsAction extends SimpleViewAction<CompareForm>
     {
         private Wiki _wiki = null;
@@ -1515,7 +1515,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class) //requires update or update_own; will check below
+    @RequiresPermission(ReadPermission.class) //requires update or update_own; will check below
     public class VersionsAction extends SimpleViewAction<WikiNameForm>
     {
         Wiki _wiki;
@@ -1594,7 +1594,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class) //will check in code below
+    @RequiresPermission(ReadPermission.class) //will check in code below
     public class MakeCurrentAction extends FormViewAction<WikiNameForm>
     {
         Wiki _wiki;
@@ -1906,7 +1906,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetPagesAction extends ApiAction<ContainerForm>
     {
         public ApiResponse execute(ContainerForm form, BindException errors) throws Exception
@@ -2020,7 +2020,7 @@ public class WikiController extends SpringActionController
     }
 
     @ActionNames("edit, editWiki")
-    @RequiresPermissionClass(ReadPermission.class) //will check below
+    @RequiresPermission(ReadPermission.class) //will check below
     public class EditWikiAction extends SimpleViewAction<EditWikiForm>
     {
         private WikiVersion _wikiVer = null;
@@ -2261,7 +2261,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) //will check below
+    @RequiresPermission(ReadPermission.class) //will check below
     public class SaveWikiAction extends ExtFormAction<SaveWikiForm>
     {
         public final static String PROP_DEFAULT_FORMAT = "defaultFormat";
@@ -2483,7 +2483,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class AttachFilesAction extends ApiAction<AttachFilesForm>
     {
         @SuppressWarnings({"UnusedDeclaration"})
@@ -2646,7 +2646,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetWikiTocAction extends ApiAction<GetWikiTocForm>
     {
         public ApiResponse execute(GetWikiTocForm form, BindException errors) throws Exception
@@ -2826,7 +2826,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BackLinksAction extends SimpleViewAction<Object>
     {
         @Override

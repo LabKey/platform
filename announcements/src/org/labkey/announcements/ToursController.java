@@ -29,7 +29,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -51,7 +51,7 @@ public class ToursController extends SpringActionController
     }
 
     // Anyone with read permission can attempt to view the list.  ToursTable will do further permission checking.
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @SuppressWarnings("UnusedDeclaration")
     public class BeginAction extends SimpleViewAction<QueryForm>
     {
@@ -85,7 +85,7 @@ public class ToursController extends SpringActionController
     }
 
     @ActionNames("edit, editTour")
-    @RequiresPermissionClass(ReadPermission.class) //will check below
+    @RequiresPermission(ReadPermission.class) //will check below
     public class EditTourAction extends SimpleViewAction<EditTourForm>
     {
         @Override
@@ -111,7 +111,7 @@ public class ToursController extends SpringActionController
     }
 
     @ActionNames("tours, saveTour")
-    @RequiresPermissionClass(ReadPermission.class) //will check below
+    @RequiresPermission(ReadPermission.class) //will check below
     public class SaveTourAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
@@ -166,7 +166,7 @@ public class ToursController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetTourAction extends MutatingApiAction<SimpleApiJsonForm>
     {
 

@@ -23,7 +23,7 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.Pair;
 import org.labkey.query.ValidateQueriesVisitor;
@@ -35,7 +35,7 @@ import org.springframework.validation.BindException;
  * 
  * Validates all queries.
  */
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 @Action(ActionType.SelectMetaData.class)
 public class ValidateQueriesAction extends ApiAction
 {

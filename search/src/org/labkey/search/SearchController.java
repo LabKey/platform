@@ -41,7 +41,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
@@ -117,7 +117,7 @@ public class SearchController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -708,7 +708,7 @@ public class SearchController extends SpringActionController
 
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class JsonAction extends ApiAction<SearchForm>
     {
         @Override
@@ -775,7 +775,7 @@ public class SearchController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TestJson extends SimpleViewAction<Object>
     {
         @Override
@@ -930,7 +930,7 @@ public class SearchController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SearchAction extends AbstractSearchAction
     {
         private String _category = null;
@@ -1000,7 +1000,7 @@ public class SearchController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SearchExternalAction extends AbstractSearchAction
     {
         String _description;
@@ -1098,7 +1098,7 @@ public class SearchController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class CommentAction extends FormHandlerAction<SearchForm>
     {
         @Override

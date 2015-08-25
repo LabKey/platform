@@ -57,7 +57,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -108,7 +108,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         return new ActionURL(UpdateSurveyAction.class, container).addParameter("surveyDesignId", surveyDesignId);
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class CreateSurveyTemplateAction extends ApiAction<SurveyTemplateForm>
     {
         @Override
@@ -151,7 +151,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) // readpermissions because this action can be used to see the read-only view of a submitted request
+    @RequiresPermission(ReadPermission.class) // readpermissions because this action can be used to see the read-only view of a submitted request
     public class UpdateSurveyAction extends SimpleViewAction<SurveyForm>
     {
         private String _title = null;
@@ -209,7 +209,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class SurveyDesignAction extends SimpleViewAction<SurveyDesignForm>
     {
         private String _title = "Create Survey Design";
@@ -316,7 +316,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class SaveSurveyTemplateAction extends ApiAction<SurveyDesignForm>
     {
         @Override
@@ -507,7 +507,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         return survey;
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetSurveyTemplateAction extends ApiAction<SurveyDesignForm>
     {
         @Override
@@ -531,7 +531,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
    }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class UpdateSurveyResponseAction extends ApiAction<SurveyResponseForm>
     {
         @Override
@@ -742,7 +742,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         return Collections.emptyMap();
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetSurveyResponseAction extends ApiAction<SurveyForm>
     {
         @Override
@@ -857,7 +857,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
      public class UpdateSurveyResponseAttachmentsAction extends ApiAction<SurveyAttachmentForm>
     {
         @Override
@@ -943,7 +943,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteSurveysAction extends FormHandlerAction<QueryForm>
     {
         private ActionURL _returnURL;
@@ -980,7 +980,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteSurveyDesignsAction extends FormHandlerAction<QueryForm>
     {
         private ActionURL _returnURL;
@@ -1017,7 +1017,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetValidDesignQueries extends ApiAction<QueryForm>
     {
         @Override

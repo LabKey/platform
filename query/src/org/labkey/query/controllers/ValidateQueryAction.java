@@ -26,7 +26,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.query.persist.QueryManager;
 import org.springframework.validation.BindException;
@@ -38,7 +38,7 @@ import org.springframework.validation.Errors;
  * Time: 5:17:26 PM
  */
 
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 @Action(ActionType.SelectMetaData.class)
 public class ValidateQueryAction extends ApiAction<ValidateQueryAction.ValidateQueryForm>
 {

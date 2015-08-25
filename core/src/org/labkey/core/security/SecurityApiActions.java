@@ -35,7 +35,7 @@ import org.labkey.api.security.InvalidGroupMembershipException;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurableResource;
@@ -103,7 +103,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @RequiresLogin
     public static class GetGroupPermsAction extends ApiAction<GetGroupPermsForm>
     {
@@ -251,7 +251,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public static class GetUserPermsAction extends ApiAction<GetUserPermsForm>
     {
         public ApiResponse execute(GetUserPermsForm form, BindException errors) throws Exception
@@ -376,7 +376,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public static class GetGroupsForCurrentUserAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
@@ -424,7 +424,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public static class GetRolesAction extends ApiAction
     {
         private Set<Permission> _allPermissions = new HashSet<>();
@@ -517,7 +517,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public static class GetSecurableResourcesAction extends ApiAction<GetSecurableResourcesForm>
     {
         private boolean _includeSubfolders = false;
@@ -617,7 +617,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class GetPolicyAction extends ApiAction<PolicyIdForm>
     {
         public ApiResponse execute(PolicyIdForm form, BindException errors) throws Exception
@@ -720,7 +720,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @CSRF
     public static class SavePolicyAction extends MutatingApiAction<SavePolicyForm>
     {
@@ -878,7 +878,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @CSRF
     public static class DeletePolicyAction extends MutatingApiAction<PolicyIdForm>
     {
@@ -955,7 +955,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @CSRF
     public static class CreateGroupAction extends MutatingApiAction<NameForm>
     {
@@ -985,7 +985,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @CSRF
     public static class DeleteGroupAction extends MutatingApiAction<IdForm>
     {
@@ -1071,7 +1071,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @CSRF
     public static class RenameGroupAction extends FormApiAction<RenameForm>
     {
@@ -1226,7 +1226,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class AddGroupMemberAction extends BaseGroupMemberAction
     {
         public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
@@ -1249,7 +1249,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class RemoveGroupMemberAction extends BaseGroupMemberAction
     {
         public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
@@ -1297,7 +1297,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @CSRF
     public static class CreateNewUserAction extends MutatingApiAction<CreateNewUserForm>
     {

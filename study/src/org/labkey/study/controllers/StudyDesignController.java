@@ -22,7 +22,7 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -68,7 +68,7 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @ActionNames("manageAssaySchedule, manageAssaySpecimen")
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ManageAssayScheduleAction extends SimpleViewAction<AssayScheduleForm>
     {
         public ModelAndView getView(AssayScheduleForm form, BindException errors) throws Exception
@@ -100,7 +100,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ManageStudyProductsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -117,7 +117,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ManageTreatmentsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -134,7 +134,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetStudyProducts extends ApiAction<GetStudyProductsForm>
     {
         private StudyImpl _study;
@@ -204,7 +204,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetStudyTreatments extends ApiAction<Object>
     {
         private StudyImpl _study;
@@ -255,7 +255,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetStudyTreatmentSchedule extends ApiAction<Object>
     {
         private StudyImpl _study;
@@ -292,7 +292,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteTreatmentAction extends MutatingApiAction<IdForm>
     {
         @Override
@@ -307,7 +307,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteStudyProductAction extends MutatingApiAction<IdForm>
     {
         @Override
@@ -322,7 +322,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class UpdateStudyTreatmentScheduleAction extends MutatingApiAction<StudyTreatmentSchedule>
     {
         @Override
@@ -407,7 +407,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteCohortAction extends MutatingApiAction<IdForm>
     {
         @Override
@@ -437,7 +437,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class CreateVisitAction extends MutatingApiAction<VisitForm>
     {
         @Override
@@ -475,7 +475,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class UpdateAssayPlanAction extends MutatingApiAction<AssayPlanForm>
     {
         @Override

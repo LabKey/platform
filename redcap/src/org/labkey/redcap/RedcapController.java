@@ -27,7 +27,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.security.Encryption;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
@@ -61,7 +61,7 @@ public class RedcapController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ConfigureAction extends SimpleViewAction<RedcapManager.RedcapSettings>
     {
         @Override
@@ -86,7 +86,7 @@ public class RedcapController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SaveRedcapConfig extends ApiAction<RedcapManager.RedcapSettings>
     {
         @Override
@@ -133,7 +133,7 @@ public class RedcapController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ReloadRedcap extends ApiAction<RedcapManager.RedcapSettings>
     {
         @Override

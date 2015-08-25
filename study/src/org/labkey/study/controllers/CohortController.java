@@ -29,7 +29,7 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
@@ -75,7 +75,7 @@ public class CohortController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteCohortAction extends SimpleRedirectAction<CohortIdForm>
     {
         public ActionURL getRedirectURL(CohortIdForm form) throws Exception
@@ -95,7 +95,7 @@ public class CohortController extends BaseStudyController
         public int getRowId() {return rowId;}
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteUnusedCohortsAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object form) throws Exception
@@ -111,7 +111,7 @@ public class CohortController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageCohortsAction extends FormViewAction<ManageCohortsForm>
     {
         public ModelAndView getView(ManageCohortsForm form, boolean reshow, BindException errors) throws Exception
@@ -458,7 +458,7 @@ public class CohortController extends BaseStudyController
         public void setRowId(int rowId) {this.rowId = rowId;}
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class InsertAction extends InsertUpdateAction
     {
         protected boolean isInsert()
@@ -473,7 +473,7 @@ public class CohortController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UpdateAction extends InsertAction
     {
         protected boolean isInsert()

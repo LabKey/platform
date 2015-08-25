@@ -29,7 +29,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Encryption;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
@@ -58,7 +58,7 @@ public class FreezerProController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ConfigureAction extends SimpleViewAction<FreezerProConfig>
     {
         @Override
@@ -98,7 +98,7 @@ public class FreezerProController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SaveFreezerProConfig extends ApiAction<FreezerProConfig>
     {
         @Override
@@ -151,7 +151,7 @@ public class FreezerProController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class TestFreezerProConfig extends ApiAction<FreezerProConfig>
     {
         @Override
@@ -177,7 +177,7 @@ public class FreezerProController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ReloadFreezerPro extends ApiAction<FreezerProConfig>
     {
         @Override

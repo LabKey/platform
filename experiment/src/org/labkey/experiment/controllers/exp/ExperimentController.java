@@ -117,7 +117,7 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -258,7 +258,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @ActionNames("begin,gridView")
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends ShowRunsAction
     {
         public VBox getView(Object o, BindException errors) throws Exception
@@ -280,7 +280,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowRunsAction extends SimpleViewAction
     {
         public VBox getView(Object o, BindException errors) throws Exception
@@ -303,7 +303,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) @ActionNames("showRunGroups, showExperiments")
+    @RequiresPermission(ReadPermission.class) @ActionNames("showRunGroups, showExperiments")
     public class ShowRunGroupsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -320,7 +320,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class CreateHiddenRunGroupAction extends ApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
@@ -343,7 +343,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DetailsAction extends QueryViewAction<ExpObjectForm, ExperimentRunListView>
     {
         private ExpExperimentImpl _experiment;
@@ -439,7 +439,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ListMaterialSourcesAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -458,7 +458,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowMaterialSourceAction extends SimpleViewAction<ExpObjectForm>
     {
         private ExpSampleSetImpl _source;
@@ -595,7 +595,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowAllMaterialsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -629,7 +629,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     @ApiVersion(9.2)
     @RequiresLogin
     public class SaveMaterialsAction extends ApiAction<SaveMaterialsForm>
@@ -676,7 +676,7 @@ public class ExperimentController extends SpringActionController
 
 
     /** Only shows standard and custom properties, not parent and child samples. Used for indexing */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowMaterialSimpleAction extends SimpleViewAction<ExpObjectForm>
     {
         protected ExpMaterialImpl _material;
@@ -736,7 +736,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowMaterialAction extends ShowMaterialSimpleAction
     {
         public VBox getView(ExpObjectForm form, BindException errors) throws Exception
@@ -1000,7 +1000,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowRunGraphAction extends AbstractShowRunAction
     {
         protected VBox createLowerView(ExpRunImpl experimentRun, BindException errors)
@@ -1012,7 +1012,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DownloadGraphAction extends SimpleViewAction<ExperimentRunForm>
     {
         public ModelAndView getView(ExperimentRunForm form, BindException errors) throws Exception
@@ -1171,7 +1171,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ToggleRunExperimentMembershipAction extends SimpleViewAction<ToggleRunExperimentMembershipForm>
     {
         public NavTree appendNavTrail(NavTree root)
@@ -1251,7 +1251,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowRunTextAction extends AbstractShowRunAction
     {
         protected VBox createLowerView(ExpRunImpl expRun, BindException errors)
@@ -1325,7 +1325,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowRunGraphDetailAction extends AbstractShowRunAction
     {
         protected VBox createLowerView(ExpRunImpl run, BindException errors)
@@ -1363,7 +1363,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowDataAction extends AbstractDataAction
     {
         public ModelAndView getDataView(DataForm form, BindException errors) throws Exception
@@ -1451,7 +1451,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowFileAction extends AbstractDataAction
     {
         protected ModelAndView getDataView(DataForm form, BindException errors) throws IOException
@@ -1687,7 +1687,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ConvertArraysToExcelAction extends ExportAction<ConvertArraysToExcelForm>
     {
         @Override
@@ -1738,7 +1738,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ConvertArraysToTableAction extends ExportAction<ConvertArraysToExcelForm>
     {
         @Override
@@ -1854,7 +1854,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class) @CSRF
+    @RequiresPermission(ReadPermission.class) @CSRF
     public static class ConvertHtmlToExcelAction extends FormViewAction<ConvertHtmlToExcelForm>
     {
         String _responseHtml = null;
@@ -1941,7 +1941,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowApplicationAction extends SimpleViewAction<ExpObjectForm>
     {
         private ExpProtocolApplicationImpl _app;
@@ -1994,7 +1994,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowProtocolGridAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2008,7 +2008,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ProtocolDetailsAction extends SimpleViewAction<ExpObjectForm>
     {
         private ExpProtocol _protocol;
@@ -2056,7 +2056,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ProtocolPredecessorsAction extends SimpleViewAction
     {
         private ExpProtocol _parentProtocol;
@@ -2219,7 +2219,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteSelectedExpRunsAction extends AbstractDeleteAction
     {
         public DeleteSelectedExpRunsAction()
@@ -2287,7 +2287,7 @@ public class ExperimentController extends SpringActionController
     }
 
     /** Separate delete action from the client API */
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
     {
         public ApiResponse execute(DeleteRunForm form, BindException errors) throws Exception
@@ -2341,7 +2341,7 @@ public class ExperimentController extends SpringActionController
         protected abstract void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException;
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteProtocolByRowIdsAction extends AbstractDeleteAction
     {
         public DeleteProtocolByRowIdsAction()
@@ -2410,7 +2410,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteMaterialByRowIdAction extends AbstractDeleteAction
     {
         public DeleteMaterialByRowIdAction()
@@ -2478,7 +2478,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteSelectedDataAction extends AbstractDeleteAction
     {
         public DeleteSelectedDataAction()
@@ -2525,7 +2525,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteSelectedExperimentsAction extends AbstractDeleteAction
     {
         public DeleteSelectedExperimentsAction()
@@ -2585,7 +2585,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteMaterialSourceAction extends AbstractDeleteAction
     {
         public DeleteMaterialSourceAction()
@@ -2679,7 +2679,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ShowUpdateMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
         private ExpSampleSet _sampleSet;
@@ -2767,7 +2767,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class ShowInsertMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
         public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
@@ -2782,7 +2782,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class UpdateMaterialSourceAction extends FormHandlerAction<MaterialSourceForm>
     {
         private MaterialSource _source;
@@ -2819,7 +2819,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ShowUploadMaterialsAction extends FormViewAction<UploadMaterialSetForm>
     {
         ExpSampleSet _ss;
@@ -2912,7 +2912,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class SetActiveSampleSetAction extends FormHandlerAction
     {
         public void validateCommand(Object target, Errors errors)
@@ -2969,7 +2969,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class ShowAddXarFileAction extends FormViewAction<Object>
     {
         public URLHelper getSuccessURL(Object o)
@@ -3070,7 +3070,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ShowUpdateAction extends SimpleViewAction<ExperimentForm>
     {
         public ModelAndView getView(ExperimentForm form, BindException errors) throws Exception
@@ -3093,7 +3093,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class UpdateAction extends FormHandlerAction<ExperimentForm>
     {
         private Experiment _exp;
@@ -3415,7 +3415,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ExportProtocolsAction extends AbstractExportAction
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
@@ -3471,7 +3471,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ExportRunsAction extends AbstractExportAction
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
@@ -3515,7 +3515,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ExportSampleSetAction extends AbstractExportAction
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
@@ -3543,7 +3543,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ExportRunFilesAction extends AbstractExportAction
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
@@ -3583,7 +3583,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ExportFilesAction extends AbstractExportAction
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
@@ -3668,7 +3668,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class AddRunsToExperimentAction extends FormHandlerAction<ExperimentRunListForm>
     {
         public void validateCommand(ExperimentRunListForm target, Errors errors)
@@ -3687,7 +3687,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class RemoveSelectedExpRunsAction extends FormHandlerAction<ExperimentRunListForm>
     {
         public void validateCommand(ExperimentRunListForm target, Errors errors)
@@ -3731,7 +3731,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ResolveLSIDAction extends SimpleViewAction<LsidForm>
     {
         public ModelAndView getView(LsidForm form, BindException errors) throws Exception
@@ -3865,7 +3865,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class DeriveSamplesChooseTargetAction extends SimpleViewAction<DeriveMaterialForm>
     {
         private List<ExpMaterial> _materials;
@@ -3991,7 +3991,7 @@ public class ExperimentController extends SpringActionController
         return sampleSets;
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class DescribeDerivedSamplesAction extends SimpleViewAction<DeriveMaterialForm>
     {
         List<ExpMaterial> _materials;
@@ -4074,7 +4074,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class DeriveSamplesAction extends SimpleViewAction<DeriveMaterialForm>
     {
         private DescribeDerivedSamplesAction _action;
@@ -4311,7 +4311,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class) @ActionNames("createRunGroup, createExperiment")
+    @RequiresPermission(InsertPermission.class) @ActionNames("createRunGroup, createExperiment")
     public class CreateRunGroupAction extends SimpleViewAction<CreateExperimentForm>
     {
         public ModelAndView getView(CreateExperimentForm form, BindException errors) throws Exception
@@ -4431,7 +4431,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class MoveRunsLocationAction extends SimpleViewAction<MoveRunsForm>
     {
         public ModelAndView getView(MoveRunsForm form, BindException errors) throws Exception
@@ -4471,7 +4471,7 @@ public class ExperimentController extends SpringActionController
 
 
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class MoveRunsAction extends FormHandlerAction<MoveRunsForm>
     {
         private Container _targetContainer;
@@ -4548,7 +4548,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowExternalDocsAction extends SimpleViewAction<ShowExternalDocsForm>
     {
         public ModelAndView getView(ShowExternalDocsForm form, BindException errors) throws Exception
@@ -4591,7 +4591,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowGraphMoreListAction extends SimpleViewAction<ExperimentRunForm>
     {
         private ExperimentRunForm _form;
@@ -4614,7 +4614,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class ImportXarFileAction extends SimpleViewAction<PipelinePathForm>
     {
         public ModelAndView getView(PipelinePathForm form, BindException errors) throws Exception
@@ -4933,7 +4933,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SampleSetServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()

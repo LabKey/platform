@@ -40,7 +40,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -95,7 +95,7 @@ public class ParticipantGroupController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class CreateParticipantCategory extends MutatingApiAction<ParticipantCategorySpecification>
     {
         @Override
@@ -177,7 +177,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class UpdateParticipantCategory extends MutatingApiAction<ParticipantCategorySpecification>
     {
         @Override
@@ -241,7 +241,7 @@ public class ParticipantGroupController extends BaseStudyController
 
     }
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class AddParticipantsToCategory extends ModifyCategoryParticipants
     {
         @Override
@@ -251,7 +251,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class RemoveParticipantsFromCategory extends ModifyCategoryParticipants
     {
         @Override
@@ -262,7 +262,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetParticipantCategory extends ApiAction<ParticipantCategoryImpl>
     {
         @Override
@@ -279,7 +279,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetParticipantCategories extends ApiAction<GetParticipantCategoriesForm>
     {
         @Override
@@ -309,7 +309,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetParticipantGroupsWithLiveFilters extends ApiAction
     {
         public ApiResponse execute(Object form, BindException errors) throws Exception
@@ -351,7 +351,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class DeleteParticipantCategory extends MutatingApiAction<ParticipantCategoryImpl>
     {
         @Override
@@ -382,7 +382,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     /**
      * A little confusing to have two actions to delete categories. This is a temporary measure to allow categories to be
      * deleted through the schema browser query views, until we can implement a UI to handle management of categories
@@ -426,7 +426,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetParticipantsFromSelectionAction extends MutatingApiAction<ParticipantSelection>
     {
         @Override
@@ -515,7 +515,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BrowseParticipantGroups extends ApiAction<BrowseGroupsForm>
     {
         private Collection<String> _allParticipants;
@@ -842,7 +842,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetSubjectsFromGroups extends ApiAction<GroupsForm>
     {
         private StudyImpl _study;
@@ -937,7 +937,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class SaveParticipantGroup extends MutatingApiAction<ParticipantGroupSpecification>
     {
         ParticipantGroup _prevGroup;
@@ -1072,7 +1072,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class DeleteParticipantGroup extends MutatingApiAction<ParticipantGroup>
     {
         @Override
@@ -1169,7 +1169,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class UpdateParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
     {
         @Override
@@ -1214,7 +1214,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     /**
      * A little confusing to have two actions to delete groups. This is a temporary measure to allow groups to be
      * deleted through the schema browser query views, until we can implement a UI to handle management of categories
@@ -1364,7 +1364,7 @@ public class ParticipantGroupController extends BaseStudyController
 
     // CONSIDER: Merge with UpdateParticipantGroupAction
     @Marshal(Marshaller.Jackson)
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SessionParticipantGroupAction extends ApiAction<UpdateParticipantGroupForm>
     {
         public SessionParticipantGroupAction()

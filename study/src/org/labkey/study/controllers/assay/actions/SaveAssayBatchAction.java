@@ -25,7 +25,7 @@ import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySaveHandler;
@@ -38,7 +38,7 @@ import java.util.List;
  * User: jeckels
  * Date: Jan 14, 2009
  */
-@RequiresPermissionClass(InsertPermission.class)
+@RequiresPermission(InsertPermission.class)
 @ApiVersion(9.1)
 public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonForm>
 {

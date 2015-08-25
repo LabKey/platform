@@ -29,7 +29,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
@@ -57,7 +57,7 @@ import java.util.List;
  */
 
 // Used to create ancillary studies, study snapshots, and specimen-based studies
-@RequiresPermissionClass(AdminPermission.class)
+@RequiresPermission(AdminPermission.class)
 public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefinition>
 {
     private static final Logger LOG = Logger.getLogger(CreateChildStudyAction.class);

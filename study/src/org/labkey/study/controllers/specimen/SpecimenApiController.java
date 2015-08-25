@@ -196,7 +196,7 @@ public class SpecimenApiController extends BaseStudyController
         return response;
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
     public class GetRepositoriesAction extends ApiAction<SpecimenApiForm>
     {
@@ -214,7 +214,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
     public class GetOpenRequestsAction extends ApiAction<GetRequestsForm>
     {
@@ -247,7 +247,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
     public class GetRequestAction extends ApiAction<RequestIdForm>
     {
@@ -290,7 +290,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
     public class GetProvidingLocations extends ApiAction<GetProvidingLocationsForm>
     {
@@ -308,7 +308,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
     public class GetVialsByRowIdAction extends ApiAction<GetVialsByRowIdForm>
     {
@@ -412,7 +412,7 @@ public class SpecimenApiController extends BaseStudyController
         return request;
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
     public class AddVialsToRequestAction extends ApiAction<VialRequestForm>
     {
@@ -474,7 +474,7 @@ public class SpecimenApiController extends BaseStudyController
         return vial;
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
     public class RemoveVialsFromRequestAction extends ApiAction<VialRequestForm>
     {
@@ -514,7 +514,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
     public class AddSamplesToRequestAction extends ApiAction<AddSpecimenToRequestForm>
     {
@@ -548,7 +548,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
     public class CancelRequestAction extends ApiAction<RequestIdForm>
     {
@@ -592,7 +592,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @ApiVersion(11.2)
     public class GetVialTypeSummaryAction extends ApiAction<SpecimenApiForm>
     {
@@ -618,7 +618,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @ApiVersion(13.1)
     public class GetSpecimenWebPartGroupsAction extends ApiAction<SpecimenApiForm>
     {

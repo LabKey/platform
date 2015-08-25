@@ -30,7 +30,7 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -99,7 +99,7 @@ public class SecurityController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -115,7 +115,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SaveStudyPermissionsAction extends FormHandlerAction
     {
         public void validateCommand(Object target, Errors errors)
@@ -191,7 +191,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ExportSecurityPolicyAction extends ExportAction<Object>
     {
         public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
@@ -222,7 +222,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ImportSecurityPolicyAction extends FormViewAction<Object>
     {
         private String _messageText = null;
@@ -342,7 +342,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ApplyDatasetPermissionsAction extends FormHandlerAction
     {
         public void validateCommand(Object target, Errors errors)
@@ -481,7 +481,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ReportPermissionsAction extends FormViewAction<PermissionsForm>
     {
         public ModelAndView getView(PermissionsForm form, boolean reshow, BindException errors) throws Exception
@@ -598,7 +598,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class StudySecurityAction extends FormHandlerAction<StudySecurityForm>
     {
         public void validateCommand(StudySecurityForm target, Errors errors)

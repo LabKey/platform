@@ -25,7 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
@@ -49,7 +49,7 @@ import java.sql.BatchUpdateException;
 import java.sql.SQLException;
 import java.util.*;
 
-@RequiresPermissionClass(AdminPermission.class)
+@RequiresPermission(AdminPermission.class)
 public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimensAction.UploadSpecimensForm> 
 {
     public void validateCommand(UploadSpecimensForm form, Errors errors)
@@ -276,7 +276,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         return root;
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class ImportCompleteAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception

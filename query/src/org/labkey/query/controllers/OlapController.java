@@ -65,7 +65,7 @@ import org.labkey.api.query.QueryParseExceptionUnresolvedField;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
@@ -231,7 +231,7 @@ public class OlapController extends SpringActionController
 
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
     public class GetCubeDefinitionAction extends ApiAction<CubeForm>
     {
@@ -425,7 +425,7 @@ public class OlapController extends SpringActionController
 
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CreateDefinitionAction extends InsertUpdateDefinitionAction
     {
         @Override
@@ -464,7 +464,7 @@ public class OlapController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class EditDefinitionAction extends InsertUpdateDefinitionAction
     {
         @Override
@@ -489,7 +489,7 @@ public class OlapController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteDefinitionAction extends ConfirmAction<CustomOlapDescriptorForm>
     {
         @Override
@@ -703,7 +703,7 @@ public class OlapController extends SpringActionController
      * NOT PART OF OFFICIAL CLIENT API
      * the particulars of the JSON format may change, and is very tied to the dataspace implementation
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class JsonQueryAction extends ApiAction<JsonQueryForm>
     {
@@ -819,7 +819,7 @@ public class OlapController extends SpringActionController
  * TODO document set selection syntax (operator, memberQuery etc.)
  */
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class CountDistinctQueryAction extends ApiAction<JsonQueryForm>
     {
@@ -929,7 +929,7 @@ public class OlapController extends SpringActionController
 
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class XmlaAction extends SimpleViewAction<OlapForm>
     {
@@ -990,7 +990,7 @@ public class OlapController extends SpringActionController
 
 
     // for testing
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @Action(ActionType.SelectData.class)
     public class TestBrowserAction extends SimpleViewAction<OlapForm>
     {
@@ -1014,7 +1014,7 @@ public class OlapController extends SpringActionController
 
 
     // for testing
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @Action(ActionType.SelectData.class)
     public class TestMdxAction extends SimpleViewAction<OlapForm>
     {
@@ -1040,7 +1040,7 @@ public class OlapController extends SpringActionController
 
 
     // for testing
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @Action(ActionType.SelectData.class)
     public class TestJsonAction extends SimpleViewAction<OlapForm>
     {
@@ -1279,7 +1279,7 @@ public class OlapController extends SpringActionController
         return contextNames;
     }
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @RequiresPermission(AdminReadPermission.class)
     public class ListAppsAction extends ApiAction<Object>
     {
         @Override
@@ -1385,7 +1385,7 @@ public class OlapController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @ActionNames("insertApp,updateApp")
     public class InsertAppAction extends MutatingApiAction<InsertUpdateAppForm>
     {
@@ -1407,7 +1407,7 @@ public class OlapController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteAppAction extends MutatingApiAction<AppForm>
     {
         @Override
@@ -1425,7 +1425,7 @@ public class OlapController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageAppsAction extends SimpleViewAction<ManageAppForm>
     {
         @Override
@@ -1451,7 +1451,7 @@ public class OlapController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class EditAppAction extends SimpleViewAction<AppForm>
     {
         String _contextName;
@@ -1487,7 +1487,7 @@ public class OlapController extends SpringActionController
 
     private static final String APP_ACTIVE_CONFIG_CATEGORY = "appActiveConfig";
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SetActiveAppConfigAction extends MutatingApiAction<AppForm>
     {
         @Override

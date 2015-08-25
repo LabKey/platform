@@ -73,7 +73,7 @@ import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
@@ -230,7 +230,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class OverviewAction extends SimpleViewAction
     {
         @Override
@@ -250,7 +250,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o)
@@ -331,7 +331,7 @@ public class SpecimenController extends BaseStudyController
 
     private static final String SELECTED_SAMPLES_SESSION_ATTRIB_KEY = SpecimenController.class.getName() + "/SelectedSamples";
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SelectedSamplesAction extends QueryViewAction<SampleViewTypeForm, SpecimenQueryView>
     {
         private boolean _vialView;
@@ -418,7 +418,7 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SamplesAction extends QueryViewAction<SampleViewTypeForm, SpecimenQueryView>
     {
         private boolean _vialView;
@@ -666,7 +666,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SampleEventsAction extends SimpleViewAction<ViewEventForm>
     {
         private boolean _showingSelectedSamples;
@@ -780,7 +780,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class HandleAddRequestSamplesAction extends RedirectAction<AddToSampleRequestForm>
     {
         public boolean doAction(AddToSampleRequestForm addToSampleRequestForm, BindException errors) throws Exception
@@ -1082,7 +1082,7 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ManageRequestAction extends FormViewAction<ManageRequestForm>
     {
         private int _requestId;
@@ -1192,7 +1192,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ViewRequestsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1222,7 +1222,7 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class HandleRemoveRequestSamplesAction extends FormHandlerAction<AddToSampleRequestForm>
     {
         public void validateCommand(AddToSampleRequestForm target, Errors errors)
@@ -1315,7 +1315,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     public class ManageRequestStatusAction extends FormViewAction<ManageRequestStatusForm>
     {
         private SpecimenRequest _specimenRequest;
@@ -1686,7 +1686,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     public class HandleCreateSampleRequestAction extends FormViewAction<CreateSampleRequestForm>
     {
         private SpecimenRequest _specimenRequest;
@@ -1912,7 +1912,7 @@ public class SpecimenController extends BaseStudyController
                 new NewRequestBean(getViewContext(), requested, form, errors));
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     public class ShowCreateSampleRequestAction extends SimpleViewAction<CreateSampleRequestForm>
     {
         public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
@@ -1927,7 +1927,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     public class ShowAPICreateSampleRequestAction extends SimpleViewAction<CreateSampleRequestForm>
     {
         public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
@@ -1941,7 +1941,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     public class ExtendedSpecimenRequestAction extends SimpleViewAction<CreateSampleRequestForm>
     {
         public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
@@ -2027,7 +2027,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class ShowAddToSampleRequestAction extends SimpleViewAction<CreateSampleRequestForm>
     {
         public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
@@ -2126,7 +2126,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageRequestsPermission.class)
+    @RequiresPermission(ManageRequestsPermission.class)
     public class DeleteRequirementAction extends RedirectAction<RequirementForm>
     {
         public void validateCommand(RequirementForm target, Errors errors)
@@ -2153,7 +2153,7 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ManageRequestRequirementsPermission.class)
+    @RequiresPermission(ManageRequestRequirementsPermission.class)
     public class DeleteDefaultRequirementAction extends RedirectAction<IdForm>
     {
         public void validateCommand(IdForm target, Errors errors)
@@ -2180,7 +2180,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageRequestsPermission.class)
+    @RequiresPermission(ManageRequestsPermission.class)
     public class DeleteMissingRequestSpecimensAction extends RedirectAction<IdForm>
     {
         public void validateCommand(IdForm target, Errors errors)
@@ -2265,7 +2265,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ManageRequirementAction extends FormViewAction<ManageRequirementForm>
     {
         private SpecimenRequest _specimenRequest;
@@ -2361,7 +2361,7 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class RequestHistoryAction extends SimpleViewAction<IdForm>
     {
         private int _requestId;
@@ -2483,7 +2483,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SpecimenRequestConfigRequired extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2545,7 +2545,7 @@ public class SpecimenController extends BaseStudyController
             return _actors;
         }
     }
-    @RequiresPermissionClass(ManageRequestRequirementsPermission.class)
+    @RequiresPermission(ManageRequestRequirementsPermission.class)
     public class ManageDefaultReqsAction extends FormViewAction<DefaultRequirementsForm>
     {
         public void validateCommand(DefaultRequirementsForm target, Errors errors)
@@ -2668,7 +2668,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     public class SubmitRequestAction extends RedirectAction<IdForm>
     {
         public void validateCommand(IdForm target, Errors errors)
@@ -2733,7 +2733,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     public class DeleteRequestAction extends RedirectAction<IdForm>
     {
         public void validateCommand(IdForm target, Errors errors)
@@ -2766,7 +2766,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageRequestsPermission.class)
+    @RequiresPermission(ManageRequestsPermission.class)
     public class EmailLabSpecimenListsAction extends FormHandlerAction<EmailSpecimenListForm>
     {
         public void validateCommand(EmailSpecimenListForm target, Errors errors)
@@ -2968,7 +2968,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageRequestsPermission.class)
+    @RequiresPermission(ManageRequestsPermission.class)
     public class DownloadSpecimenListAction extends SimpleViewAction<ExportSiteForm>
     {
         public ModelAndView getView(ExportSiteForm form, BindException errors) throws Exception
@@ -3006,7 +3006,7 @@ public class SpecimenController extends BaseStudyController
     private static final String EXPORT_TSV = "tsv";
     private static final String EXPORT_XLS = "xls";
 
-    @RequiresPermissionClass(ManageRequestsPermission.class)
+    @RequiresPermission(ManageRequestsPermission.class)
     public class LabSpecimenListsAction extends SimpleViewAction<LabSpecimenListsForm>
     {
         private int _requestId;
@@ -3225,7 +3225,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TypeSummaryReportAction extends SpecimenVisitReportAction<TypeSummaryReportFactory>
     {
         public TypeSummaryReportAction()
@@ -3236,7 +3236,7 @@ public class SpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TypeParticipantReportAction extends SpecimenVisitReportAction<TypeParticipantReportFactory>
     {
         public TypeParticipantReportAction()
@@ -3247,7 +3247,7 @@ public class SpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class RequestReportAction extends SpecimenVisitReportAction<RequestReportFactory>
     {
         public RequestReportAction()
@@ -3258,7 +3258,7 @@ public class SpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TypeCohortReportAction extends SpecimenVisitReportAction<TypeCohortReportFactory>
     {
         public TypeCohortReportAction()
@@ -3269,7 +3269,7 @@ public class SpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class RequestSiteReportAction extends SpecimenVisitReportAction<RequestLocationReportFactory>
     {
         public RequestSiteReportAction()
@@ -3280,7 +3280,7 @@ public class SpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ParticipantSummaryReportAction extends SpecimenVisitReportAction<ParticipantSummaryReportFactory>
     {
         public ParticipantSummaryReportAction()
@@ -3291,7 +3291,7 @@ public class SpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ParticipantTypeReportAction extends SpecimenVisitReportAction<ParticipantTypeReportFactory>
     {
         public ParticipantTypeReportAction()
@@ -3302,7 +3302,7 @@ public class SpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ParticipantSiteReportAction extends SpecimenVisitReportAction<ParticipantSiteReportFactory>
     {
         public ParticipantSiteReportAction()
@@ -3313,7 +3313,7 @@ public class SpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class RequestEnrollmentSiteReportAction extends SpecimenVisitReportAction<RequestEnrollmentSiteReportFactory>
     {
         public RequestEnrollmentSiteReportAction()
@@ -3324,7 +3324,7 @@ public class SpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class RequestParticipantReportAction extends SpecimenVisitReportAction<RequestParticipantReportFactory>
     {
         public RequestParticipantReportAction()
@@ -3434,7 +3434,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class AutoReportListAction extends SimpleViewAction
     {
         public ModelAndView getView(Object form, BindException errors)
@@ -3690,7 +3690,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(SetSpecimenCommentsPermission.class)
+    @RequiresPermission(SetSpecimenCommentsPermission.class)
     public class ClearCommentsAction extends RedirectAction<UpdateSpecimenCommentsForm>
     {
         public ActionURL getSuccessURL(UpdateSpecimenCommentsForm updateSpecimenCommentsForm)
@@ -3723,7 +3723,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(SetSpecimenCommentsPermission.class)
+    @RequiresPermission(SetSpecimenCommentsPermission.class)
     public class UpdateCommentsAction extends FormViewAction<UpdateParticipantCommentsForm>
     {
         private ActionURL _successUrl;
@@ -3859,7 +3859,7 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ImportSpecimenData extends SimpleViewAction<PipelineForm>
     {
         private String[] _filePaths = null;
@@ -3912,7 +3912,7 @@ public class SpecimenController extends BaseStudyController
 
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SubmitSpecimenBatchImport extends FormHandlerAction<PipelineForm>
     {
         public void validateCommand(PipelineForm target, Errors errors)
@@ -3946,7 +3946,7 @@ public class SpecimenController extends BaseStudyController
      * but this method should be kept around until we receive verification that the URL is no longer being hit
      * programmatically.
      */
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SubmitSpecimenImport extends FormHandlerAction<PipelineForm>
     {
         public void validateCommand(PipelineForm target, Errors errors)
@@ -4081,7 +4081,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends SimpleViewAction<SpecimentEventAttachmentForm>
     {
         public ModelAndView getView(SpecimentEventAttachmentForm form, BindException errors) throws Exception
@@ -4100,7 +4100,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ShowManageRepositorySettingsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -4118,7 +4118,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageStudyPermission.class)
+    @RequiresPermission(ManageStudyPermission.class)
     public class ManageRepositorySettingsAction extends SimpleViewAction<ManageRepositorySettingsForm>
     {
         public ModelAndView getView(ManageRepositorySettingsForm form, BindException errors) throws Exception
@@ -4175,7 +4175,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageSpecimenActorsPermission.class)
+    @RequiresPermission(ManageSpecimenActorsPermission.class)
     public class ManageActorOrderAction extends DisplayManagementSubpageAction<BaseStudyController.BulkEditForm>
     {
         public ManageActorOrderAction()
@@ -4258,7 +4258,7 @@ public class SpecimenController extends BaseStudyController
         return idToStatus;
     }
 
-    @RequiresPermissionClass(ManageSpecimenActorsPermission.class)
+    @RequiresPermission(ManageSpecimenActorsPermission.class)
     public class ManageActorsAction extends DisplayManagementSubpageAction<ActorEditForm>
     {
         public ManageActorsAction()
@@ -4339,7 +4339,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageSpecimenActorsPermission.class)
+    @RequiresPermission(ManageSpecimenActorsPermission.class)
     public class ManageStatusOrderAction extends DisplayManagementSubpageAction<BulkEditForm>
     {
         public ManageStatusOrderAction()
@@ -4388,7 +4388,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageRequestStatusesPermission.class)
+    @RequiresPermission(ManageRequestStatusesPermission.class)
     public class ManageStatusesAction extends DisplayManagementSubpageAction<StatusEditForm>
     {
         public ManageStatusesAction()
@@ -4535,7 +4535,7 @@ public class SpecimenController extends BaseStudyController
         return idToStatus;
     }
 
-    @RequiresPermissionClass(ManageRequestStatusesPermission.class)
+    @RequiresPermission(ManageRequestStatusesPermission.class)
     public class DeleteActorAction extends RedirectAction<IdForm>
     {
         public ActionURL getSuccessURL(IdForm idForm)
@@ -4557,7 +4557,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteStatusAction extends RedirectAction<IdForm>
     {
         public ActionURL getSuccessURL(IdForm idForm)
@@ -4589,7 +4589,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageNewRequestFormPermission.class)
+    @RequiresPermission(ManageNewRequestFormPermission.class)
     public class HandleUpdateRequestInputsAction extends RedirectAction<ManageRequestInputsForm>
     {
         public ActionURL getSuccessURL(ManageRequestInputsForm manageRequestInputsForm)
@@ -4690,7 +4690,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageNewRequestFormPermission.class)
+    @RequiresPermission(ManageNewRequestFormPermission.class)
     public class ManageRequestInputsAction extends SimpleViewAction<PipelineForm>
     {
         public ModelAndView getView(PipelineForm pipelineForm, BindException errors) throws Exception
@@ -4759,7 +4759,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageNotificationsPermission.class)
+    @RequiresPermission(ManageNotificationsPermission.class)
     public class ManageNotificationsAction extends FormViewAction<RequestNotificationSettings>
     {
         public void validateCommand(RequestNotificationSettings form, Errors errors)
@@ -4864,7 +4864,7 @@ public class SpecimenController extends BaseStudyController
         return ((toCheck == null) || toCheck.equals(""));
     }
 
-    @RequiresPermissionClass(ManageDisplaySettingsPermission.class)
+    @RequiresPermission(ManageDisplaySettingsPermission.class)
     public class ManageDisplaySettingsAction extends FormViewAction<DisplaySettingsForm>
     {
         public void validateCommand(DisplaySettingsForm target, Errors errors)
@@ -4912,7 +4912,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class GetSpecimenExcelAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -5023,7 +5023,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageSpecimenCommentsAction extends FormViewAction<ManageCommentsForm>
     {
         public void validateCommand(ManageCommentsForm form, Errors errors)
@@ -5187,7 +5187,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class CopyParticipantCommentAction extends SimpleViewAction<ParticipantCommentForm>
     {
         public ModelAndView getView(final ParticipantCommentForm form, BindException errors) throws Exception
@@ -5334,7 +5334,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageRequestSettingsPermission.class)
+    @RequiresPermission(ManageRequestSettingsPermission.class)
     public class UpdateRequestabilityRulesAction extends ApiAction<UpdateRequestabilityRulesForm>
     {
         @Override
@@ -5354,7 +5354,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageRequestSettingsPermission.class)
+    @RequiresPermission(ManageRequestSettingsPermission.class)
     public class ConfigureRequestabilityRulesAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -5434,7 +5434,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    @RequiresPermission(RequestSpecimensPermission.class)
     public class ImportVialIdsAction extends AbstractQueryImportAction<IdForm>
     {
         private int _requestId = -1;
@@ -5627,7 +5627,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CompleteSpecimenAction extends ApiAction<CompleteSpecimenForm>
     {
         @Override
@@ -5661,7 +5661,7 @@ public class SpecimenController extends BaseStudyController
         return completions;
     }
 
-    @RequiresPermissionClass(ManageDisplaySettingsPermission.class)
+    @RequiresPermission(ManageDisplaySettingsPermission.class)
     public class ManageSpecimenWebPartAction extends SimpleViewAction<SpecimenWebPartForm>
     {
         public ModelAndView getView(SpecimenWebPartForm form, BindException errors)
@@ -5684,7 +5684,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SaveSpecimenWebPartSettingsAction extends ApiAction<SpecimenWebPartForm>
     {
         @Override
@@ -5746,7 +5746,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(EditSpecimenDataPermission.class)
+    @RequiresPermission(EditSpecimenDataPermission.class)
     public static class UpdateSpecimenQueryRowAction extends UserSchemaAction
     {
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
@@ -5784,7 +5784,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(EditSpecimenDataPermission.class)
+    @RequiresPermission(EditSpecimenDataPermission.class)
     public static class InsertSpecimenQueryRowAction extends UserSchemaAction
     {
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
@@ -5830,7 +5830,7 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DesignerAction extends SimpleViewAction<DesignerForm>
     {
         private DesignerForm _form;
@@ -5860,7 +5860,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()

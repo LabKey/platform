@@ -15,7 +15,7 @@
  */
 package org.labkey.study.assay;
 
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.ImportAction;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.springframework.web.servlet.ModelAndView;
@@ -27,7 +27,7 @@ import java.util.Map;
  * Date: Dec 30, 2010
  * Time: 12:58:09 PM
  */
-@RequiresPermissionClass(DesignAssayPermission.class)
+@RequiresPermission(DesignAssayPermission.class)
 public class TsvImportAction extends ImportAction
 {
     @Override

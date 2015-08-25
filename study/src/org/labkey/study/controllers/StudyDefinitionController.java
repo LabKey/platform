@@ -22,7 +22,7 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -75,7 +75,7 @@ public class StudyDefinitionController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class EditCohortDefinitionAction extends EditDefinitionAction
     {
         protected ExtensibleStudyEntity.DomainInfo getDomainInfo()
@@ -84,7 +84,7 @@ public class StudyDefinitionController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class EditStudyDefinitionAction extends EditDefinitionAction
     {
         protected ExtensibleStudyEntity.DomainInfo getDomainInfo()
@@ -113,7 +113,7 @@ public class StudyDefinitionController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CohortViewAction extends ViewAction
     {
         protected ExtensibleStudyEntity.DomainInfo getDomainInfo()

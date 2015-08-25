@@ -82,7 +82,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.CSRF;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -181,7 +181,7 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SendFileAction extends SimpleViewAction<SendFileForm>
     {
         WebdavResource _resource;
@@ -430,7 +430,7 @@ public class FileContentController extends SpringActionController
    }
 
 
-   @RequiresPermissionClass(ReadPermission.class)
+   @RequiresPermission(ReadPermission.class)
    public class FrameAction extends SimpleViewAction<SrcForm>
    {
        public ModelAndView getView(SrcForm srcForm, BindException errors) throws Exception
@@ -446,7 +446,7 @@ public class FileContentController extends SpringActionController
    }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction<FileContentForm>
     {
         public BeginAction()
@@ -535,7 +535,7 @@ public class FileContentController extends SpringActionController
    }
 
 
-   @RequiresPermissionClass(InsertPermission.class)
+   @RequiresPermission(InsertPermission.class)
    public class AddAttachmentAction extends FormViewAction<AttachmentForm>
    {
        HttpView _closeView = null;
@@ -616,7 +616,7 @@ public class FileContentController extends SpringActionController
    }
 
 
-   @RequiresPermissionClass(DeletePermission.class)
+   @RequiresPermission(DeletePermission.class)
    public class DeleteAttachmentAction extends ConfirmAction<AttachmentForm>
    {
        HttpView _closeView = null;
@@ -854,7 +854,7 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class FileContentSummaryAction extends FileTreeNodeAction
     {
         public Set<Map<String, Object>> getChildren(NodeForm form, BindException errors) throws Exception
@@ -936,7 +936,7 @@ public class FileContentController extends SpringActionController
     /**
      * Returns information for project file web part administrative information on a per project basis
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class FileContentProjectSummaryAction extends FileTreeNodeAction
     {
         private static final String NODE_LABEL = "file web part";
@@ -1001,7 +1001,7 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public abstract class FileTreeNodeAction extends ApiAction<NodeForm>
     {
         protected abstract Set<Map<String, Object>> getChildren(NodeForm form, BindException errors) throws Exception;
@@ -1047,7 +1047,7 @@ public class FileContentController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DesignerAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
@@ -1075,7 +1075,7 @@ public class FileContentController extends SpringActionController
     }
 
     // GWT Action
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class FilePropertiesServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -1115,7 +1115,7 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class UpdateFilePropsAction extends MutatingApiAction<FilePropsForm>
     {
         private List<Map<String, Object>> _files;
@@ -1262,7 +1262,7 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class SaveCustomFilePropsAction extends ExtFormAction<CustomFilePropsForm>
     {
         WebdavResource _resource;
@@ -1394,7 +1394,7 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ResetFileOptionsAction extends MutatingApiAction<ResetType>
     {
         public ApiResponse execute(ResetType form, BindException errors) throws Exception
@@ -1422,7 +1422,7 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetEmailPrefAction extends ApiAction<Object>
     {
         @Override
@@ -1444,7 +1444,7 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SetEmailPrefAction extends MutatingApiAction<EmailPrefForm>
     {
         @Override
@@ -1460,7 +1460,7 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SetDefaultEmailPrefAction extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
@@ -1487,7 +1487,7 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ShowFilesHistoryAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1514,7 +1514,7 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class FileEmailPreferenceAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception

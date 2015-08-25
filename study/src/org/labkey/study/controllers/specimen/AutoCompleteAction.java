@@ -25,7 +25,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.view.AjaxCompletion;
@@ -41,7 +41,7 @@ import java.util.List;
  * User: klum
  * Date: Jul 21, 2009
  */
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoCompletionForm>
 {
     @Override

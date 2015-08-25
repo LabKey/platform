@@ -23,7 +23,7 @@ import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.GUID;
@@ -60,7 +60,7 @@ public class SharedStudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class StudyFilterAction extends SimpleViewAction<Object>
     {
         @Override
@@ -133,7 +133,7 @@ public class SharedStudyController extends BaseStudyController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SharedStudyContainerFilterAction extends ApiAction<SharedStudyContainerFilterForm>
     {
         private Study _study = null;

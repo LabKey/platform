@@ -34,7 +34,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
@@ -77,7 +77,7 @@ public class DatasetController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class UpdateAction extends InsertUpdateAction
     {
         public UpdateAction()
@@ -96,7 +96,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class InsertAction extends InsertUpdateAction
     {
         public InsertAction()
@@ -115,7 +115,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DatasetAuditHistoryAction extends SimpleViewAction<DatasetAuditHistoryForm>
     {
         public ModelAndView getView(DatasetAuditHistoryForm form, BindException errors) throws Exception
@@ -244,7 +244,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class BulkDatasetDeleteAction extends FormViewAction<DatasetDeleteForm>
     {
         public ModelAndView getView(DatasetDeleteForm form, boolean reshow, BindException errors) throws Exception
@@ -301,7 +301,7 @@ public class DatasetController extends BaseStudyController
 
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DefineAndImportDatasetAction extends SimpleViewAction<DatasetIdForm>
     {
         public ModelAndView getView(DatasetIdForm form, BindException errors) throws Exception
@@ -370,7 +370,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DomainImportServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()

@@ -20,7 +20,7 @@ import org.labkey.api.action.ActionType;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
@@ -36,7 +36,7 @@ import org.springframework.web.servlet.ModelAndView;
 * Time: 10:39:52 AM
 */
 
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 @Action(ActionType.Configure.class)
 public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
 {

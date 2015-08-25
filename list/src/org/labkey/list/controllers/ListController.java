@@ -80,7 +80,7 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -221,7 +221,7 @@ public class ListController extends SpringActionController
         return config.setHelpTopic(new HelpTopic("lists"));
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction<QueryForm>
     {
         @Override
@@ -239,7 +239,7 @@ public class ListController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DomainImportServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -249,7 +249,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowListDefinitionAction extends SimpleRedirectAction<ListDefinitionForm>
     {
         @Override
@@ -264,7 +264,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(DesignListPermission.class)
+    @RequiresPermission(DesignListPermission.class)
     public class EditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
@@ -306,7 +306,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @Action(ActionType.SelectMetaData.class)
     public class ListEditorServiceAction extends GWTServiceAction
     {
@@ -317,7 +317,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
     {
         private ArrayList<Integer> _listIDs = new ArrayList<>();
@@ -404,7 +404,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GridAction extends SimpleViewAction<ListQueryForm>
     {
         private ListDefinition _list;
@@ -486,7 +486,7 @@ public class ListController extends SpringActionController
      * Only here for backwards compatibility to resolve requests and redirect.
      */
     @Deprecated
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class InsertAction extends InsertUpdateAction
     {
         @Override
@@ -519,7 +519,7 @@ public class ListController extends SpringActionController
      * Only here for backwards compatibility to resolve requests and redirect.
      */
     @Deprecated
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class UpdateAction extends InsertUpdateAction
     {
         @Override
@@ -609,7 +609,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DetailsAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
@@ -761,7 +761,7 @@ public class ListController extends SpringActionController
     // Users can change the PK of a list item, so we don't want to store PK in discussion source URL (back link
     // from announcements to the object).  Instead, we tell discussion service to store a URL with ListId and
     // EntityId.  This action resolves to the current details URL for that item.
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ResolveAction extends SimpleRedirectAction<ListDefinitionForm>
     {
         public ActionURL getRedirectURL(ListDefinitionForm form) throws Exception
@@ -777,7 +777,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class UploadListItemsAction extends AbstractQueryImportAction<ListDefinitionForm>
     {
         private ListDefinition _list;
@@ -814,7 +814,7 @@ public class ListController extends SpringActionController
     }
 
     
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class HistoryAction extends SimpleViewAction<ListQueryForm>
     {
         private ListDefinition _list;
@@ -877,7 +877,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ListItemDetailsAction extends SimpleViewAction
     {
         private ListDefinition _list;
@@ -1107,7 +1107,7 @@ public class ListController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends SimpleViewAction<ListAttachmentForm>
     {
         public ModelAndView getView(final ListAttachmentForm form, BindException errors) throws Exception
@@ -1139,7 +1139,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(DesignListPermission.class)
+    @RequiresPermission(DesignListPermission.class)
     public class ExportListArchiveAction extends ExportAction<ListDefinitionForm>
     {
         public void export(ListDefinitionForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -1166,7 +1166,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(DesignListPermission.class)
+    @RequiresPermission(DesignListPermission.class)
     public class ImportListArchiveAction extends FormViewAction<ListDefinitionForm>
     {
         public void validateCommand(ListDefinitionForm target, Errors errors)
@@ -1244,7 +1244,7 @@ public class ListController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BrowseListsAction extends ApiAction<Object>
     {
         public ApiResponse execute(Object form, BindException errors) throws Exception

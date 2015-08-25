@@ -21,7 +21,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -77,7 +77,7 @@ public class TestController extends SpringActionController
 
 
     // Test action
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TestAction extends SimpleViewAction<Object>
     {
         @Override
@@ -102,7 +102,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -143,7 +143,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SimpleFormAction extends FormViewAction<SimpleForm>
     {
         String _enctype = "application/x-www-form-urlencoded";
@@ -178,7 +178,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TagsAction extends FormViewAction<SimpleForm>
     {
         public void validateCommand(SimpleForm target, Errors errors)
@@ -211,7 +211,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class MultipartFormAction extends SimpleFormAction
     {
         public MultipartFormAction()
@@ -226,7 +226,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ComplexFormAction extends FormViewAction<ComplexForm>
     {
         public void validateCommand(ComplexForm target, Errors errors)
@@ -484,7 +484,7 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PermReadAction extends PermAction
     {
         public PermReadAction()
@@ -493,7 +493,7 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class PermUpdateAction extends PermAction
     {
         public PermUpdateAction()
@@ -502,7 +502,7 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class PermInsertAction extends PermAction
     {
         public PermInsertAction()
@@ -511,7 +511,7 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class PermDeleteAction extends PermAction
     {
         public PermDeleteAction()
@@ -521,7 +521,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class PermAdminAction extends PermAction
     {
         public PermAdminAction()
@@ -644,7 +644,7 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ButtonAction extends SimpleViewAction<ButtonForm>
     {
         @Override
@@ -690,7 +690,7 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class CoreClientApiAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception

@@ -100,7 +100,7 @@ import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -340,7 +340,7 @@ public class StudyController extends BaseStudyController
         return root.addChild(sb.toString(), new ActionURL(ManageVisitsAction.class, getContainer()));
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         private Study _study;
@@ -380,7 +380,7 @@ public class StudyController extends BaseStudyController
 	}
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>
     {
         private Dataset _def;
@@ -476,7 +476,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     @SuppressWarnings("unchecked")
     public class EditTypeAction extends SimpleViewAction<DatasetForm>
     {
@@ -530,7 +530,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DatasetDetailsAction extends SimpleViewAction<IdForm>
     {
         private DatasetDefinition _def;
@@ -609,7 +609,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class OverviewAction extends SimpleViewAction<OverviewForm>
     {
         private StudyImpl _study;
@@ -661,7 +661,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class QueryReportAction extends QueryViewAction<QueryReportForm, QueryView>
     {
         protected Report _report;
@@ -712,7 +712,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DatasetReportAction extends QueryReportAction
     {
         public DatasetReportAction()
@@ -768,7 +768,7 @@ public class StudyController extends BaseStudyController
         return newUrl.addParameters(context.getActionURL().getParameters());
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteDatasetReportAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -799,7 +799,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DatasetAction extends QueryViewAction<DatasetFilterForm, QueryView>
     {
         private CohortFilter _cohortFilter;
@@ -1076,7 +1076,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class IndexParticipantAction extends ParticipantAction
     {
         ParticipantForm _form;
@@ -1106,7 +1106,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ParticipantAction extends SimpleViewAction<ParticipantForm>
     {
         private ParticipantForm _bean;
@@ -1215,7 +1215,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ImportVisitMapAction extends FormViewAction<ImportVisitMapForm>
     {
         public ModelAndView getView(ImportVisitMapForm form, boolean reshow, BindException errors) throws Exception
@@ -1255,7 +1255,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CreateStudyAction extends FormViewAction<StudyPropertiesForm>
     {
         public ModelAndView getView(StudyPropertiesForm form, boolean reshow, BindException errors) throws Exception
@@ -1328,7 +1328,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class OldCreateStudyAction extends FormHandlerAction<StudyPropertiesForm>
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
@@ -1407,7 +1407,7 @@ public class StudyController extends BaseStudyController
         SpecimenManager.getInstance().saveRepositorySettings(c, reposSettings);
     }
 
-    @RequiresPermissionClass(ManageStudyPermission.class)
+    @RequiresPermission(ManageStudyPermission.class)
     public class ManageStudyAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1424,7 +1424,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteStudyAction extends FormViewAction<DeleteStudyForm>
     {
         public void validateCommand(DeleteStudyForm form, Errors errors)
@@ -1485,7 +1485,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class RemoveProtocolDocumentAction extends FormHandlerAction<RemoveProtocolDocumentForm>
     {
         @Override
@@ -1508,7 +1508,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ManageStudyPropertiesAction extends FormApiAction<TableViewForm>
     {
         @Override
@@ -1577,7 +1577,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageVisitsAction extends FormViewAction<StudyPropertiesForm>
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
@@ -1636,7 +1636,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageTypesAction extends SimpleViewAction<Object>
     {
         @Override
@@ -1653,7 +1653,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageLocationsAction extends FormViewAction<LocationEditForm>
     {
         public void validateCommand(LocationEditForm target, Errors errors)
@@ -1747,7 +1747,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteAllUnusedLocationsAction extends ConfirmAction<LocationForm>
     {
         @Override
@@ -1882,7 +1882,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class VisitSummaryAction extends FormViewAction<VisitForm>
     {
         private VisitImpl _v;
@@ -2019,7 +2019,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageStudyPermission.class)
+    @RequiresPermission(ManageStudyPermission.class)
     public class StudyScheduleAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2035,7 +2035,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteVisitAction extends FormHandlerAction<IdForm>
     {
         public void validateCommand(IdForm target, Errors errors)
@@ -2073,7 +2073,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteUnusedVisitsAction extends ConfirmAction<IdForm>
     {
         @Override
@@ -2170,7 +2170,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ConfirmDeleteVisitAction extends SimpleViewAction<IdForm>
     {
         private VisitImpl _visit;
@@ -2196,7 +2196,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CreateVisitAction extends FormViewAction<VisitForm>
     {
         public void validateCommand(VisitForm target, Errors errors)
@@ -2255,7 +2255,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UpdateDatasetVisitMappingAction extends FormViewAction<DatasetForm>
     {
         DatasetDefinition _def;
@@ -2317,7 +2317,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class ImportAction extends AbstractQueryImportAction<ImportDatasetForm>
     {
         ImportDatasetForm _form = null;
@@ -2439,7 +2439,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class BulkImportDataTypesAction extends FormViewAction<BulkImportTypesForm>
     {
         public void validateCommand(BulkImportTypesForm target, Errors errors)
@@ -2532,7 +2532,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ShowUploadHistoryAction extends SimpleViewAction<IdForm>
     {
         String _datasetLabel;
@@ -2572,7 +2572,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class DownloadTsvAction extends SimpleViewAction<IdForm>
     {
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
@@ -2589,7 +2589,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DatasetItemDetailsAction extends SimpleViewAction<SourceLsidForm>
     {
         public ModelAndView getView(SourceLsidForm form, BindException errors) throws Exception
@@ -2608,7 +2608,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PublishHistoryDetailsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2670,7 +2670,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeletePublishedRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
         public void validateCommand(DeleteDatasetRowsForm target, Errors errors)
@@ -2784,7 +2784,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteDatasetRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
         public void validateCommand(DeleteDatasetRowsForm target, Errors errors)
@@ -2952,7 +2952,7 @@ public class StudyController extends BaseStudyController
         return new TableSelector(datasetTable, Collections.singleton("SourceLsid"), sourceLsidFilter, null).exists();
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ProtocolDocumentDownloadAction extends SimpleViewAction<AttachmentForm>
     {
         public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
@@ -3383,7 +3383,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageQCStatesAction extends FormViewAction<ManageQCStatesForm>
     {
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors) throws Exception
@@ -3523,7 +3523,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteQCStateAction extends RedirectAction<DeleteQCStateForm>
     {
         public boolean doAction(DeleteQCStateForm form, BindException errors) throws Exception
@@ -3628,7 +3628,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UpdateQCStateAction extends FormViewAction<UpdateQCStateForm>
     {
         private int _datasetId;
@@ -3734,7 +3734,7 @@ public class StudyController extends BaseStudyController
     }
 
     // GWT Action
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DatasetServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService() throws IllegalStateException
@@ -3758,7 +3758,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ResetPipelineAction extends SimpleRedirectAction<ResetPipelinePathForm>
     {
         public ActionURL getRedirectURL(ResetPipelinePathForm form) throws Exception
@@ -3782,7 +3782,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DefaultDatasetReportAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -3808,7 +3808,7 @@ public class StudyController extends BaseStudyController
 
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageUndefinedTypesAction extends SimpleViewAction
     {
         StudyImpl study;
@@ -3826,7 +3826,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TemplateAction extends ExportAction
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -3927,7 +3927,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ViewPreferencesAction extends SimpleViewAction<ViewPreferencesForm>
     {
         private StudyImpl _study;
@@ -3990,7 +3990,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ImportStudyBatchAction extends SimpleViewAction<PipelinePathForm>
     {
         private String path;
@@ -4042,7 +4042,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SubmitStudyBatchAction extends SimpleRedirectAction<PipelinePathForm>
     {
         public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
@@ -4078,7 +4078,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ImportStudyFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
     {
         public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
@@ -4104,7 +4104,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     /**
      * Landing page for ImportStudyFromPipelineAction
      */
@@ -4275,7 +4275,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class PurgeDatasetAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -4316,7 +4316,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TypeNotFoundAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -4330,7 +4330,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UpdateParticipantVisitsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -4355,7 +4355,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class VisitOrderAction extends FormViewAction<VisitReorderForm>
     {
         public ModelAndView getView(VisitReorderForm reorderForm, boolean reshow, BindException errors) throws Exception
@@ -4451,7 +4451,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class VisitVisibilityAction extends FormViewAction<VisitPropertyForm>
     {
         public ModelAndView getView(VisitPropertyForm visitPropertyForm, boolean reshow, BindException errors) throws Exception
@@ -4717,7 +4717,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DatasetDisplayOrderAction extends FormViewAction<DatasetReorderForm>
     {
         public ModelAndView getView(DatasetReorderForm form, boolean reshow, BindException errors) throws Exception
@@ -4765,7 +4765,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteDatasetAction extends SimpleViewAction<IdForm>
     {
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
@@ -4910,7 +4910,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CustomizeParticipantViewAction extends FormViewAction<CustomizeParticipantViewForm>
     {
         public void validateCommand(CustomizeParticipantViewForm target, Errors errors)
@@ -4974,7 +4974,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class QuickCreateStudyAction extends ApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm simpleApiJsonForm, BindException errors) throws Exception
@@ -5154,7 +5154,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CreateSnapshotAction extends FormViewAction<StudySnapshotForm>
     {
         ActionURL _successURL;
@@ -5368,7 +5368,7 @@ public class StudyController extends BaseStudyController
      * Provides a view to update study query snapshots. Since query snapshots are implemented as datasets, the
      * dataset properties editor can be shown in this view.
      */
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class EditSnapshotAction extends FormViewAction<StudySnapshotForm>
     {
         ActionURL _successURL;
@@ -6441,7 +6441,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DatasetsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -6457,7 +6457,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SamplesAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -6475,7 +6475,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ViewDataAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -6492,7 +6492,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageReloadAction extends FormViewAction<ReloadForm>
     {
         public void validateCommand(ReloadForm target, Errors errors)
@@ -6613,7 +6613,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageExternalReloadAction extends SimpleViewAction<Object>
     {
         @Override
@@ -6629,7 +6629,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DatasetDetailRedirectAction extends RedirectAction<DatasetDetailRedirectForm>
     {
         private ActionURL _url;
@@ -6756,7 +6756,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DemoModeAction extends FormViewAction<DemoModeForm>
     {
         @Override
@@ -6809,7 +6809,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ShowVisitImportMappingAction extends SimpleViewAction
     {
         @Override
@@ -6850,7 +6850,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ImportVisitAliasesAction extends FormViewAction<VisitAliasesForm>
     {
         @Override
@@ -6938,7 +6938,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ClearVisitAliasesAction extends ConfirmAction
     {
         @Override
@@ -6969,7 +6969,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class ManageParticipantCategoriesAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object form, BindException errors) throws Exception
@@ -6986,7 +6986,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageAlternateIdsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object form, BindException errors) throws Exception
@@ -7006,7 +7006,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class MergeParticipantsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object form, BindException errors) throws Exception
@@ -7023,7 +7023,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SubjectListAction extends SimpleViewAction
     {
         @Override
@@ -7039,7 +7039,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BrowseStudyScheduleAction extends ApiAction<BrowseStudyForm>
     {
         @Override
@@ -7078,7 +7078,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetStudyTimepointsAction extends ApiAction<BrowseStudyForm>
     {
         @Override
@@ -7114,7 +7114,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class UpdateStudyScheduleAction extends MutatingApiAction<StudySchedule>
     {
         @Override
@@ -7181,7 +7181,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DefineDatasetAction extends MutatingApiAction<DefineDatasetForm>
     {
         private StudyImpl _study;
@@ -7307,7 +7307,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CancelDefineDatasetAction extends SimpleViewAction<Object>
     {
         @Override
@@ -7474,7 +7474,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ChangeAlternateIdsAction extends ApiAction<ChangeAlternateIdsForm>
     {
         @Override
@@ -7531,7 +7531,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class MapAliasIdsAction extends ApiAction<MapAliasIdsForm>
     {
         @Override
@@ -7552,7 +7552,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ExportParticipantTransformsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object form, BindException errors) throws Exception
@@ -7623,7 +7623,7 @@ public class StudyController extends BaseStudyController
         StudyManager.getInstance().updateStudy(getUser(), study);
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ManageLocationTypesAction extends SimpleViewAction<ManageLocationTypesForm>
     {
         public ModelAndView getView(ManageLocationTypesForm form, BindException errors) throws Exception
@@ -7645,7 +7645,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SaveLocationsTypeSettingsAction extends MutatingApiAction<ManageLocationTypesForm>
     {
         @Override
@@ -7718,7 +7718,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ManageStudyPermission.class)
+    @RequiresPermission(ManageStudyPermission.class)
     public class ImportAlternateIdMappingAction extends AbstractQueryImportAction<IdForm>
     {
         private Study _study;
@@ -7780,7 +7780,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SnapshotSettingsAction extends FormViewAction<SnapshotSettingsForm>
     {
         private StudyImpl _study;

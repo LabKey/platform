@@ -39,7 +39,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
@@ -95,7 +95,7 @@ public class TypesController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class BeginAction extends SimpleViewAction
     {
         @SuppressWarnings({"UnusedDeclaration"}) // Constructed via reflection
@@ -137,7 +137,7 @@ public class TypesController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class RepairAction extends FormViewAction<RepairForm>
     {
         @Override
@@ -182,7 +182,7 @@ public class TypesController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class ImportVocabularyAction extends FormViewAction<ImportVocabularyForm>
     {
         ModelAndView successView = null;
@@ -246,7 +246,7 @@ public class TypesController extends SpringActionController
     }
     
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class TypesAction extends SimpleViewAction
     {
         @SuppressWarnings({"UnusedDeclaration"}) // Constructed via reflection
@@ -303,7 +303,7 @@ public class TypesController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class TypeDetailsAction extends SimpleViewAction<TypeForm>
     {
         public String typeName;
@@ -340,7 +340,7 @@ public class TypesController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public static class FindConceptsAction extends SimpleViewAction<SearchForm>
     {
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception

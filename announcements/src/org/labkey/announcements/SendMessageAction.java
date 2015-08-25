@@ -27,7 +27,7 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -49,7 +49,7 @@ import java.util.Set;
  * User: klum
  * Date: Jul 24, 2009
  */
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 public class SendMessageAction extends MutatingApiAction<SendMessageAction.MessageForm>
 {
     private Map<String, Set<String>> _recipientMap = new HashMap<>();

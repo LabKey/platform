@@ -33,7 +33,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -88,7 +88,7 @@ public class DemoController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends AbstractController implements NavTrailAction
     {
         public ModelAndView handleRequestInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws Exception
@@ -110,7 +110,7 @@ public class DemoController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class InsertAction extends FormViewAction<Person>
     {
         @SuppressWarnings("UnusedDeclaration")
@@ -174,7 +174,7 @@ public class DemoController extends SpringActionController
     /**
      * Using PersonForm (rather than Person) to make UpdateView reshow work
      */
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class UpdateAction extends FormViewAction<PersonForm>
     {
         private Person _person = null;
@@ -249,7 +249,7 @@ public class DemoController extends SpringActionController
      *
      * Note this returns a true ModelAndView.  bulkUpdate.jsp looks like a typical Spring jsp
      */
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class BulkUpdateAction extends FormViewAction<BulkUpdateForm> implements NavTrailAction
     {
         @SuppressWarnings("UnusedDeclaration")
@@ -321,7 +321,7 @@ public class DemoController extends SpringActionController
      * This pattern is actually a little different than a typical form.  Should have a ConfirmViewAction
      * base class
      */
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteAction extends FormViewAction
     {
         public HttpView getView(Object o, boolean reshow, BindException errors) throws Exception
@@ -647,7 +647,7 @@ public class DemoController extends SpringActionController
 
 
     /** Test action not related to demo data */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BindAction extends SimpleViewAction<BindActionBean>
     {
         public BindAction()
@@ -714,7 +714,7 @@ public class DemoController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class ConvertXlsToJsonAction extends ApiAction
     {
         @Override

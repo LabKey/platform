@@ -42,7 +42,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -64,7 +64,7 @@ import java.util.Map;
  * Date: Sep 3, 2009
  * Time: 3:36:07 PM
  */
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 @Action(ActionType.SelectMetaData.class)
 public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 {

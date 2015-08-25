@@ -19,7 +19,7 @@ package org.labkey.study.controllers.specimen;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -43,7 +43,7 @@ import java.util.Map;
  * User: klum
  * Date: Oct 7, 2009
  */
-@RequiresPermissionClass(ReadPermission.class)
+@RequiresPermission(ReadPermission.class)
 public abstract class ParticipantCommentAction extends InsertUpdateAction<SpecimenController.ParticipantCommentForm>
 {
     public ParticipantCommentAction()
@@ -82,7 +82,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
         return false;
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public static class SpecimenCommentInsertAction extends ParticipantCommentAction
     {
         private DataView _dataView;
@@ -124,7 +124,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public static class SpecimenCommentUpdateAction extends ParticipantCommentAction
     {
         @Override

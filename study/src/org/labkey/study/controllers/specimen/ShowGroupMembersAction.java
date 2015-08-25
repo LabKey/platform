@@ -18,7 +18,7 @@ package org.labkey.study.controllers.specimen;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
@@ -44,7 +44,7 @@ import javax.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.List;
 
-@RequiresPermissionClass(ManageSpecimenActorsPermission.class)
+@RequiresPermission(ManageSpecimenActorsPermission.class)
 public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersAction.UpdateGroupForm>
 {
     private SpecimenRequestActor _actor;

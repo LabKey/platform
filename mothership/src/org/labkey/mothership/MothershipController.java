@@ -58,7 +58,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -118,7 +118,7 @@ public class MothershipController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -134,7 +134,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ShowUpdateAction extends SimpleViewAction<SoftwareReleaseForm>
     {
         public ModelAndView getView(SoftwareReleaseForm form, BindException errors) throws Exception
@@ -148,7 +148,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class UpdateAction extends FormHandlerAction<SoftwareReleaseForm>
     {
         public void validateCommand(SoftwareReleaseForm target, Errors errors)
@@ -168,7 +168,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowReleasesAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -190,7 +190,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowRegistrationInstallationGraphAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -240,7 +240,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowActiveInstallationGraphAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -349,7 +349,7 @@ public class MothershipController extends SpringActionController
         return chart;
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteAction extends FormHandlerAction
     {
         public void validateCommand(Object target, Errors errors)
@@ -370,7 +370,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowExceptionsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -395,7 +395,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class ShowInsertAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -411,7 +411,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class InsertAction extends FormHandlerAction<SoftwareReleaseForm>
     {
         public void validateCommand(SoftwareReleaseForm target, Errors errors)
@@ -430,7 +430,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowInstallationsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -458,7 +458,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class CreateIssueFinishedAction extends SimpleViewAction<CreateIssueFinishedForm>
     {
         public ModelAndView getView(CreateIssueFinishedForm form, BindException errors) throws Exception
@@ -476,7 +476,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class EditUpgradeMessageAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -498,7 +498,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class SaveUpgradeMessageAction extends FormHandlerAction<UpgradeMessageForm>
     {
         public void validateCommand(UpgradeMessageForm target, Errors errors)
@@ -520,7 +520,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowServerSessionDetailAction extends SimpleViewAction<ServerSessionForm>
     {
         public ModelAndView getView(ServerSessionForm form, BindException errors) throws Exception
@@ -552,7 +552,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowInstallationDetailAction extends SimpleViewAction<ServerInstallationForm>
     {
         public ModelAndView getView(ServerInstallationForm form, BindException errors) throws Exception
@@ -582,7 +582,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ShowStackTraceDetailAction extends SimpleViewAction<ExceptionStackTraceForm>
     {
         public ModelAndView getView(ExceptionStackTraceForm form, BindException errors) throws Exception
@@ -682,7 +682,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class UpdateStackTraceAction extends FormHandlerAction<ExceptionStackTraceForm>
     {
         public void validateCommand(ExceptionStackTraceForm target, Errors errors)
@@ -701,7 +701,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class UpdateInstallationAction extends FormHandlerAction<ServerInstallationForm>
     {
         public void validateCommand(ServerInstallationForm target, Errors errors)
@@ -789,7 +789,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ThrowExceptionAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -842,7 +842,7 @@ public class MothershipController extends SpringActionController
         getViewContext().getResponse().setHeader(MothershipReport.MOTHERSHIP_STATUS_HEADER_NAME, MothershipReport.MOTHERSHIP_STATUS_SUCCESS);
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ReportsAction extends SimpleViewAction
     {
         public NavTree appendNavTrail(NavTree root)
@@ -1377,7 +1377,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class BulkUpdateAction extends FormHandlerAction<BulkUpdateForm>
     {
         @Override

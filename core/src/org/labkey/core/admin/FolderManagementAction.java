@@ -55,7 +55,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -111,7 +111,7 @@ import java.util.Set;
  * Date: Jan 17, 2011
  * Time: 10:36:02 AM
  */
-@RequiresPermissionClass(AdminPermission.class)
+@RequiresPermission(AdminPermission.class)
 @ActionNames("folderManagement, folderSettings, customize")
 public class FolderManagementAction extends FormViewAction<FolderManagementAction.FolderManagementForm>
 {

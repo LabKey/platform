@@ -83,7 +83,7 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -345,7 +345,7 @@ public class VisualizationController extends SpringActionController
 
 
     @Action(ActionType.SelectMetaData.class)
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetDimensionsAction extends GetMeasuresAction<MeasureSetRequest>
     {
         @Override
@@ -370,7 +370,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class GetDimensionValues extends GetMeasuresAction<DimensionValuesForm>
     {
@@ -434,7 +434,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @Action(ActionType.SelectMetaData.class)
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetZeroDateAction extends GetMeasuresAction<MeasureSetRequest>
     {
         @Override
@@ -444,7 +444,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetVisualizationTypes extends ApiAction
     {
         Map<String, Object> getBaseTypeProperties(Study study)
@@ -713,7 +713,7 @@ public class VisualizationController extends SpringActionController
      * Expects an HTTP post with no parameters, the post body carrying an SVG XML document.
      * Alternately a form-encoded post with a parameter called svg to allow JavaScript clients to access it
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     abstract class ExportSVGAction extends BaseViewAction
     {
         private String _svgSource;
@@ -762,7 +762,7 @@ public class VisualizationController extends SpringActionController
      * Content-type of request must be text/xml, not any kind of multipart
      * Returns a PNG image.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ExportImageAction extends ExportSVGAction
     {
         @Override
@@ -786,7 +786,7 @@ public class VisualizationController extends SpringActionController
      * Content-type of request must be text/xml, not any kind of multipart
      * Returns a PDF document containing the visualization as a scalable vector graphic
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ExportPDFAction extends ExportSVGAction
     {
         @Override
@@ -1021,7 +1021,7 @@ public class VisualizationController extends SpringActionController
         return null;
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetVisualizationAction extends ApiAction<GetVisualizationForm>
     {
         private ReportDescriptor descriptor;
@@ -1086,7 +1086,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @RequiresLogin
     public class SaveVisualizationAction extends ApiAction<SaveVisualizationForm>
     {
@@ -1178,7 +1178,7 @@ public class VisualizationController extends SpringActionController
 
     public static final String TITLE = "Time Chart Wizard";
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TimeChartWizardAction extends SimpleViewAction<GetVisualizationForm>
     {
         String _navTitle = TITLE;
@@ -1221,7 +1221,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class GenericChartWizardAction extends SimpleViewAction<GenericReportForm>
     {
@@ -1274,7 +1274,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @RequiresLogin @RequiresPermissionClass(ReadPermission.class)
+    @RequiresLogin @RequiresPermission(ReadPermission.class)
     public class SaveGenericReportAction extends ApiAction<GenericReportForm>
     {
         @Override
@@ -1378,7 +1378,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetGenericReportAction extends ApiAction<GenericReportForm>
     {
         @Override
@@ -1401,7 +1401,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
     public class GetGenericReportColumnsAction extends ApiAction<ColumnListForm>
     {
@@ -1656,7 +1656,7 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class GetSourceCountsAction extends ApiAction<SourceCountForm>
     {

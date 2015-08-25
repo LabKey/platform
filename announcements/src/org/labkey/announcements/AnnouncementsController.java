@@ -75,7 +75,7 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
@@ -213,7 +213,7 @@ public class AnnouncementsController extends SpringActionController
 
     // Anyone with read permission can attempt to view the list.  AnnouncementWebPart will do further permission checking.  For example,
     //   in a secure message board, those without Editor permissions will only see messages when they are on the member list
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         // Invoked via reflection
@@ -257,7 +257,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ListAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -284,7 +284,7 @@ public class AnnouncementsController extends SpringActionController
         return url;
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteThreadsAction extends RedirectAction
     {
         public boolean doAction(Object o, BindException errors) throws Exception
@@ -608,7 +608,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends AttachmentAction
     {
         public ModelAndView getAttachmentView(final AttachmentForm form, final AttachmentParent parent) throws Exception
@@ -680,7 +680,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CustomizeAction extends FormViewAction<DiscussionService.Settings>
     {
         public URLHelper getSuccessURL(DiscussionService.Settings form)
@@ -743,7 +743,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public abstract class BaseInsertAction extends FormViewAction<AnnouncementForm>
     {
         private URLHelper _returnURL;
@@ -855,7 +855,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class InsertAction extends BaseInsertAction
     {
         public void validateCommand(AnnouncementForm form, Errors errors)
@@ -903,7 +903,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class RespondAction extends BaseInsertAction
     {
         private AnnouncementModel _parent;
@@ -1021,7 +1021,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermission(InsertPermission.class)
     public class CompleteUserAction extends ApiAction<AjaxCompletionForm>
     {
         @Override
@@ -1335,7 +1335,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ThreadAction extends SimpleViewAction<AnnouncementForm>
     {
         private String _title;
@@ -1374,7 +1374,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ThreadBareAction extends ThreadAction
     {
         @Override
@@ -1395,7 +1395,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class RssAction extends SimpleViewAction
     {
         // Invoked via reflection
@@ -1578,7 +1578,7 @@ public class AnnouncementsController extends SpringActionController
         return emailOption;
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SetDefaultEmailOptionsAction extends RedirectAction<EmailDefaultSettingsForm>
     {
         public boolean doAction(EmailDefaultSettingsForm form, BindException errors) throws Exception
@@ -1599,7 +1599,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SetEmailDefault extends ApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
@@ -1627,7 +1627,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SetBulkEmailOptions extends ApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
@@ -1691,7 +1691,7 @@ public class AnnouncementsController extends SpringActionController
     /**
      * Action to populate an Ext store with email notification options for admin settings
      */
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class GetEmailOptions extends ApiAction<NotifyOptionsForm>
     {
         @Override
@@ -2681,7 +2681,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresLogin @RequiresPermissionClass(ReadPermission.class)
+    @RequiresLogin @RequiresPermission(ReadPermission.class)
     public class SubscribeThreadAction extends RedirectAction<SubscriptionBean>
     {
         @Override
