@@ -127,6 +127,20 @@ Ext.define('LABKEY.app.model.Filter', {
 
             var controller = config.isArgos ? 'argos' : 'participant-group';
             var action = config.isArgos ? 'createPatientGroup' : 'createParticipantCategory';
+            var jsonData =  {
+                label : group.label,
+                participantIds : [],
+                description : group.description,
+                ownerId : LABKEY.user.id,
+                type : 'list',
+                visibility : group.visibility,
+                filters : m.toJSON(group.filters, group.isLive)
+            };
+            if (config.isArgos && group.share !== undefined) {
+
+                jsonData['sharePrincipalIds'] = group.share.principals;
+                jsonData['shareSendEmail'] = group.share.sendEmail;
+            }
 
             // setup config for save call
             var requestConfig = {
@@ -134,17 +148,7 @@ Ext.define('LABKEY.app.model.Filter', {
                 method: 'POST',
                 success: config.success,
                 failure: config.failure || m.getErrorCallback(),
-                jsonData: {
-                    label : group.label,
-                    participantIds : [],
-                    description : group.description,
-                    ownerId : LABKEY.user.id,
-                    type : 'list',
-                    visibility : group.visibility,
-                    filters : m.toJSON(group.filters, group.isLive),
-                    sharePrincipalIds: group.share.principals,
-                    shareSendEmail: group.share.sendEmail
-                },
+                jsonData: jsonData,
                 headers: {"Content-Type": 'application/json', "X-LABKEY-CSRF":LABKEY.CSRF}
             };
 
