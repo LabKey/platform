@@ -29,7 +29,8 @@ Ext4.define('Study.window.ParticipantGroup', {
             height : config.hideDataRegion ? 325 : 500,
             type : config.type || 'manual',
             shared : config.shared || false,
-            resizable : false
+            resizable : false,
+            isUpdate : false
         });
 
         Ext4.apply(config, {
@@ -314,8 +315,13 @@ Ext4.define('Study.window.ParticipantGroup', {
             return false;
         }
 
+        var apiMethod = "saveParticipantGroup.api";
+        if (me.isUpdate) {
+            apiMethod = "updateParticipantGroup.api";
+        }
+
         Ext4.Ajax.request({
-            url : (LABKEY.ActionURL.buildURL("participant-group", "saveParticipantGroup.api")),
+            url : (LABKEY.ActionURL.buildURL("participant-group", apiMethod)),
             method : 'POST',
             success : LABKEY.Utils.getCallbackWrapper(function(data) {
                 this.getEl().unmask();
