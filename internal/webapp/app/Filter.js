@@ -141,7 +141,9 @@ Ext.define('LABKEY.app.model.Filter', {
                     ownerId : LABKEY.user.id,
                     type : 'list',
                     visibility : group.visibility,
-                    filters : m.toJSON(group.filters, group.isLive)
+                    filters : m.toJSON(group.filters, group.isLive),
+                    sharePrincipalIds: group.share.principals,
+                    shareSendEmail: group.share.sendEmail
                 },
                 headers: {"Content-Type": 'application/json', "X-LABKEY-CSRF":LABKEY.CSRF}
             };
