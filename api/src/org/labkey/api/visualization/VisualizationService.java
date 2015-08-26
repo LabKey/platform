@@ -15,7 +15,6 @@
  */
 package org.labkey.api.visualization;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -25,20 +24,24 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
+import org.springframework.validation.BindException;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
 public interface VisualizationService
 {
-    public static class SQLResponse
+    class SQLResponse
     {
         public SchemaKey schemaKey;
         public String sql;
     }
 
     SQLResponse getDataGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException, IOException;
+
+    SQLResponse getDataCDSGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException, SQLException, BindException, IOException;
 
     Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(Container c, User u, MeasureSetRequest measureRequest);
 
