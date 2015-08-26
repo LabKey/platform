@@ -562,7 +562,8 @@ public class LoginController extends SpringActionController
                     if( null == form.getReturnUrl() || form.getReturnUrl().length() == 0)  {
                         response.put("returnUrl",  "/labkey/project/home/begin.view?");
                     } else {
-                        response.put("returnUrl", form.getReturnUrl());
+                        // response.put("returnUrl", form.getReturnUrl());
+                        response.put("returnUrl", redirectUrl.toString());
                     }
 
                     if (form.isApprovedTermsOfUse())
