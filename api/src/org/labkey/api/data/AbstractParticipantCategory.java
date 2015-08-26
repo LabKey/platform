@@ -162,17 +162,6 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
         return json;
     }
 
-    // subclasses should override, call this super implementation, and then take care of their own fields
-    public void fromJSON(JSONObject json)
-    {
-        if (json.has("rowId"))
-            setRowId(json.getInt("rowId"));
-        if (json.has("ownerId"))
-            setOwnerId(json.getInt("ownerId"));
-        if (json.has("label"))
-            setLabel(json.getString("label"));
-    }
-
     private JSONObject createDisplayValue(Object value, Object displayValue)
     {
         JSONObject json = new JSONObject();
