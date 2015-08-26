@@ -2,6 +2,7 @@
     <library compileInProductionMode="true">
         <script path="query/browser/Caches.js"/>
         <script path="query/browser/Tree.js"/>
+        <script path="query/browser/Button.js"/>
         <script path="query/browser/view/Base.js"/>
         <script path="query/browser/view/Home.js"/>
         <script path="query/browser/view/QueryDetails.js"/>

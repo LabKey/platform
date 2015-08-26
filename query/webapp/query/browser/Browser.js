@@ -137,106 +137,66 @@ Ext4.define('LABKEY.query.browser.Browser', {
 
     _initTbar : function() {
         var tbar = [{
+            xtype: 'querybutton',
             text: 'Refresh',
-            handler: this.onRefresh,
             tooltip: 'Refreshes the tree of schemas and queries, or a particular schema if one is selected.',
-            renderTpl: [
-            '<span id="{id}-btnEl" class="iconbtn">',
-                '<span class="fa fa-refresh"></span>',
-                '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
-                    '{text:htmlEncode}',
-                '</span>',
-            '</span>'
-            ],
+            fontCls: 'fa-refresh',
+            handler: this.onRefresh,
             scope: this
         },{
+            xtype: 'querybutton',
             text: 'Validate Queries',
-            handler: function() { this.showPanel('lk-vq-panel'); },
+            fontCls: 'fa-check-circle',
             tooltip: 'Opens the validate queries tab where you can validate all the queries defined in this folder.',
-            renderTpl: [
-            '<span id="{id}-btnEl" class="iconbtn">',
-                '<span class="fa fa-check-circle"></span>',
-                '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
-                    '{text:htmlEncode}',
-                '</span>',
-            '</span>'
-            ],
+            handler: function() { this.showPanel('lk-vq-panel'); },
             scope: this
         }];
 
         if (LABKEY.Security.currentUser.isAdmin) {
             tbar.push({
+                xtype: 'querybutton',
                 text: 'Schema Administration',
+                tooltip: 'Create or modify external schemas.',
+                fontCls: 'fa-folder-o',
+                stacked: true,
+                stackedCls: 'fa-plus-circle labkey-fa-plus-circle-folder',
                 handler: function() {
                     window.location = LABKEY.ActionURL.buildURL('query', 'admin');
                 },
-                tooltip: 'Create or modify external schemas.',
-                renderTpl: [
-                    '<span id="{id}-btnEl" class="iconbtn">',
-                        '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper">',
-                            '<span class="fa fa-folder-o fa-stack-2x"></span>',
-                            '<span class="fa fa-stack-1x fa-plus-circle labkey-fa-plus-circle-folder"></span>',
-                        '</span>',
-                        '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
-                            '{text:htmlEncode}',
-                        '</span>',
-                    '</span>'
-                ],
                 scope: this
             });
             tbar.push({
+                xtype: 'querybutton',
                 text: 'Create New Query',
-                handler: this.onCreateQueryClick,
                 tooltip: 'Create a new query in the selected schema (requires that you select a particular schema or query within that schema).',
-                renderTpl: [
-                    '<span id="{id}-btnEl" class="iconbtn">',
-                        '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper">',
-                            '<span class="fa fa-folder-o fa-stack-2x"></span>',
-                            '<span class="fa fa-stack-1x fa-plus-circle labkey-fa-plus-circle-folder"></span>',
-                        '</span>',
-                        '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
-                            '{text:htmlEncode}',
-                        '</span>',
-                    '</span>'
-                ],
+                fontCls: 'fa-file-o',
+                stacked: true,
+                stackedCls: 'fa-plus-circle labkey-fa-plus-circle-file',
+                handler: this.onCreateQueryClick,
                 scope: this
             });
             tbar.push({
+                xtype: 'querybutton',
                 text: 'Manage Remote Connections',
+                tooltip: 'Manage remote connection credentials for remote LabKey server authentication.',
+                fontCls: 'fa-file-o',
+                stacked: true,
+                stackedCls: 'fa-plus-circle labkey-fa-plus-circle-file',
                 handler: function() {
                     window.location = LABKEY.ActionURL.buildURL('query', 'manageRemoteConnections');
                 },
-                tooltip: 'Manage remote connection credentials for remote LabKey server authentication.',
-                renderTpl: [
-                    '<span id="{id}-btnEl" class="iconbtn">',
-                        '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper">',
-                            '<span class="fa fa-folder-o fa-stack-2x"></span>',
-                            '<span class="fa fa-stack-1x fa-plus-circle labkey-fa-plus-circle-folder"></span>',
-                        '</span>',
-                        '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
-                            '{text:htmlEncode}',
-                        '</span>',
-                    '</span>'
-                ],
                 scope: this
             });
             tbar.push({
+                xtype: 'querybutton',
                 text: 'Generate Schema Export',
+                tooltip: 'Generate schema export sql script for migrating a schema.',
+                fontCls: 'fa-file-o',
+                stacked: true,
+                stackedCls: 'fa-plus-circle labkey-fa-plus-circle-file',
                 handler: function() {
                     location.href = LABKEY.ActionURL.buildURL('query', 'generateSchema', null, {returnUrl: window.location});
                 },
-                tooltip: 'Generate schema export sql script for migrating a schema.',
-                renderTpl: [
-                    '<span id="{id}-btnEl" class="iconbtn">',
-                        '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper">',
-                            '<span class="fa fa-folder-o fa-stack-2x"></span>',
-                            '<span class="fa fa-stack-1x fa-plus-circle labkey-fa-plus-circle-folder"></span>',
-                        '</span>',
-                        '<span id="{id}-btnInnerEl" class="labkey-fa-icon-text">',
-                            '{text:htmlEncode}',
-                        '</span>',
-                    '</span>'
-                ],
                 scope: this
             });
         }

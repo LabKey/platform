@@ -22,6 +22,10 @@ Ext4.define('File.panel.Action', {
 
     padding: '2px 6px',
 
+    stackedCls: undefined,
+
+    fontCls: undefined,
+
     statics: {
         Type: {
             NOMIN: 'NOMIN', // 'No file required',

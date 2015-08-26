@@ -581,7 +581,7 @@ Ext4.define('File.panel.Browser', {
                 text: 'Edit Properties',
                 hardText: 'Edit Properties',
                 itemId: 'editFileProps',
-                fontCls: 'fa-pencil',
+                fontCls: 'fa-wrench',
                 tooltip: 'Edit properties on the selected file(s)',
                 actionType: File.panel.Action.Type.ATLEASTONE,
                 handler: this.onEditFileProps,
