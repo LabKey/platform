@@ -2150,6 +2150,13 @@ public class BitSetQueryImpl
                         String levelColumn = "_" + lvl.getName();
                         levelColumn = levelColumn.toLowerCase();
 
+                        // Unfortunately, need to suffix participant identifiers with 'id' in order to resolve the
+                        // column, not the query.
+                        if (levelColumn.equals("_subject") || levelColumn.equals("_patient") || levelColumn.equals("_participant"))
+                        {
+                            levelColumn += "id";
+                        }
+
                         for (int i=1; i < metaData.getColumnCount(); i++)
                         {
                             if (metaData.getColumnName(i).toLowerCase().contains(levelColumn))
