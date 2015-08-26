@@ -78,7 +78,10 @@
                 isWebDav  : true,
                 fileSystem : fileSystem,
                 gridConfig : {
-                    selType : 'rowmodel'
+                    selModel: {
+                        type: 'rowmodel',
+                        mode: 'MULTI'
+                    }
                 },
                 tbarItems : ['->', htmlViewAction, <%= getUser().isGuest() ? "loginAction" : "logoutAction" %>]
             }],
