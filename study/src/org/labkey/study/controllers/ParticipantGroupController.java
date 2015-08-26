@@ -152,29 +152,6 @@ public class ParticipantGroupController extends BaseStudyController
         {
             _filters = filters;
         }
-
-        public void fromJSON(JSONObject json)
-        {
-            super.fromJSON(json);
-
-            if (json.has("participantIds"))
-            {
-                JSONArray ptids = json.getJSONArray("participantIds");
-                String[] ids = new String[ptids.length()];
-
-                for (int i=0; i < ptids.length(); i++)
-                {
-                    ids[i] = ptids.getString(i);
-                }
-                setParticipantIds(ids);
-            }
-
-            if (json.has("participantFilters"))
-            {
-                JSONArray filters = json.getJSONArray("participantFilters");
-                setFilters(filters.toString());
-            }
-        }
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin

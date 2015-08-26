@@ -163,27 +163,6 @@ public class ParticipantCategoryImpl extends AbstractParticipantCategory<String>
     }
 
     @Override
-    public void fromJSON(JSONObject json)
-    {
-        super.fromJSON(json);
-
-        if (json.has("type"))
-            setType(json.getString("type"));
-
-        if (json.has("queryName"))
-            setLabel(json.getString("queryName"));
-        if (json.has("schemaName"))
-            setLabel(json.getString("schemaName"));
-        if (json.has("viewName"))
-            setLabel(json.getString("viewName"));
-
-        if (json.has("datasetId"))
-            setDatasetId(json.getInt("datasetId"));
-        if (json.has("groupProperty"))
-            setGroupProperty(json.getString("groupProperty"));
-    }
-
-    @Override
     public void copy(AbstractParticipantCategory copy)
     {
         super.copy(copy);
