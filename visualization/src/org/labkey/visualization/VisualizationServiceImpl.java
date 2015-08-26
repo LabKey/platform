@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JsonWriter;
@@ -43,9 +44,12 @@ import org.labkey.api.visualization.VisualizationProvider.MeasureFilter;
 import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
 import org.labkey.api.visualization.VisualizationService;
 import org.labkey.api.visualization.VisualizationSourceColumn;
+import org.labkey.visualization.sql.VisualizationCDSGenerator;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
+import org.springframework.validation.BindException;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -70,6 +74,27 @@ public class VisualizationServiceImpl implements VisualizationService
         SQLResponse ret = new SQLResponse();
         ret.schemaKey = generator.getPrimarySchema().getSchemaPath();
         ret.sql = generator.getSQL();
+        return ret;
+    }
+
+    public SQLResponse getDataCDSGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException, SQLException, BindException, IOException
+    {
+        ViewContext context = new ViewContext();
+        context.setUser(user);
+        context.setContainer(c);
+
+        ObjectReader r = new ObjectMapper().reader(VisDataRequest.class).without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        VisDataRequest vdr = r.readValue(json.toString());
+        vdr.setMetaDataOnly(true);
+
+        VisualizationCDSGenerator generator = new VisualizationCDSGenerator(context, vdr);
+
+        SQLResponse ret = new SQLResponse();
+        ret.schemaKey = generator.getPrimarySchema().getSchemaPath();
+        BindException errors = new NullSafeBindException(vdr, "form");
+        ret.sql = generator.getSQL(errors);
+        if (errors.hasErrors())
+            throw errors;
         return ret;
     }
 

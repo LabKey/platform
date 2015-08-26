@@ -64,6 +64,7 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -737,7 +738,7 @@ public class BitSetQueryImpl
                     throw new IllegalStateException("unsupported query, did not expect " + subquery.getClass().getName());
                 return new MemberSetResult(filtered);
             }
-            else if (null != expr.sql || null != expr.getData)
+            else if (null != expr.sql || null != expr.getData || null != expr.getDataCDS)
             {
                 if (!(_dataSourceHelper instanceof SqlDataSourceHelper))
                     throw new IllegalStateException("sql not supported");
@@ -748,17 +749,25 @@ public class BitSetQueryImpl
                     throw new IllegalStateException("sql requires a user");
 
                 String sql = expr.sql;
-                if (null != expr.getData)
+                if (null != expr.getData || null != expr.getDataCDS)
                 {
                     VisualizationService vs = ServiceRegistry.get(VisualizationService.class);
                     if (null == vs)
                         throw new UnsupportedOperationException("VisualizationService not registered");
                     try
                     {
-                        VisualizationService.SQLResponse r = vs.getDataGenerateSQL(container, user, expr.getData);
-                        sql = r.sql;
+                        if (null != expr.getData)
+                        {
+                            VisualizationService.SQLResponse r = vs.getDataGenerateSQL(container, user, expr.getData);
+                            sql = r.sql;
+                        }
+                        else
+                        {
+                            VisualizationService.SQLResponse r = vs.getDataCDSGenerateSQL(container, user, expr.getDataCDS);
+                            sql = r.sql;
+                        }
                     }
-                    catch (SQLGenerationException|IOException ex)
+                    catch (SQLGenerationException|IOException|SQLException|BindException ex)
                     {
                         throw new IllegalArgumentException(ex);
                     }
@@ -2127,22 +2136,51 @@ public class BitSetQueryImpl
             MemberSet ret = new MemberSet();
             try (ResultSet rs = execute(user, sql))
             {
-resultLoop:     while (rs.next())
-                {
-                    CachedCube._Member m = all;
-                    for (int i=1 ; i<=depth ; i++)
+                Map<Integer, Integer> columnMap = new HashMap<>();
+                ResultSetMetaData metaData = rs.getMetaData();
+                Hierarchy hierarchy = level.getHierarchy();
+                NamedList<Level> levels = hierarchy.getLevels();
+                int _depth = -1;
+
+                // Determine which columns align with which level -- this should possibly be passed in by the user
+                levelLoop:
+                    for (Level lvl : levels)
                     {
-                        Object key = rs.getObject(i);
-                        CachedCube._Member child = m.getChildMemberByKey(key);
-                        if (null == child)
+                        _depth++;
+                        String levelColumn = "_" + lvl.getName();
+                        levelColumn = levelColumn.toLowerCase();
+
+                        for (int i=1; i < metaData.getColumnCount(); i++)
                         {
-                            _log.info("Child not found: parent=" + m.getUniqueName() + " key=" + String.valueOf(key));
-                            continue resultLoop;
+                            if (metaData.getColumnName(i).toLowerCase().contains(levelColumn))
+                            {
+                                columnMap.put(_depth, i);
+                                continue levelLoop;
+                            }
                         }
-                        m = child;
+
+                        // Didn't find an associated column
+                        columnMap.put(_depth, -1);
                     }
-                    ret.add(m);
-                }
+
+                resultLoop:
+                    while (rs.next())
+                    {
+                        CachedCube._Member m = all;
+                        for (int i=1; i <= depth; i++)
+                        {
+                            Object key = rs.getObject(columnMap.get(i));
+                            CachedCube._Member child = m.getChildMemberByKey(key);
+
+                            if (null == child)
+                            {
+                                _log.info("Child not found: parent=" + m.getUniqueName() + " key=" + String.valueOf(key));
+                                continue resultLoop;
+                            }
+                            m = child;
+                        }
+                        ret.add(m);
+                    }
             }
 
             _resultsCache.put(cacheKey, ret);
