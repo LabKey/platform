@@ -1259,7 +1259,7 @@ public class IssuesController extends SpringActionController
         {
             if (requiredFields.indexOf(columnName) != -1)
             {
-                if (StringUtils.isEmpty(value))
+                if (StringUtils.isEmpty(value) || StringUtils.isEmpty(value.trim()))
                 {
                     final CustomColumnConfiguration ccc = getCustomColumnConfiguration();
                     String name = null;
