@@ -26,7 +26,25 @@ import java.util.*;
  */
 public class AdminConsole
 {
-    public enum SettingsLinkType {Premium, Configuration, Management, Diagnostics}
+    public enum SettingsLinkType
+    {
+        Premium
+        {
+            @Override
+            public String getCaption()
+            {
+                return "Premium Features";
+            }
+        },
+        Configuration,
+        Management,
+        Diagnostics;
+
+        public String getCaption()
+        {
+            return name();
+        }
+    }
 
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
     private static final List<ExperimentalFeatureFlag> _experimentalFlags = new ArrayList<>();
