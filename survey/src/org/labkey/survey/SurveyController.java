@@ -238,6 +238,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     public static class SurveyDesignForm extends ReturnUrlForm
     {
         private int _rowId;
+        private String _designId;
         private String _label;
         private String _description;
         private String _metadata;
@@ -314,6 +315,20 @@ public class SurveyController extends SpringActionController implements SurveyUr
         {
             _stringifyMetadata = stringifyMetadata;
         }
+
+        public String getDesignId()
+        {
+            return _designId;
+        }
+
+        public void setDesignId(String designId)
+        {
+            _designId = designId;
+            if (NumberUtils.isDigits(_designId))
+            {
+                _rowId = NumberUtils.toInt(_designId);
+            }
+        }
     }
 
     @RequiresPermission(InsertPermission.class)
@@ -324,7 +339,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             SurveyDesign survey = getSurveyDesign(form);
-            JSONObject errorInfo = null;
+            Map<String, Object> errorInfo = new HashMap<>();
 
             try {
                 // try to validate the metadata
@@ -332,11 +347,10 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
                 if (metadata != null)
                 {
-                    ObjectMapper mapper = new ObjectMapper();
-                    mapper.readTree(metadata);
-
                     // if the json is valid, validate that it meets a minimal survey shape
-                    errorInfo = validateSurveyMetadata(metadata);
+                    String errorMsg = SurveyManager.validateSurveyMetadata(metadata);
+                    if (errorMsg != null)
+                        errorInfo.put("message", errorMsg);
                 }
             }
             catch (JsonProcessingException e)
@@ -353,7 +367,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                 errorInfo.put("message", String.format(msg, cause));
             }
 
-            if (errorInfo == null)
+            if (errorInfo.isEmpty())
             {
                 SurveyManager.get().saveSurveyDesign(getContainer(), getUser(), survey);
                 response.put("success", true);
@@ -398,67 +412,6 @@ public class SurveyController extends SpringActionController implements SurveyUr
             }
             return errors;
         }
-
-        private JSONObject validateSurveyMetadata(String metadata)
-        {
-            JSONObject errors = null;
-
-            try {
-                JSONObject o = new JSONObject(metadata);
-                StringBuilder sb = new StringBuilder();
-
-                if (o.has("survey"))
-                {
-                    JSONObject jsonSurvey = o.getJSONObject("survey");
-                    if (jsonSurvey.has("sections"))
-                    {
-                        JSONArray jsonSections = jsonSurvey.getJSONArray("sections");
-
-                        if (jsonSections.length() == 0)
-                            sb.append("The sections JSON array cannot be empty");
-
-                        for (int i=0; i < jsonSections.length(); i++)
-                        {
-                            JSONObject section = jsonSections.getJSONObject(i);
-
-                            if (!section.containsKey("title"))
-                                sb.append("Each section must contain a property named : 'title'\n");
-                            else if (section.has("questions"))
-                            {
-                                for (JSONObject question : section.getJSONArray("questions").toJSONObjectArray())
-                                {
-                                    if (question == null)
-                                    {
-                                        sb.append("Each of the elements in the question array must be an object and cannot be null\n");
-                                        break;
-                                    }
-                                }
-                            }
-                            else if (section.has("extAlias"))
-                                section.getString("extAlias");
-                            else
-                                sb.append("Each section must contain a JSON array named 'questions' or contain a JSON string for the 'extAlias'\n");
-                        }
-                    }
-                    else
-                        sb.append("The survey object must contain a JSON array named : 'sections'");
-                }
-                else
-                    sb.append("Survey metadata must have a top level property named : 'survey'");
-
-                if (sb.length() > 0)
-                {
-                    errors = new JSONObject();
-                    errors.put("message", sb.toString());
-                }
-            }
-            catch (JSONException e)
-            {
-                errors = new JSONObject();
-                errors.put("message", e.getMessage());
-            }
-            return errors;
-        }
     }
 
     private SurveyDesign getSurveyDesign(SurveyDesignForm form)
@@ -466,6 +419,17 @@ public class SurveyController extends SpringActionController implements SurveyUr
         SurveyDesign survey = new SurveyDesign();
         if (form.getRowId() != 0)
             survey = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getRowId());
+        else if (form.getDesignId() != null)
+        {
+            if (NumberUtils.isDigits(form.getDesignId()))
+            {
+                survey = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), NumberUtils.toInt(form.getDesignId()));
+            }
+            else
+            {
+                survey = SurveyManager.get().getModuleSurveyDesign(getContainer(), getUser(), form.getDesignId());
+            }
+        }
 
         if (survey != null)
         {

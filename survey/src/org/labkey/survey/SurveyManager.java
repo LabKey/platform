@@ -17,11 +17,19 @@
 
 package org.labkey.survey;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -39,33 +47,51 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.PathBasedModuleResourceCache;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.api.survey.model.SurveyListener;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SurveyManager
 {
+    private static final Logger _log = Logger.getLogger(SurveyManager.class);
     private static final SurveyManager _instance = new SurveyManager();
     private static final List<SurveyListener> _surveyListeners = new CopyOnWriteArrayList<>();
+    private static final PathBasedModuleResourceCache<Collection<SurveyDesign>> MODULE_SURVEY_DESIGN_CACHE = ModuleResourceCaches.create("Module Survey Design Cache", new SurveyDesignResourceCacheHandler());
+
+    public static final String MODULE_RESOURCE_FILE_EXTENSION = ".metadata.json";
+    public static final String MODULE_RESOURCE_PREFIX = "module:";
 
     private SurveyManager()
     {
@@ -233,6 +259,29 @@ public class SurveyManager
     public SurveyDesign getSurveyDesign(Container container, User user, int surveyId)
     {
         return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter(FieldKey.fromParts("rowId"), surveyId), null).getObject(SurveyDesign.class);
+    }
+
+    /**
+     * Experimental, retrieves a module based survey design from the cache. Module based survey IDs
+     * look like : module:schema/query for example module:mpower/participantDemographics.
+     */
+    @Nullable
+    public SurveyDesign getModuleSurveyDesign(Container container, User user, String surveyId)
+    {
+        if (surveyId != null && surveyId.startsWith(MODULE_RESOURCE_PREFIX))
+        {
+            // parse out the path parts
+            Path parts = Path.parse(surveyId.substring(MODULE_RESOURCE_PREFIX.length()));
+            if (parts.size() == 2)
+            {
+                Map<String, SurveyDesign> surveyDesignMap = getModuleSurveyDesigns(container, user, parts.get(0));
+                if (surveyDesignMap.containsKey(parts.get(1)))
+                {
+                    return surveyDesignMap.get(parts.get(1));
+                }
+            }
+        }
+        return null;
     }
 
     public SurveyDesign[] getSurveyDesigns(Container container, ContainerFilter filter)
@@ -526,6 +575,199 @@ public class SurveyManager
             }
         }
         return null;
+    }
+
+    public Map<String, SurveyDesign> getModuleSurveyDesigns(Container container, User user, String schemaName)
+    {
+        Collection<Module> modules = container.getActiveModules();
+        Map<String, SurveyDesign> designMap = new CaseInsensitiveHashMap<>();
+
+        for (Module module : modules)
+        {
+            Collection<SurveyDesign> surveyDesigns = MODULE_SURVEY_DESIGN_CACHE.getResource(module, new Path("surveys", schemaName), schemaName);
+            if (!surveyDesigns.isEmpty())
+            {
+                // CacheLoader returns empty collection (not null) for non-existent directories
+                //noinspection ConstantConditions
+                for (SurveyDesign design : surveyDesigns)
+                {
+                    if (design.getQueryName() != null)
+                    {
+                        designMap.put(design.getQueryName(), design);
+                    }
+                }
+            }
+        }
+        return designMap;
+    }
+
+    private static class SurveyDesignResourceCacheHandler implements ModuleResourceCacheHandler<Path, Collection<SurveyDesign>>
+    {
+        @Override
+        public boolean isResourceFile(String filename)
+        {
+            return filename.endsWith(MODULE_RESOURCE_FILE_EXTENSION);
+        }
+
+        @Override
+        public String getResourceName(Module module, String filename)
+        {
+            // We're invalidating the whole list of survey designs in the schema, not individual designs... so leave resource name blank
+            return "";
+        }
+
+        @Override
+        public String createCacheKey(Module module, Path path)
+        {
+            // We're retrieving/caching/invalidating a list of survey designs, not individual designs, so append "*" to the
+            // requested path. This causes the listener to be registered in "path", not its parent.
+            return ModuleResourceCache.createCacheKey(module, path.append("*").toString());
+        }
+
+        @Override
+        public CacheLoader<String, Collection<SurveyDesign>> getResourceLoader()
+        {
+            return (key, argument) -> {
+                try
+                {
+                    ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
+
+                    // Remove "/*" added by getCacheKey()
+                    String name = id.getName();
+                    Resource surveyDir = id.getModule().getModuleResource(name.substring(0, name.length() - 2));
+
+                    Collection<? extends Resource> viewResources = getModuleSurveyDesigns(surveyDir);
+                    if (viewResources.isEmpty())
+                    {
+                        return Collections.emptyList();
+                    }
+                    else
+                    {
+                        Collection<SurveyDesign> surveyDesigns = new LinkedList<>();
+                        for (Resource r : viewResources)
+                        {
+                            String metadata = PageFlowUtil.getStreamContentsAsString(r.getInputStream(), StandardCharsets.UTF_8);
+
+                            try
+                            {
+                                String errorMessage = validateSurveyMetadata(metadata);
+                                if (errorMessage == null)
+                                {
+                                    SurveyDesign design = new SurveyDesign();
+
+                                    design.setMetadata(metadata);
+                                    design.setSchemaName((String)argument);
+                                    design.setQueryName(r.getName().substring(0, r.getName().length() - MODULE_RESOURCE_FILE_EXTENSION.length()));
+
+                                    surveyDesigns.add(design);
+                                }
+                                else
+                                {
+                                    _log.error(errorMessage);
+                                }
+                            }
+                            catch (IOException e)
+                            {
+                                _log.error(e.getMessage());
+                            }
+                        }
+                        return Collections.unmodifiableCollection(surveyDesigns);
+                    }
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            };
+        }
+
+        @Nullable
+        @Override
+        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return null;
+        }
+
+        /** Find any .metadata.json files under the given surveyDir Resource. */
+        private Collection<? extends Resource> getModuleSurveyDesigns(Resource surveyDir)
+        {
+            if (surveyDir == null || !surveyDir.isCollection())
+                return Collections.emptyList();
+
+            List<Resource> ret = new ArrayList<>();
+            for (String name : surveyDir.listNames())
+            {
+                if (StringUtils.endsWithIgnoreCase(name, MODULE_RESOURCE_FILE_EXTENSION))
+                {
+                    Resource surveyMetadata = surveyDir.find(name);
+                    if (surveyMetadata != null)
+                    {
+                        ret.add(surveyMetadata);
+                    }
+                }
+            }
+            return ret;
+        }
+    }
+
+    /**
+     * Used to validate the basic shape of the survey design JSON
+     * @param metadata
+     * @return the error messages
+     */
+    public static String validateSurveyMetadata(String metadata) throws IOException, JsonProcessingException
+    {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.readTree(metadata);
+        StringBuilder sb = new StringBuilder();
+
+        try {
+            JSONObject o = new JSONObject(metadata);
+
+            if (o.has("survey"))
+            {
+                JSONObject jsonSurvey = o.getJSONObject("survey");
+                if (jsonSurvey.has("sections"))
+                {
+                    JSONArray jsonSections = jsonSurvey.getJSONArray("sections");
+
+                    if (jsonSections.length() == 0)
+                        sb.append("The sections JSON array cannot be empty");
+
+                    for (int i=0; i < jsonSections.length(); i++)
+                    {
+                        JSONObject section = jsonSections.getJSONObject(i);
+
+                        if (!section.containsKey("title"))
+                            sb.append("Each section must contain a property named : 'title'\n");
+                        else if (section.has("questions"))
+                        {
+                            for (JSONObject question : section.getJSONArray("questions").toJSONObjectArray())
+                            {
+                                if (question == null)
+                                {
+                                    sb.append("Each of the elements in the question array must be an object and cannot be null\n");
+                                    break;
+                                }
+                            }
+                        }
+                        else if (section.has("extAlias"))
+                            section.getString("extAlias");
+                        else
+                            sb.append("Each section must contain a JSON array named 'questions' or contain a JSON string for the 'extAlias'\n");
+                    }
+                }
+                else
+                    sb.append("The survey object must contain a JSON array named : 'sections'");
+            }
+            else
+                sb.append("Survey metadata must have a top level property named : 'survey'");
+        }
+        catch (JSONException e)
+        {
+            sb.append(e.getMessage());
+        }
+        return sb.length() > 0 ? sb.toString() : null;
     }
 
     public static class TestCase extends Assert
