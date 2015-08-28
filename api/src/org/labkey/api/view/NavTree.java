@@ -27,9 +27,9 @@ import org.labkey.api.util.URLHelper;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -54,7 +54,6 @@ public class NavTree implements Collapsible
     private String _script;
     private String _id = "";
     private boolean _disabled;
-    private String _display;
     private String _description;
     private boolean _nofollow = false;
     private String _imageSrc = null;
@@ -134,8 +133,7 @@ public class NavTree implements Collapsible
         _target = source._target;
         _tip = source._tip;
 
-        for (NavTree child : source._children)
-            _children.add(new NavTree(child));
+        _children.addAll(source._children.stream().map(NavTree::new).collect(Collectors.toList()));
     }
 
 
@@ -202,12 +200,6 @@ public class NavTree implements Collapsible
     }
 
 
-    public NavTree addChild(String display, String href, String imageSrc, int width, int height)
-    {
-        addChild(new NavTree(display, href, imageSrc));
-        return this;
-    }
-
     public NavTree addChild(String display, String href, String imageSrc)
     {
         addChild(new NavTree(display, href, imageSrc));
@@ -258,13 +250,7 @@ public class NavTree implements Collapsible
     // Sort children by name, case-insensitive
     public void sort()
     {
-        Collections.sort(_children, new Comparator<NavTree>()
-        {
-            public int compare(NavTree a, NavTree b)
-            {
-                return a.getText().compareToIgnoreCase(b.getText());
-            }
-        });
+        Collections.sort(_children, (a, b) -> a.getText().compareToIgnoreCase(b.getText()));
     }
 
 
