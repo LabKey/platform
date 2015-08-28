@@ -50,7 +50,7 @@
         if (!links.isEmpty())
         { %>
 
-    <tr><td colspan="2"><b><%=h(type.name())%></b></td></tr><%
+    <tr><td colspan="2"><b><%=h(type.getCaption())%></b></td></tr><%
         for (AdminLink link : links)
         { %>
     <tr><td colspan="2"><%=textLink(link.getText(), link.getUrl())%></td></tr><%
