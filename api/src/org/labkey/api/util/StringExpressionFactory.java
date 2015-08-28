@@ -30,6 +30,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 
@@ -41,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -307,6 +307,25 @@ public class StringExpressionFactory
                         if (table != null)
                         {
                             return table.getPublicSchemaName();
+                        }
+                    }
+                    return "";
+                }
+            },
+            schemaPath
+            {
+                @Override
+                public String getValue(RenderContext context)
+                {
+                    DataRegion region = context.getCurrentRegion();
+                    if (region != null)
+                    {
+                        TableInfo table = region.getTable();
+                        if (table != null)
+                        {
+                            UserSchema userSchema = table.getUserSchema();
+                            if (null != userSchema)
+                                return userSchema.getSchemaPath().toString();
                         }
                     }
                     return "";
