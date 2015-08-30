@@ -139,6 +139,8 @@ abstract public class EHRService
 
     abstract public DataEntryForm getDataEntryForm(String name, Container c, User u);
 
+    abstract public void registerDefaultFieldKeys(String schemaName, String queryName, List<FieldKey> keys);
+
     public static enum FORM_TYPE
     {
         Task(),
