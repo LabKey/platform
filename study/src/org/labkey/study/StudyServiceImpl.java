@@ -767,7 +767,7 @@ public class StudyServiceImpl implements StudyService.Service
                         @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         return getOneOfSpecimenTablesUnion(qsDefault, containers, filterFragments, new SpecimenDomainKind(),
-                                           SpecimenSummaryTable.class, dontAliasColumns, useParticipantIdName);
+                SpecimenSummaryTable.class, dontAliasColumns, useParticipantIdName);
     }
 
     private TableInfo getOneOfSpecimenTablesUnion(QuerySchema qsDefault, Set<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments,
@@ -812,7 +812,7 @@ public class StudyServiceImpl implements StudyService.Service
             throw new IllegalStateException("Unable to construct class instance.");
         }
         return createUnionTable(schemaDefault, tables.values(), tables.keySet(), publicName, kind, filterFragmentMap,
-                                dontAliasColumns, useParticipantIdName);
+                dontAliasColumns, useParticipantIdName);
     }
 
     private TableInfo createUnionTable(StudyQuerySchema schemaDefault, Collection<BaseStudyTable> terms, final Set<Container> containers, String tableName, DomainKind kind,
@@ -828,17 +828,6 @@ public class StudyServiceImpl implements StudyService.Service
         BaseStudyTable table = (BaseStudyTable)terms.toArray()[0];
         SqlDialect dialect = table.getSqlDialect();
         AliasManager aliasManager = new AliasManager(table.getSchema());
-        Set<String> mandatory = new CaseInsensitiveHashSet(kind.getMandatoryPropertyNames(null));
-        mandatory.add("specimen");          // alias for specimenid
-        mandatory.add("container");
-        mandatory.add("vialcomments");      // alias for globaluniqueid
-        mandatory.add("participantid");
-        mandatory.add("sequencenum");
-        mandatory.add("primarytype");       // alias for primarytypeid
-        mandatory.add("derivativetype");    // alias for derivativetypeid
-        mandatory.add("derivativetype2");    // alias for derivativetypeid
-        mandatory.add("additivetype");      // alias for additivetypeid
-        mandatory.add("visit");
 
         // scan all tables for all columns
         Map<String,ColumnInfo> unionColumns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,ColumnInfo>());
@@ -857,11 +846,7 @@ public class StudyServiceImpl implements StudyService.Service
                 if (null == unionCol)
                 {
                     unionCol = makeUnionColumn(c, aliasManager, containers, name);
-                    if (!mandatory.contains(name))
-                    {
-                        unionCol.setFk(null);
-                    }
-                    else if ("primarytype".equalsIgnoreCase(name))
+                    if ("primarytype".equalsIgnoreCase(name))
                     {
                         LookupForeignKey fk = new LookupForeignKey("RowId")
                         {
@@ -913,7 +898,7 @@ public class StudyServiceImpl implements StudyService.Service
                         fk.addJoin(FieldKey.fromParts("Container"), "Container", false);
                         unionCol.setFk(fk);
                     }
-/*                    else if (null != unionCol.getFk() && ("participantid".equalsIgnoreCase(name))) // || "visit".equalsIgnoreCase(name))) // TODO: these FKs need additional work
+                    else if (null != unionCol.getFk() && ("participantid".equalsIgnoreCase(name)) || "visit".equalsIgnoreCase(name) || "collectioncohort".equalsIgnoreCase(name))
                     {
                         final TableInfo lookupTable = unionCol.getFk().getLookupTableInfo();
                         LookupForeignKey fk = new LookupForeignKey()
@@ -921,16 +906,18 @@ public class StudyServiceImpl implements StudyService.Service
                             @Override
                             public TableInfo getLookupTableInfo()
                             {
-                                TableInfo lookupTableNew = lookupTable;
-                                if (lookupTableNew instanceof FilteredTable)
-                                    ((FilteredTable)lookupTableNew).setContainerFilter(new ContainerFilter.SimpleContainerFilter(containers));
-                                return lookupTableNew;
+                                if (lookupTable instanceof FilteredTable && lookupTable.supportsContainerFilter())
+                                    ((FilteredTable)lookupTable).setContainerFilter(new ContainerFilter.SimpleContainerFilter(containers));
+                                return lookupTable;
                             }
                         };
-                        fk.addJoin(new FieldKey(null, "Container"), "Container", false);
+                        if ("visit".equalsIgnoreCase(name))
+                            fk.addJoin(new FieldKey(null, "Container"), "Folder", false);
+                        else if ("participantid".equalsIgnoreCase(name))
+                            fk.addJoin(new FieldKey(null, "Container"), "Container", false);
                         unionCol.setFk(fk);
                     }
-*/
+
                     unionColumns.put(name,unionCol);
                 }
                 unionCol.setJdbcType(JdbcType.promote(unionCol.getJdbcType(), c.getJdbcType()));
