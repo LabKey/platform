@@ -610,7 +610,7 @@ public class ParticipantGroupManager
             throw new ValidationException(errors);
 
         if (categoryExists(c, user, def.getLabel(), def.isShared()))
-            throw new ValidationException("There is already a category named: '" + def.getLabel() + "' within this folder. Please choose a unique (case-insensitive) category name.");
+            throw new ValidationException("There is already a category named '" + def.getLabel() + "' within this folder. Please choose a unique (case-insensitive) category name.");
 
         if (def.isNew())
             ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);

@@ -332,7 +332,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             }),
             failure : function(response, options){
                 this.getEl().unmask();
-                LABKEY.Utils.displayAjaxErrorResponse(response, options, false);
+                LABKEY.Utils.displayAjaxErrorResponse(response, options, false, "An error occurred trying to save:  ");
             },
             jsonData : groupData,
             scope : this
