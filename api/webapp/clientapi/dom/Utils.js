@@ -53,7 +53,7 @@ LABKEY.Utils = new function(impl, $) {
             msgPrefix: msgPrefix,
             showExceptionClass: showExceptionClass
         });
-        LABKEY.Utils.alert("Error", LABKEY.Utils.encodeHtml(error));
+        LABKEY.Utils.alert("Error", error);
     };
 
     /**
@@ -145,7 +145,7 @@ LABKEY.Utils = new function(impl, $) {
             Ext.Msg.alert(title?Ext.util.Format.htmlEncode(title):"", msg?Ext.util.Format.htmlEncode(msg):"");
         }
         else {
-            alert(title + ' : ' + msg);
+            alert(LABKEY.Utils.encodeHtml(title + ' : ' + msg));
         }
     };
 
