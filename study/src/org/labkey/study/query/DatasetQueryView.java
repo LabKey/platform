@@ -686,8 +686,8 @@ public class DatasetQueryView extends StudyQueryView
             Container project = ctx.getContainer().getProject();
             if (immport != null && project != null && project.getActiveModules().contains(immport))
             {
-                ActionURL subjectFinderURL = new ActionURL("immport", "subjectFinder.view", project);
-                msg.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Edit").href(subjectFinderURL.toString()));
+                ActionURL finderURL = new ActionURL("immport", "dataFinder.view", project);
+                msg.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Edit").href(finderURL.toString()));
             }
             msg.append("</div>");
 

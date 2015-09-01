@@ -51,9 +51,9 @@
 
     Module immport = ModuleLoader.getInstance().getModule("immport");
     Container project = getContainer().getProject();
-    ActionURL subjectFinderURL = null;
+    ActionURL finderURL = null;
     if (immport != null && project != null && project.getActiveModules().contains(immport))
-        subjectFinderURL = new ActionURL("immport", "subjectFinder.view", project);
+        finderURL = new ActionURL("immport", "dataFinder.view", project);
 
     String key = DataspaceQuerySchema.SHARED_STUDY_CONTAINER_FILTER_KEY + getContainer().getProject().getRowId();
     Object o = getViewContext().getSession().getAttribute(key);
@@ -95,5 +95,5 @@
 <% } %>
 
 <br>
-<% if (subjectFinderURL != null) { %><%=this.textLink("subject finder", subjectFinderURL)%><% } %>
+<% if (finderURL != null) { %><%=this.textLink("data finder", finderURL)%><% } %>
 
