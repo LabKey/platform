@@ -97,6 +97,14 @@ public class PlateService
         PlateTemplate getPlateTemplate(Container container, String templateName);
 
         /**
+         * Gets an existing plate template.
+         * @param container The template's container.
+         * @param plateId The template's id.
+         * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
+         */
+        PlateTemplate getPlateTemplate(Container container, int plateId);
+
+        /**
          * Gets all plate templates for the specified container.
          * @param container The templates' container.
          * @return An array of all plate templates from the specified container.
