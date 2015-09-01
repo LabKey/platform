@@ -212,6 +212,10 @@ bigiron/src/org/labkey/bigiron/sas/SasDialect.java -text
 bigiron/src/org/labkey/bigiron/sas/SasDialectFactory.java -text
 bigiron/src/org/labkey/bigiron/sas/SasExportScriptFactory.java -text
 bigiron/src/org/labkey/bigiron/sas/SasExportScriptModel.java -text
+cas/CAS.iml -text
+cas/module.properties -text
+cas/src/org/labkey/cas/CasModule.java -text
+cas/test/test_cas.iml -text
 cbcassay/CBCAssay.iml -text
 cbcassay/data/ex_20081016_131859.small.dat -text
 cbcassay/data/ex_20090115_jul08BAD.dat -text
@@ -665,6 +669,10 @@ demo/src/org/labkey/demo/view/DemoWebPart.java -text
 demo/src/org/labkey/demo/view/bindTest.jsp -text
 demo/src/org/labkey/demo/view/bulkUpdate.jsp -text
 demo/src/org/labkey/demo/view/demoWebPart.jsp -text
+duo/Duo.iml -text
+duo/module.properties -text
+duo/src/org/labkey/duo/DuoManager.java -text
+duo/src/org/labkey/duo/DuoModule.java -text
 experiment/gwtsrc/org/labkey/experiment/property/Designer.gwt.xml -text
 experiment/gwtsrc/org/labkey/experiment/property/client/Designer.java -text
 experiment/gwtsrc/org/labkey/experiment/property/client/PropertyService.java -text
@@ -1122,6 +1130,10 @@ mothership/src/org/labkey/mothership/editUpgradeMessage.jsp -text
 mothership/src/org/labkey/mothership/query/ExceptionStackTraceQueryView.java -text
 mothership/src/org/labkey/mothership/query/MothershipSchema.java -text
 mothership/src/org/labkey/mothership/view/createIssue.jsp -text
+oauth/OAuth.iml -text
+oauth/module.properties -text
+oauth/src/org/labkey/oauth/OAuthManager.java -text
+oauth/src/org/labkey/oauth/OAuthModule.java -text
 pipeline/build.xml -text
 pipeline/lib/activemq-core-4.1.1-sources.zip -text
 pipeline/lib/activemq-core-4.1.1.jar -text
@@ -1542,6 +1554,9 @@ pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup.wsdl -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup.xsd -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_bindings.wsdl -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_service.wsdl -text
+premium/Premium.iml -text
+premium/module.properties -text
+premium/src/org/labkey/premium/PremiumModule.java -text
 query/build.xml -text
 query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text
@@ -1946,6 +1961,9 @@ redcap/test/src/org/labkey/test/pages/redcap/ConfigurePage.java -text
 redcap/test/src/org/labkey/test/tests/RedCapTest.java -text
 redcap/test/src/org/labkey/test/util/redcap/ConfigXmlBuilder.java -text
 redcap/test/test_redcap.iml -text
+saml/SAML.iml -text
+saml/module.properties -text
+saml/src/org/labkey/saml/SamlModule.java -text
 search/Search.iml -text
 search/lib/instructions.txt -text
 search/lib/lucene-5.2.1-src.zip -text
