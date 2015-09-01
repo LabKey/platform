@@ -168,6 +168,20 @@ public class PlateManager implements PlateService.Service
         return template;
     }
 
+    public PlateTemplateImpl getPlateTemplate(Container container, int plateId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
+        filter.addCondition(FieldKey.fromParts("RowId"), plateId);
+        filter.addCondition(FieldKey.fromParts("Container"), container);
+        PlateTemplateImpl template = new TableSelector(StudySchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateTemplateImpl.class);
+        if (template != null)
+        {
+            populatePlate(template);
+            cache(template);
+        }
+        return template;
+    }
+
     @NotNull
     public List<PlateTemplateImpl> getPlateTemplates(Container container)
     {

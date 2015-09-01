@@ -48,7 +48,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         super(context);
     }
 
-    public GWTPlate getTemplateDefinition(String templateName, String assayTypeName, String templateTypeName, int rowCount, int columnCount) throws Exception
+    public GWTPlate getTemplateDefinition(String templateName, int plateId, String assayTypeName, String templateTypeName, int rowCount, int columnCount) throws Exception
     {
         try
         {
@@ -58,7 +58,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
             if (templateName != null)
             {
                 // existing template
-                template = PlateService.get().getPlateTemplate(getContainer(), templateName);
+                template = PlateService.get().getPlateTemplate(getContainer(), plateId);
                 if (template == null)
                     throw new Exception("Plate " + templateName + " does not exist.");
 

@@ -49,26 +49,35 @@
             if (isAssayDesigner || c.hasPermission(getUser(), UpdatePermission.class))
             {
         %>
-        <td><%= textLink("edit", buildURL(PlateController.DesignerAction.class, "templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
+        <td><%= textLink("edit", new ActionURL(PlateController.DesignerAction.class, getContainer()).
+                addParameter("templateName", template.getName()).
+                addParameter("plateId", template.getRowId())) %></td>
         <%
             }
             if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
             {
         %>
-        <td><%= textLink("edit a copy", buildURL(PlateController.DesignerAction.class, "copy=true&templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
+        <td><%= textLink("edit a copy", new ActionURL(PlateController.DesignerAction.class, getContainer()).
+                addParameter("copy", true).
+                addParameter("templateName", template.getName()).
+                addParameter("plateId", template.getRowId())) %></td>
         <%
             }
             if (c.hasPermission(getUser(), InsertPermission.class))
             {
         %>
-        <td><%= textLink("copy to another folder", buildURL(PlateController.CopyTemplateAction.class, "templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
+        <td><%= textLink("copy to another folder", new ActionURL(PlateController.CopyTemplateAction.class, getContainer()).
+                addParameter("templateName", template.getName()).
+                addParameter("plateId", template.getRowId())) %></td>
         <%
             }
             if (isAssayDesigner || c.hasPermission(getUser(), DeletePermission.class))
             {
         %>
         <td><%= text(((plateTemplates.size() > 1) ?
-                textLink("delete", buildURL(PlateController.DeleteAction.class, "templateName=" + PageFlowUtil.encode(template.getName())),
+                textLink("delete", new ActionURL(PlateController.DeleteAction.class, getContainer()).
+                        addParameter("templateName", template.getName()).
+                        addParameter("plateId", template.getRowId()),
                         "return confirm('Permanently delete this plate template?')", null) :
                 "Cannot delete the final template.")) %></td>
         <%

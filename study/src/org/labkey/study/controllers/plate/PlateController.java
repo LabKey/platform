@@ -17,30 +17,45 @@
 package org.labkey.study.controllers.plate;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.action.*;
-import org.labkey.api.security.RequiresAnyOf;
-import org.labkey.api.security.User;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.study.permissions.DesignAssayPermission;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.view.*;
-import org.labkey.api.study.*;
-import org.labkey.api.study.assay.PlateUrls;
-import org.labkey.api.gwt.client.util.ColorGenerator;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.gwt.client.util.ColorGenerator;
+import org.labkey.api.security.RequiresAnyOf;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Plate;
+import org.labkey.api.study.PlateService;
+import org.labkey.api.study.PlateTemplate;
+import org.labkey.api.study.WellGroup;
+import org.labkey.api.study.assay.PlateUrls;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.ContainerTree;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.study.plate.PlateDataServiceImpl;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.study.view.StudyGWTView;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.servlet.ModelAndView;
 
-import java.util.*;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -208,6 +223,8 @@ public class PlateController extends SpringActionController
             {
                 properties.put("copyTemplate", Boolean.toString(form.isCopy()));
                 properties.put("templateName", form.getTemplateName());
+                if (form.getPlateId() != null)
+                    properties.put("plateId", String.valueOf(form.getPlateId()));
                 if (form.isCopy())
                     properties.put("defaultPlateName", getUniqueName(getContainer(), form.getTemplateName()));
                 else
@@ -250,7 +267,7 @@ public class PlateController extends SpringActionController
             List<? extends PlateTemplate> templates = PlateService.get().getPlateTemplates(getContainer());
             if (templates.size() > 1)
             {
-                PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getTemplateName());
+                PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getPlateId());
                 if (template != null)
                     PlateService.get().deletePlate(getContainer(), template.getRowId());
             }
@@ -431,6 +448,7 @@ public class PlateController extends SpringActionController
     public static class NameForm
     {
         private String _templateName;
+        private Integer _plateId;
 
         public String getTemplateName()
         {
@@ -440,6 +458,16 @@ public class PlateController extends SpringActionController
         public void setTemplateName(String templateName)
         {
             _templateName = templateName;
+        }
+
+        public Integer getPlateId()
+        {
+            return _plateId;
+        }
+
+        public void setPlateId(Integer plateId)
+        {
+            _plateId = plateId;
         }
     }
 

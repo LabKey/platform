@@ -45,6 +45,7 @@ import java.util.*;
 public class TemplateView extends HorizontalPanel
 {
     private RootPanel _rootPanel;
+    private int _plateId;
     private String _templateName;
     private TemplateGrid _grid;
     private List<GroupChangeListener> _groupListeners = new ArrayList<GroupChangeListener>();
@@ -90,9 +91,10 @@ public class TemplateView extends HorizontalPanel
         }
     };
 
-    public TemplateView(RootPanel rootPanel, String plateName, String plateTypeName, String templateName, int rowCount, int columnCount)
+    public TemplateView(RootPanel rootPanel, int plateId, String plateName, String plateTypeName, String templateName, int rowCount, int columnCount)
     {
         _rootPanel = rootPanel;
+        _plateId = plateId;
         _templateName = plateName;
         _assayTypeName = plateTypeName;
         _templateTypeName = templateName;
@@ -105,7 +107,7 @@ public class TemplateView extends HorizontalPanel
     {
         _rootPanel.clear();
         _rootPanel.add(new Label("Loading..."));
-        getService().getTemplateDefinition(_templateName, _assayTypeName, _templateTypeName, _rowCount, _columnCount, new AsyncCallback<GWTPlate>()
+        getService().getTemplateDefinition(_templateName, _plateId, _assayTypeName, _templateTypeName, _rowCount, _columnCount, new AsyncCallback<GWTPlate>()
         {
             public void onFailure(Throwable throwable)
             {

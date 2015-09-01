@@ -44,11 +44,12 @@ public class TemplateDesigner implements EntryPoint
     {
         RootPanel panel = StudyApplication.getRootPanel();
         String templateName = PropertyUtil.getServerProperty("templateName");
+        int plateId = PropertyUtil.getServerProperty("plateId") != null ? Integer.parseInt(PropertyUtil.getServerProperty("plateId")) : 0;
         String assayTypeName = PropertyUtil.getServerProperty("assayTypeName");
         String templateTypeName = PropertyUtil.getServerProperty("templateTypeName");
         int rowCount = getIntProperty("templateRowCount", 8);
         int colCount = getIntProperty("templateColumnCount", 12);
-        TemplateView view = new TemplateView(panel, templateName, assayTypeName, templateTypeName, rowCount, colCount);
+        TemplateView view = new TemplateView(panel, plateId, templateName, assayTypeName, templateTypeName, rowCount, colCount);
         view.showAsync();
     }
 }
