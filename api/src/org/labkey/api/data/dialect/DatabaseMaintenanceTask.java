@@ -19,7 +19,9 @@ package org.labkey.api.data.dialect;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.SystemMaintenance;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
 {
@@ -64,7 +66,16 @@ class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
 
         String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
         if (null != sql)
-            new SqlExecutor(scope).execute(sql);
+        {
+            try
+            {
+                new SqlExecutor(scope).execute(sql);
+            }
+            catch (BadSqlGrammarException e)
+            {
+                throw new ConfigurationException(e.getMessage());
+            }
+        }
 
         if (null != url)
             _log.info("Database maintenance on " + url + " complete");
