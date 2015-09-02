@@ -1390,6 +1390,7 @@ api/src/org/labkey/api/settings/AppProps.java -text
 api/src/org/labkey/api/settings/AppPropsImpl.java -text
 api/src/org/labkey/api/settings/DateParsingMode.java -text
 api/src/org/labkey/api/settings/FolderSettingsCache.java -text
+api/src/org/labkey/api/settings/FooterProperties.java -text
 api/src/org/labkey/api/settings/LookAndFeelFolderProperties.java -text
 api/src/org/labkey/api/settings/LookAndFeelProperties.java -text
 api/src/org/labkey/api/settings/PreferenceService.java -text

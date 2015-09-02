@@ -22,6 +22,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.module.SimpleAction;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -121,20 +122,24 @@ public class HomeTemplate extends PrintTemplate
 
     protected HttpView getFooterView()
     {
-        Module coreModule = ModuleLoader.getInstance().getCoreModule();
         WebPartView view = null;
-        List<Module> modules = ModuleLoader.getInstance().getModules();
-        ListIterator<Module> i = modules.listIterator(modules.size());
-        while (i.hasPrevious()) {
+        if (FooterProperties.isShowFooter())
+        {
+            Module coreModule = ModuleLoader.getInstance().getCoreModule();
+            List<Module> modules = ModuleLoader.getInstance().getModules();
+            ListIterator<Module> i = modules.listIterator(modules.size());
+            while (i.hasPrevious())
+            {
                 view = SimpleAction.getModuleHtmlView(i.previous(), "_footer", null);
                 if (null != view)
                     break;
+            }
+            if (null == view)
+            {
+                view = SimpleAction.getModuleHtmlView(coreModule, "_footer", null);
+            }
+            view.setFrame(FrameType.NONE);
         }
-        if (null == view)
-        {
-            view = SimpleAction.getModuleHtmlView(coreModule, "_footer", null);
-        }
-        view.setFrame(FrameType.NONE);
         return view;
     }
 
