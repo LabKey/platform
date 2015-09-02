@@ -124,21 +124,4 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
         }
         return false;
     }
-
-    private boolean comparisonValid(int comparison, String type)
-    {
-        if (StringUtils.equals("~eq", type))
-            return comparison == 0;
-        else if (StringUtils.equals("~neq", type))
-            return comparison != 0;
-        else if (StringUtils.equals("~lte", type))
-            return comparison != 1;
-        else if (StringUtils.equals("~gte", type))
-            return comparison != -1;
-        else if (StringUtils.equals("~gt", type))
-            return comparison == 1;
-        else if (StringUtils.equals("~lt", type))
-            return comparison == -1;
-        return false;
-    }
 }

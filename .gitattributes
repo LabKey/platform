@@ -836,6 +836,7 @@ experiment/src/org/labkey/experiment/api/SampleSetUpdateService.java -text
 experiment/src/org/labkey/experiment/api/property/DomainImpl.java -text
 experiment/src/org/labkey/experiment/api/property/DomainPropertyImpl.java -text
 experiment/src/org/labkey/experiment/api/property/DomainPropertyManager.java -text
+experiment/src/org/labkey/experiment/api/property/LengthValidator.java -text
 experiment/src/org/labkey/experiment/api/property/LookupValidator.java -text
 experiment/src/org/labkey/experiment/api/property/PrimitiveType.java -text
 experiment/src/org/labkey/experiment/api/property/PropertyServiceImpl.java -text

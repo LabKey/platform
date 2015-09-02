@@ -31,6 +31,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -41,6 +42,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -621,6 +623,7 @@ public class DomainPropertyImpl implements DomainProperty
         _schemaChanged = false;
         _schemaImport = false;
 
+        ensureValidatorForType();
         for (PropertyValidatorImpl validator : ensureValidators())
         {
             if (validator.isDeleted())
@@ -738,6 +741,39 @@ public class DomainPropertyImpl implements DomainProperty
             _formats.addAll(DomainPropertyManager.get().getConditionalFormats(this));
         }
         return _formats;
+    }
+
+    private void ensureValidatorForType()
+    {
+        PropertyDescriptor pd = getPropertyDescriptor();
+        Lsid lsidValidator = DefaultPropertyValidator.createValidatorURI(PropertyValidatorType.Length);
+        IPropertyValidator pvLength = PropertyService.get().createValidator(lsidValidator.toString());
+        if (null != pvLength)
+        {
+            if (PropertyType.STRING.equals(pd.getPropertyType()) && pd.getScale() > 0)
+            {
+                for (PropertyValidatorImpl validator : ensureValidators())
+                {
+                    if (validator.getType() == pvLength.getType())
+                        return;        // Type validator already present
+                }
+
+                pvLength.setName("Text Length");
+                pvLength.setExpressionValue("~lte=" + pd.getScale());
+                addValidator(pvLength);
+            }
+            else
+            {
+                for (PropertyValidatorImpl validator : ensureValidators())
+                {
+                    if (validator.getType() == pvLength.getType())
+                    {
+                        removeValidator(validator);
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     public PropertyDescriptor getOldProperty()

@@ -60,6 +60,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainType;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
+import org.labkey.experiment.api.property.LengthValidator;
 import org.labkey.experiment.api.property.LookupValidator;
 import org.labkey.experiment.api.property.PropertyServiceImpl;
 import org.labkey.experiment.api.property.RangeValidator;
@@ -219,24 +220,24 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ServiceRegistry.get(FileContentService.class).addFileListener(new FileLinkFileListener());
 
         ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
-        {
-            public void containerDeleted(Container c, User user)
-            {
-                try
-                {
-                    ExperimentService.get().deleteAllExpObjInContainer(c, user);
-                }
-                catch (ExperimentException ee)
-                {
-                    throw new RuntimeException(ee);
-                }
-            }
-        },
-        // This is in the Last group because when a container is deleted,
-        // the Experiment listener needs to be called after the Study listener,
-        // because Study needs the metadata held by Experiment to delete properly.
-        // but it should be before the CoreContainerListener
-        ContainerManager.ContainerListener.Order.Last);
+                                              {
+                                                  public void containerDeleted(Container c, User user)
+                                                  {
+                                                      try
+                                                      {
+                                                          ExperimentService.get().deleteAllExpObjInContainer(c, user);
+                                                      }
+                                                      catch (ExperimentException ee)
+                                                      {
+                                                          throw new RuntimeException(ee);
+                                                      }
+                                                  }
+                                              },
+                // This is in the Last group because when a container is deleted,
+                // the Experiment listener needs to be called after the Study listener,
+                // because Study needs the metadata held by Experiment to delete properly.
+                // but it should be before the CoreContainerListener
+                ContainerManager.ContainerListener.Order.Last);
 
         SystemProperty.registerProperties();
         TypesController.registerAdminConsoleLinks();
@@ -244,6 +245,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
         PropertyService.get().registerValidatorKind(new LookupValidator());
+        PropertyService.get().registerValidatorKind(new LengthValidator());
 
         FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
         if (null != folderRegistry)
