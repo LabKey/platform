@@ -22,7 +22,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * <code>EnumToCommandArgs</code>
+ * Allows different arguments to be generated based on the value of a single parameter.
+ * The converters map has keys which are the values of the parameter that should cause the inclusion of specific
+ * arguments, and the values are the set of TaskToCommandArgs that generate the desired arguments if the parameter's
+ * value matches.
+ *
+ * The default controls which key should be used if the protocol has not specified a value for the parameter.
+ *
+ * If none of the keys match the value (either from the protocol or the default value), no arguments will be added.
 */
 public class EnumToCommandArgs extends JobParamToCommandArgs
 {
