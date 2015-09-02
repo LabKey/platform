@@ -181,7 +181,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public CustomView getCustomView(@NotNull User owner, @Nullable HttpServletRequest request, String name)
     {
-        return getCustomViews(owner, request, true, false).get(name);
+        CustomView result = getCustomViews(owner, request, true, false).get(name);
+        if (result == null && name != null)
+        {
+            log.info("Could not find the requested custom view named '" + name + "'" + " in " + getSchemaPath() + "." + getQueryDef().getName() + " in the container " + _container.getPath() + " for user " + owner);
+        }
+        return result;
     }
 
     public CustomView getSharedCustomView(String name)
