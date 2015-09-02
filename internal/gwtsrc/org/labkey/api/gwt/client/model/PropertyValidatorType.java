@@ -48,6 +48,21 @@ public enum PropertyValidatorType
         {
             return false;
         }
+    },
+    Length
+    {
+        public HelpPopup createHelpPopup()
+        {
+            return new HelpPopup("Length Validator", "Length validators allow you to validate the length of a text field");
+        }
+        public boolean isConfigurable()
+        {
+            return false;
+        }
+        public boolean isHidden()
+        {
+            return true;
+        }
     };
 
     public abstract HelpPopup createHelpPopup();
@@ -60,6 +75,11 @@ public enum PropertyValidatorType
     public boolean isConfigurable()
     {
         return true;
+    }
+
+    public boolean isHidden()
+    {
+        return false;
     }
 
     public static PropertyValidatorType getType(String typeName)

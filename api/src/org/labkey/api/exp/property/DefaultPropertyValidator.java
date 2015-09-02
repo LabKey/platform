@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -48,5 +49,22 @@ public abstract class DefaultPropertyValidator implements ValidatorKind
         if (validator.getErrorMessage() != null)
             sb.append(validator.getErrorMessage());
         errors.add(new SimpleValidationError(sb.toString()));
+    }
+
+    protected boolean comparisonValid(int comparison, String type)
+    {
+        if (StringUtils.equals("~eq", type))
+            return comparison == 0;
+        else if (StringUtils.equals("~neq", type))
+            return comparison != 0;
+        else if (StringUtils.equals("~lte", type))
+            return comparison != 1;
+        else if (StringUtils.equals("~gte", type))
+            return comparison != -1;
+        else if (StringUtils.equals("~gt", type))
+            return comparison == 1;
+        else if (StringUtils.equals("~lt", type))
+            return comparison == -1;
+        return false;
     }
 }

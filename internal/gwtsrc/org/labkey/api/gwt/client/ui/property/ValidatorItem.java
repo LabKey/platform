@@ -209,52 +209,57 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         while (rowCount > 0)
             _validatorTable.removeRow(rowCount--);
 
+        int visibleValidators = 0;
         for (final GWTPropertyValidator pv : _validators)
         {
-            HorizontalPanel panel = new HorizontalPanel();
-
-            if (_addRangeButton.isEnabled())
+            if (!pv.getType().isHidden())
             {
-                PushButton deleteButton = new PushButton(new Image(PropertyUtil.getContextPath() + "/_images/partdelete.gif"));
-                deleteButton.addClickHandler(new ClickHandler()
+                visibleValidators += 1;
+                HorizontalPanel panel = new HorizontalPanel();
+
+                if (_addRangeButton.isEnabled())
                 {
-                    public void onClick(ClickEvent event)
+                    PushButton deleteButton = new PushButton(new Image(PropertyUtil.getContextPath() + "/_images/partdelete.gif"));
+                    deleteButton.addClickHandler(new ClickHandler()
                     {
-                        _validators.remove(pv);
-                        _validatorChanged = true;
-                        _propertyPane.copyValuesToPropertyDescriptor();
-                        refreshValidators();
+                        public void onClick(ClickEvent event)
+                        {
+                            _validators.remove(pv);
+                            _validatorChanged = true;
+                            _propertyPane.copyValuesToPropertyDescriptor();
+                            refreshValidators();
+                        }
+                    });
+                    Tooltip.addTooltip(deleteButton, "Remove this validator");
+
+                    panel.add(deleteButton);
+                    panel.add(new HTML("&nbsp;"));
+                    PushButton editButton = new PushButton(new Image(PropertyUtil.getContextPath() + "/_images/partedit.gif"));
+                    Tooltip.addTooltip(editButton, "Edit this validator");
+                    if (pv.getType().equals(PropertyValidatorType.Range))
+                    {
+                        editButton.addClickHandler(new RangeClickHandler(pv));
                     }
-                });
-                Tooltip.addTooltip(deleteButton, "Remove this validator");
+                    else if (pv.getType().equals(PropertyValidatorType.RegEx))
+                    {
+                        editButton.addClickHandler(new RegexClickHandler(pv));
+                    }
+                    if (pv.getType().isConfigurable())
+                    {
+                        panel.add(editButton);
+                    }
+                }
 
-                panel.add(deleteButton);
-                panel.add(new HTML("&nbsp;"));
-                PushButton editButton = new PushButton(new Image(PropertyUtil.getContextPath() + "/_images/partedit.gif"));
-                Tooltip.addTooltip(editButton, "Edit this validator");
-                if (pv.getType().equals(PropertyValidatorType.Range))
-                {
-                    editButton.addClickHandler(new RangeClickHandler(pv));
-                }
-                else if (pv.getType().equals(PropertyValidatorType.RegEx))
-                {
-                    editButton.addClickHandler(new RegexClickHandler(pv));
-                }
-                if (pv.getType().isConfigurable())
-                {
-                    panel.add(editButton);
-                }
+                _validatorTable.setWidget(row, 0, panel);
+                _validatorTable.setWidget(row, 1, new HTML(StringUtils.filter(pv.getName(), true)));
+                _validatorTable.setWidget(row, 2, new HTML(StringUtils.filter(pv.getDescription(), true)));
+                _validatorTable.setWidget(row, 3, new Label(pv.getType().name()));
+                _validatorTable.setWidget(row++, 4, pv.getType().createHelpPopup());
             }
-
-            _validatorTable.setWidget(row, 0, panel);
-            _validatorTable.setWidget(row, 1, new HTML(StringUtils.filter(pv.getName(), true)));
-            _validatorTable.setWidget(row, 2, new HTML(StringUtils.filter(pv.getDescription(), true)));
-            _validatorTable.setWidget(row, 3, new Label(pv.getType().name()));
-            _validatorTable.setWidget(row++, 4, pv.getType().createHelpPopup());
         }
 
-        _validatorTable.setVisible(!_validators.isEmpty());
-        _noValidatorsLabel.setVisible(_validators.isEmpty());
+        _validatorTable.setVisible(visibleValidators > 0);
+        _noValidatorsLabel.setVisible(visibleValidators <= 0);
     }
 
     public void propertyChanged(GWTPropertyValidator validator)
