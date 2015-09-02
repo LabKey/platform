@@ -6,34 +6,8 @@
   -->
 <project basedir="." default="compile" name="Radeox">
 
-  <taskdef resource="clovertasks"/>
-
-  <target name="with.clover">
-     <clover-setup initString="radeox_coverage.db/"/>
-  </target>
-
-  <target name="report.html" depends="with.clover">
-   <clover-report>
-      <current outfile="clover_html" title="clover radeox">
-         <format type="html"/>
-      </current>
-   </clover-report>
-  </target>
-
-  <target name="record.point" depends="with.clover">
-    <clover-historypoint historyDir="clover_history"/>
-  </target>
-
-  <target name="hist.report" depends="with.clover">
-     <clover-report>
-           <historical outfile="historical.pdf"
-                  historyDir="clover_history"/>
-     </clover-report>
-  </target>
-
   <path id="classpath">
     <pathelement location="lib/picocontainer.jar"/>
-    <pathelement location="lib/clover.jar"/>
     <pathelement location="lib/groovy.jar"/>
     <pathelement location="lib/asm.jar"/>
     <pathelement location="lib/asm-util.jar"/>
