@@ -314,12 +314,12 @@ public class VisTestSchema extends UserSchema
                 {
                     if (scale.equals("log"))
                     {
-                        for (String pop : Arrays.asList("C4", "C8"))
+                        for (String pop : Arrays.asList("CD4", "CD8"))
                             data.add(new Object[]{"TestContainer1", participantid, visit, antigen, pop, Math.exp(r.nextDouble()*Math.log(range))});
                     }
                     else
                     {
-                        for (String pop : Arrays.asList("C4","C8"))
+                        for (String pop : Arrays.asList("CD4","CD8"))
                             data.add(new Object[]{"TestContainer1", participantid,visit,antigen,pop, Math.round(r.nextDouble()*range)});
 
                     }

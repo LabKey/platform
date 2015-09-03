@@ -20,12 +20,19 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.dialect.DialectStringHandler;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -46,13 +53,17 @@ import org.springframework.validation.BindException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
@@ -147,10 +158,24 @@ public class VisualizationCDSGenerator
     }
 
 
+    static Path pathForMeasure(VisDataRequest.Measure m)
+    {
+        if (StringUtils.isEmpty(m.getAxisName()))
+            return new Path(m.getSchemaName(), m.getQueryName());
+        else
+            return new Path(m.getSchemaName(), m.getQueryName(), m.getAxisName());
+    }
+
+
     public String getSQL(BindException errors) throws SQLGenerationException, SQLException
     {
+        SqlDialect dialect = getPrimarySchema().getDbSchema().getSqlDialect();
+
+        //
         // pre analyze the request, and break down the tables into two groups
         // the non-dataset tables and the dataset tables
+        //
+
         Set<Path> nonDatasetTablesSet = new HashSet<>();
         LinkedHashSet<Path> datasetTablesSet = new LinkedHashSet<>();
 
@@ -171,17 +196,21 @@ public class VisualizationCDSGenerator
             {
                 isDataset = true;
             }
-            if (isDataset)
-                datasetTablesSet.add(new Path(m.getSchemaName(), m.getQueryName()));
+            Path p = pathForMeasure(m);
+            if (!isDataset)
+                nonDatasetTablesSet.add(p);
             else
-                nonDatasetTablesSet.add(new Path(m.getSchemaName(), m.getQueryName()));
+                datasetTablesSet.add(p);
         }
         Path[] datasetTables = datasetTablesSet.toArray(new Path[datasetTablesSet.size()]);
 
+        //
         // VALIDATION
-
+        //
         // since we are wrapping the getData() API, I want to be strict and 'white-list' functionality,
         // rather than passing through options without validating the behavior
+        //
+
         if (null != _request.getFilterQuery())
             errors.reject(ERROR_MSG, "NYI - filterQuery");
         if (null != _request.getFilterUrl())
@@ -203,15 +232,22 @@ public class VisualizationCDSGenerator
         if (errors.hasErrors())
             return null;
 
+
+        // TODO code review? consider making this size() < 1, so that the one dataset case and two dataset case look more similiar
         if (datasetTablesSet.size() <= 1)
         {
             VisualizationSQLGenerator sqlGenerator = new VisualizationSQLGenerator(getViewContext(), _request);
-
-            // use the default columnAliases
             _columnAliases = sqlGenerator.getColumnAliases();
-
             return sqlGenerator.getSQL();
         }
+
+
+        //
+        // Prepare a VisualizationSQLGenerator call for each participating dataset
+        //
+        // This is clunky and it would be very nice to simply replace the call to VSQLG, howevever,
+        // this works perfectly well for now
+        //
 
         List<VisualizationSQLGenerator> generators = new ArrayList<>();
         List<String> generatedSql = new ArrayList<>();
@@ -222,10 +258,11 @@ public class VisualizationCDSGenerator
             subjectColumnName = study.getSubjectColumnName();
 
         DefaultSchema schema = DefaultSchema.get(getUser(), getContainer());
-        for (Path datasetPath : datasetTablesSet)
+        for (Path datasetPath : datasetTables)
         {
-            String datasetQueryName = datasetPath.getName();
-            String datasetSchemaName = datasetPath.getParent().getName();
+            String datasetSchemaName =  datasetPath.get(0);
+            String datasetQueryName = datasetPath.getName(1);
+            String axisName = datasetPath.size() > 2 ? datasetPath.get(2) : null;
 
             Set<Path> blacklist = new HashSet<>(datasetTablesSet);
             blacklist.remove(datasetPath);
@@ -241,11 +278,12 @@ public class VisualizationCDSGenerator
             for (VisDataRequest.MeasureInfo mi : _request.getMeasures())
             {
                 VisDataRequest.Measure m = mi.getMeasure();
-                if (blacklist.contains(new Path(m.getSchemaName(), m.getQueryName())))
+                Path measurePath = pathForMeasure(m);
+                if (blacklist.contains(measurePath))
                 {
                     continue;
                 }
-                boolean isDatasetMeasure = equalsIgnoreCase(m.getSchemaName(), datasetSchemaName) && equalsIgnoreCase(m.getQueryName(), datasetQueryName);
+                boolean isDatasetMeasure = measurePath.equals(datasetPath);
                 if (isDatasetMeasure)
                 {
                     if (equalsIgnoreCase(m.getName(), containerColumnName))
@@ -272,21 +310,21 @@ public class VisualizationCDSGenerator
             if (null == container)
             {
                 VisDataRequest.Measure cont = new VisDataRequest.Measure(datasetSchemaName, datasetQueryName, containerColumnName)
-                        .setAlias((datasetSchemaName + "_" + datasetQueryName + "_" + containerColumnName).toLowerCase());
+                        .setAxisName(axisName);
                 container = new VisDataRequest.MeasureInfo(cont).setTime(timeType);
             }
 
             if (null == participant)
             {
                 VisDataRequest.Measure subject = new VisDataRequest.Measure(datasetSchemaName, datasetQueryName, subjectColumnName)
-                        .setAlias((datasetSchemaName + "_" + datasetQueryName + "_" + subjectColumnName).toLowerCase());
+                    .setAxisName(axisName);
                 participant = new VisDataRequest.MeasureInfo(subject).setTime(timeType);
             }
 
             if (null == sequencenum)
             {
                 VisDataRequest.Measure seqnum = new VisDataRequest.Measure(datasetSchemaName, datasetQueryName, sequenceNumColumnName)
-                        .setAlias((datasetSchemaName + "_" + datasetQueryName + "_" + sequenceNumColumnName).toLowerCase());
+                    .setAxisName(axisName);
                 sequencenum = new VisDataRequest.MeasureInfo(seqnum).setTime(timeType);
             }
 
@@ -308,18 +346,25 @@ public class VisualizationCDSGenerator
             if (_log.isDebugEnabled())
             {
                 String sql = generator.getSQL();
-                _log.debug("\n" + sql);
-//                try (ResultSet rs = QueryService.get().select(schema.getSchema("study"), sql);)
-//                {
-//                    ResultSetUtil.logData(rs, _log);
-//                    _log.debug("\n\n");
-//                }
+                _log.debug("---------------------------------------\n" + datasetPath.toString() + "\n\n" + sql);
             }
         }
 
-        // now comes the annoying part
-        // we can get the SQL for each part of the union, but we have to rearrange columns to line up, and pad with NULLs
-        LinkedHashSet<String> fullAliasList = new LinkedHashSet<>();
+
+        //
+        // Generate the UNION query
+        //
+        // We can get the SQL for each part of the union, but we have to rearrange columns to line up, and pad with NULLs.
+        // Also we want to line up the common dataset columns (container, participant, sequencenum),
+        // we the uri as the alias for these columns
+        //
+
+        // collect full set of union column names
+
+        // this is the full list of union columns (except the shared key columns)
+        LinkedHashMap<String,JdbcType> unionAliasList = new LinkedHashMap<>();
+
+        // this is the collection for returned metadata
         List<Map<String, String>> columnAliases = new ArrayList<>();
 
         for (VisualizationSQLGenerator generator : generators)
@@ -330,85 +375,74 @@ public class VisualizationCDSGenerator
                 String alias = StringUtils.defaultString(vcol.getClientAlias(), vcol.getAlias());
                 if (isEmpty(alias))
                     continue;
-                String columnName = vcol.getOriginalName();
-
-                if (!equalsIgnoreCase(columnName, containerColumnName)
-                    && !equalsIgnoreCase(columnName, subjectColumnName)
-                    && !equalsIgnoreCase(columnName, sequenceNumColumnName))
-                {
-                    if (fullAliasList.add(alias))
-                        columnAliases.add(vcol.toJSON());
-                }
+                if (null == unionAliasList.put(alias,vcol.getType()))
+                    columnAliases.add(vcol.toJSON());
             }
         }
+
+        // for each VisualizationSQLGenerator, wrap SQL with outer SELECT to align columns
 
         StringBuilder fullSQL = new StringBuilder();
         String union = "";
         String datasetTableColumnName = "Dataset";
-        String URI = "http://cpas.labkey.com/Study#";
-        List<Map<String, String>> keyColumnAlias = new ArrayList<>();
+        String uriBase = "http://cpas.labkey.com/Study#";
+        String selectAliasPrefix = uriBase;
 
         for (int i=0; i < generators.size(); i++)
         {
+            Path datasetPath = datasetTables[i];
             VisualizationSQLGenerator generator = generators.get(i);
             String containerColumnAlias = null;
             String participantColumnAlias = null;
             String sequenceColumnAlias = null;
 
-            Set<String> aliasSet = new HashSet<>();
+            // set of non-shared columns in this generator
+            Set<String> aliasInCurrentSet = new HashSet<>();
             List<VisualizationSourceColumn> list = generator.getColumns();
             for (VisualizationSourceColumn sourceColumn : list)
             {
                 String alias = StringUtils.defaultString(sourceColumn.getClientAlias(), sourceColumn.getAlias());
                 if (isEmpty(alias))
                     continue;
+                String schemaName = sourceColumn.getSchemaName();
+                String queryName = sourceColumn.getQueryName();
                 String columnName = sourceColumn.getOriginalName();
 
-                if (null == containerColumnAlias && equalsIgnoreCase(columnName, containerColumnName))
-                    containerColumnAlias = alias;
-                else if (null == participantColumnAlias && equalsIgnoreCase(columnName, subjectColumnName))
-                    participantColumnAlias = alias;
-                else if (null == sequenceColumnAlias && equalsIgnoreCase(columnName, sequenceNumColumnName))
-                    sequenceColumnAlias = alias;
-
-                aliasSet.add(alias);
+                if (datasetPath.startsWith(new Path(schemaName,queryName)))
+                {
+                    if (equalsIgnoreCase(columnName, containerColumnName))
+                        containerColumnAlias = alias;
+                    else if (equalsIgnoreCase(columnName, subjectColumnName))
+                        participantColumnAlias = alias;
+                    else if (equalsIgnoreCase(columnName, sequenceNumColumnName))
+                        sequenceColumnAlias = alias;
+                }
+                aliasInCurrentSet.add(alias);
             }
 
             fullSQL.append(union); union = "\n  UNION ALL\n";
             fullSQL.append("SELECT ");
 
             // container column
-            fullSQL.append(defaultString(containerColumnAlias, "NULL")).append(" AS \"").append(URI).append(containerColumnName).append("\"").append(", ");
+            fullSQL.append(defaultString(containerColumnAlias, "CAST(NULL AS " + dialect.getGuidType() + ")")).append(" AS \"").append(selectAliasPrefix).append(containerColumnName).append("\"").append(", ");
 
             // subject column
-            fullSQL.append(defaultString(participantColumnAlias, "NULL")).append(" AS \"").append(URI).append(subjectColumnName).append("\"").append(", ");
+            fullSQL.append(defaultString(participantColumnAlias, "NULL")).append(" AS \"").append(selectAliasPrefix).append(subjectColumnName).append("\"").append(", ");
 
             // sequenceNum column
-            fullSQL.append(defaultString(sequenceColumnAlias, "NULL")).append(" AS \"").append(URI).append(sequenceNumColumnName).append("\"").append(", ");
+            fullSQL.append(defaultString(sequenceColumnAlias, "CAST(NULL AS NUMERIC(15,4))")).append(" AS \"").append(selectAliasPrefix).append(sequenceNumColumnName).append("\"").append(", ");
 
-            // dataset name column
-            fullSQL.append(string_quote(datasetTables[i].getName())).append(" AS \"").append(URI).append(datasetTableColumnName).append("\"");
+            // dataset (or axis) name column
+            fullSQL.append(string_quote(datasetTables[i].getName())).append(" AS \"").append(selectAliasPrefix).append(datasetTableColumnName).append("\"");
 
-            // only need to gather alias information for the initial generator
-            if (keyColumnAlias.isEmpty())
+            for (Map.Entry<String,JdbcType> entry : unionAliasList.entrySet())
             {
-                // container column
-                keyColumnAlias.add(generateColumnAlias(URI + containerColumnName, containerColumnName));
-
-                // subject column
-                keyColumnAlias.add(generateColumnAlias(URI + subjectColumnName, subjectColumnName));
-
-                // sequenceNum column
-                keyColumnAlias.add(generateColumnAlias(URI + sequenceNumColumnName, sequenceNumColumnName));
-
-                // dataset name column
-                keyColumnAlias.add(generateColumnAlias(URI + datasetTableColumnName, datasetTableColumnName));
-            }
-
-            for (String alias : fullAliasList)
-            {
-                if (aliasSet.contains(alias))
+                String alias = entry.getKey();
+                JdbcType type = entry.getValue();
+                if (aliasInCurrentSet.contains(alias))
                     fullSQL.append(", ").append('"').append(alias).append('"');
+                //else if (type != JdbcType.VARCHAR)
+                //    fullSQL.append(", ").append("CAST(NULL AS ").append(dialect.sqlCastTypeNameFromJdbcType(type)).append(") AS \"").append(alias).append('"');
                 else
                     fullSQL.append(", ").append("NULL AS \"").append(alias).append('"');
             }
@@ -417,7 +451,7 @@ public class VisualizationCDSGenerator
 
         if (_log.isDebugEnabled())
         {
-            _log.debug(fullSQL.toString());
+            _log.debug("----------------------\nunion sql\n\n" + fullSQL.toString() + "\n\n");
             try (ResultSet rs = QueryService.get().select(schema.getSchema("study"), fullSQL.toString()))
             {
                 ResultSetUtil.logData(rs, _log);
@@ -427,18 +461,26 @@ public class VisualizationCDSGenerator
 
         // key columns should display first in the columnAlias list
         _columnAliases = new ArrayList<>();
-        _columnAliases.addAll(keyColumnAlias);
+        _columnAliases.add(generateSharedColumnAlias(containerColumnName, uriBase, selectAliasPrefix));
+        _columnAliases.add(generateSharedColumnAlias(subjectColumnName, uriBase, selectAliasPrefix));
+        _columnAliases.add(generateSharedColumnAlias(sequenceNumColumnName, uriBase, selectAliasPrefix));
+        _columnAliases.add(generateSharedColumnAlias(datasetTableColumnName, uriBase, selectAliasPrefix));
         _columnAliases.addAll(columnAliases);
 
         return fullSQL.toString();
     }
 
 
-    private static Map<String, String> generateColumnAlias(String columnName, String measureName)
+    private static Map<String,String> generateSharedColumnAlias(String columnName, String uriBase, String selectAliasPrefix)
+    {
+        return generateColumnAlias(uriBase + columnName, columnName, selectAliasPrefix + columnName);
+    }
+
+    private static Map<String, String> generateColumnAlias(String alias, String measureName, String columnName)
     {
         Map<String, String> colAlias = new HashMap<>();
 
-        colAlias.put("alias", columnName);
+        colAlias.put("alias", alias);
         colAlias.put("columnName", columnName);
         colAlias.put("measureName", measureName);
 
@@ -487,6 +529,35 @@ public class VisualizationCDSGenerator
             return gen.getColumnAliases();
         }
 
+        Stream<Double> streamDoubles(ResultSet rs, int i) throws Exception
+        {
+            ArrayList<Double> l = new ArrayList<>();
+            rs.beforeFirst();
+            while (rs.next())
+            {
+                double d = rs.getDouble(i);
+                l.add(rs.wasNull() ? null : d);
+            }
+            rs.beforeFirst();
+            return l.stream();
+        }
+        Stream<String> streamStrings(ResultSet rs, int i) throws Exception
+        {
+            ArrayList<String> l = new ArrayList<>();
+            rs.beforeFirst();
+            while (rs.next())
+                l.add(rs.getString(i));
+            rs.beforeFirst();
+            return l.stream();
+        }
+        List<Map<String,Object>> toList(ResultSet rs) throws Exception
+        {
+            rs.beforeFirst();
+            DataIterator di = ResultSetDataIterator.wrap(rs, new DataIteratorContext());
+            return di.stream().collect(Collectors.toList());
+            // closes result set
+        }
+
         void dump(ResultSet rs) throws SQLException
         {
             rs.beforeFirst();
@@ -506,27 +577,22 @@ public class VisualizationCDSGenerator
         }
 
         @Test
-        public void tryme() throws Exception
+        public void twoDataset() throws Exception
         {
             VisDataRequest.MeasureInfo age = mi("demographics","age","visit");
             VisDataRequest.MeasureInfo study = mi("demographics","study","visit");
             VisDataRequest.MeasureInfo gender = mi("demographics","gender","visit");
-            VisDataRequest.MeasureInfo measure1 = mi("flow","cellcount","visit");      // shouldn't need to specify time=visit
-            VisDataRequest.MeasureInfo measure2 = mi("ics","mfi","visit");      // shouldn't need to specify time=visit
+            VisDataRequest.MeasureInfo measure1 = mi("flow","cellcount","visit");
+            VisDataRequest.MeasureInfo measure2 = mi("ics","mfi","visit");
 
             VisDataRequest q = new VisDataRequest();
             q.addMeasure(study).addMeasure(gender);
             q.addMeasure(measure1); q.addMeasure(measure2);
 
-            try (ResultsImpl r = (ResultsImpl)getResults(q))
-            {
-                assertEquals(384, r.getSize()); /* 2*192 */
-            }
-
             List<Map<String,String>> metadata = getColumnAliases(q);
             Map<String,Map<String,String>> metaMap = new TreeMap<>();
+            metadata.stream().forEach(map -> metaMap.put(StringUtils.defaultString(map.get("alias"), map.get("columnName")), map));
             metadata.stream().forEach(map -> metaMap.put(StringUtils.defaultString(map.get("alias"),map.get("columnName")), map));
-            assertEquals(8, metaMap.size());
             assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Container"));
             assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#ParticipantId"));
             assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#SequenceNum"));
@@ -535,6 +601,103 @@ public class VisualizationCDSGenerator
             assertTrue(metaMap.containsKey("vis_junit_demographics_study"));
             assertTrue(metaMap.containsKey("vis_junit_demographics_gender"));
             assertTrue(metaMap.containsKey("vis_junit_ics_mfi"));
+
+            try (ResultsImpl r = (ResultsImpl)getResults(q))
+            {
+                assertEquals(384, r.getSize()); /* 2*192 */
+                assertTrue(streamStrings(r, r.findColumn(new FieldKey(null, "http://cpas.labkey.com/Study#Dataset")))
+                        .allMatch(s -> s.equals("flow") || s.equals("ics")));
+            }
+        }
+
+
+        @Test
+        public void sameDatasetTwice() throws Exception
+        {
+            VisDataRequest q = new VisDataRequest();
+
+            // same dataset on both axes, unfiltered
+            {
+                VisDataRequest.MeasureInfo age = mi("demographics", "age", "visit");
+                VisDataRequest.MeasureInfo study = mi("demographics", "study", "visit");
+                VisDataRequest.MeasureInfo gender = mi("demographics", "gender", "visit");
+                VisDataRequest.MeasureInfo measureX = mi("flow", "cellcount", "visit");
+                measureX.getMeasure().setAxisName("x");
+                VisDataRequest.MeasureInfo measureY = mi("flow", "cellcount", "visit");
+                measureY.getMeasure().setAxisName("y");
+
+                q.addMeasure(study).addMeasure(gender);
+                q.addMeasure(measureX);
+                q.addMeasure(measureY);
+
+                List<Map<String, String>> metadata = getColumnAliases(q);
+                Map<String, Map<String, String>> metaMap = new TreeMap<>();
+                metadata.stream().forEach(map -> metaMap.put(StringUtils.defaultString(map.get("alias"), map.get("columnName")), map));
+                assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Container"));
+                assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#ParticipantId"));
+                assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#SequenceNum"));
+                assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Dataset"));
+                assertTrue(metaMap.containsKey("vis_junit_demographics_participantid"));
+                assertTrue(metaMap.containsKey("vis_junit_flow_cellcount"));
+                assertTrue(metaMap.containsKey("vis_junit_demographics_study"));
+                assertTrue(metaMap.containsKey("vis_junit_demographics_gender"));
+
+                try (ResultsImpl r = (ResultsImpl) getResults(q))
+                {
+                    ;
+                    assertEquals(384, r.getSize()); /* 2*192 */
+                    assertTrue(streamStrings(r, r.findColumn(new FieldKey(null, "http://cpas.labkey.com/Study#Dataset")))
+                            .allMatch(s -> s.equals("x") || s.equals("y")));
+                    assertTrue(streamStrings(r, r.findColumn(new FieldKey(null,"http://cpas.labkey.com/Study#Container")))
+                            .allMatch(StringUtils::isNotEmpty));
+                    assertTrue(streamStrings(r, r.findColumn(new FieldKey(null,"http://cpas.labkey.com/Study#ParticipantId")))
+                            .allMatch(StringUtils::isNotEmpty));
+                    assertTrue(streamStrings(r, r.findColumn(new FieldKey(null,"http://cpas.labkey.com/Study#SequenceNum")))
+                            .allMatch(StringUtils::isNotEmpty));
+                }
+            }
+
+            // different filters on the two axes
+            {
+                VisDataRequest.MeasureInfo measureXpop = mi("flow", "population", "visit");
+                measureXpop.getMeasure().setAxisName("x");
+                measureXpop.getMeasure().setValues(Arrays.asList("CD4"));
+
+                VisDataRequest.MeasureInfo measureYpop = mi("flow", "population", "visit");
+                measureYpop.getMeasure().setAxisName("y");
+                measureYpop.getMeasure().setValues(Arrays.asList("CD8"));
+
+                q.addMeasure(measureXpop).addMeasure(measureYpop);
+
+                List<Map<String, String>> metadata = getColumnAliases(q);
+                Map<String, Map<String, String>> metaMap = new TreeMap<>();
+                metadata.stream().forEach(map -> metaMap.put(StringUtils.defaultString(map.get("alias"), map.get("columnName")), map));
+                assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Container"));
+                assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#ParticipantId"));
+                assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#SequenceNum"));
+                assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Dataset"));
+                assertTrue(metaMap.containsKey("vis_junit_demographics_participantid"));
+                assertTrue(metaMap.containsKey("vis_junit_flow_cellcount"));
+                assertTrue(metaMap.containsKey("vis_junit_flow_population"));
+                assertTrue(metaMap.containsKey("vis_junit_demographics_study"));
+                assertTrue(metaMap.containsKey("vis_junit_demographics_gender"));
+
+                try (ResultsImpl r = (ResultsImpl) getResults(q))
+                {
+                    assertEquals(192, r.getSize()); /* 2*192 */
+                    assertTrue(streamStrings(r, r.findColumn(new FieldKey(null,"http://cpas.labkey.com/Study#Dataset")))
+                            .allMatch(s -> s.equals("x") || s.equals("y")));
+
+                    ColumnInfo dsCol = r.getColumnInfo(r.findColumn(new FieldKey(null,"http://cpas.labkey.com/Study#Dataset")));
+                    List<Map<String, Object>> list = toList(r);
+                    assertTrue(list.stream()
+                            .filter(m -> StringUtils.equals((String) m.get(dsCol.getAlias()), "x"))
+                            .allMatch(m -> StringUtils.equals((String) m.get("vis_junit_flow_population"), "CD4")));
+                    assertTrue(list.stream()
+                            .filter(m -> StringUtils.equals((String) m.get(dsCol.getAlias()), "y"))
+                            .allMatch(m -> StringUtils.equals((String) m.get("vis_junit_flow_population"), "CD8")));
+                }
+            }
         }
     }
 }
