@@ -239,6 +239,7 @@ public class VisDataRequest
         String name;
         String nsvalues;
         String queryName;
+        String axisName;
         Boolean requireLeftJoin;
         String schemaName;
         List<Object> values = new ArrayList<>();
@@ -251,6 +252,7 @@ public class VisDataRequest
             this.schemaName = schema;
             this.queryName = query;
             this.name = name;
+            this.alias = (schema + "_" + query + "_" + name).toLowerCase();
         }
 
 
@@ -349,6 +351,17 @@ public class VisDataRequest
         public Measure setQueryName(String queryName)
         {
             this.queryName = queryName;
+            return this;
+        }
+
+        public String getAxisName()
+        {
+            return axisName;
+        }
+
+        public Measure setAxisName(String axisName)
+        {
+            this.axisName = axisName;
             return this;
         }
 

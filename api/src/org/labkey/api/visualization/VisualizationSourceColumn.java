@@ -16,6 +16,7 @@
 package org.labkey.api.visualization;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -58,18 +59,21 @@ public class VisualizationSourceColumn
     private boolean _hidden = false;
     private Set<Object> _values = new LinkedHashSet<>();
 
+    // used by CDS, not used by VisualizationSQLGenerator, just copy it around please
+    private String _axisName = null;
+
 
     public Map<String, String> toJSON()
     {
         Map<String, String> info = new HashMap<>();
         info.put("measureName", getOriginalName());
-        if (getClientAlias() != null)
-        {
+        if (StringUtils.isNotEmpty(getClientAlias()))
             info.put("alias", getClientAlias());
-        }
         info.put("columnName", getAlias());
         info.put("schemaName", getSchemaName());
         info.put("queryName", getQueryName());
+        if (StringUtils.isNotEmpty(_axisName))
+            info.put("axisName",_axisName);
 
         return info;
     }
@@ -105,6 +109,8 @@ public class VisualizationSourceColumn
                 current._values.addAll(col._values);
                 if (null != col.getClientAlias() && null == current.getClientAlias())
                     current._clientAlias = col.getClientAlias();
+                if (null != col._axisName && null == current._axisName) // this happens because of addExtraSelectColumns()
+                    current._axisName = col._axisName;
                 return current;
             }
             else
@@ -168,6 +174,9 @@ public class VisualizationSourceColumn
                 measure.getRequireLeftJoin());
         _inNotNullSet = BooleanUtils.toBooleanDefaultIfNull(measure.getInNotNullSet(), false);
 
+        if (StringUtils.isNotEmpty(measure.getAxisName()))
+            _axisName = measure.getAxisName();
+
         List<Object> values = measure.getValues();
         _clientAlias = measure.getAlias();
         if (values != null)
@@ -219,6 +228,11 @@ public class VisualizationSourceColumn
     public String getClientAlias()
     {
         return _clientAlias;
+    }
+
+    public String getAxisName()
+    {
+        return _axisName;
     }
 
     public boolean isAllowNullResults()
