@@ -272,10 +272,6 @@ Ext.define('LABKEY.app.model.Filter', {
 
         /**
          * Modifies the participants in a participant group for a study-backed module.
-         *
-         * @param mdx object against which participants are queried
-         * @param  onUpdateFailure - called if the function fails
-         * @param  grpData
          */
         doParticipantUpdate : function(mdx, successFn, failureFn, grpData, subjectName) {
             var m = LABKEY.app.model.Filter;
@@ -363,8 +359,7 @@ Ext.define('LABKEY.app.model.Filter', {
             return LABKEY.app.model.Filter.emptyLabelText;
         },
 
-        getGridFilterLabel : function(gf)
-        {
+        getGridFilterLabel : function(gf) {
             var endLabel = "";
 
             if (Ext.isFunction(gf.getColumnName))
@@ -391,8 +386,7 @@ Ext.define('LABKEY.app.model.Filter', {
         },
 
         getGridLabel : function(data) {
-            var filterLabel = function(gf)
-            {
+            var filterLabel = function(gf) {
                 if (gf) {
                     if (!Ext.isFunction(gf.getFilterType))
                     {
@@ -401,25 +395,24 @@ Ext.define('LABKEY.app.model.Filter', {
                     }
                     var value = gf.getValue();
                     if (!value) {
-                        value = "";
+                        value = '';
                     }
-                    return LABKEY.app.model.Filter.getShortFilter(gf.getFilterType().getDisplayText()) + ' ' + value;
+                    return LABKEY.app.model.Filter.getShortFilter(gf.getFilterType().getDisplayText()) + ' ' + Ext.htmlEncode(value);
                 }
                 return LABKEY.app.model.Filter.emptyLabelText;
             };
 
-            if (data['gridFilter']) { // TODO: change to look for sqlFilters
-                var label = "";
-                var sep = "";
-                Ext.each(data.gridFilter, function(gf){
+            if (data['gridFilter']) {
+                var label = '';
+                var sep = '';
+                Ext.each(data.gridFilter, function(gf) {
                     label += sep + filterLabel(gf);
-                    sep = ", ";
+                    sep = ', ';
                 });
                 return label;
             }
-            else {
-                return filterLabel(data);
-            }
+
+            return filterLabel(data);
         },
 
         // Data Filter Provider
