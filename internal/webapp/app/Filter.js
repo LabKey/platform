@@ -67,7 +67,6 @@ Ext.define('LABKEY.app.model.Filter', {
 
             return arr;
         }},
-        {name : 'plotScales', defaultValue: []}, // array of scales
 
         {name : 'isWhereFilter', type: 'boolean', defaultValue: false},
         {name : 'showInverseFilter', type: 'boolean', defaultValue: false},
