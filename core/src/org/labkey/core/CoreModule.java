@@ -129,6 +129,10 @@ import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.authentication.ldap.LdapAuthenticationProvider;
+import org.labkey.authentication.ldap.LdapController;
+import org.labkey.authentication.test.TestSecondaryController;
+import org.labkey.authentication.test.TestSecondaryProvider;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.CustomizeMenuForm;
@@ -263,6 +267,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("util", UtilController.class);
         addController("logger", LoggerController.class);
         addController("mini-profiler", MiniProfilerController.class);
+        addController("ldap", LdapController.class);
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.register(new AttachmentServiceImpl());
@@ -316,6 +321,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_JSDOC, "Javascript Documentation", "Displays LabKey javascript API's from the Developer Links menu.", false);
         AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
                 "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
+
+        // authentication provider implementations
+        AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
+        if (AppProps.getInstance().isDevMode())
+        {
+            addController("testsecondary", TestSecondaryController.class);
+            AuthenticationManager.registerProvider(new TestSecondaryProvider(), Priority.Low);
+        }
     }
 
     @NotNull

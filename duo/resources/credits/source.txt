@@ -1,0 +1,4 @@
+{table}
+Library|Version|Source|License|LabKey Dev|Purpose
+Duo Web Java/JS Toolkit|1d8741bc8e|{link:duoweb|https://github.com/duosecurity/duo_java}|{link:License|https://github.com/duosecurity/duo_java/blob/master/LICENSE}|tgaluhn|Duo Two Factor Authentication
+{table}

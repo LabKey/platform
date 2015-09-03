@@ -1,0 +1,4 @@
+{table}
+Library|Version|Source|License|LabKey Dev|Purpose
+OneLogin SAML Toolkit for Java|3195ae5852|{link:java-saml|https://github.com/onelogin/java-saml}|{link:License|https://github.com/onelogin/java-saml/blob/master/LICENSE}|tgaluhn|SAML Service Provider functionality
+{table}

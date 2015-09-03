@@ -21,7 +21,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.authentication.duo.DuoController;
+import org.labkey.authentication.duo.DuoProvider;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -59,6 +62,8 @@ public class DuoModule extends DefaultModule
     @Override
     protected void init()
     {
+        addController("duo", DuoController.class);
+        AuthenticationManager.registerProvider(new DuoProvider(), AuthenticationManager.Priority.Low);
     }
 
     @Override

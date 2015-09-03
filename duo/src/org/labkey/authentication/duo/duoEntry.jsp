@@ -28,7 +28,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("authentication/duo"));// These are equivalent as Client Dependencies without a suffix are assumed to be .lib.xml
+        resources.add(ClientDependency.fromPath("duo"));// These are equivalent as Client Dependencies without a suffix are assumed to be .lib.xml
         return resources;
     }
 %>

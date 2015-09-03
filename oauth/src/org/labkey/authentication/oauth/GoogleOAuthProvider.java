@@ -47,7 +47,7 @@ import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.authentication.AuthenticationModule;
+import org.labkey.oauth.OAuthModule;
 import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -148,7 +148,7 @@ public class GoogleOAuthProvider implements SSOAuthenticationProvider
     @Nullable
     public static ValidEmail authenticate(HttpServletRequest request, HttpServletResponse response, BindException errors) throws ValidEmail.InvalidEmailException
     {
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(AuthenticationModule.EXPERIMENTAL_OPENID_GOOGLE))
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(OAuthModule.EXPERIMENTAL_OPENID_GOOGLE))
         {
             errors.reject(SpringActionController.ERROR_MSG,"OAuth not supported");
             return null;

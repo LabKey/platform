@@ -37,7 +37,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.authentication.AuthenticationModule;
+import org.labkey.saml.SamlModule;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -91,7 +91,7 @@ public class SamlController extends SpringActionController
         @Override
         public ValidEmail validateAuthentication(ReturnUrlForm form, BindException errors) throws Exception
         {
-            if (!AppProps.getInstance().isExperimentalFeatureEnabled(AuthenticationModule.EXPERIMENTAL_SAML_SERVICE_PROVIDER))
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(SamlModule.EXPERIMENTAL_SAML_SERVICE_PROVIDER))
                 throw new IllegalStateException();
 
             String email = SamlManager.getUserFromSamlResponse(getViewContext().getRequest());
@@ -99,7 +99,6 @@ public class SamlController extends SpringActionController
                 return new ValidEmail(email);
             else
                 return null;
-
         }
     }
 
