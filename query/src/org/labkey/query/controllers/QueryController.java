@@ -1360,7 +1360,7 @@ public class QueryController extends SpringActionController
         @Override
         protected void renderView(Object model, PrintWriter out) throws Exception
         {
-            out.println("<table>");
+            out.println("<table class=\"labkey-data-region labkey-show-borders\">");
 
             try
             {
@@ -1371,16 +1371,25 @@ public class QueryController extends SpringActionController
 
                 for (int i = 1; i <= columnCount; i++)
                 {
-                    out.print("<th>");
+                    out.print("<th class=\"labkey-column-header\">");
                     out.print(PageFlowUtil.filter(md.getColumnLabel(i)));
                     out.print("</th>");
                 }
 
                 out.println("</tr>\n");
 
+                long rowCount = 0;
+
                 while (_rs.next())
                 {
-                    out.print("  <tr>");
+                    if (rowCount % 2 == 0)
+                    {
+                        out.print("  <tr>");
+                    }
+                    else
+                    {
+                        out.print("  <tr class=\"labkey-alternate-row\">");
+                    }
 
                     for (int i = 1; i <= columnCount; i++)
                     {
@@ -1404,6 +1413,7 @@ public class QueryController extends SpringActionController
                     }
 
                     out.println("</tr>\n");
+                    rowCount++;
                 }
             }
             finally
