@@ -117,15 +117,6 @@ audit/src/org/labkey/audit/query/AuditQuerySchema.java -text
 audit/src/org/labkey/audit/query/AuditQueryView.java -text
 audit/src/org/labkey/audit/query/AuditQueryViewImpl.java -text
 audit/src/org/labkey/audit/siteSettingsAuditDetails.jsp -text
-authentication/Authentication.iml -text
-authentication/module.properties -text
-authentication/resources/credits/source.txt -text
-authentication/src/org/labkey/authentication/AuthenticationModule.java -text
-authentication/src/org/labkey/authentication/opensso/OpenSSOController.java -text
-authentication/src/org/labkey/authentication/opensso/OpenSSOManager.java -text
-authentication/src/org/labkey/authentication/opensso/OpenSSOProvider.java -text
-authentication/src/org/labkey/authentication/opensso/view/currentSettings.jsp -text
-authentication/src/org/labkey/authentication/opensso/view/referrerPrefix.jsp -text
 bigiron/BigIron.iml -text
 bigiron/module.properties -text
 bigiron/src/org/labkey/bigiron/BigIronModule.java -text
