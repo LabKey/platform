@@ -1285,8 +1285,7 @@ public class PageFlowUtil
         return "<a class=\"labkey-menu-text-link\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\"" +
                 " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
                 (id == null ? "" : " id=\"" + filter(id) + "PopupLink\"") + "><span" +
-                (id == null ? "" : " id=\"" + filter(id) + "PopupText\"") + ">" + filter(text) + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
-                "/_images/text_link_arrow.gif\" style=\"position:relative; background-color:transparent; width:10px; height:auto; top:" + offset +"px; right:0;\"></a>";
+                (id == null ? "" : " id=\"" + filter(id) + "PopupText\"") + ">" + filter(text) + "</span>&nbsp;<span class=\"fa fa-caret-down\" style=\"position:relative;color:lightgray\"></span></a>";
     }
 
     /* Renders image and a drop down wrapped in an unstyled link */

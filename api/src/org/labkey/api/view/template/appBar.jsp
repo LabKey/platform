@@ -112,7 +112,7 @@
                         <li class="tab-nav-edit" id="editTabs">
                             <a href="javascript:LABKEY.Portal.toggleTabEditMode();" title="Toggle Edit Mode">
                                 &nbsp;
-                                <span class="tab-nav-edit-img" unselectable="on"></span>
+                                <span class="fa fa-pencil" unselectable="on"></span>
                             </a>
                         </li>
                 <%
