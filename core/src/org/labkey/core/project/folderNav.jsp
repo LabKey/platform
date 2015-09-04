@@ -34,6 +34,7 @@
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("dataview/DataViewsPanel.css"));
         return resources;
     }
 %>
@@ -169,11 +170,11 @@
     if (c.hasPermission(user, AdminPermission.class))
     {
 %>
-    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><img src="<%=getWebappURL("_images/icon_folders_add.png")%>" alt="New Subfolder" /></a></span>
+    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><span class="fa-stack fa-1x labkey-fa-stacked-wrapper"><span class="fa fa-folder-o fa-stack-2x labkey-main-menu-icon" alt="New Subfolder"></span><span class="fa fa-plus-circle fa-stack-1x"></span></span></a></span>
 <%
     }
 %>
-    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><img src="<%=getWebappURL("_images/icon_permalink.png")%>" alt="Permalink Page" /></a></span>
+    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><span class="fa fa-link labkey-main-menu-icon" alt="Permalink Page"></span></a></span>
     <script type="text/javascript">
         (function(){
             var p = document.getElementById('permalink');

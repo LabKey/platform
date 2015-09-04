@@ -3066,7 +3066,8 @@ li.tab-nav-active a {
 }
 
 .labkey-app-bar ul li.tab-nav-edit {
-    padding: 4px 6px 8px 0;
+    padding: 8px 6px 8px 0;
+    font-size: 14px;
 }
 
 .labkey-app-bar ul li .tab-nav-edit-img {
@@ -3466,7 +3467,6 @@ div.headermenu a.labkey-nomenu-text-link img {
 div.headermenu a.labkey-menu-text-link {
     color: white;
     padding-right: 12px;
-    background: url(./_images/arrow_menu_down.png) top right no-repeat;
 }
 
 div.headermenu a.labkey-menu-text-link:hover {

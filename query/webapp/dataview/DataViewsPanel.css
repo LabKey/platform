@@ -212,3 +212,10 @@ div.icon img
 .labkey-fa-stacked-wrapper {
     font-size: 9px;
 }
+
+div span.labkey-main-menu-icon {
+    width: 26px;
+    height: 20px;
+    font-size: 15px;
+    background-color: white;
+}
