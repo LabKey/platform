@@ -3802,7 +3802,7 @@ public class StudyManager
         context.setConfigParameters(options);
 
         List<String> lsids = def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
-        batchValidateExceptionToList(context.getErrors(),errors);
+        batchValidateExceptionToList(context.getErrors(), errors);
         return lsids;
     }
 
@@ -3842,7 +3842,7 @@ public class StudyManager
         context.setConfigParameters(options);
 
         List<String> lsids = def.importDatasetData(user, it, context, checkDuplicates, defaultQCState, null, logger, forUpdate);
-        batchValidateExceptionToList(context.getErrors(),errors);
+        batchValidateExceptionToList(context.getErrors(), errors);
         return lsids;
     }
 
@@ -4169,17 +4169,19 @@ public class StudyManager
         return container.getId() + "/" + Participant.class.toString();
     }
 
+    /** non-permission checking, non-recursive */
     private Map<String, Participant> getParticipantMap(Study study)
     {
         Map<String, Participant> participantMap = (Map<String, Participant>) DbCache.get(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()));
         if (participantMap == null)
         {
             SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
-            Participant[] participants = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(),
-                    filter, new Sort("ParticipantId")).getArray(Participant.class);
+            ArrayList<Participant> participants = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(),
+                    filter, new Sort("ParticipantId")).getArrayList(Participant.class);
             participantMap = new LinkedHashMap<>();
             for (Participant participant : participants)
                 participantMap.put(participant.getParticipantId(), participant);
+            participantMap = Collections.unmodifiableMap(participantMap);
             DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()), participantMap, CacheManager.HOUR);
         }
         return participantMap;
@@ -4193,11 +4195,7 @@ public class StudyManager
     public Participant[] getParticipants(Study study)
     {
         Map<String, Participant> participantMap = getParticipantMap(study);
-        Participant[] participants = new Participant[participantMap.size()];
-        int i = 0;
-        for (Map.Entry<String, Participant> entry : participantMap.entrySet())
-            participants[i++] = entry.getValue();
-        return participants;
+        return participantMap.values().toArray(new Participant[participantMap.size()]);
     }
 
     public Participant getParticipant(Study study, String participantId)
@@ -4205,6 +4203,34 @@ public class StudyManager
         Map<String, Participant> participantMap = getParticipantMap(study);
         return participantMap.get(participantId);
     }
+
+    public static class ParticipantNotUniqueException extends Exception
+    {
+        ParticipantNotUniqueException(String ptid)
+        {
+            super("Paricipant found in more than one study: " + ptid);
+        }
+    }
+
+    /* non-permission checking,  may return participant from sub folder */
+    public Container findParticipant(Study study, String ptid) throws ParticipantNotUniqueException
+    {
+        Participant p = getParticipant(study, ptid);
+        if (null != p)
+            return study.getContainer();
+        else if  (!study.isDataspaceStudy())
+            return null;
+
+        TableInfo table = StudySchema.getInstance().getTableInfoParticipant();
+        ArrayList<String> containers = new SqlSelector(table.getSchema(), new SQLFragment("SELECT container FROM study.participant WHERE participantid=?",ptid))
+                .getArrayList(String.class);
+        if (containers.size() == 0)
+            return null;
+        else if (containers.size() == 1)
+            return ContainerManager.getForId(containers.get(0));
+        throw new ParticipantNotUniqueException(ptid);
+    }
+
 
     public CustomParticipantView getCustomParticipantView(Study study) throws SQLException
     {

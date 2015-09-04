@@ -1127,12 +1127,24 @@ public class StudyController extends BaseStudyController
             Participant participant = StudyManager.getInstance().getParticipant(study, form.getParticipantId());
             if (participant == null)
             {
-                if (study.isDataspaceStudy())
+                try
                 {
-                    return new HtmlView("The default participant view is not supported for dataspace studies");
+                    if (study.isDataspaceStudy())
+                    {
+                        Container c = StudyManager.getInstance().findParticipant(study, form.getParticipantId());
+                        Study s = null == c ? null : StudyManager.getInstance().getStudy(c);
+                        if (null != s && c.hasPermission(getUser(), ReadPermission.class))
+                        {
+                            participant = StudyManager.getInstance().getParticipant(s, form.getParticipantId());
+                        }
+                    }
+                    if (null == participant)
+                        throw new NotFoundException("Could not find " + study.getSubjectNounSingular() + " " + form.getParticipantId());
                 }
-
-                throw new NotFoundException("Could not find " + study.getSubjectNounSingular() + " " + form.getParticipantId());
+                catch (StudyManager.ParticipantNotUniqueException x)
+                {
+                    return new HtmlView(PageFlowUtil.filter(x.getMessage()));
+                }
             }
 
             String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
