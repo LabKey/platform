@@ -1522,9 +1522,6 @@ pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup.wsdl -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup.xsd -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_bindings.wsdl -text
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_service.wsdl -text
-premium/Premium.iml -text
-premium/module.properties -text
-premium/src/org/labkey/premium/PremiumModule.java -text
 query/build.xml -text
 query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text
