@@ -375,8 +375,17 @@ public class VisualizationCDSGenerator
                 String alias = StringUtils.defaultString(vcol.getClientAlias(), vcol.getAlias());
                 if (isEmpty(alias))
                     continue;
-                if (null == unionAliasList.put(alias,vcol.getType()))
-                    columnAliases.add(vcol.toJSON());
+
+                String columnName = vcol.getOriginalName();
+                boolean isContainer = equalsIgnoreCase(columnName, containerColumnName);
+                boolean isSubject = equalsIgnoreCase(columnName, subjectColumnName);
+                boolean isSequenceNum = equalsIgnoreCase(columnName, sequenceNumColumnName);
+
+                if (!isContainer && !isSubject && !isSequenceNum)
+                {
+                    if (null == unionAliasList.put(alias, vcol.getType()))
+                        columnAliases.add(vcol.toJSON());
+                }
             }
         }
 
