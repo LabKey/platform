@@ -16,6 +16,7 @@
 package org.labkey.query.controllers;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
@@ -46,6 +47,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -68,6 +70,8 @@ import java.util.Map;
 @Action(ActionType.SelectMetaData.class)
 public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 {
+    private static final Logger LOG = Logger.getLogger(GetQueryDetailsAction.class);
+
     public ApiResponse execute(Form form, BindException errors) throws Exception
     {
         ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -191,7 +195,22 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         }
         catch (QueryParseException e)
         {
-            resp.put("exception", e.getMessage());
+            String queryName = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.QueryName);
+            String message = e.getMessage();
+            String fullMessage = "";
+            if (queryName != null)
+            {
+                fullMessage = "Error parsing query: '" + queryName + "'.";
+                if (message != null && !message.isEmpty())
+                {
+                    fullMessage += " Message: ";
+                }
+            }
+            fullMessage += message;
+            resp.put("exception", fullMessage);
+
+            LOG.error("QueryParseException. Container: " + getContainer().getPath() + " Query: " + queryName, e);
+
             return resp;
         }
 
