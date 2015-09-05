@@ -2298,6 +2298,8 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
                 loadError.message = errorJson.exception;
         }
 
+        LABKEY.Utils.alert('Error loading query information', loadError.message);
+
         this.loadError = loadError;
     },
 
