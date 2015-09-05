@@ -1708,6 +1708,8 @@ public class QueryServiceImpl extends QueryService
         // Look for file-based definitions in modules
         Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : schema.getContainer().getActiveModules(schema.getUser());
 
+        modules = reorderModules(modules);
+
         for (Module module : modules)
         {
             Collection<? extends Resource> queryMetadatas;
