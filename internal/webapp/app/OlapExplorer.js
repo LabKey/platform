@@ -914,11 +914,22 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
     },
 
     highlightSelections : function() {
-        if (Ext.isArray(this.selections) && this.selections.length > 0) {
+        if (!Ext.isEmpty(this.selections)) {
             var members, uniques = [];
             Ext.each(this.selections, function(sel) {
-                members = Ext.isFunction(sel.get) ? sel.get('members') : sel.membersQuery.members;
-                uniques = uniques.concat(Ext.Array.pluck(members, "uniqueName"));
+
+                // initialize members
+                if (Ext.isFunction(sel.get)) {
+                    members = sel.get('members');
+                }
+                else if (Ext.isArray(sel.arguments)) {
+                    members = sel.arguments[0].membersQuery.members;
+                }
+                else {
+                    members = sel.membersQuery.members;
+                }
+
+                uniques = uniques.concat(Ext.Array.pluck(members, 'uniqueName'));
             }, this);
 
             Ext.each(uniques, function(uniqueName) {
