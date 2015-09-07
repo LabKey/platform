@@ -85,6 +85,8 @@ public class AuthenticationManager
     // Map of user id to login provider.  This is needed to handle clean up on logout.
     private static final Map<Integer, AuthenticationProvider> _userProviders = new ConcurrentHashMap<>();
 
+    private static final Map<String, Boolean> _authConfigProperties = new ConcurrentHashMap<>();
+
     public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";
     public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_";
 
@@ -110,6 +112,36 @@ public class AuthenticationManager
         loadProperties();
     }
 
+    public static boolean isRegistrationEnabled()
+    {
+        return getAuthConfigProperty(REGISTRATION_ENABLED_KEY, false);
+    }
+
+    public static boolean isAutoCreateAccountsEnabled()
+    {
+        return getAuthConfigProperty(AUTO_CREATE_ACCOUNTS_KEY, true);
+    }
+
+    public static boolean getAuthConfigProperty(String key, Boolean defaultValue)
+    {
+        return _authConfigProperties.get(key) == null ? defaultValue : _authConfigProperties.get(key);
+    }
+
+    public static void setRegistrationEnabled(boolean enabled)
+    {
+        setAuthConfigProperty(REGISTRATION_ENABLED_KEY, enabled);
+    }
+
+    public static void setAutoCreateAccountsEnabled(boolean enabled)
+    {
+        setAuthConfigProperty(AUTO_CREATE_ACCOUNTS_KEY, enabled);
+    }
+
+    public static void setAuthConfigProperty(String key, boolean value)
+    {
+        _authConfigProperties.put(key, value);
+        saveAuthConfigProperties();
+    }
 
     public static @Nullable String getHeaderLogoHtml(ActionURL currentURL)
     {
@@ -296,9 +328,11 @@ public class AuthenticationManager
     }
 
 
-    private static final String AUTHENTICATION_PROVIDERS_SET = "Authentication";
+    private static final String AUTHENTICATION_CATEGORY = "Authentication";
     private static final String PROVIDERS_KEY = "Authentication";
     private static final String PROP_SEPARATOR = ":";
+    public static final String REGISTRATION_ENABLED_KEY = "RegistrationEnabled";
+    public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
 
     public static void saveActiveProviders()
     {
@@ -312,16 +346,27 @@ public class AuthenticationManager
             sep = PROP_SEPARATOR;
         }
 
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_PROVIDERS_SET, true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
         props.put(PROVIDERS_KEY, sb.toString());
         props.save();
         loadProperties();
     }
 
 
+    public static void saveAuthConfigProperties()
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+        for (Map.Entry<String, Boolean> entry : _authConfigProperties.entrySet())
+        {
+            props.put(entry.getKey(), entry.getValue().toString());
+        }
+        props.save();
+        loadProperties();
+    }
+
     public static void loadProperties()
     {
-        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_PROVIDERS_SET);
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
         String activeProviderProp = props.get(PROVIDERS_KEY);
         List<String> activeNames = Arrays.asList(null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
         List<AuthenticationProvider> activeProviders = new ArrayList<>(_allProviders.size());
@@ -335,6 +380,11 @@ public class AuthenticationManager
 
         _activeProviders.clear();
         _activeProviders.addAll(activeProviders);
+
+        if (props.get(REGISTRATION_ENABLED_KEY) != null)
+            _authConfigProperties.put(REGISTRATION_ENABLED_KEY, Boolean.valueOf(props.get(REGISTRATION_ENABLED_KEY)));
+        if (props.get(AUTO_CREATE_ACCOUNTS_KEY) != null)
+            _authConfigProperties.put(AUTO_CREATE_ACCOUNTS_KEY, Boolean.valueOf(props.get(AUTO_CREATE_ACCOUNTS_KEY)));
     }
 
 
@@ -690,6 +740,10 @@ public class AuthenticationManager
         return StringUtils.isNotBlank(id) && StringUtils.isNotBlank(password);
     }
 
+    public static boolean isExternalProviderEnabled()
+    {
+        return getActiveProviders().size() > 1;
+    }
 
     public static boolean isActive(String providerName)
     {

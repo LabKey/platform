@@ -2525,15 +2525,7 @@ public class SecurityManager
                 Container c = context.getContainer();
                 messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(c, email, mailPrefix);
 
-                ActionURL verificationURL = createVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters);
-
-                SecurityManager.sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
-                if (!currentUser.getEmail().equals(email.getEmailAddress()))
-                {
-                    SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
-                    msg.setTo(email.getEmailAddress());
-                    SecurityManager.sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
-                }
+                sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters);
             }
 
             User newUser = newUserStatus.getUser();
@@ -2586,6 +2578,46 @@ public class SecurityManager
         }
 
         return message.toString();
+    }
+
+    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, Pair<String, String>[] extraParameters) throws Exception
+    {
+        Container c = context.getContainer();
+        User currentUser = context.getUser();
+
+        ActionURL verificationURL = createVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters);
+
+        SecurityManager.sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
+        if (!currentUser.getEmail().equals(email.getEmailAddress()))
+        {
+            SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
+            msg.setTo(email.getEmailAddress());
+            SecurityManager.sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
+        }
+    }
+
+    public static void addSelfRegisteredUser(ViewContext context, ValidEmail email) throws Exception
+    {
+        User currentUser = context.getUser();
+        SecurityManager.NewUserStatus newUserStatus = SecurityManager.addUser(email, currentUser);
+
+        User newUser = newUserStatus.getUser();
+        if (newUserStatus.getHasLogin())
+        {
+            try
+            {
+                SecurityManager.sendRegistrationEmail(context, email, null, newUserStatus, null);
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  Verification email was sent successfully.");
+            }
+            catch (ConfigurationException e)
+            {
+                User createdUser = UserManager.getUser(email);
+
+                if (null != createdUser)
+                    UserManager.addToUserHistory(createdUser, createdUser.getEmail() + " was added to the system.  Sending the verification email failed.");
+                throw e;
+            }
+        }
     }
 
     private static void appendMailHelpText(StringBuilder sb, ActionURL messageContentsURL, boolean isAdmin)
