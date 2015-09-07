@@ -39,6 +39,8 @@
 
     <% appendProviders(out, primary, urls); %>
 
+    <tr><td colspan="5">&nbsp;</td></tr>
+    <tr><td colspan="5"><%=PageFlowUtil.textLink("Configure account creation methods", urls.getConfigureAccountCreationURL())%></td></tr>
 <%
     if (!secondary.isEmpty())
     {

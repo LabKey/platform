@@ -1,0 +1,29 @@
+<style type="text/css">
+    .labkey-error {
+        margin-top: 15px;
+    }
+    .register-submit-button {
+        position: absolute;
+        left: -9999px;
+        width: 1px;
+        height: 1px;
+    }
+</style>
+
+
+<div class="auth-header">Register</div>
+<div class="labkey-error" id="errors"></div>
+<div id="registration-content" class="auth-form-body">
+    <form class="register-form" name="register" action="javascript:void(0)">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="text" class="input-block" tabindex="1" >
+        <label for="emailConfirmation">
+            Email (verify)
+        </label>
+        <input id="emailConfirmation" name="emailConfirmation" type="text" class="input-block" tabindex="2" autofocus>
+        <div>
+            <input type="submit" tab-index="-1" class="register-submit-button"/><a class="labkey-button register-btn"><span>Register</span></a>
+        </div>
+        <input type=hidden name='X-LABKEY-CSRF'>
+    </form>
+</div>

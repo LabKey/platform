@@ -14,6 +14,7 @@
         init();
         getTermsOfUse();
         getOtherLoginMechanisms();
+        registrationEnabled();
     }
 
     function authenticateUser() {
@@ -119,6 +120,23 @@
         });
     }
 
+
+    function registrationEnabled() {
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('login', 'getRegistrationConfigApi.api', this.containerPath),
+            method: 'POST',
+            params: {
+                'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
+            },
+            success: LABKEY.Utils.getCallbackWrapper(function (response) {
+                var registrationSections = document.getElementsByClassName('registrationSection');
+                if (registrationSections && registrationSections.length >=1) {
+                    registrationSections[0].hidden = !response || !response.enabled;
+                }
+            }, this)
+        });
+    }
+
     function init() {
         // Provide support for persisting the url hash through a login redirect
         if (window && window.location && window.location.hash) {
@@ -154,7 +172,7 @@
             passwordField.onkeypress = changeListener;
         }
 
-        // examine cookies to determine if user wants the email prepoluated on form
+        // examine cookies to determine if user wants the email pre-populated on form
         var h = document.getElementById('email');
         if (h && LABKEY.Utils.getCookie("email")) {
             h.value = decodeURIComponent(LABKEY.Utils.getCookie("email"));

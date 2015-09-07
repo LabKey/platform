@@ -19,6 +19,7 @@ package org.labkey.core.login;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
@@ -155,6 +156,18 @@ public class LoginController extends SpringActionController
         public ActionURL getConfigureDbLoginURL()
         {
             return LoginController.getConfigureDbLoginURL(false);
+        }
+
+        public ActionURL getConfigureAccountCreationURL() { return new ActionURL(ConfigureAccountCreationAction.class, ContainerManager.getRoot()); }
+
+        public ActionURL getEnableConfigParameterURL(String paramName)
+        {
+            return new ActionURL(SetAuthenticationParameterAction.class, ContainerManager.getRoot()).addParameter("parameter", paramName).addParameter("enabled", true);
+        }
+
+        public ActionURL getDisableConfigParameterURL(String paramName)
+        {
+            return new ActionURL(SetAuthenticationParameterAction.class, ContainerManager.getRoot()).addParameter("parameter", paramName).addParameter("enabled", false);
         }
 
         public ActionURL getInitialUserURL()
@@ -360,6 +373,131 @@ public class LoginController extends SpringActionController
             SecurityManager.logoutUser(context.getRequest(), user);
 
         return true;
+    }
+
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @CSRF
+    public class RegisterAction extends SimpleViewAction<RegisterForm>
+    {
+
+        public ModelAndView getView(RegisterForm form, BindException errors) throws Exception
+        {
+            if (!AuthenticationManager.isRegistrationEnabled())
+                throw new NotFoundException("Registration is not enabled");
+            PageConfig config = getPageConfig();
+            config.setTitle("Register");
+            config.setTemplate(PageConfig.Template.Dialog);
+            config.setIncludeLoginLink(false);
+
+            JspView jsp = new JspView("/org/labkey/core/login/register.jsp");
+
+            WebPartView view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), "register", null);
+            view.setFrame(WebPartView.FrameType.NONE);
+            jsp.setView("registerView", view);
+            return jsp;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
+    public class RegisterUserAction extends MutatingApiAction<RegisterForm>
+    {
+
+        @Override
+        public void validateForm(RegisterForm form, Errors errors)
+        {
+            if (StringUtils.isEmpty(form.getEmail()) || StringUtils.isEmpty(form.getEmailConfirmation()))
+            {
+                errors.reject(ERROR_REQUIRED, "You must verify your email address");
+            }
+            else
+            {
+                try
+                {
+                    ValidEmail email = new ValidEmail(form.getEmail());
+                    if (!form.getEmail().equals(form.getEmailConfirmation()))
+                        errors.reject(ERROR_MSG, "The email addresses you have entered do not match.  Please verify your email addresses below.");
+                    else if (UserManager.userExists(email))
+                    {
+                        errors.reject(ERROR_MSG, "The email address you have entered is already associated with an account.  If you have forgotten your password, you can <a href=\"login-resetPassword.view?\">reset your password</a>.  Otherwise, please contact your administrator.");
+                    }
+                }
+                catch (InvalidEmailException e)
+                {
+                    errors.reject(ERROR_MSG, "Your email address is not valid. Please verify your email address below.");
+                }
+
+            }
+        }
+
+        @Override
+        public Object execute(RegisterForm form, BindException errors) throws Exception
+        {
+            if (!AuthenticationManager.isRegistrationEnabled())
+                throw new NotFoundException("Registration is not enabled");
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            ValidEmail email = new ValidEmail(form.getEmail());
+
+            try
+            {
+                SecurityManager.addSelfRegisteredUser(getViewContext(), email);
+            }
+            catch (ConfigurationException e)
+            {
+                errors.reject(ERROR_MSG, "There was a problem sending the registration email.  Please contact your administrator.");
+            }
+            response.put("success", !errors.hasErrors());
+            if (!errors.hasErrors())
+                response.put("email", email.getEmailAddress());
+            return response;
+        }
+    }
+
+    public static class RegisterForm extends AbstractLoginForm
+    {
+        private String email;
+        private String emailConfirmation;
+        private boolean isConfirmation;
+
+        public void setEmail(String email)
+        {
+            this.email = email;
+        }
+
+        public String getEmail()
+        {
+            return this.email;
+        }
+
+        public void setEmailConfirmation(String email)
+        {
+            this.emailConfirmation = email;
+        }
+
+        public String getEmailConfirmation()
+        {
+            return this.emailConfirmation;
+        }
+
+        public boolean isConfirmation()
+        {
+            return isConfirmation;
+        }
+
+        public void setIsConfirmation(boolean isConfirmation)
+        {
+            this.isConfirmation = isConfirmation;
+        }
     }
 
 
@@ -655,13 +793,28 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(LoginForm form, BindException errors) throws Exception
         {
-            ApiSimpleResponse response = null;
-            response = new ApiSimpleResponse();
+            ApiSimpleResponse response = new ApiSimpleResponse();
             String otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(form.getReturnActionURL());
             response.put("otherLoginMechanismsContent", otherLoginMechanisms);
             return response;
         }
     }
+
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @CSRF
+    public class GetRegistrationConfigApiAction extends ApiAction
+    {
+
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("enabled", AuthenticationManager.isRegistrationEnabled());
+            return response;
+        }
+    }
+
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
@@ -1977,6 +2130,70 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction
+    public class ConfigureAccountCreationAction extends SimpleViewAction<ReturnUrlForm>
+    {
+        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/login/configureAccountCreation.jsp", form);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic(new HelpTopic("authenticationModule"));
+            return getUrls().appendAuthenticationNavTrail(root);
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class SetAuthenticationParameterAction extends RedirectAction<AuthParameterForm>
+    {
+
+        @Override
+        public URLHelper getSuccessURL(AuthParameterForm form)
+        {
+            return getUrls().getConfigureAccountCreationURL();
+        }
+
+        @Override
+        public boolean doAction(AuthParameterForm parameterForm, BindException errors) throws Exception
+        {
+            AuthenticationManager.setAuthConfigProperty(parameterForm.getParameter(), parameterForm.isEnabled());
+            return true;
+        }
+
+        @Override
+        public void validateCommand(AuthParameterForm target, Errors errors)
+        {
+
+        }
+    }
+
+    public static class AuthParameterForm
+    {
+        private String _parameter;
+        private boolean _enabled;
+
+        public boolean isEnabled()
+        {
+            return _enabled;
+        }
+
+        public void setEnabled(boolean enabled)
+        {
+            _enabled = enabled;
+        }
+
+        public String getParameter()
+        {
+            return _parameter;
+        }
+
+        public void setParameter(String parameter)
+        {
+            _parameter = parameter;
+        }
+    }
 
     @RequiresSiteAdmin
     public class EnableAction extends RedirectAction<ProviderForm>

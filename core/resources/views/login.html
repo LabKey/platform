@@ -2,6 +2,16 @@
     .labkey-error {
         margin-top: 15px;
     }
+    .register-text {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+    .loginSubmitButton {
+        position: absolute;
+        left: -9999px;
+        width: 1px;
+        height: 1px;
+    }
 </style>
 
 <form class="auth-form" name="login" action="javascript:void(0)">
@@ -26,8 +36,13 @@
         </div>
         <input type="hidden" name="termsOfUseType" id="termsOfUseType">
         <div class="auth-item auth-credentials-submit">
-            <input type="submit" tab-index="-1" style="position: absolute; left: -9999px; width: 1px; height: 1px;" class="loginSubmitButton"/><a class="labkey-button signin-btn" ><span>Sign In</span></a>
+            <input type="submit" tab-index="-1" class="loginSubmitButton"/><a class="labkey-button signin-btn" ><span>Sign In</span></a>
+            <span class="registrationSection">
+                <span class="register-text">or</span>
+                <a class="labkey-text-link" href="login-register.view?">Register for a new account</a>
+            </span>
         </div>
+
         <input type="hidden" name="returnUrl">
         <input type="hidden" id="urlhash" name="urlhash">
         <input type=hidden name='X-LABKEY-CSRF'>

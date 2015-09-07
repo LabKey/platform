@@ -741,9 +741,22 @@ regions on mouseover */
 }
 
 /* This lightens the text to make it look inactive. (limited use) */
-.labkey-disabled, .labkey-disabled a:link, .labkey-disabled a:visited
+.labkey-disabled, .labkey.labkey-disabled a:link, .labkey-disabled a:visited, .labkey-disabled-text-link
 {
     color: #C0C0C0;
+}
+
+.labkey-disabled-text-link
+{
+    font-family: Verdana,Arial,Helvetica,sans-serif;
+    font-weight: bold;
+    padding: .3em 14px 2px 0;
+    text-transform: uppercase;
+    border: none;
+    position: relative;
+    vertical-align: middle;
+    white-space: nowrap;
+    margin: 0.1em 0.8em 0.5em 0;
 }
 
 /* This lightens the text to make it look "grayed out", but still readable, unlike labkey-disabled, above. */
@@ -2111,7 +2124,7 @@ a.no-arrow {
 
 /* these are the new text links with css arrows */
 
-.labkey-text-link, a.labkey-text-link-noarrow
+.labkey-text-link, a.labkey-text-link-noarrow, .labkey-disabled-text-link
 {
     font-size: 10px;
 }

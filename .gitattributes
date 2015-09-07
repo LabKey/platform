@@ -267,6 +267,8 @@ core/resources/views/ModulePropertyAdmin.view.xml -text
 core/resources/views/_footer.html -text
 core/resources/views/login.html -text
 core/resources/views/login.view.xml -text
+core/resources/views/register.html -text
+core/resources/views/register.view.xml -text
 core/resources/views/testCustomLogin.html -text
 core/resources/views/testCustomLogin.view.xml -text
 core/script-fragments/Ext.footer.js -text
@@ -418,10 +420,12 @@ core/src/org/labkey/core/login/DbLoginManager.java -text
 core/src/org/labkey/core/login/LoginController.java -text
 core/src/org/labkey/core/login/PasswordRule.java -text
 core/src/org/labkey/core/login/configuration.jsp -text
+core/src/org/labkey/core/login/configureAccountCreation.jsp -text
 core/src/org/labkey/core/login/configureDbLogin.jsp -text
 core/src/org/labkey/core/login/finishResetPassword.jsp -text
 core/src/org/labkey/core/login/login.jsp -text
 core/src/org/labkey/core/login/pickAuthLogo.jsp -text
+core/src/org/labkey/core/login/register.jsp -text
 core/src/org/labkey/core/login/resetPassword.jsp -text
 core/src/org/labkey/core/login/setPassword.jsp -text
 core/src/org/labkey/core/portal/PortalJUnitTest.java -text
@@ -520,6 +524,7 @@ core/webapp/fileAddRemoveIcon.css -text
 core/webapp/fileBrowser.js -text
 core/webapp/login.js -text
 core/webapp/printStyle.css -text
+core/webapp/register.js -text
 core/webapp/stylesheet.css -text
 dataintegration/Dataintegration.iml -text
 dataintegration/module.properties -text
