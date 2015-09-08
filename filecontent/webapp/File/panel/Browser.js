@@ -537,7 +537,6 @@ Ext4.define('File.panel.Browser', {
                 pressed: this.showUpload && this.expandUpload,
                 handler : this.onUpload,
                 scope: this,
-                hideText: true,
                 tooltip: 'Upload files or folders from your local machine to the server'
             });
 
@@ -562,8 +561,7 @@ Ext4.define('File.panel.Browser', {
                 fontCls: 'fa-database',
                 tooltip: 'Import data from files into the database, or analyze data files',
                 actionType : File.panel.Action.Type.NOMIN,
-                scope: this,
-                hideText: true
+                scope: this
             });
 
             this.actions.customize = Ext4.create('File.panel.Action', {
@@ -612,7 +610,6 @@ Ext4.define('File.panel.Browser', {
                 handler : function() {
                     window.location = LABKEY.ActionURL.buildURL('filecontent', 'showFilesHistory', this.containerPath);
                 },
-                hideText: true,
                 scope: this
             });
         }

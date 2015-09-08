@@ -65,11 +65,11 @@ Ext4.define('File.panel.Toolbar', {
                 {id : 'renamePath', hideText : true, hideIcon : false},
                 {id : 'movePath', hideText : true, hideIcon : false},
                 {id : 'editFileProps', hideText : true, hideIcon : false},
-                {id : 'upload', hideText : true, hideIcon : false},
-                {id : 'importData', hideText : true, hideIcon : false},
+                {id : 'upload', hideText : false, hideIcon : false},
+                {id : 'importData', hideText : false, hideIcon : false},
                 {id : 'emailPreferences', hideText : true, hideIcon : false},
-                {id : 'auditLog', hideText : true, hideIcon : false},
-                {id : 'customize', hideText : true, hideIcon : false}
+                {id : 'auditLog', hideText : false, hideIcon : false},
+                {id : 'customize', hideText : false, hideIcon : false}
             ],
             gridConfigs : {
                 columns : [
@@ -103,7 +103,7 @@ Ext4.define('File.panel.Toolbar', {
             customize        : {icon : 'fa-cog',   text : 'Admin', used : false},
             deletePath       : {icon : 'fa-trash-o',      text : 'Delete', used : false},
             download         : {icon : 'fa-download',    text : 'Download', used : false},
-            editFileProps    : {icon : 'fa-pencil',   text : 'Edit Properties', used : false},
+            editFileProps    : {icon : 'fa-wrench',   text : 'Edit Properties', used : false},
             emailPreferences : {icon : 'fa-envelope',       text : 'Email Preferences', used : false},
             importData       : {icon : 'fa-database',   text : 'Import Data', used : false},
             movePath         : {icon : 'fa-sign-out',        text : 'Move', used : false},
