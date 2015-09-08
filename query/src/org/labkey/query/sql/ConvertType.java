@@ -29,6 +29,7 @@ public enum ConvertType
     BIGINT(JdbcType.BIGINT),
     BINARY(JdbcType.BINARY),
     BIT(JdbcType.BOOLEAN),
+    BOOLEAN(JdbcType.BOOLEAN),
     CHAR(JdbcType.CHAR),
     DECIMAL(JdbcType.DECIMAL),
     DOUBLE(JdbcType.DOUBLE),
