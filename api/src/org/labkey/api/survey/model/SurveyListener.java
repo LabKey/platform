@@ -77,7 +77,7 @@ public interface SurveyListener
      * @param c
      * @param user
      * @param survey
-     * @param rowData the reponses (survey answers) that have been modified.
+     * @param rowData the responses (survey answers) that have been modified.
      * @throws Exception
      */
     void surveyResponsesUpdated(Container c, User user, Survey survey, Map<String, Object> rowData) throws Exception;

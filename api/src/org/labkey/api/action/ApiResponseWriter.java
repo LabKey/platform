@@ -50,7 +50,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
      /*
      * (MAB) This code defaults to using setting the response to SC_BAD_REQUEST
      * when any error is encountered.  I think this is wrong.  Expected
-     * errors should be encoded in a normal JSON reponse and SC_OK.
+     * errors should be encoded in a normal JSON response and SC_OK.
      *
      * Allow new code to specify that SC_OK should be used for errors
      */

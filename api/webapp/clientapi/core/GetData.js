@@ -364,7 +364,7 @@
          * @param {Function} config.success Required. A function to be executed when the GetData request completes
          *      successfully. The function will
          *      be passed a {@link LABKEY.Query.Response} object.
-         * @param {Function} config.failure Optional. If no failure function is provided the reponse is sent to the console
+         * @param {Function} config.failure Optional. If no failure function is provided the response is sent to the console
          *      via console.error. If a function is provided the JSON response is passed to it as the only parameter.
          * @returns {LABKEY.Ajax.request}
          */

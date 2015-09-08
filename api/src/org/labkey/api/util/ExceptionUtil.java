@@ -519,7 +519,7 @@ public class ExceptionUtil
             }
             catch (IllegalStateException x)
             {
-                // This is fine, just can't clear the existing reponse as its
+                // This is fine, just can't clear the existing response as its
                 // been at least partially written back to the client
             }
         }

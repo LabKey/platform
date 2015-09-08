@@ -2316,7 +2316,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
     };
 
     /**
-     * Gets the row count from the reponse, which is the total number of rows in the query, not necessarily the number
+     * Gets the row count from the response, which is the total number of rows in the query, not necessarily the number
      * of rows returned. For example, if setting maxRows to 100 on a query that has 5,000 rows, getRowCount will return
      * 5,000, not 100.
      * @returns {Integer}

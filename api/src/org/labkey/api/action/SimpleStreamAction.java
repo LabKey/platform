@@ -61,7 +61,7 @@ public abstract class SimpleStreamAction<FORM> extends SimpleViewAction<FORM>
     /**
      * Override to set extra properties on the response object.
      *
-     * @param response reponse for the HTTP request
+     * @param response response for the HTTP request
      */
     public void setResponseProperties(HttpServletResponse response)
     {
