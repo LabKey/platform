@@ -633,6 +633,11 @@
                 return this._responseMetadata;
             },
 
+            getColumnMap : function()
+            {
+                return this._columnMap;
+            },
+
             _group : function(dim, keyFn)
             {
                 var fnInit = reduceInit.bind(null, this._columns);
