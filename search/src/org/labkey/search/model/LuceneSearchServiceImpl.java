@@ -124,7 +124,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     enum FIELD_NAME
     {
-        title,                     // Used to be the "search" title (equivalent to keywordsMed), now the display title
+        title,            // Used to be the "search" title (equivalent to keywordsMed), now the display title
         body,
 
         // Use keywords for english language terms that should be analyzed (stemmed)

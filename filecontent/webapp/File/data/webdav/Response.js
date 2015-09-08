@@ -65,7 +65,7 @@ Ext4.define('File.data.webdav.XMLResponse', {
     ]
 });
 
-Ext4.define('File.data.webdav.JSONReponse', {
+Ext4.define('File.data.webdav.JSONResponse', {
 
     extend : 'Ext.data.Model',
 

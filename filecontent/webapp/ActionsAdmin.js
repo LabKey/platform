@@ -142,7 +142,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         var o = eval('var $=' + response.responseText + ';$;');
         var actions = o.success ? o.actions : [];
 
-        // parse the reponse and create the data object
+        // parse the response and create the data object
         var data = {actions: []};
         if (actions && actions.length)
         {

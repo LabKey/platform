@@ -124,7 +124,7 @@
 
         getModel: function (type)
         {
-            return (type == 'xml' ? 'File.data.webdav.XMLResponse' : 'File.data.webdav.JSONReponse');
+            return (type == 'xml' ? 'File.data.webdav.XMLResponse' : 'File.data.webdav.JSONResponse');
         },
 
         getProxyCfg: function (type)

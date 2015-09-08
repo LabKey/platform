@@ -59,7 +59,7 @@ CREATE TABLE survey.Surveys
     Status NVARCHAR(50),
     SurveyDesignId INT NOT NULL,
 
-    -- the rowPk which holds the reponses
+    -- the rowPk which holds the responses
 	ResponsesPk NVARCHAR(200),
 
     CONSTRAINT pk_surveys PRIMARY KEY (RowId),
