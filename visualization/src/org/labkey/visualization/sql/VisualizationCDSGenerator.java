@@ -646,7 +646,6 @@ public class VisualizationCDSGenerator
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#ParticipantId"));
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#SequenceNum"));
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Dataset"));
-                assertTrue(metaMap.containsKey("vis_junit_demographics_participantid"));
                 assertTrue(metaMap.containsKey("vis_junit_flow_cellcount"));
                 assertTrue(metaMap.containsKey("vis_junit_demographics_study"));
                 assertTrue(metaMap.containsKey("vis_junit_demographics_gender"));
@@ -685,7 +684,6 @@ public class VisualizationCDSGenerator
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#ParticipantId"));
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#SequenceNum"));
                 assertTrue(metaMap.containsKey("http://cpas.labkey.com/Study#Dataset"));
-                assertTrue(metaMap.containsKey("vis_junit_demographics_participantid"));
                 assertTrue(metaMap.containsKey("vis_junit_flow_cellcount"));
                 assertTrue(metaMap.containsKey("vis_junit_flow_population"));
                 assertTrue(metaMap.containsKey("vis_junit_demographics_study"));
