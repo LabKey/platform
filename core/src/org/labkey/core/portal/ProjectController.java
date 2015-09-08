@@ -467,7 +467,7 @@ public class ProjectController extends SpringActionController
         @Override
         public void checkPermissions() throws UnauthorizedException
         {
-            setUseBasicAuthentication(true);
+            setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
             super.checkPermissions();
         }
     }
@@ -1223,6 +1223,11 @@ public class ProjectController extends SpringActionController
     {
         public static final String PARAM_WEBPART = "webpart.name";
 
+        public GetWebPartAction()
+        {
+            setUnauthorizedType(UnauthorizedException.Type.sendUnauthorized);
+        }
+
         public ApiResponse execute(GetWebPartForm form, BindException errors) throws Exception
         {
             HttpServletRequest request = getViewContext().getRequest();
@@ -1272,6 +1277,11 @@ public class ProjectController extends SpringActionController
     public class GetNavigationPartAction extends ApiAction<GetWebPartForm>
     {
         String _webPartName;
+
+        public GetNavigationPartAction()
+        {
+            setUnauthorizedType(UnauthorizedException.Type.sendUnauthorized);
+        }
 
         @Override
         public void validateForm(GetWebPartForm form, Errors errors)

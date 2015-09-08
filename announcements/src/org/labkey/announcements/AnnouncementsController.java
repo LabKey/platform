@@ -1413,7 +1413,7 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public void checkPermissions() throws UnauthorizedException
         {
-            setUseBasicAuthentication(true);
+            setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
             super.checkPermissions();
         }
 
