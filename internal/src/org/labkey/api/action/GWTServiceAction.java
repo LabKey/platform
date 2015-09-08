@@ -33,7 +33,7 @@ public abstract class GWTServiceAction extends BaseViewAction<Object>
     protected GWTServiceAction()
     {
         super(Object.class);
-        setUseBasicAuthentication(true);
+        setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
     }
 
     @Override

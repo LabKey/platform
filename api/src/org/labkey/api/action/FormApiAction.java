@@ -51,7 +51,7 @@ public abstract class FormApiAction<FORM> extends ExtFormAction<FORM> implements
     public void checkPermissions() throws UnauthorizedException
     {
         HttpServletRequest req = getViewContext().getRequest();
-        setUseBasicAuthentication(!"GET".equals(req.getMethod()));
+        setUnauthorizedType("GET".equals(req.getMethod()) ? UnauthorizedException.Type.sendBasicAuth : UnauthorizedException.Type.redirectToLogin);
         super.checkPermissions();
     }
 

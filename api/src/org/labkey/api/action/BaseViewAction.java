@@ -113,7 +113,7 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
     private boolean _robot = false;  // Is this request from GoogleBot or some other crawler?
     private boolean _debug = false;
 
-    protected boolean _useBasicAuthentication = false;
+    protected UnauthorizedException.Type _unauthorizedType = UnauthorizedException.Type.redirectToLogin;
     protected boolean _print = false;
     protected Class _commandClass;
     protected String _commandName = "form";
@@ -161,9 +161,9 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
     }
 
 
-    protected void setUseBasicAuthentication(boolean use)
+    protected void setUnauthorizedType(UnauthorizedException.Type unauthorizedType)
     {
-        _useBasicAuthentication = use;
+        _unauthorizedType = unauthorizedType;
     }
 
 
@@ -647,10 +647,10 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
 
     public void checkPermissions() throws UnauthorizedException
     {
-        checkPermissions(_useBasicAuthentication);
+        checkPermissions(_unauthorizedType);
     }
 
-    protected void checkPermissions(boolean useBasicAuth) throws UnauthorizedException
+    protected void checkPermissions(UnauthorizedException.Type unauthorizedType) throws UnauthorizedException
     {
         // ideally, we should pass the bound FORM to getContextualRoles so that
         // actions can determine if the OwnerRole should apply, but this would require
@@ -665,13 +665,13 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
         }
         catch (TermsOfUseException e)
         {
-            if (useBasicAuth)
+            if (unauthorizedType == UnauthorizedException.Type.sendBasicAuth || unauthorizedType == UnauthorizedException.Type.sendUnauthorized)
                 return;
             throw e;
         }
         catch (UnauthorizedException e)
         {
-            e.setUseBasicAuthentication(useBasicAuth);
+            e.setType(unauthorizedType);
             throw e;
         }
     }

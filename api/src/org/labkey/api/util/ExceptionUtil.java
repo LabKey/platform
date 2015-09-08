@@ -570,7 +570,7 @@ public class ExceptionUtil
             String headerHint = request.getHeader("X-ONUNAUTHORIZED");
 
             boolean isGuest = user.isGuest();
-            boolean useBasicAuthentication = uae.getUseBasicAuthentication();
+            UnauthorizedException.Type type = uae.getType();
             boolean overrideBasicAuth = "UNAUTHORIZED".equals(headerHint);
             boolean isCSRFViolation = uae instanceof CSRFException;
             boolean isTermsOfUseViolation = uae instanceof TermsOfUseException;
@@ -579,7 +579,7 @@ public class ExceptionUtil
             if (isGET)
             {
                 // If user has not logged in or agreed to terms, not really unauthorized yet...
-                if (!isCSRFViolation && (isGuest || isTermsOfUseViolation) && !useBasicAuthentication && !overrideBasicAuth)
+                if (!isCSRFViolation && (isGuest || isTermsOfUseViolation) && type == UnauthorizedException.Type.redirectToLogin && !overrideBasicAuth)
                 {
                     ActionURL redirect;
 
@@ -601,7 +601,7 @@ public class ExceptionUtil
             message = ex.getMessage();
             responseStatusMessage = message;
 
-            if (isGuest && useBasicAuthentication && !overrideBasicAuth)
+            if (isGuest && type == UnauthorizedException.Type.sendBasicAuth && !overrideBasicAuth)
             {
                 headers.put("WWW-Authenticate", "Basic realm=\"" + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription() + "\"");
                 if (isGET)

@@ -69,14 +69,14 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
     public ApiAction()
     {
-        setUseBasicAuthentication(true);
+        setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
         _marshaller = findMarshaller();
     }
 
     public ApiAction(Class<? extends FORM> formClass)
     {
         super(formClass);
-        setUseBasicAuthentication(true);
+        setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
         _marshaller = findMarshaller();
     }
 
@@ -216,7 +216,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         }
         catch (UnauthorizedException e)
         {
-            e.setUseBasicAuthentication(_useBasicAuthentication);
+            e.setType(_unauthorizedType);
             throw e;
         }
         catch (Exception e)

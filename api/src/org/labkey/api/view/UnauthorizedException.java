@@ -20,7 +20,9 @@ import org.labkey.api.util.SkipMothershipLogging;
 
 public class UnauthorizedException extends RuntimeException implements SkipMothershipLogging
 {
-    boolean _useBasicAuthentication = false;
+    public enum Type { redirectToLogin, sendBasicAuth, sendUnauthorized };
+
+    Type _type = Type.redirectToLogin;
 
     public UnauthorizedException()
     {
@@ -32,13 +34,13 @@ public class UnauthorizedException extends RuntimeException implements SkipMothe
         super(StringUtils.defaultIfEmpty(message, "User does not have permission to perform this operation"));
     }
 
-    public void setUseBasicAuthentication(boolean use)
+    public void setType(Type type)
     {
-        _useBasicAuthentication = use;
+        _type = type;
     }
 
-    public boolean getUseBasicAuthentication()
+    public Type getType()
     {
-        return _useBasicAuthentication;
+        return _type;
     }
 }

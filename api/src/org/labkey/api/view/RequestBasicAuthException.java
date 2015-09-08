@@ -25,6 +25,6 @@ public class RequestBasicAuthException extends UnauthorizedException
     public RequestBasicAuthException()
     {
         super();
-        setUseBasicAuthentication(true);
+        setType(Type.sendBasicAuth);
     }
 }

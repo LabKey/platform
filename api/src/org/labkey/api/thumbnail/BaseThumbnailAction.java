@@ -37,7 +37,7 @@ public abstract class BaseThumbnailAction<FORM> extends ExportAction<FORM>
     @Override
     public void checkPermissions() throws UnauthorizedException
     {
-        setUseBasicAuthentication(true);
+        setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
         super.checkPermissions();
     }
 

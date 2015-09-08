@@ -30,6 +30,8 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.admin.CoreUrls" %>
+<%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -238,12 +240,22 @@
 
             render : function() {
                 if (!this.rendered) {
+                    var targetId = this.popup.id;
                     var partConfig = {
-                        renderTo : this.popup.id,
+                        renderTo : targetId,
                         partName : this.webPartName,
                         frame    : 'none',
                         partConfig : this.partConfig,
-                        failure  : function(err) {if (window.console && window.console.log) { window.console.log(err);}},
+                        failure  : function(response) {
+                            if (response.status == 401) {
+                                document.getElementById(targetId).innerHTML = 'You have likely been logged out automatically. Please <a href="' + <%= PageFlowUtil.jsString(PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(getContainer(), getActionURL()).toString()) %> + '">log in</a> again.';
+                            }
+                            else {
+                                if (window.console && window.console.log) {
+                                    window.console.log(err);
+                                }
+                            }
+                        },
                         scope    : this
                     };
 
