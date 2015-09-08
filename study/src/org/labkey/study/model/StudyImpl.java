@@ -78,6 +78,7 @@ import org.labkey.study.specimen.settings.RepositorySettings;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -722,10 +723,10 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             TimepointType timepointType = getTimepointType();
             return PageFlowUtil.filter((getLabel() == null ? "This study" : getLabel()) + " tracks data in ")
                     + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">"
-                    + getDatasets().size() + " dataset" + (getDatasets().size() == 1 ? "" : "s") + "</a>"
-                    + PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " "
-                    + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s")
-                    + ". Data is present for " + count + " " + PageFlowUtil.filter(subjectNoun) + ".");
+                    + getDatasets().size() + " dataset" + (getDatasets().size() == 1 ? "" : "s") + "</a>" +
+                    (timepointType != TimepointType.CONTINUOUS ? (PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " "
+                    + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s"))) : "" )
+                    + ". Data is present for " + PageFlowUtil.filter(DecimalFormat.getNumberInstance().format(count)) + " " + PageFlowUtil.filter(subjectNoun) + ".";
         }
         else
         {
