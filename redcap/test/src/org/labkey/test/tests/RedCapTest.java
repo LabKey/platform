@@ -169,7 +169,7 @@ public class RedCapTest extends BaseWebDriverTest
         clickTab("Manage");
         clickAndWait(Locator.linkWithText("Manage Timepoints"));
         List<String> expectedVisits = Collections.singletonList("Day 0");
-        List<String> visits = getTexts(Locator.css("#visits tr:not(:first-child) > th").findElements(getDriver()));
+        List<String> visits = getTexts(Locator.css(".manage-visit-table tr:not(:first-child) > td:nth-child(2)").findElements(getDriver()));
         Assert.assertEquals("Wrong visits imported", expectedVisits, visits);
     }
 
