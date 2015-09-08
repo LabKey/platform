@@ -1593,6 +1593,7 @@ api/src/org/labkey/api/survey/model/SurveyListener.java -text
 api/src/org/labkey/api/survey/model/SurveyMetadataBuilder.java -text
 api/src/org/labkey/api/survey/model/SurveyStatus.java -text
 api/src/org/labkey/api/test/TestTimeout.java -text
+api/src/org/labkey/api/test/TestWhen.java -text
 api/src/org/labkey/api/thumbnail/BaseThumbnailAction.java -text
 api/src/org/labkey/api/thumbnail/ImageStreamThumbnailProvider.java -text
 api/src/org/labkey/api/thumbnail/Thumbnail.java -text
