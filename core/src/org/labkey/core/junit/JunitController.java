@@ -16,6 +16,7 @@
 
 package org.labkey.core.junit;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +35,7 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -59,6 +61,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 public class JunitController extends SpringActionController
@@ -88,22 +91,29 @@ public class JunitController extends SpringActionController
                     for (String module : testCases.keySet())
                     {
                         ActionURL moduleURL = new ActionURL(RunAction.class, getContainer()).addParameter("module", module);
-                        String moduleTd = "<a href=\"" + PageFlowUtil.filter(moduleURL.getLocalURIString()) + "\">" + module + "</a>";
+
+                        out.println("<tr><td colspan=3>");
+                        out.println("<a href=\"" + PageFlowUtil.filter(moduleURL.getLocalURIString()) + "\">" + module + "</a>");
+                        out.println("</td></tr>");
 
                         for (Class clazz : testCases.get(module))
                         {
-                            out.println("<tr><td>" + moduleTd + "</td><td>");
                             ActionURL testCaseURL = new ActionURL(RunAction.class, getContainer()).addParameter("testCase", clazz.getName());
-                            out.println(clazz.getName() + " <a href=\"" + PageFlowUtil.filter(testCaseURL.getLocalURIString()) + "\">&lt;run&gt;</a></td></tr>");
-                            moduleTd = "&nbsp;";
+                            out.println("<tr>");
+                            out.println("<td style=\"min-width:60px;\">&nbsp;</td>");
+                            out.println("<td style=\"font-size:66%; color:gray;\">" + getWhen(clazz) + "&nbsp;&nbsp;</td>");
+                            out.println("<td> <a href=\"" + PageFlowUtil.filter(testCaseURL.getLocalURIString()) + "\">" + clazz.getName() + "</a></td>");
+                            out.println("</tr>");
                         }
-
-                        out.println("<tr><td colspan=2>&nbsp;</td></tr>");
+                        out.println("<tr><td colspan=3>&nbsp;</td></tr>");
                     }
 
                     out.println("</table></div>");
 
                     out.print("<p><br>" + PageFlowUtil.button("Run All").href(new ActionURL(RunAction.class, getContainer())) + "</p>");
+                    out.print("<p><br>" + PageFlowUtil.button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("WHEN","BVT")) + "</p>");
+                    out.print("<p><br>" + PageFlowUtil.button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("WHEN","DRT")) + "</p>");
+
                     out.print("<form name=\"run2\" action=\"" +  new ActionURL(Run2Action.class, getContainer()) + "\" method=\"post\">" + PageFlowUtil.button("Run In Background #1 (Experimental)").submit(true) + "</form>");
                     out.print("<br>" + PageFlowUtil.button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer())));
                 }
@@ -117,6 +127,15 @@ public class JunitController extends SpringActionController
         {
             return null;
         }
+    }
+
+
+    static private TestWhen.When getWhen(Class cls)
+    {
+        TestWhen ann = (TestWhen)cls.getAnnotation(TestWhen.class);
+        if (null == ann)
+            return TestWhen.When.DRT;
+        return ann.value();
     }
 
 
@@ -138,35 +157,40 @@ public class JunitController extends SpringActionController
             }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new TestResultView(results);
+            return new TestResultView(testClasses, results);
         }
+
 
         private List<Class> getTestClasses(TestForm form)
         {
-            String module = form.getModule();
-
-            if (null != module)
-                return JunitManager.getTestCases().get(module);
-
-            Map<String, List<Class>> allTestClasses = JunitManager.getTestCases();
             List<Class> testClasses = new LinkedList<>();
-            String testCase = form.getTestCase();
 
-            if (null == testCase || 0 != testCase.length())
+
+            if (null != form.getModule())
             {
-                for (String m : allTestClasses.keySet())
+                testClasses.addAll(JunitManager.getTestCases().get(form.getModule()));
+            }
+            else if (StringUtils.isEmpty(form.getTestCase()))
+            {
+                JunitManager.getTestCases().values().forEach(testClasses::addAll);
+            }
+            else
+            {
+                for (List<Class> list : JunitManager.getTestCases().values())
                 {
-                    for (Class clazz : allTestClasses.get(m))
-                    {
-                        // include test
-                        if (null == testCase || testCase.equals(clazz.getName()))
-                            testClasses.add(clazz);
-                    }
+                    list.stream()
+                        .filter((test) -> test.getName().equals(form.getTestCase()))
+                        .forEach(testClasses::add);
                 }
             }
 
-            return testClasses;
+            List<Class> ret;
+            ret = testClasses.stream()
+                    .filter((test)->getWhen(test).ordinal()<=form._when.ordinal())
+                    .collect(Collectors.toList());
+            return ret;
         }
+
 
         public NavTree appendNavTrail(NavTree root)
         {
@@ -192,7 +216,7 @@ public class JunitController extends SpringActionController
             if (null != results)
             {
                 session.removeAttribute(RESULTS_SESSION_KEY);
-                view = new TestResultView(results);
+                view = new TestResultView(new ArrayList<Class>(), results);
             }
             else
             {
@@ -362,10 +386,17 @@ public class JunitController extends SpringActionController
                     {
                         timeout = testTimeout.value();
                     }
+                    if (testTimeout != null)
+                    {
+                        timeout = testTimeout.value();
+                    }
+                    TestWhen.When when = getWhen(clazz);
+
                     // Send back both the class name and the timeout
                     Map<String, Object> testClass = new HashMap<>();
                     testClass.put("className", clazz.getName());
                     testClass.put("timeout", timeout);
+                    testClass.put("when", when.name());
                     tests.add(testClass);
                 }
             }
@@ -443,6 +474,7 @@ public class JunitController extends SpringActionController
     {
         private String _module;
         private String _testCase;
+        private TestWhen.When _when = TestWhen.When.WEEKLY;
 
         public String getTestCase()
         {
@@ -464,6 +496,19 @@ public class JunitController extends SpringActionController
         public void setModule(String module)
         {
             _module = module;
+        }
+
+        public void setWhen(String when)
+        {
+            try
+            {
+                TestWhen.When w = TestWhen.When.valueOf(when);
+                _when = w;
+            }
+            catch (IllegalArgumentException e)
+            {
+                /* */
+            }
         }
     }
 
@@ -542,12 +587,16 @@ public class JunitController extends SpringActionController
 
     private static class TestResultView extends HttpView
     {
+        private final List<Class> _tests;
+        private final List<Result> _results;
         private final List<Failure> _failures = new LinkedList<>();
         private int _runCount = 0;
         private int _failureCount = 0;
 
-        TestResultView(List<Result> results)
+        TestResultView(List<Class> tests, List<Result> results)
         {
+            this._tests = tests;
+            this._results = results;
             for (Result result : results)
             {
                 _runCount += result.getRunCount();
@@ -602,6 +651,22 @@ public class JunitController extends SpringActionController
                     }
                 }
             }
+
+            out.println("<p></p><p></p>");
+            out.println("<table>");
+            for (int i=0 ; i<_results.size() && i<_tests.size() ; i++)
+            {
+                out.print("<tr><td align=left>");
+                out.println(PageFlowUtil.filter(_tests.get(i).getName()));
+                out.println("</td><td align=right>");
+                long time = _results.get(i).getRunTime();
+                if (time < 10_000)
+                    out.println(time/1000.0);
+                else
+                    out.println(time/1000);
+                out.println("</td></tr>");
+            }
+            out.println("</table>");
         }
     }
 
