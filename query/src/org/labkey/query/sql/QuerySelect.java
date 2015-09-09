@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -62,6 +63,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class QuerySelect extends QueryRelation implements Cloneable
@@ -1099,18 +1101,39 @@ groupByLoop:
         QueryTableInfo ret = new QueryTableInfo(this, getAlias())
         {
             // Hold a separate reference so we can null it out if the container filter changes
-            private SQLFragment _sql = sql;
+            private SQLFragment _sqlAllColumns = null;
 
             @NotNull
             @Override
             public SQLFragment getFromSQL(String alias)
             {
                 SQLFragment f = new SQLFragment();
-                if (_sql == null)
+                if (_sqlAllColumns == null)
                 {
-                    _sql = getSql();
+                    markAllSelected(_query);
+                    _sqlAllColumns = getSql();
                 }
-                f.append("(").append(_sql).append(") ").append(alias);
+                f.append("(").append(_sqlAllColumns).append(") ").append(alias);
+                return f;
+            }
+
+            @NotNull
+            @Override
+            public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedFieldKeys)
+            {
+                if (null != selectedFieldKeys && !selectedFieldKeys.isEmpty())
+                {
+                    Set<String> names = selectedFieldKeys.stream()
+                            .map((k) -> k.getRootName())
+                            .collect(Collectors.toSet());
+                    releaseAllSelected(_query);
+                    markAllSelected(new CaseInsensitiveHashSet(names),_query);
+                }
+                else
+                    markAllSelected(_query);
+                SQLFragment s = getSql();
+                SQLFragment f = new SQLFragment();
+                f.append("(").append(s).append(") ").append(alias);
                 return f;
             }
 
@@ -1125,7 +1148,7 @@ groupByLoop:
             {
                 super.setContainerFilter(containerFilter);
                 // This changes the SQL we'll need to generate, so clear out the cached version
-                _sql = null;
+                _sqlAllColumns = null;
             }
 
             @Override
@@ -1238,11 +1261,25 @@ groupByLoop:
         }
     }
 
+    public void markAllSelected(Set<String> names, Object referant)
+    {
+        for (SelectColumn c : _columns.values())
+        {
+            if (names.contains(c.getName()))
+            {
+                c._selected = true;
+                c.addRef(referant);
+            }
+        }
+    }
 
     public void releaseAllSelected(Object referant)
     {
         for (SelectColumn column : _columns.values())
-            column.releaseRef(referant);
+        {
+            int count = column.releaseRef(referant);
+            column._selected = (count > 0);
+        }
     }
 
     @Override
@@ -2079,8 +2116,7 @@ groupByLoop:
         {
             if (null == _resolved)
             {
-                // if this is select is not in a from, let's be conservative and ref count all fields
-                _resolved = resolveFields(getField(), null, !_inFromClause ? this : null);
+                _resolved = resolveFields(getField(), null, null);
                 if (0 < ref.count())
                     _resolved.addFieldRefs(this);
             }

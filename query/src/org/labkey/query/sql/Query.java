@@ -819,6 +819,8 @@ public class Query
             }
 
             // move relation to new outer query
+            // NOTE: setting _inFromClause == true enables some optimizations
+            s._inFromClause = true;
             QueryRelation ret = query._queryRoot;
             ret.setQuery(this);
             resolveExceptions.addAll(query.getParseErrors());

@@ -330,7 +330,6 @@ public abstract class QueryRelation
             super(column.getFieldKey(), parent);
             setAlias(column.getAlias());
             column.copyColumnAttributesTo(this);
-            column.addRef(this);
             _column = column;
         }
 

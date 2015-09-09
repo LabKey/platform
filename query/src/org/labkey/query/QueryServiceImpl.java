@@ -110,6 +110,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 
 public class QueryServiceImpl extends QueryService
@@ -2073,7 +2074,10 @@ public class QueryServiceImpl extends QueryService
         }
 
 		SQLFragment fromFrag = new SQLFragment("FROM ");
-        SQLFragment getfromsql = table.getFromSQL(tableAlias);
+        Set<FieldKey> fieldKeySet = allColumns.stream()
+                .map(ColumnInfo::getFieldKey)
+                .collect(Collectors.toSet());
+        SQLFragment getfromsql = table.getFromSQL(tableAlias, fieldKeySet);
         fromFrag.append(getfromsql);
         fromFrag.append(" ");
 
