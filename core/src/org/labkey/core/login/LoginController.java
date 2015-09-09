@@ -158,8 +158,6 @@ public class LoginController extends SpringActionController
             return LoginController.getConfigureDbLoginURL(false);
         }
 
-        public ActionURL getConfigureAccountCreationURL() { return new ActionURL(ConfigureAccountCreationAction.class, ContainerManager.getRoot()); }
-
         public ActionURL getEnableConfigParameterURL(String paramName)
         {
             return new ActionURL(SetAuthenticationParameterAction.class, ContainerManager.getRoot()).addParameter("parameter", paramName).addParameter("enabled", true);
@@ -341,6 +339,10 @@ public class LoginController extends SpringActionController
                 case UserCreationError:
                     laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
                     errors.addError(new FormattedError("The server could not create your account. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> for assistance."));
+                    break;
+                case  UserCreationNotAllowed:
+                    laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
+                    errors.addError(new FormattedError("Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> to have your account created."));
                     break;
                 default:
                     throw new IllegalStateException("Unknown authentication status: " + result.getStatus());
@@ -2130,21 +2132,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
-    public class ConfigureAccountCreationAction extends SimpleViewAction<ReturnUrlForm>
-    {
-        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/core/login/configureAccountCreation.jsp", form);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic(new HelpTopic("authenticationModule"));
-            return getUrls().appendAuthenticationNavTrail(root);
-        }
-    }
-
     @RequiresSiteAdmin
     public class SetAuthenticationParameterAction extends RedirectAction<AuthParameterForm>
     {
@@ -2152,7 +2139,7 @@ public class LoginController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(AuthParameterForm form)
         {
-            return getUrls().getConfigureAccountCreationURL();
+            return getUrls().getConfigureURL();
         }
 
         @Override

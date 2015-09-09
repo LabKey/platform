@@ -30,6 +30,7 @@
 <%
     List<AuthenticationProvider> primary = AuthenticationManager.getAllPrimaryProviders();
     List<SecondaryAuthenticationProvider> secondary = AuthenticationManager.getAllSecondaryProviders();
+    boolean isExternalProviderEnabled = AuthenticationManager.isExternalProviderEnabled();
 
     LoginUrls urls = urlProvider(LoginUrls.class);
 %>
@@ -40,8 +41,29 @@
     <% appendProviders(out, primary, urls); %>
 
     <tr><td colspan="5">&nbsp;</td></tr>
-    <tr><td colspan="5"><%=PageFlowUtil.textLink("Configure account creation methods", urls.getConfigureAccountCreationURL())%></td></tr>
-<%
+    <tr><td colspan="5">Other authentication options:</td></tr>
+    <tr>
+        <td>&nbsp;&nbsp;</td>
+        <td>Self sign-up</td>
+        <% if (AuthenticationManager.isRegistrationEnabled()) { %>
+        <td><%=PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.REGISTRATION_ENABLED_KEY))%></td>
+        <% } else { %>
+        <td><%=PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.REGISTRATION_ENABLED_KEY))%></td>
+        <% } %>
+        <td colspan="3">Users are able to register for accounts when using database authentication.  Use caution when enabling this if you have enabled sending email to non-users.</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;</td>
+        <td>Auto-create authenticated users</td>
+        <% if (AuthenticationManager.isAutoCreateAccountsEnabled()) { %>
+        <td><%=isExternalProviderEnabled ? PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)) : "&nbsp;"%></td>
+        <% } else { %>
+        <td><%=isExternalProviderEnabled ? PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)) : "&nbsp;" %></td>
+        <% } %>
+        <td colspan="3">Accounts are created automatically for users authenticated via LDAP, SSO, etc.</td>
+    </tr>
+
+    <%
     if (!secondary.isEmpty())
     {
 %>
