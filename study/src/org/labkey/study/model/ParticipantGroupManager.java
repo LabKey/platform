@@ -64,6 +64,8 @@ import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.query.DataspaceQuerySchema;
+import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -682,7 +684,14 @@ public class ParticipantGroupManager
         final CaseInsensitiveHashMap<String> participantIdMap = new CaseInsensitiveHashMap<>();
         final int BLOCK_SIZE = 1000;
 
-        QuerySchema schema = QueryService.get().getUserSchema(user, c, "study");
+        StudyQuerySchema schema = (StudyQuerySchema)QueryService.get().getUserSchema(user, c, "study");
+
+        // We want the DataspaceSchema or StudySchema, but without the session filters applied
+        // TODO we need a way to ask for this w/o having to 'undo' the session filters
+        schema.setSessionParticipantGroup(null);
+        if (schema instanceof DataspaceQuerySchema)
+            ((DataspaceQuerySchema)schema).clearSessionContainerFilter();
+
         TableInfo participantTable = schema.getTable(StudyService.get().getSubjectTableName(c));
         String[] participantIds = group.getParticipantIds();
         int idx = 0;

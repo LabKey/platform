@@ -41,7 +41,7 @@ public class DataspaceQuerySchema extends StudyQuerySchema
 {
     public static final String SHARED_STUDY_CONTAINER_FILTER_KEY = "LABKEY.sharedStudyContainerFilter.";
 
-    private final List<GUID> _sharedStudyContainerFilter;
+    private List<GUID> _sharedStudyContainerFilter;
 
     public DataspaceQuerySchema(@NotNull StudyImpl study, User user, boolean mustCheckPermissions)
     {
@@ -58,6 +58,11 @@ public class DataspaceQuerySchema extends StudyQuerySchema
         }
 
         _sharedStudyContainerFilter = containerIds;
+    }
+
+    public void clearSessionContainerFilter()
+    {
+        _sharedStudyContainerFilter = null;
     }
 
     /* for tables that support container filter, should they turn on support or not */
