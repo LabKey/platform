@@ -17,6 +17,7 @@ package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SchemaTableInfoFactory;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -28,7 +29,7 @@ public class StandardTableResolver implements TableResolver
 {
     // Do nothing by default
     @Override
-    public void addTableNames(Map<String, String> map, DbScope scope, String schemaName)
+    public void addTableInfoFactories(Map<String, SchemaTableInfoFactory> map, DbScope scope, String schemaName) throws SQLException
     {
     }
 

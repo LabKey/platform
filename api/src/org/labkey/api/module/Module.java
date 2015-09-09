@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.OlapSchemaInfo;
@@ -358,7 +359,7 @@ public interface Module extends Comparable<Module>
     @Nullable
     OlapSchemaInfo getOlapSchemaInfo();
 
-    DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, String> metaDataTableNames);
+    DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, SchemaTableInfoFactory> tableInfoFactoryMap);
 
     /**
      * Lets a Module map a schema name used in code to a different schema name in the database. For example, Argos uses this to provide

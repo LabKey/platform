@@ -15,10 +15,17 @@
  */
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SchemaTableInfoFactory;
+import org.labkey.api.data.StandardSchemaTableInfoFactory;
+import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 
+import java.sql.SQLException;
 import java.util.Collection;
 
 /**
@@ -32,14 +39,44 @@ public class ProvisionedDbSchema extends DbSchema
     }
 
     @Override
-    protected String getMetaDataName(String tableName)
-    {
-        return tableName;
-    }
-
-    @Override
     public Collection<String> getTableNames()
     {
         throw new IllegalStateException("Should not be requesting table names from provisioned schema \"" + getName() + "\"");
+    }
+
+    @Nullable
+    @Override
+    public SchemaTableInfo createTableFromDatabaseMetaData(String requestedTableName) throws SQLException
+    {
+        try (JdbcMetaDataLocator locator = getSqlDialect().getJdbcMetaDataLocator(getScope(), getName(), requestedTableName))
+        {
+            return new SingleTableMetaDataLoader(this, locator, DbSchema.getTemp() != this).load();
+        }
+    }
+
+
+    protected static class SingleTableMetaDataLoader extends TableMetaDataLoader<SchemaTableInfo>
+    {
+        private final DbSchema _schema;
+        private SchemaTableInfo _ti = null;
+
+        public SingleTableMetaDataLoader(DbSchema schema, JdbcMetaDataLocator locator, boolean ignoreTemp)
+        {
+            super(locator, ignoreTemp);
+            _schema = schema;
+        }
+
+        @Override
+        protected void handleTable(String tableName, DatabaseTableType tableType, String description) throws SQLException
+        {
+            SchemaTableInfoFactory factory = new StandardSchemaTableInfoFactory(tableName, tableType, description);
+            _ti = factory.getSchemaTableInfo(_schema);
+        }
+
+        @Override
+        protected SchemaTableInfo getReturnValue()
+        {
+            return _ti;
+        }
     }
 }

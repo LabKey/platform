@@ -1794,7 +1794,7 @@ public class DbScope
                 DbSchema schema = scope.getSchema(randomSchemaName, type);
 
                 // For performance reasons, we don't bother loading the table list in Provisioned schemas, so we need special handling to get them here
-                Collection<String> tableNames = DbSchemaType.Provisioned == type ? DbSchema.loadTableNames(scope, randomSchemaName).keySet() : schema.getTableNames();
+                Collection<String> tableNames = DbSchemaType.Provisioned == type ? DbSchema.loadTableMetaData(scope, randomSchemaName).keySet() : schema.getTableNames();
                 TableInfo tinfo = pickRandomTable(schema, tableNames);
 
                 if (null != tinfo)

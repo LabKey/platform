@@ -64,16 +64,16 @@ public class DbSchema
     private final String _name;
     private final DbSchemaType _type;
     private final DbScope _scope;
-    private final Map<String, String> _metaDataTableNames;  // Union of all table names from database and schema.xml
+    private final Map<String, SchemaTableInfoFactory> _tableInfoFactoryMap;  // Union of all table names from database and schema.xml
     private final Map<String, TableType> _tableXmlMap = new CaseInsensitiveHashMap<>();
     private final Module _module;
 
-    public DbSchema(String name, DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames, Module module)
+    public DbSchema(String name, DbSchemaType type, DbScope scope, Map<String, SchemaTableInfoFactory> tableInfoFactoryMap, Module module)
     {
         _name = name;
         _type = type;
         _scope = scope;
-        _metaDataTableNames = metaDataTableNames;
+        _tableInfoFactoryMap = tableInfoFactoryMap;
         _module = module;
     }
 
@@ -195,30 +195,31 @@ public class DbSchema
      * Note: Do not call this unless you really know what you're doing! You should probably be calling DbSchema.getTables()
      * instead, to ensure you get the cached version.
      */
-    public static Map<String, String> loadTableNames(DbScope scope, String schemaName) throws SQLException
+    public static Map<String, SchemaTableInfoFactory> loadTableMetaData(DbScope scope, String schemaName) throws SQLException
     {
-        return loadTableNames(scope, schemaName, true);
+        return loadTableMetaData(scope, schemaName, true);
     }
 
-    public static Map<String, String> loadTableNames(DbScope scope, String schemaName, boolean ignoreTemp) throws SQLException
+    public static Map<String, SchemaTableInfoFactory> loadTableMetaData(DbScope scope, String schemaName, boolean ignoreTemp) throws SQLException
     {
-        final Map<String, String> metaDataTableNameMap = new CaseInsensitiveHashMap<>();
+        final Map<String, SchemaTableInfoFactory> schemaTableInfoFactoryMap = new CaseInsensitiveHashMap<>();
 
         try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, "%"))
         {
             new TableMetaDataLoader(locator, ignoreTemp)
             {
                 @Override
-                protected void handleTable(String name, ResultSet rs) throws SQLException
+                protected void handleTable(String tableName, DatabaseTableType tableType, String description) throws SQLException
                 {
-                    metaDataTableNameMap.put(name, name);
+                    SchemaTableInfoFactory factory = new StandardSchemaTableInfoFactory(tableName, tableType, description);
+                    schemaTableInfoFactoryMap.put(tableName, factory);
                 }
             }.load();
         }
 
-        scope.getSqlDialect().addTableNames(metaDataTableNameMap, scope, schemaName);
+        scope.getSqlDialect().addTableInfoFactories(schemaTableInfoFactoryMap, scope, schemaName);
 
-        return metaDataTableNameMap;
+        return schemaTableInfoFactoryMap;
     }
 
 
@@ -226,22 +227,22 @@ public class DbSchema
     // code between schema load (when we capture just the table names for all tables) and table load (when we capture
     // all properties of just a single table). We want consistent transaction, exception, and filtering behavior in
     // both cases.
-    private static abstract class TableMetaDataLoader<T>
+    public static abstract class TableMetaDataLoader<T>
     {
         private final JdbcMetaDataLocator _locator;
         private final boolean _ignoreTemp;
 
-        private TableMetaDataLoader(JdbcMetaDataLocator locator, boolean ignoreTemp)
+        protected TableMetaDataLoader(JdbcMetaDataLocator locator, boolean ignoreTemp)
         {
             _locator = locator;
             _ignoreTemp = ignoreTemp;
         }
 
-        protected abstract void handleTable(String name, ResultSet rs) throws SQLException;
+        protected abstract void handleTable(String tableName, DatabaseTableType tableType, String description) throws SQLException;
 
         protected T getReturnValue() {return null;}
 
-        T load() throws SQLException
+        public T load() throws SQLException
         {
             final SqlDialect dialect = _locator.getScope().getSqlDialect();
 
@@ -258,7 +259,10 @@ public class DbSchema
                 if (_ignoreTemp && tableName.length() > 33 && tableName.charAt(tableName.length() - 33) == '$')
                     return;
 
-                handleTable(tableName, rs);
+                DatabaseTableType tableType = dialect.getTableType(rs.getString("TABLE_TYPE"));
+                String description = dialect.getTableDescription(rs.getString("REMARKS"));
+
+                handleTable(tableName, tableType, description);
             });
 
             return getReturnValue();
@@ -266,23 +270,10 @@ public class DbSchema
     }
 
 
-    protected String getMetaDataName(String tableName)
+    @Nullable <OptionType extends DbScope.SchemaTableOptions> SchemaTableInfo loadTable(String requestedTableName, OptionType options) throws SQLException
     {
-        return _metaDataTableNames.get(tableName);
-    }
-
-
-    @Nullable <OptionType extends DbScope.SchemaTableOptions> SchemaTableInfo loadTable(String tableName, OptionType options) throws SQLException
-    {
-        // When querying table metadata we must use the name from the database
-        String metaDataTableName = getMetaDataName(tableName);
-
-        // Didn't find a hard table with that name... maybe it's a query. See #12822
-        if (null == metaDataTableName)
-            return null;
-
-        SchemaTableInfo ti = createTableFromDatabaseMetaData(metaDataTableName);
-        TableType xmlTable = _tableXmlMap.get(tableName);
+        SchemaTableInfo ti = createTableFromDatabaseMetaData(requestedTableName);
+        TableType xmlTable = _tableXmlMap.get(requestedTableName);
 
         if (null != xmlTable)
         {
@@ -313,42 +304,11 @@ public class DbSchema
 
     // Could return null if the requested table doesn't exist in the database
     @Nullable
-    public SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException
+    public SchemaTableInfo createTableFromDatabaseMetaData(final String requestedTableName) throws SQLException
     {
-        try (JdbcMetaDataLocator locator = getSqlDialect().getJdbcMetaDataLocator(getScope(), getName(), tableName))
-        {
-            return new SingleTableMetaDataLoader(tableName, locator, DbSchema.getTemp() != this).load();
-        }
-    }
+        SchemaTableInfoFactory factory = _tableInfoFactoryMap.get(requestedTableName);
 
-
-    private class SingleTableMetaDataLoader extends TableMetaDataLoader<SchemaTableInfo>
-    {
-        private final String _tableName;
-        private SchemaTableInfo _ti = null;
-
-        private SingleTableMetaDataLoader(String tableName, JdbcMetaDataLocator locator, boolean ignoreTemp)
-        {
-            super(locator, ignoreTemp);
-            _tableName = tableName;
-        }
-
-        @Override
-        protected void handleTable(String name, ResultSet rs) throws SQLException
-        {
-            String typeName = rs.getString("TABLE_TYPE");
-            DatabaseTableType tableType = DbSchema.this.getSqlDialect().getTableType(typeName);
-            _ti = new SchemaTableInfo(DbSchema.this, tableType, _tableName);
-            String description = rs.getString("REMARKS");
-            if (null != description && !"No comments".equals(description))  // Consider: Move "No comments" exclusion to SAS dialect?
-                _ti.setDescription(description);
-        }
-
-        @Override
-        protected SchemaTableInfo getReturnValue()
-        {
-            return _ti;
-        }
+        return null != factory ? factory.getSchemaTableInfo(this) : null;
     }
 
 
@@ -434,9 +394,9 @@ public class DbSchema
             _tableXmlMap.put(xmlTable.getTableName(), xmlTable);
 
             // Tables in schema.xml but not in the database need to be added to _tableNames
-            if (!_metaDataTableNames.containsKey(xmlTableName))
+            if (!_tableInfoFactoryMap.containsKey(xmlTableName))
             {
-                _metaDataTableNames.put(xmlTableName, xmlTableName);
+                _tableInfoFactoryMap.put(xmlTableName, new StandardSchemaTableInfoFactory(xmlTableName, DatabaseTableType.NOT_IN_DB, xmlTable.getDescription()));
             }
         }
     }
@@ -444,7 +404,7 @@ public class DbSchema
 
     public Collection<String> getTableNames()
     {
-        return Collections.unmodifiableCollection(new LinkedList<>(_metaDataTableNames.keySet()));
+        return Collections.unmodifiableCollection(new LinkedList<>(_tableInfoFactoryMap.keySet()));
     }
 
     public SchemaTableInfo getTable(String tableName)

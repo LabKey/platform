@@ -368,6 +368,7 @@ api/src/org/labkey/api/data/SQLGenerationException.java -text
 api/src/org/labkey/api/data/SchemaColumnMetaData.java -text
 api/src/org/labkey/api/data/SchemaNameCache.java -text
 api/src/org/labkey/api/data/SchemaTableInfoCache.java -text
+api/src/org/labkey/api/data/SchemaTableInfoFactory.java -text
 api/src/org/labkey/api/data/SchemaXmlCacheHandler.java -text
 api/src/org/labkey/api/data/SelectQueryAuditEvent.java -text
 api/src/org/labkey/api/data/SelectQueryAuditProvider.java -text
@@ -384,6 +385,7 @@ api/src/org/labkey/api/data/SqlScriptManager.java -text
 api/src/org/labkey/api/data/SqlScriptRunner.java -text
 api/src/org/labkey/api/data/SqlSelector.java -text
 api/src/org/labkey/api/data/SqlSelectorTestCase.java -text
+api/src/org/labkey/api/data/StandardSchemaTableInfoFactory.java -text
 api/src/org/labkey/api/data/StatementUtils.java -text
 api/src/org/labkey/api/data/StringBuilderWriter.java -text
 api/src/org/labkey/api/data/TSVColumnWriter.java -text

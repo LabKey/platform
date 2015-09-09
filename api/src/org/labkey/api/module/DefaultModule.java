@@ -33,6 +33,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
@@ -1519,9 +1520,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, String> metaDataTableNames)
+    public DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, SchemaTableInfoFactory> tableInfoFactoryMap)
     {
-        return new DbSchema(metaDataName, DbSchemaType.Module, scope, metaDataTableNames, this);
+        return new DbSchema(metaDataName, DbSchemaType.Module, scope, tableInfoFactoryMap, this);
     }
 
     // for development mode info only

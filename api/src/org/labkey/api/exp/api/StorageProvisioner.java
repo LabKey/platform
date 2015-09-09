@@ -968,7 +968,7 @@ public class StorageProvisioner
 
                 try
                 {
-                    tableNames = DbSchema.loadTableNames(schema.getScope(), schema.getName()).values();
+                    tableNames = DbSchema.loadTableMetaData(schema.getScope(), schema.getName()).keySet();
                 }
                 catch (SQLException e)
                 {

@@ -24,25 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConnectionWrapper;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DatabaseTableType;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.InClauseGenerator;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.ParameterMarkerInClauseGenerator;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlScriptExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableChange;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TempTableTracker;
-import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
@@ -128,6 +110,11 @@ public abstract class SqlDialect
             throw new IllegalStateException("Unknown table type: " + tableTypeName);
 
         return tableType;
+    }
+
+    public @Nullable String getTableDescription(@Nullable String description)
+    {
+        return description;
     }
 
     protected abstract @NotNull Set<String> getReservedWords();
@@ -880,14 +867,14 @@ public abstract class SqlDialect
         return STANDARD_TABLE_RESOLVER;
     }
 
-    public final void addTableNames(Map<String, String> map, DbScope scope, String schemaName)
+    public final void addTableInfoFactories(Map<String, SchemaTableInfoFactory> map, DbScope scope, String schemaName) throws SQLException
     {
-        getTableResolver().addTableNames(map, scope, schemaName);
+        getTableResolver().addTableInfoFactories(map, scope, schemaName);
     }
 
-    public final JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
+    public final JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String requestedTableName) throws SQLException
     {
-        return getTableResolver().getJdbcMetaDataLocator(scope, schemaName, tableName);
+        return getTableResolver().getJdbcMetaDataLocator(scope, schemaName, requestedTableName);
     }
 
     public final ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)
@@ -1299,8 +1286,8 @@ public abstract class SqlDialect
     {
         Object noref = new Object();
         DbSchema schema = DbSchema.getTemp();
-        Map<String, String> tableNames = DbSchema.loadTableNames(schema.getScope(), schema.getName(), false);
-        for (String tableName : tableNames.values())
+        Map<String, SchemaTableInfoFactory> tableInfoFactoryMap = DbSchema.loadTableMetaData(schema.getScope(), schema.getName(), false);
+        for (String tableName : tableInfoFactoryMap.keySet())
         {
             String tempName = schema.getName() + "." + tableName;
             if (!createdTableNames.containsKey(tempName))

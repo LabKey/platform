@@ -66,11 +66,11 @@ public class ConnectionWrapper implements java.sql.Connection
     private final Integer _spid;
     private final java.util.Date _allocationTime = new java.util.Date();
     private final String _allocatingThreadName;
-    private final Set<String> _referencingThreadNames = Collections.synchronizedSet(new TreeSet<String>());
+    private final Set<String> _referencingThreadNames = Collections.synchronizedSet(new TreeSet<>());
 
     private final static Logger LOG = Logger.getLogger(ConnectionWrapper.class);
 
-    private static final Map<ConnectionWrapper, Pair<Thread,Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<ConnectionWrapper, Pair<Thread, Throwable>>());
+    private static final Map<ConnectionWrapper, Pair<Thread,Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<>());
 
     private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
 

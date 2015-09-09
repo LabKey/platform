@@ -40,7 +40,7 @@ public enum DbSchemaType
         @Override
         DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException
         {
-            Map<String, String> metaDataTableNames = DbSchema.loadTableNames(scope, metaDataName);
+            Map<String, SchemaTableInfoFactory> metaDataTableNames = DbSchema.loadTableMetaData(scope, metaDataName);
 
             return module.createModuleDbSchema(scope, metaDataName, metaDataTableNames);
         }
@@ -72,8 +72,8 @@ public enum DbSchemaType
         @Override
         DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException
         {
-            Map<String, String> metaDataTableNames = DbSchema.loadTableNames(scope, metaDataName);
-            return new DbSchema(metaDataName, Bare, scope, metaDataTableNames, module);
+            Map<String, SchemaTableInfoFactory> tableInfoFactoryMap = DbSchema.loadTableMetaData(scope, metaDataName);
+            return new DbSchema(metaDataName, Bare, scope, tableInfoFactoryMap, module);
         }
     },
     All("", 0, false)
