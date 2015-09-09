@@ -1377,6 +1377,24 @@ public class ParticipantGroupController extends BaseStudyController
                         group = new ParticipantGroup();
                         group.setSession(true);
                     }
+                    else if (!group.isSession())
+                    {
+                        group = new ParticipantGroup();
+                        group.setSession(true);
+                        group.setCategoryId(group.getCategoryId());
+                        group.setCategoryLabel(group.getCategoryLabel());
+                        group.setDescription(group.getDescription());
+                        group.setFilters(group.getFilters());
+                        group.setLabel(group.getLabel());
+                        group.setParticipantIds(group.getParticipantIds());
+                        group.setParticipantSet(group.getParticipantSet());
+                        group.setContainerId(group.getContainerId());
+                        group.setCreated(group.getCreated());
+                        group.setCreatedBy(group.getCreatedBy());
+                        group.setModified(group.getModified());
+                        group.setModifiedBy(group.getModifiedBy());
+                        ParticipantGroupManager.getInstance().setSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest(), group);
+                    }
 
                     Set<String> participantIds = new HashSet<>(Arrays.asList(form.getParticipantIds() == null ? group.getParticipantIds() : form.getParticipantIds()));
                     if (form.getEnsureParticipantIds() != null)
