@@ -156,6 +156,14 @@ public class FieldKey extends QueryKey<FieldKey>
         return (FieldKey)super.getParent();
     }
 
+    public String getRootName()
+    {
+        FieldKey fk = this;
+        while (null != fk.getParent())
+            fk = fk.getParent();
+        return fk.getName();
+    }
+
     @Override
     public FieldKey getParent()
     {
