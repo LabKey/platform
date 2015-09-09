@@ -5892,7 +5892,7 @@ public class QueryController extends SpringActionController
         public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
     public class ExportTablesAction extends FormViewAction<ExportTablesForm>
     {
