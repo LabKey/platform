@@ -1337,24 +1337,6 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         this.lastSummary.file = file;
     },
 
-    /**
-     * Adds a marker class to determine when a directory change
-     * event is complete with respect to the file content tool.
-     * This is used to help with the selenium tests.
-     */
-    onGridDataChanged : function(complete) {
-
-        var el = this.getTopToolbar().getEl();
-
-        if (el)
-        {
-            if (complete)
-                el.addClass('labkey-file-grid-initialized');
-            else
-                el.removeClass('labkey-file-grid-initialized');
-        }
-    },
-
     //private
     fireUploadEvents : function()
     {
@@ -1904,7 +1886,6 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         var i, len;
         if (this.currentDirectory.data.path == path)
         {
-            this.onGridDataChanged(false);
             var t = records;
             records = [];
             for (i=0 ; i < t.length ; i++)
@@ -1926,7 +1907,6 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
             this.store.totalLength = records.length;
             this.store.applySort();
             this.store.fireEvent("datachanged", this.store);
-            this.onGridDataChanged(true);
         }
         this.grid.getEl().unmask();
     },

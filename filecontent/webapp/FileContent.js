@@ -321,39 +321,17 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
      * are used to help with automated tests.
      */
     enableImportData : function(enabled) {
-
-        var el = this.getTopToolbar().getEl();
-
         if (enabled)
-        {
-            el.addClass('labkey-import-enabled');
             this.actions.importData.enable();
-        }
         else
-        {
-            el.removeClass('labkey-import-enabled');
             this.actions.importData.disable();
-        }
     },
 
-    /**
-     * Helper to enable and disable the import data action, marker classes
-     * are used to help with automated tests.
-     */
     enableAdmin : function(enabled) {
-
-        var el = this.getTopToolbar().getEl();
-
         if (enabled)
-        {
-            el.addClass('labkey-admin-enabled');
             this.actions.customize.enable();
-        }
         else
-        {
-            el.removeClass('labkey-admin-enabled');
             this.actions.customize.disable();
-        }
     },
 
     updatePipelineActions : function(response, e)

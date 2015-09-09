@@ -302,6 +302,8 @@ Ext4.define('File.panel.Browser', {
             Ext4.iterate(actions, function(key, action) {
                 action.updateEnabled(fileSystem, selection);
             });
+
+            LABKEY.Utils.signalWebDriverTest("import-actions-updated", selection.length);
         }
 
     },
@@ -374,14 +376,6 @@ Ext4.define('File.panel.Browser', {
         }
 
         //
-        // Tests require a flag element to notify state
-        // NOTE: This will not work for multiple browsers on single page
-        //
-        var testFlag = document.createElement("div");
-        testFlag.id = 'testFlag';
-        document.body.appendChild(testFlag);
-
-        //
         // Initialize the actions that are available to the current user
         //
         this.getActions();
@@ -394,8 +388,6 @@ Ext4.define('File.panel.Browser', {
 
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
-
-        File.panel.Browser._toggleActions(this.fileSystem, this.actions, []);
 
         this.callParent();
     },
@@ -1719,8 +1711,6 @@ Ext4.define('File.panel.Browser', {
 
         this.enableImportData(false);
 
-        this.changeTestFlag(false, false);
-
         if (this.pipelineActions.length > 0) {
 
             var selections = selectedRecords,
@@ -1838,8 +1828,6 @@ Ext4.define('File.panel.Browser', {
 
         this.selectedRecord = selectedRecords[0];
 
-        this.changeTestFlag(true, true);
-
         this.selectionProcessed = true;
     },
 
@@ -1902,9 +1890,6 @@ Ext4.define('File.panel.Browser', {
                 containercontextmenu : function (grid, e, eOpts) {
                     this.showContextMenu(null, e);
                 },
-                afterrender : function() {
-                    this.changeTestFlag(true, true);
-                },
                 scope : this
             }
         });
@@ -1928,7 +1913,6 @@ Ext4.define('File.panel.Browser', {
      * @param model
      */
     onFolderChange : function(path, model) {
-        this.changeTestFlag(false, false);
         var tb = this.getDockedComponent(0), action;
         if (tb) {
             action = tb.getComponent('deletePath');
@@ -1957,7 +1941,6 @@ Ext4.define('File.panel.Browser', {
             }
         }
         this.currentDirectory = model;
-        this.changeTestFlag(true, true);
 
         if (this.showDetails) {
             if (this.currentDirectory)
@@ -2788,25 +2771,6 @@ Ext4.define('File.panel.Browser', {
                 height: 12
             });
         }
-    },
-
-    changeTestFlag : function(folderMove, importReady) {
-        var flag = document.getElementById('testFlag');
-        var appliedClass = "";
-        if(folderMove)
-        {
-            appliedClass += 'labkey-file-grid-initialized';
-            if(importReady)
-            {
-                appliedClass += ' labkey-import-enabled';
-            }
-        }
-        else if(importReady)
-        {
-            appliedClass = 'labkey-import-enabled';
-        }
-
-        flag.setAttribute('class', appliedClass);
     },
 
     showErrorMsg : function(title, msg) {
