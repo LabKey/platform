@@ -43,12 +43,14 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.Project;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reader.Readers;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -107,6 +109,7 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
@@ -2033,6 +2036,8 @@ public class PageFlowUtil
             json.put("project", projectProps);
         }
 
+        json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
+
         json.put("tours", getTourJson(container));
         json.put("serverName", StringUtils.isNotEmpty(appProps.getServerName()) ? appProps.getServerName() : "Labkey Server");
         json.put("versionString", appProps.getLabKeyVersionString());
@@ -2071,6 +2076,43 @@ public class PageFlowUtil
         return SERVER_HASH_STRING;
     }
 
+    @Nullable
+    public static Project getTermsOfUseProject(Container container, String returnURL)
+    {
+        Container termsContainer = null;
+
+        if (null == container)
+            return null;
+
+        if (null != returnURL)
+        {
+            try
+            {
+                URLHelper urlHelper = new URLHelper(returnURL);
+                Container redirectContainer = ContainerManager.getForPath(new ActionURL(urlHelper.getLocalURIString()).getExtraPath());
+                if (null != redirectContainer)
+                    termsContainer = redirectContainer.getProject();
+            }
+            catch (IllegalArgumentException iae)
+            {
+                // the redirect URL isn't an action url, so we can't get the container. Ignore.
+            }
+            catch (URISyntaxException e)
+            {
+                // the redirect URL isn't well formed, so we can't get the container. Ignore.
+            }
+        }
+
+        if (null == termsContainer)
+        {
+            if (container.isRoot())
+                return null;
+            else
+                termsContainer = container.getProject();
+        }
+
+        return new Project(termsContainer);
+    }
 
     private static class ValidateHandler extends org.xml.sax.helpers.DefaultHandler
     {

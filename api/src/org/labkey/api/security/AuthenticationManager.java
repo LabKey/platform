@@ -159,10 +159,9 @@ public class AuthenticationManager
     public static Map<String, Object> getLoginPageConfiguration(Project project)
     {
         Map<String, Object> config = new HashMap<>();
-        config.put("registration", isRegistrationEnabled());
-        SecurityManager.TermsOfUse terms = SecurityManager.getTermsOfUse(project);
-        config.put("termsOfUseType", terms.getType() );
-        config.put("otherLoginMechanisms", hasSSOAuthenticationProvider());
+        config.put("registrationEnabled", isRegistrationEnabled());
+        config.put("requiresTermsOfUse", SecurityManager.isTermsOfUseRequired(project));
+        config.put("hasOtherLoginMechanisms", hasSSOAuthenticationProvider());
         return config;
     }
 
