@@ -18,6 +18,7 @@ package org.labkey.core.login;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -804,6 +805,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
     @CSRF
     public class GetRegistrationConfigApiAction extends ApiAction
     {
@@ -1097,37 +1099,12 @@ public class LoginController extends SpringActionController
     {
         Container termsContainer = null;
 
-        URLHelper returnURL = form.getReturnURLHelper(null);
-
         if ((null != form.getTermsOfUseType()) && (form.getTermsOfUseType() == SecurityManager.TermsOfUseType.SITE_WIDE))
         {
             return null;
         }
-        if (null != returnURL)
-        {
-            try
-            {
-                Container redirContainer = ContainerManager.getForPath(new ActionURL(returnURL.getLocalURIString()).getExtraPath());
-                if (null != redirContainer)
-                    termsContainer = redirContainer.getProject();
-            }
-            catch (IllegalArgumentException iae)
-            {
-                // the redirect URL isn't an action url, so we can't get the container. Ignore.
-            }
-        }
-
-        if (null == termsContainer)
-        {
-            Container c = getContainer();
-
-            if (c.isRoot())
-                return null;
-            else
-                termsContainer = c.getProject();
-        }
-
-        return new Project(termsContainer);
+        else
+            return PageFlowUtil.getTermsOfUseProject(getContainer(), form.getReturnUrl() == null ? null : form.getReturnUrl().toString());
     }
 
 

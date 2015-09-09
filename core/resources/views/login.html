@@ -26,7 +26,7 @@
             <input id="password" name="password" type="password" class="input-block" tabindex="2" autofocus>
             <input type=checkbox name="remember" id="remember"  checked>
             <label for="remember">Remember my email address</label>
-        <div class="termsOfUseSection">
+        <div class="termsOfUseSection" hidden>
             <div class="auth-header auth-item">Terms of Use</div>
             <div class="toucontent auth-item termsOfUseContent"></div>
             <div class="auth-item">
@@ -37,7 +37,7 @@
         <input type="hidden" name="termsOfUseType" id="termsOfUseType">
         <div class="auth-item auth-credentials-submit">
             <input type="submit" tab-index="-1" class="loginSubmitButton"/><a class="labkey-button signin-btn" ><span>Sign In</span></a>
-            <span class="registrationSection">
+            <span class="registrationSection" hidden>
                 <span class="register-text">or</span>
                 <a class="labkey-text-link" href="login-register.view?">Register for a new account</a>
             </span>
@@ -45,10 +45,10 @@
 
         <input type="hidden" name="returnUrl">
         <input type="hidden" id="urlhash" name="urlhash">
-        <input type=hidden name='X-LABKEY-CSRF'>
+        <input type="hidden" name='X-LABKEY-CSRF'>
     </div>
 </form>
-<div class="otherLoginMechanismsSection">
+<div class="otherLoginMechanismsSection" hidden>
     <br><h3>Or</h3>
     <div class="auth-header">Sign In using:</div>
     <br>

@@ -14,7 +14,7 @@
         init();
         getTermsOfUse();
         getOtherLoginMechanisms();
-        registrationEnabled();
+        toggleRegistrationLink();
     }
 
     function authenticateUser() {
@@ -72,69 +72,84 @@
     }
 
     function getTermsOfUse() {
-        LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('login', 'getTermsOfUseApi.api', this.containerPath),
-            method: 'POST',
-            params: {
-                returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
-                urlHash: document.getElementById('urlhash'),
-                'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
-            },
-            success: LABKEY.Utils.getCallbackWrapper(function (response) {
-                var termsContents = document.getElementsByClassName('termsOfUseContent');
-                var termsSections = document.getElementsByClassName('termsOfUseSection');
-                if (termsSections && termsSections.length >= 1 && termsContents && termsContents.length >=1) {
-                    if (!response.termsOfUseContent) {
-                        termsSections[0].hidden = true;
-                    } else {
-                        termsContents[0].innerHTML = response.termsOfUseContent;
+        if (LABKEY.login.requiresTermsOfUse)
+        {
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('login', 'getTermsOfUseApi.api', this.containerPath),
+                method: 'POST',
+                params: {
+                    returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
+                    urlHash: document.getElementById('urlhash'),
+                    'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
+                },
+                success: LABKEY.Utils.getCallbackWrapper(function (response)
+                {
+                    var termsContents = document.getElementsByClassName('termsOfUseContent');
+                    var termsSections = document.getElementsByClassName('termsOfUseSection');
+                    if (termsSections && termsSections.length >= 1 && termsContents && termsContents.length >= 1)
+                    {
+                        if (response.termsOfUseContent)
+                        {
+                            termsContents[0].innerHTML = response.termsOfUseContent;
+                            termsSections[0].hidden = false;
+                        }
+                        else
+                        {
+                            termsSecitons[0].hidden = true;
+                        }
                     }
-                }
-                if (document.getElementById('termsOfUseType') && response && response.termsOfUseType) {
-                    document.getElementById('termsOfUseType').value = response.termsOfUseType;
-                }
-            }, this)
-        });
+                    if (document.getElementById('termsOfUseType') && response && response.termsOfUseType)
+                    {
+                        document.getElementById('termsOfUseType').value = response.termsOfUseType;
+                    }
+                }, this)
+            });
+        }
     }
 
     function getOtherLoginMechanisms() {
-        LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('login', 'getLoginMechanismsApi.api', this.containerPath),
-            method: 'POST',
-            params: {
-                returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
-                urlHash: document.getElementById('urlhash'),
-                'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
-            },
-            success: LABKEY.Utils.getCallbackWrapper(function (response) {
-                var otherLoginContents = document.getElementsByClassName('otherLoginMechanismsContent');
-                var otherLoginSections = document.getElementsByClassName('otherLoginMechanismsSection');
-                if (otherLoginSections && otherLoginSections.length >=1 && otherLoginContents && otherLoginContents.length >= 1) {
-                    if (!response || !response.otherLoginMechanismsContent) {
-                        otherLoginSections[0].hidden = true;
-                    } else {
-                        otherLoginContents[0].innerHTML = response.otherLoginMechanismsContent;
+        if (LABKEY.login.hasOtherLoginMechanisms)
+        {
+            var returnURL = LABKEY.ActionURL.getParameter("returnUrl");
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('login', 'getLoginMechanismsApi.api', this.containerPath),
+                method: 'POST',
+                params: {
+                    returnUrl: returnURL == null ? null : encodeURIComponent(returnURL),
+                    urlHash: document.getElementById('urlhash'),
+                    'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
+                },
+                success: LABKEY.Utils.getCallbackWrapper(function (response)
+                {
+                    var otherLoginContents = document.getElementsByClassName('otherLoginMechanismsContent');
+                    var otherLoginSections = document.getElementsByClassName('otherLoginMechanismsSection');
+                    if (otherLoginSections && otherLoginSections.length >= 1 && otherLoginContents && otherLoginContents.length >= 1)
+                    {
+                        if (response && response.otherLoginMechanismsContent)
+                        {
+                            otherLoginSections[0].hidden = false;
+                            otherLoginContents[0].innerHTML = response.otherLoginMechanismsContent;
+                        }
+                        else
+                        {
+                            otherLoginSections[0].hidden = true;
+                        }
                     }
-                }
-             }, this)
-        });
+                }, this)
+            });
+        }
     }
 
 
-    function registrationEnabled() {
-        LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('login', 'getRegistrationConfigApi.api', this.containerPath),
-            method: 'POST',
-            params: {
-                'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
-            },
-            success: LABKEY.Utils.getCallbackWrapper(function (response) {
-                var registrationSections = document.getElementsByClassName('registrationSection');
-                if (registrationSections && registrationSections.length >=1) {
-                    registrationSections[0].hidden = !response || !response.enabled;
-                }
-            }, this)
-        });
+    function toggleRegistrationLink() {
+        if (LABKEY.login.registrationEnabled)
+        {
+            var registrationSections = document.getElementsByClassName('registrationSection');
+            if (registrationSections && registrationSections.length >= 1)
+            {
+                registrationSections[0].hidden = !LABKEY.login.registrationEnabled;
+            }
+        }
     }
 
     function init() {
