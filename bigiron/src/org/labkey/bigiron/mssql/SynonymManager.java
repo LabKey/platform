@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2015 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.bigiron.mssql;
 
 import org.apache.commons.collections15.MultiMap;
@@ -62,9 +77,9 @@ public class SynonymManager
         return null == synonymMap ? Collections.<String, Synonym>emptyMap() : synonymMap;
     }
 
-    static @Nullable Pair<DbScope, Synonym> getSynonym(DbScope scope, String schemaName, String tableName)
+    static @Nullable Pair<DbScope, Synonym> getSynonym(DbScope scope, String schemaName, String requestedTableName)
     {
-        Synonym synonym = getSynonymMap(scope, schemaName).get(tableName);
+        Synonym synonym = getSynonymMap(scope, schemaName).get(requestedTableName);
 
         // tableName is not a synonym... return null
         if (null == synonym)

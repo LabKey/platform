@@ -39,13 +39,16 @@ public class SynonymTestCase extends Assert
             DbSchema schema = DbSchema.get("test", DbSchemaType.Bare);
 
             TableInfo containerAliases2 = schema.getTable("ContainerAliases2");
+            assertNotNull("Failed to find synonym ContainerAliases2", containerAliases2);
             assertEquals(containerAliases2.getTableType(), DatabaseTableType.TABLE);
             ColumnInfo containerId = containerAliases2.getColumn("ContainerId");
+            assertNotNull("Failed to find column ContainerId", containerId);
             ForeignKey containerIdFk = containerId.getFk();
             assertEquals("test", containerIdFk.getLookupSchemaName());
             assertEquals("Containers2", containerIdFk.getLookupTableName());
 
             TableInfo containers2 = schema.getTable("Containers2");
+            assertNotNull("Failed to find synonym Container2", containers2);
             assertEquals(containers2.getTableType(), DatabaseTableType.TABLE);
             ColumnInfo parent = containers2.getColumn("Parent");
             ForeignKey parentFk = parent.getFk();
@@ -57,6 +60,7 @@ public class SynonymTestCase extends Assert
             assertFalse(containers2.getColumn("Type").isNullable());
 
             TableInfo testTable3 = schema.getTable("TestTable3");
+            assertNotNull("Failed to find synonym TestTable3", testTable3);
             assertEquals(testTable3.getTableType(), DatabaseTableType.TABLE);
             assertEquals(1, testTable3.getPkColumns().size());
             assertEquals("RowId", testTable3.getPkColumns().get(0).getName());
@@ -70,6 +74,7 @@ public class SynonymTestCase extends Assert
             assertFalse(testTable3.getColumn("BitNotNull").isNullable());
 
             TableInfo users2 = schema.getTable("Users2");
+            assertNotNull("Failed to find synonym Users2", users2);
             assertEquals(users2.getTableType(), DatabaseTableType.VIEW);
             assertEquals(users2.getColumn("Active").getJdbcType(), JdbcType.BOOLEAN);
             assertEquals(users2.getColumn("UserId").getJdbcType(), JdbcType.INTEGER);
@@ -82,7 +87,7 @@ public class SynonymTestCase extends Assert
             assertNull(testTable3.getDescription());
 
             // Make sure the module schema applies test.xml
-            DbSchema moduleSchema = DbSchema.get("test");
+            DbSchema moduleSchema = DbSchema.get("test", DbSchemaType.Module);
             assertEquals("This is used to test synonyms on SQL Server", moduleSchema.getTable("TestTable3").getDescription());
         }
     }

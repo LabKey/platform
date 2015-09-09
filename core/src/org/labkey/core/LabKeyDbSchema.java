@@ -18,6 +18,7 @@ package org.labkey.core;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.module.ModuleLoader;
 
 import java.util.Map;
@@ -26,9 +27,9 @@ import java.util.Map;
 // external data sources.
 public class LabKeyDbSchema extends DbSchema
 {
-    public LabKeyDbSchema(DbScope scope, Map<String, String> metaDataTableNames)
+    public LabKeyDbSchema(DbScope scope, Map<String, SchemaTableInfoFactory> tableInfoFactoryMap)
     {
-        super("labkey", DbSchemaType.Module, scope, metaDataTableNames, ModuleLoader.getInstance().getCoreModule());
+        super("labkey", DbSchemaType.Module, scope, tableInfoFactoryMap, ModuleLoader.getInstance().getCoreModule());
     }
 
     // Used to retrieve schema XML file and scripts. Override so this is not datasource-qualified (we want to always resolve to labkey.xml, labkey-0.00-14.20.sql, etc.)

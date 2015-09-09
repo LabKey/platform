@@ -62,6 +62,14 @@ public abstract class SasDialect extends SimpleSqlDialect
         return Collections.emptySet();
     }
 
+    @Nullable
+    @Override
+    public String getTableDescription(@Nullable String description)
+    {
+        // SAS returns "No comments"... convert to null
+        return (null != description && !"No comments".equals(description) ? null : description);
+    }
+
     @Override
     public String getProductName()
     {
