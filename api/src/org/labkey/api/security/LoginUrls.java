@@ -46,7 +46,6 @@ public interface LoginUrls extends UrlProvider
     ActionURL getDisableProviderURL(AuthenticationProvider provider);
     ActionURL getPickLogosURL(AuthenticationProvider provider);
     ActionURL getSSORedirectURL(AuthenticationProvider provider, URLHelper returnURL);
-    ActionURL getConfigureAccountCreationURL();
     ActionURL getEnableConfigParameterURL(String name);
     ActionURL getDisableConfigParameterURL(String name);
 

@@ -31,6 +31,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
@@ -62,6 +63,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +121,7 @@ public class AuthenticationManager
 
     public static boolean isAutoCreateAccountsEnabled()
     {
-        return getAuthConfigProperty(AUTO_CREATE_ACCOUNTS_KEY, true);
+        return isExternalProviderEnabled() && getAuthConfigProperty(AUTO_CREATE_ACCOUNTS_KEY, true);
     }
 
     public static boolean getAuthConfigProperty(String key, Boolean defaultValue)
@@ -154,6 +156,24 @@ public class AuthenticationManager
         return getAuthLogoHtml(currentURL, LOGIN_PAGE_LOGO_PREFIX);
     }
 
+    public static Map<String, Object> getLoginPageConfiguration(Project project)
+    {
+        Map<String, Object> config = new HashMap<>();
+        config.put("registration", isRegistrationEnabled());
+        SecurityManager.TermsOfUse terms = SecurityManager.getTermsOfUse(project);
+        config.put("termsOfUseType", terms.getType() );
+        config.put("otherLoginMechanisms", hasSSOAuthenticationProvider());
+        return config;
+    }
+
+    private static Boolean hasSSOAuthenticationProvider()
+    {
+        for (AuthenticationProvider provider : getActiveProviders())
+            if (provider instanceof SSOAuthenticationProvider)
+                return true;
+        return false;
+
+    }
 
     private static @Nullable String getAuthLogoHtml(ActionURL currentURL, String prefix)
     {
@@ -402,7 +422,7 @@ public class AuthenticationManager
     }
 
 
-    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused, UserCreationError}
+    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused, UserCreationError, UserCreationNotAllowed}
 
     public static class PrimaryAuthenticationResult
     {
@@ -598,7 +618,17 @@ public class AuthenticationManager
 
         try
         {
-            user = SecurityManager.afterAuthenticate(email);
+            user = UserManager.getUser(email);
+
+            // If user is authenticated but doesn't exist in our system then add user to the database if we're configured to allow that...
+            if (null == user && isAutoCreateAccountsEnabled())
+            {
+                SecurityManager.NewUserStatus bean = SecurityManager.addUser(email, null, false);
+                user = bean.getUser();
+                UserManager.addToUserHistory(user, user.getEmail() + " authenticated successfully and was added to the system automatically.");
+            }
+            if (user != null)
+                UserManager.updateLogin(user);
         }
         catch (SecurityManager.UserManagementException e)
         {
@@ -607,6 +637,12 @@ public class AuthenticationManager
             ExceptionUtil.logExceptionToMothership(request, e);
 
             return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationError);
+        }
+
+        // didn't find the user on the system and we are not permitted to create accounts automatically
+        if (user == null && !isAutoCreateAccountsEnabled())
+        {
+            return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
         }
 
         if (!user.isActive())

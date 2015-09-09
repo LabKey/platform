@@ -30,7 +30,7 @@ public class EmailNonUsersRole extends AbstractRole
 {
     public EmailNonUsersRole()
     {
-        super("Email Non-Users", "Allows users to send emails to addresses that are not associated with LabKey Server accounts.",
+        super("Email Non-Users", "Allows users to send emails to addresses that are not associated with LabKey Server accounts.  Use caution when enabling this if you have self-sign-on enabled.",
                 EmailNonUsersPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));

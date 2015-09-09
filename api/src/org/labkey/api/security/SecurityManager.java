@@ -378,27 +378,6 @@ public class SecurityManager
     }
 
 
-    // This user has been authenticated, but may not exist (if user was added to the database and is visiting for the first
-    //  time or user authenticated using LDAP, SSO, etc.)
-    public static User afterAuthenticate(ValidEmail email) throws UserManagementException
-    {
-        User u = UserManager.getUser(email);
-
-        // If user is authenticated but doesn't exist in our system then add user to the database...
-        // must be an LDAP or SSO user's first visit
-        if (null == u)
-        {
-            NewUserStatus bean = addUser(email, null, false);
-            u = bean.getUser();
-            UserManager.addToUserHistory(u, u.getEmail() + " authenticated successfully and was added to the system automatically.");
-        }
-
-        UserManager.updateLogin(u);
-
-        return u;
-    }
-
-
     public static User getAuthenticatedUser(HttpServletRequest request)
     {
         User u = (User) request.getUserPrincipal();
@@ -2607,14 +2586,14 @@ public class SecurityManager
             try
             {
                 SecurityManager.sendRegistrationEmail(context, email, null, newUserStatus, null);
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  Verification email was sent successfully.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system via self-registration.  Verification email was sent successfully.");
             }
             catch (ConfigurationException e)
             {
                 User createdUser = UserManager.getUser(email);
 
                 if (null != createdUser)
-                    UserManager.addToUserHistory(createdUser, createdUser.getEmail() + " was added to the system.  Sending the verification email failed.");
+                    UserManager.addToUserHistory(createdUser, createdUser.getEmail() + " was added to the system via self-registration.  Sending the verification email failed.");
                 throw e;
             }
         }
