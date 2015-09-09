@@ -186,25 +186,8 @@ public class ListModule extends DefaultModule
 
     public static class ListUpgradeCode implements UpgradeCode
     {
-        /** called at 13.11->13.12 */
-        public void upgradeListDomains(final ModuleContext moduleContext)
-        {
-            if (moduleContext.isNewInstall())
-                return;
-
-            ListManager.get().upgradeListDefinitions(moduleContext.getUpgradeUser());
-        }
-
-        /** called at 13.12->13.13 */
-        public void ensureListDomains(final ModuleContext moduleContext)
-        {
-            if (moduleContext.isNewInstall())
-                return;
-
-            ListManager.get().ensureListDomains();
-        }
-
-        /** called at 13.30->14.1 */
+        /** called at 13.30->14.10 */
+        @SuppressWarnings("unused")
         public void addContainerColumns(final ModuleContext moduleContext)
         {
             if (moduleContext.isNewInstall())
@@ -218,8 +201,8 @@ public class ListModule extends DefaultModule
     @Override
     public Set<Class> getUnitTests()
     {
-        return new HashSet<Class>(Arrays.asList(
-                ListManager.TestCase.class
+        return new HashSet<>(Arrays.asList(
+            ListManager.TestCase.class
         ));
     }
 }

@@ -13,14 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* list-13.10-13.11.sql */
 
 CREATE SCHEMA list;
 GO
-
-/* list-13.11-13.12.sql */
-
-EXEC core.executeJavaUpgradeCode 'upgradeListDomains';
 
 DROP TABLE exp.indexinteger;
 DROP TABLE exp.indexvarchar;
@@ -28,7 +23,3 @@ DROP TABLE exp.indexvarchar;
 ALTER TABLE exp.list DROP CONSTRAINT UQ_RowId;
 ALTER TABLE exp.list DROP COLUMN rowid;
 GO
-
-/* list-13.12-13.13.sql */
-
-EXEC core.executeJavaUpgradeCode 'ensureListDomains';

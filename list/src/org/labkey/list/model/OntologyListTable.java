@@ -21,9 +21,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
@@ -31,18 +28,13 @@ import org.labkey.api.data.PkFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.StatementUtils;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -59,12 +51,10 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.list.controllers.ListController;
-import org.labkey.api.data.AttachmentDisplayColumn;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -350,53 +340,6 @@ import java.util.Set;
     public boolean supportsContainerFilter()
     {
         return false;
-    }
-
-    /**
-     * NOTE: This function is only to be used during the migration of lists to hard tables. DO NOT use this prior to
-     * or after the migration occurs due to dependencies being bridged.
-     */
-    @Deprecated
-    public static void deleteOntologyList(final ListDefinition list, User user) throws SQLException, DomainNotFoundException
-    {
-        // could ensure old list by validating against domain type being ListDomainType
-        if (null == list || null == list.getDomain() || !list.getDomain().getDomainKind().getClass().equals(ListDomainType.class))
-            return;
-
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
-        {
-            SimpleFilter listItemFilter = new SimpleFilter(FieldKey.fromParts("ListId"), getRowId(list));
-
-            // SKIP DOING ANYTHING WITH ANNOUNCEMENTS AND DISCUSSIONS AS THEY SHOULD ALREADY BE MIGRATED
-
-            //delete all list items
-            ListItm[] itms = new TableSelector(getIndexTable(list.getKeyType()), listItemFilter, null).getArray(ListItm.class);
-            Table.delete(getIndexTable(list.getKeyType()), listItemFilter);
-
-            Set<String> ids = new HashSet<>();
-
-            for (ListItm itm : itms)
-            {
-                if (itm.getObjectId() != null)
-                {
-                    OntologyObject object = OntologyManager.getOntologyObject(itm.getObjectId());
-                    if (object != null)
-                    {
-                        ids.add(object.getObjectURI());
-                    }
-                }
-            }
-            OntologyManager.deleteOntologyObjects(list.getContainer(), ids.toArray(new String[ids.size()]));
-
-            // Unindex all item docs and the entire list doc
-//            ListManager.get().deleteIndexedList(list);
-
-            //then delete the list itself
-//            Table.delete(ListManager.get().getListMetadataTable(), new Object[] {list.getContainer(), list.getListId()});
-//            list.getDomain().delete(user);
-
-            transaction.commit();
-        }
     }
 
     private static Object getRowId(ListDefinition list)
