@@ -47,16 +47,40 @@ public class JdbcMetaDataSelector
 
     public TableResultSet getResultSet() throws SQLException
     {
-        return handleResultSet(rs -> new ResultSetImpl(rs, QueryLogging.emptyQueryLogging()));
+        return handleResultSet(new ResultSetHandler<ResultSetImpl>()
+        {
+            @Override
+            public ResultSetImpl handle(ResultSet rs) throws SQLException
+            {
+                return new ResultSetImpl(rs, QueryLogging.emptyQueryLogging());
+            }
+
+            @Override
+            public boolean shouldClose()
+            {
+                return false;
+            }
+        });
     }
 
     public void forEach(final ForEachBlock<ResultSet> block) throws SQLException
     {
-        handleResultSet(rs -> {
-            while (rs.next())
-                block.exec(rs);
+        handleResultSet(new ResultSetHandler<Object>()
+        {
+            @Override
+            public Object handle(ResultSet rs) throws SQLException
+            {
+                while (rs.next())
+                    block.exec(rs);
 
-            return null;
+                return null;
+            }
+
+            @Override
+            public boolean shouldClose()
+            {
+                return true;
+            }
         });
     }
 
@@ -64,12 +88,17 @@ public class JdbcMetaDataSelector
     {
         // Retry on deadlock, up to five times, see #22148 and #15640.
         int tries = 1;
+        boolean success = false;
+        ResultSet rs = null;
 
         while (true)
         {
             try
             {
-                return handler.handle(_factory.getResultSet(_locator.getDatabaseMetaData(), _locator));
+                rs = _factory.getResultSet(_locator.getDatabaseMetaData(), _locator);
+                T ret = handler.handle(rs);
+                success = true;
+                return ret;
             }
             catch (SQLException e)
             {
@@ -79,12 +108,18 @@ public class JdbcMetaDataSelector
                 if (null == message || !message.contains("deadlocked") || tries++ >= DEADLOCK_RETRIES)
                     throw e;
             }
+            finally
+            {
+                if ((handler.shouldClose() || !success) && null != rs)
+                    rs.close();
+            }
         }
     }
 
     private interface ResultSetHandler<T>
     {
         T handle(ResultSet rs) throws SQLException;
+        boolean shouldClose();
     }
 
     public interface JdbcMetaDataResultSetFactory

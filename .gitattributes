@@ -267,6 +267,7 @@ api/src/org/labkey/api/data/CrosstabTableInfo.java -text
 api/src/org/labkey/api/data/DataIteratorResultsImpl.java -text
 api/src/org/labkey/api/data/DataRegionSelection.java -text
 api/src/org/labkey/api/data/DatabaseCache.java -text
+api/src/org/labkey/api/data/DatabaseMetaDataWrapper.java -text
 api/src/org/labkey/api/data/DatabaseTableType.java -text
 api/src/org/labkey/api/data/DbSchemaCache.java -text
 api/src/org/labkey/api/data/DbSchemaType.java -text

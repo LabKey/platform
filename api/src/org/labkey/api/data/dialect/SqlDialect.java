@@ -884,6 +884,11 @@ public abstract class SqlDialect
 
     public abstract boolean canExecuteUpgradeScripts();
 
+    public DatabaseMetaData wrapDatabaseMetaData(DatabaseMetaData md, DbScope scope)
+    {
+        return md;
+    }
+
     protected class SQLSyntaxException extends SQLException
     {
         private Collection<String> _errors;

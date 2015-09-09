@@ -210,8 +210,7 @@ public class ConnectionWrapper implements java.sql.Connection
         return _spid;
     }
 
-    public Statement createStatement()
-    throws SQLException
+    public Statement createStatement() throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -224,8 +223,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public PreparedStatement prepareStatement(String sql)
-    throws SQLException
+    public PreparedStatement prepareStatement(String sql) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -238,8 +236,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public CallableStatement prepareCall(String sql)
-    throws SQLException
+    public CallableStatement prepareCall(String sql) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -252,8 +249,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public String nativeSQL(String sql)
-    throws SQLException
+    public String nativeSQL(String sql) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -266,8 +262,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public void setAutoCommit(boolean autoCommit)
-    throws SQLException
+    public void setAutoCommit(boolean autoCommit) throws SQLException
     {
         checkForSuspiciousClose();
         _log.debug("setAutoCommit(" + (autoCommit?"TRUE)":"FALSE)"));
@@ -281,8 +276,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public boolean getAutoCommit()
-    throws SQLException
+    public boolean getAutoCommit() throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -295,8 +289,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public void commit()
-    throws SQLException
+    public void commit() throws SQLException
     {
         checkForSuspiciousClose();
         _log.debug("commit()");
@@ -310,8 +303,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public void rollback()
-    throws SQLException
+    public void rollback() throws SQLException
     {
         checkForSuspiciousClose();
         _log.debug("rollback()");
@@ -326,8 +318,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public void close()
-    throws SQLException
+    public void close() throws SQLException
     {
         _openConnections.remove(this);
         _loggedLeaks.remove(this);
@@ -372,8 +363,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public boolean isClosed()
-    throws SQLException
+    public boolean isClosed() throws SQLException
     {
         try
         {
@@ -385,14 +375,14 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public DatabaseMetaData getMetaData()
-    throws SQLException
+    public DatabaseMetaData getMetaData() throws SQLException
     {
         checkForSuspiciousClose();
         try
         {
             final DatabaseMetaData md = _connection.getMetaData();
-            return new DatabaseMetaDataWrapper(md);
+            final DatabaseMetaData wrapped = getScope().getSqlDialect().wrapDatabaseMetaData(md, getScope());
+            return new LoggingDatabaseMetaDataWrapper(wrapped);
         }
         catch (SQLException e)
         {
@@ -400,8 +390,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public void setReadOnly(boolean readOnly)
-    throws SQLException
+    public void setReadOnly(boolean readOnly) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -414,8 +403,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public boolean isReadOnly()
-    throws SQLException
+    public boolean isReadOnly() throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -428,8 +416,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public void setCatalog(String catalog)
-    throws SQLException
+    public void setCatalog(String catalog) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -442,8 +429,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public String getCatalog()
-    throws SQLException
+    public String getCatalog() throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -456,8 +442,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public void setTransactionIsolation(int level)
-    throws SQLException
+    public void setTransactionIsolation(int level) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -470,8 +455,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public int getTransactionIsolation()
-    throws SQLException
+    public int getTransactionIsolation() throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -484,8 +468,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public SQLWarning getWarnings()
-    throws SQLException
+    public SQLWarning getWarnings() throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -498,8 +481,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public void clearWarnings()
-    throws SQLException
+    public void clearWarnings() throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -529,8 +511,7 @@ public class ConnectionWrapper implements java.sql.Connection
     }
 
 
-    public Statement createStatement(int resultSetType, int resultSetConcurrency)
-    throws SQLException
+    public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -543,8 +524,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
-    throws SQLException
+    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -557,8 +537,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
-    throws SQLException
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -571,8 +550,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public Map<String, Class<?>> getTypeMap()
-    throws SQLException
+    public Map<String, Class<?>> getTypeMap() throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -610,8 +588,7 @@ public class ConnectionWrapper implements java.sql.Connection
         return e;
     }
 
-    public void setTypeMap(Map<String, Class<?>> map)
-    throws SQLException
+    public void setTypeMap(Map<String, Class<?>> map) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -624,8 +601,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public void setHoldability(int holdability)
-    throws SQLException
+    public void setHoldability(int holdability) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -638,8 +614,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public int getHoldability()
-    throws SQLException
+    public int getHoldability() throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -652,8 +627,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public Savepoint setSavepoint()
-    throws SQLException
+    public Savepoint setSavepoint() throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -666,8 +640,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public Savepoint setSavepoint(String name)
-    throws SQLException
+    public Savepoint setSavepoint(String name) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -680,8 +653,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public void rollback(Savepoint savepoint)
-    throws SQLException
+    public void rollback(Savepoint savepoint) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -694,8 +666,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public void releaseSavepoint(Savepoint savepoint)
-    throws SQLException
+    public void releaseSavepoint(Savepoint savepoint) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -708,8 +679,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-    throws SQLException
+    public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -722,8 +692,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-    throws SQLException
+    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -736,8 +705,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-    throws SQLException
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -750,8 +718,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
-    throws SQLException
+    public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -764,8 +731,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public PreparedStatement prepareStatement(String sql, int[] columnIndexes)
-    throws SQLException
+    public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -778,8 +744,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    public PreparedStatement prepareStatement(String sql, String[] columnNames)
-    throws SQLException
+    public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException
     {
         checkForSuspiciousClose();
         try
@@ -822,9 +787,8 @@ public class ConnectionWrapper implements java.sql.Connection
 
     public <T> T unwrap(Class<T> iface) throws SQLException
     {
-        if (iface.isAssignableFrom(_connection.getClass()))
-            return (T)_connection;
-        return null;
+        //noinspection unchecked
+        return isWrapperFor(iface)?  (T)_connection : null;
     }
 
 
@@ -840,6 +804,8 @@ public class ConnectionWrapper implements java.sql.Connection
             throw logAndCheckException(e);
         }
     }
+
+    // TODO: Implement all of the following methods!
 
     public Blob createBlob() throws SQLException
     {
@@ -891,9 +857,6 @@ public class ConnectionWrapper implements java.sql.Connection
         throw new UnsupportedOperationException();
     }
 
-    
-    // TODO: now that we require JDK/JRE 7.0, these methods should be properly implemented.
-
     public void setSchema(String schema) throws SQLException
     {
         throw new UnsupportedOperationException();
@@ -933,17 +896,21 @@ public class ConnectionWrapper implements java.sql.Connection
         _suspiciousCloseStackTrace = new Throwable("This connection may have been closed by a codepath that did not intend to leave it in this state");
     }
 
-    private class DatabaseMetaDataWrapper implements DatabaseMetaData
+
+    private class LoggingDatabaseMetaDataWrapper extends DatabaseMetaDataWrapper
     {
-        private final DatabaseMetaData _md;
-        
-        DatabaseMetaDataWrapper(DatabaseMetaData md)
+        LoggingDatabaseMetaDataWrapper(DatabaseMetaData md)
         {
-            _md = md;
+            super(md);
         }
 
-        private void log(String methodName, String message, long start)
+        private void log(ResultSet rs, String methodName, String message, long start)
         {
+            // If the ResultSet is one of our wrappers then don't log; we must have issued the query which means the Selector
+            // framework already logged it (don't double count it)
+            if (rs instanceof TableResultSet)
+                return;
+
             long duration = System.currentTimeMillis() - start;
 
             if (getLogger().isDebugEnabled())
@@ -954,8 +921,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean allProceduresAreCallable()
-                throws SQLException
+        public boolean allProceduresAreCallable() throws SQLException
         {
             try
             {
@@ -968,8 +934,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean allTablesAreSelectable()
-                throws SQLException
+        public boolean allTablesAreSelectable() throws SQLException
         {
             try
             {
@@ -982,8 +947,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getURL()
-                throws SQLException
+        public String getURL() throws SQLException
         {
             try
             {
@@ -996,8 +960,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getUserName()
-                throws SQLException
+        public String getUserName() throws SQLException
         {
             try
             {
@@ -1010,8 +973,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean isReadOnly()
-                throws SQLException
+        public boolean isReadOnly() throws SQLException
         {
             try
             {
@@ -1024,8 +986,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean nullsAreSortedHigh()
-                throws SQLException
+        public boolean nullsAreSortedHigh() throws SQLException
         {
             try
             {
@@ -1038,8 +999,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean nullsAreSortedLow()
-                throws SQLException
+        public boolean nullsAreSortedLow() throws SQLException
         {
             try
             {
@@ -1052,8 +1012,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean nullsAreSortedAtStart()
-                throws SQLException
+        public boolean nullsAreSortedAtStart() throws SQLException
         {
             try
             {
@@ -1066,8 +1025,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean nullsAreSortedAtEnd()
-                throws SQLException
+        public boolean nullsAreSortedAtEnd() throws SQLException
         {
             try
             {
@@ -1080,8 +1038,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getDatabaseProductName()
-                throws SQLException
+        public String getDatabaseProductName() throws SQLException
         {
             try
             {
@@ -1094,8 +1051,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getDatabaseProductVersion()
-                throws SQLException
+        public String getDatabaseProductVersion() throws SQLException
         {
             try
             {
@@ -1108,8 +1064,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getDriverName()
-                throws SQLException
+        public String getDriverName() throws SQLException
         {
             try
             {
@@ -1122,8 +1077,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getDriverVersion()
-                throws SQLException
+        public String getDriverVersion() throws SQLException
         {
             try
             {
@@ -1136,20 +1090,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getDriverMajorVersion()
-        {
-            return _md.getDriverMajorVersion();
-        }
-
-        @Override
-        public int getDriverMinorVersion()
-        {
-            return _md.getDriverMinorVersion();
-        }
-
-        @Override
-        public boolean usesLocalFiles()
-                throws SQLException
+        public boolean usesLocalFiles() throws SQLException
         {
             try
             {
@@ -1162,8 +1103,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean usesLocalFilePerTable()
-                throws SQLException
+        public boolean usesLocalFilePerTable() throws SQLException
         {
             try
             {
@@ -1176,8 +1116,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsMixedCaseIdentifiers()
-                throws SQLException
+        public boolean supportsMixedCaseIdentifiers() throws SQLException
         {
             try
             {
@@ -1190,8 +1129,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean storesUpperCaseIdentifiers()
-                throws SQLException
+        public boolean storesUpperCaseIdentifiers() throws SQLException
         {
             try
             {
@@ -1204,8 +1142,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean storesLowerCaseIdentifiers()
-                throws SQLException
+        public boolean storesLowerCaseIdentifiers() throws SQLException
         {
             try
             {
@@ -1218,8 +1155,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean storesMixedCaseIdentifiers()
-                throws SQLException
+        public boolean storesMixedCaseIdentifiers() throws SQLException
         {
             try
             {
@@ -1232,8 +1168,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsMixedCaseQuotedIdentifiers()
-                throws SQLException
+        public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException
         {
             try
             {
@@ -1246,8 +1181,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean storesUpperCaseQuotedIdentifiers()
-                throws SQLException
+        public boolean storesUpperCaseQuotedIdentifiers() throws SQLException
         {
             try
             {
@@ -1260,8 +1194,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean storesLowerCaseQuotedIdentifiers()
-                throws SQLException
+        public boolean storesLowerCaseQuotedIdentifiers() throws SQLException
         {
             try
             {
@@ -1274,8 +1207,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean storesMixedCaseQuotedIdentifiers()
-                throws SQLException
+        public boolean storesMixedCaseQuotedIdentifiers() throws SQLException
         {
             try
             {
@@ -1288,8 +1220,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getIdentifierQuoteString()
-                throws SQLException
+        public String getIdentifierQuoteString() throws SQLException
         {
             try
             {
@@ -1302,8 +1233,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getSQLKeywords()
-                throws SQLException
+        public String getSQLKeywords() throws SQLException
         {
             try
             {
@@ -1316,8 +1246,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getNumericFunctions()
-                throws SQLException
+        public String getNumericFunctions() throws SQLException
         {
             try
             {
@@ -1330,8 +1259,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getStringFunctions()
-                throws SQLException
+        public String getStringFunctions() throws SQLException
         {
             try
             {
@@ -1344,8 +1272,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getSystemFunctions()
-                throws SQLException
+        public String getSystemFunctions() throws SQLException
         {
             try
             {
@@ -1358,8 +1285,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getTimeDateFunctions()
-                throws SQLException
+        public String getTimeDateFunctions() throws SQLException
         {
             try
             {
@@ -1372,8 +1298,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getSearchStringEscape()
-                throws SQLException
+        public String getSearchStringEscape() throws SQLException
         {
             try
             {
@@ -1386,8 +1311,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getExtraNameCharacters()
-                throws SQLException
+        public String getExtraNameCharacters() throws SQLException
         {
             try
             {
@@ -1400,8 +1324,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsAlterTableWithAddColumn()
-                throws SQLException
+        public boolean supportsAlterTableWithAddColumn() throws SQLException
         {
             try
             {
@@ -1414,8 +1337,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsAlterTableWithDropColumn()
-                throws SQLException
+        public boolean supportsAlterTableWithDropColumn() throws SQLException
         {
             try
             {
@@ -1428,8 +1350,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsColumnAliasing()
-                throws SQLException
+        public boolean supportsColumnAliasing() throws SQLException
         {
             try
             {
@@ -1442,8 +1363,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean nullPlusNonNullIsNull()
-                throws SQLException
+        public boolean nullPlusNonNullIsNull() throws SQLException
         {
             try
             {
@@ -1456,8 +1376,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsConvert()
-                throws SQLException
+        public boolean supportsConvert() throws SQLException
         {
             try
             {
@@ -1470,8 +1389,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsConvert(int fromType, int toType)
-                throws SQLException
+        public boolean supportsConvert(int fromType, int toType) throws SQLException
         {
             try
             {
@@ -1484,8 +1402,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsTableCorrelationNames()
-                throws SQLException
+        public boolean supportsTableCorrelationNames() throws SQLException
         {
             try
             {
@@ -1498,8 +1415,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsDifferentTableCorrelationNames()
-                throws SQLException
+        public boolean supportsDifferentTableCorrelationNames() throws SQLException
         {
             try
             {
@@ -1512,8 +1428,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsExpressionsInOrderBy()
-                throws SQLException
+        public boolean supportsExpressionsInOrderBy() throws SQLException
         {
             try
             {
@@ -1526,8 +1441,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsOrderByUnrelated()
-                throws SQLException
+        public boolean supportsOrderByUnrelated() throws SQLException
         {
             try
             {
@@ -1540,8 +1454,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsGroupBy()
-                throws SQLException
+        public boolean supportsGroupBy() throws SQLException
         {
             try
             {
@@ -1554,8 +1467,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsGroupByUnrelated()
-                throws SQLException
+        public boolean supportsGroupByUnrelated() throws SQLException
         {
             try
             {
@@ -1568,8 +1480,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsGroupByBeyondSelect()
-                throws SQLException
+        public boolean supportsGroupByBeyondSelect() throws SQLException
         {
             try
             {
@@ -1582,8 +1493,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsLikeEscapeClause()
-                throws SQLException
+        public boolean supportsLikeEscapeClause() throws SQLException
         {
             try
             {
@@ -1596,8 +1506,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsMultipleResultSets()
-                throws SQLException
+        public boolean supportsMultipleResultSets() throws SQLException
         {
             try
             {
@@ -1610,8 +1519,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsMultipleTransactions()
-                throws SQLException
+        public boolean supportsMultipleTransactions() throws SQLException
         {
             try
             {
@@ -1624,8 +1532,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsNonNullableColumns()
-                throws SQLException
+        public boolean supportsNonNullableColumns() throws SQLException
         {
             try
             {
@@ -1638,8 +1545,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsMinimumSQLGrammar()
-                throws SQLException
+        public boolean supportsMinimumSQLGrammar() throws SQLException
         {
             try
             {
@@ -1652,8 +1558,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsCoreSQLGrammar()
-                throws SQLException
+        public boolean supportsCoreSQLGrammar() throws SQLException
         {
             try
             {
@@ -1666,8 +1571,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsExtendedSQLGrammar()
-                throws SQLException
+        public boolean supportsExtendedSQLGrammar() throws SQLException
         {
             try
             {
@@ -1680,8 +1584,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsANSI92EntryLevelSQL()
-                throws SQLException
+        public boolean supportsANSI92EntryLevelSQL() throws SQLException
         {
             try
             {
@@ -1694,8 +1597,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsANSI92IntermediateSQL()
-                throws SQLException
+        public boolean supportsANSI92IntermediateSQL() throws SQLException
         {
             try
             {
@@ -1708,8 +1610,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsANSI92FullSQL()
-                throws SQLException
+        public boolean supportsANSI92FullSQL() throws SQLException
         {
             try
             {
@@ -1722,8 +1623,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsIntegrityEnhancementFacility()
-                throws SQLException
+        public boolean supportsIntegrityEnhancementFacility() throws SQLException
         {
             try
             {
@@ -1736,8 +1636,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsOuterJoins()
-                throws SQLException
+        public boolean supportsOuterJoins() throws SQLException
         {
             try
             {
@@ -1750,8 +1649,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsFullOuterJoins()
-                throws SQLException
+        public boolean supportsFullOuterJoins() throws SQLException
         {
             try
             {
@@ -1764,8 +1662,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsLimitedOuterJoins()
-                throws SQLException
+        public boolean supportsLimitedOuterJoins() throws SQLException
         {
             try
             {
@@ -1778,8 +1675,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getSchemaTerm()
-                throws SQLException
+        public String getSchemaTerm() throws SQLException
         {
             try
             {
@@ -1792,8 +1688,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getProcedureTerm()
-                throws SQLException
+        public String getProcedureTerm() throws SQLException
         {
             try
             {
@@ -1806,8 +1701,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getCatalogTerm()
-                throws SQLException
+        public String getCatalogTerm() throws SQLException
         {
             try
             {
@@ -1820,8 +1714,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean isCatalogAtStart()
-                throws SQLException
+        public boolean isCatalogAtStart() throws SQLException
         {
             try
             {
@@ -1834,8 +1727,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public String getCatalogSeparator()
-                throws SQLException
+        public String getCatalogSeparator() throws SQLException
         {
             try
             {
@@ -1848,8 +1740,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsSchemasInDataManipulation()
-                throws SQLException
+        public boolean supportsSchemasInDataManipulation() throws SQLException
         {
             try
             {
@@ -1862,8 +1753,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsSchemasInProcedureCalls()
-                throws SQLException
+        public boolean supportsSchemasInProcedureCalls() throws SQLException
         {
             try
             {
@@ -1876,8 +1766,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsSchemasInTableDefinitions()
-                throws SQLException
+        public boolean supportsSchemasInTableDefinitions() throws SQLException
         {
             try
             {
@@ -1890,8 +1779,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsSchemasInIndexDefinitions()
-                throws SQLException
+        public boolean supportsSchemasInIndexDefinitions() throws SQLException
         {
             try
             {
@@ -1904,8 +1792,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsSchemasInPrivilegeDefinitions()
-                throws SQLException
+        public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException
         {
             try
             {
@@ -1918,8 +1805,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsCatalogsInDataManipulation()
-                throws SQLException
+        public boolean supportsCatalogsInDataManipulation() throws SQLException
         {
             try
             {
@@ -1932,8 +1818,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsCatalogsInProcedureCalls()
-                throws SQLException
+        public boolean supportsCatalogsInProcedureCalls() throws SQLException
         {
             try
             {
@@ -1946,8 +1831,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsCatalogsInTableDefinitions()
-                throws SQLException
+        public boolean supportsCatalogsInTableDefinitions() throws SQLException
         {
             try
             {
@@ -1960,8 +1844,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsCatalogsInIndexDefinitions()
-                throws SQLException
+        public boolean supportsCatalogsInIndexDefinitions() throws SQLException
         {
             try
             {
@@ -1974,8 +1857,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsCatalogsInPrivilegeDefinitions()
-                throws SQLException
+        public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException
         {
             try
             {
@@ -1988,8 +1870,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsPositionedDelete()
-                throws SQLException
+        public boolean supportsPositionedDelete() throws SQLException
         {
             try
             {
@@ -2002,8 +1883,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsPositionedUpdate()
-                throws SQLException
+        public boolean supportsPositionedUpdate() throws SQLException
         {
             try
             {
@@ -2016,8 +1896,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsSelectForUpdate()
-                throws SQLException
+        public boolean supportsSelectForUpdate() throws SQLException
         {
             try
             {
@@ -2030,8 +1909,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsStoredProcedures()
-                throws SQLException
+        public boolean supportsStoredProcedures() throws SQLException
         {
             try
             {
@@ -2044,8 +1922,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsSubqueriesInComparisons()
-                throws SQLException
+        public boolean supportsSubqueriesInComparisons() throws SQLException
         {
             try
             {
@@ -2058,8 +1935,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsSubqueriesInExists()
-                throws SQLException
+        public boolean supportsSubqueriesInExists() throws SQLException
         {
             try
             {
@@ -2072,8 +1948,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsSubqueriesInIns()
-                throws SQLException
+        public boolean supportsSubqueriesInIns() throws SQLException
         {
             try
             {
@@ -2086,8 +1961,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsSubqueriesInQuantifieds()
-                throws SQLException
+        public boolean supportsSubqueriesInQuantifieds() throws SQLException
         {
             try
             {
@@ -2100,8 +1974,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsCorrelatedSubqueries()
-                throws SQLException
+        public boolean supportsCorrelatedSubqueries() throws SQLException
         {
             try
             {
@@ -2114,8 +1987,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsUnion()
-                throws SQLException
+        public boolean supportsUnion() throws SQLException
         {
             try
             {
@@ -2128,8 +2000,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsUnionAll()
-                throws SQLException
+        public boolean supportsUnionAll() throws SQLException
         {
             try
             {
@@ -2142,8 +2013,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsOpenCursorsAcrossCommit()
-                throws SQLException
+        public boolean supportsOpenCursorsAcrossCommit() throws SQLException
         {
             try
             {
@@ -2156,8 +2026,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsOpenCursorsAcrossRollback()
-                throws SQLException
+        public boolean supportsOpenCursorsAcrossRollback() throws SQLException
         {
             try
             {
@@ -2170,8 +2039,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsOpenStatementsAcrossCommit()
-                throws SQLException
+        public boolean supportsOpenStatementsAcrossCommit() throws SQLException
         {
             try
             {
@@ -2184,8 +2052,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsOpenStatementsAcrossRollback()
-                throws SQLException
+        public boolean supportsOpenStatementsAcrossRollback() throws SQLException
         {
             try
             {
@@ -2198,8 +2065,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxBinaryLiteralLength()
-                throws SQLException
+        public int getMaxBinaryLiteralLength() throws SQLException
         {
             try
             {
@@ -2212,8 +2078,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxCharLiteralLength()
-                throws SQLException
+        public int getMaxCharLiteralLength() throws SQLException
         {
             try
             {
@@ -2226,8 +2091,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxColumnNameLength()
-                throws SQLException
+        public int getMaxColumnNameLength() throws SQLException
         {
             try
             {
@@ -2240,8 +2104,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxColumnsInGroupBy()
-                throws SQLException
+        public int getMaxColumnsInGroupBy() throws SQLException
         {
             try
             {
@@ -2254,8 +2117,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxColumnsInIndex()
-                throws SQLException
+        public int getMaxColumnsInIndex() throws SQLException
         {
             try
             {
@@ -2268,8 +2130,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxColumnsInOrderBy()
-                throws SQLException
+        public int getMaxColumnsInOrderBy() throws SQLException
         {
             try
             {
@@ -2282,8 +2143,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxColumnsInSelect()
-                throws SQLException
+        public int getMaxColumnsInSelect() throws SQLException
         {
             try
             {
@@ -2296,8 +2156,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxColumnsInTable()
-                throws SQLException
+        public int getMaxColumnsInTable() throws SQLException
         {
             try
             {
@@ -2310,8 +2169,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxConnections()
-                throws SQLException
+        public int getMaxConnections() throws SQLException
         {
             try
             {
@@ -2324,8 +2182,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxCursorNameLength()
-                throws SQLException
+        public int getMaxCursorNameLength() throws SQLException
         {
             try
             {
@@ -2338,8 +2195,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxIndexLength()
-                throws SQLException
+        public int getMaxIndexLength() throws SQLException
         {
             try
             {
@@ -2352,8 +2208,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxSchemaNameLength()
-                throws SQLException
+        public int getMaxSchemaNameLength() throws SQLException
         {
             try
             {
@@ -2366,8 +2221,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxProcedureNameLength()
-                throws SQLException
+        public int getMaxProcedureNameLength() throws SQLException
         {
             try
             {
@@ -2380,8 +2234,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxCatalogNameLength()
-                throws SQLException
+        public int getMaxCatalogNameLength() throws SQLException
         {
             try
             {
@@ -2394,8 +2247,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxRowSize()
-                throws SQLException
+        public int getMaxRowSize() throws SQLException
         {
             try
             {
@@ -2408,8 +2260,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean doesMaxRowSizeIncludeBlobs()
-                throws SQLException
+        public boolean doesMaxRowSizeIncludeBlobs() throws SQLException
         {
             try
             {
@@ -2422,8 +2273,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxStatementLength()
-                throws SQLException
+        public int getMaxStatementLength() throws SQLException
         {
             try
             {
@@ -2436,8 +2286,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxStatements()
-                throws SQLException
+        public int getMaxStatements() throws SQLException
         {
             try
             {
@@ -2450,8 +2299,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxTableNameLength()
-                throws SQLException
+        public int getMaxTableNameLength() throws SQLException
         {
             try
             {
@@ -2464,8 +2312,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxTablesInSelect()
-                throws SQLException
+        public int getMaxTablesInSelect() throws SQLException
         {
             try
             {
@@ -2478,8 +2325,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getMaxUserNameLength()
-                throws SQLException
+        public int getMaxUserNameLength() throws SQLException
         {
             try
             {
@@ -2492,8 +2338,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getDefaultTransactionIsolation()
-                throws SQLException
+        public int getDefaultTransactionIsolation() throws SQLException
         {
             try
             {
@@ -2506,8 +2351,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsTransactions()
-                throws SQLException
+        public boolean supportsTransactions() throws SQLException
         {
             try
             {
@@ -2559,8 +2403,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean dataDefinitionCausesTransactionCommit()
-                throws SQLException
+        public boolean dataDefinitionCausesTransactionCommit() throws SQLException
         {
             try
             {
@@ -2573,8 +2416,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean dataDefinitionIgnoredInTransactions()
-                throws SQLException
+        public boolean dataDefinitionIgnoredInTransactions() throws SQLException
         {
             try
             {
@@ -2619,7 +2461,7 @@ public class ConnectionWrapper implements java.sql.Connection
             {
                 long start = System.currentTimeMillis();
                 ResultSet ret = _md.getTables(catalog, schemaPattern, tableNamePattern, types);
-                log("getTables()", "getTables(" + catalog + ", " + schemaPattern + ", " + tableNamePattern + ")", start);
+                log(ret, "getTables()", "getTables(" + catalog + ", " + schemaPattern + ", " + tableNamePattern + ")", start);
 
                 return ret;
             }
@@ -2636,7 +2478,7 @@ public class ConnectionWrapper implements java.sql.Connection
             {
                 long start = System.currentTimeMillis();
                 ResultSet ret = _md.getSchemas();
-                log("getSchemas()", "getSchemas()", start);
+                log(ret, "getSchemas()", "getSchemas()", start);
 
                 return ret;
             }
@@ -2653,7 +2495,7 @@ public class ConnectionWrapper implements java.sql.Connection
             {
                 long start = System.currentTimeMillis();
                 ResultSet ret = _md.getCatalogs();
-                log("getCatalogs()", "getCatalogs()", start);
+                log(ret, "getCatalogs()", "getCatalogs()", start);
 
                 return ret;
             }
@@ -2670,7 +2512,7 @@ public class ConnectionWrapper implements java.sql.Connection
             {
                 long start = System.currentTimeMillis();
                 ResultSet ret =  _md.getTableTypes();
-                log("getTableTypes()", "getTableTypes()", start);
+                log(ret, "getTableTypes()", "getTableTypes()", start);
 
                 return ret;
             }
@@ -2687,7 +2529,7 @@ public class ConnectionWrapper implements java.sql.Connection
             {
                 long start = System.currentTimeMillis();
                 ResultSet ret = _md.getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern);
-                log("getColumns()", "getColumns(" + catalog + ", " + schemaPattern + ", " + tableNamePattern + ", " + columnNamePattern + ")", start);
+                log(ret, "getColumns()", "getColumns(" + catalog + ", " + schemaPattern + ", " + tableNamePattern + ", " + columnNamePattern + ")", start);
 
                 return ret;
             }
@@ -2756,7 +2598,7 @@ public class ConnectionWrapper implements java.sql.Connection
             {
                 long start = System.currentTimeMillis();
                 ResultSet ret = _md.getPrimaryKeys(catalog, schema, table);
-                log("getPrimaryKeys()", "getPrimaryKeys(" + catalog + ", " + schema + ", " + table + ")", start);
+                log(ret, "getPrimaryKeys()", "getPrimaryKeys(" + catalog + ", " + schema + ", " + table + ")", start);
 
                 return ret;
             }
@@ -2773,7 +2615,7 @@ public class ConnectionWrapper implements java.sql.Connection
             {
                 long start = System.currentTimeMillis();
                 ResultSet ret = _md.getImportedKeys(catalog, schema, table);
-                log("getImportedKeys()", "getImportedKeys(" + catalog + ", " + schema + ", " + table + ")", start);
+                log(ret, "getImportedKeys()", "getImportedKeys(" + catalog + ", " + schema + ", " + table + ")", start);
 
                 return ret;
             }
@@ -2797,8 +2639,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable)
-                throws SQLException
+        public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException
         {
             try
             {
@@ -2811,8 +2652,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getTypeInfo()
-                throws SQLException
+        public ResultSet getTypeInfo() throws SQLException
         {
             try
             {
@@ -2838,8 +2678,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsResultSetType(int type)
-                throws SQLException
+        public boolean supportsResultSetType(int type) throws SQLException
         {
             try
             {
@@ -2852,8 +2691,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsResultSetConcurrency(int type, int concurrency)
-                throws SQLException
+        public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException
         {
             try
             {
@@ -2866,8 +2704,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean ownUpdatesAreVisible(int type)
-                throws SQLException
+        public boolean ownUpdatesAreVisible(int type) throws SQLException
         {
             try
             {
@@ -2880,8 +2717,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean ownDeletesAreVisible(int type)
-                throws SQLException
+        public boolean ownDeletesAreVisible(int type) throws SQLException
         {
             try
             {
@@ -2894,8 +2730,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean ownInsertsAreVisible(int type)
-                throws SQLException
+        public boolean ownInsertsAreVisible(int type) throws SQLException
         {
             try
             {
@@ -2908,8 +2743,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean othersUpdatesAreVisible(int type)
-                throws SQLException
+        public boolean othersUpdatesAreVisible(int type) throws SQLException
         {
             try
             {
@@ -2922,8 +2756,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean othersDeletesAreVisible(int type)
-                throws SQLException
+        public boolean othersDeletesAreVisible(int type) throws SQLException
         {
             try
             {
@@ -2936,8 +2769,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean othersInsertsAreVisible(int type)
-                throws SQLException
+        public boolean othersInsertsAreVisible(int type) throws SQLException
         {
             try
             {
@@ -2950,8 +2782,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean updatesAreDetected(int type)
-                throws SQLException
+        public boolean updatesAreDetected(int type) throws SQLException
         {
             try
             {
@@ -2964,8 +2795,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean deletesAreDetected(int type)
-                throws SQLException
+        public boolean deletesAreDetected(int type) throws SQLException
         {
             try
             {
@@ -2978,8 +2808,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean insertsAreDetected(int type)
-                throws SQLException
+        public boolean insertsAreDetected(int type) throws SQLException
         {
             try
             {
@@ -2992,8 +2821,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsBatchUpdates()
-                throws SQLException
+        public boolean supportsBatchUpdates() throws SQLException
         {
             try
             {
@@ -3006,8 +2834,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types)
-                throws SQLException
+        public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException
         {
             try
             {
@@ -3020,8 +2847,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public Connection getConnection()
-                throws SQLException
+        public Connection getConnection() throws SQLException
         {
             try
             {
@@ -3034,8 +2860,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsSavepoints()
-                throws SQLException
+        public boolean supportsSavepoints() throws SQLException
         {
             try
             {
@@ -3048,8 +2873,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsNamedParameters()
-                throws SQLException
+        public boolean supportsNamedParameters() throws SQLException
         {
             try
             {
@@ -3062,8 +2886,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsMultipleOpenResults()
-                throws SQLException
+        public boolean supportsMultipleOpenResults() throws SQLException
         {
             try
             {
@@ -3076,8 +2899,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsGetGeneratedKeys()
-                throws SQLException
+        public boolean supportsGetGeneratedKeys() throws SQLException
         {
             try
             {
@@ -3090,8 +2912,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern)
-                throws SQLException
+        public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException
         {
             try
             {
@@ -3104,8 +2925,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern)
-                throws SQLException
+        public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException
         {
             try
             {
@@ -3118,8 +2938,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern)
-                throws SQLException
+        public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws SQLException
         {
             try
             {
@@ -3132,8 +2951,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsResultSetHoldability(int holdability)
-                throws SQLException
+        public boolean supportsResultSetHoldability(int holdability) throws SQLException
         {
             try
             {
@@ -3146,8 +2964,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getResultSetHoldability()
-                throws SQLException
+        public int getResultSetHoldability() throws SQLException
         {
             try
             {
@@ -3160,8 +2977,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getDatabaseMajorVersion()
-                throws SQLException
+        public int getDatabaseMajorVersion() throws SQLException
         {
             try
             {
@@ -3174,8 +2990,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getDatabaseMinorVersion()
-                throws SQLException
+        public int getDatabaseMinorVersion() throws SQLException
         {
             try
             {
@@ -3188,8 +3003,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getJDBCMajorVersion()
-                throws SQLException
+        public int getJDBCMajorVersion() throws SQLException
         {
             try
             {
@@ -3202,8 +3016,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getJDBCMinorVersion()
-                throws SQLException
+        public int getJDBCMinorVersion() throws SQLException
         {
             try
             {
@@ -3216,8 +3029,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public int getSQLStateType()
-                throws SQLException
+        public int getSQLStateType() throws SQLException
         {
             try
             {
@@ -3230,8 +3042,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean locatorsUpdateCopy()
-                throws SQLException
+        public boolean locatorsUpdateCopy() throws SQLException
         {
             try
             {
@@ -3244,8 +3055,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsStatementPooling()
-                throws SQLException
+        public boolean supportsStatementPooling() throws SQLException
         {
             try
             {
@@ -3258,8 +3068,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public RowIdLifetime getRowIdLifetime()
-                throws SQLException
+        public RowIdLifetime getRowIdLifetime() throws SQLException
         {
             try
             {
@@ -3272,8 +3081,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getSchemas(String catalog, String schemaPattern)
-                throws SQLException
+        public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException
         {
             try
             {
@@ -3286,8 +3094,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsStoredFunctionsUsingCallSyntax()
-                throws SQLException
+        public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException
         {
             try
             {
@@ -3300,8 +3107,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean autoCommitFailureClosesAllResultSets()
-                throws SQLException
+        public boolean autoCommitFailureClosesAllResultSets() throws SQLException
         {
             try
             {
@@ -3314,8 +3120,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getClientInfoProperties()
-                throws SQLException
+        public ResultSet getClientInfoProperties() throws SQLException
         {
             try
             {
@@ -3328,8 +3133,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern)
-                throws SQLException
+        public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException
         {
             try
             {
@@ -3342,8 +3146,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern)
-                throws SQLException
+        public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern) throws SQLException
         {
             try
             {
@@ -3356,22 +3159,6 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public <T> T unwrap(Class<T> iface)
-                throws SQLException
-        {
-            return (T)_md;
-        }
-
-        @Override
-        public boolean isWrapperFor(Class<?> iface)
-                throws SQLException
-        {
-            return iface.isAssignableFrom(DatabaseMetaData.class);
-        }
-
-
-        // JDBC 4.1 methods below must be here so we compile on JDK 7; Once JRE 7 is required, should implement these via delegation.
-
         public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException
         {
             try
@@ -3384,6 +3171,7 @@ public class ConnectionWrapper implements java.sql.Connection
             }
         }
 
+        @Override
         public boolean generatedKeyAlwaysReturned() throws SQLException
         {
             try
