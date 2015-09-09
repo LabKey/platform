@@ -180,7 +180,6 @@ import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.statistics.StatsServiceImpl;
-import org.labkey.core.test.JdbcTest;
 import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
@@ -190,7 +189,6 @@ import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.io.IOException;
