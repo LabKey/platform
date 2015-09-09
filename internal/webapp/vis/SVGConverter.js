@@ -39,14 +39,13 @@ LABKEY.vis.SVGConverter = {
         else
             throw "Unknown format: " + format;
 
-        // use multipart post (i.e hidden fileuploadfield) in case the SVG source is large (i.e. > 2 MB)
+        // use multipart post (i.e fileuploadfield) in case the SVG source is large (i.e. > 2 MB)
         var exportForm = Ext4.create('Ext.form.Panel', {
             hidden: true,
-            standardSubmit: true,
             items: [
                 {xtype : 'hidden', name : 'svg', value: svg},
                 {xtype : 'hidden', name : 'title', value: Ext4.util.Format.trim(title)},
-                {xtype : 'fileuploadfield', name : 'file', hidden : true}
+                {xtype : 'fileuploadfield', name : 'file'}
             ]
         });
         exportForm.submit({url: LABKEY.ActionURL.buildURL('visualization', action), target: '_blank', scope: this});
