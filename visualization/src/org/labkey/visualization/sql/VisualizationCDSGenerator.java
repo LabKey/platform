@@ -380,8 +380,9 @@ public class VisualizationCDSGenerator
                 boolean isContainer = equalsIgnoreCase(columnName, containerColumnName);
                 boolean isSubject = equalsIgnoreCase(columnName, subjectColumnName);
                 boolean isSequenceNum = equalsIgnoreCase(columnName, sequenceNumColumnName);
+                boolean isWhiteListQuery = "GridBase".equalsIgnoreCase(vcol.getQueryName());
 
-                if (!isContainer && !isSubject && !isSequenceNum)
+                if ((!isContainer && !isSubject && !isSequenceNum) || isWhiteListQuery)
                 {
                     if (null == unionAliasList.put(alias, vcol.getType()))
                         columnAliases.add(vcol.toJSON());
@@ -450,12 +451,12 @@ public class VisualizationCDSGenerator
                 JdbcType type = entry.getValue();
                 if (aliasInCurrentSet.contains(alias))
                     fullSQL.append(", ").append('"').append(alias).append('"');
-                //else if (type != JdbcType.VARCHAR)
-                //    fullSQL.append(", ").append("CAST(NULL AS ").append(dialect.sqlCastTypeNameFromJdbcType(type)).append(") AS \"").append(alias).append('"');
+                else if (type != JdbcType.VARCHAR)
+                    fullSQL.append(", ").append("CAST(NULL AS ").append(type.name()).append(") AS \"").append(alias).append('"');
                 else
                     fullSQL.append(", ").append("NULL AS \"").append(alias).append('"');
             }
-            fullSQL.append(" FROM (").append(generatedSql.get(i)).append(") AS _").append(i);
+            fullSQL.append("\nFROM (").append(generatedSql.get(i)).append(") AS _").append(i);
         }
 
         if (_log.isDebugEnabled())
