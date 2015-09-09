@@ -401,27 +401,6 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
 
         String selectSql = "SELECT " + targetColumn + " as label, COUNT(DISTINCT " + distinctColumn + ") AS value FROM StudyData ";
         selectSql += getMemberWhereClause(members, distinctColumn);
-
-        String innerSql;
-        String sep = "";
-
-        if (sources.length() > 0)
-        {
-            if (members != null)
-                innerSql = "AND ";
-            else
-                innerSql = "WHERE ";
-
-            innerSql += targetColumn + " IN (";
-            for (int i = 0; i < sources.length(); i++)
-            {
-                innerSql += sep + toSqlString(sources.getString(i));
-                sep = ", ";
-            }
-            innerSql += ") ";
-            selectSql += innerSql;
-        }
-
         selectSql += "GROUP BY " + targetColumn;
 
         return selectSql;
