@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.DatabaseMetaDataWrapper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.InClauseGenerator;
@@ -1399,6 +1400,31 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         return true;
     }
 
+    // Query INFORMATION_SCHEMA.TABLES directly, since this is 50X faster than jTDS getTables() (which calls sp_tables). Select only the columns we care about. SQL Server always returns NULL for REMARKS.
+    private static final String ALL_TABLES_SQL = "SELECT TABLE_NAME, CASE TABLE_TYPE WHEN 'BASE TABLE' THEN 'TABLE' ELSE TABLE_TYPE END AS TABLE_TYPE, NULL AS REMARKS FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ?";
+
+    @Override
+    public DatabaseMetaData wrapDatabaseMetaData(DatabaseMetaData md, DbScope scope)
+    {
+        return new DatabaseMetaDataWrapper(md)
+        {
+            @Override
+            public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException
+            {
+                SQLFragment sql = new SQLFragment(ALL_TABLES_SQL);
+                sql.add(catalog);
+                sql.add(schemaPattern);
+
+                if (!"%".equals(tableNamePattern))
+                {
+                    sql.append(" AND TABLE_NAME = ?");
+                    sql.add(tableNamePattern);
+                }
+
+                return new SqlSelector(scope, sql).getResultSet();
+            }
+        };
+    }
 
     private enum TokenType
     {

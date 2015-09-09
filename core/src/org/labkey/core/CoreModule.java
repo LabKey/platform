@@ -28,7 +28,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.audit.ClientApiAuditProvider;
-import org.labkey.api.cache.CacheListener;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -274,14 +273,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AnalyticsServiceImpl.register();
         FirstRequestHandler.addFirstRequestListener(new CoreFirstRequestHandler());
         RhinoService.register();
-        CacheManager.addListener(new CacheListener()
-        {
-            @Override
-            public void clearCaches()
-            {
-                RhinoService.clearCaches();
-            }
-        });
+        CacheManager.addListener(RhinoService::clearCaches);
 
         ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
         ServiceRegistry.get().registerService(DataLoaderService.I.class, new DataLoaderServiceImpl());
@@ -335,169 +327,170 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(
-                new AlwaysAvailableWebPartFactory("Contacts")
+        return new ArrayList<>(Arrays.asList(
+            new AlwaysAvailableWebPartFactory("Contacts")
+            {
+                public WebPartView getWebPartView(@NotNull ViewContext ctx, @NotNull Portal.WebPart webPart)
                 {
-                    public WebPartView getWebPartView(@NotNull ViewContext ctx, @NotNull Portal.WebPart webPart)
-                    {
-                        return new ContactWebPart();
-                    }
-                },
-                new BaseWebPartFactory("FolderNav")
-                {
-                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-                    {
-                        FolderNavigationForm form = getForm(portalCtx);
-
-                        final FolderMenu folders = new FolderMenu(portalCtx);
-                        form.setFolderMenu(folders);
-
-                        JspView<FolderNavigationForm> view = new JspView<>("/org/labkey/core/project/folderNav.jsp", form);
-                        view.setTitle("Folder Navigation");
-                        view.setFrame(WebPartView.FrameType.NONE);
-                        return view;
-                    }
-
-                    @Override
-                    public boolean isAvailable(Container c, String location)
-                    {
-                        return false;
-                    }
-
-                    private FolderNavigationForm getForm(ViewContext context)
-                    {
-                        FolderNavigationForm form = new FolderNavigationForm();
-                        form.setPortalContext(context);
-                        return form;
-                    }
-                },
-                new BaseWebPartFactory("Workbooks")
-                {
-                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-                    {
-                        UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
-                        WorkbookQueryView wbqview = new WorkbookQueryView(portalCtx, schema);
-                        VBox box = new VBox(new WorkbookSearchView(wbqview), wbqview);
-                        box.setFrame(WebPartView.FrameType.PORTAL);
-                        box.setTitle("Workbooks");
-                        return box;
-                    }
-
-                    @Override
-                    public boolean isAvailable(Container c, String location)
-                    {
-                        return !c.isWorkbook() && location.equalsIgnoreCase(HttpView.BODY);
-                    }
-                },
-                new BaseWebPartFactory("Workbook Description")
-                {
-                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-                    {
-                        JspView view = new JspView("/org/labkey/core/workbook/workbookDescription.jsp");
-                        view.setTitle("Workbook Description");
-                        view.setFrame(WebPartView.FrameType.NONE);
-                        return view;
-                    }
-
-                    @Override
-                    public boolean isAvailable(Container c, String location)
-                    {
-                        return false;
-                    }
-                },
-                new AlwaysAvailableWebPartFactory("Projects")
-                {
-                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-                    {
-                        JspView<Portal.WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
-
-                        String title = webPart.getPropertyMap().containsKey("title") ? webPart.getPropertyMap().get("title") : "Projects";
-                        view.setTitle(title);
-
-                        if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
-                        {
-                            NavTree customize = new NavTree("");
-                            customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
-                            view.setCustomize(customize);
-                        }
-                        return view;
-                    }
-                },
-                new BaseWebPartFactory("ProjectNav")
-                {
-                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-                    {
-                        JspView<Portal.WebPart> view = new JspView<>("/org/labkey/core/project/projectNav.jsp", webPart);
-                        view.setTitle("Project Navigation");
-                        view.setFrame(WebPartView.FrameType.NONE);
-                        return view;
-                    }
-
-                    @Override
-                    public boolean isAvailable(Container c, String location)
-                    {
-                        return false;
-                    }
-                },
-                new AlwaysAvailableWebPartFactory("Custom Menu", true, true, WebPartFactory.LOCATION_MENUBAR) {
-                    public WebPartView getWebPartView(@NotNull final ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-                    {
-                        final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
-                        String title = "My Menu";
-                        if (form.getTitle() != null && !form.getTitle().equals(""))
-                            title = form.getTitle();
-
-                        WebPartView view;
-                        if (form.isChoiceListQuery())
-                        {
-                            view = MenuViewFactory.createMenuQueryView(portalCtx, title, form);
-                        }
-                        else
-                        {
-                            view = MenuViewFactory.createMenuFolderView(portalCtx, title, form);
-                        }
-                        view.setFrame(WebPartView.FrameType.PORTAL);
-                        return view;
-                    }
-
-                    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
-                    {
-                        CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
-                        JspView<CustomizeMenuForm> view = new JspView<>("/org/labkey/core/admin/customizeMenu.jsp", form);
-                        view.setTitle(form.getTitle());
-                        view.setFrame(WebPartView.FrameType.PORTAL);
-                        return view;
-                    }
-                },
-                new BaseWebPartFactory("BetaNav")
-                {
-                    @Override
-                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-                    {
-                        FolderNavigationForm form = getForm(portalCtx);
-
-                        final FolderMenu folders = new FolderMenu(portalCtx);
-                        form.setFolderMenu(folders);
-
-                        JspView<FolderNavigationForm> view = new JspView<>("/org/labkey/core/project/betaNav.jsp", form);
-                        view.setTitle("Beta Navigation");
-                        view.setFrame(WebPartView.FrameType.NONE);
-                        return view;
-                    }
-
-                    @Override
-                    public boolean isAvailable(Container c, String location)
-                    {
-                        return false;
-                    }
-
-                    private FolderNavigationForm getForm(ViewContext context)
-                    {
-                        FolderNavigationForm form = new FolderNavigationForm();
-                        form.setPortalContext(context);
-                        return form;
-                    }
+                    return new ContactWebPart();
                 }
+            },
+            new BaseWebPartFactory("FolderNav")
+            {
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                {
+                    FolderNavigationForm form = getForm(portalCtx);
+
+                    final FolderMenu folders = new FolderMenu(portalCtx);
+                    form.setFolderMenu(folders);
+
+                    JspView<FolderNavigationForm> view = new JspView<>("/org/labkey/core/project/folderNav.jsp", form);
+                    view.setTitle("Folder Navigation");
+                    view.setFrame(WebPartView.FrameType.NONE);
+                    return view;
+                }
+
+                @Override
+                public boolean isAvailable(Container c, String location)
+                {
+                    return false;
+                }
+
+                private FolderNavigationForm getForm(ViewContext context)
+                {
+                    FolderNavigationForm form = new FolderNavigationForm();
+                    form.setPortalContext(context);
+                    return form;
+                }
+            },
+            new BaseWebPartFactory("Workbooks")
+            {
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                {
+                    UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
+                    WorkbookQueryView wbqview = new WorkbookQueryView(portalCtx, schema);
+                    VBox box = new VBox(new WorkbookSearchView(wbqview), wbqview);
+                    box.setFrame(WebPartView.FrameType.PORTAL);
+                    box.setTitle("Workbooks");
+                    return box;
+                }
+
+                @Override
+                public boolean isAvailable(Container c, String location)
+                {
+                    return !c.isWorkbook() && location.equalsIgnoreCase(HttpView.BODY);
+                }
+            },
+            new BaseWebPartFactory("Workbook Description")
+            {
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                {
+                    JspView view = new JspView("/org/labkey/core/workbook/workbookDescription.jsp");
+                    view.setTitle("Workbook Description");
+                    view.setFrame(WebPartView.FrameType.NONE);
+                    return view;
+                }
+
+                @Override
+                public boolean isAvailable(Container c, String location)
+                {
+                    return false;
+                }
+            },
+            new AlwaysAvailableWebPartFactory("Projects")
+            {
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                {
+                    JspView<Portal.WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
+
+                    String title = webPart.getPropertyMap().containsKey("title") ? webPart.getPropertyMap().get("title") : "Projects";
+                    view.setTitle(title);
+
+                    if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
+                    {
+                        NavTree customize = new NavTree("");
+                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                        view.setCustomize(customize);
+                    }
+                    return view;
+                }
+            },
+            new BaseWebPartFactory("ProjectNav")
+            {
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                {
+                    JspView<Portal.WebPart> view = new JspView<>("/org/labkey/core/project/projectNav.jsp", webPart);
+                    view.setTitle("Project Navigation");
+                    view.setFrame(WebPartView.FrameType.NONE);
+                    return view;
+                }
+
+                @Override
+                public boolean isAvailable(Container c, String location)
+                {
+                    return false;
+                }
+            },
+            new AlwaysAvailableWebPartFactory("Custom Menu", true, true, WebPartFactory.LOCATION_MENUBAR)
+            {
+                public WebPartView getWebPartView(@NotNull final ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                {
+                    final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
+                    String title = "My Menu";
+                    if (form.getTitle() != null && !form.getTitle().equals(""))
+                        title = form.getTitle();
+
+                    WebPartView view;
+                    if (form.isChoiceListQuery())
+                    {
+                        view = MenuViewFactory.createMenuQueryView(portalCtx, title, form);
+                    }
+                    else
+                    {
+                        view = MenuViewFactory.createMenuFolderView(portalCtx, title, form);
+                    }
+                    view.setFrame(WebPartView.FrameType.PORTAL);
+                    return view;
+                }
+
+                public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+                {
+                    CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
+                    JspView<CustomizeMenuForm> view = new JspView<>("/org/labkey/core/admin/customizeMenu.jsp", form);
+                    view.setTitle(form.getTitle());
+                    view.setFrame(WebPartView.FrameType.PORTAL);
+                    return view;
+                }
+            },
+            new BaseWebPartFactory("BetaNav")
+            {
+                @Override
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                {
+                    FolderNavigationForm form = getForm(portalCtx);
+
+                    final FolderMenu folders = new FolderMenu(portalCtx);
+                    form.setFolderMenu(folders);
+
+                    JspView<FolderNavigationForm> view = new JspView<>("/org/labkey/core/project/betaNav.jsp", form);
+                    view.setTitle("Beta Navigation");
+                    view.setFrame(WebPartView.FrameType.NONE);
+                    return view;
+                }
+
+                @Override
+                public boolean isAvailable(Container c, String location)
+                {
+                    return false;
+                }
+
+                private FolderNavigationForm getForm(ViewContext context)
+                {
+                    FolderNavigationForm form = new FolderNavigationForm();
+                    form.setPortalContext(context);
+                    return form;
+                }
+            }
         ));
     }
 
@@ -770,7 +763,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<Class> getIntegrationTests()
     {
         @SuppressWarnings({"unchecked"})
-        Set<Class> testClasses = new HashSet<Class>(Arrays.asList(
+        Set<Class> testClasses = new HashSet<>(Arrays.asList(
                 Table.TestCase.class,
                 Table.DataIteratorTestCase.class,
                 SchemaXMLTestCase.class,
@@ -826,7 +819,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public Set<Class> getUnitTests()
     {
-        return new HashSet<Class>(Arrays.asList(
+        return new HashSet<>(Arrays.asList(
                 DateUtil.TestCase.class,
                 TSVWriter.TestCase.class,
                 TSVMapWriter.Tests.class,
@@ -900,12 +893,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Collection<String> getSchemaNames()
     {
         return Arrays.asList
-            (
-                CoreSchema.getInstance().getSchemaName(),       // core
-                PropertySchema.getInstance().getSchemaName(),   // prop
-                TestSchema.getInstance().getSchemaName(),       // test
-                DbSchema.TEMP_SCHEMA_NAME                       // temp
-            );
+                (
+                        CoreSchema.getInstance().getSchemaName(),       // core
+                        PropertySchema.getInstance().getSchemaName(),   // prop
+                        TestSchema.getInstance().getSchemaName(),       // test
+                        DbSchema.TEMP_SCHEMA_NAME                       // temp
+                );
     }
 
     @NotNull
@@ -957,70 +950,65 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (c.isRoot())
             return;
 
-        Runnable r = new Runnable()
-        {
-            @Override
-            public void run()
+        Runnable r = () -> {
+            Container p = c.getProject();
+            if (null == p)
+                return;
+            String title;
+            String keywords;
+            String body;
+
+            // UNDONE: generalize to other folder types
+            StudyService.Service svc = StudyService.get();
+            Study study = svc != null ? svc.getStudy(c) : null;
+
+            if (null != study)
             {
-                Container p = c.getProject();
-                if (null == p)
-                    return;
-                String title;
-                String keywords;
-                String body;
-
-                // UNDONE: generalize to other folder types
-                StudyService.Service svc = StudyService.get();
-                Study study = svc != null ? svc.getStudy(c) : null;
-
-                if (null != study)
-                {
-                    title = study.getSearchDisplayTitle();
-                    keywords = study.getSearchKeywords();
-                    body = study.getSearchBody();
-                }
-                else
-                {
-                    String type;
-
-                    if (c.isProject())
-                        type = "Project";
-                    else if (c.isWorkbook())
-                        type = "Workbook";
-                    else
-                        type = "Folder";
-
-                    String containerTitle = c.getTitle();
-
-                    String description = StringUtils.trimToEmpty(c.getDescription());
-                    title = type + " -- " + containerTitle;
-                    User u_user = UserManager.getUser(c.getCreatedBy());
-                    String user = (u_user == null) ? "" : u_user.getDisplayName(User.getSearchUser());
-                    keywords = description + " " + type + " " + user;
-                    body = type + " " + containerTitle + (c.isProject() ? "" : " in Project " + p.getName());
-                    body += "\n" + description;
-                }
-
-                String identifiers = c.getName();
-
-                Map<String, Object> properties = new HashMap<>();
-
-                assert (null != keywords);
-                properties.put(SearchService.PROPERTY.indentifiersMed.toString(), identifiers);
-                properties.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
-                properties.put(SearchService.PROPERTY.title.toString(), title);
-                properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
-                ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
-                startURL.setExtraPath(c.getId());
-                WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
-                        "link:" + c.getId(),
-                        c.getId(),
-                        "text/plain",
-                        body.getBytes(),
-                        startURL,
-                        properties);
-                (null==task?ss.defaultTask():task).addResource(doc, SearchService.PRIORITY.item);
+                title = study.getSearchDisplayTitle();
+                keywords = study.getSearchKeywords();
+                body = study.getSearchBody();
             }
+            else
+            {
+                String type;
+
+                if (c.isProject())
+                    type = "Project";
+                else if (c.isWorkbook())
+                    type = "Workbook";
+                else
+                    type = "Folder";
+
+                String containerTitle = c.getTitle();
+
+                String description = StringUtils.trimToEmpty(c.getDescription());
+                title = type + " -- " + containerTitle;
+                User u_user = UserManager.getUser(c.getCreatedBy());
+                String user = (u_user == null) ? "" : u_user.getDisplayName(User.getSearchUser());
+                keywords = description + " " + type + " " + user;
+                body = type + " " + containerTitle + (c.isProject() ? "" : " in Project " + p.getName());
+                body += "\n" + description;
+            }
+
+            String identifiers = c.getName();
+
+            Map<String, Object> properties = new HashMap<>();
+
+            assert (null != keywords);
+            properties.put(SearchService.PROPERTY.indentifiersMed.toString(), identifiers);
+            properties.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
+            properties.put(SearchService.PROPERTY.title.toString(), title);
+            properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
+            ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
+            startURL.setExtraPath(c.getId());
+            WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
+                    "link:" + c.getId(),
+                    c.getId(),
+                    "text/plain",
+                    body.getBytes(),
+                    startURL,
+                    properties);
+            (null==task?ss.defaultTask():task).addResource(doc, SearchService.PRIORITY.item);
         };
         // running this asynchronously seems to expose race conditions in domain checking/creation
         // (null==task?ss.defaultTask():task).addRunnable(r, SearchService.PRIORITY.item);
