@@ -670,7 +670,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
         File dataFile = getDataFile(run);
         if (null == dataFile)
-            throw new ExperimentException("Data file not found.");
+            throw new MissingDataFileException("Data file not found.");
 
         Map<String, DomainProperty> runProperties = getRunProperties(provider, protocol);
         StatsService.CurveFitType fit = StatsService.CurveFitType.FIVE_PARAMETER;
