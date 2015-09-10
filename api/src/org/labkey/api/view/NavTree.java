@@ -57,6 +57,7 @@ public class NavTree implements Collapsible
     private String _description;
     private boolean _nofollow = false;
     private String _imageSrc = null;
+    private String _imageCls = null;
     private Integer _imageHeight;
     private Integer _imageWidth;
     private String _target = null;
@@ -324,6 +325,12 @@ public class NavTree implements Collapsible
         return _imageSrc;
     }
 
+    public String getImageCls()
+    {
+        return _imageCls;
+    }
+
+
     @Deprecated  // TODO: Delete
     public void setImageSrc(String imageSrc)
     {
@@ -333,6 +340,11 @@ public class NavTree implements Collapsible
     public void setImageSrc(@Nullable URLHelper imageURL)
     {
         _imageURL = imageURL;
+    }
+
+    public void setImageCls(@Nullable String imageCls)
+    {
+        _imageCls = imageCls;
     }
 
     public Integer getImageHeight()
@@ -496,6 +508,8 @@ public class NavTree implements Collapsible
             o.put("checked", true);
         if (null != getImageSrc())
             o.put("icon", getImageSrc());
+        if (null != getImageCls())
+            o.put("iconCls", getImageCls());
         if (isDisabled())
             o.put("disabled", true);
         if (null != getHref())
@@ -543,7 +557,9 @@ public class NavTree implements Collapsible
             sb.append(",tooltip:").append(PageFlowUtil.qh(getDescription()));
         if (isSelected())
             sb.append(",checked:true");
-        if (null != getImageSrc())
+        if (null != getImageCls())
+            sb.append(",iconCls:").append(PageFlowUtil.qh(getImageCls()));
+        else if (null != getImageSrc())
             sb.append(",icon:").append(PageFlowUtil.qh(getImageSrc()));
         if (isDisabled())
             sb.append(",disabled:true");

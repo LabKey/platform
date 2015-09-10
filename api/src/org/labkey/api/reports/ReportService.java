@@ -162,6 +162,8 @@ public class ReportService
 
         @Nullable URLHelper getIconURL();
 
+        @Nullable String getIconCls();
+
         DesignerType getType();
     }
 

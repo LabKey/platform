@@ -49,6 +49,11 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         return null;
     }
 
+    public @Nullable String getIconCls(Report report)
+    {
+        return null;
+    }
+
     protected ActionURL addForwardParams(ActionURL url, ViewContext context, String[] params)
     {
         for (String name : params)
@@ -82,6 +87,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         private final String _reportType;
         private final ReportService.DesignerType _type;
         private final URLHelper _iconURL;
+        private final String _iconCls;
 
         private String _label;
         private ActionURL _designerURL;
@@ -101,6 +107,12 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
 
         public DesignerInfoImpl(String reportType, String label, String description, ActionURL designerURL, String iconPath, ReportService.DesignerType type)
         {
+
+            this(reportType, label, description, designerURL, iconPath, type, null);
+        }
+
+        public DesignerInfoImpl(String reportType, String label, String description, ActionURL designerURL, String iconPath, ReportService.DesignerType type, String iconCls)
+        {
             if (reportType == null)
                 throw new IllegalArgumentException("The reportType param is required");
 
@@ -110,6 +122,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
             _designerURL = designerURL;
             _iconURL = null != iconPath ? new ResourceURL(iconPath) : null;
             _type = type;
+            _iconCls = iconCls;
         }
 
         public void setLabel(String label)
@@ -171,6 +184,12 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         public @Nullable URLHelper getIconURL()
         {
             return _iconURL;
+        }
+
+        @Override
+        public @Nullable String getIconCls()
+        {
+            return _iconCls;
         }
 
         public ReportService.DesignerType getType()

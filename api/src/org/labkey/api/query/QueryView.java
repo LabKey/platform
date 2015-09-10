@@ -407,6 +407,7 @@ public class QueryView extends WebPartView<Object>
                     if (name.equals(current))
                         item.setStrong(true);
                     item.setImageSrc(new ResourceURL("/reports/grid.gif"));
+                    item.setImageCls("fa fa-table");
                     addMenuItem(item);
                 }
             }
@@ -1274,6 +1275,7 @@ public class QueryView extends WebPartView<Object>
                     NavTree item = new NavTree(designer.getLabel(), designer.getDesignerURL().getLocalURIString());
                     item.setId(getBaseMenuId() + ":Views:Create:" + designer.getLabel());
                     item.setImageSrc(designer.getIconURL());
+                    item.setImageCls(designer.getIconCls());
 
                     submenu.addChild(item);
                 }
@@ -1332,7 +1334,7 @@ public class QueryView extends WebPartView<Object>
                 NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL().getLocalURIString());
                 item.setId(getBaseMenuId() + ":Charts:Create" + designer.getLabel());
                 item.setImageSrc(designer.getIconURL());
-
+                item.setImageCls(designer.getIconCls());
                 button.addMenuItem(item);
             }
         }
@@ -1552,6 +1554,8 @@ public class QueryView extends WebPartView<Object>
                     iconUrl = new URLHelper(view.isShared() ? "/reports/grid.gif" : "/reports/icon_private_view.png");
                 iconUrl.setContextPath(AppProps.getInstance().getParsedContextPath());
                 item.setImageSrc(iconUrl);
+                if (view.isShared())
+                    item.setImageCls("fa fa-table");
             }
             catch (URISyntaxException e)
             {

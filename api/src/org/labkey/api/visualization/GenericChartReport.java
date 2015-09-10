@@ -74,6 +74,12 @@ public abstract class GenericChartReport extends AbstractReport
             {
                 return "box_plot.png";
             }
+            @Override
+            public String getIconCls()
+            {
+                return "fa fa-sliders fa-rotate-90";
+            }
+
         },
         SCATTER_PLOT()
         {
@@ -101,6 +107,11 @@ public abstract class GenericChartReport extends AbstractReport
             public String getThumbnailName()
             {
                 return "scatter_plot.png";
+            }
+            @Override
+            public String getIconCls()
+            {
+                return "fa fa-area-chart";
             }
         },
         AUTO_PLOT()
@@ -130,11 +141,17 @@ public abstract class GenericChartReport extends AbstractReport
             {
                 return "box_plot.png";
             }
+            @Override
+            public String getIconCls()
+            {
+                return null;
+            }
         };
         public abstract String getId();
         public abstract String getName();
         public abstract String getDescription();
         public abstract String getIconPath();
+        public abstract String getIconCls();
         public abstract String getThumbnailName();
     }
 
