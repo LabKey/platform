@@ -101,9 +101,24 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
             allowedContainers.addAll(super.getIds(currentContainer, perm, roles));
         }
 
-        Set<GUID> studyContainers = studiesCache.get(currentContainer.getId());
+        Set<GUID> studyContainers = null;
+        if (currentContainer.isProject())
+        {
+            // only if it is a project do we use the studiesCache
+            studyContainers = studiesCache.get(currentContainer.getId());
+        }
+        else
+        {
+            // see if the current container is a study
+            Study study = StudyService.get().getStudy(currentContainer);
+            if (study != null)
+                studyContainers = Collections.singleton(currentContainer.getEntityId());
+        }
+
         if (null == studyContainers)
+        {
             studyContainers = Collections.emptySet();
+        }
 
         // OPTIMIZATION: intersect the containers with permissions with the actual list of studies
         // OPTIMIZATION: check if the list is a superset of all studies (e.g. no containers are filtered)
