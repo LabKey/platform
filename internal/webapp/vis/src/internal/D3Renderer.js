@@ -846,7 +846,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var addBrush = function(){
         if (plot.brushing != null && (plot.brushing.brushstart || plot.brushing.brush || plot.brushing.brushend ||
                 plot.brushing.brushclear)) {
-            var xScale, yScale;
+            var xScale, yScale, scalePadding = 1;
 
             if(brush == null) {
                 brush = d3.svg.brush();
@@ -857,8 +857,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 // We need to add some padding to the scale in order for us to actually be able to select all of the points.
                 // If we don't, any points that lie exactly at the edge of the chart will be unselectable.
                 xScale = plot.scales.x.scale.copy();
-                xScale.domain([xScale.invert(plot.grid.leftEdge - 5), xScale.invert(plot.grid.rightEdge + 5)]);
-                xScale.range([plot.grid.leftEdge - 5, plot.grid.rightEdge + 5]);
+                xScale.domain([xScale.invert(plot.grid.leftEdge - scalePadding), xScale.invert(plot.grid.rightEdge + scalePadding)]);
+                xScale.range([plot.grid.leftEdge - scalePadding, plot.grid.rightEdge + scalePadding]);
             } else {
                 xScale = plot.scales.x.scale;
             }
@@ -866,8 +866,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             if (plot.scales.yLeft.scaleType == 'continuous' && plot.scales.yLeft.trans == 'linear') {
                 // See the note above.
                 yScale = plot.scales.yLeft.scale.copy();
-                yScale.domain([yScale.invert(plot.grid.bottomEdge + 5), yScale.invert(plot.grid.topEdge - 5)]);
-                yScale.range([plot.grid.bottomEdge + 5, plot.grid.topEdge - 5]);
+                yScale.domain([yScale.invert(plot.grid.bottomEdge + scalePadding), yScale.invert(plot.grid.topEdge - scalePadding)]);
+                yScale.range([plot.grid.bottomEdge + scalePadding, plot.grid.topEdge - scalePadding]);
             } else {
                 yScale = plot.scales.yLeft.scale;
             }
