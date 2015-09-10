@@ -51,6 +51,7 @@ import org.labkey.api.gwt.client.ui.BoundCheckBox;
 import org.labkey.api.gwt.client.ui.BoundTextAreaBox;
 import org.labkey.api.gwt.client.ui.BoundTextBox;
 import org.labkey.api.gwt.client.ui.DirtyCallback;
+import org.labkey.api.gwt.client.ui.FontButton;
 import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.LinkButton;
@@ -748,7 +749,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         }, this, _debugScriptFiles, _allowSpacesInPath);
         textBox.getBox().setVisibleLength(79);
 
-        final PushButton deleteButton = PropertiesEditor.getDeleteButton("removeTransformScript" + row, null);
+        final FontButton deleteButton = PropertiesEditor.getDeleteButton("removeTransformScript" + row, null);
         deleteButton.setTitle("Click to remove");
         deleteButton.addClickHandler(new ClickHandler()
         {

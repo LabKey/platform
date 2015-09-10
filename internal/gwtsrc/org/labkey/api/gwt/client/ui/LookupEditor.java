@@ -70,7 +70,7 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
             _txtContainer.setWidth("200px");
             DOM.setElementProperty(_txtContainer.getElement(), "id", "folder");
             _table.setWidget(row, 1, _txtContainer);
-            final PushButton folderButton = PropertiesEditor.getDownButton("folder");
+            final FontButton folderButton = PropertiesEditor.getDownButton("folder");
             folderButton.addClickHandler(new ClickHandler()
             {
                 public void onClick(ClickEvent event)
@@ -89,7 +89,7 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
         _txtSchemaName.setWidth("200px");
         DOM.setElementProperty(_txtSchemaName.getElement(), "id", "schema");
         _table.setWidget(row, 1, _txtSchemaName);
-        final PushButton schemaButton = PropertiesEditor.getDownButton("schema");
+        final FontButton schemaButton = PropertiesEditor.getDownButton("schema");
         schemaButton.addClickHandler(new ClickHandler()
         {
             public void onClick(ClickEvent event)
@@ -107,7 +107,7 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
         _txtTableName.setWidth("200px");
         DOM.setElementProperty(_txtTableName.getElement(), "id", "table");
         _table.setWidget(row, 1, _txtTableName);
-        final PushButton tableButton = PropertiesEditor.getDownButton("table");
+        final FontButton tableButton = PropertiesEditor.getDownButton("table");
         tableButton.addClickHandler(new ClickHandler()
         {
             public void onClick(ClickEvent event)

@@ -23,6 +23,7 @@ import com.extjs.gxt.ui.client.widget.form.Field;
 import com.extjs.gxt.ui.client.widget.form.TextField;
 import com.extjs.gxt.ui.client.widget.form.Validator;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
+import com.google.gwt.dom.client.Node;
 import com.google.gwt.event.dom.client.*;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
@@ -75,18 +76,18 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     public enum FieldStatus
     {
-        Added("This field is newly added", "/_images/partadded.gif"),
-        Deleted("This field is marked for deletion", "/_images/partdeleted.gif"),
-        Existing("This field has not been changed", "/_images/partexisting.gif"),
-        Changed("This field has been edited", "/_images/partchanged.gif");
+        Added("This field is newly added", "fa-plus-circle"),
+        Deleted("This field is marked for deletion", "fa-trash-o"),
+        Existing("This field has not been changed", null),
+        Changed("This field has been edited", "fa-wrench");
 
         private final String _description;
-        private final String _path;
+        private final String _fontClass;
 
-        private FieldStatus(String description, String path)
+        private FieldStatus(String description, String fontClass)
         {
             _description = description;
-            _path = path;
+            _fontClass = fontClass;
         }
 
         public String getDescription()
@@ -94,9 +95,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             return _description;
         }
 
-        public String getImageSrc()
+        public String getClassName()
         {
-            return PropertyUtil.getContextPath() + _path;
+            if (_fontClass != null)
+                return "gwt-FontImage fa " + _fontClass;
+            else
+                return "gwt-FontImage";
         }
     }
 
@@ -772,7 +776,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         boolean readOnly = isReadOnly(rowObject);
 
         String imageId = "partstatus_" + index;
-        Image statusImage = getStatusImage(imageId, status);
+        HTML statusImage = getStatusHtml(imageId, status);
         if (status != FieldStatus.Existing)
             fireChangeEvent();
         _table.setWidget(tableRow, col, statusImage);
@@ -780,7 +784,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         if (isReorderable())
         {
-            PushButton upButton = getUpButton(index);
+            FontButton upButton = getUpButton(index);
             upButton.addClickHandler(new ClickHandler()
             {
                 public void onClick(ClickEvent event)
@@ -808,15 +812,15 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             addTooltip(upButton, "Click to move up");
             _table.setWidget(tableRow, col++, upButton);
 
-            PushButton downButton = getDownButton(index);
+            FontButton downButton = getDownButton(index);
             downButton.addClickHandler(new ClickHandler()
             {
                 public void onClick(ClickEvent event)
                 {
-                    if (index > _rows.size()-2)
+                    if (index > _rows.size() - 2)
                         return;
                     Row moveDown = rowObject;
-                    Row moveUp = _rows.get(index+1);
+                    Row moveUp = _rows.get(index + 1);
                     _rows.set(index, moveUp);
                     _rows.set(index + 1, moveDown);
                     fireChangeEvent();
@@ -859,7 +863,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
             else
             {
-                PushButton deleteButton = getDeleteButton(index, new ClickHandler()
+                FontButton deleteButton = getDeleteButton(index, new ClickHandler()
                 {
                     public void onClick(ClickEvent event)
                     {
@@ -909,7 +913,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
 
         {
-        Image decorationImage = getDecorationImage(status, rowObject);
+        Widget decorationImage = getDecorationImage(status, rowObject);
         if (null == decorationImage)
             _table.setText(tableRow, col++, "");
         else
@@ -1008,7 +1012,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             if (!readOnly)
             {
-                PushButton l = getDownButton("lookup" + index, new ClickHandler()
+                FontButton l = getDownButton("lookup" + index, new ClickHandler()
                 {
                     public void onClick(ClickEvent sender)
                     {
@@ -1046,24 +1050,35 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return result;
     }
 
-    PushButton getUpButton(Object idSuffix)
+    public static FontButton getFontButton(String fontClass, String action, Object idSuffix, ClickHandler h)
     {
-        return getImageButton("partup", idSuffix, null);
+        FontButton button = new FontButton(fontClass);
+
+        String id = action + "_" + idSuffix;
+        button.getElement().setId(id);
+        if (null != h)
+            button.addClickHandler(h);
+        return button;
     }
 
-    public static PushButton getDownButton(Object idSuffix)
+    FontButton getUpButton(Object idSuffix)
+    {
+        return getFontButton("fa-caret-square-o-up", "partup", idSuffix, null);
+    }
+
+    public static FontButton getDownButton(Object idSuffix)
     {
         return getDownButton(idSuffix, null);
     }
 
-    public static PushButton getDownButton(Object idSuffix, ClickHandler handler)
+    public static FontButton getDownButton(Object idSuffix, ClickHandler handler)
     {
-        return getImageButton("partdown", idSuffix, handler);
+        return getFontButton("fa-caret-square-o-down", "partdown", idSuffix, handler);
     }
 
-    public static PushButton getDeleteButton(Object idSuffix, ClickHandler l)
+    public static FontButton getDeleteButton(Object idSuffix, ClickHandler l)
     {
-        return getImageButton("partdelete", idSuffix, l);
+        return getFontButton("fa-times", "partdelete", idSuffix, l);
     }
 
     PushButton getCancelButton(Object idSuffix, ClickHandler l)
@@ -1071,16 +1086,18 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return getImageButton("cancel", idSuffix, l);
     }
 
-    protected Image getStatusImage(String id, FieldStatus status)
+    protected HTML getStatusHtml(String id, FieldStatus status)
     {
-        String src = status.getImageSrc();
-        Image i = new Image(src);
-        DOM.setElementProperty(i.getElement(), "id", id);
-        addTooltip(i, status.getDescription());
-        return i;
+        String fontClass = status.getClassName();
+        HTML html = new HTML("<span class='" + fontClass + "'></span>");
+
+        DOM.setElementProperty(html.getElement(), "id", id);
+        addTooltip(html, status.getDescription());
+
+        return html;
     }
 
-    protected Image getDecorationImage(FieldStatus status, Row row)
+    protected Widget getDecorationImage(FieldStatus status, Row row)
     {
         return null;
     }
@@ -1486,12 +1503,31 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         if (getRow(pd) != -1)
         {
             FieldStatus status = getStatus(pd);
-            Image i = (Image)_table.getWidget(getRow(pd)+1,0);
-            String old = i.getUrl();
-            if (old.contains(status.getImageSrc()))
+            HTML html = (HTML)_table.getWidget(getRow(pd)+1,0);
+            Element el = html.getElement();
+
+            // have to dig out the span tag from parent div element
+            if (el.getTagName().equalsIgnoreCase("div"))
+            {
+                Node node = el.getFirstChild();
+                if (node.getNodeType() == Node.ELEMENT_NODE)
+                {
+                    el = (Element)node;
+                }
+            }
+
+            if (!el.getNodeName().equalsIgnoreCase("span"))
                 return;
-            i.setUrl(status.getImageSrc());
-            addTooltip(i, status.getDescription());
+
+            if (el.getClassName().trim().equalsIgnoreCase(status.getClassName()))
+                return;
+
+            if (status.getClassName() != null)
+                el.setClassName(status.getClassName());
+            else
+                el.removeClassName(el.getClassName());
+
+            addTooltip(html, status.getDescription());
             fireChangeEvent();
         }
     }

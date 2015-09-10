@@ -6637,6 +6637,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/DirtyCallback.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/DomainProvider.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ExportSchemaWizard.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/FileUploadWithListeners.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/FontButton.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/FormUtil.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/GWTTabLoader.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/HelpPopup.java -text
@@ -7001,7 +7002,6 @@ internal/webapp/_images/icon_project.png -text
 internal/webapp/_images/icon_projects_add.png -text
 internal/webapp/_images/icons.css -text
 internal/webapp/_images/info.png -text
-internal/webapp/_images/key.png -text
 internal/webapp/_images/labkey.png -text
 internal/webapp/_images/leaf.gif -text
 internal/webapp/_images/lockoverlay.png -text
@@ -7016,11 +7016,9 @@ internal/webapp/_images/one.png -text
 internal/webapp/_images/paperclip.gif -text
 internal/webapp/_images/paperclip.png -text
 internal/webapp/_images/partadded.gif -text
-internal/webapp/_images/partchanged.gif -text
 internal/webapp/_images/partdelete.gif -text
 internal/webapp/_images/partdelete.png -text
 internal/webapp/_images/partdeleted.gif -text
-internal/webapp/_images/partdown.gif -text
 internal/webapp/_images/partdown.png -text
 internal/webapp/_images/partdowng.gif -text
 internal/webapp/_images/partdowng.png -text
@@ -7031,7 +7029,6 @@ internal/webapp/_images/partmaximize.gif -text
 internal/webapp/_images/partmenu.png -text
 internal/webapp/_images/partover-ie.png -text
 internal/webapp/_images/partover.png -text
-internal/webapp/_images/partup.gif -text
 internal/webapp/_images/partup.png -text
 internal/webapp/_images/partupdown.png -text
 internal/webapp/_images/partupg.gif -text
