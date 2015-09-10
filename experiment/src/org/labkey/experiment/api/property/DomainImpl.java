@@ -285,10 +285,16 @@ public class DomainImpl implements Domain
 
     public void delete(@Nullable User user) throws DomainNotFoundException
     {
-        DefaultValueService.get().clearDefaultValues(getContainer(), this);
-        OntologyManager.deleteDomain(getTypeURI(), getContainer());
-        StorageProvisioner.drop(this);
-        addAuditEvent(user, String.format("The domain %s was deleted", _dd.getName()));
+        ExperimentService.Interface exp = ExperimentService.get();
+        Lock domainLock = _domainSaveLockManager.getLock(_dd.getDomainURI().toLowerCase());
+        try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction(domainLock))
+        {
+            DefaultValueService.get().clearDefaultValues(getContainer(), this);
+            OntologyManager.deleteDomain(getTypeURI(), getContainer());
+            StorageProvisioner.drop(this);
+            addAuditEvent(user, String.format("The domain %s was deleted", _dd.getName()));
+            transaction.commit();
+        }
     }
 
     private boolean isNew()
