@@ -1239,18 +1239,16 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         }
 
         @Override
-        protected Image getDecorationImage(FieldStatus status, PropertiesEditor.Row row)
+        protected Widget getDecorationImage(FieldStatus status, PropertiesEditor.Row row)
         {
             if (isKeyRow(row))
             {
                 String name = (null == row.orig ? row.edit.getName() : row.orig.getName());
                 if (name.equalsIgnoreCase(_list.getKeyPropertyName()))
                 {
-                    String src = PropertyUtil.getContextPath() + "/_images/key.png";
-                    Image i = new Image(src);
-                    i.setPixelSize(14, 21);
-                    Tooltip.addTooltip(i, "primary key");
-                    return i;
+                    HTML html = new HTML("<span class='gwt-FontImage fa fa-key'></span>");
+                    Tooltip.addTooltip(html, "primary key");
+                    return html;
                 }
             }
             return super.getDecorationImage(status, row);

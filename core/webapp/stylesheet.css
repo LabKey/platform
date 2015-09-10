@@ -2544,6 +2544,10 @@ table.labkey-r-tsvout
     cursor: pointer;
 }
 
+.gwt-FontImage {
+    font-size: 18px;
+}
+
 .gwt-PushButton-up-disabled
 {
     cursor: default;
