@@ -594,7 +594,7 @@ public class StudyQuerySchema extends UserSchema
             SpecimenEventTable ret = new SpecimenEventTable(this);
             return ret;
         }
-        if (StudyService.get().getSubjectVisitTableName(getContainer()).equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.CONTINUOUS)
+        if ((StudyService.get().getSubjectVisitTableName(getContainer()).equalsIgnoreCase(name) || "ParticipantVisit".equalsIgnoreCase(name)) && _study.getTimepointType() != TimepointType.CONTINUOUS)
         {
             ParticipantVisitTable ret = new ParticipantVisitTable(this, false);
             return ret;
