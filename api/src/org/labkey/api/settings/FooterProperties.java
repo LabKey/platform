@@ -20,28 +20,37 @@ import org.labkey.api.data.PropertyManager;
 
 import java.util.Map;
 
-/**
- * Created by jimpiper on 9/1/15.
- */
 public class FooterProperties
 {
 
     public static final String FOOTER_CONFIGS = "FooterProperties";
     public static final String SHOW_FOOTER_PROPERTY_NAME = "ShowFooter";
+    public static final String FOOTER_MODULE_PROPERTY_NAME = "FooterModule";
 
     public static boolean isShowFooter() {
         String showFooter = "TRUE"; // default is to show the footer
         Map<String, String> map = PropertyManager.getProperties(FOOTER_CONFIGS);
-        if (null != map && !map.isEmpty())
+        if (!map.isEmpty())
         {
             showFooter = map.get(SHOW_FOOTER_PROPERTY_NAME);
         }
-        return ("FALSE".equalsIgnoreCase(showFooter)) ? false : true;
+        return !"FALSE".equalsIgnoreCase(showFooter);
     }
 
     public static void setShowFooter(boolean isShowFooter) {
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(FOOTER_CONFIGS, true);
         map.put(SHOW_FOOTER_PROPERTY_NAME, (isShowFooter) ? "TRUE" : "FALSE");
+        map.save();
+    }
+
+    public static String getFooterModule() {
+        Map<String, String> map = PropertyManager.getProperties(FOOTER_CONFIGS);
+        return map.get(FOOTER_MODULE_PROPERTY_NAME);
+    }
+
+    public static void setFooterModule(String footerModule) {
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(FOOTER_CONFIGS, true);
+        map.put(FOOTER_MODULE_PROPERTY_NAME, footerModule);
         map.save();
     }
  }

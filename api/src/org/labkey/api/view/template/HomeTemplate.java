@@ -126,7 +126,11 @@ public class HomeTemplate extends PrintTemplate
         if (FooterProperties.isShowFooter())
         {
             Module coreModule = ModuleLoader.getInstance().getCoreModule();
-            List<Module> modules = ModuleLoader.getInstance().getModules();
+            List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
+            if (null != ModuleLoader.getInstance().getModule(FooterProperties.getFooterModule()))
+            {
+                modules.add(ModuleLoader.getInstance().getModule(FooterProperties.getFooterModule()));
+            }
             ListIterator<Module> i = modules.listIterator(modules.size());
             while (i.hasPrevious())
             {
