@@ -220,8 +220,10 @@ public class IssuesQueryView extends QueryView
             if (view.isShared())
                 item.setImageSrc(getViewContext().getContextPath() + "/reports/grid_shared.gif");
             else
+            {
                 item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
-
+                item.setImageCls("fa fa-table");
+            }
             menu.addMenuItem(item);
         }
     }

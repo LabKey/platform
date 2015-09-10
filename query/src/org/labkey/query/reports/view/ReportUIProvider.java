@@ -63,6 +63,7 @@ import java.util.Map;
 public class ReportUIProvider extends DefaultReportUIProvider
 {
     private static Map<String, String> _typeToIconMap = new HashMap<>();
+    private static Map<String, String> _typeToIconClsMap = new HashMap<>();
 
     static
     {
@@ -72,6 +73,16 @@ public class ReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(AttachmentReport.TYPE, "/reports/attachment.png");
         _typeToIconMap.put(LinkReport.TYPE, "/reports/external-link.png");
         _typeToIconMap.put(QueryReport.TYPE, "/reports/grid.gif");
+    }
+
+    static
+    {
+//        _typeToIconClsMap.put(RReport.TYPE, "/reports/r.gif");
+        _typeToIconClsMap.put(ChartQueryReport.TYPE, "fa fa-bar-chart");
+//        _typeToIconClsMap.put(JavaScriptReport.TYPE, "/reports/js.png");
+        _typeToIconClsMap.put(AttachmentReport.TYPE, "fa fa-paperclip");
+        _typeToIconClsMap.put(LinkReport.TYPE, "fa fa-external-link-square");
+        _typeToIconClsMap.put(QueryReport.TYPE, "fa fa-table");
     }
 
     /**
@@ -88,31 +99,31 @@ public class ReportUIProvider extends DefaultReportUIProvider
             bean.setReportType(RReport.TYPE);
             bean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
-            DesignerInfoImpl di = new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getScriptReportDesignerURL(context, bean),
-                    _getIconPath(RReport.TYPE));
+            DesignerInfoImpl di = new DesignerInfoImpl(RReport.TYPE, "R View", null, ReportUtil.getScriptReportDesignerURL(context, bean),
+                    _getIconPath(RReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(RReport.TYPE));
             di.setId("create_rView");
             di.setDisabled(!ReportUtil.canCreateScript(context));
 
             designers.add(di);
         }
 
-        DesignerInfoImpl attachmentDesigner = new DesignerInfoImpl(AttachmentReport.TYPE, "Attachment Report",
+        DesignerInfoImpl attachmentDesigner = new DesignerInfoImpl(AttachmentReport.TYPE, "Attachment Report", null,
                 ReportsController.getCreateAttachmentReportURL(context.getContainer(), context.getActionURL()),
-                _getIconPath(AttachmentReport.TYPE));
+                _getIconPath(AttachmentReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(AttachmentReport.TYPE));
         attachmentDesigner.setId("create_attachment_report");
         attachmentDesigner.setDisabled(!context.hasPermission(InsertPermission.class));
         designers.add(attachmentDesigner);
 
-        DesignerInfoImpl linkDesigner = new DesignerInfoImpl(LinkReport.TYPE, "Link Report",
+        DesignerInfoImpl linkDesigner = new DesignerInfoImpl(LinkReport.TYPE, "Link Report", null,
                 ReportsController.getCreateLinkReportURL(context.getContainer(), context.getActionURL()),
-                _getIconPath(LinkReport.TYPE));
+                _getIconPath(LinkReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(LinkReport.TYPE));
         linkDesigner.setId("create_link_report");
         linkDesigner.setDisabled(!context.hasPermission(InsertPermission.class));
         designers.add(linkDesigner);
 
-        DesignerInfoImpl queryDesigner = new DesignerInfoImpl(QueryReport.TYPE, "Query Report",
+        DesignerInfoImpl queryDesigner = new DesignerInfoImpl(QueryReport.TYPE, "Query Report", null,
                 ReportsController.getCreateQueryReportURL(context.getContainer(), context.getActionURL()),
-                _getIconPath(QueryReport.TYPE));
+                _getIconPath(QueryReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(QueryReport.TYPE));
         queryDesigner.setId("create_query_report");
         queryDesigner.setDisabled(!context.hasPermission(InsertPermission.class));
         designers.add(queryDesigner);
@@ -144,7 +155,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         {
             // Study registers its own 'Chart View'
             designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", "XY and Time Charts",
-                    ReportUtil.getChartDesignerURL(context, chartBean), _getIconPath(ChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION));
+                    ReportUtil.getChartDesignerURL(context, chartBean), _getIconPath(ChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(ChartQueryReport.TYPE)));
         }
 
         boolean canCreateScript = ReportUtil.canCreateScript(context);
@@ -154,8 +165,8 @@ public class ReportUIProvider extends DefaultReportUIProvider
             RReportBean rBean = new RReportBean(settings);
             rBean.setReportType(RReport.TYPE);
             rBean.setRedirectUrl(returnUrl.getLocalURIString());
-            designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getScriptReportDesignerURL(context, rBean),
-                    _getIconPath(RReport.TYPE)));
+            designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", null, ReportUtil.getScriptReportDesignerURL(context, rBean),
+                    _getIconPath(RReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(RReport.TYPE)));
         }
 
         ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
@@ -172,14 +183,14 @@ public class ReportUIProvider extends DefaultReportUIProvider
                 if (factory instanceof ExternalScriptEngineFactory)
                 {
                     bean.setReportType(ExternalScriptEngineReport.TYPE);
-                    designers.add(new DesignerInfoImpl(ExternalScriptEngineReport.TYPE, factory.getLanguageName() + " View",
-                            ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(ExternalScriptEngineReport.TYPE)));
+                    designers.add(new DesignerInfoImpl(ExternalScriptEngineReport.TYPE, factory.getLanguageName() + " View", null,
+                            ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(ExternalScriptEngineReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ExternalScriptEngineReport.TYPE)));
                 }
                 else
                 {
                     bean.setReportType(InternalScriptEngineReport.TYPE);
-                    designers.add(new DesignerInfoImpl(InternalScriptEngineReport.TYPE, factory.getLanguageName() + " View",
-                            ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(InternalScriptEngineReport.TYPE)));
+                    designers.add(new DesignerInfoImpl(InternalScriptEngineReport.TYPE, factory.getLanguageName() + " View", null,
+                            ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(InternalScriptEngineReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(InternalScriptEngineReport.TYPE)));
                 }
             }
         }
@@ -189,8 +200,8 @@ public class ReportUIProvider extends DefaultReportUIProvider
         {
             QuerySnapshotService.I provider = QuerySnapshotService.get(settings.getSchemaName());
             if (provider != null && !QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
-                designers.add(new DesignerInfoImpl(QuerySnapshotService.TYPE, "Query Snapshot",
-                        provider.getCreateWizardURL(settings, context), _getIconPath(QuerySnapshotService.TYPE)));
+                designers.add(new DesignerInfoImpl(QuerySnapshotService.TYPE, "Query Snapshot", null,
+                        provider.getCreateWizardURL(settings, context), _getIconPath(QuerySnapshotService.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(QuerySnapshotService.TYPE)));
         }
 
         if (canCreateScript)
@@ -200,7 +211,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             bean.setScriptExtension(".js");
             bean.setReportType(JavaScriptReport.TYPE);
             designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "JavaScript View",
-                    ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(JavaScriptReport.TYPE)));
+                    ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(JavaScriptReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(JavaScriptReport.TYPE)));
         }
 
         return designers;
@@ -253,4 +264,45 @@ public class ReportUIProvider extends DefaultReportUIProvider
 
         return super.getIconPath(report);
     }
+
+
+    private String _getIconCls(String type)
+    {
+        return _typeToIconClsMap.get(type);
+    }
+
+    public String getIconCls(Report report)
+    {
+        if (report != null)
+        {
+            if (report instanceof AttachmentReport)
+            {
+                 return null;
+            }
+
+            if (report instanceof LinkReport)
+            {
+                Container c = ContainerManager.getForId(report.getContainerId());
+                LinkReport linkReport = (LinkReport)report;
+                // external link versus internal link
+                String url = linkReport.getUrl(c);
+                if (url != null)
+                {
+                    // XXX: Is there a better way to check if a link is local to this server?
+                    if (linkReport.isInternalLink())
+                        return "fa fa-external-link-square fa-rotate-180";
+                    else if (linkReport.isLocalLink())
+                        return "fa fa-external-link-square fa-rotate-180";
+                    else
+                        return "fa fa-external-link-square";
+                }
+            }
+
+            return _getIconCls(report.getType());
+        }
+
+        return super.getIconPath(report);
+    }
+
+
 }

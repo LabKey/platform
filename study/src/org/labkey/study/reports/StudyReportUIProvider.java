@@ -55,6 +55,7 @@ import java.util.Map;
 public class StudyReportUIProvider extends DefaultReportUIProvider
 {
     private static Map<String, String> _typeToIconMap = new HashMap<>();
+    private static Map<String, String> _typeToIconClsMap = new HashMap<>();
 
     static
     {
@@ -68,6 +69,20 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconMap.put(EnrollmentReport.TYPE, "/reports/enrollment.png");
+    }
+
+    static
+    {
+ //       _typeToIconClsMap.put(StudyRReport.TYPE, "/reports/r.gif");
+        _typeToIconClsMap.put(ChartReportView.TYPE, "fa fa-bar-chart");
+        _typeToIconClsMap.put(StudyQueryReport.TYPE, "fa fa-table");
+        _typeToIconClsMap.put(StudyChartQueryReport.TYPE, "fa fa-bar-chart");
+        _typeToIconClsMap.put(ExportExcelReport.TYPE, "fa fa-file-excel-o");
+        _typeToIconClsMap.put(ExternalReport.TYPE, "fa fa-share-square-o");
+        _typeToIconClsMap.put(ParticipantReport.TYPE, "fa fa-clipboard");
+//        _typeToIconClsMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
+//        _typeToIconClsMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
+        _typeToIconClsMap.put(EnrollmentReport.TYPE, "fa fa-check");
     }
 
     private static final ReportService.ItemFilter _filter = new ReportService.ItemFilter(){
@@ -103,16 +118,16 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         {
             try
             {
-                DesignerInfoImpl gridInfo = new DesignerInfoImpl(StudyQueryReport.TYPE, "Grid View",
+                DesignerInfoImpl gridInfo = new DesignerInfoImpl(StudyQueryReport.TYPE, "Grid View", null,
                         new ActionURL(ReportsController.CreateQueryReportAction.class, context.getContainer()),
-                        _getIconPath(StudyQueryReport.TYPE));
+                        _getIconPath(StudyQueryReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyQueryReport.TYPE));
                 gridInfo.setId("create_gridView");
                 gridInfo.setDisabled(!context.hasPermission(AdminPermission.class));
                 designers.add(gridInfo);
 
-                DesignerInfoImpl crosstabInfo = new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View",
+                DesignerInfoImpl crosstabInfo = new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", null,
                         new ActionURL(ReportsController.CreateCrosstabReportAction.class, context.getContainer()),
-                        _getIconPath(StudyCrosstabReport.TYPE));
+                        _getIconPath(StudyCrosstabReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyCrosstabReport.TYPE));
                 crosstabInfo.setId("create_crosstabView");
                 designers.add(crosstabInfo);
 
@@ -131,9 +146,9 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 if (EnrollmentReport.getEnrollmentReport(context.getUser(), study, false) != null)
                     enrollmentInfo.setLabel("Configure Enrollment View");
 */
-                DesignerInfoImpl prInfo = new DesignerInfoImpl(ParticipantReport.TYPE, study.getSubjectNounSingular() + " Report",
+                DesignerInfoImpl prInfo = new DesignerInfoImpl(ParticipantReport.TYPE, study.getSubjectNounSingular() + " Report", null,
                         new ActionURL(ReportsController.ParticipantReportAction.class, context.getContainer()),
-                        _getIconPath(ParticipantReport.TYPE));
+                        _getIconPath(ParticipantReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ParticipantReport.TYPE));
                 prInfo.setId("create_participantReport");
                 designers.add(prInfo);
 
@@ -169,7 +184,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         {
             // crosstab report
             crossTabURL.addParameter(ReportDescriptor.Prop.reportType, StudyCrosstabReport.TYPE);
-            designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", crossTabURL, _getIconPath(StudyCrosstabReport.TYPE)));
+            designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", null, crossTabURL, _getIconPath(StudyCrosstabReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyCrosstabReport.TYPE)));
 
             // chart designer
             ChartDesignerBean chartBean = new ChartDesignerBean(settings);
@@ -179,7 +194,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             url.addParameter(DatasetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DatasetDefinition.DATASETKEY), 0));
             url.setAction(ReportsController.DesignChartAction.class);
 
-            designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", null, url, _getIconPath(StudyChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION));
+            designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", null, url, _getIconPath(StudyChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(StudyChartQueryReport.TYPE)));
 
             // r report
             if (ReportUtil.canCreateScript(context) && RReport.isEnabled())
@@ -188,8 +203,8 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 rBean.setReportType(StudyRReport.TYPE);
                 rBean.setRedirectUrl(returnUrl.getLocalURIString());
 
-                designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean),
-                        _getIconPath(StudyRReport.TYPE)));
+                designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R View", null, ReportUtil.getRReportDesignerURL(context, rBean),
+                        _getIconPath(StudyRReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyRReport.TYPE)));
             }
 
             // external report
@@ -198,13 +213,13 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 ActionURL buttonURL = context.getActionURL().clone();
                 buttonURL.setAction(ReportsController.ExternalReportAction.class);
                 designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced View", "An External Command Report",
-                        buttonURL, _getIconPath(ExternalReport.TYPE)));
+                        buttonURL, _getIconPath(ExternalReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ExternalReport.TYPE)));
             }
         }
         else
         {
             crossTabURL.addParameter(ReportDescriptor.Prop.reportType, CrosstabReport.TYPE);
-            designers.add(new DesignerInfoImpl(CrosstabReport.TYPE, "Crosstab View", crossTabURL, _getIconPath(CrosstabReport.TYPE)));
+            designers.add(new DesignerInfoImpl(CrosstabReport.TYPE, "Crosstab View", null, crossTabURL, _getIconPath(CrosstabReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(CrosstabReport.TYPE)));
         }
 
         return designers;
@@ -222,6 +237,20 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             return _getIconPath(report.getType());
         }
         return super.getIconPath(report);
+    }
+
+    private String _getIconCls(String type)
+    {
+        return _typeToIconClsMap.get(type);
+    }
+
+    public String getIconCls(Report report)
+    {
+        if (report != null)
+        {
+            return _getIconCls(report.getType());
+        }
+        return super.getIconCls(report);
     }
 
     public static ReportService.ItemFilter getItemFilter()

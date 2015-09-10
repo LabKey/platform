@@ -48,20 +48,20 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
         {
             ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer(), context.getUser(), settings);
             info.add(new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", null, designerURL,
-                    "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION));
+                    "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION, "fa fa-line-chart"));
         }
 
         GenericChartReport.RenderType boxType = GenericChartReport.RenderType.BOX_PLOT;
 
         ActionURL boxPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, boxType);
         info.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), null, boxPlotURL,
-                boxType.getIconPath(), ReportService.DesignerType.VISUALIZATION));
+                boxType.getIconPath(), ReportService.DesignerType.VISUALIZATION, boxType.getIconCls()));
 
         GenericChartReport.RenderType scatterType = GenericChartReport.RenderType.SCATTER_PLOT;
 
         ActionURL scatterPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, scatterType);
         info.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), null, scatterPlotURL,
-                scatterType.getIconPath(), ReportService.DesignerType.VISUALIZATION));
+                scatterType.getIconPath(), ReportService.DesignerType.VISUALIZATION, scatterType.getIconCls()));
 
         return info;
     }
@@ -81,7 +81,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
             ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer());
 
             DesignerInfoImpl info = new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", null, designerURL,
-                    "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION);
+                    "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION, "fa fa-line-chart");
             info.setId("create_timeChart");
             designers.add(info);
         }
@@ -90,13 +90,13 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
 
         ActionURL boxPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, boxType);
         designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), null, boxPlotURL,
-                boxType.getIconPath(), ReportService.DesignerType.VISUALIZATION));
+                boxType.getIconPath(), ReportService.DesignerType.VISUALIZATION, boxType.getIconCls()));
 
         GenericChartReport.RenderType scatterType = GenericChartReport.RenderType.SCATTER_PLOT;
 
         ActionURL scatterPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, scatterType);
         designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), null, scatterPlotURL,
-                scatterType.getIconPath(), ReportService.DesignerType.VISUALIZATION));
+                scatterType.getIconPath(), ReportService.DesignerType.VISUALIZATION, scatterType.getIconCls()));
 
         return designers;
     }

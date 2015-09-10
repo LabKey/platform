@@ -301,14 +301,20 @@ public class ParticipantGroupManager
                     }
                     button.addMenuItem(item);
                     if (cls.isShared())
+                    {
                         item.setImageSrc(new ResourceURL("/reports/grid.gif"));
+                        item.setImageCls("fa fa-table");
+                    }
                 }
                 else if (null != groups && groups.length == 1)
                 {
                     Pair<FieldKey, String> filterColValue = groups[0].getFilterColAndValue(container);
                     NavTree item = button.addMenuItem(groups[0].getLabel(), null, getSelectionReplaceScript(dataRegionName, filterColValue, filterColValue.first.getParent().getName()), selected.contains(groups[0]));
                     if (cls.isShared())
+                    {
                         item.setImageSrc(new ResourceURL("/reports/grid.gif"));
+                        item.setImageCls("fa fa-table");
+                    }
                 }
             }
 
