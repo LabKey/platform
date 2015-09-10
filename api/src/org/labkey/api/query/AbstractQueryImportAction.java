@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
@@ -79,6 +80,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         public String importMessage = null;
         public String successMessageSuffix = null;
         public boolean hideTsvCsvCombo = false;
+        // extra EXT config to inject into the form
+        public JSONArray extraFields = null;
     }
 
     protected AbstractQueryImportAction(Class<? extends FORM> formClass)
@@ -141,6 +144,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     public ModelAndView getDefaultImportView(FORM form, BindException errors) throws Exception
     {
+        return getDefaultImportView(form, null, errors);
+    }
+
+    public ModelAndView getDefaultImportView(FORM form, JSONArray extraFields, BindException errors) throws Exception
+    {
         ActionURL url = getViewContext().getActionURL();
         User user = getUser();
         Container c = getContainer();
@@ -152,6 +160,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         bean.urlCancel = StringUtils.trimToNull(url.getParameter(ActionURL.Param.cancelUrl));
         bean.hideTsvCsvCombo = _hideTsvCsvCombo;
         bean.successMessageSuffix = _successMessageSuffix;
+        bean.extraFields = extraFields;
 
         if (null == bean.urlReturn)
         {

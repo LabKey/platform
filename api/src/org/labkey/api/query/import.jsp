@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -38,11 +39,19 @@
     final String uploadFileDivId = "uploadFileDiv" + getRequestScopedUID();
     String tsvId = "tsv" + getRequestScopedUID();
     String errorDivId = "errorDiv" + getRequestScopedUID();
+    String extraFormFields = "";
 
     if (bean.importMessage != null)
     {
         %><div><%=h(bean.importMessage)%></div><p></p><%
     }
+
+    if (null != bean.extraFields)
+    {
+        for (JSONObject o : bean.extraFields.toJSONObjectArray())
+            extraFormFields += o.toString() + ",\n";
+    }
+
 
     if (bean.urlExcelTemplates != null && bean.urlExcelTemplates.size() > 0)
     {
@@ -272,7 +281,7 @@
     {
         importTsvForm = new Ext.form.FormPanel({
             fileUpload : false,
-            labelWidth: 75, // label settings here cascade unless overridden
+            labelWidth: 100, // label settings here cascade unless overridden
             url:endpoint,
             title: false, // 'Import text',
             border: false,
@@ -281,6 +290,7 @@
             timeout: Ext.Ajax.timeout,
 
             items: [
+                <%=text(extraFormFields)%>
                 {
                     id: <%=q(tsvId)%>,
                     xtype: 'textarea',
@@ -348,6 +358,7 @@
             timeout: Ext.Ajax.timeout,
 
             items: [
+                    <%=text(extraFormFields)%>
                     fibasic
             ],
 
