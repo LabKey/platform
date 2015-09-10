@@ -356,9 +356,30 @@
     %><%=PageFlowUtil.helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
         }
     %></th>
-    <td class="labkey-expandable-row-header" style="text-align:right;"><%=rowCount%>
-    </td>
-    <td class="labkey-expandable-row-header" colspan="<%=totalSeqKeyCount%>">&nbsp;</td>
+    <td class="labkey-expandable-row-header" style="text-align:right;"><%=rowCount%></td>
+    <%
+        for (VisitImpl visit : visits)
+        {
+            for (double seq : visitSequenceMap.get(visit.getRowId()))
+            {
+                Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
+                Integer count = countKeysForSequence.get(seq);
+                int colspan = count != null ? count : 1;
+                if (null != keyMap)
+                {
+    %>
+                <td class="labkey-expandable-row-header" colspan="<%=colspan%>"><%=keyMap.size()%></td>
+    <%
+                }
+                else
+                {
+    %>
+                <td class="labkey-expandable-row-header" colspan="<%=colspan%>">&nbsp;</td>
+    <%
+                }
+            }
+        }
+    %>
 </tr>
 <%
 
