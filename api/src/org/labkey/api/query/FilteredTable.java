@@ -370,7 +370,8 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     @NotNull
     public SQLFragment getFromSQL(String alias)
     {
-        SQLFragment where = getFilter().getSQLFragment(_rootTable.getSqlDialect());
+        SimpleFilter filter = getFilter();
+        SQLFragment where = filter.getSQLFragment(_rootTable.getSqlDialect());
         if (where.isEmpty())
             return getFromTable().getFromSQL(alias);
 
@@ -387,7 +388,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), columnMap);
         ret.append("\n").append(filterFrag).append(") ").append(alias);
         return ret;
     }
