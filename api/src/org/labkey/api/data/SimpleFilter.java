@@ -320,24 +320,26 @@ public class SimpleFilter implements Filter
 
     public static class SQLClause extends FilterClause
     {
-        String _fragment;
+        SQLFragment _fragment;
         private List<FieldKey> _fieldKeys = new ArrayList<>();
 
         public SQLClause(String fragment, @Nullable Object[] paramVals, FieldKey... fieldKeys)
         {
             _needsTypeConversion = false;
-            _fragment = fragment;
-            if (paramVals == null)
-            {
-                paramVals = new Object[0];
-            }
-            _paramVals = paramVals;
+            _fragment = new SQLFragment(fragment, paramVals);
+            _fieldKeys = Arrays.asList(fieldKeys);
+        }
+
+        public SQLClause(SQLFragment fragment, FieldKey... fieldKeys)
+        {
+            _needsTypeConversion = false;
+            _fragment = new SQLFragment(fragment);
             _fieldKeys = Arrays.asList(fieldKeys);
         }
 
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            return new SQLFragment(_fragment, getParamVals());
+            return _fragment;
         }
 
         @Deprecated // Use .getFieldKeys() instead.
@@ -1153,8 +1155,7 @@ public class SimpleFilter implements Filter
 
     public SimpleFilter addWhereClause(SQLFragment fragment, FieldKey... fieldKeys)
     {
-        assert null == fragment.commonTableExpressionsMap || fragment.commonTableExpressionsMap.isEmpty() : "SQLClause does not support CTE";
-        _clauses.add(new SQLClause(fragment.getSQL(), fragment.getParamsArray(), fieldKeys));
+        _clauses.add(new SQLClause(fragment, fieldKeys));
         return this;
     }
 

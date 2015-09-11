@@ -248,7 +248,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     {
         if (condition.isEmpty())
             return;
-        _filter.addWhereClause("(" + condition.getSQL() + ")", condition.getParams().toArray(), fieldKeys);
+        SQLFragment tmp = new SQLFragment();
+        tmp.append("(").append(condition.getSQL()).append(")");
+        _filter.addWhereClause(condition, fieldKeys);
     }
 
     public void addCondition(SimpleFilter filter)
