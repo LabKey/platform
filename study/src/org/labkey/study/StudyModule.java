@@ -479,27 +479,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    public void afterUpdate(final ModuleContext moduleContext)
-    {
-        if (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 13.11)
-        {
-            ContextListener.addStartupListener(new StartupListener()
-            {
-                @Override
-                public String getName()
-                {
-                    return "Study: upgrade dataset labels to names";
-                }
-
-                public void moduleStartupComplete(ServletContext servletContext)
-                {
-                    StudyUpgradeCode.upgradeDatasetLabelsToNames(moduleContext);
-                }
-            });
-        }
-    }
-
-    @Override
     @NotNull
     public Set<String> getSchemaNames()
     {

@@ -134,11 +134,6 @@ public class ListDefinitionImpl implements ListDefinition
         return _domain;
     }
 
-    public void clearDomain()
-    {
-        _domain = null;
-    }
-
     public String getName()
     {
         return _def.getName();

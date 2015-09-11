@@ -88,44 +88,6 @@ public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
 
-    // invoked for module version < 13.11 in StudyModule.afterUpdate
-    @DeferredUpgrade
-    public static void upgradeDatasetLabelsToNames(ModuleContext context)
-    {
-        // one time upgrade to migrate all queryName usages of dataset labels in reports, custom views, and query snapshots
-        // to instead be references to the dataset name (which is what will be used going forward)
-        MultiMap<Container, Container> containerTree = ContainerManager.getContainerTree();
-        for (Map.Entry<Container, Collection<Container>> treeEntry : containerTree.entrySet())
-        {
-            for (Container container : treeEntry.getValue())
-            {
-                Study study = StudyManager.getInstance().getStudy(container);
-                if (study != null)
-                {
-                    List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<>();
-                    for (DatasetDefinition dsd : StudyManager.getInstance().getDatasetDefinitions(study))
-                    {
-                        if (!dsd.getName().equals(dsd.getLabel()))
-                        {
-                            queryPropertyChanges.add(new QueryChangeListener.QueryPropertyChange<>(
-                                    QueryService.get().getUserSchema(context.getUpgradeUser(), container, StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(dsd.getName()),
-                                    QueryChangeListener.QueryProperty.Name,
-                                    dsd.getLabel(),
-                                    dsd.getName()
-                            ));
-                        }
-                    }
-
-                    if (queryPropertyChanges.size() > 0)
-                    {
-                        QueryService.get().fireQueryChanged(User.getSearchUser(), container, null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME), QueryChangeListener.QueryProperty.Name, queryPropertyChanges);
-                    }
-                }
-            }
-        }
-    }
-
-
     public static final CommandLineSplitter COMMAND_LINE_SPLITTER = SystemUtils.IS_OS_WINDOWS ? new WindowsCommandLineSplitter() : new DefaultCommandLineSplitter();
 
     // invoked by study-13.23-13.24.sql
