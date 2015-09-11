@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -127,7 +128,7 @@ public class QueryTable extends QueryRelation
         ColumnInfo ci = _tableInfo.getColumn(name);
         if (ci == null)
             return null;
-        ret = new TableColumn(k, ci);
+        ret = new TableColumn(k, ci, null);
         addSelectedColumn(k, ret);
         return ret;
     }
@@ -172,7 +173,7 @@ public class QueryTable extends QueryRelation
         ColumnInfo lk = parent._col.getFk().createLookupColumn(parent._col, name);
         if (lk == null)
             return null;
-        ret = new TableColumn(k, lk);
+        ret = new TableColumn(k, lk, parent);
         addSelectedColumn(k, ret);
         return ret;
     }
@@ -199,7 +200,7 @@ public class QueryTable extends QueryRelation
         if (null == qfk)
             return null;
         ColumnInfo lk = qfk.createLookupColumn(parent._col, name);
-        ret = new TableColumn(k, lk);
+        ret = new TableColumn(k, lk, parent);
         addSelectedColumn(k,ret);
         return ret;
     }
@@ -359,12 +360,14 @@ public class QueryTable extends QueryRelation
         FieldKey _key;
         ColumnInfo _col;
         String _alias;
+        TableColumn _parent;
 
-        TableColumn(FieldKey key, ColumnInfo col)
+        TableColumn(FieldKey key, ColumnInfo col, @Nullable TableColumn parent)
         {
             _key = key;
             _col = col;
             _alias = _aliasManager.decideAlias(col.getAlias());
+            _parent = parent;
         }
 
         String getAlias()
@@ -443,6 +446,31 @@ public class QueryTable extends QueryRelation
                 _query.qtableColumnMaps.put(QueryTable.this, _mapOutputColToTableColumn);
             }
             _mapOutputColToTableColumn.put(to.getFieldKey(), this);
+        }
+
+        @Override
+        public int addRef(@NotNull Object refer)
+        {
+            if (0 == ref.count())
+            {
+                if (null != _parent)
+                    _parent.addRef(this);
+            }
+            return super.addRef(refer);
+        }
+
+        @Override
+        public int releaseRef(@NotNull Object refer)
+        {
+            if (0 == ref.count())
+                return 0;
+            int count = super.releaseRef(refer);
+            if (0 == count)
+            {
+                if (null != _parent)
+                    _parent.releaseRef(this);
+            }
+            return count;
         }
     }
 
