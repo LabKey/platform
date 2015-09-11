@@ -25,6 +25,7 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
 import org.labkey.api.data.BaseSelector.StatementHandler;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -355,6 +356,7 @@ public class DbSequenceManager
     }
 
 
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         // Append a GUID to allow multiple, simultaneous invocations of this test

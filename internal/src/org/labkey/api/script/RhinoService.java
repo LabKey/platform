@@ -38,6 +38,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
@@ -117,6 +118,7 @@ public final class RhinoService
         RhinoEngine.clearTopLevel();
     }
 
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         @BeforeClass

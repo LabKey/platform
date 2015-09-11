@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -622,6 +623,8 @@ public class PropertyManager
         }
     }
 
+
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         interface PropertyStoreTest

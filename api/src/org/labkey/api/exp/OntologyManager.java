@@ -51,6 +51,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -2883,6 +2884,7 @@ public class OntologyManager
     }
 
 
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         @Test

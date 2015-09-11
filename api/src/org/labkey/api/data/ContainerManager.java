@@ -65,6 +65,7 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.test.TestTimeout;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -2158,7 +2159,7 @@ public class ContainerManager
         return navTrail;
     }
 
-    @TestTimeout(120)
+    @TestTimeout(120) @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert implements ContainerListener
     {
         Map<Path, Container> _containers = new HashMap<>();

@@ -33,6 +33,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -53,6 +54,7 @@ import java.util.Set;
  * Date: Apr 27, 2006
  * Time: 10:21:24 AM
  */
+@TestWhen(TestWhen.When.BVT)
 public class ContainerDisplayColumn extends DataColumn
 {
     private final boolean _showPath;
@@ -193,6 +195,8 @@ public class ContainerDisplayColumn extends DataColumn
         return !_showPath;
     }
 
+
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         private TestContext _ctx;

@@ -33,6 +33,7 @@ import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
@@ -1703,6 +1704,7 @@ public class DbScope
     }
 
     // Test dialects that are in-use; only for tests that require connecting to the database.
+    @TestWhen(TestWhen.When.BVT)
     public static class DialectTestCase extends Assert
     {
         @Test
