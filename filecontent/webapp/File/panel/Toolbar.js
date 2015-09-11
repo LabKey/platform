@@ -99,7 +99,7 @@ Ext4.define('File.panel.Toolbar', {
 
         var baseData = {
             auditLog         : {icon : 'fa-users',   text : 'Audit Log', used : false},
-            createDirectory  : {icon : 'fa-folder-o fa-plus-circle',  text : 'Create Folder', used : false},
+            createDirectory  : {icon : 'fa-folder, fa-plus labkey-fa-plus-folder',  text : 'Create Folder', used : false},
             customize        : {icon : 'fa-cog',   text : 'Admin', used : false},
             deletePath       : {icon : 'fa-trash-o',      text : 'Delete', used : false},
             download         : {icon : 'fa-download',    text : 'Download', used : false},
@@ -111,7 +111,7 @@ Ext4.define('File.panel.Toolbar', {
             refresh          : {icon : 'fa-refresh',      text : 'Refresh', used : false},
             renamePath       : {icon : 'fa-pencil',      text : 'Rename', used : false},
             folderTreeToggle : {icon : 'fa-sitemap', text : 'Toggle Folder Tree', used : false},
-            upload           : {icon : 'fa-file-o fa-arrow-circle-o-up',      text : 'Upload Files', used : false}
+            upload           : {icon : 'fa-file, fa-arrow-up labkey-fa-upload-files',      text : 'Upload Files', used : false}
         };
 
         var processedData = [];
@@ -281,7 +281,7 @@ Ext4.define('File.panel.Toolbar', {
                 {header : 'Icon', dataIndex: 'icon', flex : 1, renderer : function(value){
                     // var path = LABKEY.contextPath + '/_images/' + value;
                     // return '<img src = "'+path+'" />';
-                    var fontClasses = value.split(' ');
+                    var fontClasses = value.split(',');
                     if (fontClasses.length > 1) {
                         return '<span class="fa-stack fa-1x labkey-fa-stacked-wrapper"><span class="fa '+fontClasses[0]+' fa-stack-2x"></span><span class="fa '+fontClasses[1]+' fa-stack-1x"></span></span>';
                     } else {

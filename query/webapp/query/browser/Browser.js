@@ -157,9 +157,9 @@ Ext4.define('LABKEY.query.browser.Browser', {
                 xtype: 'querybutton',
                 text: 'Schema Administration',
                 tooltip: 'Create or modify external schemas.',
-                fontCls: 'fa-folder-o',
+                fontCls: 'fa-folder',
                 stacked: true,
-                stackedCls: 'fa-plus-circle labkey-fa-plus-circle-folder',
+                stackedCls: 'fa-plus labkey-fa-plus-folder',
                 handler: function() {
                     window.location = LABKEY.ActionURL.buildURL('query', 'admin');
                 },
@@ -169,9 +169,9 @@ Ext4.define('LABKEY.query.browser.Browser', {
                 xtype: 'querybutton',
                 text: 'Create New Query',
                 tooltip: 'Create a new query in the selected schema (requires that you select a particular schema or query within that schema).',
-                fontCls: 'fa-file-o',
+                fontCls: 'fa-file',
                 stacked: true,
-                stackedCls: 'fa-plus-circle labkey-fa-plus-circle-file',
+                stackedCls: 'fa-plus labkey-fa-plus-file',
                 handler: this.onCreateQueryClick,
                 scope: this
             });
@@ -179,9 +179,8 @@ Ext4.define('LABKEY.query.browser.Browser', {
                 xtype: 'querybutton',
                 text: 'Manage Remote Connections',
                 tooltip: 'Manage remote connection credentials for remote LabKey server authentication.',
-                fontCls: 'fa-file-o',
+                fontCls: 'fa-server',
                 stacked: true,
-                stackedCls: 'fa-plus-circle labkey-fa-plus-circle-file',
                 handler: function() {
                     window.location = LABKEY.ActionURL.buildURL('query', 'manageRemoteConnections');
                 },
@@ -191,9 +190,9 @@ Ext4.define('LABKEY.query.browser.Browser', {
                 xtype: 'querybutton',
                 text: 'Generate Schema Export',
                 tooltip: 'Generate schema export sql script for migrating a schema.',
-                fontCls: 'fa-file-o',
+                fontCls: 'fa-file',
                 stacked: true,
-                stackedCls: 'fa-plus-circle labkey-fa-plus-circle-file',
+                stackedCls: 'fa-plus labkey-fa-plus-file',
                 handler: function() {
                     location.href = LABKEY.ActionURL.buildURL('query', 'generateSchema', null, {returnUrl: window.location});
                 },
