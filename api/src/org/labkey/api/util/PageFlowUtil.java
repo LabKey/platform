@@ -2081,9 +2081,6 @@ public class PageFlowUtil
     {
         Container termsContainer = null;
 
-        if (null == container)
-            return null;
-
         if (null != returnURL)
         {
             try
@@ -2105,7 +2102,7 @@ public class PageFlowUtil
 
         if (null == termsContainer)
         {
-            if (container.isRoot())
+            if (null == container || container.isRoot())
                 return null;
             else
                 termsContainer = container.getProject();
