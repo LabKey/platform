@@ -23,6 +23,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
@@ -35,6 +36,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Map;
@@ -211,5 +213,47 @@ public class ParticipantVisitTable extends BaseStudyTable
     {
         return false;
     }
+
+    /* You would usually want to turn off session participantgroup for the whole schema,
+     * however, you might want to also turn off just for ParticpantTable when this table
+     * is being used as a lookup (especially for a table that is already filtered)
+     */
+    boolean _ignoreSessionParticipantGroup = false;
+
+    public void setIgnoreSessionParticipantGroup()
+    {
+        _ignoreSessionParticipantGroup = true;
+    }
+
+    protected SimpleFilter getFilter()
+    {
+        SimpleFilter sf;
+        sf = super.getFilter();
+
+        ParticipantGroup group = _ignoreSessionParticipantGroup ? null : getUserSchema().getSessionParticipantGroup();
+        if (null == group)
+            return sf;
+
+        if (null == sf)
+            sf = new SimpleFilter();
+
+        FieldKey participantFieldKey = FieldKey.fromParts("ParticipantId");
+
+        if (group.isSession() || group.isNew())
+        {
+            SimpleFilter.InClause clause = new SimpleFilter.InClause(participantFieldKey, group.getParticipantSet());
+            sf.addClause(clause);
+        }
+        else
+        {
+            SimpleFilter.SQLClause clause = new SimpleFilter.SQLClause(
+                    "ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)",
+                    new Object[] {group.getRowId()},
+                    participantFieldKey);
+            sf.addClause(clause);
+        }
+        return sf;
+    }
+
 }
 

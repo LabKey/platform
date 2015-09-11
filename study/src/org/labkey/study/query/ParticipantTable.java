@@ -363,8 +363,7 @@ public class ParticipantTable extends BaseStudyTable
 
     protected SimpleFilter getFilter()
     {
-        SimpleFilter sf;
-        sf = super.getFilter();
+        SimpleFilter sf = super.getFilter();
 
         ParticipantGroup group = _ignoreSessionParticipantGroup ? null : getUserSchema().getSessionParticipantGroup();
         if (null == group)

@@ -999,6 +999,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     class ParticipantVisitForeignKey extends LookupForeignKey
     {
+        private ParticipantVisitTable _tableInfo;
+
         ParticipantVisitForeignKey(String pkColumnName)
         {
             super(pkColumnName);
@@ -1011,7 +1013,15 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         @Override
         public TableInfo getLookupTableInfo()
         {
-            return new ParticipantVisitTable(_userSchema, true);
+            if (_tableInfo == null)
+            {
+                // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
+                // but we need to pass arguments to ParticipantTable constructor to hide datasets.
+                _tableInfo = new ParticipantVisitTable(_userSchema, true);
+                _tableInfo.setIgnoreSessionParticipantGroup();
+                _tableInfo.afterConstruct();
+            }
+            return _tableInfo;
         }
     }
 
