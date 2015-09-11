@@ -111,6 +111,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -4903,7 +4904,7 @@ public class StudyManager
 
 
 
-
+    @TestWhen(TestWhen.When.BVT)
     public static class DatasetImportTestCase extends Assert
     {
         TestContext _context = null;
@@ -5845,6 +5846,7 @@ public class StudyManager
         }
     }
 
+    @TestWhen(TestWhen.When.BVT)
     public static class AssayScheduleTestCase extends Assert
     {
         TestContext _context = null;

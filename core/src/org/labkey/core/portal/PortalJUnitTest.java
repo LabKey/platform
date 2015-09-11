@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
@@ -37,6 +38,7 @@ import java.util.Map;
  * Date: May 31, 2011
  * Time: 3:18:15 PM
  */
+@TestWhen(TestWhen.When.BVT)
 public class PortalJUnitTest extends Assert
 {
     private static final String _testDirName = "/_jUnitPortal";

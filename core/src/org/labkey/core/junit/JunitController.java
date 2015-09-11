@@ -111,8 +111,8 @@ public class JunitController extends SpringActionController
                     out.println("</table></div>");
 
                     out.print("<p><br>" + PageFlowUtil.button("Run All").href(new ActionURL(RunAction.class, getContainer())) + "</p>");
-                    out.print("<p><br>" + PageFlowUtil.button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("WHEN","BVT")) + "</p>");
-                    out.print("<p><br>" + PageFlowUtil.button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("WHEN","DRT")) + "</p>");
+                    out.print("<p><br>" + PageFlowUtil.button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when","BVT")) + "</p>");
+                    out.print("<p><br>" + PageFlowUtil.button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when","DRT")) + "</p>");
 
                     out.print("<form name=\"run2\" action=\"" +  new ActionURL(Run2Action.class, getContainer()) + "\" method=\"post\">" + PageFlowUtil.button("Run In Background #1 (Experimental)").submit(true) + "</form>");
                     out.print("<br>" + PageFlowUtil.button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer())));
@@ -165,16 +165,11 @@ public class JunitController extends SpringActionController
         {
             List<Class> testClasses = new LinkedList<>();
 
-
-            if (null != form.getModule())
+            if (!StringUtils.isEmpty(form.getModule()))
             {
                 testClasses.addAll(JunitManager.getTestCases().get(form.getModule()));
             }
-            else if (StringUtils.isEmpty(form.getTestCase()))
-            {
-                JunitManager.getTestCases().values().forEach(testClasses::addAll);
-            }
-            else
+            else if (!StringUtils.isEmpty(form.getTestCase()))
             {
                 for (List<Class> list : JunitManager.getTestCases().values())
                 {
@@ -183,7 +178,12 @@ public class JunitController extends SpringActionController
                         .forEach(testClasses::add);
                 }
             }
+            else
+            {
+                JunitManager.getTestCases().values().forEach(testClasses::addAll);
+            }
 
+            // filter by TestWhen
             List<Class> ret;
             ret = testClasses.stream()
                     .filter((test)->getWhen(test).ordinal()<=form._when.ordinal())

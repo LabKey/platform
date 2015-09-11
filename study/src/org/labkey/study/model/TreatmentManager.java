@@ -35,6 +35,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -339,6 +340,7 @@ public class TreatmentManager
      *
      */
 
+    @TestWhen(TestWhen.When.BVT)
     public static class TreatmentDataTestCase extends Assert
     {
         TestContext _context = null;

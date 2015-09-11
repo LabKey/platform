@@ -50,6 +50,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -782,6 +783,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return (FileContentServiceImpl) ServiceRegistry.get(FileContentService.class);
     }
 
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends AssertionError
     {
         private static final String TRICKY_CHARACTERS_FOR_PROJECT_NAMES = "\u2603~!@$&()_+{}-=[],.#\u00E4\u00F6\u00FC";

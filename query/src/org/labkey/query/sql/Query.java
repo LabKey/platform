@@ -65,6 +65,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -1428,6 +1429,7 @@ public class Query
                                    Arrays.asList("R/seven", "R/twelve")),
     };
 
+    @TestWhen(TestWhen.When.BVT)
     public static class QueryTestCase extends Assert
     {
         private String hash = GUID.makeHash();

@@ -67,6 +67,7 @@ import org.labkey.api.query.QueryUrls;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -921,6 +922,7 @@ public class TransformManager implements DataIntegrationService.Interface
     // Tests
     //
 
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         @Test

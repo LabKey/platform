@@ -27,6 +27,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.WebPartFactory;
 
@@ -39,6 +40,7 @@ import java.util.Map;
 * Date: 12/1/12
 * Time: 10:03 AM
 */
+@TestWhen(TestWhen.When.BVT)
 public class ModulePropertiesTestCase extends Assert
 {
     private User _user;

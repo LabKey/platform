@@ -62,6 +62,7 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
@@ -3664,6 +3665,8 @@ public class SpecimenImporter
         return uniqueIds;
     }
 
+
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         TempTableInfo _simpleTable;

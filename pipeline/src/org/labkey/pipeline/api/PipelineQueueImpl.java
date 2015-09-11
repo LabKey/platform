@@ -27,6 +27,7 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -294,6 +295,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         }
     }
 
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         @Test

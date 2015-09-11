@@ -65,6 +65,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -1447,6 +1448,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     //JUnit TestCase
     //
 
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         private static final String _testDirName = "/_jUnitAttachment";

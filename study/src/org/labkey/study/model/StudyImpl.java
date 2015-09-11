@@ -56,6 +56,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HTMLContentExtractor;
@@ -1297,6 +1298,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return getContainer() != null ? getContainer().hashCode() : 0;
     }
 
+
+    @TestWhen(TestWhen.When.BVT)
     public static class ProtocolDocumentTestCase extends Assert
     {
         Study _testStudy = null;
