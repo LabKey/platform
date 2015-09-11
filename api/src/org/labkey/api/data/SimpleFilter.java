@@ -326,7 +326,10 @@ public class SimpleFilter implements Filter
         public SQLClause(String fragment, @Nullable Object[] paramVals, FieldKey... fieldKeys)
         {
             _needsTypeConversion = false;
-            _fragment = new SQLFragment(fragment, paramVals);
+            if (null == paramVals)
+                _fragment = new SQLFragment(fragment);
+            else
+                _fragment = new SQLFragment(fragment, paramVals);
             _fieldKeys = Arrays.asList(fieldKeys);
         }
 
