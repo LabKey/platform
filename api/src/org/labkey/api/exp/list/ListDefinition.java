@@ -106,24 +106,11 @@ public interface ListDefinition extends Comparable<ListDefinition>
             }
         }
 
-        public boolean isValidKey(Object key)
-        {
-            try
-            {
-                convertKey(key);
-                return true;
-            }
-            catch (KeyConversionException e)
-            {
-                return false;
-            }
-        }
-
         protected abstract Object convertKeyInternal(Object key) throws KeyConversionException;
         public abstract PropertyType getPropertyType();
     }
 
-    public static class KeyConversionException extends NotFoundException
+    class KeyConversionException extends NotFoundException
     {
         protected KeyConversionException(Object key, KeyType type, Throwable cause)
         {
@@ -295,7 +282,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     void setPreferredListIds(Collection<Integer> preferredListIds); // Attempts to use this list IDs when inserting
     Container getContainer();
     @Nullable Domain getDomain();
-    void clearDomain();
+
     String getName();
     String getKeyName();
     void setKeyName(String name);
@@ -305,8 +292,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
     String getTitleColumn();
     Date getModified();
     void setModified(Date modified);
-    public Date getLastIndexed();
-    public void setLastIndexed(Date modified);
+    Date getLastIndexed();
+    void setLastIndexed(Date modified);
 
     KeyType getKeyType();
     void setKeyType(KeyType type);
