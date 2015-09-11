@@ -1332,6 +1332,9 @@ groupByLoop:
         {
             if (isDebugEnabled)
                 _log.debug("    " + col.getDebugString() + " ref=" + col.ref.count());
+            // NOTE: container columns are sometimes used by lookups without being explicity REF'd
+            if (col.getJdbcType() == JdbcType.GUID)
+                col.addRef(col);
             if (0 < col.ref.count())
                 count++;
         }
