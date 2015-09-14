@@ -28,7 +28,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ImageUtil;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
@@ -227,6 +226,10 @@ public class ExperimentRunGraph
             imageFile.deleteOnExit();
 
             BufferedImage originalImage = ImageIO.read(imageFile);
+            if (originalImage == null)
+            {
+                throw new IOException("Unable to read image file " + imageFile.getAbsolutePath() + " of size " + imageFile.length() + " - disk may be full?");
+            }
 
             try (FileOutputStream fOut = new FileOutputStream(imageFile))
             {
