@@ -149,7 +149,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             view = new JspView(page);
             view.setViewContext(context);
             view.setFrame(WebPartView.FrameType.NONE);
-            m.setTemplateContent(request, view, "text/html");
+            m.setTemplateContent(request, view, "text/html; charset=UTF-8");
 
             return m;
         }
