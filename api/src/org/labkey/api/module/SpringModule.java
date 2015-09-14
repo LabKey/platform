@@ -79,7 +79,7 @@ public abstract class SpringModule extends DefaultModule
 
     public SpringModule()
     {
-        _moduleServletContext = createtModuleServletContext();
+        _moduleServletContext = createModuleServletContext();
     }
 
 
@@ -243,7 +243,7 @@ public abstract class SpringModule extends DefaultModule
 
     ServletContext _moduleServletContext = null;
     
-    protected ServletContext createtModuleServletContext()
+    protected ServletContext createModuleServletContext()
     {
         return new ModuleServletContextWrapper(getParentServletContext());
     }
