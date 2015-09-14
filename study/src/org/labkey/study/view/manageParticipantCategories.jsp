@@ -73,6 +73,7 @@
                     {name : 'createdBy',        type : 'string',    convert : function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
                     {name : 'modifiedBy',       type : 'string',    convert : function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
                     {name : 'participantIds',   type : 'string',    convert : function(v, record){return v.join(', ');}},
+                    {name : 'filters',          type : 'string',    mapping : 'category.filters'},
                     {name : 'canEdit',          type : 'boolean',   mapping : 'category.canEdit'},
                     {name : 'canDelete',        type : 'boolean',   mapping : 'category.canDelete'},
                     {name : 'categoryLabel',    type : 'string',    mapping : 'category.label'},
@@ -208,7 +209,7 @@
                     var editButton = Ext4.getCmp('editSelectedButtonExt4');
                     var deleteButton = Ext4.getCmp('deleteSelectedButtonExt4');
 
-                    editButton.setDisabled(false);
+                    editButton.setDisabled(row.get('filters') != undefined && row.get('filters').length > 0);
                     editButton.setText(row.get('canEdit') ? 'Edit Selected' : 'View Selected');
 
                     deleteButton.setDisabled(row.get("canDelete") ? false : true);
