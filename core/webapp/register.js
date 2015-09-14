@@ -23,9 +23,14 @@
             },
             success: LABKEY.Utils.getCallbackWrapper(function (response) {
                 if (response.email)
+                {
+                    document.getElementById('errors').innerHTML = "";
                     document.getElementById('registration-content').innerHTML = "We have sent a registration email to " + LABKEY.Utils.encodeHtml(response.email) + ".  Please follow the link in the email to continue the registration process.";
+                }
                 else
+                {
                     document.getElementById('errors').innerHTML = "Unknown error in creating account or sending email.  Please contact your administrator.";
+                }
             }, this),
             failure: LABKEY.Utils.getCallbackWrapper(function (response) {
                 if(document.getElementById('errors') && response && response.exception) {
