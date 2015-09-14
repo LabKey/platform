@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014 LabKey Corporation
+ * Copyright (c) 2007-2015 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,7 +212,7 @@ public abstract class SpringModule extends DefaultModule
                     @Override
                     protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws IOException
                     {
-                        beanFactory.registerSingleton("module",SpringModule.this);
+                        beanFactory.registerSingleton("module", SpringModule.this);
                         super.loadBeanDefinitions(beanFactory);
                     }
                 };
@@ -265,8 +265,8 @@ public abstract class SpringModule extends DefaultModule
 
     public static class ModuleServletContextWrapper implements ServletContext
     {
-        HashMap<String,Object> _attributes = new HashMap<>();
-        HashMap<String,String> _initParameters = new HashMap<>();
+        HashMap<String, Object> _attributes = new HashMap<>();
+        HashMap<String, String> _initParameters = new HashMap<>();
 
         final ServletContext _wrapped;
 
@@ -405,7 +405,7 @@ public abstract class SpringModule extends DefaultModule
 
         public void setAttribute(String string, Object object)
         {
-            _attributes.put(string,object);
+            _attributes.put(string, object);
         }
 
         public void removeAttribute(String string)
@@ -434,7 +434,7 @@ public abstract class SpringModule extends DefaultModule
             if (null == bf)
                 return null;
             String name = cls.getSimpleName();
-            name = name.substring(0,1).toLowerCase() + name.substring(1);
+            name = name.substring(0, 1).toLowerCase() + name.substring(1);
             Object o = bf.getBean(name, cls);
             return (T)o;
         }
