@@ -421,18 +421,20 @@ public class AuthenticationManager
     }
 
 
-    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused, UserCreationError, UserCreationNotAllowed}
+    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused, UserCreationError, UserCreationNotAllowed, PasswordExpired}
 
     public static class PrimaryAuthenticationResult
     {
         private final User _user;
         private final AuthenticationStatus _status;
+        private final URLHelper _redirectURL;
 
         // Success case
         private PrimaryAuthenticationResult(@NotNull User user)
         {
             _user = user;
             _status = AuthenticationStatus.Success;
+            _redirectURL = null;
         }
 
         // Failure case
@@ -440,6 +442,15 @@ public class AuthenticationManager
         {
             _user = null;
             _status = status;
+            _redirectURL = null;
+        }
+
+        // Failure case with password expire and redirect
+        private PrimaryAuthenticationResult(@NotNull URLHelper redirectURL)
+        {
+            _user = null;
+            _status = AuthenticationStatus.PasswordExpired;
+            _redirectURL = redirectURL;
         }
 
         @Nullable
@@ -453,6 +464,13 @@ public class AuthenticationManager
         {
             return _status;
         }
+
+        @Nullable
+        public URLHelper getRedirectURL()
+        {
+            return _redirectURL;
+        }
+
     }
 
 
@@ -603,7 +621,16 @@ public class AuthenticationManager
                 ActionURL redirectURL = firstFailure.getRedirectURL();
 
                 if (null != redirectURL)
-                    throw new RedirectException(redirectURL);
+                {
+                    if (firstFailure.getFailureReason().name().equals("expired"))
+                    {
+                        return new PrimaryAuthenticationResult(redirectURL);
+                    }
+                    else
+                    {
+                        throw new RedirectException(redirectURL);
+                    }
+                }
             }
         }
 
@@ -953,7 +980,18 @@ public class AuthenticationManager
         User primaryAuthUser = AuthenticationManager.getPrimaryAuthenticationUser(session);
 
         if (null == primaryAuthUser)
-            return new AuthenticationResult(PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, null));
+        {
+            // failed login because of expired login will have a return url set to the update password page so use that.
+            LoginReturnProperties properties = getLoginReturnProperties(request);
+            if (null != properties && null != properties.getReturnUrl())
+            {
+                return new AuthenticationResult(properties.getReturnUrl());
+            }
+            else
+            {
+                return new AuthenticationResult(PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, null));
+            }
+         }
 
         for (SecondaryAuthenticationProvider provider : getActiveSecondaryProviders())
         {
