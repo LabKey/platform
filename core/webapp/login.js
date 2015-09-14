@@ -45,6 +45,9 @@
                 if(document.getElementById('errors') && response && response.exception) {
                     document.getElementById('errors').innerHTML = response.exception;
                 }
+                if(response && response.returnUrl){
+                    window.location = response.returnUrl;
+                }
             }, this)
         });
     }

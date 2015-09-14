@@ -345,6 +345,10 @@ public class LoginController extends SpringActionController
                     laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
                     errors.addError(new FormattedError("Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> to have your account created."));
                     break;
+                case  PasswordExpired:
+                    AuthenticationManager.LoginReturnProperties properties = new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile());
+                    AuthenticationManager.setLoginReturnProperties(request, properties);
+                    break;
                 default:
                     throw new IllegalStateException("Unknown authentication status: " + result.getStatus());
             }
@@ -728,6 +732,19 @@ public class LoginController extends SpringActionController
                     }
                     // in the ajax response inform js handler to load page from secondary authenticator url
                     response.put("returnUrl", redirectUrl.toString());
+                }
+            }
+            else
+            {
+                // keep the redirectUrl if the authenticate fail included a redirect URL which happens when the password has expired
+                AuthenticationManager.AuthenticationResult authResult = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
+                if (null != authResult && null != authResult.getRedirectURL() && !authResult.getRedirectURL().getPath().isEmpty())
+                {
+                    URLHelper redirectUrl = authResult.getRedirectURL();
+                    response = new ApiSimpleResponse();
+                    response.put("success", false);
+                    response.put("returnUrl", redirectUrl.toString());
+                    AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), null);
                 }
             }
 
