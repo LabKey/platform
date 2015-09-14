@@ -375,6 +375,7 @@ public class MailHelper
                 ((JspView) view).setFrame(WebPartView.FrameType.NOT_HTML);
 
             MockHttpServletResponse response = new MockHttpServletResponse();
+            response.setCharacterEncoding("UTF-8");
             HttpView.include(view, request, response);
 
             if (_isMultipart)
