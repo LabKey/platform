@@ -201,6 +201,7 @@ public class RedCapTest extends BaseWebDriverTest
     @Test
     public void testMergeDuplicateNames() throws Exception
     {
+        checkErrors();
         final String folderName = "testMergeDuplicateNames";
         ApiKey keyCopy = new ApiKey();
         String keyCopyName = SURVEY_NAME_CLASSIC + "2";
@@ -217,11 +218,13 @@ public class RedCapTest extends BaseWebDriverTest
         waitForPipelineJobsToComplete(1, "Import files", true);
         clickAndWait(Locator.linkWithText("ERROR")); // Error, because of self-merge
         assertElementPresent(Locators.labkeyError.containing("Only one row is allowed for each Participant/Visit"));
+        resetErrors();
     }
 
     @Test
     public void testFailDuplicateNames() throws Exception
     {
+        checkErrors();
         final String folderName = "testFailDuplicateNames";
         ApiKey keyCopy = new ApiKey();
         String keyCopyName = SURVEY_NAME_CLASSIC + "2";
@@ -238,6 +241,7 @@ public class RedCapTest extends BaseWebDriverTest
         waitForPipelineJobsToComplete(1, "Import files", true);
         clickAndWait(Locator.linkWithText("ERROR"));
         assertElementPresent(Locators.labkeyError.containing("Collection instrument name collision found"));
+        resetErrors();
     }
 
     @Test
