@@ -366,8 +366,8 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         throw new IllegalStateException();
     }
 
-
     @NotNull
+    @Override
     public SQLFragment getFromSQL(String alias)
     {
         SimpleFilter filter = getFilter();
@@ -376,7 +376,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
             return getFromTable().getFromSQL(alias);
 
         // SELECT
-        SQLFragment ret = new SQLFragment("(SELECT * FROM ");
+        SQLFragment ret = new SQLFragment("(SELECT ").append(getInnerFromColumns()).append(" FROM ");
 
         // FROM
         //   NOTE some filters depend on knowing the name of this table in the simple case, so don't alias it
@@ -393,6 +393,15 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         return ret;
     }
 
+    /**
+     * TODO: It would be nice to be able override getFromSQL(String alias, Set<FieldKey> cols), but the chaining of
+     * getFromSQL overrides in DatasetTableImpl makes this difficult & risky. In lieu of that, overriding
+     * this method at least allows plugging a discrete column list back into the inner SELECT
+     */
+    protected String getInnerFromColumns()
+    {
+        return "*";
+    }
 
     @Override
     public ColumnInfo addColumn(ColumnInfo column)
