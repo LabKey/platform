@@ -1403,113 +1403,6 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     // Query INFORMATION_SCHEMA.TABLES directly, since this is 50X faster than jTDS getTables() (which calls sp_tables). Select only the columns we care about. SQL Server always returns NULL for REMARKS.
     private static final String ALL_TABLES_SQL = "SELECT TABLE_NAME, CASE TABLE_TYPE WHEN 'BASE TABLE' THEN 'TABLE' ELSE TABLE_TYPE END AS TABLE_TYPE, NULL AS REMARKS FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ?";
 
-    /* Query the system views for columns directly, bypassing jTDS's getColumns() call to sp_columns.
-        This allows retrieval of the full list of sparse columns in a wide table. NOTE: This query does not
-        return the full set of column metadata properties present in the driver's result set;
-        only the subset of properties currently used by the application.
-        Acknowledgement: This query is a modified form by the SQL Server internal view sys.spt_columns_odbc_view,
-        which is used by sp_columns. It has been simplified for only the return columns and object types of interest,
-        and the DATA_TYPEs have the mappings to jdbc types that are normally performed by the driver getColumns() call.
-      */
-    private static final String ALL_TABLE_COLUMNS_SQL = "SELECT\n" +
-            "        COLUMN_NAME         = convert(sysname,c.name),\n" +
-            "        DATA_TYPE        = convert(smallint,\n" +
-            "                                case\n" +
-            "                                when (c.system_type_id = 240) then -- CLR UDT, unknown if this is correct type\n" +
-            "                                    -4 \n" +
-            "                                when (c.system_type_id = 241) then -- XML\n" +
-            "                                    2005\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 167) then -- varchar(max)\n" +
-            "                                    2005\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 231) then -- nvarchar(max)\n" +
-            "                                    2005\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 165) then -- varbinary(max)\n" +
-            "                                    2004\n" +
-            "                                when c.system_type_id IN (40, 41, 42, 43) then -- DATE/TIME/DATETIME2/DATETIMEOFFSET\n" +
-            "                                     12\n" +
-            "                                when c.system_type_id IN (98, 167, 231) then -- sql_variant, varchar, nvarchar\n" +
-            "                                     12\n" +
-            "                                when c.system_type_id  = 34 then -- image\n" +
-            "                                     2004\n" +
-            "                when c.system_type_id IN (35, 99) then -- text, ntext\n" +
-            "         2005 \n" +
-            "        when c.system_type_id IN (58, 61) then -- smalldatetime, datetime\n" +
-            "         93\n" +
-            "                                when c.system_type_id  = 104 then -- bit\n" +
-            "         -7\n" +
-            "                                when c.system_type_id  = 48 then -- tinyint\n" +
-            "         -6\n" +
-            "                                when c.system_type_id  = 127 then -- bigint\n" +
-            "         -5\n" +
-            "                                when c.system_type_id  = 165 then -- varbinary\n" +
-            "         -3\n" +
-            "        when c.system_type_id IN (173, 189) then -- binary, timestamp (rowversion)\n" +
-            "         -2                                              \n" +
-            "        when c.system_type_id IN (36, 175, 239) then -- uniqueidentifier, char, nchar\n" +
-            "         1\n" +
-            "                                when c.system_type_id  = 108 then -- numeric\n" +
-            "         2\n" +
-            "        when c.system_type_id IN (60, 106, 122) then -- money, decimal, smallmoney\n" +
-            "         3 \n" +
-            "                                when c.system_type_id  = 56 then -- int\n" +
-            "         4\n" +
-            "                                when c.system_type_id  = 52 then -- smallint\n" +
-            "         5\n" +
-            "                                when c.system_type_id  = 59 then -- real\n" +
-            "         7\n" +
-            "                                when c.system_type_id  = 62 then -- float\n" +
-            "         8\n" +
-            "                                end),\n" +
-            "        TYPE_NAME         = convert(sysname,\n" +
-            "                                case\n" +
-            "                                when (t.system_type_id = 240 or t.user_type_id > 255) then -- CLR UDTs\n" +
-            "                                    t.name\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 167) then -- varchar(max)\n" +
-            "                                    N'text'\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 231) then -- nvarchar(max)\n" +
-            "                                    N'ntext'\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 165) then -- varbinary(max)\n" +
-            "                                    N'image'\n" +
-            "                                else\n" +
-            "                                    t.name\n" +
-            "                                end) + CASE WHEN c.is_identity = 1 THEN ' identity' ELSE '' END,\n" +
-            "        COLUMN_SIZE        = convert(int,\n" +
-            "                                case\n" +
-            "                                when c.system_type_id in (59,62) then -- FLOAT/REAL\n" +
-            "                                    t.precision\n" +
-            "                                when c.system_type_id = 241 then -- XML\n" +
-            "                                    1073741823\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 167) then -- varchar(max)\n" +
-            "                                    2147483647\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 231) then -- nvarchar(max)\n" +
-            "                                    1073741823\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 165) then -- varbinary(max)\n" +
-            "                                    2147483647\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 240) then -- Large UDT => image for non-SNAC clients\n" +
-            "                                    2147483647\n" +
-            "                                else\n" +
-            "                                    OdbcPrec(c.system_type_id,c.max_length,c.precision)\n" +
-            "                                end),\n" +
-            "        NULLABLE            = convert(int, c.is_nullable),\n" +
-            "        REMARKS             = convert(varchar(254),NULL),\n" +
-            "        COLUMN_DEF          = convert(nvarchar(4000), object_definition(ColumnProperty(c.object_id, c.name, 'default'))),\n" +
-            "        ORDINAL_POSITION    = ROW_NUMBER() OVER (ORDER BY c.column_id),\n" +
-            "        IS_NULLABLE         = CASE WHEN c.is_nullable = 1 THEN 'YES' ELSE 'NO' END\n" +
-            "    FROM\n" +
-            "        sys.all_columns c inner join\n" +
-            "        sys.all_objects o on\n" +
-            "            (\n" +
-            "                o.object_id = c.object_id and\n" +
-            "                o.type in ('S','U','V', 'TF', 'IF') -- limit columns to tables, views, table-valued functions\n" +
-            "            ) inner join\n" +
-            "        sys.schemas s on \n" +
-            "   s.schema_id = o.schema_id inner join\n" +
-            "  sys.types t on\n" +
-            "            (\n" +
-            "                t.user_type_id = c.user_type_id\n" +
-            "            ) \n" +
-            " WHERE s.name = ? AND o.name = ?";
-
     @Override
     public DatabaseMetaData wrapDatabaseMetaData(DatabaseMetaData md, DbScope scope)
     {
@@ -1526,23 +1419,6 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                 {
                     sql.append(" AND TABLE_NAME = ?");
                     sql.add(tableNamePattern);
-                }
-
-                return new SqlSelector(scope, sql).getResultSet();
-            }
-
-            @Override
-            public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException
-            {
-                SQLFragment sql = new SQLFragment(ALL_TABLE_COLUMNS_SQL);
-                // Intentionally ignoring the 'catalog'; within the sp_columns proc we're bypassing, it's only used as a check that it is the same as the db_name
-                sql.add(schemaPattern);
-                sql.add(tableNamePattern);
-
-                if (null != columnNamePattern && !"%".equals(tableNamePattern))
-                {
-                    sql.append(" AND c.name = ?");
-                    sql.add(columnNamePattern);
                 }
 
                 return new SqlSelector(scope, sql).getResultSet();
