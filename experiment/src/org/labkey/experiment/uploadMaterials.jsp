@@ -249,7 +249,7 @@
     <tr>
         <td></td>
         <td>
-            <%= button("Submit").submit(true).id("submit-form-btn") %>
+            <%= button("Submit").submit(true).id("submit-form-btn").disableOnClick(true) %>
             <%= button("Clear").id("clear-form-btn") %>
         </td>
     </tr>
