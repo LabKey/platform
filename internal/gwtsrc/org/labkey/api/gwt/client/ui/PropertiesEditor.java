@@ -98,9 +98,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         public String getClassName()
         {
             if (_fontClass != null)
-                return "gwt-FontImage fa " + _fontClass;
+                return "labkey-link gwt-FontImage fa " + _fontClass;
             else
-                return "gwt-FontImage";
+                return "labkey-link gwt-FontImage";
         }
     }
 

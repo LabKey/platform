@@ -25,7 +25,7 @@ public class FontButton extends HTML
 {
     public FontButton(String fontClass)
     {
-        super("<span class='fa " + fontClass + "'></span>");
+        super("<span class='fa labkey-link " + fontClass + "'></span>");
 
         setStyleName("gwt-FontImage gwt-PushButton");
     }
