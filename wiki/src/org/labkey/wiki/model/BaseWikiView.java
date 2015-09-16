@@ -217,7 +217,7 @@ public abstract class BaseWikiView extends JspView<Object>
                     // Indlude wiki.js as a client dependency only for inline editing
                     addClientDependency(ClientDependency.fromPath("wiki/internal/Wiki.js"));
 
-                    NavTree edit = new NavTree("Edit Inline", null, getViewContext().getContextPath() + "/_images/partedit.png");
+                    NavTree edit = new NavTree("Edit Inline", null, getViewContext().getContextPath() + "/_images/partedit.png", "fa fa-pencil");
                     edit.setScript("LABKEY.wiki.internal.Wiki.createWebPartInlineEditor({" +
                             "entityId: " + PageFlowUtil.jsString(wiki.getEntityId()) +
                             ",pageVersionId: " + wiki.getPageVersionId() +
@@ -235,7 +235,7 @@ public abstract class BaseWikiView extends JspView<Object>
                 else
                 {
                     // other render types get the standard editor
-                    NavTree edit = new NavTree("Edit", updateContentURL.toString(), getViewContext().getContextPath() + "/_images/partedit.png");
+                    NavTree edit = new NavTree("Edit", updateContentURL.toString(), null, "fa fa-pencil");
                     addCustomMenu(edit);
                 }
             }
@@ -253,7 +253,7 @@ public abstract class BaseWikiView extends JspView<Object>
         if (hasContent && !(isEmbedded() && getFrame() == WebPartView.FrameType.NONE))
         {
             if (null != updateContentURL)
-                menu.addChild("Edit", updateContentURL.toString(), path + "/_images/partedit.png");
+                menu.addChild("Edit", updateContentURL.toString(), null, "fa fa-pencil");
             if (null != newURL)
                 menu.addChild("New", newURL.toString());
             if (null != customizeURL)
