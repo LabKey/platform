@@ -1098,10 +1098,8 @@ mothership/src/org/labkey/mothership/query/ExceptionStackTraceQueryView.java -te
 mothership/src/org/labkey/mothership/query/MothershipSchema.java -text
 mothership/src/org/labkey/mothership/view/createIssue.jsp -text
 oauth/OAuth.iml -text
-oauth/lib/jopenid-1.08.jar -text
 oauth/module.properties -text
-oauth/resources/credits/jars.txt -text
-oauth/resources/web/authentication/openid_google.png -text
+oauth/resources/web/oauth/openid_google.png -text
 oauth/src/org/labkey/authentication/oauth/GoogleOAuthProvider.java -text
 oauth/src/org/labkey/authentication/oauth/OAuthController.java -text
 oauth/src/org/labkey/authentication/oauth/configure.jsp -text

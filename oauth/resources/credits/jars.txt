@@ -1,4 +1,0 @@
-{table}
-Filename|Component|Version|Source|License|LabKey Dev|Purpose
-jopenid-1.08.jar|JOpenId|1.03|{link:JOpenID|https://code.google.com/p/jopenid/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|matthewb|OpenID authentication
-{table}
