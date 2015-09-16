@@ -23,6 +23,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -112,5 +113,11 @@ public class SqlDialectManager
         }
 
         return dialects;
+    }
+
+
+    public static List<SqlDialectFactory> getFactories()
+    {
+        return new LinkedList<>(_factories);
     }
 }

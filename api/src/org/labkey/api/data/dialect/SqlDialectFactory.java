@@ -25,18 +25,23 @@ import java.util.Collection;
 * Date: Nov 26, 2010
 * Time: 8:52:56 PM
 */
-public abstract class SqlDialectFactory
+public interface SqlDialectFactory
 {
-    public abstract @Nullable SqlDialect createFromDriverClassName(String driverClassName);
+    @Nullable SqlDialect createFromDriverClassName(String driverClassName);
 
     // Returns null if this factory is not responsible for the specified database server.  Otherwise, if the version is
     // supported, returns the matching implementation; if the version is not supported, throws DatabaseNotSupportedException.
-    public abstract @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException;
+    @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException;
 
     // These tests must be safe to invoke when LabKey Server can't connect to any datasources matching the dialect and
     // even when the JDBC driver isn't present.
-    public abstract Collection<? extends Class> getJUnitTests();
+    Collection<? extends Class> getJUnitTests();
 
     // Caller must invoke initialize() on the dialects.
-    public abstract Collection<? extends SqlDialect> getDialectsToTest();
+    Collection<? extends SqlDialect> getDialectsToTest();
+
+    // Factories can override if they want the ability to replace their standard TableResolver
+    default void setTableResolver(TableResolver tableResolver)
+    {
+    }
 }
