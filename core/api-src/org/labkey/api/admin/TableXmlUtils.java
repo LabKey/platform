@@ -156,6 +156,11 @@ public class TableXmlUtils
 
                 if (!(mDbTableOrdinals.containsKey(xmlTableName.toLowerCase())))
                 {
+                    if (xmlTableType.equals("UNKNOWN"))
+                    {
+                        continue;
+                    }
+
                     if (!xmlTableType.equals("NOT_IN_DB"))
                     {
                         rlOut.addBlank();
