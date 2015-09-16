@@ -87,6 +87,12 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     private volatile boolean _groupConcatInstalled = false;
 
     private final InClauseGenerator _defaultGenerator = new InlineInClauseGenerator(this);
+    private final TableResolver _tableResolver;
+
+    public MicrosoftSqlServer2008R2Dialect(TableResolver tableResolver)
+    {
+        _tableResolver = tableResolver;
+    }
 
     @Override
     protected @NotNull Set<String> getReservedWords()
@@ -1386,12 +1392,10 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
 
-    private final static TableResolver TABLE_RESOLVER = new SynonymTableResolver();
-
     @Override
     protected TableResolver getTableResolver()
     {
-        return TABLE_RESOLVER;
+        return _tableResolver;
     }
 
     @Override

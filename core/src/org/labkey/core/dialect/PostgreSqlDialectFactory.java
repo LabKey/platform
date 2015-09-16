@@ -40,7 +40,7 @@ import java.util.Set;
 * Date: Nov 26, 2010
 * Time: 9:19:38 PM
 */
-public class PostgreSqlDialectFactory extends SqlDialectFactory
+public class PostgreSqlDialectFactory implements SqlDialectFactory
 {
     private static final Logger _log = Logger.getLogger(PostgreSqlDialectFactory.class);
 

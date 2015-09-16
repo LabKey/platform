@@ -35,7 +35,7 @@ import java.util.Set;
  * Date: 6/10/11
  * Time: 3:40 PM
  */
-public class OracleDialectFactory extends SqlDialectFactory
+public class OracleDialectFactory implements SqlDialectFactory
 {
     private String getProductName()
     {

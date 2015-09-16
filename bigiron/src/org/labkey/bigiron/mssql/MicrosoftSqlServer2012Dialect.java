@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TempTableInClauseGenerator;
+import org.labkey.api.data.dialect.TableResolver;
 
 import java.util.Collection;
 
@@ -32,6 +33,11 @@ public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Diale
     private final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
 
     private final InClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
+
+    public MicrosoftSqlServer2012Dialect(TableResolver tableResolver)
+    {
+        super(tableResolver);
+    }
 
     // Called only if rowCount and offset are both > 0... and order is non-blank
     @Override

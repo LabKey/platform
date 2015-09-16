@@ -17,18 +17,19 @@
 package org.labkey.bigiron;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.bigiron.mssql.GroupConcatInstallationManager;
+import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.bigiron.mssql.GroupConcatInstallationManager;
 import org.labkey.bigiron.mssql.MicrosoftSqlServerDialectFactory;
+import org.labkey.bigiron.mssql.SynonymTableResolver;
 import org.labkey.bigiron.mysql.MySqlDialectFactory;
+import org.labkey.bigiron.oracle.OracleDialectFactory;
 import org.labkey.bigiron.sas.SasDialectFactory;
 import org.labkey.bigiron.sas.SasExportScriptFactory;
-import org.labkey.bigiron.oracle.OracleDialectFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -43,6 +44,11 @@ public class BigIronModule extends DefaultModule
         SqlDialectManager.register(new MySqlDialectFactory());
         SqlDialectManager.register(new SasDialectFactory());
         SqlDialectManager.register(new OracleDialectFactory());
+
+        // TODO: Move to new synonym module static initializer
+        for (SqlDialectFactory factory : SqlDialectManager.getFactories())
+            if (factory.getClass().getSimpleName().equals("MicrosoftSqlServerDialectFactory"))
+                factory.setTableResolver(new SynonymTableResolver());
     }
 
     public String getName()

@@ -29,7 +29,7 @@ import java.util.Collections;
 * Date: Nov 26, 2010
 * Time: 10:25:16 PM
 */
-public class SasDialectFactory extends SqlDialectFactory
+public class SasDialectFactory implements SqlDialectFactory
 {
     private String getProductName()
     {

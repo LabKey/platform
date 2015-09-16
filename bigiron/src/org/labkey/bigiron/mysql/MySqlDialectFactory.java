@@ -31,7 +31,7 @@ import java.util.Collections;
 * Date: Nov 26, 2010
 * Time: 10:11:46 PM
 */
-public class MySqlDialectFactory extends SqlDialectFactory
+public class MySqlDialectFactory implements SqlDialectFactory
 {
     private static final Logger _log = Logger.getLogger(MySqlDialectFactory.class);
 
