@@ -4252,7 +4252,9 @@ public class DavController extends SpringActionController
         String sessionId = getRequest().getSession(true).getId();
         String pageId = StringUtils.defaultIfBlank(getRequest().getParameter("pageId"), "-");
         Path p;
-        p = new Path(sessionId).append(String.valueOf(pageId)).append(path);
+        p = new Path(sessionId).append(String.valueOf(pageId));
+        if (null != path)
+            p = p.append(path);
         return p;
     }
 
@@ -4284,7 +4286,7 @@ public class DavController extends SpringActionController
         {
             Path key = getErrorCacheKey();
 
-            JSONObject x = (JSONObject)exceptionCache.get(key);
+            JSONObject x = exceptionCache.get(key);
             if (null != x)
                 exceptionCache.remove(key);
 
@@ -4450,9 +4452,9 @@ public class DavController extends SpringActionController
         {
             assert resource.canRead(User.guest,true);
 
-            if (-1 == resource.getName().indexOf(".nocache."))
+            if (resource.getName().contains(".nocache."))
             {
-                boolean isPerfectCache = -1 != resource.getName().indexOf(".cache.");
+                boolean isPerfectCache = !resource.getName().contains(".cache.");
                 boolean allowCaching = AppProps.getInstance().isCachingAllowed();
 
                 if (allowCaching || isPerfectCache || alwaysCacheFile(resource.getPath()))
@@ -4537,7 +4539,7 @@ public class DavController extends SpringActionController
                 }
 
                 HttpServletRequest request = getRequest();
-                if (true && null != file && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
+                if (null != file && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
                 {
                     request.setAttribute("org.apache.tomcat.sendfile.filename", file.getAbsolutePath());
                     request.setAttribute("org.apache.tomcat.sendfile.start", new Long(0L));
@@ -4929,8 +4931,6 @@ public class DavController extends SpringActionController
                 {
                     Path pathDecodeAgain = Path.parse(decodeAgain).normalize();
                     try { r = resolvePath(pathDecodeAgain); } catch (DavException x) {};
-//                    if (null != r && !(r instanceof WebdavResolverImpl.UnboundResource))
-//                        path = pathDecodeAgain;
                 }
             }
         }
@@ -5046,7 +5046,7 @@ public class DavController extends SpringActionController
                         conditionSatisfied = true;
                 }
 
-                // If none of the given ETags match, 412 Precodition failed is
+                // If none of the given ETags match, 412 Precondition failed is
                 // sent back
                 if (!conditionSatisfied)
                 {
