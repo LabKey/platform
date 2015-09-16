@@ -138,9 +138,17 @@ public class PopupMenu extends DisplayElement
         else if (_buttonStyle == ButtonStyle.IMAGE)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
-            assert _navTree.getImageSrc() != null && _navTree.getImageSrc().length() > 0 : "Must provide an image source for image based popups.";
-            out.append(PageFlowUtil.generateDropDownImage(_navTree.getText(),  "javascript:void(0)",
-                    "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth()));
+            if (_navTree.getImageCls() != null && _navTree.getImageCls().length() > 0)
+            {
+                out.append(PageFlowUtil.generateDropDownFontIconImage(_navTree.getText(), "javascript:void(0)",
+                        "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _navTree.getImageCls(), _imageId));
+            }
+            else
+            {
+                assert _navTree.getImageSrc() != null && _navTree.getImageSrc().length() > 0 : "Must provide an image source or image cls for image based popups.";
+                out.append(PageFlowUtil.generateDropDownImage(_navTree.getText(), "javascript:void(0)",
+                        "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth()));
+            }
         }
     }
 

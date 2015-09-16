@@ -655,7 +655,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                         if (nMenu.hasChildren())
                         {
                             out.print("&nbsp;");
-                            renderMenu(nMenu, out, contextPath + "/_images/partmenu.png");
+                            renderMenuWithFontImage(nMenu, out, "fa fa-caret-down");
                         }
                     }
                     else if (!isWebPart())
@@ -698,7 +698,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
                         if (nMenu != null && nMenu.hasChildren())
                         {
-                            renderMenu(nMenu, out, contextPath + "/_images/partmenu.png");
+                            renderMenuWithFontImage(nMenu, out, "fa fa-caret-down");
                         }
 
                         // Render specific parts first (e.g. wiki edit)
@@ -739,7 +739,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                         out.print(">");
                                     }
 
-                                    if (null != current.getImageSrc())
+                                    if (null != current.getImageCls())
+                                    {
+                                        out.print("<span class=\"" + current.getImageCls() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\"></span>");
+                                    }
+                                    else if (null != current.getImageSrc())
                                     {
                                         if (current.getImageWidth() != null && current.getImageHeight() != null)
                                             out.print("<img height=" + current.getImageHeight() + " width=" + current.getImageWidth() + " src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
@@ -773,8 +777,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                             }
                             else
                                 out.print("<span class=\"labkey-wp-icon-button-inactive\">");
-                            
-                            if (null != link.getImageSrc())
+                            if (null != link.getImageCls())
+                            {
+                                out.print("<span class=\"" + link.getImageCls() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\"></span>");
+                            }
+                            else if (null != link.getImageSrc())
                             {
                                 if (link.getImageWidth() != null && link.getImageHeight() != null)
                                     out.print("<img height=" + link.getImageHeight() + " width=" + link.getImageWidth() + " src=\"" + link.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
@@ -1041,6 +1048,24 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             menu.setText("More");
             PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.IMAGE);
             menu.setImage(imageSrc, 24, 24);
+            more.setImageId("more-" + PageFlowUtil.filter(getTitle().toLowerCase()));
+            out.print("<span class=\"labkey-wp-icon-button-active\">");
+            more.render(out);
+            out.print("</span>");
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void renderMenuWithFontImage(NavTree menu, PrintWriter out, String imageCls)
+    {
+        try
+        {
+            menu.setText("More");
+            PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.IMAGE);
+            menu.setImageCls(imageCls);
             more.setImageId("more-" + PageFlowUtil.filter(getTitle().toLowerCase()));
             out.print("<span class=\"labkey-wp-icon-button-active\">");
             more.render(out);

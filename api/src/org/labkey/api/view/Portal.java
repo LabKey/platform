@@ -996,24 +996,21 @@ public class Portal
                         view.setCustomize(new NavTree("", getCustomizeURL(context, part)));
 
                     if (i > 0)
-                        navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), contextPath + "/_images/partup.png");
+                        navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up labkey-fa-portal-nav");
                     else if (part.getLocation().equals(WebPartFactory.LOCATION_RIGHT))
-                        navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), contextPath + "/_images/partupg.png");
+                        navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
                     else
-                        navTree.addChild("", "", contextPath + "/_images/partupg.png");
+                        navTree.addChild("", "", null, "fa fa-caret-square-o-up x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
 
                     if (i < partsForLocation.size() - 1)
-                        navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), contextPath + "/_images/partdown.png");
+                        navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down labkey-fa-portal-nav");
                     else if (part.getLocation().equals(WebPartFactory.LOCATION_RIGHT))
-                        navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), contextPath + "/_images/partdowng.png");
+                        navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
                     else
-                        navTree.addChild("", "", contextPath + "/_images/partdowng.png");
-                    
+                        navTree.addChild("", "", null, "fa fa-caret-square-o-down x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
                     if (!part.isPermanent())
                     {
-                        NavTree delete = new NavTree("Remove From Page", getDeleteURL(context, part));
-                        delete.setImage(contextPath + "/_images/partdelete.png", 24, 24);
-                        navTree.addChild(delete);
+                        navTree.addChild("Remove From Page", getDeleteURL(context, part), null, "fa fa-times");
                     }
                 }
 

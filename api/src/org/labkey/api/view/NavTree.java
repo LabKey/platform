@@ -95,6 +95,12 @@ public class NavTree implements Collapsible
         _imageSrc = imageSrc;
     }
 
+    public NavTree(String text, String href, String imageSrc, String imageCls)
+    {
+        this(text, href, false);
+        _imageSrc = imageSrc;
+        _imageCls = imageCls;
+    }
 
     public NavTree(String text, URLHelper urlhelp)
     {
@@ -133,6 +139,7 @@ public class NavTree implements Collapsible
         _imageWidth = source._imageWidth;
         _target = source._target;
         _tip = source._tip;
+        _imageCls = source._imageCls;
 
         _children.addAll(source._children.stream().map(NavTree::new).collect(Collectors.toList()));
     }
@@ -204,6 +211,12 @@ public class NavTree implements Collapsible
     public NavTree addChild(String display, String href, String imageSrc)
     {
         addChild(new NavTree(display, href, imageSrc));
+        return this;
+    }
+
+    public NavTree addChild(String display, String href, String imageSrc, String imageCls)
+    {
+        addChild(new NavTree(display, href, imageSrc, imageCls));
         return this;
     }
 

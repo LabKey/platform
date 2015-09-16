@@ -1300,6 +1300,14 @@ public class PageFlowUtil
             (imageHeight == null ? "" : " height=\"" + imageHeight + "\"") + (imageWidth == null ? "" : " width=\"" + imageWidth + "\"") + "/></a>";
     }
 
+    /* Renders image using font icon and a drop down wrapped in an unstyled link */
+    public static String generateDropDownFontIconImage(String text, String href, String onClick, String imageCls, String imageId)
+    {
+        return "<a href=\"" + filter(href) +"\"" +
+                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
+                "><span id=\"" + imageId + "\" title=\"" + filter(text) + "\" class=\"" + imageCls + "\"></span></a>";
+    }
+
     /* Renders a lightly colored inactive button, or in other words, a disabled span wrapped in a link of type labkey-disabled-button */
     public static String generateDisabledButton(String text)
     {

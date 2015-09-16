@@ -125,21 +125,21 @@
         }
 
 
-        function removeImgHref(imageEl, newImgSrc)
+        function removeImgHref(imageEl, newImageCls)
         {
             var href = imageEl.parentNode;
             var hrefParent = href.parentNode;
-            imageEl.src = newImgSrc;
+             imageEl.className = newImageCls;
             // replace href with imageEl to remove the link entirely:
             hrefParent.replaceChild(imageEl, href);
             hrefParent.className = "labkey-wp-icon-button-inactive";
         }
 
-        function addImgHref(imageEl, href, newImgSrc)
+        function addImgHref(imageEl, href, newImageCls)
         {
             var hrefEl = document.createElement("a");
             hrefEl.href = href;
-            imageEl.src = newImgSrc;
+            imageEl.className = newImageCls;
             imageEl.parentNode.className = "labkey-wp-icon-button-active";
             imageEl.parentNode.replaceChild(hrefEl, imageEl);
             hrefEl.appendChild(imageEl);
@@ -147,11 +147,10 @@
 
         function updateButtons(webparts)
         {
-            var moveUpImage = LABKEY.ActionURL.getContextPath() + '/_images/partup.png';
-            var moveUpDisabledImage = LABKEY.ActionURL.getContextPath() + '/_images/partupg.png';
-            var moveDownImage = LABKEY.ActionURL.getContextPath() + '/_images/partdown.png';
-            var moveDownDisabledImage = LABKEY.ActionURL.getContextPath() + '/_images/partdowng.png';
-
+            var moveUpImage = 'fa fa-caret-square-o-up labkey-fa-portal-nav';
+            var moveUpDisabledImage = 'fa fa-caret-square-o-up x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav';
+            var moveDownImage = 'fa fa-caret-square-o-down labkey-fa-portal-nav';
+            var moveDownDisabledImage = 'fa fa-caret-square-o-down x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav';
             for (var region in webparts)
             {
                 if (!webparts.hasOwnProperty(region))
@@ -181,18 +180,18 @@
                     var webpart = confirmedWebparts[index];
                     var disableUp = index == 0;
                     var disableDown = index == confirmedWebparts.length - 1;
-                    var imgChildren = webpartTable.getElementsByTagName("img");
+                    var imgChildren = webpartTable.getElementsByClassName('labkey-fa-portal-nav');
 
                     for (var imageIndex = 0; imageIndex < imgChildren.length; imageIndex++)
                     {
                         var imageEl = imgChildren[imageIndex];
-                        if (imageEl.src.indexOf(moveUpImage) >= 0 && disableUp)
+                        if (imageEl.className.indexOf(moveUpImage) >= 0 && disableUp)
                             removeImgHref(imageEl, moveUpDisabledImage);
-                        else if (imageEl.src.indexOf(moveUpDisabledImage) >= 0 && !disableUp)
+                        else if (imageEl.className.indexOf(moveUpDisabledImage) >= 0 && !disableUp)
                             addImgHref(imageEl, "javascript:LABKEY.Portal.moveWebPartUp({webPartId:" + webpart.webPartId + ",updateDOM:true});", moveUpImage);
-                        else if (imageEl.src.indexOf(moveDownImage) >= 0 && disableDown)
+                        else if (imageEl.className.indexOf(moveDownImage) >= 0 && disableDown)
                             removeImgHref(imageEl, moveDownDisabledImage);
-                        else if (imageEl.src.indexOf(moveDownDisabledImage) >= 0 && !disableDown)
+                        else if (imageEl.className.indexOf(moveDownDisabledImage) >= 0 && !disableDown)
                             addImgHref(imageEl, "javascript:LABKEY.Portal.moveWebPartDown({webPartId:" + webpart.webPartId + ",updateDOM:true});", moveDownImage);
                     }
                 }
