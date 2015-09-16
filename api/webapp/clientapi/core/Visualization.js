@@ -282,7 +282,7 @@ LABKEY.Query.Visualization = new function() {
                         fa = measure.filterArray[f];
                         if (fa)
                         {
-                            asURL = fa.getURLParameterName() + "=" + fa.getURLParameterValue();
+                            asURL = encodeURIComponent(fa.getURLParameterName()) + "=" + encodeURIComponent(fa.getURLParameterValue());
                             filters.push(asURL);
                         }
                     }
