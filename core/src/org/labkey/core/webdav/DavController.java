@@ -2557,7 +2557,9 @@ public class DavController extends SpringActionController
             json.key("collection").value(resource.isCollection());
             if (resource.isFile())
             {
-                json.key("lastmodified").value(new Date(resource.getLastModified()));
+                long lastModified = resource.getLastModified();
+                if (Long.MIN_VALUE != lastModified)
+                    json.key("lastmodified").value(new Date(lastModified));
                 long length = resource.getContentLength();
                 json.key("contentlength").value(length);
                 if (length >= 0)
