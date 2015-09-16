@@ -110,10 +110,10 @@ public interface Module extends Comparable<Module>
     /** The homepage URL for additional information on the module. */
     @Nullable String getUrl();
 
-    /** Comma separated list of names and, optionally, email addresses: e.g. "Adam Rauch &lt;adamr@labkey.com&gt;, Kevin Krouse" */
+    /** Comma separated list of names and, optionally, email addresses: e.g. "Adam Rauch &lt;adam@labkey.com&gt;, Kevin Krouse" */
     @Nullable String getAuthor();
 
-    /** Comma separated list of names and, optionally, email addresses: e.g. "Adam Rauch &lt;adamr@labkey.com&gt;, Kevin Krouse" */
+    /** Comma separated list of names and, optionally, email addresses: e.g. "Adam Rauch &lt;adam@labkey.com&gt;, Kevin Krouse" */
     @Nullable String getMaintainer();
 
     @Nullable String getOrganization();
