@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015 LabKey Corporation
+ * Copyright (c) 2015 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,64 +14,64 @@
  * limitations under the License.
  */
 
-package org.labkey.bigiron;
+package org.labkey.synonym;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.bigiron.mssql.GroupConcatInstallationManager;
-import org.labkey.bigiron.mssql.MicrosoftSqlServerDialectFactory;
-import org.labkey.bigiron.mysql.MySqlDialectFactory;
-import org.labkey.bigiron.oracle.OracleDialectFactory;
-import org.labkey.bigiron.sas.SasDialectFactory;
-import org.labkey.bigiron.sas.SasExportScriptFactory;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-public class BigIronModule extends DefaultModule
+public class SynonymModule extends DefaultModule
 {
-    // Register these dialects extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
     static
     {
-        SqlDialectManager.register(new MicrosoftSqlServerDialectFactory());
-        SqlDialectManager.register(new MySqlDialectFactory());
-        SqlDialectManager.register(new SasDialectFactory());
-        SqlDialectManager.register(new OracleDialectFactory());
+        SqlDialectManager.getFactories().stream()
+                .filter(factory -> factory.getClass().getSimpleName().equals("MicrosoftSqlServerDialectFactory"))
+                .forEach(factory -> factory.setTableResolver(new SynonymTableResolver()));
     }
 
+    public static final String NAME = "Synonym";
+
+    @Override
     public String getName()
     {
-        return "BigIron";
+        return NAME;
     }
 
+    @Override
     public double getVersion()
     {
-        return 15.20;
+        return 15.21;
+    }
+
+    @Override
+    protected void init()
+    {
+
     }
 
     @NotNull
-    protected Collection<WebPartFactory> createWebPartFactories()
+    @Override
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public boolean hasScripts()
     {
         return false;
     }
 
-    protected void init()
+    @Override
+    protected void doStartup(ModuleContext moduleContext)
     {
-        QueryView.register(new SasExportScriptFactory());
-    }
 
-    public void doStartup(ModuleContext moduleContext)
-    {
     }
 
     public TabDisplayMode getTabDisplayMode()
@@ -83,6 +83,6 @@ public class BigIronModule extends DefaultModule
     @Override
     public Set<Class> getIntegrationTests()
     {
-        return Collections.<Class>singleton(GroupConcatInstallationManager.TestCase.class);
+        return Collections.<Class>singleton(SynonymTestCase.class);
     }
 }

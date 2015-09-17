@@ -32,7 +32,6 @@ import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.data.dialect.TestUpgradeCode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
-import org.labkey.remoteapi.assay.Run;
 
 import javax.servlet.ServletException;
 import java.util.Arrays;
@@ -114,7 +113,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     @Override
     public Collection<? extends Class> getJUnitTests()
     {
-        return Arrays.asList(DialectRetrievalTestCase.class, InlineProcedureTestCase.class, JdbcHelperTestCase.class, SynonymTestCase.class);
+        return Arrays.asList(DialectRetrievalTestCase.class, InlineProcedureTestCase.class, JdbcHelperTestCase.class);
     }
 
     @Override

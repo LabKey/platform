@@ -126,9 +126,6 @@ bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2012Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2014Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2016Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServerDialectFactory.java -text
-bigiron/src/org/labkey/bigiron/mssql/SynonymManager.java -text
-bigiron/src/org/labkey/bigiron/mssql/SynonymTableResolver.java -text
-bigiron/src/org/labkey/bigiron/mssql/SynonymTestCase.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySql56Dialect.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySqlDialect.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySqlDialectFactory.java -text
@@ -2899,6 +2896,12 @@ survey/webapp/survey/SurveyGridQuestion.js -text
 survey/webapp/survey/SurveyPanel.js -text
 survey/webapp/survey/UsersCombo.js -text
 survey/webapp/survey/surveyDesignPanel.js -text
+synonym/Synonym.iml -text
+synonym/module.properties -text
+synonym/src/org/labkey/synonym/SynonymManager.java -text
+synonym/src/org/labkey/synonym/SynonymModule.java -text
+synonym/src/org/labkey/synonym/SynonymTableResolver.java -text
+synonym/src/org/labkey/synonym/SynonymTestCase.java -text
 timeline/Timeline.iml -text
 timeline/minifyTimeline -text
 timeline/module.properties -text

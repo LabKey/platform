@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.bigiron.mssql;
+package org.labkey.synonym;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DatabaseTableType;
@@ -25,9 +25,6 @@ import org.labkey.api.data.dialect.ForeignKeyResolver;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.util.Pair;
-import org.labkey.bigiron.mssql.SynonymManager.Synonym;
-import org.labkey.bigiron.mssql.SynonymManager.SynonymForeignKeyResolver;
-import org.labkey.bigiron.mssql.SynonymManager.SynonymJdbcMetaDataLocator;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -40,7 +37,7 @@ public class SynonymTableResolver extends StandardTableResolver
     @Override
     public void addTableInfoFactories(Map<String, SchemaTableInfoFactory> map, DbScope scope, String schemaName) throws SQLException
     {
-        Map<String, Synonym> synonymMap = SynonymManager.getSynonymMap(scope, schemaName);
+        Map<String, SynonymManager.Synonym> synonymMap = SynonymManager.getSynonymMap(scope, schemaName);
 
         // Put a SchemaTableInfoFactory into the map for each synonym
         for (String synonymnName : synonymMap.keySet())
@@ -62,22 +59,22 @@ public class SynonymTableResolver extends StandardTableResolver
     @Override
     public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String requestedTableName) throws SQLException
     {
-        Pair<DbScope, Synonym> pair = SynonymManager.getSynonym(scope, schemaName, requestedTableName);
+        Pair<DbScope, SynonymManager.Synonym> pair = SynonymManager.getSynonym(scope, schemaName, requestedTableName);
 
         if (null == pair)
             return super.getJdbcMetaDataLocator(scope, schemaName, requestedTableName);      // Not a valid synonym, so return the standard locator
         else
-            return new SynonymJdbcMetaDataLocator(pair.first, scope, pair.second);  // tableName is a synonym, so return a synonym locator
+            return new SynonymManager.SynonymJdbcMetaDataLocator(pair.first, scope, pair.second);  // tableName is a synonym, so return a synonym locator
     }
 
     @Override
     public ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)
     {
-        Pair<DbScope, Synonym> pair = SynonymManager.getSynonym(scope, schemaName, tableName);
+        Pair<DbScope, SynonymManager.Synonym> pair = SynonymManager.getSynonym(scope, schemaName, tableName);
 
         if (null == pair)
             return super.getForeignKeyResolver(scope, schemaName, tableName);       // Not a synonym, so return the standard resolver
         else
-            return new SynonymForeignKeyResolver(pair.first, scope, pair.second);   // tableName is a synonym, so return a synonym resolver
+            return new SynonymManager.SynonymForeignKeyResolver(pair.first, scope, pair.second);   // tableName is a synonym, so return a synonym resolver
     }
 }
