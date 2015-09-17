@@ -74,7 +74,7 @@ import java.util.Map;
  * Date: Mar 6, 2006
  * Time: 7:55:56 PM
  */
-public abstract class AbstractReport implements Report
+public abstract class AbstractReport implements Report, Cloneable // TODO: Remove this and switch to a builder pattern.
 {
     private ReportDescriptor _descriptor;
 
@@ -97,6 +97,22 @@ public abstract class AbstractReport implements Report
     {
         if (getDescriptor() != null && hasContentModified(context))
             getDescriptor().setContentModified();
+    }
+
+    @Override  // TODO: Temporary workaround for current save report pattern, which pulls reports from the cache, mutates them, and saves. Should switch to a builder pattern.
+    public Report clone()
+    {
+        try
+        {
+            Report clone = (Report)super.clone();
+            clone.setDescriptor(clone.getDescriptor().clone());
+
+            return clone;
+        }
+        catch (CloneNotSupportedException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

@@ -83,7 +83,7 @@ import java.util.Map;
  * User: Karl Lum
  * Date: Oct 4, 2006
  */
-public class ReportDescriptor extends Entity implements SecurableResource
+public class ReportDescriptor extends Entity implements SecurableResource, Cloneable
 {
     public static final String TYPE = "reportDescriptor";
     public static final int FLAG_INHERITABLE = 0x01;
@@ -138,6 +138,17 @@ public class ReportDescriptor extends Entity implements SecurableResource
         Module queryModule = ModuleLoader.getInstance().getModule("Query");
         if (queryModule != null)
             setProperty(Prop.version, String.valueOf(queryModule.getVersion()));
+    }
+
+    @Override
+    public ReportDescriptor clone() throws CloneNotSupportedException
+    {
+        ReportDescriptor clone = (ReportDescriptor)super.clone();
+
+        clone._props = new LinkedHashMap<>(_props);
+        clone._mapReportProps = new HashMap<>(_mapReportProps);
+
+        return clone;
     }
 
     public interface ReportProperty

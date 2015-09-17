@@ -47,6 +47,7 @@ import java.util.Map;
  */
 public interface Report extends AttachmentParent, ThumbnailProvider
 {
+    Report clone();
     String getType();
     String getTypeDescription();
     String getDescriptorType();
