@@ -16,6 +16,8 @@
 
 package org.labkey.api.settings;
 
+import org.apache.commons.lang3.BooleanUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager;
 
 import java.util.Map;
@@ -23,32 +25,37 @@ import java.util.Map;
 public class FooterProperties
 {
 
-    public static final String FOOTER_CONFIGS = "FooterProperties";
-    public static final String SHOW_FOOTER_PROPERTY_NAME = "ShowFooter";
-    public static final String FOOTER_MODULE_PROPERTY_NAME = "FooterModule";
+    private static final String FOOTER_CONFIGS = "FooterProperties";
+    private static final String SHOW_FOOTER_PROPERTY_NAME = "ShowFooter";
+    private static final String FOOTER_MODULE_PROPERTY_NAME = "FooterModule";
 
-    public static boolean isShowFooter() {
+    public static boolean isShowFooter()
+    {
         String showFooter = "TRUE"; // default is to show the footer
         Map<String, String> map = PropertyManager.getProperties(FOOTER_CONFIGS);
         if (!map.isEmpty())
         {
             showFooter = map.get(SHOW_FOOTER_PROPERTY_NAME);
         }
-        return !"FALSE".equalsIgnoreCase(showFooter);
+        return BooleanUtils.toBoolean(showFooter);
     }
 
-    public static void setShowFooter(boolean isShowFooter) {
+    public static void setShowFooter(boolean isShowFooter)
+    {
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(FOOTER_CONFIGS, true);
-        map.put(SHOW_FOOTER_PROPERTY_NAME, (isShowFooter) ? "TRUE" : "FALSE");
+        map.put(SHOW_FOOTER_PROPERTY_NAME, BooleanUtils.toStringTrueFalse(isShowFooter));
         map.save();
     }
 
-    public static String getFooterModule() {
+    @Nullable
+    public static String getFooterModule()
+    {
         Map<String, String> map = PropertyManager.getProperties(FOOTER_CONFIGS);
         return map.get(FOOTER_MODULE_PROPERTY_NAME);
     }
 
-    public static void setFooterModule(String footerModule) {
+    public static void setFooterModule(String footerModule)
+    {
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(FOOTER_CONFIGS, true);
         map.put(FOOTER_MODULE_PROPERTY_NAME, footerModule);
         map.save();
