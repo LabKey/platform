@@ -1246,7 +1246,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 String name = (null == row.orig ? row.edit.getName() : row.orig.getName());
                 if (name.equalsIgnoreCase(_list.getKeyPropertyName()))
                 {
-                    HTML html = new HTML("<span class='gwt-FontImage fa fa-key'></span>");
+                    HTML html = new HTML("<span class='labkey-link gwt-FontImage fa fa-key'></span>");
                     Tooltip.addTooltip(html, "primary key");
                     return html;
                 }
