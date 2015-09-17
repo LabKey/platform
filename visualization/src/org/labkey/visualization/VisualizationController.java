@@ -83,7 +83,6 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -130,7 +129,6 @@ import java.io.StringReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1099,18 +1097,22 @@ public class VisualizationController extends SpringActionController
             if (form.getName() == null)
                 errors.reject(ERROR_MSG, "Name must be specified when saving a report.");
 
+            Report report;
+
             try
             {
-                _currentReport = getReport(form);
+                report = getReport(form);
             }
             catch (SQLException e)
             {
                 throw new RuntimeSQLException(e);
             }
 
-            if (_currentReport != null)
+            if (report != null)
             {
-                if(!_currentReport.canEdit(getUser(), getContainer()))
+                _currentReport = report.clone();
+
+                if (!_currentReport.canEdit(getUser(), getContainer()))
                 {
                     errors.reject(ERROR_MSG, "You do not have permission to save shared reports.");
                 }
@@ -1344,9 +1346,18 @@ public class VisualizationController extends SpringActionController
             Report report;
 
             if (form.getReportId() != null)
+            {
                 report = form.getReportId().getReport(getViewContext());
+
+                // We don't want to mutate reports in the cache. It's bad general practice, plus it breaks hasContentModified()
+                if (null != report)
+                    report = report.clone();
+
+            }
             else
+            {
                 report = ReportService.get().createReportInstance(GenericChartReport.TYPE);
+            }
 
             if (report != null)
             {

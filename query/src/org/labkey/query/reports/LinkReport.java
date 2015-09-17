@@ -24,7 +24,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
-import java.io.IOException;
 import java.net.URL;
 import java.net.UnknownHostException;
 
