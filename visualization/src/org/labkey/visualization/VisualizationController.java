@@ -1352,7 +1352,6 @@ public class VisualizationController extends SpringActionController
                 // We don't want to mutate reports in the cache. It's bad general practice, plus it breaks hasContentModified()
                 if (null != report)
                     report = report.clone();
-
             }
             else
             {

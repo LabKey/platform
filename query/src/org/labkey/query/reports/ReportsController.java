@@ -51,7 +51,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
@@ -66,7 +65,6 @@ import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
@@ -2197,10 +2195,21 @@ public class ReportsController extends SpringActionController
         @Override
         protected LinkReport initializeReportForSave(LinkReportForm form) throws Exception
         {
-            LinkReport report = (LinkReport) (form.isUpdate() ? form.getReportId().getReport(getViewContext()) : ReportService.get().createReportInstance(LinkReport.TYPE));
+            LinkReport report;
 
-            if (null == report)
-                throw new NotFoundException("Report does not exist");
+            if (form.isUpdate())
+            {
+                Report r = form.getReportId().getReport(getViewContext());
+
+                if (r instanceof LinkReport)
+                    report = (LinkReport)r.clone();
+                else
+                    throw new NotFoundException("Report does not exist");
+            }
+            else
+            {
+                report = (LinkReport)ReportService.get().createReportInstance(LinkReport.TYPE);
+            }
 
             report.setRunReportTarget(form.isTargetNewWindow() ? "_blank" : null);
 

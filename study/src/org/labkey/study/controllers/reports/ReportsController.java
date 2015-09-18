@@ -1865,6 +1865,7 @@ public class ReportsController extends BaseStudyController
 
             if (report != null)
             {
+                report = report.clone();
                 ReportDescriptor descriptor = report.getDescriptor();
 
                 if (form.getName() != null)
