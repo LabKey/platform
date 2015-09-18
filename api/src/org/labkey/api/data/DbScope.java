@@ -1385,6 +1385,8 @@ public class DbScope
          * or remove transaction from thread pool. Effectively starts new transaction with same pre and post commit tasks.
          */
         public void commitAndKeepConnection();
+
+        boolean isAborted();
     }
 
     private void popCurrentTransaction()
@@ -1589,6 +1591,12 @@ public class DbScope
             {
                 throw new RuntimeSQLException(e);
             }
+        }
+
+        @Override
+        public boolean isAborted()
+        {
+            return _aborted;
         }
 
         private void runCommitTasks(CommitTaskOption taskOption)
