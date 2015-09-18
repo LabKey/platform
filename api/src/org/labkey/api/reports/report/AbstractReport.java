@@ -412,7 +412,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 
     public boolean canEdit(User user, Container container)
     {
-        return !getDescriptor().isModuleBased() && canEdit(user, container, new ArrayList<ValidationError>());
+        return !getDescriptor().isModuleBased() && canEdit(user, container, new ArrayList<>());
 
     }
 
@@ -439,12 +439,12 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 
     public boolean canShare(User user, Container container)
     {
-        return canShare(user, container, new ArrayList<ValidationError>());
+        return canShare(user, container, new ArrayList<>());
     }
 
     public boolean canDelete(User user, Container container)
     {
-        return canDelete(user, container, new ArrayList<ValidationError>());
+        return canDelete(user, container, new ArrayList<>());
     }
 
     public boolean canDelete(User user, Container container, List<ValidationError> errors)
@@ -555,14 +555,9 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     /**
      * Did the current user create this report? This is our only real concept of "owner" with a report (the "owner" descriptor property is deprecated).
      */
-    protected boolean isOwner(User user)
+    protected boolean isOwner(UserPrincipal user)
     {
-        return isOwner(user.getUserId());
-    }
-
-    private boolean isOwner(int userId)
-    {
-        return isNew() || (getDescriptor().getCreatedBy() != 0 && (getDescriptor().getCreatedBy() == userId));
+        return isNew() || (getDescriptor().getCreatedBy() != 0 && (getDescriptor().getCreatedBy() == user.getUserId()));
     }
 
     /**
@@ -618,7 +613,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
             }
             else
             {
-                return !isPrivate() || isOwner(user.getUserId());
+                return !isPrivate() || isOwner(user);
             }
         }
         return false;
