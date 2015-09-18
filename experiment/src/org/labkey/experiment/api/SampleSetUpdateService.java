@@ -23,6 +23,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -37,6 +39,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
@@ -47,6 +50,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import static org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
 
@@ -189,6 +194,38 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
             errors.addRowError(vex.getValidationException());
         }
         return null;
+    }
+
+    @Override
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
+    {
+        DataIterator iterator = rows.getDataIterator(getDataIteratorContext(errors, InsertOption.MERGE, configParameters));
+        Collector<Map<String, Object>, ?, List<Map<String, Object>>> collector = Collectors.<Map<String, Object>>toList();
+        List<Map<String, Object>> maps = iterator.stream().collect(collector);
+        try
+        {
+            return insertOrUpdate(InsertUpdateChoice.insertOrUpdate, user, container, maps).size();
+        }
+        catch (ValidationException vex)
+        {
+            errors.addRowError(vex);
+            return 0;
+        }
+        catch (QueryUpdateServiceException e)
+        {
+            throw new UnexpectedException(e);
+        }
+    }
+
+    @Override
+    protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
+    {
+        List<ExpMaterialImpl> samples = _ss.getSamples(container);
+        for (ExpMaterialImpl sample : samples)
+        {
+            sample.delete(user);
+        }
+        return samples.size();
     }
 
     @Override
