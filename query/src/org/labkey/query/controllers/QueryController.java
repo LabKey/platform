@@ -3498,6 +3498,12 @@ public class QueryController extends SpringActionController
         public void commitAndKeepConnection()
         {
         }
+
+        @Override
+        public boolean isAborted()
+        {
+            return false;
+        }
     };
 
     @RequiresNoPermission //will check below
