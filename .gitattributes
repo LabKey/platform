@@ -170,6 +170,8 @@ cbcassay/src/org/labkey/cbcassay/data/CBCDataProperty.java -text
 cbcassay/src/org/labkey/cbcassay/view/showDetails.jsp -text
 core/Core-API.iml -text
 core/api-src/org/labkey/api/admin/TableXmlUtils.java -text
+core/api-src/org/labkey/api/admin/notification/Notification.java -text
+core/api-src/org/labkey/api/admin/notification/NotificationService.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationProvider.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationProviderImpl.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResult.java -text
@@ -189,6 +191,7 @@ core/resources/schemas/dbscripts/postgresql/core-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-13.30-14.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-14.20-14.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-14.30-15.10.sql -text
+core/resources/schemas/dbscripts/postgresql/core-15.20-15.21.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/labkey-0.00-13.30.sql -text
@@ -221,6 +224,7 @@ core/resources/schemas/dbscripts/sqlserver/core-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.30-14.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-14.20-14.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-14.30-15.10.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-15.20-15.21.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
@@ -425,6 +429,7 @@ core/src/org/labkey/core/login/pickAuthLogo.jsp -text
 core/src/org/labkey/core/login/register.jsp -text
 core/src/org/labkey/core/login/resetPassword.jsp -text
 core/src/org/labkey/core/login/setPassword.jsp -text
+core/src/org/labkey/core/notification/NotificationServiceImpl.java -text
 core/src/org/labkey/core/portal/PortalJUnitTest.java -text
 core/src/org/labkey/core/portal/UtilController.java -text
 core/src/org/labkey/core/portal/customizeErrors.jsp -text

@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.SubfolderWriter;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -162,6 +163,7 @@ import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.notification.NotificationServiceImpl;
 import org.labkey.core.portal.PortalJUnitTest;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.portal.UtilController;
@@ -274,6 +276,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FirstRequestHandler.addFirstRequestListener(new CoreFirstRequestHandler());
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
+        NotificationService.register(NotificationServiceImpl.getInstance());
 
         ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
         ServiceRegistry.get().registerService(DataLoaderService.I.class, new DataLoaderServiceImpl());
