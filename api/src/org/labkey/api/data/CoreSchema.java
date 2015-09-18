@@ -151,4 +151,9 @@ public class CoreSchema
     {
         return getSchema().getTable("Report");
     }
+
+    public TableInfo getTableInfoNotifications()
+    {
+        return getSchema().getTable("Notifications");
+    }
 }
