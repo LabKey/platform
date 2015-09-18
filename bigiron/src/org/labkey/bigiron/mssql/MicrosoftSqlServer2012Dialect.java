@@ -30,7 +30,7 @@ import java.util.Collection;
  */
 public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Dialect
 {
-    private final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
+    private static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
 
     private final InClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
 
@@ -63,5 +63,4 @@ public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Diale
         }
         return super.appendInClauseSql(sql, params);
     }
-
 }
