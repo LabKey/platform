@@ -314,7 +314,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     @Override
     public String getDescription()
     {
-        return ETL_PREFIX + _etlDescriptor.getDescription();
+        return ETL_PREFIX + (_etlDescriptor.getDescription() != null ? _etlDescriptor.getDescription() : _etlDescriptor.getName());
     }
 
     public void setRunId(int runId)
