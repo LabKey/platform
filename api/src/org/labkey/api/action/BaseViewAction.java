@@ -390,16 +390,30 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
         catch (InvalidPropertyException x)
         {
             // Maybe we should propagate exception and return SC_BAD_REQUEST (in ExceptionUtil.handleException())
-            // most POST handlers check erros.hasErrors(), but not all GET handlers do
+            // most POST handlers check errors.hasErrors(), but not all GET handlers do
             BindException errors = new BindException(command, commandName);
             errors.reject(SpringActionController.ERROR_MSG, "Error binding property: " + x.getPropertyName());
             return errors;
         }
         catch (NumberFormatException x)
         {
-            // Malfomed array parameter throws this exception, unfortunately. Just reject the request. #21931
+            // Malformed array parameter throws this exception, unfortunately. Just reject the request. #21931
             BindException errors = new BindException(command, commandName);
             errors.reject(SpringActionController.ERROR_MSG, "Error binding array property; invalid array index (" + x.getMessage() + ")");
+            return errors;
+        }
+        catch (NegativeArraySizeException x)
+        {
+            // Another malformed array parameter throws this exception. #23929
+            BindException errors = new BindException(command, commandName);
+            errors.reject(SpringActionController.ERROR_MSG, "Error binding array property; negative array size (" + x.getMessage() + ")");
+            return errors;
+        }
+        catch (IllegalArgumentException x)
+        {
+            // General bean binding problem. #23929
+            BindException errors = new BindException(command, commandName);
+            errors.reject(SpringActionController.ERROR_MSG, "Error binding property; (" + x.getMessage() + ")");
             return errors;
         }
     }
