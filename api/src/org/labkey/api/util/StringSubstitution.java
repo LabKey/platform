@@ -26,7 +26,7 @@ import java.util.regex.MatchResult;
  * matched "groups" from the regular expression.
  * <p>
  * e.g.    regex      = ([0-9.]+)@(\w)
- *         substition = -n${2},${1}
+ *         substitution = -n${2},${1}
  *         value      = 4.026655@K
  *         result     = -nK,4.026655 
  *
@@ -85,7 +85,7 @@ public class StringSubstitution
         {
             MatchResult match = matcher.toMatchResult();
 
-            StringBuffer valueSubst = new StringBuffer(value.substring(0, match.start()));
+            StringBuilder valueSubst = new StringBuilder(value.substring(0, match.start()));
             String[] parts = _substitution.split("\\$\\{");
             valueSubst.append(parts[0]);
             for (int i = 1; i < parts.length; i++)
