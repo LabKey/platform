@@ -693,7 +693,10 @@ public class ModuleLoader implements Filter
         }
 
         simpleModule.setName(moduleName);
-        simpleModule.setSourcePath(moduleDir.getAbsolutePath());
+        if (props.containsKey("SourcePath"))
+            simpleModule.setSourcePath((String)props.get("SourcePath"));
+        else
+            simpleModule.setSourcePath(moduleDir.getAbsolutePath());
         BeanUtils.populate(simpleModule, props);
         simpleModule.setApplicationContext(parentContext);
 
