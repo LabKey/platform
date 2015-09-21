@@ -769,6 +769,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     markDirty : function(value) {
         this.dirty = value;
+        LABKEY.Utils.signalWebDriverTest("timeChartDirty", value);
     },
 
     chartDefinitionChanged: function(requiresDataRefresh) {

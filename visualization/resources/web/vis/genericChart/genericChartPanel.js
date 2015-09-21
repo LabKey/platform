@@ -1484,6 +1484,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     markDirty : function(dirty) {
         this.dirty = dirty;
+        LABKEY.Utils.signalWebDriverTest("genericChartDirty", dirty);
     },
 
     isDirty : function() {
