@@ -97,6 +97,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -262,80 +263,100 @@ public class DavController extends SpringActionController
         response.setCharacterEncoding("UTF-8");
         _webdavresponse = new WebdavResponse(response);
 
-        String contentType = request.getContentType();
-        if (null != contentType && contentType.startsWith("multipart"))
-        {
-            try
-            {
-                request = (new CommonsMultipartResolver()).resolveMultipart(request);
-            }
-            catch (MultipartException x)
-            {
-                _webdavresponse.sendError(WebdavStatus.SC_BAD_REQUEST, x);
-                return null;
-            }
-        }
-
-        ViewContext context = getViewContext();
-        context.setRequest(request);
-        context.setResponse(response);
-
-        String method = getViewContext().getActionURL().getAction();
-        Controller action = resolveAction(method.toLowerCase());
-
-        if (null == action)
-        {
-            _webdavresponse.sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
-            return null;
-        }
-
-        Class<? extends Controller> actionClass = action.getClass();
-        if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
-        {
-            MemTracker.get().ignore();
-        }
-        else
-        {
-            // Don't send back mini-profiler id if the user won't be able to get the profiler info
-            if (MiniProfiler.isEnabled(getViewContext()))
-            {
-                RequestInfo req = MemTracker.get().current();
-                if (req != null)
-                {
-                    LinkedHashSet<Long> ids = new LinkedHashSet<>();
-                    ids.add(req.getId());
-                    ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
-
-                    response.setHeader("X-MiniProfiler-Ids", ids.toString());
-                }
-            }
-        }
+        MultipartHttpServletRequest multipartRequest = null;
 
         try
         {
+            String contentType = request.getContentType();
+            if (null != contentType && contentType.startsWith("multipart"))
+            {
+                try
+                {
+                    multipartRequest = (new CommonsMultipartResolver()).resolveMultipart(request);
+                    request = multipartRequest;
+                }
+                catch (MultipartException x)
+                {
+                    _webdavresponse.sendError(WebdavStatus.SC_BAD_REQUEST, x);
+                    return null;
+                }
+            }
+
+            ViewContext context = getViewContext();
+            context.setRequest(request);
+            context.setResponse(response);
+
+            String method = getViewContext().getActionURL().getAction();
+            Controller action = resolveAction(method.toLowerCase());
+
             if (null == action)
             {
                 _webdavresponse.sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
                 return null;
             }
-            if (action instanceof HasViewContext)
-                ((HasViewContext)action).setViewContext(context);
-            action.handleRequest(request, response);
+
+            Class<? extends Controller> actionClass = action.getClass();
+            if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
+            {
+                MemTracker.get().ignore();
+            }
+            else
+            {
+                // Don't send back mini-profiler id if the user won't be able to get the profiler info
+                if (MiniProfiler.isEnabled(getViewContext()))
+                {
+                    RequestInfo req = MemTracker.get().current();
+                    if (req != null)
+                    {
+                        LinkedHashSet<Long> ids = new LinkedHashSet<>();
+                        ids.add(req.getId());
+                        ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
+
+                        response.setHeader("X-MiniProfiler-Ids", ids.toString());
+                    }
+                }
+            }
+
+            try
+            {
+                if (action instanceof HasViewContext)
+                    ((HasViewContext) action).setViewContext(context);
+                action.handleRequest(request, response);
+            }
+            catch (RedirectException ex)
+            {
+                ExceptionUtil.doErrorRedirect(response, ex.getURL());
+            }
+            catch (ConfigurationException ex)
+            {
+                _log.error("Unexpected exception, might be related to server configuration problems", ex);
+                _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, ex);
+            }
+            catch (Exception ex)
+            {
+                _log.error("unexpected exception", ex);
+                ExceptionUtil.logExceptionToMothership(request, ex);
+                _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, ex);
+            }
         }
-        catch (RedirectException ex)
+        finally
         {
-            ExceptionUtil.doErrorRedirect(response, ex.getURL());
-        }
-        catch (ConfigurationException ex)
-        {
-            _log.error("Unexpected exception, might be related to server configuration problems", ex);
-            _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, ex);
-        }
-        catch (Exception ex)
-        {
-            _log.error("unexpected exception", ex);
-            ExceptionUtil.logExceptionToMothership(request, ex);
-            _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, ex);
+            if (multipartRequest != null)
+            {
+                // Be sure that temp files are deleted. This typically is handled via garbage collection
+                // but there is no guarantee that it will actually run in a timely fashion, or ever depending
+                // on how the server is shut down
+                for (List<MultipartFile> multipartFiles : multipartRequest.getMultiFileMap().values())
+                {
+                    for (MultipartFile multipartFile : multipartFiles)
+                    {
+                        if (multipartFile instanceof CommonsMultipartFile)
+                        {
+                            ((CommonsMultipartFile)multipartFile).getFileItem().delete();
+                        }
+                    }
+                }
+            }
         }
         for (Map.Entry<Closeable, Throwable> e : closables.entrySet())
         {
