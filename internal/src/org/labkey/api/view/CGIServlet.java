@@ -629,7 +629,7 @@ public final class CGIServlet extends HttpServlet {
                     out.println("Check the <b>HttpServletRequest ");
                     out.println("<a href=\"#pathInfo\">pathInfo</a></b> ");
                     out.println("property to see if it is what you meant ");
-                    out.println("it to be.  You must specify an existant ");
+                    out.println("it to be.  You must specify an existent ");
                     out.println("and executable file as part of the ");
                     out.println("path-info.");
                     out.println("</H4>");

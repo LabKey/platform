@@ -244,7 +244,7 @@ public class SecurityManager
         // HACK: I really want to make sure we don't have orphaned Groups.typeProject groups
         //
         // either because
-        //  a) the container is non-existant or
+        //  a) the container is non-existent or
         //  b) the container is not longer a project
 
         scrubTables();
@@ -1076,7 +1076,7 @@ public class SecurityManager
         // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
         GroupMembershipCache.handleGroupChange(group, group);
 
-        // NOTE: Most code can not tell the difference between a non-existant SecurityPolicy and an empty SecurityPolicy
+        // NOTE: Most code can not tell the difference between a non-existent SecurityPolicy and an empty SecurityPolicy
         // NOTE: Both are treated as meaning "inherit", we don't want to accidentally create an empty security policy
         // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
 
