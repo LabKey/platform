@@ -669,7 +669,7 @@
             filter : function(dimName, range)
             {
                 // issue 24008: use filterFunction if filtering by an array of values
-                if (toString.call(range) === '[object Array]') {
+                if ($.isArray(range)) {
                     return this.getDimension(dimName).filterFunction(function(dimVal) {
                         return range.indexOf(dimVal) > -1;
                     });
