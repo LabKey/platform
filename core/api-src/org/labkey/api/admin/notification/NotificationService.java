@@ -16,6 +16,7 @@
 package org.labkey.api.admin.notification;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -52,14 +53,10 @@ public class NotificationService
         Notification getNotification(Container container, @NotNull String objectId, @NotNull String type, int notifyUserId);
 
         /*
-         * Removes all notifications for a specific user based on the specified type.
+         * Remove a single notification, if it exists, for a specific user based on the specified objectId and types,
+         * rr if no objectId provided, removes all notifications for a specific user based on the specified types.
          */
-        int removeNotificationsByType(Container container, @NotNull String type, int notifyUserId);
-
-        /*
-         * Remove a single notification for a specific user based on the specified objectId and type.
-         */
-        void removeNotification(Container container, @NotNull String objectId, @NotNull String type, int notifyUserId);
+        int removeNotifications(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId);
     }
 
     public static void register(Service serviceImpl)

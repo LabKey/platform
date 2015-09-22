@@ -16,6 +16,7 @@
 package org.labkey.core.notification;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.Container;
@@ -90,23 +91,15 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
-    public int removeNotificationsByType(Container container, @NotNull String type, int notifyUserId)
+    public int removeNotifications(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("Type"), type);
         filter.addCondition(FieldKey.fromParts("UserID"), notifyUserId);
-        return Table.delete(getTable(), filter);
-    }
+        filter.addInClause(FieldKey.fromParts("Type"), types);
+        if (objectId != null)
+            filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
 
-    @Override
-    public void removeNotification(Container container, @NotNull String objectId, @NotNull String type, int notifyUserId)
-    {
-        Notification notification = getNotification(container, objectId, type, notifyUserId);
-        if (notification == null)
-        {
-            throw new NotFoundException("Notification does not exist for the specified user, object, and type.");
-        }
-        Table.delete(getTable(), notification.getRowId());
+        return Table.delete(getTable(), filter);
     }
 
     private TableInfo getTable()
