@@ -81,7 +81,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     // Convenience method that avoids "unchecked assignment" warnings
     @Override
-    public @NotNull Collection<Map<String, Object>> getMapCollection()
+    public @NotNull Collection<Map<String, Object>>  getMapCollection()
     {
         //noinspection unchecked
         return Arrays.asList(getMapArray());
