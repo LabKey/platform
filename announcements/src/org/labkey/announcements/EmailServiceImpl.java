@@ -399,7 +399,7 @@ public class EmailServiceImpl implements EmailService.I
         public ExpectedException exception = ExpectedException.none();
 
         private static final String PROTOCOL_ATTACHMENT_NAME = "Protocol.txt";
-        private static final String NON_EXISTANT_ATTACHMENT_NAME = "fake_file.txt";
+        private static final String NON_EXISTENT_ATTACHMENT_NAME = "fake_file.txt";
         private static final String FAKE_DIRECTORY_NAME = "/path/to/fake/directory";
 
         @org.junit.Test
@@ -430,18 +430,18 @@ public class EmailServiceImpl implements EmailService.I
         }
 
         @org.junit.Test
-        public void testNonExistantFileAttachments() throws MessagingException, IOException
+        public void testNonExistentFileAttachments() throws MessagingException, IOException
         {
             EmailMessage msg = getBaseMessage();
-            File attachment = getAttachment(NON_EXISTANT_ATTACHMENT_NAME);
+            File attachment = getAttachment(NON_EXISTENT_ATTACHMENT_NAME);
 
             if (attachment == null)
                 return;
 
-            List<File> attachementList = new ArrayList<>(Arrays.asList(attachment));
+            List<File> attachmentList = new ArrayList<>(Arrays.asList(attachment));
 
             exception.expect(IllegalArgumentException.class);
-            msg.setFiles(attachementList);
+            msg.setFiles(attachmentList);
         }
 
         @org.junit.Test
@@ -453,10 +453,10 @@ public class EmailServiceImpl implements EmailService.I
             if (attachment == null)
                 return;
 
-            List<File> attachementList = new ArrayList<>(Arrays.asList(attachment));
+            List<File> attachmentList = new ArrayList<>(Arrays.asList(attachment));
 
             exception.expect(IllegalArgumentException.class);
-            msg.setFiles(attachementList);
+            msg.setFiles(attachmentList);
         }
 
         private EmailMessage getBaseMessage()

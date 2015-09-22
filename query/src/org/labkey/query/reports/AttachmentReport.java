@@ -500,7 +500,7 @@ public class AttachmentReport extends BaseRedirectReport
             if (newFilePath != null)
                 return origFilePath == null || !newFilePath.equals(origFilePath);
 
-            // NOTE: in the case of an update attachement file, the ContentModified will need to be updated in
+            // NOTE: in the case of an update attachment file, the ContentModified will need to be updated in
             // the UpdateAttachmentReportAction.afterReportSave since we can't tell at this point in beforeSave
             // if a new file was uploaded or not
         }
