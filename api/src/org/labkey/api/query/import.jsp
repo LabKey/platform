@@ -292,6 +292,9 @@
             items: [
                 <%=text(extraFormFields)%>
                 {
+                    xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
+                },
+                {
                     id: <%=q(tsvId)%>,
                     xtype: 'textarea',
                     fieldLabel: 'Data',
@@ -359,6 +362,9 @@
 
             items: [
                     <%=text(extraFormFields)%>
+                    {
+                        xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
+                    },
                     fibasic
             ],
 
