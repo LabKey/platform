@@ -58,7 +58,7 @@ public class SSOwithCASTest extends BaseWebDriverTest
         super();
         CAS_HOST = TestCredentials.getServer(credentialKey).getHost();
         EXISTING_USER_LOGIN = TestCredentials.getServer(credentialKey).getLogins().get(0);
-        NEW_USER_LOGIN = TestCredentials.getServer(credentialKey).getLogins().get(1);
+        NEW_USER_LOGIN = TestCredentials.getServer(credentialKey).getLogins().get(0);
     }
 
     @Override
@@ -80,7 +80,6 @@ public class SSOwithCASTest extends BaseWebDriverTest
     private void doSetup()
     {
         configureCASServer();
-        createUser(EXISTING_USER_LOGIN.getEmail(), null);
     }
 
     @Before
@@ -90,7 +89,7 @@ public class SSOwithCASTest extends BaseWebDriverTest
         casLogout();
     }
 
-    @Test @Ignore("Test accounts have been removed")
+    @Test
     public void testNewUserSSO()
     {
         signOut();
@@ -104,6 +103,9 @@ public class SSOwithCASTest extends BaseWebDriverTest
         assertEquals("Wrong email for new user.", NEW_USER_LOGIN.getEmail(), getText(Locator.css(".labkey-nav-page-header")));
         String displayName = getFormElement(Locator.name("quf_DisplayName"));
         assertEquals("Wrong display name for new user.", displayNameFromEmail(NEW_USER_LOGIN.getEmail()), displayName);
+
+        ensureSignedInAsAdmin();
+        deleteUsersIfPresent(NEW_USER_LOGIN.getEmail());
     }
 
     @Test
@@ -141,13 +143,13 @@ public class SSOwithCASTest extends BaseWebDriverTest
         verifyLogoDeletion();
     }
 
-    @Test @Ignore("Test accounts have been removed")
+    @Test
     public void testSSOWithCASFromLoginPage()
     {
         testCAS(true);
     }
 
-    @Test @Ignore("Test accounts have been removed")
+    @Test
     public void testSSOwithCASFromHeaderLink()
     {
         testCAS(false);
@@ -179,21 +181,18 @@ public class SSOwithCASTest extends BaseWebDriverTest
         clickButton("Save");
 
         signOut();
-
-        click(Locator.linkWithHref("/labkey/login/ssoRedirect.view?provider=CAS"));
-
+        clickAndWait(Locator.linkWithHref("/labkey/login/ssoRedirect.view?provider=CAS"));
         assertEquals("invalid configured serverUrl, should get a 404 response", 404, getResponseCode()); //check for 404
-
         signIn();
 
         //configure CAS correctly for the other tests to run. Could add this part in Before method, but this is the only
         //test that requires re-configuring CAS Server correctly (since it is already configured once in BeforeClass method)
         configureCASServer();
-
     }
 
     private void testCAS(boolean loginPage)
     {
+        createUser(EXISTING_USER_LOGIN.getEmail(), null);
         signOut();
 
         clickFolder("support");
@@ -237,6 +236,9 @@ public class SSOwithCASTest extends BaseWebDriverTest
 
         //User should be CAS user
         assertEquals("User should be still signed in with CAS userId", displayNameFromEmail(EXISTING_USER_LOGIN.getEmail()), getDisplayName());
+
+        ensureSignedInAsAdmin();
+        deleteUsersIfPresent(EXISTING_USER_LOGIN.getEmail());
     }
 
     @LogMethod(quiet = true)
