@@ -54,7 +54,7 @@ public class NotificationService
 
         /*
          * Remove a single notification, if it exists, for a specific user based on the specified objectId and types,
-         * rr if no objectId provided, removes all notifications for a specific user based on the specified types.
+         * or if no objectId provided, removes all notifications for a specific user based on the specified types.
          */
         int removeNotifications(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId);
     }
