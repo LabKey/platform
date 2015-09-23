@@ -161,6 +161,22 @@ public class DatasetQueryView extends StudyQueryView
         setViewItemFilter(StudyReportUIProvider.getItemFilter());
         // Issue 23076: hide container filter option in dataset view menu even if dataset is shared
         disableContainerFilterSelection();
+
+        addSessionParticipantGroup(settings);
+    }
+
+    private void addSessionParticipantGroup(DatasetQuerySettings settings)
+    {
+        if (getViewContext() != null && getViewContext().getRequest() != null)
+        {
+            ParticipantGroup sessionGroup = ParticipantGroupManager.getInstance().getSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest());
+            if (sessionGroup != null && sessionGroup.getRowId() > 0)
+            {
+                ActionURL sortFilterURL = settings.getSortFilterURL();
+                sortFilterURL.addParameter("query.ParticipantId/" + sessionGroup.getCategoryLabel() + "~eq", sessionGroup.getLabel());
+                settings.setSortFilterURL(sortFilterURL);
+            }
+        }
     }
 
     @Override
