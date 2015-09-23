@@ -33,7 +33,7 @@
     Container currentProject = getContainer().getProject();
     String projectName = null;
     if (null != currentProject)
-        projectName = currentProject.getName();
+        projectName = currentProject.getTitle();
 
     // Based on the number of projects calculate a rectangle with a column number of MAX_COLS
     int MAX_COLS = 4;

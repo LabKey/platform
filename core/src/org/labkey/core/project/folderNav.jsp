@@ -59,9 +59,9 @@
     {
         if (c.hasPermission(u, ReadPermission.class))
         {
-            return _hs("<a href=\"" + h(c.getStartURL(u)) +"\">" + h(c.getName()) + "</a>" + getTrailSeparator());
+            return _hs("<a href=\"" + h(c.getStartURL(u)) +"\">" + h(c.getTitle()) + "</a>" + getTrailSeparator());
         }
-        return _hs("<span>" + h(c.getName()) + "</span>" + getTrailSeparator());
+        return _hs("<span>" + h(c.getTitle()) + "</span>" + getTrailSeparator());
     }
 %>
 <div>
@@ -78,7 +78,8 @@
                 {
                     %><%=getTrailLink(containers.get(p), user)%><%
                 }
-                %><span style="color: black;"><%=h(containers.get(size - 1).getName())%></span><%
+                String title = containers.get(size - 1).isWorkbook() ? containers.get(size - 1).getName() : containers.get(size - 1).getTitle();
+                %><span style="color: black;"><%=h(title)%></span><%
             }
             else
             {
@@ -91,7 +92,8 @@
                 {
                     %><%=getTrailLink(containers.get(p), user)%><%
                 }
-                %><span style="color: black;"><%=h(containers.get(size - 1).getName())%></span><%
+                String title = containers.get(size - 1).isWorkbook() ? containers.get(size - 1).getName() : containers.get(size - 1).getTitle();
+                %><span style="color: black;">ffff<%=h(title)%></span><%
             }
         %>
     </div>

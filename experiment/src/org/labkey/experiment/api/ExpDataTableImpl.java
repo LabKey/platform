@@ -108,8 +108,9 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         setDefaultVisibleColumns(defaultCols);
 
         setTitleColumn("Name");
-        ActionURL detailsURL = new ActionURL(ExperimentController.ShowDataAction.class, _userSchema.getContainer());
-        setDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("rowId", "RowId")));
+        DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowDataAction.class, _userSchema.getContainer()), Collections.singletonMap("rowId", "RowId"));
+        setDetailsURL(detailsURL);
+        getColumn(Column.RowId).setURL(detailsURL);
 
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
         String domainURI = svc.getDomainURI(getContainer());

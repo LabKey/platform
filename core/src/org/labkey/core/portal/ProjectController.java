@@ -361,7 +361,7 @@ public class ProjectController extends SpringActionController
             }
             else
             {
-                title = c.getName();
+                title = c.getTitle();
             }
             if (title != null)
                 page.setTitle(title, appendPath);
