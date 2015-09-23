@@ -585,6 +585,7 @@ dataintegration/src/org/labkey/di/steps/QueueJobTask.java -text
 dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStep.java -text
 dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStepMeta.java -text
 dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStepProvider.java -text
+dataintegration/src/org/labkey/di/steps/ResetSchemaMetadata.java -text
 dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStep.java -text
 dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStepMeta.java -text
 dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStepProvider.java -text
