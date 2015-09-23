@@ -216,7 +216,9 @@
                 },
                 itemdblclick : function(g) {
                     if (g.getSelectionModel().hasSelection()) {
-                        editParticipantGroup(g.getSelectionModel().getSelection()[0]);
+                        var filters = g.getSelectionMode().getSelection()[0].get('filters');
+                        if (filters == undefined || filters.length == 0)
+                            editParticipantGroup(g.getSelectionModel().getSelection()[0]);
                     }
                 },
                 scope: this
