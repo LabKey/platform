@@ -346,8 +346,10 @@ public class LoginController extends SpringActionController
                     errors.addError(new FormattedError("Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> to have your account created."));
                     break;
                 case  PasswordExpired:
-                    AuthenticationManager.LoginReturnProperties properties = new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile());
-                    AuthenticationManager.setLoginReturnProperties(request, properties);
+                     AuthenticationManager.setLoginReturnProperties(request,  new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
+                    break;
+                case  Complexity:
+                    AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
                     break;
                 default:
                     throw new IllegalStateException("Unknown authentication status: " + result.getStatus());
