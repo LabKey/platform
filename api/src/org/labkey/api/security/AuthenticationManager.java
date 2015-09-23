@@ -421,7 +421,7 @@ public class AuthenticationManager
     }
 
 
-    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused, UserCreationError, UserCreationNotAllowed, PasswordExpired}
+    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused, UserCreationError, UserCreationNotAllowed, PasswordExpired, Complexity}
 
     public static class PrimaryAuthenticationResult
     {
@@ -446,10 +446,10 @@ public class AuthenticationManager
         }
 
         // Failure case with password expire and redirect
-        private PrimaryAuthenticationResult(@NotNull URLHelper redirectURL)
+        private PrimaryAuthenticationResult(@NotNull URLHelper redirectURL, AuthenticationStatus status)
         {
             _user = null;
-            _status = AuthenticationStatus.PasswordExpired;
+            _status = status;
             _redirectURL = redirectURL;
         }
 
@@ -622,9 +622,14 @@ public class AuthenticationManager
 
                 if (null != redirectURL)
                 {
-                    if (firstFailure.getFailureReason().name().equals("expired"))
+                    // if labkey db authenticate determines password has expired or that password does not meet complexity requirements then return url to redirect user
+                    if (null != firstFailure.getFailureReason().name() && firstFailure.getFailureReason().name().equals("expired"))
                     {
-                        return new PrimaryAuthenticationResult(redirectURL);
+                        return new PrimaryAuthenticationResult(redirectURL, AuthenticationStatus.PasswordExpired);
+                    }
+                    else if (null != firstFailure.getFailureReason().name() && firstFailure.getFailureReason().name().equals("complexity"))
+                    {
+                        return new PrimaryAuthenticationResult(redirectURL, AuthenticationStatus.Complexity);
                     }
                     else
                     {
