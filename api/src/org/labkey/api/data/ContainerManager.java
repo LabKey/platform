@@ -1070,7 +1070,7 @@ public class ContainerManager
                 if (project.equals(getHomeContainer()))
                     list.addChild(new NavTree("Home", startURL));
                 else
-                    list.addChild(project.getName(), startURL);
+                    list.addChild(project.getTitle(), startURL);
             }
         }
 
@@ -1116,7 +1116,7 @@ public class ContainerManager
                     continue;
 
                 //HACK to make home link consistent...
-                String name = f.getName();
+                String name = f.getTitle();
                 if (name.equals("home") && f.equals(getHomeContainer()))
                     name = "Home";
 

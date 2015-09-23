@@ -58,7 +58,7 @@
     String projectName = "";
     if (null != p)
     {
-        projectName = p.getName();
+        projectName = p.getTitle();
         if (null != projectName && projectName.equalsIgnoreCase("home"))
             projectName = "Home";
     }

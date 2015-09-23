@@ -18,10 +18,14 @@ package org.labkey.api.module;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartConfigurationException;
@@ -38,6 +42,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 /*
 * User: Dave
@@ -195,9 +200,29 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
 //                ret.setTitle(_webPartDef.getTitle());
 //            }
         }
+
+        if (null != _webPartDef.getCustomizeHandler() && portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
+        {
+            NavTree customize = new NavTree("");
+            customize.setScript(getWrappedOnClick(webPart, _webPartDef.getCustomizeHandler()));
+            ret.setCustomize(customize);
+        }
+
+
         return ret;
     }
 
+    private String getWrappedOnClick(Portal.WebPart webPart, String originalOnClick)
+    {
+        if (originalOnClick == null)
+            return null;
+
+        StringBuilder onClickWrapper = new StringBuilder();
+        onClickWrapper.append("var webPartRowId = ").append(PageFlowUtil.jsString(String.valueOf(webPart.getRowId()))).append("; ");
+        onClickWrapper.append("var webPartProperties = ").append(Matcher.quoteReplacement(new JSONObject(webPart.getPropertyMap()).toString())).append("; ");
+        onClickWrapper.append(originalOnClick);
+        return onClickWrapper.toString();
+    }
 
     @Override
     public boolean isAvailable(Container c, String location)

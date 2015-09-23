@@ -324,7 +324,7 @@ public class SimpleFolderType extends MultiPortalFolderType
     @Override
     protected String getFolderTitle(ViewContext context)
     {
-        return context.getContainer().getName();
+        return context.getContainer().getTitle();
     }
 
     @Override
