@@ -286,22 +286,22 @@ boxPlot.render();
             userMargins = {};
         }
 
-        if(!userMargins.top || userMargins.top < 0){
+        if(!Ext.isDefined(userMargins.top)){
             margins.top = top;
         } else {
             margins.top = userMargins.top;
         }
-        if(!userMargins.right || userMargins.right < 0){
+        if(!Ext.isDefined(userMargins.right)){
             margins.right = right;
         } else {
             margins.right = userMargins.right;
         }
-        if(!userMargins.bottom || userMargins.bottom < 0){
+        if(!Ext.isDefined(userMargins.bottom)){
             margins.bottom = bottom;
         } else {
             margins.bottom = userMargins.bottom;
         }
-        if(!userMargins.left || userMargins.left < 0){
+        if(!Ext.isDefined(userMargins.left)){
             margins.left = left;
         } else {
             margins.left = userMargins.left;
@@ -788,6 +788,7 @@ boxPlot.render();
         this.bgColor = config.bgColor ? config.bgColor : null;
         this.gridColor = config.gridColor ? config.gridColor : null;
         this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
+        this.gridLinesVisible = config.gridLinesVisible ? config.gridLinesVisible : null;
         this.fontFamily = config.fontFamily ? config.fontFamily : null;
         this.tickColor = config.tickColor ? config.tickColor : null;
         this.borderColor = config.borderColor ? config.borderColor : null;
@@ -1048,6 +1049,10 @@ boxPlot.render();
             this.render();
         };
 
+        this.setBrushing = function(configBrushing) {
+            this.renderer.setBrushing(configBrushing);
+        };
+
         this.clearBrush = function() {
             if(this.renderer.clearBrush) {
                 this.renderer.clearBrush();
@@ -1065,6 +1070,10 @@ boxPlot.render();
             // min/max of the non-selected dimension will be null/null.
             this.renderer.setBrushExtent(extent);
         };
+
+        this.bindBrushing = function(otherPlots) {
+            this.renderer.bindBrushing(otherPlots);
+        }
 
         return this;
     };

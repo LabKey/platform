@@ -14,7 +14,7 @@ LABKEY.vis.internal.Axis = function() {
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
             tickRectCls, tickRectHeightOffset=6, tickRectWidthOffset=8, tickClick, axisSel, tickSel, textSel, gridLineSel,
             borderSel, grid, scalesList = [];
-    var tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD',
+    var tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', gridLinesVisible = 'both',
             borderColor = '#000000', tickDigits;
     var tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1;
     var fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10;
@@ -135,13 +135,18 @@ LABKEY.vis.internal.Axis = function() {
                     .attr('stroke-width', tickWidth);
         }
 
-        if (gridLineWidth > 0) {
-            gridLineEls = gridLineSel.selectAll('path').data(gridLineData);
-            gridLineEls.exit().remove();
-            gridLineEls.enter().append('path');
-            gridLineEls.attr('d', gridLineFn)
-                    .attr('stroke', gridLineColor)
-                    .attr('stroke-width', gridLineWidth);
+        if (gridLineWidth > 0 ) {
+            if((orientation === 'left' || orientation === 'right') && (gridLinesVisible === 'both' || gridLinesVisible === 'x')
+                || (orientation === 'top' || orientation === 'bottom') && (gridLinesVisible === 'both' || gridLinesVisible === 'y'))
+            {
+
+                gridLineEls = gridLineSel.selectAll('path').data(gridLineData);
+                gridLineEls.exit().remove();
+                gridLineEls.enter().append('path');
+                gridLineEls.attr('d', gridLineFn)
+                        .attr('stroke', gridLineColor)
+                        .attr('stroke-width', gridLineWidth);
+            }
         }
 
         textAnchors = textSel.selectAll(tickHover ? 'a' : 'g').data(data);
@@ -310,6 +315,12 @@ LABKEY.vis.internal.Axis = function() {
         }
         return axis;
     };
+    axis.gridLinesVisible = function(c) {
+        if (c !== undefined && c !== null) {
+            gridLinesVisible = c;
+        }
+        return axis;
+    };
     axis.gridLineWidth = function(w) {
         if (w !== undefined && w !== null) {
             gridLineWidth = w;
@@ -357,15 +368,17 @@ LABKEY.vis.internal.Axis = function() {
 };
 
 LABKEY.vis.internal.D3Renderer = function(plot) {
-    var errorMsg, labelElements = null,
+    var errorMsg, labelElements = null, labelBkgds = null,
         xAxis = null, xTopAxis = null, leftAxis = null, rightAxis = null,
         brush = null, brushSel = null, brushSelectionType = null,
         xHandleBrush = null, xHandleSel = null, yHandleBrush = null, yHandleSel = null,
-        defaultBrushFillColor = '#EBF7F8', defaultBrushFillOpacity = .75, defaultBrushStrokeColor = '#14C9CC';
+        defaultBrushFillColor = '#EBF7F8', defaultBrushFillOpacity = .75, defaultBrushStrokeColor = '#14C9CC',
+        defaultAxisFontSize=14, defaultMainFontSize=18;
 
     var initLabelElements = function() {
-        labelElements = {};
+        labelElements = {}; labelBkgds = {};
         var fontFamily = plot.fontFamily ? plot.fontFamily : 'verdana, arial, helvetica, sans-serif';
+        var labelBkgd = this.canvas.append('g').attr('class', 'labelBkgd');
         var labels = this.canvas.append('g').attr('class', plot.renderTo + '-labels');
 
         var appendLabelElement = function(name, defaultFontSize) {
@@ -383,12 +396,54 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return labelEl;
         };
 
-        labelElements.main = appendLabelElement('main', 18);
-        labelElements.x = appendLabelElement('x', 14);
-        labelElements.xTop = appendLabelElement('xTop', 14);
-        labelElements.y = appendLabelElement('yLeft', 14);
+        var appendLabelBkgd = function(name, defaultWidth, defaultHeight) {
+            var labelBkgdEl = {}, width, height, x, y;
+
+            if(name === 'x' || name === 'xTop') {
+                width = plot.labels[name] && plot.labels[name].bkgdWidth ? plot.labels[name].bkgdWidth : plot.grid.width;
+                height = plot.labels[name] && plot.labels[name].bkgdHeight ? plot.labels[name].bkgdHeight : defaultHeight;
+            } else {
+                width = plot.labels[name] && plot.labels[name].bkgdWidth ? plot.labels[name].bkgdWidth : defaultWidth;
+                height = plot.labels[name] && plot.labels[name].bkgdHeight ? plot.labels[name].bkgdHeight : plot.grid.height;
+            }
+
+            if(name === 'x') {
+                x = plot.grid.leftEdge;
+                y = plot.grid.bottomEdge;
+            } else if(name === 'xTop') {
+                x = plot.grid.leftEdge;
+                y = plot.grid.topEdge - height;
+            } else if(name === 'yRight') {
+                x = plot.grid.rightEdge;
+                y = plot.grid.topEdge;
+            } else {
+                x = plot.grid.leftEdge - width;
+                y = plot.grid.topEdge;
+            }
+
+            labelBkgdEl.dom = labelBkgd.append('rect')
+                    .attr('fill-opacity',1)
+                    .attr('height', height)
+                    .attr('width', width)
+                    .attr('fill', plot.labels[name] && plot.labels[name].bkgdColor ? plot.labels[name].bkgdColor : '#FFFFFF')
+                    .attr('x', x)
+                    .attr('y', y);
+
+            return labelBkgdEl;
+        };
+
+        labelBkgds.x = appendLabelBkgd('x', null, 30);
+        labelBkgds.xTop = appendLabelBkgd('xTop', null, 30);
+        labelBkgds.y = appendLabelBkgd('yLeft', 30, null);
+        labelBkgds.yLeft = labelBkgds.y;
+        labelBkgds.yRight = appendLabelBkgd('yRight', 30, null);
+
+        labelElements.main = appendLabelElement('main', defaultMainFontSize);
+        labelElements.x = appendLabelElement('x', defaultAxisFontSize);
+        labelElements.xTop = appendLabelElement('xTop', defaultAxisFontSize);
+        labelElements.y = appendLabelElement('yLeft', defaultAxisFontSize);
         labelElements.yLeft = labelElements.y;
-        labelElements.yRight = appendLabelElement('yRight', 14);
+        labelElements.yRight = appendLabelElement('yRight', defaultAxisFontSize);
     };
 
     var initClipRect = function() {
@@ -451,6 +506,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var configureAxis = function(ax){
         ax.grid(plot.grid)
             .gridLineColor(plot.gridLineColor)
+            .gridLinesVisible(plot.gridLinesVisible)
             .gridLineWidth(plot.gridLineWidth)
             .tickColor(plot.tickColor)
             .tickLength(plot.tickLength)
@@ -591,7 +647,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var addXBrush = function(brush, brushSel) {
         var xBrushStart, xBrush, xBrushEnd,
-            brushStrokeColor = plot.brushing.strokeColor || defaultBrushStrokeColor;
+            brushStrokeColor = plot.brushing.strokeColor || defaultBrushStrokeColor,
+            height = 70;
 
         if (!xHandleSel) {
             xHandleSel = this.canvas.insert('g', '.brush').attr('class', 'x-axis-handle');
@@ -652,8 +709,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             brush.on('brushend')();
         };
 
-        xHandleSel.attr('transform', 'translate(0,' + plot.grid.bottomEdge + ')');
-        xHandleSel.selectAll('rect').attr('height', 30);
+        if (plot.brushing.dimension == 'xTop')
+            xHandleSel.attr('transform', 'translate(0, ' + (plot.grid.topEdge - height) + ')');
+        else
+            xHandleSel.attr('transform', 'translate(0,' + plot.grid.bottomEdge + ')');
+        xHandleSel.selectAll('rect').attr('height', height);
         xHandleSel.selectAll('.extent').attr('opacity', 0);
         xHandleSel.select('.resize.e rect').attr('fill', brushStrokeColor).attr('style', null);
         xHandleSel.select('.resize.w rect').attr('fill', brushStrokeColor).attr('style', null);
@@ -663,7 +723,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var addYBrush = function(brush, brushSel) {
-        var yBrushStart, yBrush, yBrushEnd,
+        var yBrushStart, yBrush, yBrushEnd, width = 60,
             brushStrokeColor = plot.brushing.strokeColor || defaultBrushStrokeColor;
 
         if (!yHandleSel) {
@@ -725,8 +785,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             brush.on('brushend')();
         };
 
-        yHandleSel.attr('transform', 'translate(' + (plot.grid.leftEdge - 30) + ',0)');
-        yHandleSel.selectAll('rect').attr('width', 30);
+        if (plot.brushing.dimension == 'yRight')
+            yHandleSel.attr('transform', 'translate(' + plot.grid.rightEdge + ',0)');
+        else
+            yHandleSel.attr('transform', 'translate(' + (plot.grid.leftEdge - width) + ',0)');
+        yHandleSel.selectAll('rect').attr('width', width);
         yHandleSel.selectAll('.extent').attr('opacity', 0);
         yHandleSel.select('.resize.n rect').attr('fill-opacity', 1).attr('fill', brushStrokeColor).attr('style', null);
         yHandleSel.select('.resize.s rect').attr('fill-opacity', 1).attr('fill', brushStrokeColor).attr('style', null);
@@ -736,11 +799,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var addBrushHandles = function(brush, brushSel){
-        if(!plot.brushing.dimension || plot.brushing.dimension == 'x' || plot.brushing.dimension == 'both') {
+        if(!plot.brushing.dimension || plot.brushing.dimension == 'x' || plot.brushing.dimension == 'xTop' || plot.brushing.dimension == 'both') {
             addXBrush.call(this, brush, brushSel);
         }
 
-        if(!plot.brushing.dimension || plot.brushing.dimension == 'y' || plot.brushing.dimension == 'both') {
+        if(!plot.brushing.dimension || plot.brushing.dimension == 'y' || plot.brushing.dimension == 'yRight' || plot.brushing.dimension == 'both') {
             addYBrush.call(this, brush, brushSel);
         }
     };
@@ -846,52 +909,64 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var addBrush = function(){
         if (plot.brushing != null && (plot.brushing.brushstart || plot.brushing.brush || plot.brushing.brushend ||
                 plot.brushing.brushclear)) {
-            var xScale, yScale, scalePadding = 1;
+            var xScale, yScale, scalePadding = 1, xAxis, yAxis;
 
             if(brush == null) {
                 brush = d3.svg.brush();
                 brushSel = this.canvas.insert('g', '.layer').attr('class', 'brush');
             }
 
-            if (plot.scales.x.scaleType == 'continuous' && plot.scales.x.trans == 'linear') {
+            if (plot.scales.xTop) {
+                xAxis = plot.scales.xTop;
+            } else {
+                xAxis = plot.scales.x;
+            }
+
+            if (xAxis.scaleType == 'continuous' && xAxis.trans == 'linear') {
                 // We need to add some padding to the scale in order for us to actually be able to select all of the points.
                 // If we don't, any points that lie exactly at the edge of the chart will be unselectable.
-                xScale = plot.scales.x.scale.copy();
+                xScale = xAxis.scale.copy();
                 xScale.domain([xScale.invert(plot.grid.leftEdge - scalePadding), xScale.invert(plot.grid.rightEdge + scalePadding)]);
                 xScale.range([plot.grid.leftEdge - scalePadding, plot.grid.rightEdge + scalePadding]);
             } else {
-                xScale = plot.scales.x.scale;
+                xScale = xAxis.scale;
             }
 
-            if (plot.scales.yLeft.scaleType == 'continuous' && plot.scales.yLeft.trans == 'linear') {
+            if (plot.scales.yLeft) {
+                yAxis = plot.scales.yLeft;
+            } else {
+                yAxis = plot.scales.yRight;
+            }
+
+            if (yAxis.scaleType == 'continuous' && yAxis.trans == 'linear') {
                 // See the note above.
-                yScale = plot.scales.yLeft.scale.copy();
+                yScale = yAxis.scale.copy();
                 yScale.domain([yScale.invert(plot.grid.bottomEdge + scalePadding), yScale.invert(plot.grid.topEdge - scalePadding)]);
                 yScale.range([plot.grid.bottomEdge + scalePadding, plot.grid.topEdge - scalePadding]);
             } else {
-                yScale = plot.scales.yLeft.scale;
+                yScale = yAxis.scale;
             }
 
-            if (!plot.brushing.dimension || plot.brushing.dimension == 'x' || plot.brushing.dimension == 'both') {
+            if (!plot.brushing.dimension || plot.brushing.dimension == 'x' || plot.brushing.dimension == 'xTop' || plot.brushing.dimension == 'both') {
                 brush.x(xScale);
             }
 
-            if (!plot.brushing.dimension || plot.brushing.dimension == 'y' || plot.brushing.dimension == 'both') {
+            if (!plot.brushing.dimension || plot.brushing.dimension == 'y' || plot.brushing.dimension == 'yRight' || plot.brushing.dimension == 'both') {
                 brush.y(yScale);
             }
 
             brushSel.call(brush);
 
-            if (plot.brushing.dimension == 'y') {
+            if (plot.brushing.dimension == 'y' || plot.brushing.dimension == 'yRight') {
                 // Manually set width of brush.
                 brushSel.selectAll('rect')
                     .attr('x', plot.grid.leftEdge)
                     .attr('width', plot.grid.rightEdge - plot.grid.leftEdge);
-            } else if(plot.brushing.dimension == 'x') {
+            } else if(plot.brushing.dimension == 'x' || plot.brushing.dimension == 'xTop') {
                 // Manually set height of brush.
                 brushSel.selectAll('rect')
-                    .attr('y', plot.grid.topEdge)
-                    .attr('height', plot.grid.bottomEdge - plot.grid.topEdge);
+                        .attr('y', plot.grid.topEdge)
+                        .attr('height', plot.grid.bottomEdge - plot.grid.topEdge);
             }
 
             brushSel.selectAll('.extent')
@@ -1022,6 +1097,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
+    var setBrushing = function(brushingConfig) {
+        plot.brushing = brushingConfig;
+        addBrush.call(this);
+    };
+
     var setBrushExtent = function(extent) {
         validateExtent(extent);
         var xIsNull = extent[0][0] === null && extent[1][0] === null,
@@ -1033,16 +1113,20 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             brushSelectionType = 'x';
             xHandleBrush.extent([extent[0][0], extent[1][0]]);
             xHandleBrush(xHandleSel);
-            yHandleBrush.clear();
-            yHandleBrush(yHandleSel);
+            if(yHandleBrush) {
+                yHandleBrush.clear();
+                yHandleBrush(yHandleSel);
+            }
             xHandleBrush.on('brush')();
             xHandleBrush.on('brushend')();
         } else if (xIsNull && !yIsNull) {
             brushSelectionType = 'y';
             yHandleBrush.extent([extent[0][1], extent[1][1]]);
             yHandleBrush(yHandleSel);
-            xHandleBrush.clear();
-            xHandleBrush(xHandleSel);
+            if(xHandleBrush) {
+                xHandleBrush.clear();
+                xHandleBrush(xHandleSel);
+            }
             yHandleBrush.on('brush')();
             yHandleBrush.on('brushend')();
         } else if (!xIsNull && !yIsNull) {
@@ -1196,12 +1280,18 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             initLabelElements.call(this);
         }
 
+        if(plot.labels[name] && Ext.isDefined(plot.labels[name].rotate)) {
+            translate = true;
+            rotate = plot.labels[name].rotate;
+        }
+
         if ((name == 'y' || name == 'yLeft')) {
             if (!plot.scales.yLeft || (plot.scales.yLeft && !plot.scales.yLeft.scale)) {
                 return;
             }
             translate = true;
-            rotate = 270;
+            if(!Ext.isDefined(rotate))
+                rotate = 270;
             x = plot.grid.leftEdge - (plot.labels[name] && plot.labels[name].position != undefined ? plot.labels[name].position : 55);
             y = plot.grid.height / 2
         } else if (name == 'yRight') {
@@ -1209,7 +1299,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 return;
             }
             translate = true;
-            rotate = 90;
+            if(!Ext.isDefined(rotate))
+                rotate = 90;
             x = plot.grid.rightEdge + (plot.labels[name].position != undefined ? plot.labels[name].position : 45);
             y = plot.grid.height / 2;
         } else if (name == 'x') {
@@ -1224,7 +1315,52 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
 
         if (this.canvas && plot.labels[name] && plot.labels[name].value) {
-            labelElements[name].dom.text(plot.labels[name].value);
+            if(Ext.isDefined(plot.labels[name].maxCharPerLine)) {
+                if(plot.labels[name].value.length > plot.labels[name].maxCharPerLine) {
+                    var fontSize = plot.scales[name].fontSize ? plot.scales[name].fontSize : defaultAxisFontSize;
+                    var tspanEl, textWidth = null;
+
+                    // Divide label into maxCharPerLine chunks
+                    var regex = new RegExp("(.{1," + plot.labels[name].maxCharPerLine + "})", 'g');
+                    var values = plot.labels[name].value.match(regex);
+
+                    // Insert each chunk into tspans
+                    for(var i=0; i<values.length; i++) {
+                        var calcX, calcY, align = 'middle';
+
+                        if(Ext.isDefined(plot.labels[name].lineWrapAlign))
+                            align = plot.labels[name].lineWrapAlign;
+
+
+                        tspanEl = labelElements[name].dom.insert('tspan', 'text')
+                                .attr('dy',fontSize)
+                                .attr('text-anchor',align)
+                                .text(values[i]);
+
+                        // Align tspans
+                        if(textWidth === null)
+                            textWidth = tspanEl[0][0].getComputedTextLength();
+
+                        if(name === 'x' || name === 'xTop') {
+                            if(align === 'start') {
+                                calcX = x - textWidth/2;
+                            } else if(align === 'end') {
+                                calcX = x + textWidth/2;
+                            } else {
+                                calcX = x;
+                            }
+                            calcY = y + fontSize*i;
+                        } else {
+                            calcX = 0;
+                            calcY = 0 - (fontSize*values.length/2)*(values.length-i-1); //Center vertically
+                        }
+
+                        tspanEl.attr('x',calcX).attr('y',calcY);
+                    }
+                }
+            } else {
+                labelElements[name].dom.text(plot.labels[name].value);
+            }
             if (translate) {
                 labelElements[name].dom.attr('transform', 'translate(' + x + ',' + y + ')rotate(' + rotate + ')')
             } else {
@@ -2195,6 +2331,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         addLabelListener: addLabelListener,
         clearBrush: clearBrush,
         setBrushExtent: setBrushExtent,
+        setBrushing: setBrushing,
         getBrushExtent: getBrushExtent,
         renderLegend: renderLegend,
         renderPointGeom: renderPointGeom,
