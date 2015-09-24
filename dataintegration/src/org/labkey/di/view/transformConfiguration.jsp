@@ -53,13 +53,16 @@ for (TransformConfiguration c : configurationsList)
 Collection<ScheduledPipelineJobDescriptor> descriptorsList = TransformManager.get().getDescriptors(getContainer());
 TreeMap<String,ScheduledPipelineJobDescriptor> descriptorsMap = new TreeMap<>();
 for (ScheduledPipelineJobDescriptor d : descriptorsList)
-    descriptorsMap.put(d.getId(), d);
+{
+    if (d.isStandalone())
+        descriptorsMap.put(d.getId(), d);
+}
 for (TransformConfiguration c : configurationsList)
 {
     if (!descriptorsMap.containsKey(c.getTransformId()))
     {
         ScheduledPipelineJobDescriptor d = TransformManager.get().getDescriptor(c.getTransformId());
-        if (null != d)
+        if (null != d && d.isStandalone())
             descriptorsMap.put(d.getId(), d);
     }
 }

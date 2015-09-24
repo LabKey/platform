@@ -21,6 +21,11 @@
             <element name="parameters" type="etl:ParametersType" minOccurs="0" maxOccurs="1"/>
         </all>
         <attribute name="loadReferencedFiles" type="boolean" default="false"/>
+        <attribute name="standalone" type="boolean" default="true">
+            <annotation>
+                <documentation>ETL can be run on its own, rather than a subcomponent that can only be queued from another ETL.</documentation>
+            </annotation>
+        </attribute>
     </complexType>
 
     <complexType name="SourceObjectType">

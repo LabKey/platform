@@ -258,7 +258,7 @@ public class TransformManager implements DataIntegrationService.Interface
             // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
             XmlBeansUtil.validateXmlDocument(document, "ETL '" + resource.getPath() + "'");
 
-            return new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXML.getLoadReferencedFiles(), hasGateStep);
+            return new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXML.getLoadReferencedFiles(), hasGateStep, etlXML.getStandalone());
         }
     }
 

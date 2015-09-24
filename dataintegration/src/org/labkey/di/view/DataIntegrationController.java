@@ -280,8 +280,9 @@ public class DataIntegrationController extends SpringActionController
                 config = new TransformConfiguration(etl, context.getContainer());
             if (null != form.isEnabled())
             {
-                shouldStartStop = (form.isEnabled() != config.isEnabled());
-                config.setEnabled(form.isEnabled());
+                boolean enabling = form.isEnabled() && etl.isStandalone();
+                shouldStartStop = (enabling != config.isEnabled());
+                config.setEnabled(enabling);
             }
             if (null != form.isVerboseLogging())
                 config.setVerboseLogging(form.isVerboseLogging());
@@ -321,6 +322,11 @@ public class DataIntegrationController extends SpringActionController
             if (etl.isPending(getViewContext()))
             {
                 status = TransformManager.getJobPendingMessage(null);
+                LOG.info(status);
+            }
+            else if (!etl.isStandalone())
+            {
+                status = "Not queueing job because etl is a subcomponent of another etl.";
                 LOG.info(status);
             }
             else

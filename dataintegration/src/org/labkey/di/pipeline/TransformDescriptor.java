@@ -109,6 +109,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final String _moduleName;
     private final boolean _loadReferencedFiles;
     private final boolean _gatedByStep;
+    private final boolean _standalone;
     private static final String XAR_EXT = ".etl.xar.xml";
 
     // declared variables
@@ -127,13 +128,13 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                                CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
                                Map<ParameterDescription, Object> declaredVariables) throws XmlException, IOException
     {
-        this(id, name, description, moduleName, interval, cron, defaultFactory, stepMetaDatas, declaredVariables, false, false);
+        this(id, name, description, moduleName, interval, cron, defaultFactory, stepMetaDatas, declaredVariables, false, false, true);
     }
 
     public TransformDescriptor(String id, String name, String description, String moduleName, Long interval,
                                CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
                                Map<ParameterDescription, Object> declaredVariables,
-                               boolean loadReferencedFiles, boolean gatedByStep) throws XmlException, IOException
+                               boolean loadReferencedFiles, boolean gatedByStep, boolean standalone) throws XmlException, IOException
     {
         _id = id;
         _name = name;
@@ -147,6 +148,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             _declaredVariables.putAll(declaredVariables);
         _loadReferencedFiles = loadReferencedFiles;
         _gatedByStep = gatedByStep;
+        _standalone = standalone;
     }
 
 
@@ -196,6 +198,11 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         return _defaultFactory;
     }
 
+    @Override
+    public boolean isStandalone()
+    {
+        return _standalone;
+    }
 
     @Override
     public String toString()
