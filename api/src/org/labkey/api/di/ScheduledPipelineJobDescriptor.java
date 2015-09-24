@@ -39,7 +39,7 @@ public interface ScheduledPipelineJobDescriptor<C extends ContainerUser>
     String getModuleName();
     int getVersion();
     Map<ParameterDescription,Object> getDeclaredVariables();
-
+    boolean isStandalone();
 
     public ScheduleBuilder getScheduleBuilder();
     public String getScheduleDescription();
