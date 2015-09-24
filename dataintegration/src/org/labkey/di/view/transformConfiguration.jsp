@@ -239,7 +239,7 @@ function onTruncateAndReset(el, id)
         <td class="labkey-column-header">Source Module</td>
         <td class="labkey-column-header">Schedule</td>
         <td class="labkey-column-header">Enabled</td>
-        <td class="labkey-column-header">Verbose Logging</td>
+        <%--<td class="labkey-column-header">Verbose Logging</td>--%>
         <td class="labkey-column-header">Last Status</td>
         <td class="labkey-column-header">Last Successful Run</td>
         <td class="labkey-column-header">Last Checked</td>
@@ -277,9 +277,9 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox onchange="onEnabledChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isEnabled())%>></td>
-        <td><input type=checkbox
-                   onchange="onVerboseLoggingChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isVerboseLogging())%>>
-        </td>
+        <%--<td><input type=checkbox--%>
+                   <%--onchange="onVerboseLoggingChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isVerboseLogging())%>>--%>
+        <%--</td>--%>
         <td><%=text(configuration.getLastStatusUrl())%></td>
         <td><%=text(configuration.getLastCompletionUrl())%></td>
         <td><%=text(configuration.getLastCheckedString())%></td>
@@ -299,7 +299,7 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox disabled="true" <%=checked(configuration.isEnabled())%>></td>
-        <td><input type=checkbox disabled="true" onchange="onVerboseLoggingChanged()" <%=checked(configuration.isVerboseLogging())%>></td>
+        <%--<td><input type=checkbox disabled="true" onchange="onVerboseLoggingChanged()" <%=checked(configuration.isVerboseLogging())%>></td>--%>
         <td></td>
         <td></td>
         <td></td>
