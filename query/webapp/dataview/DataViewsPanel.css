@@ -186,11 +186,15 @@ div.icon img
     font-size: 11px;
 }
 
-/* Font Awesome */
-.fa-refresh {
-    margin-left: .1em;
+.x4-menu-body .iconbtn-label{
+    text-transform: uppercase;
+    font-weight: bold;
+    color: black;
+    font-size: 11px;
+    margin-left: 1em;
 }
 
+/* Font Awesome */
 .labkey-fa-plus-folder {
     color: white;
     margin-left: -0.3em;
@@ -211,6 +215,11 @@ div.icon img
 
 .labkey-fa-stacked-wrapper {
     font-size: 9px;
+}
+
+.x4-menu-body .labkey-fa-stacked-wrapper {
+    font-size: 9px;
+    margin-left: -0.5em;
 }
 
 div span.labkey-main-menu-icon {
