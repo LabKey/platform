@@ -30,7 +30,7 @@ LABKEY.vis.internal.Axis = function() {
         }
 
         // issue 22297: axis values can end up with rounding issues (i.e. 1.4000000000000001)
-        for (var i = 0; i < data.length; i++) {
+        for (i = 0; i < data.length; i++) {
             if (typeof data[i] == "number") {
                 data[i] = parseFloat(data[i].toFixed(10));
             }
@@ -41,7 +41,7 @@ LABKEY.vis.internal.Axis = function() {
         if (tickDigits)
         {
             var convert = false;
-            for (var i=0; i<gridLineData.length; i++)
+            for (i=0; i<gridLineData.length; i++)
             {
                 if (gridLineData[i].toString().replace('.','').length >= tickDigits)
                 {

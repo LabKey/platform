@@ -286,22 +286,22 @@ boxPlot.render();
             userMargins = {};
         }
 
-        if(!Ext.isDefined(userMargins.top)){
+        if(typeof userMargins.top === 'undefined'){
             margins.top = top;
         } else {
             margins.top = userMargins.top;
         }
-        if(!Ext.isDefined(userMargins.right)){
+        if(typeof userMargins.right === 'undefined'){
             margins.right = right;
         } else {
             margins.right = userMargins.right;
         }
-        if(!Ext.isDefined(userMargins.bottom)){
+        if(typeof userMargins.bottom === 'undefined'){
             margins.bottom = bottom;
         } else {
             margins.bottom = userMargins.bottom;
         }
-        if(!Ext.isDefined(userMargins.left)){
+        if(typeof userMargins.left === 'undefined'){
             margins.left = left;
         } else {
             margins.left = userMargins.left;
