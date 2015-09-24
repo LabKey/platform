@@ -118,7 +118,7 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
                 }
 
                 String editScript = "editDataViews(" + webPart.getRowId() + ");";
-                NavTree edit = new NavTree("Edit", "javascript:" + editScript, portalCtx.getContextPath() + "/_images/partedit.png");
+                NavTree edit = new NavTree("Edit", "javascript:" + editScript, null, "fa fa-pencil");
                 view.addCustomMenu(edit);
             }
 

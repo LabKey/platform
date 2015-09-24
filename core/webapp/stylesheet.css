@@ -2064,10 +2064,6 @@ span.labkey-wp-icon-button-active {
 	vertical-align: text-bottom;
 }
 
-span.labkey-wp-icon-button-active:hover {
-	background-color: #fff;
-}
-
 span.labkey-wp-icon-button-inactive {
 	margin-left: 3px;
 	font-size: 19px;
