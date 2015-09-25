@@ -668,8 +668,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 SQLFragment temp = clause.toSQLFragment(Collections.singletonMap(participantFieldKey, participantCol), getSqlDialect());
 
                 // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm string replacing and hoping...
-                String sql = temp.getRawSQL();
-                sql = sql.replaceAll("ParticipantId", innerAlias + ".ParticipantId");
+                // don't use String.replaceAll(), $ is a special character (in 2nd parameter) and will throw
+                String sql = StringUtils.replace(temp.getRawSQL(), "ParticipantId", innerAlias + ".ParticipantId");
                 frag = new SQLFragment(sql, temp.getParams());
             }
             else
