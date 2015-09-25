@@ -3543,6 +3543,11 @@ div.headermenu a.labkey-menu-text-link img {
     right: 2px;
 }
 
+.x4-menu-item-icon.fa
+{
+    margin-top: 0.28em;
+}
+
 .x4-column-header
 {
     border-bottom: 1px solid #AAAAAA !important;
