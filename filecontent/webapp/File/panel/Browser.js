@@ -2808,6 +2808,7 @@ Ext4.define('File.panel.Browser', {
             // TODO: This should respect the visibility/availability as specified by the pipeline configuration
             var actions = this.getActions(),
                 items;
+            this.configureActions(true);
 
             if (this.isWebDav) {
                 items = [
