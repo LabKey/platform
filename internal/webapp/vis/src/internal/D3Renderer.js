@@ -1280,7 +1280,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             initLabelElements.call(this);
         }
 
-        if(plot.labels[name] && Ext.isDefined(plot.labels[name].rotate)) {
+        if(plot.labels[name] && typeof plot.labels[name].rotate !== 'undefined') {
             translate = true;
             rotate = plot.labels[name].rotate;
         }
@@ -1290,7 +1290,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 return;
             }
             translate = true;
-            if(!Ext.isDefined(rotate))
+            if(typeof rotate === 'undefined')
                 rotate = 270;
             x = plot.grid.leftEdge - (plot.labels[name] && plot.labels[name].position != undefined ? plot.labels[name].position : 55);
             y = plot.grid.height / 2
@@ -1299,7 +1299,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 return;
             }
             translate = true;
-            if(!Ext.isDefined(rotate))
+            if(typeof rotate === 'undefined')
                 rotate = 90;
             x = plot.grid.rightEdge + (plot.labels[name].position != undefined ? plot.labels[name].position : 45);
             y = plot.grid.height / 2;
@@ -1315,7 +1315,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
 
         if (this.canvas && plot.labels[name] && plot.labels[name].value) {
-            if(Ext.isDefined(plot.labels[name].maxCharPerLine)) {
+            if(typeof plot.labels[name].maxCharPerLine !== 'undefined') {
                 if(plot.labels[name].value.length > plot.labels[name].maxCharPerLine) {
                     var fontSize = plot.scales[name].fontSize ? plot.scales[name].fontSize : defaultAxisFontSize;
                     var tspanEl, textWidth = null;
@@ -1328,7 +1328,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     for(var i=0; i<values.length; i++) {
                         var calcX, calcY, align = 'middle';
 
-                        if(Ext.isDefined(plot.labels[name].lineWrapAlign))
+                        if(typeof plot.labels[name].lineWrapAlign !== 'undefined')
                             align = plot.labels[name].lineWrapAlign;
 
 
