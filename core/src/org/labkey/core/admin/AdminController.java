@@ -2620,7 +2620,7 @@ public class AdminController extends SpringActionController
         protected SystemMaintenance newStatusReportingRunnable()
         {
             String taskName = (String)getViewContext().get("taskName");
-            return new SystemMaintenance(true, taskName);
+            return new SystemMaintenance(taskName, getUser());
         }
     }
 
