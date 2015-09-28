@@ -26,6 +26,6 @@ import java.util.Collection;
 */
 public interface StatusReportingRunnable extends Runnable
 {
-    public boolean isRunning();
-    public Collection<String> getStatus(@Nullable Integer offset);
+    boolean isRunning();
+    Collection<String> getStatus(@Nullable Integer offset);
 }

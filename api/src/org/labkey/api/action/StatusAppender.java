@@ -32,7 +32,7 @@ import java.util.*;
 // on each invocation of your task, otherwise the appender will accumulate status across multiple invocations.
 public class StatusAppender extends AppenderSkeleton
 {
-    private final List<String> _status = Collections.synchronizedList(new ArrayList<String>());
+    private final List<String> _status = Collections.synchronizedList(new ArrayList<>());
 
     @Override
     protected void append(LoggingEvent event)

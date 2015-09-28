@@ -17,6 +17,7 @@ package org.labkey.api.action;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.StatusReportingRunnableAction.StatusReportingRunnableForm;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -25,7 +26,10 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -53,7 +57,7 @@ import java.util.concurrent.Executors;
 //
 // Your StatusReportingRunnable can track its status any way it wants to, but StatusAppender provides an easy way to do
 // this via standard log4j mechanisms.  See the StatusAppender comments for more details.
-public abstract class StatusReportingRunnableAction<K extends StatusReportingRunnable> extends FormApiAction<StatusReportingRunnableAction.StatusReportingRunnableForm>
+public abstract class StatusReportingRunnableAction<K extends StatusReportingRunnable> extends FormApiAction<StatusReportingRunnableForm>
 {
     private static final Map<Class<? extends StatusReportingRunnableAction>, StatusReportingRunnable> EXISTING_RUNNABLES = new HashMap<>();
 

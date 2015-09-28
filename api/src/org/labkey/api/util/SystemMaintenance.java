@@ -23,10 +23,19 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.StatusAppender;
 import org.labkey.api.action.StatusReportingRunnable;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.ServletContextEvent;
+import java.io.File;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -34,12 +43,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -53,30 +65,38 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
 
     private static Timer _timer = null;
     private static SystemMaintenance _timerTask = null;
-    private static boolean _taskRunning = false;
 
     private volatile static boolean _timerDisabled = false;
 
     private final @Nullable String _taskName;
     private final Logger _log;
-    private final boolean _temp;
+    private final boolean _manualInvocation;
+    private final AtomicBoolean _taskRunning = new AtomicBoolean(false);
+    private final @Nullable User _user;
 
     private StatusAppender _appender;
 
-    // temp = true allows manual invocation of system maintenance tasks.  Prevents time check and creates a logger that
-    // can report status back to request threads.
-    public SystemMaintenance(boolean temp, @Nullable String taskName)
+    // Used by the standard timer invoked maintenance
+    public SystemMaintenance()
+    {
+        this(false, null, null);
+    }
+
+    // Used for manual invocation of system maintenance tasks. Creates a logger that can report status back to request threads,
+    // allows invocation of a single task, kicks off the pipeline job with the initiating user, and skips time checks.
+    public SystemMaintenance(@Nullable String taskName, User user)
+    {
+        this(true, taskName, user);
+        _appender = new StatusAppender();
+        _log.addAppender(_appender);
+    }
+
+    private SystemMaintenance(boolean manualInvocation, @Nullable String taskName, @Nullable User user)
     {
         _log = Logger.getLogger(SystemMaintenance.class);
         _taskName = taskName;
-
-        if (temp)
-        {
-            _appender = new StatusAppender();
-            _log.addAppender(_appender);
-        }
-
-        _temp = temp;
+        _user = user;
+        _manualInvocation = manualInvocation;
     }
 
     public static void setTimer()
@@ -91,10 +111,10 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
             // Create daemon timer for daily maintenance task
             _timer = new Timer("SystemMaintenance", true);
 
-            // Timer has a single task that simply kicks off a thread that performs all the maintenance tasks.  This ensures that
-            // the maintenance tasks run serially and will allow (if we need to in the future) to control the ordering (for example,
+            // Timer has a single task that simply kicks off a pipeline job that performs all the maintenance tasks. This ensures that
+            // the maintenance tasks run serially and will allow (if we need to in the future) controlling the ordering (for example,
             // purge data first, then compact the database)
-            _timerTask = new SystemMaintenance(false, null);
+            _timerTask = new SystemMaintenance();
             ContextListener.addShutdownListener(_timerTask);
             _timer.scheduleAtFixedRate(_timerTask, getNextSystemMaintenanceTime(), DateUtils.MILLIS_PER_DAY);
         }
@@ -200,11 +220,10 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
         PropertyManager.PropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
 
         Set<String> enabled = new HashSet<>(enabledTasks);
-        Set<String> disabled = new HashSet<>();
-
-        for (MaintenanceTask task : getTasks())
-            if (task.canDisable() && !enabled.contains(task.getName()))
-                disabled.add(task.getName());
+        Set<String> disabled = getTasks().stream()
+            .filter(task -> task.canDisable() && !enabled.contains(task.getName()))
+            .map(MaintenanceTask::getName)
+            .collect(Collectors.toSet());
 
         writableProps.put(TIME_PROPERTY_NAME, time);
         writableProps.put(DISABLED_TASKS_PROPERTY_NAME, StringUtils.join(disabled, ","));
@@ -241,27 +260,57 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
     // Start a separate thread to do all the work
     public void run()
     {
-        if (!_temp && (System.currentTimeMillis() - scheduledExecutionTime()) > 2 * DateUtils.MILLIS_PER_HOUR)
+        if (!_manualInvocation && (System.currentTimeMillis() - scheduledExecutionTime()) > 2 * DateUtils.MILLIS_PER_HOUR)
         {
             _log.warn("Skipping system maintenance since it's two hours past the scheduled time");
         }
-        else if (_taskRunning)
-        {
-            _log.warn("Skipping system maintenance since it's already running");
-        }
         else
         {
-            _taskRunning = true;
-            Thread thread = new Thread(new Janitor(), "System Maintenance");
-            thread.setDaemon(true);
-            thread.start();
+            _taskRunning.set(true);
+            Set<String> disabledTasks = getProperties().getDisabledTasks();
+            Collection<MaintenanceTask> tasksToRun = new LinkedList<>();
+
+            for (MaintenanceTask task : _tasks)
+            {
+                if (null != _taskName && !_taskName.isEmpty())
+                {
+                    // If _taskName is set, then admin has invoked a single task from the UI... skip all the others
+                    if (task.getName().equals(_taskName))
+                    {
+                        tasksToRun.add(task);
+                        break;
+                    }
+                }
+                else
+                {
+                    // If the task can't be disabled or isn't disabled now then include it
+                    if (!task.canDisable() || !disabledTasks.contains(task.getName()))
+                    {
+                        tasksToRun.add(task);
+                    }
+                }
+            }
+
+            Container c = ContainerManager.getRoot();
+            ViewBackgroundInfo vbi = new ViewBackgroundInfo(c, _user, null);
+            PipeRoot root = PipelineService.get().findPipelineRoot(c);
+
+            try
+            {
+                PipelineJob job = new MaintenancePipelineJob(_log, vbi, root, tasksToRun, _taskRunning);
+                PipelineService.get().queueJob(job);
+            }
+            catch (PipelineValidationException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
     }
 
     @Override
     public boolean isRunning()
     {
-        return _taskRunning;
+        return _taskRunning.get();
     }
 
     @Override
@@ -289,37 +338,49 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
         }
     }
 
-    // Janitor runs each MaintenanceTask in order
-    private class Janitor implements Runnable
+    // Runs each MaintenanceTask in order
+    private static class MaintenancePipelineJob extends PipelineJob
     {
+        private final Collection<MaintenanceTask> _tasks;
+        private final transient Logger _log;
+        private final AtomicBoolean _taskRunning;
+
+        public MaintenancePipelineJob(Logger log, ViewBackgroundInfo info, PipeRoot pipeRoot, Collection<MaintenanceTask> tasks, AtomicBoolean taskRunning)
+        {
+            super(null, info, pipeRoot);
+            setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("system_maintenance", "log")));
+            _tasks = tasks;
+            _log = log;
+            _taskRunning = taskRunning;
+        }
+
+        @Override
+        public URLHelper getStatusHref()
+        {
+            return null;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "System Maintenance";
+        }
+
+        @Override
         public void run()
         {
-            _log.info("System maintenance started");
-
-            Set<String> disabledTasks = getProperties().getDisabledTasks();
+            info("System maintenance started");
 
             for (MaintenanceTask task : _tasks)
             {
+                setStatus("Running " + task.getName());
                 if (ViewServlet.isShuttingDown())
                 {
-                    _log.info("System maintenance is stopping due to server shut down");
+                    info("System maintenance is stopping due to server shut down");
                     break;
                 }
 
-                if (null != _taskName && !_taskName.isEmpty())
-                {
-                    // If _taskName is set, then admin has invoked a single task from the UI... skip all the others
-                    if (!task.getName().equals(_taskName))
-                        continue;
-                }
-                else
-                {
-                    // Run all tasks, except for disabled
-                    if (task.canDisable() && disabledTasks.contains(task.getName()))
-                        continue;
-                }
-
-                _log.info(task.getDescription() + " started");
+                info(task.getDescription() + " started");
                 long start = System.currentTimeMillis();
 
                 try
@@ -333,27 +394,36 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
                 }
 
                 long elapsed = System.currentTimeMillis() - start;
-                _log.info(task.getDescription() + " complete; elapsed time " + elapsed/1000 + " seconds");
+                info(task.getDescription() + " complete; elapsed time " + elapsed/1000 + " seconds");
             }
 
-            _log.info("System maintenance complete");           
-            _taskRunning = false;
+            info("System maintenance complete");
+            setStatus(TaskStatus.complete);
+            _taskRunning.set(false);
+        }
+
+        @Override
+        public void info(String message)
+        {
+            // Log to both passed in Logger and pipeline log
+            _log.info(message);
+            super.info(message);
         }
     }
 
     public interface MaintenanceTask extends Runnable
     {
         // Description used in logging and UI
-        public String getDescription();
+        String getDescription();
 
         // Short name used in forms and to persist disabled settings
         // Task name must be unique and cannot contain a comma
-        public String getName();
+        String getName();
 
         // Can this task be disabled?
-        public boolean canDisable();
+        boolean canDisable();
 
         // Hide this from the Admin page (because it will be controlled from elsewhere)
-        public boolean hideFromAdminPage();
+        boolean hideFromAdminPage();
     }
 }
