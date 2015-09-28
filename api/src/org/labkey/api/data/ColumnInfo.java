@@ -1026,7 +1026,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (xmlCol.isSetUrl())
         {
             String url = xmlCol.getUrl();
-            if (!StringUtils.isEmpty(url))
+            if (StringUtils.isEmpty(url))
+                setURL(AbstractTableInfo.LINK_DISABLER);
+            else
                 setURL(StringExpressionFactory.createURLSilent(url));
         }
         if (xmlCol.isSetUrlTarget())
