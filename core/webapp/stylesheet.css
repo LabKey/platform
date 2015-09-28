@@ -3492,7 +3492,15 @@ div.headermenu a.labkey-menu-text-link img {
 
 .lk-input input.hdr-search-input {
     padding-left: 22px;
-    background: #FFFFFF url(./_images/search.png) 2% center no-repeat;
+    background: #FFFFFF;
+}
+
+.lk-fa-search-icon {
+    position: relative;
+    z-index: 1;
+    left: 12px;
+    color: darkgrey;
+    width: 0px;
 }
 
 #headerSearchInput-inputEl {

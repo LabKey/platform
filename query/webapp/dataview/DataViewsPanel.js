@@ -767,12 +767,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     xtype   : 'box',
                     border  : 0,
                     autoEl  : {
-                        tag : 'img',
+                        tag : 'span',
                         style : {
                             position : 'relative',
-                            left     : '-20px'
+                            left     : '-20px',
+                            bottom   : '3px',
+                            color    : 'darkgrey'
                         },
-                        src : LABKEY.ActionURL.getContextPath() + '/_images/search.png'
+                        cls : 'fa fa-search'
                     }}
                 ]},
                 msgField, '->', mineField
