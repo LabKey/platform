@@ -672,7 +672,7 @@ public class AuthenticationManager
         // didn't find the user on the system and we are not permitted to create accounts automatically
         if (user == null && !isAutoCreateAccountsEnabled())
         {
-            addAuditEvent(user, request, "User " + user.getEmail() + " successfully authenticated via " + authProvider.getName() + ". Login failed because account creation is disabled.");
+            addAuditEvent(user, request, "User " + email + " successfully authenticated via " + authProvider.getName() + ". Login failed because account creation is disabled.");
             return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
         }
 
