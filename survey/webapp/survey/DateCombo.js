@@ -33,19 +33,34 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
             defaultYear : 1970
         });
 
+        this.months = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December'
+        ];
+
         this.monthMap = {
-            'January'   : 31,
-            'February'  : 28,
-            'March'     : 31,
-            'April'     : 30,
-            'May'       : 31,
-            'June'      : 30,
-            'July'      : 31,
-            'August'    : 31,
-            'September' : 30,
-            'October'   : 31,
-            'November'  : 31,
-            'December'  : 30
+            1 : 31,
+            2 : 28,
+            3 : 31,
+            4 : 30,
+            5 : 31,
+            6 : 30,
+            7 : 31,
+            8 : 31,
+            9 : 30,
+            10 : 31,
+            11 : 31,
+            12 : 30
         };
 
         this.month = 1;
@@ -62,12 +77,10 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
         var months = [];
         // convert any lookup display values back to keys
         var monthNumber = 1;
-        for (var key in this.monthMap){
-            if (this.monthMap.hasOwnProperty(key)){
+        Ext4.each(this.months, function(rec){
 
-                months.push({name : key, value : monthNumber++});
-            }
-        }
+            months.push({name : rec, value : monthNumber++});
+        }, this);
 
         var years = [];
         for (var year = this.startYear; year <= this.endYear; year++){
@@ -105,7 +118,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
             cls     : 'mpower-day-combo',
             store : {
                 fields  : ['name', 'value'],
-                data    : this.createDayStore('January')
+                data    : this.createDayStore(1)
             },
             submitValue     : false,
             valueField      : 'value',
@@ -171,7 +184,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
 
     isLeap : function() {
 
-        return (this.month === 'February' && ((this.year % 4) == 0));
+        return (this.month === 2 && ((this.year % 4) == 0));
     },
 
     createDayStore : function(month){
