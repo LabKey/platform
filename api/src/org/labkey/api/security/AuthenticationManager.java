@@ -116,7 +116,7 @@ public class AuthenticationManager
 
     public static boolean isRegistrationEnabled()
     {
-        return getAuthConfigProperty(REGISTRATION_ENABLED_KEY, false);
+        return getAuthConfigProperty(SELF_REGISTRATION_KEY, false);
     }
 
     public static boolean isAutoCreateAccountsEnabled()
@@ -129,20 +129,11 @@ public class AuthenticationManager
         return _authConfigProperties.get(key) == null ? defaultValue : _authConfigProperties.get(key);
     }
 
-    public static void setRegistrationEnabled(boolean enabled)
-    {
-        setAuthConfigProperty(REGISTRATION_ENABLED_KEY, enabled);
-    }
-
-    public static void setAutoCreateAccountsEnabled(boolean enabled)
-    {
-        setAuthConfigProperty(AUTO_CREATE_ACCOUNTS_KEY, enabled);
-    }
-
-    public static void setAuthConfigProperty(String key, boolean value)
+    public static void setAuthConfigProperty(User user, String key, boolean value)
     {
         _authConfigProperties.put(key, value);
         saveAuthConfigProperties();
+        addConfigurationAuditEvent(user, key, value ? "enabled" : "disabled");
     }
 
     public static @Nullable String getHeaderLogoHtml(ActionURL currentURL)
@@ -297,6 +288,14 @@ public class AuthenticationManager
         addProviderAuditEvent(user, name, "disabled");
     }
 
+    private static void addConfigurationAuditEvent(User user, String name, String action)
+    {
+        AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent event = new AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent(
+                ContainerManager.getRoot().getId(), new StringBuilder(name).append(" was ").append(action).toString());
+        event.setChanges(action);
+        AuditLogService.get().addEvent(user, event);
+    }
+
     private static void addProviderAuditEvent(User user, String name,  String action)
     {
         AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent event = new AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent(
@@ -350,7 +349,7 @@ public class AuthenticationManager
     private static final String AUTHENTICATION_CATEGORY = "Authentication";
     private static final String PROVIDERS_KEY = "Authentication";
     private static final String PROP_SEPARATOR = ":";
-    public static final String REGISTRATION_ENABLED_KEY = "RegistrationEnabled";
+    public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
 
     public static void saveActiveProviders()
@@ -400,8 +399,8 @@ public class AuthenticationManager
         _activeProviders.clear();
         _activeProviders.addAll(activeProviders);
 
-        if (props.get(REGISTRATION_ENABLED_KEY) != null)
-            _authConfigProperties.put(REGISTRATION_ENABLED_KEY, Boolean.valueOf(props.get(REGISTRATION_ENABLED_KEY)));
+        if (props.get(SELF_REGISTRATION_KEY) != null)
+            _authConfigProperties.put(SELF_REGISTRATION_KEY, Boolean.valueOf(props.get(SELF_REGISTRATION_KEY)));
         if (props.get(AUTO_CREATE_ACCOUNTS_KEY) != null)
             _authConfigProperties.put(AUTO_CREATE_ACCOUNTS_KEY, Boolean.valueOf(props.get(AUTO_CREATE_ACCOUNTS_KEY)));
     }
@@ -673,6 +672,7 @@ public class AuthenticationManager
         // didn't find the user on the system and we are not permitted to create accounts automatically
         if (user == null && !isAutoCreateAccountsEnabled())
         {
+            addAuditEvent(user, request, "User " + user.getEmail() + " successfully authenticated via " + authProvider.getName() + ". Login failed because account creation is disabled.");
             return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
         }
 
