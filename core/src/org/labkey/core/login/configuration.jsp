@@ -46,9 +46,9 @@
         <td>&nbsp;&nbsp;</td>
         <td>Self sign-up</td>
         <% if (AuthenticationManager.isRegistrationEnabled()) { %>
-        <td><%=PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.REGISTRATION_ENABLED_KEY))%></td>
+        <td><%=PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY))%></td>
         <% } else { %>
-        <td><%=PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.REGISTRATION_ENABLED_KEY))%></td>
+        <td><%=PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY))%></td>
         <% } %>
         <td colspan="3">Users are able to register for accounts when using database authentication.  Use caution when enabling this if you have enabled sending email to non-users.</td>
     </tr>

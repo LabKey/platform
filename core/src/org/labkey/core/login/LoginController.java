@@ -18,7 +18,6 @@ package org.labkey.core.login;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -2141,7 +2140,7 @@ public class LoginController extends SpringActionController
         @Override
         public boolean doAction(AuthParameterForm parameterForm, BindException errors) throws Exception
         {
-            AuthenticationManager.setAuthConfigProperty(parameterForm.getParameter(), parameterForm.isEnabled());
+            AuthenticationManager.setAuthConfigProperty(getUser(), parameterForm.getParameter(), parameterForm.isEnabled());
             return true;
         }
 

@@ -32,9 +32,9 @@
         <td>&nbsp;&nbsp;</td>
         <td>Self sign-up</td>
         <% if (AuthenticationManager.isRegistrationEnabled()) { %>
-        <td><%=PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.REGISTRATION_ENABLED_KEY))%></td>
+        <td><%=PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY))%></td>
         <% } else { %>
-        <td><%=PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.REGISTRATION_ENABLED_KEY))%></td>
+        <td><%=PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY))%></td>
         <% } %>
         <td>Users are able to register for accounts when using database authentication</td>
     </tr>
