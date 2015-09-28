@@ -422,7 +422,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             }
 
             labelBkgdEl.dom = labelBkgd.append('rect')
-                    .attr('fill-opacity',1)
+                    .attr('fill-opacity',plot.labels[name] && plot.labels[name].bkgdColor ? 1 : 0)
                     .attr('height', height)
                     .attr('width', width)
                     .attr('fill', plot.labels[name] && plot.labels[name].bkgdColor ? plot.labels[name].bkgdColor : '#FFFFFF')
