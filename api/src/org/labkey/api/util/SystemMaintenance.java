@@ -370,35 +370,41 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
         public void run()
         {
             info("System maintenance started");
+            TaskStatus finalStatus = TaskStatus.complete;
 
             for (MaintenanceTask task : _tasks)
             {
-                setStatus("Running " + task.getName());
                 if (ViewServlet.isShuttingDown())
                 {
                     info("System maintenance is stopping due to server shut down");
                     break;
                 }
 
+                boolean success;
+                setStatus("Running " + task.getName());
                 info(task.getDescription() + " started");
                 long start = System.currentTimeMillis();
 
                 try
                 {
                     task.run();
+                    success = true;
                 }
-                catch (Exception e)
+                catch (Throwable t)
                 {
                     // Log if one of these tasks throws... but continue with other tasks
-                    ExceptionUtil.logExceptionToMothership(null, e);
+                    ExceptionUtil.logExceptionToMothership(null, t);
+                    error("Failure running " + task.getName(), t);
+                    success = false;
+                    finalStatus = TaskStatus.error;
                 }
 
                 long elapsed = System.currentTimeMillis() - start;
-                info(task.getDescription() + " complete; elapsed time " + elapsed/1000 + " seconds");
+                info(task.getDescription() + (success ? " complete; elapsed time " + elapsed/1000 + " seconds" : " failed"));
             }
 
             info("System maintenance complete");
-            setStatus(TaskStatus.complete);
+            setStatus(finalStatus);
             _taskRunning.set(false);
         }
 
