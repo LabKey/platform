@@ -1412,7 +1412,7 @@ LABKEY.Query = new function()
         /**
          * Converts a JavaScript string into a format suitable for using in a LabKey SQL query.
          * @param {string} str String to use in query
-         * @returns {string} value formatted for use in a LabKey query.  Will property escape single quote characters.
+         * @returns {string} value formatted for use in a LabKey query.  Will properly escape single quote characters.
          */
         sqlStringLiteral : function(str)
         {
