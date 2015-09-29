@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -40,6 +42,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.TitleForeignKey;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
@@ -247,19 +250,47 @@ public class ParticipantTable extends BaseStudyTable
         @Override
         public SQLFragment getValueSql(String parentAlias)
         {
-            SQLFragment sql = new SQLFragment();
-            sql.appendComment("<ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());
-            sql.append("(SELECT Label FROM ");
-            sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), "_g" );
-            sql.append(" JOIN ");
-            sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "_m");
-            sql.append(" ON _g.CategoryId = ? AND _g.RowId = _m.GroupId AND _g.Container=? AND _m.Container=?\n");
-            sql.append("WHERE _m.ParticipantId = ").append(parentAlias).append(".ParticipantId)");
-            sql.add(_def.getRowId());
-            sql.add(_def.getContainerId());
-            sql.add(_def.getContainerId());
-            sql.appendComment("</ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());
-            return sql;
+            Container c = ContainerManager.getForId(_def.getContainerId());
+            Study s = null==c ? null : StudyManager.getInstance().getStudy(c);
+            if (null == s)
+                return new SQLFragment("NULL");
+
+            if (s.getShareDatasetDefinitions())
+            {
+                // NOTE: for dataspace the participantGroupMap rows may come from multiple containers so we can't use
+                // _m.Container=?
+                // Also, there is a unique constraint on (groupid,participantid,container)
+                // but not on (groupid, participantid)
+                // to avoid SQL exceptions we change Label to MIN(Label)
+                SQLFragment sql = new SQLFragment();
+                sql.appendComment("<ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());
+                sql.append("(SELECT MIN(Label) FROM ");
+                sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), "_g" );
+                sql.append(" JOIN ");
+                sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "_m");
+                sql.append(" ON _g.CategoryId = ? AND _g.RowId = _m.GroupId AND _g.Container=").append(c);
+                sql.append("WHERE _m.ParticipantId = ").append(parentAlias).append(".ParticipantId)");
+                sql.add(_def.getRowId());
+                sql.appendComment("</ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());
+                return sql;
+
+            }
+            else
+            {
+                SQLFragment sql = new SQLFragment();
+                sql.appendComment("<ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());
+                sql.append("(SELECT Label FROM ");
+                sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), "_g");
+                sql.append(" JOIN ");
+                sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "_m");
+                sql.append(" ON _g.CategoryId = ? AND _g.RowId = _m.GroupId AND _g.Container=? AND _m.Container=?\n");
+                sql.append("WHERE _m.ParticipantId = ").append(parentAlias).append(".ParticipantId)");
+                sql.add(_def.getRowId());
+                sql.add(_def.getContainerId());
+                sql.add(_def.getContainerId());
+                sql.appendComment("</ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());
+                return sql;
+            }
         }
     }
 
