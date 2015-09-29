@@ -34,7 +34,6 @@
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromPath("Ext4"));
-        resources.add(ClientDependency.fromPath("dataview/DataViewsPanel.css"));
         return resources;
     }
 %>
