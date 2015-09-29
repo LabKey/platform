@@ -23,19 +23,27 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.api.study.DataspaceContainerFilter;
+import org.labkey.study.query.DataspaceQuerySchema;
+import org.labkey.study.query.ParticipantGroupFilterClause;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.SQLException;
 import java.util.Calendar;
@@ -74,9 +82,21 @@ public class RelativeDateVisitManager extends VisitManager
         TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
 
-        SQLFragment studyDataContainerFilter = new SQLFragment(alias + ".Container = ?", _study.getContainer());
         if (_study.isDataspaceStudy())
-            studyDataContainerFilter = new DataspaceContainerFilter(user, _study).getSQLFragment(studyData.getSchema(), new SQLFragment(alias+".Container"),getStudy().getContainer());
+        {
+            StudyQuerySchema querySchema = (StudyQuerySchema) DefaultSchema.get(user, _study.getContainer(), "study");
+            DataspaceQuerySchema dataspaceSchema = (DataspaceQuerySchema)querySchema;
+
+            studyData = new FilteredTable(studyData, querySchema, new DataspaceContainerFilter(user, _study));
+
+            ParticipantGroup group = querySchema.getSessionParticipantGroup();
+            if (null != group)
+            {
+                FieldKey participantFieldKey = new FieldKey(null,"ParticipantId");
+                ParticipantGroupFilterClause pgfc = new ParticipantGroupFilterClause(participantFieldKey, group);
+                ((FilteredTable)studyData).addCondition(new SimpleFilter(pgfc));
+            }
+        }
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<RelativeDateVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());
@@ -90,10 +110,8 @@ public class RelativeDateVisitManager extends VisitManager
             sql.append("\nFROM ").append(studyData.getFromSQL(alias))
                 .append(" JOIN ").append(participantVisit.getFromSQL("pv")).append(" ON ").append(alias)
                 .append(".ParticipantId = pv.ParticipantId AND ").append(alias).append(".SequenceNum = pv.SequenceNum AND ").append(alias).append(".Container = pv.Container");
-            sql.append("\nWHERE ");
-            sql.append(studyDataContainerFilter);
             if (null != qcStates)
-                sql.append(" AND ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
+                sql.append("\nWHERE ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
             sql.append("\nGROUP BY ").append(keyCols);
             sql.append("\nORDER BY 1, 2");
         }
@@ -111,8 +129,7 @@ public class RelativeDateVisitManager extends VisitManager
                         .append(".ParticipantId = pv.ParticipantId AND ").append(alias).append(".SequenceNum = pv.SequenceNum AND ").append(alias).append(".Container = pv.Container)\n" + "JOIN ")
                         .append(participantTable.getFromSQL("P")).append(" ON (").append(alias).append(".ParticipantId = P.ParticipantId AND ").append(alias).append(".Container = P.Container)\n");
                     sql.append("\nWHERE ")
-                        .append(studyDataContainerFilter)
-                        .append(" AND P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
+                        .append("P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
                         .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "");
                     sql.add(cohortFilter.getCohortId());
                     sql.append("\nGROUP BY ").append(keyCols);

@@ -22,10 +22,14 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
@@ -33,11 +37,15 @@ import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyUnionTableInfo;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.api.study.DataspaceContainerFilter;
+import org.labkey.study.query.DataspaceQuerySchema;
+import org.labkey.study.query.ParticipantGroupFilterClause;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -65,9 +73,21 @@ public class SequenceVisitManager extends VisitManager
                 StudySchema.getInstance().getTableInfoStudyDataVisible(getStudy(), null);
         TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
 
-        SQLFragment studyDataContainerFilter = null; // new SQLFragment(alias + ".Container = ?", _study.getContainer());
         if (_study.isDataspaceStudy())
-            studyDataContainerFilter = new DataspaceContainerFilter(user, _study).getSQLFragment(studyData.getSchema(), new SQLFragment(alias+".container"),getStudy().getContainer());
+        {
+            StudyQuerySchema querySchema = (StudyQuerySchema)DefaultSchema.get(user, _study.getContainer(), "study");
+            DataspaceQuerySchema dataspaceSchema = (DataspaceQuerySchema)querySchema;
+
+            studyData = new FilteredTable(studyData, querySchema, new DataspaceContainerFilter(user, _study));
+
+            ParticipantGroup group = querySchema.getSessionParticipantGroup();
+            if (null != group)
+            {
+                FieldKey participantFieldKey = new FieldKey(null,"ParticipantId");
+                ParticipantGroupFilterClause pgfc = new ParticipantGroupFilterClause(participantFieldKey, group);
+                ((FilteredTable)studyData).addCondition(new SimpleFilter(pgfc));
+            }
+        }
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<SequenceVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());
@@ -96,11 +116,6 @@ public class SequenceVisitManager extends VisitManager
                     .append(alias).append(".container = SVM.container");
 
             String where = "\nWHERE ";
-            if (null != studyDataContainerFilter)
-            {
-                sql.append(where).append(studyDataContainerFilter);
-                where = " AND ";
-            }
             if (null != qcStates)
                 sql.append(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
             sql.append("\nGROUP BY ").append(keyCols);
@@ -122,11 +137,6 @@ public class SequenceVisitManager extends VisitManager
                             .append(alias).append(".SequenceNum = SVM.SequenceNum AND ")
                             .append(alias).append(".container = SVM.container");
                     String where = "\nWHERE ";
-                    if (null != studyDataContainerFilter)
-                    {
-                        sql.append(where).append(studyDataContainerFilter);
-                        where = " AND ";
-                    }
                     if (qcStates != null)
                         sql.append(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
                     sql.append("\nGROUP BY ").append(keyCols);
@@ -145,11 +155,6 @@ public class SequenceVisitManager extends VisitManager
                             .append(alias).append(".SequenceNum = SVM.SequenceNum AND ")
                             .append(alias).append(".container = SVM.container");
                     String where = "\nWHERE ";
-                    if (null != studyDataContainerFilter)
-                    {
-                        sql.append(where).append(studyDataContainerFilter);
-                        where = " AND ";
-                    }
                     if (qcStates != null)
                         sql.append(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
                     sql.append("\nGROUP BY ").append(keyCols);
@@ -224,7 +229,7 @@ public class SequenceVisitManager extends VisitManager
         sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ");
         sqlSelect.append(tableStudyData.getParticipantSequenceNumSQL("SD"));
         sqlSelect.append("\nEXCEPT\n");
-        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container=CAST(? AS " + d.getGuidType() + ")\n");
+        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container=CAST(? AS ").append(d.getGuidType()).append(")\n");
         sqlSelect.add(container);
 
         SQLFragment sqlInsertParticipantVisit = new SQLFragment();
@@ -298,7 +303,7 @@ public class SequenceVisitManager extends VisitManager
         if (defsWithVisitDates.isEmpty())
         {
             SQLFragment sqlUpdateVisitDates = new SQLFragment();
-            sqlUpdateVisitDates.append("UPDATE " + tableParticipantVisit + "\n")
+            sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit).append("\n")
                 .append("SET VisitDate = NULL, Day = NULL")
                 .append(" WHERE Container = ?");
             sqlUpdateVisitDates.add(visitStudy.getContainer());
@@ -362,7 +367,7 @@ public class SequenceVisitManager extends VisitManager
         boolean isVisitDateDataset = false;
         for (Visit v : study.getVisits(Visit.Order.SEQUENCE_NUM))
         {
-            if (v.getVisitDateDatasetId() == def.getDatasetId())
+            if (null!=v.getVisitDateDatasetId() && v.getVisitDateDatasetId().intValue() == def.getDatasetId())
             {
                 isVisitDateDataset = true;
                 break;

@@ -2490,6 +2490,7 @@ study/src/org/labkey/study/query/OuterAliasedColumn.java -text
 study/src/org/labkey/study/query/ParticipantCategoryTable.java -text
 study/src/org/labkey/study/query/ParticipantDatasetTable.java -text
 study/src/org/labkey/study/query/ParticipantGroupCohortUnionTable.java -text
+study/src/org/labkey/study/query/ParticipantGroupFilterClause.java -text
 study/src/org/labkey/study/query/ParticipantGroupMapTable.java -text
 study/src/org/labkey/study/query/ParticipantGroupTable.java -text
 study/src/org/labkey/study/query/ParticipantTable.java -text

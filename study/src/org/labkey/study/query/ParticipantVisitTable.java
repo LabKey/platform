@@ -238,20 +238,7 @@ public class ParticipantVisitTable extends BaseStudyTable
             sf = new SimpleFilter();
 
         FieldKey participantFieldKey = FieldKey.fromParts("ParticipantId");
-
-        if (group.isSession() || group.isNew())
-        {
-            SimpleFilter.InClause clause = new SimpleFilter.InClause(participantFieldKey, group.getParticipantSet());
-            sf.addClause(clause);
-        }
-        else
-        {
-            SimpleFilter.SQLClause clause = new SimpleFilter.SQLClause(
-                    "ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)",
-                    new Object[] {group.getRowId()},
-                    participantFieldKey);
-            sf.addClause(clause);
-        }
+        sf.addClause(new ParticipantGroupFilterClause(participantFieldKey, group));
         return sf;
     }
 

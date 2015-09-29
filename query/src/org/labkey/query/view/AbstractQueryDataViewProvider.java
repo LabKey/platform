@@ -79,6 +79,17 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
                 {
                     String[] parts = ViewCategoryManager.getInstance().decode(category);
                     vc = ViewCategoryManager.getInstance().getCategory(context.getContainer(), parts);
+
+                    // BUG 24355: For shared datasets, project level dataset categories don't match subfolder dataset categories
+                    // if this query is inherited then we might want to pick up the view category from a parent directory,
+                    // how do we know where the query/table is defined?
+                    // TODO general way to find the correct parent directory
+                    if (null == vc && !context.getContainer().isProject() && StringUtils.equalsIgnoreCase("study",view.getSchemaName()))
+                    {
+                        Container project = context.getContainer().getProject();
+                        if (null != project && project.isDataspace())
+                            vc = ViewCategoryManager.getInstance().getCategory(project, parts);
+                    }
                 }
             }
             // no explicit category could be found, use the default category
