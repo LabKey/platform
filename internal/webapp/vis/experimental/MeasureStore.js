@@ -1264,9 +1264,12 @@
             // LABKEY.Query.Visualization.getData() wrapper
             // NOTE: getData() does not require that measures be marked with isMeasure and isDimension, but this
             // wrapper API does
-            getData : function(config)
+            getData : function(config, getDataFn)
             {
-                _apiWrapper(config, LABKEY.Query.Visualization.getData, _handleGetDataResponse);
+                var getData = LABKEY.Query.Visualization.getData;
+                if (getDataFn && typeof getDataFn == "function")
+                    getData = getDataFn;
+                _apiWrapper(config, getData, _handleGetDataResponse);
             },
 
             // NYI load from Ext.Store (listen to data change events?)
