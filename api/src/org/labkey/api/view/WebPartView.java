@@ -694,6 +694,13 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                     }
                     else
                     {
+                        // show the move up move down and delete web part menu options
+                        if (links.length > 0)
+                        {
+                            for (NavTree link : links)
+                                nMenu.addChild(link);
+                        }
+
                         out.print("&nbsp;");
 
                         if (nMenu != null && nMenu.hasChildren())
@@ -764,37 +771,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
                         out.print("</th>\n<th class=\"labkey-wp-title-right\">");
 
-                        for (NavTree link : links)
-                        {
-                            out.print(sep);
-                            String linkHref = link.getHref();
-                            String linkText = link.getText();
-
-                            if (null != linkHref && 0 < linkHref.length())
-                            {
-                                out.print("<span class=\"labkey-wp-icon-button-active\">");
-                                out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
-                            }
-                            else
-                                out.print("<span class=\"labkey-wp-icon-button-inactive\">");
-                            if (null != link.getImageCls())
-                            {
-                                out.print("<span class=\"" + link.getImageCls() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\"></span>");
-                            }
-                            else if (null != link.getImageSrc())
-                            {
-                                if (link.getImageWidth() != null && link.getImageHeight() != null)
-                                    out.print("<img height=" + link.getImageHeight() + " width=" + link.getImageWidth() + " src=\"" + link.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
-                                else
-                                    out.print("<img src=\"" + link.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
-                            }
-                            else
-                                out.print(PageFlowUtil.filter(linkText));
-                            if (null != linkHref && 0 < linkHref.length())
-                                out.print("</a>");
-                            out.print("</span>");
-                        }
-                    }
+                     }
 
                     out.println("</th>");
                     out.println("</tr>");

@@ -997,17 +997,13 @@ public class Portal
 
                     if (i > 0)
                         navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up labkey-fa-portal-nav");
-                    else if (part.getLocation().equals(WebPartFactory.LOCATION_RIGHT))
-                        navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
                     else
-                        navTree.addChild("", "", null, "fa fa-caret-square-o-up x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
+                        navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
 
                     if (i < partsForLocation.size() - 1)
                         navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down labkey-fa-portal-nav");
-                    else if (part.getLocation().equals(WebPartFactory.LOCATION_RIGHT))
+                     else
                         navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
-                    else
-                        navTree.addChild("", "", null, "fa fa-caret-square-o-down x4-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
                     if (!part.isPermanent())
                     {
                         navTree.addChild("Remove From Page", getDeleteURL(context, part), null, "fa fa-times");
