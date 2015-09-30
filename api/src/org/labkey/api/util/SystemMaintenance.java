@@ -21,8 +21,6 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.StatusAppender;
-import org.labkey.api.action.StatusReportingRunnable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
@@ -49,8 +47,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -58,10 +56,11 @@ import java.util.stream.Collectors;
  * Date: Sep 29, 2006
  * Time: 2:18:53 PM
  */
-public class SystemMaintenance extends TimerTask implements ShutdownListener, StatusReportingRunnable
+public class SystemMaintenance extends TimerTask implements ShutdownListener, Callable<String>
 {
-    private static final Object _timerLock = new Object();
-    private static final List<MaintenanceTask> _tasks = new CopyOnWriteArrayList<>();
+    private static final Object TIMER_LOCK = new Object();
+    private static final List<MaintenanceTask> TASKS = new CopyOnWriteArrayList<>();
+    private static final Logger LOG = Logger.getLogger(SystemMaintenance.class);
 
     private static Timer _timer = null;
     private static SystemMaintenance _timerTask = null;
@@ -69,14 +68,10 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
     private volatile static boolean _timerDisabled = false;
 
     private final @Nullable String _taskName;
-    private final Logger _log;
     private final boolean _manualInvocation;
-    private final AtomicBoolean _taskRunning = new AtomicBoolean(false);
     private final @Nullable User _user;
 
-    private StatusAppender _appender;
-
-    // Used by the standard timer invoked maintenance
+    // Used by the standard timer-invoked maintenance
     public SystemMaintenance()
     {
         this(false, null, null);
@@ -87,13 +82,10 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
     public SystemMaintenance(@Nullable String taskName, User user)
     {
         this(true, taskName, user);
-        _appender = new StatusAppender();
-        _log.addAppender(_appender);
     }
 
     private SystemMaintenance(boolean manualInvocation, @Nullable String taskName, @Nullable User user)
     {
-        _log = Logger.getLogger(SystemMaintenance.class);
         _taskName = taskName;
         _user = user;
         _manualInvocation = manualInvocation;
@@ -101,7 +93,7 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
 
     public static void setTimer()
     {
-        synchronized(_timerLock)
+        synchronized(TIMER_LOCK)
         {
             resetTimer();
 
@@ -148,7 +140,7 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
     }
 
     // Returns null if time is null
-    public static String formatSystemMaintenanceTime(Date time)
+    public static @Nullable String formatSystemMaintenanceTime(Date time)
     {
         return DateUtil.formatDateTime(time, "H:mm");
     }
@@ -186,12 +178,12 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
     {
         if (task.getName().contains(","))
             throw new IllegalStateException("System maintenance task " + task.getClass().getSimpleName() + " has a comma in its name (" + task.getName() + ")");
-        _tasks.add(task);
+        TASKS.add(task);
     }
 
     public static List<MaintenanceTask> getTasks()
     {
-        return _tasks;
+        return TASKS;
     }
 
     public static boolean isTimerDisabled()
@@ -257,20 +249,27 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
         }
     }
 
-    // Start a separate thread to do all the work
+    @Override
     public void run()
     {
+        call();
+    }
+
+    // Determine the tasks to run and queue them up in the pipeline
+    public String call()
+    {
+        final String jobGuid;
         if (!_manualInvocation && (System.currentTimeMillis() - scheduledExecutionTime()) > 2 * DateUtils.MILLIS_PER_HOUR)
         {
-            _log.warn("Skipping system maintenance since it's two hours past the scheduled time");
+            LOG.warn("Skipping system maintenance since it's two hours past the scheduled time");
+            jobGuid = null;
         }
         else
         {
-            _taskRunning.set(true);
             Set<String> disabledTasks = getProperties().getDisabledTasks();
             Collection<MaintenanceTask> tasksToRun = new LinkedList<>();
 
-            for (MaintenanceTask task : _tasks)
+            for (MaintenanceTask task : TASKS)
             {
                 if (null != _taskName && !_taskName.isEmpty())
                 {
@@ -297,26 +296,17 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
 
             try
             {
-                PipelineJob job = new MaintenancePipelineJob(_log, vbi, root, tasksToRun, _taskRunning);
+                PipelineJob job = new MaintenancePipelineJob(vbi, root, tasksToRun);
                 PipelineService.get().queueJob(job);
+                jobGuid = job.getJobGUID();
             }
             catch (PipelineValidationException e)
             {
                 throw new RuntimeException(e);
             }
         }
-    }
 
-    @Override
-    public boolean isRunning()
-    {
-        return _taskRunning.get();
-    }
-
-    @Override
-    public Collection<String> getStatus(@Nullable Integer offset)
-    {
-        return _appender.getStatus(offset); 
+        return jobGuid;
     }
 
     @Override
@@ -325,14 +315,16 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
         return "System Maintenance";
     }
 
+    @Override
     public void shutdownPre(ServletContextEvent servletContextEvent)
     {
         
     }
 
+    @Override
     public void shutdownStarted(ServletContextEvent servletContextEvent)
     {
-        synchronized(_timerLock)
+        synchronized(TIMER_LOCK)
         {
             resetTimer();
         }
@@ -342,16 +334,12 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
     private static class MaintenancePipelineJob extends PipelineJob
     {
         private final Collection<MaintenanceTask> _tasks;
-        private final transient Logger _log;
-        private final AtomicBoolean _taskRunning;
 
-        public MaintenancePipelineJob(Logger log, ViewBackgroundInfo info, PipeRoot pipeRoot, Collection<MaintenanceTask> tasks, AtomicBoolean taskRunning)
+        public MaintenancePipelineJob(ViewBackgroundInfo info, PipeRoot pipeRoot, Collection<MaintenanceTask> tasks)
         {
             super(null, info, pipeRoot);
             setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("system_maintenance", "log")));
             _tasks = tasks;
-            _log = log;
-            _taskRunning = taskRunning;
         }
 
         @Override
@@ -405,15 +393,6 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
 
             info("System maintenance complete");
             setStatus(finalStatus);
-            _taskRunning.set(false);
-        }
-
-        @Override
-        public void info(String message)
-        {
-            // Log to both passed in Logger and pipeline log
-            _log.info(message);
-            super.info(message);
         }
     }
 

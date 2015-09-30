@@ -163,7 +163,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
     public abstract URLHelper getSuccessURL(FORM form);
 
     // not usually used but some actions return views that close the current window etc...
-    public ModelAndView getSuccessView(FORM form)
+    public ModelAndView getSuccessView(FORM form) throws Exception
     {
         return null;
     }
