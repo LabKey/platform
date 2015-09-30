@@ -56,9 +56,9 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
             throw new PipelineValidationException("User " + user + " does not have access to " + job.getContainer());
         }
 
-        LOG.debug("PENDING:   " + job.toString());
+        LOG.debug("PENDING: " + job.toString());
 
-        // Make sure status file path and Job ID are in synch.
+        // Make sure status file path and Job ID are in sync.
         File logFile = job.getLogFile();
         if (logFile != null)
         {
@@ -74,14 +74,7 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
         if (job.setQueue(this, PipelineJob.TaskStatus.waiting))
         {
             // Delay until the transaction has been committed so other threads can find the job in the database
-            PipelineSchema.getInstance().getSchema().getScope().addCommitTask(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    enqueue(job);
-                }
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
+            PipelineSchema.getInstance().getSchema().getScope().addCommitTask(() -> enqueue(job), DbScope.CommitTaskOption.POSTCOMMIT);
         }
     }
 

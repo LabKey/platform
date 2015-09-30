@@ -1258,9 +1258,10 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
         Double fragmentationPercent = new SqlSelector(schema, sql).getObject(Double.class);
 
+        // Follow the index rebuild/reorganize recommendations at https://msdn.microsoft.com/en-us/library/ms189858.aspx
         if (fragmentationPercent > 0.05)
         {
-            SQLFragment alterSql = new SQLFragment("ALTER INDEX " + indexName + " ON " + tableSelectName + " " + (fragmentationPercent > 0.30 ? "REBUILD" : "REORGANIZE"));
+            SQLFragment alterSql = new SQLFragment("ALTER INDEX " + indexName + " ON " + tableSelectName + " " + (fragmentationPercent > 0.30 ? "REBUILD WITH (ONLINE = ON)" : "REORGANIZE"));
             new SqlExecutor(schema).execute(alterSql);
         }
     }

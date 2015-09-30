@@ -16,7 +16,7 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.util.SystemMaintenance" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance.MaintenanceTask" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties" %>
@@ -25,8 +25,6 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -106,7 +104,7 @@
         </tr>
     </table>
 </labkey:form>
-<labkey:form name="systemMaintenance" action="<%=buildURL(AdminController.SystemMaintenanceAction.class)%>" method="post" target="systemMaintenance"><input type="hidden" name="taskName"/></labkey:form>
+<labkey:form name="systemMaintenance" action="<%=h(buildURL(AdminController.SystemMaintenanceAction.class))%>" method="post" target="systemMaintenance"><input type="hidden" name="taskName"/></labkey:form>
 <script type="text/javascript">
 
     // global functions for script calls from this Form
@@ -127,7 +125,9 @@
 
         submitSystemMaintenance = function(taskName)
         {
-            document.forms['systemMaintenance'].taskName.value = (taskName ? taskName : null);
+            var form = document.forms['systemMaintenance'];
+            form.taskName.value = (taskName ? taskName : null);
+            form.method = 'post';
             document.forms['systemMaintenance'].submit();
         };
 

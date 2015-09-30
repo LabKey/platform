@@ -39,6 +39,7 @@ import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.admin.FolderWriterImpl;
 import org.labkey.api.admin.StaticLoggerGetter;
+import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
@@ -56,7 +57,6 @@ import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -73,6 +73,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.ValidationError;
@@ -115,6 +116,7 @@ import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -154,8 +156,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -185,7 +185,6 @@ public class AdminController extends SpringActionController
             FileListAction.class,
             ProjectSettingsAction.class,
             FolderManagementAction.class);
-    private static final NumberFormat _formatInteger = DecimalFormat.getIntegerInstance();
 
     private static final Logger LOG = Logger.getLogger(AdminController.class);
     private static final Logger CLIENT_LOG = Logger.getLogger(LogAction.class);
@@ -2613,14 +2612,77 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
-    public class SystemMaintenanceAction extends StatusReportingRunnableAction<SystemMaintenance>
+
+    public static class SystemMaintenanceForm
     {
-        @Override
-        protected SystemMaintenance newStatusReportingRunnable()
+        private String _taskName;
+        private boolean _test = false;
+
+        public String getTaskName()
         {
-            String taskName = (String)getViewContext().get("taskName");
-            return new SystemMaintenance(taskName, getUser());
+            return _taskName;
+        }
+
+        @SuppressWarnings("unused")
+        public void setTaskName(String taskName)
+        {
+            _taskName = taskName;
+        }
+
+        public boolean isTest()
+        {
+            return _test;
+        }
+
+        public void setTest(boolean test)
+        {
+            _test = test;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class SystemMaintenanceAction extends FormHandlerAction<SystemMaintenanceForm>
+    {
+        private Integer _jobId = null;
+        private URLHelper _url = null;
+
+        @Override
+        public void validateCommand(SystemMaintenanceForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getSuccessView(SystemMaintenanceForm form) throws IOException
+        {
+            // Send the pipeline job details absolute URL back to the test
+            sendPlainText(_url.getURIString());
+
+            // Suppress templates, divs, etc.
+            getPageConfig().setTemplate(Template.None);
+            return new EmptyView();
+        }
+
+        @Override
+        public boolean handlePost(SystemMaintenanceForm form, BindException errors) throws Exception
+        {
+            String jobGuid = new SystemMaintenance(form.getTaskName(), getUser()).call();
+
+            if (null != jobGuid)
+                _jobId = PipelineService.get().getJobId(getUser(), getContainer(), jobGuid);
+
+            PipelineStatusUrls urls = PageFlowUtil.urlProvider(PipelineStatusUrls.class);
+            _url = null != _jobId ? urls.urlDetails(getContainer(), _jobId) : urls.urlBegin(getContainer());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(SystemMaintenanceForm form)
+        {
+            // In the standard case, redirect to the pipeline details URL
+            // If the test is invoking system maintenance then return the URL instead
+            return form.isTest() ? null : _url;
         }
     }
 
