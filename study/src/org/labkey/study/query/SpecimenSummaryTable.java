@@ -264,7 +264,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 final Set<String> hashes = new HashSet<>();
                 final Map<String, List<SpecimenComment>> hashToComments = new HashMap<>();
 
-                new TableSelector(_summaryTable, columns, ctx.getBaseFilter(), ctx.getBaseSort()).forEach(new Selector.ForEachBlock<ResultSet>()
+                new TableSelector(_summaryTable, columns, ctx.getBaseFilter(), null).forEach(new Selector.ForEachBlock<ResultSet>()
                 {
                     @Override
                     public void exec(ResultSet rs) throws SQLException
@@ -359,7 +359,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
             {
                 try
                 {
-                    sb.append(getCommentText(ctx, ctx.getResults().getString("SpecimenHash"), lineSeparator));
+                    String comment = getCommentText(ctx, ctx.getResults().getString("SpecimenHash"), lineSeparator);
+                    if (null != comment)
+                        sb.append(comment);
                 }
                 catch (SQLException e)
                 {
