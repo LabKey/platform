@@ -1300,6 +1300,12 @@ public abstract class SqlDialect
         }
     }
 
+    // Defragment an index, if necessary
+    public void defragmentIndex(DbSchema schema, String tableSelectName, String indexName)
+    {
+        // By default do nothing
+    }
+
     public abstract boolean isCaseSensitive();
     public abstract boolean isEditable();
     public abstract boolean isSqlServer();
