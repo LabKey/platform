@@ -69,19 +69,17 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconMap.put(EnrollmentReport.TYPE, "/reports/enrollment.png");
-    }
 
-    static
-    {
- //       _typeToIconClsMap.put(StudyRReport.TYPE, "/reports/r.gif");
+        // font icons - some report image icons dont have corresponding font icon replacements yet
+//      _typeToIconClsMap.put(StudyRReport.TYPE, "/reports/r.gif");
         _typeToIconClsMap.put(ChartReportView.TYPE, "fa fa-bar-chart");
         _typeToIconClsMap.put(StudyQueryReport.TYPE, "fa fa-table");
         _typeToIconClsMap.put(StudyChartQueryReport.TYPE, "fa fa-bar-chart");
         _typeToIconClsMap.put(ExportExcelReport.TYPE, "fa fa-file-excel-o");
         _typeToIconClsMap.put(ExternalReport.TYPE, "fa fa-share-square-o");
         _typeToIconClsMap.put(ParticipantReport.TYPE, "fa fa-clipboard");
-//        _typeToIconClsMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
-//        _typeToIconClsMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
+//      _typeToIconClsMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
+//      _typeToIconClsMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconClsMap.put(EnrollmentReport.TYPE, "fa fa-check");
     }
 

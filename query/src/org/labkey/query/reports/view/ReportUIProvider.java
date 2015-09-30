@@ -73,13 +73,11 @@ public class ReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(AttachmentReport.TYPE, "/reports/attachment.png");
         _typeToIconMap.put(LinkReport.TYPE, "/reports/external-link.png");
         _typeToIconMap.put(QueryReport.TYPE, "/reports/grid.gif");
-    }
 
-    static
-    {
-//        _typeToIconClsMap.put(RReport.TYPE, "/reports/r.gif");
+        // font icons - some report image icons dont have corresponding font icon replacements yet
+//      _typeToIconClsMap.put(RReport.TYPE, "/reports/r.gif");
         _typeToIconClsMap.put(ChartQueryReport.TYPE, "fa fa-bar-chart");
-//        _typeToIconClsMap.put(JavaScriptReport.TYPE, "/reports/js.png");
+//      _typeToIconClsMap.put(JavaScriptReport.TYPE, "/reports/js.png");
         _typeToIconClsMap.put(AttachmentReport.TYPE, "fa fa-paperclip");
         _typeToIconClsMap.put(LinkReport.TYPE, "fa fa-external-link-square");
         _typeToIconClsMap.put(QueryReport.TYPE, "fa fa-table");
