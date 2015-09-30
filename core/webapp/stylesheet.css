@@ -3721,3 +3721,8 @@ div span.labkey-main-menu-icon {
     background-color: white;
 }
 
+.labkey-wp-header .fa-pencil {
+    font-size: 16px;
+    margin-left: 0.4em;
+}
+

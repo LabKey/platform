@@ -91,7 +91,8 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
             for (ReportService.DesignerInfo info : designers)
             {
                 URLHelper iconURL = info.getIconURL();
-                NavTree item = new NavTree(info.getLabel(), info.getDesignerURL().getLocalURIString(), null != iconURL ? iconURL.getLocalURIString() : null);
+                String iconCls = info.getIconCls();
+                NavTree item = new NavTree(info.getLabel(), info.getDesignerURL().getLocalURIString(), null != iconURL ? iconURL.getLocalURIString() : null, iconCls);
 
                 item.setId(info.getId());
                 item.setDisabled(info.isDisabled());
