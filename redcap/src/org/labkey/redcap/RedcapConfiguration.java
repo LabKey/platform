@@ -56,6 +56,7 @@ public class RedcapConfiguration
     private TimepointType.Enum _timepointType = TimepointType.DATE;
     private List<RedcapProject> _projects = new ArrayList<>();
     private Map<String, String> _tokenMap = new HashMap<>();
+    private boolean _mergeLookups = true;
 
     private RedcapConfiguration(){}
 
@@ -151,6 +152,11 @@ public class RedcapConfiguration
         return _duplicateNamePolicy;
     }
 
+    public boolean isMergeLookups()
+    {
+        return _mergeLookups;
+    }
+
     private void parseConfiguration(PipelineJob job, RedcapConfigDocument doc)
     {
         try
@@ -169,6 +175,11 @@ public class RedcapConfiguration
 
             if ("visit".equalsIgnoreCase(timepointType))
                 _timepointType = TimepointType.VISIT;
+
+            if (rc.isSetMergeLookups())
+            {
+                _mergeLookups = rc.getMergeLookups();
+            }
 
             for (RedcapConfigDocument.RedcapConfig.Projects.Project project : rc.getProjects().getProjectArray())
             {

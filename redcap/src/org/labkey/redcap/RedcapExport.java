@@ -22,6 +22,7 @@ import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
@@ -83,7 +84,8 @@ public class RedcapExport
 
     private RedcapConfiguration _config;
     private Map<String, Double> _visitToSequenceNumber = new HashMap<String, Double>();
-    private Map<String, List<Map<String, Object>>> _lookups = new HashMap<>();
+    private Map<String, Lookup> _lookups = new HashMap<>();
+    private Map<String, String> _columnNameToLookupKey = new HashMap<>();
     private Map<String, ColumnInfo> _columnInfoMap = new HashMap<>();
     private Map<String, ColumnInfo> _multiValueColumns = new HashMap<>();
     private Map<String, Map<String, String>> _multiValueLookups = new HashMap<>();
@@ -370,7 +372,7 @@ public class RedcapExport
                     if (!datasets.containsKey(datasetName))
                         datasets.put(datasetName, new ArrayList<ColumnInfo>());
 
-                    createColumnInfo(datasets.get(datasetName), row);
+                    createColumnInfo(datasets.get(datasetName), row, datasetName);
 
                     // if we are matching the subject id by label, we need to track the actual generated name that
                     // redcap creates to uniquify the subject id per form
@@ -447,7 +449,7 @@ public class RedcapExport
                         for (ColumnInfo column : projDatasets.get(datasetName))
                         {
                             ColumnType columnXml = columnsXml.addNewColumn();
-                            writeColumn(column, columnXml);
+                            writeColumn(datasetName, column, columnXml);
                         }
                     }
                 }
@@ -520,7 +522,7 @@ public class RedcapExport
                             if (lk != null)
                                 newRow.put(entry.getKey(), lk);
                         }
-                        else
+                        else if (entry.getValue() != null)
                             newRow.put(entry.getKey(), entry.getValue());
                     }
                     else if (REDCAP_EVENT_COL_NAME.equalsIgnoreCase(entry.getKey()))
@@ -665,6 +667,7 @@ public class RedcapExport
 
                     if (subjectId != null)
                     {
+                        boolean addRow = false;
                         datasetRow.put("participantId", subjectId);
 
                         if (_config.getTimepointType().equals(TimepointType.VISIT))
@@ -698,15 +701,20 @@ public class RedcapExport
 
                             if (col.getJdbcType().equals(JdbcType.TIMESTAMP) && value != null)
                             {
+                                addRow = true;
                                 ConvertHelper.LenientTimeOnlyConverter converter = new ConvertHelper.LenientTimeOnlyConverter();
 
                                 Date timestamp = (Date)converter.convert(Date.class, value);
                                 datasetRow.put(col.getName(), timestamp);
                             }
-                            else
+                            else if (value != null)
+                            {
+                                addRow = true;
                                 datasetRow.put(col.getName(), value);
+                            }
                         }
-                        datasetRows.add(datasetRow);
+                        if (addRow)
+                            datasetRows.add(datasetRow);
                     }
                     else
                         _job.warn("Unable to locate subject id field: " + subjectIdField + " for dataset: " + datasetName + " row ignored.");
@@ -762,10 +770,12 @@ public class RedcapExport
             if (isCompleteValue.startsWith("0"))
                 return false;
         }
+
+        // don't export if the row is empty
         return true;
     }
 
-    private void writeColumn(ColumnInfo col, ColumnType columnXml)
+    private void writeColumn(@Nullable String datasetName, ColumnInfo col, ColumnType columnXml)
     {
         columnXml.setColumnName(col.getName());
 
@@ -785,10 +795,11 @@ public class RedcapExport
             String label = col.getLabel();
             if (label.length() > 200)
             {
-                _job.warn("Label for column : " + col.getName() + " exceeded 200 characters, truncating.");
-                label = label.substring(0, 199);
+                _job.warn("Label for column : " + col.getName() + " exceeded 200 characters, just using the column name default.");
+//                label = label.substring(0, 199);
             }
-            columnXml.setColumnTitle(label);
+            else
+                columnXml.setColumnTitle(label);
         }
 
         if (null != col.getDescription())
@@ -807,10 +818,15 @@ public class RedcapExport
 
         if (null != fk && null != fk.getLookupColumnName())
         {
-            if (_lookups.containsKey(col.getName()))
+            String columnKey = createLookupKey(datasetName, col);
+            String lookupKey = _columnNameToLookupKey.get(columnKey);
+
+            if (_lookups.containsKey(lookupKey))
             {
+                Lookup lookup = _lookups.get(lookupKey);
+
                 // Make sure public Name and SchemaName aren't null before adding the FK
-                String tinfoPublicName = col.getName();
+                String tinfoPublicName = lookup.getName();
                 String tinfoPublicSchemaName = "lists";
                 if (null != tinfoPublicName && null != tinfoPublicSchemaName)
                 {
@@ -824,7 +840,7 @@ public class RedcapExport
         }
     }
 
-    public void createColumnInfo(List<ColumnInfo> dataset, Map<String, Object> row)
+    public void createColumnInfo(List<ColumnInfo> dataset, Map<String, Object> row, String datasetName)
     {
         String name = (String)row.get("field_name");
         String label = (String)row.get("field_label");
@@ -838,13 +854,13 @@ public class RedcapExport
         col.setLabel(label);
         col.setDescription(note);
 
-        setType(col, type, validation, choices);
+        setType(datasetName, col, type, validation, choices);
         dataset.add(col);
 
         _columnInfoMap.put(col.getName(), col);
     }
 
-    private void setType(ColumnInfo col, String fieldType, String validationType, String choices)
+    private void setType(String datasetName, ColumnInfo col, String fieldType, String validationType, String choices)
     {
         if (fieldType != null)
         {
@@ -899,7 +915,7 @@ public class RedcapExport
                         }
                     };
                     col.setFk(fk);
-                    createLookup(col, choices);
+                    createLookup(datasetName, col, choices);
                 }
             }
             else if ("checkbox".equalsIgnoreCase(fieldType))
@@ -934,9 +950,32 @@ public class RedcapExport
         }
     }
 
-    private void createLookup(ColumnInfo col, String choicesStr)
+    private String createLookupKey(String datasetName, ColumnInfo col)
     {
-        if (!_lookups.containsKey(col.getName()))
+        return datasetName + "$" + col.getName();
+    }
+
+    private void createLookup(String datasetName, ColumnInfo col, String choicesStr)
+    {
+        String columnKey = createLookupKey(datasetName, col);
+        String lookupKey;
+
+        // default behavior is that we create a unique lookup for each column, this tends to produce a lot of lists (lookups),
+        // the merge option will try to coalesce identical lookups
+        if (_config.isMergeLookups())
+        {
+            if (!_columnNameToLookupKey.containsKey(columnKey))
+                _columnNameToLookupKey.put(columnKey, choicesStr.trim());
+        }
+        else
+        {
+            if (!_columnNameToLookupKey.containsKey(columnKey))
+                _columnNameToLookupKey.put(columnKey, columnKey);
+        }
+
+        lookupKey = _columnNameToLookupKey.get(columnKey);
+
+        if (!_lookups.containsKey(lookupKey))
         {
             List<Map<String, Object>> lookup = new ArrayList<>();
             boolean integerKeyField = isIntegerKey(choicesStr);
@@ -946,18 +985,20 @@ public class RedcapExport
 
             for (String choice : choicesStr.split("\\|"))
             {
-                String[] lu = choice.split(",");
-                if (lu.length == 2)
+                int idx = choice.indexOf(",");
+                if (idx != -1)
                 {
+                    String key = choice.substring(0, idx).trim();
+                    String value = choice.substring(idx+1).trim();
+
                     Map<String, Object> row = new HashMap<>();
-                    String key = lu[0].trim();
 
                     try {
                         if (integerKeyField)
                             row.put(LOOKUP_KEY_FIELD, new Integer(key));
                         else
                             row.put(LOOKUP_KEY_FIELD, key);
-                        row.put(LOOKUP_NAME_FIELD, lu[1]);
+                        row.put(LOOKUP_NAME_FIELD, value);
 
                         lookup.add(row);
                     }
@@ -967,7 +1008,7 @@ public class RedcapExport
                     }
                 }
             }
-            _lookups.put(col.getName(), lookup);
+            _lookups.put(lookupKey, new Lookup(col.getName(), lookup));
         }
     }
 
@@ -1137,25 +1178,25 @@ public class RedcapExport
             TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
             TablesType tablesXml = tablesDoc.addNewTables();
 
-            for (Map.Entry<String, List<Map<String, Object>>> entry : _lookups.entrySet())
+            for (Lookup lookup : _lookups.values())
             {
                 // Write meta data
                 // create the dataset schemas
                 TableType tableXml = tablesXml.addNewTable();
-                tableXml.setTableName(entry.getKey());
+                tableXml.setTableName(lookup.getName());
                 tableXml.setTableDbType("TABLE");
 
                 TableType.Columns columnsXml = tableXml.addNewColumns();
 
                 tableXml.setPkColumnName(LOOKUP_KEY_FIELD);
-                for (ColumnInfo column : getLookupColumns(entry.getKey()))
+                for (ColumnInfo column : getLookupColumns(lookup.getName()))
                 {
                     ColumnType columnXml = columnsXml.addNewColumn();
-                    writeColumn(column, columnXml);
+                    writeColumn(null, column, columnXml);
                 }
 
-                TSVMapWriter tsvWriter = new TSVMapWriter(entry.getValue());
-                PrintWriter out = vf.getPrintWriter(entry.getKey() + ".tsv");
+                TSVMapWriter tsvWriter = new TSVMapWriter(lookup.getEntries());
+                PrintWriter out = vf.getPrintWriter(lookup.getName() + ".tsv");
                 tsvWriter.write(out);
                 tsvWriter.close();
             }
@@ -1189,6 +1230,28 @@ public class RedcapExport
         else
             _job.warn("Unable to locate the referencing column : " + columnName + " for the lookup list");
         return columns;
+    }
+
+    public static class Lookup
+    {
+        private List<Map<String, Object>> _entries;
+        private String _name;
+
+        public Lookup(String name, List<Map<String, Object>> entries)
+        {
+            _name = name;
+            _entries = entries;
+        }
+
+        public List<Map<String, Object>> getEntries()
+        {
+            return _entries;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
     }
 
     public static class RedcapTestCase extends Assert

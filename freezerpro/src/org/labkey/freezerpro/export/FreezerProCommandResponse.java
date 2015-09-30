@@ -44,6 +44,7 @@ public abstract class FreezerProCommandResponse
     protected FreezerProExport _export;
 
     public static final String TOTAL_FIELD_NAME = "Total";
+    public static final String USER_DEFINED_FIELDS = "udfs";
     protected int _totalRecords;
 
     public FreezerProCommandResponse(FreezerProExport export, String text, int statusCode, String dataNodeName, PipelineJob job)
@@ -138,8 +139,24 @@ public abstract class FreezerProCommandResponse
             for (Object key : node.keySet())
             {
                 String fieldName = String.valueOf(key);
-                if (FreezerProExport.exportField(fieldName))
-                    row.put(translateFieldName(fieldName), node.get(key));
+                if (USER_DEFINED_FIELDS.equalsIgnoreCase(fieldName))
+                {
+                    Object udfs = node.get(key);
+                    if (udfs instanceof Map)
+                    {
+                        Map<String, Object> udfsMap = (Map<String, Object>)udfs;
+                        for (Map.Entry<String, Object> entry : udfsMap.entrySet())
+                        {
+                            if (FreezerProExport.exportField(entry.getKey()))
+                                row.put(translateFieldName(entry.getKey()), entry.getValue());
+                        }
+                    }
+                }
+                else
+                {
+                    if (FreezerProExport.exportField(fieldName))
+                        row.put(translateFieldName(fieldName), node.get(key));
+                }
             }
             data.add(row);
             token = _parser.nextToken();
