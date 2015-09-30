@@ -1248,6 +1248,25 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 
 
     @Override
+    public void defragmentIndex(DbSchema schema, String tableSelectName, String indexName)
+    {
+        SQLFragment sql = new SQLFragment("SELECT avg_fragmentation_in_percent\n" +
+            "FROM sys.dm_db_index_physical_stats (DB_ID(), OBJECT_ID(?), NULL, NULL, 'DETAILED') s\n" +
+            "INNER JOIN sys.indexes i ON s.object_id = i.object_id AND s.index_id = i.index_id WHERE index_level = 0 AND Name = ?");
+        sql.add(tableSelectName);
+        sql.add(indexName);
+
+        Double fragmentationPercent = new SqlSelector(schema, sql).getObject(Double.class);
+
+        if (fragmentationPercent > 0.05)
+        {
+            SQLFragment alterSql = new SQLFragment("ALTER INDEX " + indexName + " ON " + tableSelectName + " " + (fragmentationPercent > 0.30 ? "REBUILD" : "REORGANIZE"));
+            new SqlExecutor(schema).execute(alterSql);
+        }
+    }
+
+
+    @Override
     public SQLFragment getISOFormat(SQLFragment date)
     {
         // see http://msdn.microsoft.com/en-us/library/ms187928.aspx

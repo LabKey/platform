@@ -2187,6 +2187,7 @@ study/src/org/labkey/study/CohortFilter.java -text
 study/src/org/labkey/study/CohortFilterFactory.java -text
 study/src/org/labkey/study/CohortForeignKey.java -text
 study/src/org/labkey/study/DataspaceStudyFolderType.java -text
+study/src/org/labkey/study/DefragmentParticipantVisitIndexesTask.java -text
 study/src/org/labkey/study/MultipleCohortFilter.java -text
 study/src/org/labkey/study/PurgeParticipantsMaintenanceTask.java -text
 study/src/org/labkey/study/QueryHelper.java -text
