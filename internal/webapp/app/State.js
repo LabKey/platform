@@ -664,7 +664,7 @@ Ext.define('LABKEY.app.controller.State', {
                 var proceed = true;
                 Ext.each(olapFilters, function(of) {
                     if ((!of.getData && !of.getDataCDS) && of.arguments.length == 0) {
-                        alert('EMPTY ARGUMENTS ON FILTER');
+                        console.error('Empty arguments on filter. Unable to process app filter.');
                         proceed = false;
                     }
                 });
@@ -681,13 +681,23 @@ Ext.define('LABKEY.app.controller.State', {
                         this.updateState();
                     }
 
-                    if (!silent) {
-                        this.fireEvent('filterchange', this.filters, opChange);
-                    }
+                    this.onFilterChangeReady(mdx, this.filters, function() {
+                        if (!silent) {
+                            this.fireEvent('filterchange', this.filters, opChange);
+                        }
+                    }, this);
                 }
 
             }, this);
         }, this);
+    },
+
+    /**
+     * This method is provided to be overridden in case applications need to update state
+     * before 'filterchange' events fire.
+     */
+    onFilterChangeReady : function(mdx, filters, callback, scope) {
+        callback.call(scope);
     },
 
     getSelections : function(flat) {
