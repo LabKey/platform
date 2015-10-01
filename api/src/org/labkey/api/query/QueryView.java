@@ -1430,7 +1430,8 @@ public class QueryView extends WebPartView<Object>
 
             ContainerFilterable table = (ContainerFilterable) t;
 
-            ContainerFilter selectedFilter = table.getContainerFilter();
+            ContainerFilter selectedFilter = getContainerFilter();
+            ContainerFilter.Type selectedFilterType = null != selectedFilter ? selectedFilter.getType() : ContainerFilter.Type.Current;
 
             for (ContainerFilter.Type filterType : getAllowableContainerFilterTypes())
             {
@@ -1443,8 +1444,7 @@ public class QueryView extends WebPartView<Object>
 
                 filterItem.setId(getBaseMenuId() + ":Views:Folder Filter:" + filterType.toString());
 
-                if ((!isUnionTable && selectedFilter.getType() == filterType) ||
-                    (isUnionTable && ContainerFilter.Type.CurrentAndSubfolders.equals(filterType)))         // TODO: Not quite right for Ancillary study
+                if (selectedFilterType == filterType)
                 {
                     filterItem.setSelected(true);
                 }
