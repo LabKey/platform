@@ -619,7 +619,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
 
     getDownloadAction : function()
     {
-        return new Ext.Action({text: 'Download', tooltip: 'Download the selected files or folders', iconCls:'iconDownload', 
+        return new Ext.Action({text: 'Download', tooltip: 'Download the selected files or folders', iconCls:'fa-download',
             disabledClass:'x-button-disabled',
             scope: this,
             hideText: true,
@@ -925,7 +925,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         return new Ext.Action({
             text: 'Rename',
             tooltip: 'Rename the selected file or folder',
-            iconCls:'iconRename',
+            iconCls:'fa-pencil',
             disabledClass:'x-button-disabled',
             scope:this,
             disabled:true,
@@ -1045,7 +1045,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         return new Ext.Action({
             text: 'Move',
             tooltip: 'Move the selected file or folder',
-            iconCls:'iconMove',
+            iconCls:'fa-sign-out',
             disabledClass:'x-button-disabled',
             scope:this,
             disabled:true,
@@ -2351,7 +2351,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         actions.folderTreeToggle = new Ext.Action({
             text: 'Toggle Folder Tree',
             enableToggle: true,
-            iconCls: 'iconFolderTree',
+            iconCls: 'fa-sitemap',
             disabledClass:'x-button-disabled',
             tooltip: 'Show or hide the folder tree',
             listeners: {click:function(button, event) {

@@ -115,7 +115,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
             cls: 'importDataBtn',
             text: 'Import Data',
             listeners: {click:function(button, event) {this.onImportData(button);}, scope:this},
-            iconCls: 'iconDBCommit',
+            iconCls: 'fa-database',
             disabledClass:'x-button-disabled',
             tooltip: 'Import data from files into the database, or analyze data files'
         });
@@ -123,7 +123,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
         actions.customize = new Ext.Action({
             cls: 'customizeBtn',
             text: 'Admin',
-            iconCls: 'iconConfigure',
+            iconCls: 'fa-cog',
             disabledClass:'x-button-disabled',
             disabled : true,
             tooltip: 'Configure the buttons shown on the toolbar',
@@ -153,7 +153,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
         actions.auditLog = new Ext.Action({
             cls: 'auditLogBtn',
             text: 'Audit History',
-            iconCls: 'iconAuditLog',
+            iconCls: 'fa-users',
             disabledClass:'x-button-disabled',
             tooltip: 'View the files audit log for this folder.',
             listeners: {
