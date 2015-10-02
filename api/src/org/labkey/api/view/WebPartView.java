@@ -636,7 +636,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
                     if (getLocation() != null && getLocation().equals(WebPartFactory.LOCATION_RIGHT))
                     {
-                        out.print("</th>\n<th class=\"labkey-wp-title-right\">");
 
                         // Collapse all items into one drop-down
                         // Render the navigation menu
@@ -657,6 +656,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                             out.print("&nbsp;");
                             renderMenuWithFontImage(nMenu, out, "fa fa-caret-down");
                         }
+                        out.print("</th>\n<th class=\"labkey-wp-title-right\">");
                     }
                     else if (!isWebPart())
                     {
