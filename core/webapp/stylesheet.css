@@ -3556,6 +3556,12 @@ div.headermenu a.labkey-menu-text-link img {
     margin-top: 0.28em;
 }
 
+/* dont allow the up down arrows to show as disabled until bug 24434 has been fixed */
+.x4-menu-item-icon.fa.x4-btn-default-toolbar-small-disabled
+{
+    opacity: 1;
+}
+
 .x4-column-header
 {
     border-bottom: 1px solid #AAAAAA !important;
@@ -3724,5 +3730,11 @@ div span.labkey-main-menu-icon {
 .labkey-wp-header .fa-pencil {
     font-size: 16px;
     margin-left: 0.4em;
+}
+
+.labkey-wp-header .labkey-wp-icon-button-active .fa-caret-down
+{
+    color: #000000;
+    font-size: 0.8em;
 }
 
