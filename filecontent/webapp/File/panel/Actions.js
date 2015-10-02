@@ -392,59 +392,59 @@ Ext4.define('File.panel.Actions', {
             return adminOptions;
         }
 
-        var records = grid.getStore() ? grid.getStore().getModifiedRecords() : undefined;
+        var records = grid.getStore() ? grid.getStore().getModifiedRecords() : [],
+            actionConfig = {};
 
         // pipeline action configuration
-        if (!Ext4.isEmpty(records))
-        {
-            var actionConfig = {},
-                actionId,
+        Ext4.each(records, function(record) {
+            var actionId,
                 config,
-                display,
-                record;
+                display;
 
-            for (var i=0; i < records.length; i++)
-            {
-                record = records[i];
-                actionId = record.get('actionId');
+            actionId = record.get('actionId');
 
-                if (record.get('showOnToolbar'))
-                    display = 'toolbar';
-                else if (record.get('enabled'))
-                    display = 'enabled';
-                else
-                    display = 'disabled';
-
-                config = actionConfig[actionId];
-                if (!config)
-                {
-                    config = {
-                        id: actionId,
-                        display: 'enabled',
-                        label: record.get('type')
-                    };
-                    actionConfig[actionId] = config;
-                }
-                if (!config.links)
-                    config.links = [];
-                config.links.push({
-                    id: record.get('id'),
-                    display: display,
-                    label: record.get('action')
-                });
+            if (record.get('showOnToolbar')) {
+                display = 'toolbar';
+            }
+            else if (record.get('enabled')) {
+                display = 'enabled';
+            }
+            else {
+                display = 'disabled';
             }
 
-            Ext4.iterate(actionConfig, function(id, config) {
-                if (Ext4.isObject(config)) {
-                    adminOptions.push({
-                        id: i.id,
-                        display: i.display,
-                        label: i.label,
-                        links: i.links
-                    });
-                }
+            config = actionConfig[actionId];
+            if (!config) {
+                config = {
+                    id: actionId,
+                    display: 'enabled',
+                    label: record.get('type')
+                };
+            }
+
+            if (!config.links) {
+                config.links = [];
+            }
+
+            config.links.push({
+                id: record.get('id'),
+                display: display,
+                label: record.get('action')
             });
-        }
+
+            actionConfig[actionId] = config;
+        });
+
+        Ext4.iterate(actionConfig, function(id, config) {
+            if (Ext4.isObject(config)) {
+                adminOptions.push({
+                    id: config.id,
+                    display: config.display,
+                    label: config.label,
+                    links: config.links
+                });
+            }
+        });
 
         return adminOptions;
     },
