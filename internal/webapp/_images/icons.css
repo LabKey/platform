@@ -2,27 +2,20 @@
 .iconUp { background-image: url(up.png) !important; } 
 .iconDelete { background-image: url(delete.png) !important; } 
 .iconReload { background-image: url(reload.png) !important; }
-.iconDownload { background-image: url(download.png) !important; }
 .iconDownloadManager { background-image: url(download_manager.png) !important; }
-.iconDBCommit { background-image: url(db_commit.png) !important; }
-.iconConfigure { background-image: url(configure.png) !important; }
 .iconUpload { background-image: url(upload.png) !important; }
 .iconFileNew { background-image: url(filenew.png) !important; }
 .iconFileOpen { background-image: url(fileopen.png) !important; }
 .iconFileShare { background-image: url(fileshare.png) !important; }
 .iconFolderNew { background-image: url(folder_new.png) !important; }
 .iconMessage { background-image: url(message.png) !important; }
-.iconMove { background-image: url(move.png) !important; }
-.iconRename { background-image: url(rename.png) !important; }
 .iconCheck { background-image: url(check.png) !important; }
 .iconAjaxLoading {background-image: url(ajax-loading.gif) !important;}
 .iconAjaxLoadingGreen {background-image: url(ajax-loading-green.gif) !important;}
 .iconAjaxLoadingRed {background-image: url(ajax-loading-red.gif) !important;}
 .iconWarning {background-image: url(warning-icon.png) !important;}
 .iconZip {background-image: url(../_icons/zip.gif) !important;}
-.iconFolderTree {background-image: url(folder_tree.png) !important;}
 .iconEditFileProps { background-image: url(editprops.png) !important; }
 .iconEmailSettings { background-image: url(email.png) !important; }
-.iconAuditLog { background-image: url(audit_log.png) !important; }
 .iconClose { background-image: url(close.png) !important; }
 .iconHelp { background-image: url(info.png) !important; }

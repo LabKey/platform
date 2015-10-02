@@ -6936,7 +6936,6 @@ internal/webapp/_images/arrow_link_button_over.png -text
 internal/webapp/_images/arrow_menu_down.png -text
 internal/webapp/_images/arrow_right.png -text
 internal/webapp/_images/arrow_up.png -text
-internal/webapp/_images/audit_log.png -text
 internal/webapp/_images/beta.gif -text
 internal/webapp/_images/beta_nav_arrow.png -text
 internal/webapp/_images/button_arrow.gif -text
@@ -6954,9 +6953,7 @@ internal/webapp/_images/check.png -text
 internal/webapp/_images/close.png -text
 internal/webapp/_images/collapse_folders.gif -text
 internal/webapp/_images/computer.png -text
-internal/webapp/_images/configure.png -text
 internal/webapp/_images/customize-example.png -text
-internal/webapp/_images/db_commit.png -text
 internal/webapp/_images/defaultlogo.gif -text
 internal/webapp/_images/defaultlogo.png -text
 internal/webapp/_images/defaultlogosmall.gif -text
@@ -6965,7 +6962,6 @@ internal/webapp/_images/delete.png -text
 internal/webapp/_images/dot.gif -text
 internal/webapp/_images/downarrow.gif -text
 internal/webapp/_images/downarrow_disabled.gif -text
-internal/webapp/_images/download.png -text
 internal/webapp/_images/download_manager.png -text
 internal/webapp/_images/editprops.png -text
 internal/webapp/_images/elipsis.gif -text
@@ -6983,7 +6979,6 @@ internal/webapp/_images/filter_on.gif -text
 internal/webapp/_images/filter_on.png -text
 internal/webapp/_images/folder_new.png -text
 internal/webapp/_images/folder_open.gif -text svneol=unset#unset
-internal/webapp/_images/folder_tree.png -text
 internal/webapp/_images/go-first-disabled.png -text
 internal/webapp/_images/go-first.png -text
 internal/webapp/_images/go-last-disabled.png -text
@@ -7009,7 +7004,6 @@ internal/webapp/_images/message.png -text
 internal/webapp/_images/milestone_no.png -text
 internal/webapp/_images/milestone_yes.png -text
 internal/webapp/_images/minus.gif -text
-internal/webapp/_images/move.png -text
 internal/webapp/_images/mv_indicator.gif -text
 internal/webapp/_images/one.gif -text
 internal/webapp/_images/one.png -text
@@ -7041,7 +7035,6 @@ internal/webapp/_images/private.gif -text
 internal/webapp/_images/public.gif -text
 internal/webapp/_images/question.png -text
 internal/webapp/_images/reload.png -text
-internal/webapp/_images/rename.png -text
 internal/webapp/_images/restricted.gif -text
 internal/webapp/_images/rss.gif -text
 internal/webapp/_images/search.png -text
