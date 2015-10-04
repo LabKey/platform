@@ -17,6 +17,7 @@
 package org.labkey.api.data.queryprofiler;
 
 import org.apache.commons.collections15.map.ReferenceMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -410,15 +411,10 @@ public class QueryProfiler
         }
 
         Collection<String> executionPlan = scope.getSqlDialect().getExecutionPlan(scope, sql);
-        StringBuilder html = new StringBuilder();
 
-        for (String row : executionPlan)
-        {
-            html.append(PageFlowUtil.filter(row, true));
-            html.append("</br>\n");
-        }
+        String fullPlan = StringUtils.join(executionPlan, "\n");
 
-        return new HtmlView(html.toString());
+        return new HtmlView(PageFlowUtil.filter(fullPlan, true));
     }
 
 
