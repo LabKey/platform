@@ -57,6 +57,7 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.MailHelper.ViewMessage;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -414,7 +415,7 @@ public class AnnouncementManager
 
                             try
                             {
-                                MailHelper.ViewMessage m = getMessage(c, recipient, settings, perm, parent, a, isResponse, changePreferenceURL, currentRendererType, reason);
+                                ViewMessage m = getMessage(c, recipient, settings, perm, parent, a, isResponse, changePreferenceURL, currentRendererType, reason);
                                 m.setHeader("References", references);
                                 m.setHeader("Message-ID", messageId);
 
@@ -435,18 +436,19 @@ public class AnnouncementManager
         renderAndEmailThread.start();
     }
 
-    private static MailHelper.ViewMessage getMessage(Container c, User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason) throws MessagingException
+    private static ViewMessage getMessage(Container c, User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason) throws MessagingException
     {
         ActionURL threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId());
 
-        MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), null);
+        ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), null);
         m.setSubject(StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle()));
-        HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
         // Hack! Push a ViewContext with the recipient as the user, so embedded webparts get rendered with that
         // user's permissions, etc.
-        try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(recipient, c, threadURL))
+        try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(recipient, c, threadURL))
         {
+            HttpServletRequest request = resetter.getContext().getRequest();
+
             EmailNotificationPage page = createEmailNotificationTemplate("emailNotificationPlain.jsp", false, c, recipient, settings, perm, parent, a, removeURL, currentRendererType, reason);
             JspView view = new JspView(page);
             view.setFrame(WebPartView.FrameType.NOT_HTML);

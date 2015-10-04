@@ -14,10 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-%>
-<%@ page import="org.labkey.api.attachments.Attachment" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
+%><%@ page import="org.labkey.api.attachments.Attachment" %><%@ page import="org.labkey.api.util.DateUtil" %><%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
 ***Please do not reply to this email notification. Replies to this email are routed to an unmonitored mailbox. Instead, please use the link below.***
 
 <%=text(announcementModel.getCreatedByName(includeGroups, recipient, false) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase())) %> at <%=text(DateUtil.formatDateTime(c, announcementModel.getCreated()))%>.<%

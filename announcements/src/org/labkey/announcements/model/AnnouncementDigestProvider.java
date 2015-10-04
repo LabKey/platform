@@ -28,7 +28,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MailHelper;
@@ -39,7 +38,6 @@ import org.labkey.api.view.WebPartView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -134,10 +132,10 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(recipient, c, boardURL))
         {
             ViewContext context = resetter.getContext();
+            HttpServletRequest request = context.getRequest();
 
             MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), recipient.getEmail());
             m.setSubject("New posts to " + c.getPath());
-            HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
             DailyDigestPage page = createPage("dailyDigestPlain.jsp", c, settings, perm, announcementModels);
             JspView view = new JspView(page);

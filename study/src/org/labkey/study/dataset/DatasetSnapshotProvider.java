@@ -773,7 +773,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             }
             catch(Exception e)
             {
-                ExceptionUtil.logExceptionToMothership(AppProps.getInstance().createMockRequest(), e);
+                ExceptionUtil.logExceptionToMothership(null, e);
             }
         }
     }

@@ -56,6 +56,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +77,7 @@ public class EmailServiceImpl implements EmailService.I
     }
 
     @Override
-    public void sendMessage(EmailMessage[] msgs, User user, Container c)
+    public void sendMessage(Collection<EmailMessage> msgs, User user, Container c)
     {
         // send the email messages from a background thread
         BulkEmailer emailer = new BulkEmailer(user, c);

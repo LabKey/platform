@@ -150,7 +150,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
                 }
 
                 if (!messages.isEmpty())
-                    emailService.sendMessage(messages.toArray(new EmailMessage[messages.size()]), null, container);
+                    emailService.sendMessage(messages, null, container);
             }
         }
         catch (Exception e)

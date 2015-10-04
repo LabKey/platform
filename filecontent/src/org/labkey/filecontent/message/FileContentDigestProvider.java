@@ -17,6 +17,7 @@ package org.labkey.filecontent.message;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.CompareType;
@@ -44,7 +45,9 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.FileSystemAuditProvider;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.FileSystemBatchAuditProvider;
@@ -53,7 +56,6 @@ import org.labkey.api.webdav.WebdavService;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -71,6 +73,7 @@ import java.util.Set;
 public class FileContentDigestProvider implements MessageDigest.Provider
 {
     private static final Logger _log = Logger.getLogger(FileContentDigestProvider.class);
+
     private final int _notificationOption;    // the notification option to match : (short digest, daily digest)
 
     public FileContentDigestProvider(int notificationOption)
@@ -210,14 +213,14 @@ public class FileContentDigestProvider implements MessageDigest.Provider
 
         try
         {
-            EmailService.I svc = EmailService.get();
-            User[] users = getUsersToEmail(c);
-            HttpServletRequest request = AppProps.getInstance().createMockRequest();
-            String subject = "File Management Notification";
+            Collection<User> users = getUsersToEmail(c);
 
-            if (users != null && users.length > 0)
+            if (!users.isEmpty())
             {
+                HttpServletRequest request = ViewServlet.mockRequest("GET", new ActionURL(), null, null, null);
+                String subject = "File Management Notification";
                 List<EmailMessage> messages = new ArrayList<>();
+                EmailService.I svc = EmailService.get();
 
                 for (User user : users)
                 {
@@ -235,7 +238,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                     messages.add(msg);
                 }
                 // send messages in bulk
-                svc.sendMessage(messages.toArray(new EmailMessage[messages.size()]), null, c);
+                svc.sendMessage(messages, null, c);
             }
 
             AuditLogEvent event = new AuditLogEvent();
@@ -254,7 +257,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         }
     }
 
-    private User[] getUsersToEmail(Container c) throws Exception
+    private @NotNull Collection<User> getUsersToEmail(Container c) throws Exception
     {
         List<User> users = new ArrayList<>();
         String pref = EmailService.get().getDefaultEmailPref(c, new FileContentDefaultEmailPref());
@@ -272,7 +275,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                 users.add(ep.getUser());
             }
         }
-        return users.toArray(new User[users.size()]);
+        return users;
     }
 
     public static class FileDigestForm
