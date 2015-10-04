@@ -145,7 +145,7 @@ public abstract class MessageDigest
             }
             catch(Exception e)
             {
-                ExceptionUtil.logExceptionToMothership(AppProps.getInstance().createMockRequest(), e);
+                ExceptionUtil.logExceptionToMothership(null, e);
             }
         }
 

@@ -28,11 +28,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewServlet;
-import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -40,7 +37,6 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -246,23 +242,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         {
             throw new URISyntaxException(baseServerUrl, "Invalid URL");
         }
-    }
-
-
-    // Mock up a request using cached port, server name, etc.  Use when sending email from background threads (when
-    // a request is not available).
-   // TODO: Reconcile this and ViewServlet.mockRequest()... shouldn't these be the same?
-    public HttpServletRequest createMockRequest()
-    {
-        MockHttpServletRequest request = new MockHttpServletRequest(ViewServlet.getViewServletContext());
-
-        request.setContextPath(getContextPath());
-        request.setServerPort(getServerPort());
-        request.setServerName(getServerName());
-        request.setScheme(getScheme());
-        UniqueID.initializeRequestScopedUID(request);
-
-        return request;
     }
 
     public String getDefaultDomain()
@@ -538,13 +517,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         // Default to the oldest site administrator's email address
         List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds("Administrators");
         // Sort to find the minimum user id
-        Collections.sort(members, new Comparator<Pair<Integer, String>>()
-        {
-            public int compare(Pair<Integer, String> o1, Pair<Integer, String> o2)
-            {
-                return o1.getKey().compareTo(o2.getKey());
-            }
-        });
+        Collections.sort(members, (o1, o2) -> o1.getKey().compareTo(o2.getKey()));
         Set<String> validOptions = new HashSet<>();
         for (Pair<Integer, String> entry : members)
         {

@@ -22,6 +22,7 @@ import org.labkey.api.util.ConfigurationException;
 
 import javax.mail.MessagingException;
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -59,7 +60,7 @@ public class EmailService
          * @param user for auditing purposes, the user who is considered to have originated the message
          * @param c for auditing purposes, the container that is considered to have originated the message
          */
-        void sendMessage(EmailMessage[] msgs, User user, Container c);
+        void sendMessage(Collection<EmailMessage> msgs, User user, Container c);
 
         /**
          * Returns the email configuration for the user/container combination as described by

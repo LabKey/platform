@@ -47,9 +47,9 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
+import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
-import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -66,7 +66,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
@@ -84,6 +83,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.wiki.WikiService;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -2320,7 +2320,7 @@ public class SecurityManager
                 String password = createTempPassword();
                 SecurityManager.setPassword(email, password);
 
-                User user2 = AuthenticationManager.authenticate(AppProps.getInstance().createMockRequest(), rawEmail, password);
+                User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
                 assertNotNull("login", user2);
                 assertEquals("login", user, user2);
             }

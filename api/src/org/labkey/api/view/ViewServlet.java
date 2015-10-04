@@ -437,7 +437,6 @@ public class ViewServlet extends HttpServlet
     }
 
 
-    // TODO: Reconcile this and AppProps.createMockRequest()... shouldn't these be the same?
     public static HttpServletRequest mockRequest(String method, ActionURL url, @Nullable User user, @Nullable Map<String, Object> headers, @Nullable String postData)
     {
         MockRequest request = new MockRequest(getViewServletContext(), method, url);

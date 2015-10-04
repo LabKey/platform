@@ -36,7 +36,7 @@ import java.net.URISyntaxException;
  */
 public class AppProps
 {
-    private static Interface _instance = new AppPropsImpl();
+    private static final Interface _instance = new AppPropsImpl();
 
     public static Interface getInstance()
     {
@@ -50,61 +50,61 @@ public class AppProps
 
     public interface Interface
     {
-        public String getMascotUserPassword();
-        public String getMascotHTTPProxy();
-        public String getNetworkDriveLetter();
-        public String getNetworkDrivePath();
-        public String getNetworkDriveUser();
-        public String getNetworkDrivePassword();
-        public String getServerSessionGUID();
-        public boolean isMailRecorderEnabled();
-        public boolean isExperimentalFeatureEnabled(String feature);
-        public boolean isDevMode();
-        public @Nullable String getEnlistmentId();
-        public boolean isCachingAllowed();
-        public boolean isRecompileJspEnabled();
-        public void setProjectRoot(String projectRoot);
-        public String getProjectRoot();
-        public File getFileSystemRoot();
-        public UsageReportingLevel getUsageReportingLevel();
-        public String getLabKeyVersionString();
-        public String getContextPath();
-        public Path getParsedContextPath();
-        public int getServerPort();
-        public String getScheme();
-        public String getServerName();
-        public boolean isBaseServerUrlInitialized();
-        public void initializeFromRequest(HttpServletRequest request);
-        public void setBaseServerUrlAttributes(String baseServerUrl) throws URISyntaxException;
-        public HttpServletRequest createMockRequest();
-        public String getDefaultDomain();
-        public String getBaseServerUrl();
-        public String getHomePageUrl();
-        public ActionURL getHomePageActionURL();
-        public int getLookAndFeelRevision();
-        public String getDefaultLsidAuthority();
-        public String getPipelineToolsDirectory();
-        public boolean isSSLRequired();
-        public boolean isUserRequestedAdminOnlyMode();
-        public String getAdminOnlyMessage();
-        public boolean isShowRibbonMessage();
-        public String getRibbonMessageHtml();
-        public int getSSLPort();
-        public int getMemoryUsageDumpInterval();
-        public int getMaxBLOBSize();
-        public boolean isExt3Required();
-        public boolean isExt3APIRequired();
-        public ExceptionReportingLevel getExceptionReportingLevel();
-        public boolean isSelfReportExceptions();
-        public String getServerGUID();
-        public String getBLASTServerBaseURL();
-        public boolean hasMascotServer();
-        public String getMascotServer();
-        public String getMascotUserAccount();
-        public String getWebappConfigurationFilename();
-        public String getAdministratorContactEmail();
-        public boolean getUseContainerRelativeURL();
-        public boolean isTeamCityEnviornment();
+        String getMascotUserPassword();
+        String getMascotHTTPProxy();
+        String getNetworkDriveLetter();
+        String getNetworkDrivePath();
+        String getNetworkDriveUser();
+        String getNetworkDrivePassword();
+        String getServerSessionGUID();
+        boolean isMailRecorderEnabled();
+        boolean isExperimentalFeatureEnabled(String feature);
+        boolean isDevMode();
+        @Nullable String getEnlistmentId();
+        boolean isCachingAllowed();
+        boolean isRecompileJspEnabled();
+        void setProjectRoot(String projectRoot);
+        String getProjectRoot();
+        File getFileSystemRoot();
+        UsageReportingLevel getUsageReportingLevel();
+        String getLabKeyVersionString();
+        String getContextPath();
+        Path getParsedContextPath();
+        int getServerPort();
+        String getScheme();
+        String getServerName();
+        boolean isBaseServerUrlInitialized();
+        void initializeFromRequest(HttpServletRequest request);
+        void setBaseServerUrlAttributes(String baseServerUrl) throws URISyntaxException;
+
+        String getDefaultDomain();
+        String getBaseServerUrl();
+        String getHomePageUrl();
+        ActionURL getHomePageActionURL();
+        int getLookAndFeelRevision();
+        String getDefaultLsidAuthority();
+        String getPipelineToolsDirectory();
+        boolean isSSLRequired();
+        boolean isUserRequestedAdminOnlyMode();
+        String getAdminOnlyMessage();
+        boolean isShowRibbonMessage();
+        String getRibbonMessageHtml();
+        int getSSLPort();
+        int getMemoryUsageDumpInterval();
+        int getMaxBLOBSize();
+        boolean isExt3Required();
+        boolean isExt3APIRequired();
+        ExceptionReportingLevel getExceptionReportingLevel();
+        boolean isSelfReportExceptions();
+        String getServerGUID();
+        String getBLASTServerBaseURL();
+        boolean hasMascotServer();
+        String getMascotServer();
+        String getMascotUserAccount();
+        String getWebappConfigurationFilename();
+        String getAdministratorContactEmail();
+        boolean getUseContainerRelativeURL();
+        boolean isTeamCityEnviornment();
     }
 
     public static final String EXPERIMENTAL_CONTAINER_RELATIVE_URL = "containerRelativeURL";

@@ -38,7 +38,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -178,9 +177,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         if (null != url)
             context.setBindPropertyValues(url.getPropertyValues());
 
-        HttpServletRequest request = AppProps.getInstance().createMockRequest();
-        if (request instanceof MockHttpServletRequest)
-            ((MockHttpServletRequest)request).setUserPrincipal(user);
+        HttpServletRequest request = ViewServlet.mockRequest("GET", url, user, null, null);
         context.setRequest(request);
 
         // Major hack -- QueryView needs the context pushed onto the ViewContext stack in thread local 
