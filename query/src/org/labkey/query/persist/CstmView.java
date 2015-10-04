@@ -17,11 +17,10 @@
 package org.labkey.query.persist;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.Entity;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.CacheKey;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.Entity;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
@@ -39,6 +38,7 @@ public final class CstmView extends Entity implements Cloneable, Serializable
         customviewowner,
         flags
     }
+
     public static class Key extends CacheKey<CstmView, Column>
     {
         public Key(Container container)

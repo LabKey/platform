@@ -40,16 +40,16 @@ public class SynonymTableResolver extends StandardTableResolver
         Map<String, SynonymManager.Synonym> synonymMap = SynonymManager.getSynonymMap(scope, schemaName);
 
         // Put a SchemaTableInfoFactory into the map for each synonym
-        for (String synonymnName : synonymMap.keySet())
+        for (String synonymName : synonymMap.keySet())
         {
-            try (JdbcMetaDataLocator locator = getJdbcMetaDataLocator(scope, schemaName, synonymnName))
+            try (JdbcMetaDataLocator locator = getJdbcMetaDataLocator(scope, schemaName, synonymName))
             {
                 new DbSchema.TableMetaDataLoader<SchemaTableInfoFactory>(locator, true)
                 {
                     @Override
                     protected void handleTable(String tableName, DatabaseTableType tableType, String description) throws SQLException
                     {
-                        map.put(synonymnName, new StandardSchemaTableInfoFactory(synonymnName, tableType, description));
+                        map.put(synonymName, new StandardSchemaTableInfoFactory(synonymName, tableType, description));
                     }
                 }.load();
             }

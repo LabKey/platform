@@ -30,9 +30,7 @@ public class QuerySnapshotDef extends Entity implements Cloneable
 {
     public enum Column
     {
-        rowid,
-        schema,
-        queryDefId,
+        schema
     }
 
     static public class Key extends CacheKey<QuerySnapshotDef, Column>
@@ -46,17 +44,8 @@ public class QuerySnapshotDef extends Entity implements Cloneable
         {
             addCondition(Column.schema, schema);
         }
-
-        public void setId(int id)
-        {
-            addCondition(Column.rowid, id);
-        }
-
-        public void setQueryDefId(int id)
-        {
-            addCondition(Column.queryDefId, id);
-        }
     }
+
     private int _rowId;
     private Integer _queryDefId;
     private String _name;

@@ -265,7 +265,6 @@ public class QueryManager
                 views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, null, inheritable, false)));
             }
         }
-
     }
 
     public CstmView[] getCstmViews(Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable String viewName, @Nullable User user, boolean inheritableOnly, boolean sharedOnly)
