@@ -1261,7 +1261,8 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         // Follow the index rebuild/reorganize recommendations at https://msdn.microsoft.com/en-us/library/ms189858.aspx
         if (fragmentationPercent > 0.05)
         {
-            SQLFragment alterSql = new SQLFragment("ALTER INDEX " + indexName + " ON " + tableSelectName + " " + (fragmentationPercent > 0.30 ? "REBUILD WITH (ONLINE = ON)" : "REORGANIZE"));
+            // TODO: Determine SQL Server edition in prepare() and use REBUILD WITH (ONLINE = ON) if Enterprise or Developer
+            SQLFragment alterSql = new SQLFragment("ALTER INDEX " + indexName + " ON " + tableSelectName + " " + (fragmentationPercent > 0.30 ? "REBUILD" : "REORGANIZE"));
             new SqlExecutor(schema).execute(alterSql);
         }
     }
