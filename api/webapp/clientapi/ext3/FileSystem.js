@@ -95,6 +95,31 @@ LABKEY.FileSystem.FILESYSTEM_EVENTS = {
 
 
 /**
+ * Returns a listing of all file roots available for a given folder
+ * @memberOf LABKEY.FileSystem#
+ * @param config Configuration properties.
+ * @param {String} config.containerPath The container to test.  If null, the current container will be used.
+ * @param {Function} config.success Success callback function.  It will be called with the following arguments:
+ * <li>Results: A map linking the file root name to the WebDAV URL</li>
+ * <li>Response: The XMLHttpRequest object containing the response data.</li>
+ * @param {Function} [config.failure] Error callback function.  It will be called with the following arguments:
+ * <li>Response: The XMLHttpRequest object containing the response data.</li>
+ * <li>Options: The parameter to the request call.</li>
+ * @param {Object} [config.scope] The scope for the callback function.  Defaults to 'this'
+ */
+LABKEY.FileSystem.getFileRoots = function(config){
+    config = config || {};
+
+    LABKEY.Ajax.request({
+        url: LABKEY.ActionURL.buildURL('filecontent', 'getFileRoots', config.containerPath),
+        scope: config.scope || this,
+        success: LABKEY.Utils.getCallbackWrapper(config.success, config.scope),
+        failure: LABKEY.Utils.getCallbackWrapper(config.failure, config.scope),
+    });
+}
+
+
+/**
  * Static map of events used internally by LABKEY.FileSystem
  * @memberOf LABKEY.FileSystem#
  * @ignore
