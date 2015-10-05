@@ -69,6 +69,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -113,6 +114,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -4246,15 +4248,13 @@ public class StudyManager
         {
             if (activeModuleNames.contains(entry.getKey()) && entry.getValue().exists())
             {
-                try (InputStream is = entry.getValue().getInputStream())
+                CustomParticipantView view = CustomParticipantView.createFromResource(entry.getValue());
+                if (view == null)
                 {
-                    String body = IOUtils.toString(is);
-                    return CustomParticipantView.createModulePtidView(body);
+                    throw new RuntimeException("Unable to load participant view from " + entry.getValue().getPath());
                 }
-                catch (IOException e)
-                {
-                    throw new RuntimeException("Unable to load participant view from " + entry.getValue().getPath(), e);
-                }
+
+                return view;
             }
         }
 

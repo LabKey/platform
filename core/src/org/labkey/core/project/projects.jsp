@@ -130,9 +130,9 @@ Ext4.onReady(function() {
         containerPath: config.containerPath,
         schemaName: 'core',
         queryName: 'Containers',
-        sort: 'SortOrder, Name',
+        sort: 'SortOrder,DisplayName',
         containerFilter: config.containerFilter,
-        columns: 'Name,EntityId,Path,ContainerType',
+        columns: 'Name,DisplayName,EntityId,Path,ContainerType',
         autoLoad: false,
         metadata: {
             iconurl: {
@@ -155,7 +155,7 @@ Ext4.onReady(function() {
     var panelCfg = {
         id: 'projects-panel-<%=webPartId%>',
         iconField: 'iconurl',
-        labelField: 'Name',
+        labelField: 'DisplayName',
         urlField: 'url',
         region : 'center',
         overflowY : 'auto',

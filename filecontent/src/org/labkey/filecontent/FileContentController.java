@@ -40,6 +40,7 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
@@ -131,6 +132,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1438,6 +1440,52 @@ public class FileContentController extends SpringActionController
 
             response.put("emailPref", pref != null ? pref.getEmailOptionId() : "-1");
             response.put("emailPrefDefault", prefWithDefault);
+            response.put("success", true);
+
+            return response;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetFileRootsAction extends ApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response =  new ApiSimpleResponse();
+
+            Map<String, String> ret = new HashMap<>();
+
+            //default
+            ret.put(FileContentService.FILES_LINK, WebdavService.getPath().append(getContainer().getParsedPath()).append(FileContentService.FILES_LINK).toString());
+
+            //pipeline, if set
+            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+            if (root != null && root.isValid())
+            {
+                String webdavURL = root.getWebdavURL();
+                if (null != webdavURL && webdavURL.contains(URLEncoder.encode(FileContentService.PIPELINE_LINK)) && root.getContainer().equals(getContainer()))
+                    ret.put(FileContentService.PIPELINE_LINK, WebdavService.getPath().append(getContainer().getParsedPath()).append(FileContentService.PIPELINE_LINK).toString());
+            }
+
+            //filesets
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            for (AttachmentDirectory attDir : svc.getRegisteredDirectories(getContainer()))
+            {
+                ret.put(FileContentService.FILE_SETS_LINK + "/" + attDir.getLabel(), WebdavService.getPath().append(getContainer().getParsedPath()).append(FileContentService.FILE_SETS_LINK).append(attDir.getLabel()).toString());
+            }
+
+            Collection<String> cloudStoreNames = Collections.emptyList();
+            CloudStoreService cloud = ServiceRegistry.get().getService(CloudStoreService.class);
+            if (cloud != null)
+            {
+                for (String storeName : cloud.getEnabledCloudStores(getContainer()))
+                {
+                    ret.put(CloudStoreService.CLOUD_NAME + "/" + storeName, WebdavService.getPath().append(getContainer().getParsedPath()).append(CloudStoreService.CLOUD_NAME).append(storeName).toString());
+                }
+            }
+
+            response.put("fileRoots", ret);
             response.put("success", true);
 
             return response;

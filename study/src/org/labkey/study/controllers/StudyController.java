@@ -1191,8 +1191,7 @@ public class StudyController extends BaseStudyController
                 // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
                 getViewContext().getResponse().setHeader("X-XSS-Protection", "0");
 
-                HtmlView participantView = new HtmlView(customParticipantView.getBody());
-                vbox.addView(participantView);
+                vbox.addView(customParticipantView.getView());
             }
             else
             {

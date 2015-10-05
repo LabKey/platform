@@ -57,13 +57,14 @@
         </tr>
         <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
         <tr>
-            <th style="text-align:left;width:18em">Timepoint Style<%=helpPopup("Timepoint Styles", "<p>Timepoints in the study may be defined using dates, or using pre-determined Visits assigned by the study administrator.</p><p>When using visits, administrators assign a label and a range of numerical \"Sequence Numbers\" that are grouped into visits.</p><p>If using dates, data can be grouped by day or week.</p>", true)%></th>
+            <th style="text-align:left;width:18em">Timepoint Style<%=helpPopup("Timepoint Styles", "<p>Timepoints in the study may be defined using dates, or using pre-determined Visits assigned by the study administrator.  Alternately, if the study is ongoing without a strong concept of visit, a continuous study can be chosen.</p><p>When using visits, administrators assign a label and a range of numerical \"Sequence Numbers\" that are grouped into visits.</p><p>If using dates, data can be grouped by day or week.</p>", true)%></th>
             <td align="left">
-                <input type="radio" name="timepointType" id="dateTimepointType" value="<%=TimepointType.DATE%>"<%=checked(form.getTimepointType() == TimepointType.DATE)%> onchange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none';"> Dates &nbsp;&nbsp;
-                <input type="radio" name="timepointType" value="<%=TimepointType.VISIT%>"<%=checked(form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null)%> onchange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none';"> Assigned Visits
+                <input type="radio" name="timepointType" id="dateTimepointType" value="<%=TimepointType.DATE%>"<%=checked(form.getTimepointType() == TimepointType.DATE)%> onchange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none'; document.getElementById('defaultDateRow').style.display = document.getElementById('continuousTimepointType').checked ? 'none' : 'table-row';"> Dates &nbsp;&nbsp;
+                <input type="radio" name="timepointType" value="<%=TimepointType.VISIT%>"<%=checked(form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null)%> onchange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none'; document.getElementById('defaultDateRow').style.display = document.getElementById('continuousTimepointType').checked ? 'none' : 'table-row';"> Assigned Visits  &nbsp;&nbsp;
+                <input type="radio" name="timepointType" id="continuousTimepointType" value="<%=TimepointType.CONTINUOUS%>"<%=checked(form.getTimepointType() == TimepointType.CONTINUOUS)%> onchange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none'; document.getElementById('defaultDateRow').style.display = document.getElementById('continuousTimepointType').checked ? 'none' : 'table-row';"> Continuous
             </td>
         </tr>
-        <tr>
+        <tr id="defaultDateRow" style="display: <%= text(form.getTimepointType() == TimepointType.CONTINUOUS ? "none" : "table-row") %>">
             <th style="text-align:left;width:18em">Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></th>
             <td align="left"><input type="text" name="startDate" value="<%=formatDate(form.getStartDate())%>">
             </td>
@@ -74,7 +75,7 @@
             </td>
         </tr>
         <% } else { %>
-        <input type="hidden" name="timepointType" value="<%= form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null ? TimepointType.VISIT : TimepointType.DATE %>" >
+        <input type="hidden" name="timepointType" value="<%= form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null ? TimepointType.VISIT : form.getTimepointType() %>" >
         <input type="hidden" name="startDate" value="<%=formatDate(form.getStartDate())%>">
         <input type="hidden" name="defaultTimepointDuration" value="<%=form.getDefaultTimepointDuration()%>">
         <% } %>

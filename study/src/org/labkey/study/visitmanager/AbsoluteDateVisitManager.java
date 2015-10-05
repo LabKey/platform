@@ -19,12 +19,16 @@ package org.labkey.study.visitmanager;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.study.CohortFilter;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
+import org.labkey.study.query.DatasetTableImpl;
 
 import java.util.Collections;
 import java.util.Map;
@@ -54,15 +58,58 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
     }
 
     @Override
-    public Map<VisitMapKey, VisitStatistics> getVisitSummary(User user, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll)
+    protected SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias, boolean showAll)
     {
-        return Collections.emptyMap();
-    }
+        TableInfo studyData = showAll ?
+                StudySchema.getInstance().getTableInfoStudyData(getStudy(), user) :
+                StudySchema.getInstance().getTableInfoStudyDataVisible(getStudy(), user);
+        TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
 
-    @Override
-    protected SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias, boolean showAll)
-    {
-        throw new IllegalStateException("Should not be called");
+        SQLFragment studyDataContainerFilter = new SQLFragment(alias + ".Container = ?", _study.getContainer());
+        if (_study.isDataspaceStudy())
+            studyDataContainerFilter = new DataspaceContainerFilter(user, _study).getSQLFragment(studyData.getSchema(), new SQLFragment(alias+".Container"),getStudy().getContainer());
+
+        SQLFragment sql = new SQLFragment();
+        sql.appendComment("<RelativeDateVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());
+
+        SQLFragment keyCols = new SQLFragment("DatasetId");
+
+        if (cohortFilter == null)
+        {
+            sql.append("SELECT ").append(keyCols).append(", -1 as visitId").append(statsSql);
+            sql.append("\nFROM ").append(studyData.getFromSQL(alias));
+            sql.append("\nWHERE ");
+            sql.append(studyDataContainerFilter);
+            if (null != qcStates)
+                sql.append(" AND ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
+            sql.append("\nGROUP BY ").append(keyCols);
+            sql.append("\nORDER BY 1, 2");
+        }
+        else
+        {
+            switch (cohortFilter.getType())
+            {
+                case PTID_CURRENT:
+                case PTID_INITIAL:
+                    sql.append("SELECT ").append(keyCols).append(", -1 as visitId").append(statsSql);
+                    sql.append("\nFROM ").append(studyData.getFromSQL(alias))
+                            .append("\nJOIN ").append(participantTable.getFromSQL("P")).append(" ON (").append(alias).append(".ParticipantId = P.ParticipantId AND ").append(alias).append(".Container = P.Container)\n");
+                    sql.append("\nWHERE ")
+                            .append(studyDataContainerFilter)
+                            .append(" AND P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
+                            .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "");
+                    sql.add(cohortFilter.getCohortId());
+                    sql.append("\nGROUP BY ").append(keyCols);
+                    sql.append("\nORDER BY 1, 2");
+                    break;
+                //case DATA_COLLECTION:
+                default:
+                    throw new UnsupportedOperationException("Unsupported cohort filter for date-based study: " + cohortFilter.getType());
+            }
+        }
+
+        sql.appendComment("</AbsoluteDateVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());
+        return sql;
     }
 
     public VisitImpl findVisitBySequence(double seq)

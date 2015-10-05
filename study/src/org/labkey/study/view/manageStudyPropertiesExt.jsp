@@ -456,7 +456,7 @@ function renderFormPanel(data, editable){
         fieldLabel : "Timepoint Type",
         labelWidth : 160,
         width : 500,
-        columns : 2,
+        columns : 3,
         vertical : true,
         items : [{
             xtype: 'radio',
@@ -477,6 +477,15 @@ function renderFormPanel(data, editable){
             inputValue: 'DATE',
             name: 'TimepointType',
             checked: timepointType == 'DATE'
+        },{
+            xtype: 'radio',
+            id : 'continuousRadio',
+            inputId : 'continuous',
+            disabled: <%=!emptyStudy%>,
+            boxLabel: 'CONTINUOUS',
+            inputValue: 'CONTINUOUS',
+            name: 'TimepointType',
+            checked: timepointType == 'CONTINUOUS'
         }]
     });
 

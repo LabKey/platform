@@ -16,6 +16,15 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Entity;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
+import org.springframework.web.servlet.ModelAndView;
+
+import java.util.LinkedHashSet;
 
 /**
  * User: brittp
@@ -27,16 +36,23 @@ public class CustomParticipantView extends Entity
     private Integer _rowId;
     private String _body;
     private boolean _active;
+    private ModelAndView _view = null;
     
-    public static CustomParticipantView createModulePtidView(String body)
+    public static CustomParticipantView createFromResource(Resource r)
     {
-        CustomParticipantView view = new CustomParticipantView();
-        view.setRowId(MODULE_PTID_VIEW_ID);
-        view.setActive(true);
-        view.setBody(body);
-        return view;
-    }
+        if (r.isFile())
+        {
+            CustomParticipantView view = new CustomParticipantView();
+            view.setRowId(MODULE_PTID_VIEW_ID);
+            view.setActive(true);
+            view._view = new ModuleHtmlView(r);
 
+            return view;
+        }
+
+        throw new RuntimeException("Invalid resource for custom participant view: " + r.getPath());
+    }
+    
     public String getBody()
     {
         return _body;
@@ -71,4 +87,9 @@ public class CustomParticipantView extends Entity
     {
         return getRowId() != null && getRowId() == MODULE_PTID_VIEW_ID;
     }
+
+    public ModelAndView getView()
+    {
+        return _view != null ? _view : new HtmlView(_body);
+    }    
 }
