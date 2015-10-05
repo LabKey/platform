@@ -251,9 +251,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         {
             return (ExpSchema)_userSchema;
         }
-        ExpSchema schema = new ExpSchema(_userSchema.getUser(), _userSchema.getContainer());
-        schema.setContainerFilter(getContainerFilter());
-        return schema;
+        return new ExpSchema(_userSchema.getUser(), _userSchema.getContainer());
     }
 
     @Override
