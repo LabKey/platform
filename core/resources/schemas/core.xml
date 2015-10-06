@@ -621,11 +621,13 @@
       <ns:column columnName="UserId"/>
       <ns:column columnName="ObjectId"/>
       <ns:column columnName="Type"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="ReadOn"/>
+      <ns:column columnName="ActionLinkText"/>
+      <ns:column columnName="ActionLinkURL"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="Created"/>
       <ns:column columnName="CreatedBy"/>
-      <ns:column columnName="Modified"/>
-      <ns:column columnName="ModifiedBy"/>
     </ns:columns>
   </ns:table>
 </ns:tables>

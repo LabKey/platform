@@ -38,14 +38,19 @@ public class NotificationService
     public interface Service
     {
         /*
-         * Insert a new notification in the specified container for the given user/object/type.
+         * Insert a new notification in the specified container.
          */
-        Notification addNotification(Container container, User user, @NotNull String objectId, @NotNull String type, int notifyUserId) throws ValidationException;
+        Notification addNotification(Container container, User user, @NotNull Notification notification) throws ValidationException;
 
         /*
          * Returns a list of notifications for a specific user based on the specified type.
          */
-        List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId);
+        List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly);
+
+        /*
+         * Returns a notification (used for checking if a record already exists for the given user, objectId, and type).
+         */
+        Notification getNotification(Container container, @NotNull Notification notification);
 
         /*
          * Returns a notification for a specific user based on the specified objectId and type.
@@ -53,8 +58,16 @@ public class NotificationService
         Notification getNotification(Container container, @NotNull String objectId, @NotNull String type, int notifyUserId);
 
         /*
+         * Mark a single notification, if it exists, as read for a specific user based on the specified objectId and types,
+         * or if no objectId provided, mark all notifications as read for a specific user based on the specified types.
+         * Return a count of the number of notification records updated.
+         */
+        int markAsRead(Container container, User user, @Nullable String objectId, @NotNull List<String> types, int notifyUserId);
+
+        /*
          * Remove a single notification, if it exists, for a specific user based on the specified objectId and types,
          * or if no objectId provided, removes all notifications for a specific user based on the specified types.
+         * Return a count of the number of notification records removed.
          */
         int removeNotifications(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId);
     }

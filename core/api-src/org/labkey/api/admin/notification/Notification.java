@@ -17,6 +17,8 @@ package org.labkey.api.admin.notification;
 
 import org.labkey.api.util.GUID;
 
+import java.util.Date;
+
 /**
  * User: cnathe
  * Date: 9/14/2015
@@ -28,6 +30,10 @@ public class Notification
     private int _userId;
     private String _objectId;
     private String _type;
+    private String _description;
+    private Date _readOn;
+    private String _actionLinkText;
+    private String _actionLinkURL;
 
     public int getRowId()
     {
@@ -77,5 +83,45 @@ public class Notification
     public void setContainer(GUID container)
     {
         _container = container;
+    }
+
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        _description = description;
+    }
+
+    public Date getReadOn()
+    {
+        return _readOn;
+    }
+
+    public void setReadOn(Date readOn)
+    {
+        _readOn = readOn;
+    }
+
+    public String getActionLinkText()
+    {
+        return _actionLinkText;
+    }
+
+    public void setActionLinkText(String actionLinkText)
+    {
+        _actionLinkText = actionLinkText;
+    }
+
+    public String getActionLinkURL()
+    {
+        return _actionLinkURL;
+    }
+
+    public void setActionLinkURL(String actionLinkURL)
+    {
+        _actionLinkURL = actionLinkURL;
     }
 }
