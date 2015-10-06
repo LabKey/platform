@@ -804,6 +804,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
+    // TODO: Delete... not needed!
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)
     {
         Map<String, QuerySnapshotDefinition> ret = new LinkedHashMap<>();
@@ -814,30 +815,32 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    public QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String name)
+    public @Nullable QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String snapshotName)
     {
-        return getAllQuerySnapshotDefs(container, schema).get(name);
+        // TODO: Remove old approach
+        QuerySnapshotDefinition qsdOld = getAllQuerySnapshotDefs(container, schema).get(snapshotName);
+        QuerySnapshotDef def = QueryManager.get().getQuerySnapshotDef(container, schema, snapshotName);
+
+        return null != def ? new QuerySnapshotDefImpl(def) : null;
     }
 
     public boolean isQuerySnapshot(Container container, String schema, String name)
     {
-        return QueryService.get().getSnapshotDef(container, schema, name) != null;
+        return getSnapshotDef(container, schema, name) != null;
     }
 
-    public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schema)
+    public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schemaName)
     {
-        List<QuerySnapshotDefinition> ret = new ArrayList<>();
-
-        for (QuerySnapshotDef queryDef : QueryManager.get().getQuerySnapshots(container, schema))
-            ret.add(new QuerySnapshotDefImpl(queryDef));
-
-        return ret;
+        return QueryManager.get().getQuerySnapshots(container, schemaName)
+            .stream()
+            .map(QuerySnapshotDefImpl::new)
+            .collect(Collectors.toList());
     }
 
     private static class ContainerSchemaKey implements Serializable
     {
-        private Container _container;
-        private String _schema;
+        private final Container _container;
+        private final String _schema;
 
         public ContainerSchemaKey(Container container, String schema)
         {

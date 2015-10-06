@@ -53,9 +53,9 @@
 <%  if (def != null) { %>
 <table>
     <tr><td class="labkey-form-label">Name</td><td><%=h(def.getName())%></td>
-    <tr><td class="labkey-form-label">Created By</td><td><%=h(def.getCreatedBy())%></td>
-    <tr><td class="labkey-form-label">Modified By</td><td><%=h(def.getModifiedBy())%></td>
-    <tr><td class="labkey-form-label">Created</td><td><%=h(def.getCreated())%></td>
+    <tr><td class="labkey-form-label">Created By</td><td><%=h(def.getCreatedBy().getDisplayName(getUser()))%></td>
+    <tr><td class="labkey-form-label">Modified By</td><td><%=h(def.getModifiedBy().getDisplayName(getUser()))%></td>
+    <tr><td class="labkey-form-label">Created</td><td><%=formatDateTime((def.getCreated()))%></td>
     <tr><td class="labkey-form-label">Last Updated</td><td><%=formatDateTime(def.getLastUpdated())%></td>
     <tr><td class="labkey-form-label">Query Source</td><td><textarea rows="20" cols="65" readonly="true"><%=h(queryDef != null ? queryDef.getSql() : null)%></textarea></td>
 </table>

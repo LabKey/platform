@@ -123,14 +123,27 @@ public class QueryManager
         return key.select();
     }
 
-    public QuerySnapshotDef[] getQuerySnapshots(Container container, String schema)
+    public Collection<QuerySnapshotDef> getQuerySnapshots(@Nullable Container container, @Nullable String schemaName)
     {
         QuerySnapshotDef.Key key = new QuerySnapshotDef.Key(container);
-        if (schema != null)
+        if (schemaName != null)
         {
-            key.setSchema(schema);
+            key.setSchema(schemaName);
         }
-        return key.select();
+
+        Collection<QuerySnapshotDef> defs = QuerySnapshotCache.getQuerySnapshotDefs(container, schemaName);
+
+        Collection<QuerySnapshotDef> oldDefs = Arrays.asList(key.select());
+
+        if (!new ArrayList<>(defs).equals(new ArrayList<>(oldDefs)))
+            throw new IllegalStateException("Inconsistent number of query snapshots in " + container + "|" + schemaName + ": " + defs.size() + " vs. " + oldDefs.size());
+
+        return defs;
+    }
+
+    public QuerySnapshotDef getQuerySnapshotDef(@NotNull Container container, @NotNull String schemaName, @NotNull String snapshotName)
+    {
+        return QuerySnapshotCache.getQuerySnapshotDef(container, schemaName, snapshotName);
     }
 
     public QueryDef insert(User user, QueryDef queryDef)
@@ -151,6 +164,7 @@ public class QueryManager
     public void delete(User user, QuerySnapshotDef querySnapshotDef)
     {
         Table.delete(getTableInfoQuerySnapshotDef(), querySnapshotDef.getRowId());
+        QuerySnapshotCache.uncache(querySnapshotDef);
         if (querySnapshotDef.getQueryDefId() != null)
             Table.delete(getTableInfoQueryDef(), querySnapshotDef.getQueryDefId());
     }
@@ -162,16 +176,21 @@ public class QueryManager
             QueryDef def = insert(user, queryDef);
             snapshotDef.setQueryDefId(def.getQueryDefId());
         }
-        return Table.insert(user, getTableInfoQuerySnapshotDef(), snapshotDef);
+        snapshotDef = Table.insert(user, getTableInfoQuerySnapshotDef(), snapshotDef);
+        QuerySnapshotCache.uncache(snapshotDef);
+        return snapshotDef;
     }
 
     public QuerySnapshotDef update(User user, QueryDef queryDef, QuerySnapshotDef snapshotDef) throws SQLException
     {
         if (queryDef != null && snapshotDef.getQueryTableName() == null)
             update(user, queryDef);
-        return Table.update(user, getTableInfoQuerySnapshotDef(), snapshotDef, snapshotDef.getRowId());
+        snapshotDef = Table.update(user, getTableInfoQuerySnapshotDef(), snapshotDef, snapshotDef.getRowId());
+        QuerySnapshotCache.uncache(snapshotDef);
+        return snapshotDef;
     }
 
+    // Does not use the cache... but only used at save time
     public QuerySnapshotDef getQuerySnapshotDef(int id)
     {
         return new TableSelector(getTableInfoQuerySnapshotDef()).getObject(id, QuerySnapshotDef.class);
@@ -524,6 +543,7 @@ public class QueryManager
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         Table.delete(getTableInfoQuerySnapshotDef(), filter);
+        QuerySnapshotCache.uncache(c);
         Table.delete(getTableInfoCustomView(), filter);
         Table.delete(getTableInfoQueryDef(), filter);
         Table.delete(getTableInfoExternalSchema(), filter);

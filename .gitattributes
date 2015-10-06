@@ -1681,6 +1681,7 @@ query/src/org/labkey/query/persist/ExternalSchemaDef.java -text
 query/src/org/labkey/query/persist/LinkedSchemaDef.java -text
 query/src/org/labkey/query/persist/QueryDef.java -text
 query/src/org/labkey/query/persist/QueryManager.java -text
+query/src/org/labkey/query/persist/QuerySnapshotCache.java -text
 query/src/org/labkey/query/persist/QuerySnapshotDef.java -text
 query/src/org/labkey/query/reports/AttachmentReport.java -text
 query/src/org/labkey/query/reports/BaseRedirectReport.java -text

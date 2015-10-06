@@ -201,4 +201,50 @@ public class QuerySnapshotDef extends Entity implements Cloneable
             throw UnexpectedException.wrap(cnse);
         }
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        QuerySnapshotDef that = (QuerySnapshotDef) o;
+
+        if (_rowId != that._rowId) return false;
+        if (_updateDelay != that._updateDelay) return false;
+        if (_queryDefId != null ? !_queryDefId.equals(that._queryDefId) : that._queryDefId != null) return false;
+        if (_name != null ? !_name.equals(that._name) : that._name != null) return false;
+        if (_schema != null ? !_schema.equals(that._schema) : that._schema != null) return false;
+        if (_columns != null ? !_columns.equals(that._columns) : that._columns != null) return false;
+        if (_filter != null ? !_filter.equals(that._filter) : that._filter != null) return false;
+        if (_lastUpdated != null ? !_lastUpdated.equals(that._lastUpdated) : that._lastUpdated != null) return false;
+        if (_nextUpdate != null ? !_nextUpdate.equals(that._nextUpdate) : that._nextUpdate != null) return false;
+        if (_queryTableName != null ? !_queryTableName.equals(that._queryTableName) : that._queryTableName != null)
+            return false;
+        if (_queryTableContainer != null ? !_queryTableContainer.equals(that._queryTableContainer) : that._queryTableContainer != null)
+            return false;
+        if (_participantGroups != null ? !_participantGroups.equals(that._participantGroups) : that._participantGroups != null)
+            return false;
+        return !(_optionsId != null ? !_optionsId.equals(that._optionsId) : that._optionsId != null);
+
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _rowId;
+        result = 31 * result + (_queryDefId != null ? _queryDefId.hashCode() : 0);
+        result = 31 * result + (_name != null ? _name.hashCode() : 0);
+        result = 31 * result + (_schema != null ? _schema.hashCode() : 0);
+        result = 31 * result + (_columns != null ? _columns.hashCode() : 0);
+        result = 31 * result + (_filter != null ? _filter.hashCode() : 0);
+        result = 31 * result + (_lastUpdated != null ? _lastUpdated.hashCode() : 0);
+        result = 31 * result + (_nextUpdate != null ? _nextUpdate.hashCode() : 0);
+        result = 31 * result + _updateDelay;
+        result = 31 * result + (_queryTableName != null ? _queryTableName.hashCode() : 0);
+        result = 31 * result + (_queryTableContainer != null ? _queryTableContainer.hashCode() : 0);
+        result = 31 * result + (_participantGroups != null ? _participantGroups.hashCode() : 0);
+        result = 31 * result + (_optionsId != null ? _optionsId.hashCode() : 0);
+        return result;
+    }
 }
