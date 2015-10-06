@@ -150,11 +150,9 @@ public class StudyQuerySchema extends UserSchema
 
     private ParticipantGroup _sessionParticipantGroup;
 
-    public StudyQuerySchema(StudyImpl study, User user, boolean mustCheckPermissions)
+    public StudyQuerySchema(@NotNull StudyImpl study, User user, boolean mustCheckPermissions)
     {
-        super(SCHEMA_NAME, SCHEMA_DESCRIPTION, user, study.getContainer(), StudySchema.getInstance().getSchema());
-        _study = study;
-        _mustCheckPermissions = mustCheckPermissions;
+        this(study, study.getContainer(), user, mustCheckPermissions);
 
         initSessionParticipantGroup(study, user);
     }
@@ -162,11 +160,11 @@ public class StudyQuerySchema extends UserSchema
     /**
      * This c-tor is for schemas that have no study defined -- _study is null!
      */
-    private StudyQuerySchema(Container c, User user)
+    private StudyQuerySchema(@Nullable StudyImpl study, Container c, User user, boolean mustCheckPermissions)
     {
         super(SCHEMA_NAME, SCHEMA_DESCRIPTION, user, c, StudySchema.getInstance().getSchema());
-        _study = null;
-        _mustCheckPermissions = true;
+        _study = study;
+        _mustCheckPermissions = mustCheckPermissions;
     }
 
 
@@ -179,9 +177,9 @@ public class StudyQuerySchema extends UserSchema
     }
 
 
-    static StudyQuerySchema createSchemaWithoutStudy(Container c, User u)
+    public static StudyQuerySchema createSchemaWithoutStudy(Container c, User u)
     {
-        return new StudyQuerySchema(c, u);
+        return new StudyQuerySchema(null, c, u, true);
     }
 
 
@@ -271,15 +269,19 @@ public class StudyQuerySchema extends UserSchema
 
             if (_study != null)
             {
+                StudyService.Service studyService = StudyService.get();
+                if (null == studyService)
+                    throw new IllegalStateException("No StudyService!");
+
                 // All these require studies defined
                 names.add(STUDY_DATA_TABLE_NAME);
-                names.add(StudyService.get().getSubjectTableName(getContainer()));
+                names.add(studyService.getSubjectTableName(getContainer()));
                 names.add(LOCATION_TABLE_NAME);
                 if (_study.getTimepointType() != TimepointType.CONTINUOUS)
                     names.add(VISIT_TABLE_NAME);
 
                 if (_study.getTimepointType() != TimepointType.CONTINUOUS)
-                    names.add(StudyService.get().getSubjectVisitTableName(getContainer()));
+                    names.add(studyService.getSubjectVisitTableName(getContainer()));
 
                 names.add(SPECIMEN_EVENT_TABLE_NAME);
                 names.add(SPECIMEN_DETAIL_TABLE_NAME);
@@ -304,9 +306,9 @@ public class StudyQuerySchema extends UserSchema
                 names.add("QCState");
 
                 // Subject category/group tables:
-                names.add(StudyService.get().getSubjectCategoryTableName(getContainer()));
-                names.add(StudyService.get().getSubjectGroupTableName(getContainer()));
-                names.add(StudyService.get().getSubjectGroupMapTableName(getContainer()));
+                names.add(studyService.getSubjectCategoryTableName(getContainer()));
+                names.add(studyService.getSubjectGroupTableName(getContainer()));
+                names.add(studyService.getSubjectGroupMapTableName(getContainer()));
                 names.add(PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME);
 
                 // specimen report pivots
@@ -352,15 +354,14 @@ public class StudyQuerySchema extends UserSchema
     public Map<String, DatasetDefinition> getDatasetDefinitions()
     {
         Map<String, DatasetDefinition> ret = new LinkedHashMap<>();
-        assert _study != null : "Attempt to get datasets without a study";
-        if (_study != null)
+        if (null == _study)
+            throw new IllegalStateException("Attempt to get datasets without a study");
+
+        for (DatasetDefinition dsd : _study.getDatasets())
         {
-            for (DatasetDefinition dsd : _study.getDatasets())
-            {
-                if (dsd.getName() == null)
-                    continue;
-                ret.put(dsd.getName(), dsd);
-            }
+            if (dsd.getName() == null)
+                continue;
+            ret.put(dsd.getName(), dsd);
         }
         return ret;
     }
@@ -368,14 +369,13 @@ public class StudyQuerySchema extends UserSchema
     @Nullable
     public DatasetDefinition getDatasetDefinitionByName(String name)
     {
-        assert _study != null : "Attempt to get datasets without a study";
-        if (_study != null)
+        if (null == _study)
+            throw new IllegalStateException("Attempt to get datasets without a study");
+
+        for (DatasetDefinition dsd : _study.getDatasets())
         {
-            for (DatasetDefinition dsd : _study.getDatasets())
-            {
-                if (name.equalsIgnoreCase(dsd.getName()))
-                    return dsd;
-            }
+            if (name.equalsIgnoreCase(dsd.getName()))
+                return dsd;
         }
         return null;
     }
@@ -410,10 +410,13 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public TableInfo createTable(String name)
     {
+        StudyService.Service studyService = StudyService.get();
+        if (null == studyService)
+            throw new IllegalStateException("No study service!");
+
         if (PROPERTIES_TABLE_NAME.equalsIgnoreCase(name) || STUDY_TABLE_NAME.equalsIgnoreCase(name))
         {
-            StudyPropertiesTable ret = new StudyPropertiesTable(this);
-            return ret;
+            return new StudyPropertiesTable(this);
         }
 
         // Expose the simplified specimen table even if there's no study in this container. The caller may
@@ -422,7 +425,7 @@ public class StudyQuerySchema extends UserSchema
         {
             if (getContainer().isRoot())
                 return null;
-            if (null != _study && _study.isAncillaryStudy() && _study.hasSourceStudy())
+            if (null != _study && _study.isAncillaryStudy() && null != _study.getSourceStudy())
             {
                 Set<Container> containers = new HashSet<>();
                 containers.add(_study.getContainer());
@@ -430,7 +433,7 @@ public class StudyQuerySchema extends UserSchema
                 containers.add(sourceStudyContainer);
 
                 Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
-                return StudyService.get().getSpecimenTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
+                return studyService.getSpecimenTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
             }
             return new SimpleSpecimenTable(this, !_mustCheckPermissions);
         }
@@ -446,17 +449,16 @@ public class StudyQuerySchema extends UserSchema
         {
             if (getContainer().isRoot())
                 return null;
-            if (null != _study && _study.isAncillaryStudy())
+            if (null != _study && _study.isAncillaryStudy() && null != _study.getSourceStudy())
             {
                 Set<Container> containers = new HashSet<>();
                 containers.add(_study.getContainer());
                 Container sourceStudyContainer = _study.getSourceStudy().getContainer();
                 containers.add(sourceStudyContainer);
 
-                return StudyService.get().getTypeTableUnion(LocationTable.class, this, containers, _dontAliasColumns);
+                return studyService.getTypeTableUnion(LocationTable.class, this, containers, _dontAliasColumns);
             }
-            LocationTable ret = new LocationTable(this);
-            return ret;
+            return new LocationTable(this);
         }
 
         // always expose the study designer lookup tables
@@ -498,44 +500,37 @@ public class StudyQuerySchema extends UserSchema
 
         if (STUDY_DATA_TABLE_NAME.equalsIgnoreCase(name))
         {
-            StudyDataTable ret = new StudyDataTable(this);
-            return ret;
+            return new StudyDataTable(this);
         }
         if ("Cohort".equalsIgnoreCase(name))
         {
-            CohortTable ret = new CohortTable(this);
-            return ret;
+            return new CohortTable(this);
         }
-        if (StudyService.get().getSubjectTableName(getContainer()).equalsIgnoreCase(name))
+        if (studyService.getSubjectTableName(getContainer()).equalsIgnoreCase(name))
         {
-            ParticipantTable ret = new ParticipantTable(this, false);
-            return ret;
+            return new ParticipantTable(this, false);
         }
-        if (StudyService.get().getSubjectCategoryTableName(getContainer()).equalsIgnoreCase(name))
+        if (studyService.getSubjectCategoryTableName(getContainer()).equalsIgnoreCase(name))
         {
-            ParticipantCategoryTable ret = new ParticipantCategoryTable(this);
-            return ret;
+            return new ParticipantCategoryTable(this);
         }
-        if (StudyService.get().getSubjectGroupTableName(getContainer()).equalsIgnoreCase(name))
+        if (studyService.getSubjectGroupTableName(getContainer()).equalsIgnoreCase(name))
         {
-            ParticipantGroupTable ret = new ParticipantGroupTable(this);
-            return ret;
+            return new ParticipantGroupTable(this);
         }
-        if (StudyService.get().getSubjectGroupMapTableName(getContainer()).equalsIgnoreCase(name))
+        if (studyService.getSubjectGroupMapTableName(getContainer()).equalsIgnoreCase(name))
         {
-            ParticipantGroupMapTable ret = new ParticipantGroupMapTable(this); 
-            return ret;
+            return new ParticipantGroupMapTable(this);
         }
         if (PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME.equalsIgnoreCase(name))
         {
-            ParticipantGroupCohortUnionTable ret = new ParticipantGroupCohortUnionTable(this);
-            return ret;
+            return new ParticipantGroupCohortUnionTable(this);
         }
         if (SPECIMEN_SUMMARY_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            if (null != _study && _study.isAncillaryStudy())
+            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
             {
                 Set<Container> containers = new HashSet<>();
                 containers.add(_study.getContainer());
@@ -543,16 +538,15 @@ public class StudyQuerySchema extends UserSchema
                 containers.add(sourceStudyContainer);
 
                 Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
-                return StudyService.get().getSpecimenSummaryTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
+                return studyService.getSpecimenSummaryTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
             }
-            SpecimenSummaryTable ret = new SpecimenSummaryTable(this);
-            return ret;
+            return new SpecimenSummaryTable(this);
         }
         if (SPECIMEN_DETAIL_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            if (null != _study && _study.isAncillaryStudy())
+            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
             {
                 Set<Container> containers = new HashSet<>();
                 containers.add(_study.getContainer());
@@ -560,16 +554,15 @@ public class StudyQuerySchema extends UserSchema
                 containers.add(sourceStudyContainer);
 
                 Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
-                return StudyService.get().getSpecimenDetailTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
+                return studyService.getSpecimenDetailTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
             }
-            SpecimenDetailTable ret = new SpecimenDetailTable(this);
-            return ret;
+            return new SpecimenDetailTable(this);
         }
         if (SPECIMEN_WRAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            if (null != _study && _study.isAncillaryStudy())
+            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
             {
                 Set<Container> containers = new HashSet<>();
                 containers.add(_study.getContainer());
@@ -577,115 +570,100 @@ public class StudyQuerySchema extends UserSchema
                 containers.add(sourceStudyContainer);
 
                 Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
-                return StudyService.get().getSpecimenWrapTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
+                return studyService.getSpecimenWrapTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
             }
-            SpecimenWrapTable ret = new SpecimenWrapTable(this);
-            return ret;
+            return new SpecimenWrapTable(this);
         }
         if ("SpecimenVialCount".equalsIgnoreCase(name))
         {
-            SpecimenVialCountTable ret = new SpecimenVialCountTable(this);
-            return ret;
+            return new SpecimenVialCountTable(this);
         }
         if (SPECIMEN_EVENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            SpecimenEventTable ret = new SpecimenEventTable(this);
-            return ret;
+            return new SpecimenEventTable(this);
         }
-        if ((StudyService.get().getSubjectVisitTableName(getContainer()).equalsIgnoreCase(name) || "ParticipantVisit".equalsIgnoreCase(name)) && _study.getTimepointType() != TimepointType.CONTINUOUS)
+        if ((studyService.getSubjectVisitTableName(getContainer()).equalsIgnoreCase(name) || "ParticipantVisit".equalsIgnoreCase(name)) && _study.getTimepointType() != TimepointType.CONTINUOUS)
         {
-            ParticipantVisitTable ret = new ParticipantVisitTable(this, false);
-            return ret;
+            return new ParticipantVisitTable(this, false);
         }
         if ("SpecimenRequest".equalsIgnoreCase(name))
         {
-            SpecimenRequestTable ret = new SpecimenRequestTable(this);
-            return ret;
+            return new SpecimenRequestTable(this);
         }
         if ("SpecimenRequestStatus".equalsIgnoreCase(name))
         {
-            SpecimenRequestStatusTable ret = new SpecimenRequestStatusTable(this);
-            return ret;
+            return new SpecimenRequestStatusTable(this);
         }
         if (VISIT_TABLE_NAME.equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.CONTINUOUS)
         {
-            VisitTable ret = new VisitTable(this);
-            return ret;
+            return new VisitTable(this);
         }
         if ("DataSets".equalsIgnoreCase(name))
         {
-            DatasetsTable ret = new DatasetsTable(this);
-            return ret;
+            return new DatasetsTable(this);
         }
         if (DatasetColumnsTable.NAME.equalsIgnoreCase(name))
         {
-            DatasetColumnsTable ret = new DatasetColumnsTable(this);
-            return ret;
+            return new DatasetColumnsTable(this);
         }
         if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name))
         {
-            FilteredTable ret = new QCStateTable(this);
-            return ret;
+            return new QCStateTable(this);
         }
         if (SPECIMEN_ADDITIVE_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            if (null != _study && _study.isAncillaryStudy())
+            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
             {
                 Set<Container> containers = new HashSet<>();
                 containers.add(_study.getContainer());
                 Container sourceStudyContainer = _study.getSourceStudy().getContainer();
                 containers.add(sourceStudyContainer);
 
-                return StudyService.get().getTypeTableUnion(AdditiveTypeTable.class, this, containers, _dontAliasColumns);
+                return studyService.getTypeTableUnion(AdditiveTypeTable.class, this, containers, _dontAliasColumns);
             }
-            FilteredTable ret = new AdditiveTypeTable(this);
-            return ret;
+            return new AdditiveTypeTable(this);
         }
         if (SPECIMEN_DERIVATIVE_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            if (null != _study && _study.isAncillaryStudy())
+            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
             {
                 Set<Container> containers = new HashSet<>();
                 containers.add(_study.getContainer());
                 Container sourceStudyContainer = _study.getSourceStudy().getContainer();
                 containers.add(sourceStudyContainer);
 
-                return StudyService.get().getTypeTableUnion(DerivativeTypeTable.class, this, containers, _dontAliasColumns);
+                return studyService.getTypeTableUnion(DerivativeTypeTable.class, this, containers, _dontAliasColumns);
             }
-            FilteredTable ret = new DerivativeTypeTable(this);
-            return ret;
+            return new DerivativeTypeTable(this);
         }
         if (SPECIMEN_PRIMARY_TYPE_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            if (null != _study && _study.isAncillaryStudy())
+            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
             {
                 Set<Container> containers = new HashSet<>();
                 containers.add(_study.getContainer());
                 Container sourceStudyContainer = _study.getSourceStudy().getContainer();
                 containers.add(sourceStudyContainer);
 
-                return StudyService.get().getTypeTableUnion(PrimaryTypeTable.class, this, containers, _dontAliasColumns);
+                return studyService.getTypeTableUnion(PrimaryTypeTable.class, this, containers, _dontAliasColumns);
             }
-            FilteredTable ret = new PrimaryTypeTable(this);
-            return ret;
+            return new PrimaryTypeTable(this);
         }
         if ("SpecimenComment".equalsIgnoreCase(name))
         {
-            FilteredTable ret = new SpecimenCommentTable(this);
-            return ret;
+            return new SpecimenCommentTable(this);
         }
         if ("VialRequest".equalsIgnoreCase(name))
         {
-            FilteredTable ret = new VialRequestTable(this);
-            return ret;
+            return new VialRequestTable(this);
         }
         if (STUDY_SNAPSHOT_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -737,8 +715,7 @@ public class StudyQuerySchema extends UserSchema
         }
         if (LOCATION_SPECIMEN_LIST_TABLE_NAME.equalsIgnoreCase(name))
         {
-            FilteredTable ret = new LocationSpecimenListTable(this);
-            return ret;
+            return new LocationSpecimenListTable(this);
         }
         if (PERSONNEL_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -817,15 +794,15 @@ public class StudyQuerySchema extends UserSchema
             return tableInfo;   // No need to union 1 table
 
         if (SpecimenTable.class == tableInfo.getClass())
-            return studyService.getSpecimenTableUnion(this, containers, new HashMap<Container, SQLFragment>(), _dontAliasColumns, false);
+            return studyService.getSpecimenTableUnion(this, containers, new HashMap<>(), _dontAliasColumns, false);
         if (VialTable.class == tableInfo.getClass())
             return studyService.getVialTableUnion(this, containers);
         if (SpecimenDetailTable.class == tableInfo.getClass())
-            return studyService.getSpecimenDetailTableUnion(this, containers, new HashMap<Container, SQLFragment>(), _dontAliasColumns, false);
+            return studyService.getSpecimenDetailTableUnion(this, containers, new HashMap<>(), _dontAliasColumns, false);
         if (SpecimenWrapTable.class == tableInfo.getClass())
-            return studyService.getSpecimenWrapTableUnion(this, containers, new HashMap<Container, SQLFragment>(), _dontAliasColumns, false);
+            return studyService.getSpecimenWrapTableUnion(this, containers, new HashMap<>(), _dontAliasColumns, false);
         if (SpecimenSummaryTable.class == tableInfo.getClass())
-            return studyService.getSpecimenSummaryTableUnion(this, containers, new HashMap<Container, SQLFragment>(), _dontAliasColumns, false);
+            return studyService.getSpecimenSummaryTableUnion(this, containers, new HashMap<>(), _dontAliasColumns, false);
         if (LocationTable.class == tableInfo.getClass())
             return studyService.getTypeTableUnion(LocationTable.class, this, containers, _dontAliasColumns);
         if (PrimaryTypeTable.class == tableInfo.getClass())
@@ -851,7 +828,7 @@ public class StudyQuerySchema extends UserSchema
 
     private Map<Container, SQLFragment> getAncillaryStudyFilterFragments(Container sourceStudyContainer)
     {
-        assert _study.isAncillaryStudy();       // Don't call if it's not
+        assert _study != null && _study.isAncillaryStudy();       // Don't call if it's not
         Map<Container, SQLFragment> filterFragments = new HashMap<>();
         List<String> ptids = ParticipantGroupManager.getInstance().getAllGroupedParticipants(_study.getContainer());
         if (!ptids.isEmpty())
@@ -915,7 +892,7 @@ public class StudyQuerySchema extends UserSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         if (getStudy() != null)
         {
