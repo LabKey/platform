@@ -280,7 +280,7 @@ LABKEY.Query.Visualization = new function() {
                     for (f=0; f < measure.filterArray.length; f++)
                     {
                         fa = measure.filterArray[f];
-                        if (fa)
+                        if (fa && fa.getURLParameterName)
                         {
                             asURL = encodeURIComponent(fa.getURLParameterName()) + "=" + encodeURIComponent(fa.getURLParameterValue());
                             filters.push(asURL);
