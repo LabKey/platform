@@ -234,12 +234,12 @@ public class ParticipantVisitTable extends BaseStudyTable
         if (null == group)
             return sf;
 
-        if (null == sf)
-            sf = new SimpleFilter();
+        SimpleFilter ret = new SimpleFilter();
+        ret.addAllClauses(sf);
 
         FieldKey participantFieldKey = FieldKey.fromParts("ParticipantId");
-        sf.addClause(new ParticipantGroupFilterClause(participantFieldKey, group));
-        return sf;
+        ret.addClause(new ParticipantGroupFilterClause(participantFieldKey, group));
+        return ret;
     }
 
 }
