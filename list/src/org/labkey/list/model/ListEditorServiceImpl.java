@@ -154,9 +154,13 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
     public List<String> getListNames()
     {
-        Map<String,ListDefinition> m = ListService.get().getLists(getContainer());
+        List<String> ret = new ArrayList<>();
+        for (ListDef def : ListManager.get().getLists(getContainer()))
+        {
+            ret.add(def.getName());
+        }
+
         Map<String,QueryDefinition> queries = new ListQuerySchema(getUser(), getContainer()).getQueryDefs();
-        ArrayList ret = new ArrayList(m.keySet());
         ret.addAll(queries.keySet());
         return ret;
     }

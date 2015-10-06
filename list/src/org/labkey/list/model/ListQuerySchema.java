@@ -38,7 +38,7 @@ import org.labkey.list.controllers.ListController;
 import org.labkey.list.view.ListQueryView;
 import org.springframework.validation.BindException;
 
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 
 public class ListQuerySchema extends UserSchema
@@ -76,13 +76,18 @@ public class ListQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        return ListService.get().getLists(getContainer()).keySet();
+        Set<String> ret = new HashSet<>();
+        for (ListDef def : ListManager.get().getLists(getContainer()))
+        {
+            ret.add(def.getName());
+        }
+        return ret;
     }
 
     @Nullable
     public TableInfo createTable(String name)
     {
-        ListDefinition def = ListService.get().getLists(getContainer()).get(name);
+        ListDefinition def = ListService.get().getList(getContainer(), name);
         if (def != null)
         {
             // Only for supporting migration. These should not be handed out after migration to hard tables.
@@ -103,7 +108,7 @@ public class ListQuerySchema extends UserSchema
     @Override
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        ListDefinition def = ListService.get().getLists(getContainer()).get(settings.getQueryName());
+        ListDefinition def = ListService.get().getList(getContainer(), settings.getQueryName());
         if (def != null)
         {
             return new ListQueryView(def, this, settings, errors);
@@ -115,15 +120,13 @@ public class ListQuerySchema extends UserSchema
     public String getDomainURI(String queryName)
     {
         Container container = getContainer();
-        Map<String, ListDefinition> listDefs = ListService.get().getLists(container);
-        if(null == listDefs)
-            throw new NotFoundException("No lists found in the container '" + container.getPath() + "'.");
-
-        ListDefinition listDef = listDefs.get(queryName);
-        if(null == listDef)
+        ListDefinition listDef = ListService.get().getList(container, queryName);
+        if (null == listDef)
             throw new NotFoundException("List '" + queryName + "' was not found in the container '" + container.getPath() + "'.");
-
-        return listDef.getDomain().getTypeURI();
+        Domain domain = listDef.getDomain();
+        if (null == domain)
+            throw new IllegalStateException("Domain expected.");
+        return domain.getTypeURI();
     }
 
     @Override

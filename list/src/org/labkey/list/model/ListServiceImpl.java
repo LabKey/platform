@@ -64,7 +64,12 @@ public class ListServiceImpl implements ListService.Interface
     @Override
     public @Nullable ListDefinition getList(Container container, String name)
     {
-        return getLists(container).get(name);
+        for (ListDef def : ListManager.get().getLists(container))
+        {
+            if (name.equals(def.getName()))
+                return new ListDefinitionImpl(def);
+        }
+        return null;
     }
 
     public ListDefinition getList(Domain domain)
