@@ -65,6 +65,33 @@ Ext.define('LABKEY.app.model.Filter', {
                 }
             }
 
+            if (Ext.isArray(arr)) {
+                Ext.each(arr, function (measure) {
+                    if (Ext.isDefined(measure) && measure && Ext.isDefined(measure.filterArray)) {
+                        if (Ext.isArray(measure.filterArray)) {
+                            var filters = [];
+                            Ext.each(measure.filterArray, function (filter) {
+                                if (Ext.isString(filter)) {
+                                    if (filter === "_null") {
+                                        filters.push(null);
+                                    }
+                                    else {
+                                        var build = LABKEY.Filter.getFiltersFromUrl(filter, 'query');
+                                        if (Ext.isArray(build)) {
+                                            filters.push(build[0]); // assume single filters
+                                        }
+                                    }
+                                }
+                                else if (Ext.isDefined(filter)) {
+                                    filters.push(filter);
+                                }
+                            });
+                            measure.filterArray = filters;
+                        }
+                    }
+                });
+            }
+
             return arr;
         }},
 
@@ -1005,6 +1032,36 @@ Ext.define('LABKEY.app.model.Filter', {
                 }
             });
             jsonable.gridFilter = jsonGridFilters;
+        }
+
+         if (Ext.isArray(jsonable.plotMeasures)) {
+             Ext.each(jsonable.plotMeasures, function(measure) {
+                if (Ext.isDefined(measure)) {
+                    if (measure === null || Ext.isString(measure)) {
+                        return;
+                    }
+                    else {
+                        if (measure && Ext.isArray(measure.filterArray)) {
+                            var jsonFilters = [];
+                            Ext.each(measure.filterArray, function (filter) {
+                                if (Ext.isDefined(filter)) {
+                                    if (filter === null) {
+                                        jsonFilters.push("_null");
+                                    }
+                                    else if (Ext.isString(filter)) {
+                                        jsonFilters.push(filter);
+                                    }
+                                    else {
+                                        var composed = filter.getURLParameterName() + '=' + filter.getURLParameterValue();
+                                        jsonFilters.push(composed);
+                                    }
+                                }
+                            });
+                            measure.filterArray = jsonFilters;
+                        };
+                    }
+                }
+            });
         }
 
         // remove properties that do not persist across refresh
