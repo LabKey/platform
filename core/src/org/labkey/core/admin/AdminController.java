@@ -6118,7 +6118,7 @@ public class AdminController extends SpringActionController
             else
             {
                 String name = form.getTabName();
-                if (name == null)
+                if (StringUtils.isEmpty(name))
                 {
                     errors.reject(ERROR_MSG, "A tab name must be specified.");
                     return;
@@ -6410,16 +6410,16 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                if (form.getTabName().length() > 64)
-                {
-                    errors.reject(ERROR_MSG, "Tab name cannot be longer than 64 characters.");
-                    return;
-                }
-
                 String name = form.getTabName();
                 if (StringUtils.isEmpty(name))
                 {
                     errors.reject(ERROR_MSG, "A tab name must be specified.");
+                    return;
+                }
+
+                if (name.length() > 64)
+                {
+                    errors.reject(ERROR_MSG, "Tab name cannot be longer than 64 characters.");
                     return;
                 }
 
