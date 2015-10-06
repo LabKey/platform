@@ -79,7 +79,7 @@ public class MiniProfiler
     public static boolean isEnabled(ViewContext context)
     {
         // Disable when running within TeamCity
-        if (AppProps.getInstance().isTeamCityEnviornment())
+        if (AppProps.getInstance().isTeamCityEnvironment())
             return false;
 
         // CONSIDER: Add CanSeeProfilingPermission ?

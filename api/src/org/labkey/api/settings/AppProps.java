@@ -104,7 +104,7 @@ public class AppProps
         String getWebappConfigurationFilename();
         String getAdministratorContactEmail();
         boolean getUseContainerRelativeURL();
-        boolean isTeamCityEnviornment();
+        boolean isTeamCityEnvironment();
     }
 
     public static final String EXPERIMENTAL_CONTAINER_RELATIVE_URL = "containerRelativeURL";

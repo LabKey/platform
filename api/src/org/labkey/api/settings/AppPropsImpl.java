@@ -529,7 +529,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         }
         String result = lookupStringValue(ADMINISTRATOR_CONTACT_EMAIL, defaultValue);
 
-        // If that user is no long a site admin, go back to the default value
+        // If that user is no longer a site admin, go back to the default value
         if (!validOptions.contains(result))
         {
             return defaultValue;
@@ -550,7 +550,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     }
 
     @Override
-    public boolean isTeamCityEnviornment()
+    public boolean isTeamCityEnvironment()
     {
         String buildConfName = System.getProperty("teamcity.build.id");
         return StringUtils.isNotBlank(buildConfName);
