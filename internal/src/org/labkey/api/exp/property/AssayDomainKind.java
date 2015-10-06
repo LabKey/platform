@@ -137,6 +137,11 @@ public abstract class AssayDomainKind extends AbstractDomainKind
         result.add("Row Id");
         result.add("Container");
         result.add("LSID");
+        result.add("Owner");
+        result.add("CreatedBy");
+        result.add("Created");
+        result.add("ModifiedBy");
+        result.add("Modified");
         return result;
     }
 }
