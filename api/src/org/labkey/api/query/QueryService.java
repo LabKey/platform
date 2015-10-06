@@ -87,11 +87,11 @@ abstract public class QueryService
     abstract public QueryDefinition createQueryDef(User user, Container container, UserSchema schema, String name);
     abstract public QueryDefinition createQueryDefForTable(UserSchema schema, String tableName);
 
-    abstract public QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String name);
+    abstract public @Nullable QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String snapshotName);
     abstract public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name);
     abstract public QuerySnapshotDefinition createQuerySnapshotDef(Container container, QueryDefinition queryDef, String name);
     abstract public boolean isQuerySnapshot(Container container, String schema, String name);
-    abstract public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schema);
+    abstract public List<QuerySnapshotDefinition> getQuerySnapshotDefs(@Nullable Container container, @Nullable String schema);
     abstract public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql);
     abstract public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql, String metadataXml);
     abstract public QueryDefinition saveSessionQuery(HttpSession session, Container container, User user, String schema, String sql, @Nullable String xml);
