@@ -159,6 +159,22 @@ public class ListManager implements SearchService.DocumentProvider
         return list;
     }
 
+    public ListDef getList(Container container, String name)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container.getEntityId());
+        filter.addCondition(FieldKey.fromString("Name"), name);
+        ListDef list = new TableSelector(getListMetadataTable(), filter, null).getObject(ListDef.class);
+
+        // Workbooks can see their parent's lists, so check that container if we didn't find the list the first time
+        if (list == null && container.getType() == Container.TYPE.workbook)
+        {
+            SimpleFilter workbookFilter = new SimpleFilter(FieldKey.fromParts("Container"), container.getParent().getEntityId());
+            workbookFilter.addCondition(FieldKey.fromString("Name"), name);
+            list = new TableSelector(getListMetadataTable(), workbookFilter, null).getObject(ListDef.class);
+        }
+        return list;
+    }
+
     // Note: callers must invoke indexer (can't invoke here since we may be in a transaction)
     public ListDef insert(User user, final ListDef def, Collection<Integer> preferredListIds) throws SQLException
     {
