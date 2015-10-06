@@ -685,6 +685,7 @@ Ext.define('LABKEY.app.controller.State', {
                         if (!silent) {
                             this.fireEvent('filterchange', this.filters, opChange);
                         }
+                        this.onAfterFilterChange(mdx, this.filters);
                     }, this);
                 }
 
@@ -698,6 +699,14 @@ Ext.define('LABKEY.app.controller.State', {
      */
     onFilterChangeReady : function(mdx, filters, callback, scope) {
         callback.call(scope);
+    },
+
+    /**
+     * This method is provided to be overridden in case applications need to update state
+     * after 'filterchange' events fire.
+     */
+    onAfterFilterChange : function(mdx, filters) {
+        /* no-op */
     },
 
     getSelections : function(flat) {
@@ -834,12 +843,11 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     removePrivateSelection : function(name) {
-        var me = this;
-        this.onMDXReady(function(mdx){
+        this.onMDXReady(function(mdx) {
 
             mdx.setNamedFilter(name, []);
-            me.privatefilters[name] = undefined;
-            me.fireEvent('privateselectionchange', [], name);
+            this.privatefilters[name] = undefined;
+            this.fireEvent('privateselectionchange', [], name);
 
         }, this);
     },
