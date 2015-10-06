@@ -123,6 +123,7 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -247,11 +248,18 @@ public class TransformManager implements DataIntegrationService.Interface
                 for (ParameterType xmlp : etlXML.getParameters().getParameterArray())
                 {
                     String name = xmlp.getName();
-                    JdbcType type = JdbcType.valueOf(xmlp.getType());
-                    String strValue = xmlp.isSetValue() ? xmlp.getValue() : null;
-                    Object value = type.convert(strValue);
-                    ParameterDescription p = new ParameterDescriptionImpl(name,type,null);
-                    declaredVariables.put(p,value);
+                    try
+                    {
+                        JdbcType type = JdbcType.valueOf(xmlp.getType());
+                        String strValue = xmlp.isSetValue() ? xmlp.getValue() : null;
+                        Object value = type.convert(strValue);
+                        ParameterDescription p = new ParameterDescriptionImpl(name, type, null);
+                        declaredVariables.put(p, value);
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        throw new IllegalArgumentException("Unknown JDBC parameter type: '" + xmlp.getType() + "'. Supported types are: " + Arrays.toString(JdbcType.values()), e);
+                    }
                 }
             }
 
