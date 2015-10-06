@@ -85,6 +85,43 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     private static final Logger LOG = Logger.getLogger(MicrosoftSqlServer2008R2Dialect.class);
 
     private volatile boolean _groupConcatInstalled = false;
+    private volatile Edition _edition = Edition.Unknown;
+
+    @SuppressWarnings("unused")
+    enum Edition
+    {
+        Unknown(false),
+        Express(false),
+        Developer(true),
+        Enterprise(true);
+
+        private final boolean _onlineSupported;
+
+        Edition(boolean onlineSupported)
+        {
+            _onlineSupported = onlineSupported;
+        }
+
+        private static Edition getByEdition(String editionString)
+        {
+            Edition edition = Unknown;
+
+            try
+            {
+                edition = valueOf(editionString);
+            }
+            catch (IllegalArgumentException e)
+            {
+            }
+
+            return edition;
+        }
+
+        public boolean isOnlineSupported()
+        {
+            return _onlineSupported;
+        }
+    }
 
     private final InClauseGenerator _defaultGenerator = new InlineInClauseGenerator(this);
     private final TableResolver _tableResolver;
@@ -1156,7 +1193,17 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     public void prepare(DbScope scope)
     {
         _groupConcatInstalled = GroupConcatInstallationManager.isInstalled(scope);
+        _edition = getEdition(scope);
+
         super.prepare(scope);
+    }
+
+    private Edition getEdition(DbScope scope)
+    {
+        String edition = new SqlSelector(scope, "SELECT SERVERPROPERTY ('edition')").getObject(String.class);
+        String name = edition.split(" ")[0];
+
+        return Edition.getByEdition(name);
     }
 
     @Override
@@ -1261,8 +1308,8 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         // Follow the index rebuild/reorganize recommendations at https://msdn.microsoft.com/en-us/library/ms189858.aspx
         if (fragmentationPercent > 0.05)
         {
-            // TODO: Determine SQL Server edition in prepare() and use REBUILD WITH (ONLINE = ON) if Enterprise or Developer
-            SQLFragment alterSql = new SQLFragment("ALTER INDEX " + indexName + " ON " + tableSelectName + " " + (fragmentationPercent > 0.30 ? "REBUILD" : "REORGANIZE"));
+            String alterSql = "ALTER INDEX " + indexName + " ON " + tableSelectName + " " +
+                (fragmentationPercent > 0.30 ? "REBUILD" + (_edition.isOnlineSupported() ? " WITH (ONLINE = ON)" : "") : "REORGANIZE");
             new SqlExecutor(schema).execute(alterSql);
         }
     }
