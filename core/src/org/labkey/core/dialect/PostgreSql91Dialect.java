@@ -1602,6 +1602,10 @@ public class PostgreSql91Dialect extends SqlDialect
         {
             try
             {
+                // We could also consider using Statement.setFetchSize() instead of relying on the transaction isolation,
+                // but there's not a compelling reason to switch since we'd need to do it on a per-statement level
+                // and we still have to set the connection to be non-auto commit.
+                // See http://stackoverflow.com/questions/1468036/java-jdbc-ignores-setfetchsize
                 connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
                 connection.setAutoCommit(false);
             }
