@@ -95,6 +95,11 @@ public class FileLinkFileListener implements FileListener
 
         int rows = new SqlExecutor(OntologyManager.getExpSchema()).execute(singleEntrySQL);
         LOG.info("Updated " + rows + " row in exp.ObjectProperty for move from " + srcFile + " to " + destFile);
+        if (rows > 0)
+        {
+            // Clear potential object values
+            OntologyManager.clearPropertyCache();
+        }
 
         // Skip attempting to fix up child paths if we know that the entry is a file. If it's not (either it's a
         // directory or it doesn't exist), then try to fix up child records
@@ -118,6 +123,11 @@ public class FileLinkFileListener implements FileListener
             childPathsSQL.append(" = 1");
 
             int childRows = new SqlExecutor(OntologyManager.getExpSchema()).execute(childPathsSQL);
+            if (childRows > 0)
+            {
+                // Clear potential object values
+                OntologyManager.clearPropertyCache();
+            }
             LOG.info("Updated " + childRows + " child paths in exp.ObjectProperty rows for move from " + srcFile + " to " + destFile);
         }
     }
