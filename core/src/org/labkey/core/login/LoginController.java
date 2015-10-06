@@ -449,10 +449,13 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(RegisterForm form, BindException errors) throws Exception
         {
-            if (!AuthenticationManager.isRegistrationEnabled())
-                throw new NotFoundException("Registration is not enabled");
-
             ApiSimpleResponse response = new ApiSimpleResponse();
+
+            if (!AuthenticationManager.isRegistrationEnabled())
+            {
+                _log.warn("Attempt to register user using email " + form.getEmail() + " with registration not enabled");
+                throw new NotFoundException("Registration is not enabled");
+            }
 
             ValidEmail email = new ValidEmail(form.getEmail());
 
