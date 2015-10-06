@@ -25,7 +25,8 @@ import org.labkey.api.security.User;
 import java.util.Collection;
 
 /**
- * Listener for table and query events.
+ * Listener for table and query events that fires when the structure/schema changes, but not when individual data
+ * rows change.
  * The interface supports bulk changes to multiple tables or queries with the caveat that
  * they all have the same container, scope, and schema.
  *
