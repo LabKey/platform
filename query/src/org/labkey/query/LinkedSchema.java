@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +30,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UserSchemaCustomizer;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
@@ -56,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: kevink
@@ -86,6 +89,7 @@ public class LinkedSchema extends ExternalSchema
 
     private final UserSchema _sourceSchema;
     private final Collection<String> _availableQueries;
+
 
     public static LinkedSchema get(User user, Container container, LinkedSchemaDef def)
     {
@@ -208,7 +212,7 @@ public class LinkedSchema extends ExternalSchema
             if (_availableQueries.contains(key))
             {
                 QueryDefinition queryDef = queries.get(key);
-                TableInfo table = queryDef.getTable(new ArrayList<QueryException>(), true);
+                TableInfo table = queryDef.getTable(new ArrayList<>(), true);
                 if (table != null)
                 {
                     // Apply any filters that might have been specified in the schema linking process
@@ -250,10 +254,22 @@ public class LinkedSchema extends ExternalSchema
             return null;
         }
 
+        Set<FieldKey> includedFields = null;
+        if (null != metaData.getIncludeColumnsList())
+        {
+            String cols = StringUtils.trim(metaData.getIncludeColumnsList());
+            if (!StringUtils.equals("*",cols))
+            {
+                includedFields = Arrays.asList(StringUtils.split(cols,";")).stream()
+                        .map((col)->new FieldKey(null,col))
+                        .collect(Collectors.toSet());
+            }
+        }
+
         // Copy properties from source table to query table
         tableInfo.setDefaultVisibleColumns(sourceTable.getDefaultVisibleColumns());
 
-        LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, tableInfo);
+        LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, tableInfo, includedFields, null);
         linkedTableInfo.init();
 
         // Apply metadata. Filters have already been applied

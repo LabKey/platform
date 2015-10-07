@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -39,6 +40,7 @@ import org.labkey.api.query.UserSchema;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
 * User: kevink
@@ -46,9 +48,35 @@ import java.util.Map;
 */
 public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
 {
+    final Set<FieldKey> includedColumns;
+    final Set<FieldKey> excludedColumns;
+
     public LinkedTableInfo(@NotNull LinkedSchema schema, @NotNull TableInfo table)
     {
+        this(schema, table, null, null);
+    }
+
+    public LinkedTableInfo(@NotNull LinkedSchema schema, @NotNull TableInfo table,
+                           @Nullable Set<FieldKey> includedColumns,
+                           @Nullable Set<FieldKey> excludedColumns)
+    {
         super(schema, table);
+        this.includedColumns = includedColumns;
+        this.excludedColumns = excludedColumns;
+    }
+
+    @Override
+    protected boolean acceptColumn(ColumnInfo col)
+    {
+        if (null != includedColumns)
+        {
+            return includedColumns.contains(col.getFieldKey());
+        }
+        if (null != excludedColumns)
+        {
+            return !excludedColumns.contains(col.getFieldKey());
+        }
+        return true;
     }
 
     @Override @NotNull
