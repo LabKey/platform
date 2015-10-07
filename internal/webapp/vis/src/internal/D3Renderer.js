@@ -12,12 +12,11 @@ LABKEY.vis.internal.Axis = function() {
     // This emulates a lot of the d3.svg.axis() functionality, but adds in the ability for us to have tickHovers,
     // different colored tick & gridlines, etc.
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
-            tickRectCls, tickRectHeightOffset=6, tickRectWidthOffset=8, tickClick, axisSel, tickSel, textSel, gridLineSel,
-            borderSel, grid, scalesList = [];
-    var tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', gridLinesVisible = 'both',
-            borderColor = '#000000', tickDigits;
-    var tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1;
-    var fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10;
+        tickRectCls, tickRectHeightOffset = 6, tickRectWidthOffset = 8, tickClick, axisSel, tickSel, textSel, gridLineSel,
+        borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits,
+        tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
+        tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1,
+        fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10;
 
     var axis = function(selection) {
         var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i,
@@ -30,7 +29,7 @@ LABKEY.vis.internal.Axis = function() {
         }
 
         // issue 22297: axis values can end up with rounding issues (i.e. 1.4000000000000001)
-        for (i = 0; i < data.length; i++) {
+        for (var i = 0; i < data.length; i++) {
             if (typeof data[i] == "number") {
                 data[i] = parseFloat(data[i].toFixed(10));
             }
@@ -41,7 +40,7 @@ LABKEY.vis.internal.Axis = function() {
         if (tickDigits)
         {
             var convert = false;
-            for (i=0; i<gridLineData.length; i++)
+            for (var i = 0; i < gridLineData.length; i++)
             {
                 if (gridLineData[i].toString().replace('.','').length >= tickDigits)
                 {
@@ -136,10 +135,10 @@ LABKEY.vis.internal.Axis = function() {
         }
 
         if (gridLineWidth > 0 ) {
-            if((orientation === 'left' || orientation === 'right') && (gridLinesVisible === 'both' || gridLinesVisible === 'x')
-                || (orientation === 'top' || orientation === 'bottom') && (gridLinesVisible === 'both' || gridLinesVisible === 'y'))
+            if (gridLinesVisible === 'both'
+                    || (gridLinesVisible === 'x' && (orientation === 'left' || orientation === 'right'))
+                    || (gridLinesVisible === 'y' && (orientation === 'top' || orientation === 'bottom')))
             {
-
                 gridLineEls = gridLineSel.selectAll('path').data(gridLineData);
                 gridLineEls.exit().remove();
                 gridLineEls.enter().append('path');
@@ -373,7 +372,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         brush = null, brushSel = null, brushSelectionType = null,
         xHandleBrush = null, xHandleSel = null, yHandleBrush = null, yHandleSel = null,
         defaultBrushFillColor = '#EBF7F8', defaultBrushFillOpacity = .75, defaultBrushStrokeColor = '#14C9CC',
-        defaultAxisFontSize=14, defaultMainFontSize=18;
+        defaultAxisFontSize = 14, defaultMainFontSize = 18;
 
     var initLabelElements = function() {
         labelElements = {}; labelBkgds = {};
@@ -965,8 +964,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             } else if(plot.brushing.dimension == 'x' || plot.brushing.dimension == 'xTop') {
                 // Manually set height of brush.
                 brushSel.selectAll('rect')
-                        .attr('y', plot.grid.topEdge)
-                        .attr('height', plot.grid.bottomEdge - plot.grid.topEdge);
+                    .attr('y', plot.grid.topEdge)
+                    .attr('height', plot.grid.bottomEdge - plot.grid.topEdge);
             }
 
             brushSel.selectAll('.extent')
