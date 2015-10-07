@@ -207,7 +207,7 @@ LABKEY.Utils = new function()
         },
 
         displayAjaxErrorResponse: function() {
-            console.warn('displayAjaxErrorRepsonse: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implementation');
+            console.warn('displayAjaxErrorResponse: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implementation');
         },
 
         /**
