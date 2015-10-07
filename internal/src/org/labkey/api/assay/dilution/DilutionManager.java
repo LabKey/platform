@@ -219,21 +219,6 @@ public class DilutionManager
         return new SimpleFilter(new SimpleFilter.SQLClause(str, params));
     }
 
-    protected SimpleFilter makeDilutionDataFilter(SimpleFilter wellDataFilter)
-    {
-        TableInfo table = getSchema().getTable(WELL_DATA_TABLE_NAME);
-        String str = "RowId IN (SELECT DISTINCT DilutionDataId FROM " + table.getSelectName() + " " +
-                wellDataFilter.getWhereSQL(table) + ")";
-
-        List<Object> paramVals = wellDataFilter.getWhereParams(table);
-        Object[] params = new Object[paramVals.size()];
-        for (int i = 0; i < paramVals.size(); i += 1)
-            params[i] = paramVals.get(i);
-
-        return new SimpleFilter(new SimpleFilter.SQLClause(str, params));
-
-    }
-
     public static Set<Double> getCutoffValues(final ExpProtocol protocol)
     {
         SQLFragment sql = new SQLFragment("SELECT DISTINCT Cutoff FROM ");
@@ -268,7 +253,7 @@ public class DilutionManager
             {
                 SimpleFilter wellDataFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromString("RunId"), runIds));
                 Table.delete(getSchema().getTable(WELL_DATA_TABLE_NAME), wellDataFilter);
-                Table.delete(getSchema().getTable(DILUTION_DATA_TABLE_NAME), makeDilutionDataFilter(wellDataFilter));
+                Table.delete(getSchema().getTable(DILUTION_DATA_TABLE_NAME), wellDataFilter);
             }
 
             SimpleFilter dataIdFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromString("DataId"), dataIDs));
