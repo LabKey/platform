@@ -410,6 +410,7 @@ Ext.define('LABKEY.app.controller.State', {
         return this._is(this.selections, id);
     },
 
+    // TODO: Remove once cds/fb_refinement is merged
     updateFilterMembersComplete : function(skipState) {
         this.updateMDXFilter(skipState, false, true);
         // since it is silent we need to update the count separately
@@ -540,6 +541,44 @@ Ext.define('LABKEY.app.controller.State', {
         }
 
         return filters;
+    },
+
+    /**
+     * Allows for filters in the current filter set to be modified. The allows for modifying to be a "first-class"
+     * action to take on state filters in addition to add, remove.
+     * @param {Filter|Array} filter
+     * @param {Object} modifications
+     * @param {boolean} [skipState=false]
+     */
+    modifyFilter : function(filter, modifications, skipState) {
+
+        var modificationSet,
+            filterMap = Ext.Array.toMap(this.filters, 'id');
+
+        if (!Ext.isArray(filter)) {
+            modificationSet = [{
+                filter: filter,
+                modifications: modifications
+            }];
+        }
+        else {
+            modificationSet = filter;
+        }
+
+        // first, check that all filters are currently being tracked
+        Ext.each(modificationSet, function(filterMod) {
+            if (!filterMap[filterMod.filter.id]) {
+                throw 'State: Can only modify filters which are currently being tracked. Invalid filter.';
+            }
+        });
+
+        // modify the filters
+        Ext.each(modificationSet, function(filterMod) {
+            this.filters[filterMap[filterMod.filter.id] - 1 /* Ext.Array.toMap is 1-based */].set(filterMod.modifications);
+        }, this);
+
+        // update the MDX filter
+        this.updateMDXFilter(skipState);
     },
 
     loadFilters : function(stateIndex) {
