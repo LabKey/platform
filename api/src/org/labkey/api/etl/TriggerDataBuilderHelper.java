@@ -221,7 +221,7 @@ public class TriggerDataBuilderHelper
             }
             finally
             {
-                if (!hasNext && firedInit)
+                if (!hasNext && firedInit && !getErrors().hasErrors())
                     _target.fireBatchTrigger(_c, TableInfo.TriggerType.INSERT, false, getErrors(), _extraContext);
             }
         }
