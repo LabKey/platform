@@ -44,6 +44,7 @@ public class BatchListQueryView extends QueryView
         setShowBorders(true);
         setShowDetailsColumn(false);
         setShowExportButtons(false);
+        setShowDeleteButton(false); // issue 24216
     }
 
     @Override
