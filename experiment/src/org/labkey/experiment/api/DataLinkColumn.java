@@ -133,5 +133,5 @@ abstract class DataLinkColumn extends DataColumn
     public Object getJsonValue(RenderContext ctx)
     {
         ExpData data = getData(ctx);
-        return getURL(data);
+        return data == null ? null : getURL(data);
     }}
