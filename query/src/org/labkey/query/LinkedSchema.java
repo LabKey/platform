@@ -255,7 +255,7 @@ public class LinkedSchema extends ExternalSchema
         }
 
         Set<FieldKey> includedFields = null;
-        if (null != metaData.getIncludeColumnsList())
+        if (null != metaData && null != metaData.getIncludeColumnsList())
         {
             String cols = StringUtils.trim(metaData.getIncludeColumnsList());
             if (!StringUtils.equals("*",cols))

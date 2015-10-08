@@ -80,8 +80,12 @@ public class LocationQueryView extends QueryView
             bar.add(deleteAllUnused);
         }
 
-        bar.add(createExportButton(false));
-        bar.add(createPrintButton());
+        ActionButton b = createExportButton(false);
+        if (null != b)
+            bar.add(b);
+        b = createPrintButton();
+        if (null != b)
+            bar.add(createPrintButton());
         bar.add(createPageSizeMenuButton());
     }
 
