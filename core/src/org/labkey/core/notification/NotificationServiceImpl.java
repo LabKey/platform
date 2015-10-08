@@ -17,6 +17,11 @@ package org.labkey.core.notification;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.CompareType;
@@ -32,8 +37,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.TestContext;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -154,5 +162,135 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     public void containerDeleted(Container c, User user)
     {
         ContainerUtil.purgeTable(getTable(), c, "Container");
+    }
+
+    //
+    //JUnit TestCase
+    //
+    @TestWhen(TestWhen.When.DRT)
+    public static class TestCase extends Assert
+    {
+        private static final String _testDirName = "/_jUnitNotifications";
+        private static final NotificationService.Service _service = NotificationService.get();
+        private static User _user;
+        private static Container _container;
+        private static Notification _notif1;
+        private static Notification _notif2;
+
+        @BeforeClass
+        public static void setup()
+        {
+            _user = TestContext.get().getUser();
+            assertNotNull("Should have access to a user", _user);
+
+            deleteTestContainer();
+            _container = ContainerManager.ensureContainer(_testDirName);
+
+            _notif1 = new Notification("objectId1", "type1", _user);
+            _notif1.setActionLinkText("actionLinkText1");
+            _notif1.setActionLinkURL("actionLinkURL1");
+            _notif1.setDescription("description1");
+
+            _notif2 = new Notification("objectId2", "type2", _user);
+            _notif2.setActionLinkText("actionLinkText2");
+            _notif2.setActionLinkURL("actionLinkURL2");
+            _notif2.setDescription("description2");
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            deleteTestContainer();
+        }
+
+        @Before
+        public void ensureNotifications() throws ValidationException
+        {
+            // if either of the two notifications aren't present in the DB, create them now
+            if (_service.getNotification(_container, _notif1) == null)
+                addNotification(_container, _user, _notif1, null);
+            if (_service.getNotification(_container, _notif2) == null)
+                addNotification(_container, _user, _notif2, null);
+        }
+
+        @Test
+        public void verifyInsert() throws ValidationException
+        {
+            // verify can't insert notification without required fields
+            addNotification(_container, _user, new Notification(), "Notification missing one of the required fields");
+
+            // verify can't insert the same notification twice
+            addNotification(_container, _user, _notif1, "Notification already exists");
+
+            // verify notification using the getNotification APIs
+            verifyNotificationDetails(_notif1, _service.getNotification(_container, _notif1));
+            verifyNotificationDetails(_notif2, _service.getNotification(_container, "objectId2", "type2", _user.getUserId()));
+
+            // verify notification query by type
+            assertEquals("Unexpected number of notifications for type 'type1'", 1, _service.getNotificationsByType(_container, "type1", _user.getUserId(), false).size());
+            assertEquals("Unexpected number of notifications for type 'type2'", 1, _service.getNotificationsByType(_container, "type2", _user.getUserId(), false).size());
+            assertEquals("Unexpected number of notifications for type 'type3'", 0, _service.getNotificationsByType(_container, "type3", _user.getUserId(), false).size());
+        }
+
+        @Test
+        public void verifyMarkAsRead() throws Exception
+        {
+            // no records updated when we give it a mis-matching objectId
+            int count = _service.markAsRead(_container, _user, "objectId0", Collections.singletonList("type1"), _user.getUserId());
+            assertEquals("Unexpected number of notifications updated", 0, count);
+
+            // mark one record as read and verify that it isn't deleted or changed in any other way
+            count = _service.markAsRead(_container, _user, "objectId1", Collections.singletonList("type1"), _user.getUserId());
+            assertEquals("Unexpected number of notifications updated", 1, count);
+            assertEquals("Unexpected number of unread notifications", 0, _service.getNotificationsByType(_container, "type1", _user.getUserId(), true).size());
+            verifyNotificationDetails(_notif1, _service.getNotification(_container, _notif1));
+        }
+
+        @Test
+        public void verifyRemove() throws Exception
+        {
+            // no records removed when we give it a mis-matching objectId
+            int count = _service.removeNotifications(_container, "objectId0", Collections.singletonList("type2"), _user.getUserId());
+            assertEquals("Unexpected number of notifications removed", 0, count);
+
+            // remove a record and verify it has been deleted using the type query
+            count = _service.removeNotifications(_container, "objectId2", Collections.singletonList("type2"), _user.getUserId());
+            assertEquals("Unexpected number of notifications removed", 1, count);
+            assertEquals("Unexpected number of notifications for type 'type2'", 0, _service.getNotificationsByType(_container, "type2", _user.getUserId(), false).size());
+        }
+
+        private Notification addNotification(Container container, User user, Notification notification, String expectedErrorPrefix) throws ValidationException
+        {
+            try
+            {
+                return _service.addNotification(container, user, notification);
+            }
+            catch(ValidationException e)
+            {
+                if (expectedErrorPrefix != null)
+                    assertTrue(e.getMessage().startsWith(expectedErrorPrefix));
+                else
+                    throw e;
+
+                return null;
+            }
+        }
+
+        private void verifyNotificationDetails(Notification before, Notification after)
+        {
+            assertEquals("Unexpected notification container value", before.getContainer(), after.getContainer());
+            assertEquals("Unexpected notification userId value", before.getUserId(), after.getUserId());
+            assertEquals("Unexpected notification objectId value", before.getObjectId(), after.getObjectId());
+            assertEquals("Unexpected notification type value", before.getType(), after.getType());
+            assertEquals("Unexpected notification description value", before.getDescription(), after.getDescription());
+            assertEquals("Unexpected notification actionLinkText value", before.getActionLinkText(), after.getActionLinkText());
+            assertEquals("Unexpected notification actionLinkURL value", before.getActionLinkURL(), after.getActionLinkURL());
+        }
+
+        private static void deleteTestContainer()
+        {
+            if (null != ContainerManager.getForPath(_testDirName))
+                ContainerManager.deleteAll(ContainerManager.getForPath(_testDirName), _user);
+        }
     }
 }

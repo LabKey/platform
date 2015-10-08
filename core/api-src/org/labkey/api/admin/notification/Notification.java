@@ -15,6 +15,7 @@
  */
 package org.labkey.api.admin.notification;
 
+import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 
 import java.util.Date;
@@ -34,6 +35,16 @@ public class Notification
     private Date _readOn;
     private String _actionLinkText;
     private String _actionLinkURL;
+
+    public Notification()
+    {}
+
+    public Notification(String objectId, String type, User user)
+    {
+        _objectId = objectId;
+        _type = type;
+        _userId = user.getUserId();
+    }
 
     public int getRowId()
     {
