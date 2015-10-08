@@ -1271,14 +1271,13 @@ public abstract class SqlDialect
         }
     }
 
-    // Check for and contribute a database configuration warning (e.g., missing aggregate function or deprecated
-    // database server version) to display in the page header for administrators. This will be called:
+    // Add any database configuration warnings (e.g., missing aggregate function or deprecated database server version)
+    // to display in the page header for administrators. This will be called:
     // - Only on the LabKey DataSource's dialect instance (not external data sources)
     // - After the core module has been upgraded and the dialect has been prepared for the last time, meaning the dialect
     //   should reflect the final database configuration
-    public @Nullable String getAdminWarningMessage()
+    public void addAdminWarningMessages(Collection<String> messages)
     {
-        return null;
     }
 
     public abstract List<String> getChangeStatements(TableChange change);
