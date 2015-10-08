@@ -142,28 +142,11 @@ public class Table
 
         for (Object value : parameters)
         {
-            // UNDONE: this code belongs in Parameter._bind()
             //Parameter validation
             //Bug 1996 - rossb:  Generally, we let JDBC validate the
             //parameters and throw exceptions, however, it doesn't recognize NaN
-            //properly which can lead to database corruption.  Trap that here
-            {
-                //if the input parameter is NaN, throw a sql exception
-                boolean isInvalid = false;
-                if (value instanceof Float)
-                {
-                    isInvalid = value.equals(Float.NaN);
-                }
-                else if (value instanceof Double)
-                {
-                    isInvalid = value.equals(Double.NaN);
-                }
-
-                if (isInvalid)
-                {
-                    throw new SQLException("Illegal argument (" + Integer.toString(i) + ") to SQL Statement:  " + value.toString() + " is not a valid parameter");
-                }
-            }
+            //properly which can lead to database corruption.
+            // [This is now handled by making a special value (in ResultSetUtil) to hand to the DB]
 
             Parameter p = new Parameter(stmt, i);
             p.setValue(value);

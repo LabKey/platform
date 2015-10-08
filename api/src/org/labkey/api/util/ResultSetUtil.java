@@ -413,6 +413,7 @@ public class ResultSetUtil
 
     public static final double POSITIVE_INFINITY_DB_VALUE = 1e300;
     public static final double NEGATIVE_INFINITY_DB_VALUE = -POSITIVE_INFINITY_DB_VALUE;
+    public static final double NAN_DB_VALUE = -1e306;
 
     public static double mapJavaDoubleToDatabaseDouble(double javaDouble)
     {
@@ -420,6 +421,8 @@ public class ResultSetUtil
             return NEGATIVE_INFINITY_DB_VALUE;
         else if (Double.POSITIVE_INFINITY == javaDouble)
             return POSITIVE_INFINITY_DB_VALUE;
+        else if (Double.NaN == javaDouble)
+            return NAN_DB_VALUE;
         else
             return javaDouble;
     }
@@ -430,6 +433,8 @@ public class ResultSetUtil
             return Double.NEGATIVE_INFINITY;
         else if (POSITIVE_INFINITY_DB_VALUE == databaseValue)
             return Double.POSITIVE_INFINITY;
+        else if (NAN_DB_VALUE == databaseValue)
+            return Double.NaN;
         else
             return databaseValue;
     }

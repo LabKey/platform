@@ -16,7 +16,7 @@
 package org.labkey.api.data.validator;
 
 /**
- * Validate double or float is not NaN.
+ * Validate float is not NaN.
  */
 public class NumberValidator extends AbstractColumnValidator
 {

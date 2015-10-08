@@ -135,7 +135,7 @@ public class ColumnValidators
     @Nullable
     public static NumberValidator createNumberValidator(@Nullable ColumnInfo col)
     {
-        if (col == null || !col.getJdbcType().isReal())
+        if (col == null || !col.getJdbcType().equals(JdbcType.REAL))        // Only check REAL (not DOUBLE)
             return null;
 
         return new NumberValidator(col.getName());
