@@ -813,7 +813,9 @@ public class QueryView extends WebPartView<Object>
 
         if (_showExportButtons)
         {
-            bar.add(createPrintButton());
+            ActionButton b = createPrintButton();
+            if (null != b)
+                bar.add(b);
         }
     }
 
@@ -863,9 +865,12 @@ public class QueryView extends WebPartView<Object>
 
         if (_showExportButtons)
         {
-            bar.add(createExportButton(exportAsWebPage));
-
-            bar.add(createPrintButton());
+            ActionButton b = createExportButton(exportAsWebPage);
+            if (null != b)
+                bar.add(b);
+            b = createPrintButton();
+            if (null != b)
+                bar.add(b);
         }
 
         if (view.getDataRegion().getShowPagination())
@@ -974,6 +979,8 @@ public class QueryView extends WebPartView<Object>
     protected ActionButton createPrintButton()
     {
         ActionButton btnPrint = actionButton("Print", QueryAction.printRows);
+        if (null == btnPrint)
+            return null;
         btnPrint.setTarget("_blank");
         return btnPrint;
     }
@@ -1118,8 +1125,11 @@ public class QueryView extends WebPartView<Object>
             for (ExportScriptFactory factory : _exportScriptFactories.values())
             {
                 ActionURL url = urlFor(QueryAction.exportScript);
-                url.addParameter("scriptType", factory.getScriptType());
-                options.put(factory.getMenuText(), url);
+                if (null != url)
+                {
+                    url.addParameter("scriptType", factory.getScriptType());
+                    options.put(factory.getMenuText(), url);
+                }
             }
 
             button.addSubPanel("Script", new JspView<>("/org/labkey/api/query/scriptExportOptions.jsp", options));
