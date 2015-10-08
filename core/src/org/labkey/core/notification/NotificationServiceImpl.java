@@ -167,7 +167,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     //
     //JUnit TestCase
     //
-    @TestWhen(TestWhen.When.DRT)
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
         private static final String _testDirName = "/_jUnitNotifications";
