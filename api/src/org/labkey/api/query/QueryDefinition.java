@@ -81,6 +81,7 @@ public interface QueryDefinition
      */
     Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden, boolean sharedOnly);
 
+    CustomView createCustomView();
     CustomView createCustomView(@NotNull User owner, String name);
     CustomView createSharedCustomView(String name);
 

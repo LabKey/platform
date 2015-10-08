@@ -1482,7 +1482,7 @@ public class QueryView extends WebPartView<Object>
         if (!hasDefault)
         {
             // don't pass getUser() as owner, we want the default view to appear as "public"
-            CustomView defaultView = getQueryDef().createCustomView(null, null);
+            CustomView defaultView = getQueryDef().createCustomView();
             views.add(0, defaultView);
         }
 
