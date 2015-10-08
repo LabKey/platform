@@ -29,7 +29,7 @@ LABKEY.vis.internal.Axis = function() {
         }
 
         // issue 22297: axis values can end up with rounding issues (i.e. 1.4000000000000001)
-        for (var i = 0; i < data.length; i++) {
+        for (i = 0; i < data.length; i++) {
             if (typeof data[i] == "number") {
                 data[i] = parseFloat(data[i].toFixed(10));
             }
@@ -40,7 +40,7 @@ LABKEY.vis.internal.Axis = function() {
         if (tickDigits)
         {
             var convert = false;
-            for (var i = 0; i < gridLineData.length; i++)
+            for (i=0; i<gridLineData.length; i++)
             {
                 if (gridLineData[i].toString().replace('.','').length >= tickDigits)
                 {
@@ -372,7 +372,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         brush = null, brushSel = null, brushSelectionType = null,
         xHandleBrush = null, xHandleSel = null, yHandleBrush = null, yHandleSel = null,
         defaultBrushFillColor = '#EBF7F8', defaultBrushFillOpacity = .75, defaultBrushStrokeColor = '#14C9CC',
-        defaultAxisFontSize = 14, defaultMainFontSize = 18;
+        defaultAxisFontSize = 14, defaultMainFontSize = 18, defaultHandleLen = 30;
 
     var initLabelElements = function() {
         labelElements = {}; labelBkgds = {};
@@ -647,7 +647,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var addXBrush = function(brush, brushSel) {
         var xBrushStart, xBrush, xBrushEnd,
             brushStrokeColor = plot.brushing.strokeColor || defaultBrushStrokeColor,
-            height = 70;
+            height = plot.brushing.handleLen || defaultHandleLen;
 
         if (!xHandleSel) {
             xHandleSel = this.canvas.insert('g', '.brush').attr('class', 'x-axis-handle');
@@ -722,7 +722,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var addYBrush = function(brush, brushSel) {
-        var yBrushStart, yBrush, yBrushEnd, width = 60,
+        var yBrushStart, yBrush, yBrushEnd, width = plot.brushing.handleLen || defaultHandleLen,
             brushStrokeColor = plot.brushing.strokeColor || defaultBrushStrokeColor;
 
         if (!yHandleSel) {
