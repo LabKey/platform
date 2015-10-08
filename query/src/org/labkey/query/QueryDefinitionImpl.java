@@ -194,6 +194,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return getCustomViews(null, null, true, true).get(name);
     }
 
+
+    public CustomView createCustomView()
+    {
+        return new CustomViewImpl(this, null, null);
+    }
+
     public CustomView createCustomView(@NotNull User owner, String name)
     {
         return new CustomViewImpl(this, owner, name);

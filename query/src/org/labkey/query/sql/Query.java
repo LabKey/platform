@@ -537,9 +537,9 @@ public class Query
     {
         try
         {
+            assertParsed();
             if (_parseErrors.size() > 0)
                 return null;
-            assertParsed();
 
             QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, getSchema().getContainer());
 
