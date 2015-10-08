@@ -497,13 +497,14 @@ public class QuerySettings
         String queryName = getQueryName();
         if (queryName == null)
             return null;
-        QueryDefinition ret = QueryService.get().getQueryDef(schema.getUser(), schema.getContainer(), schema.getSchemaName(), queryName);
+
+        QueryDefinition ret = schema.getQueryDefs().get(queryName);
+        if (ret == null)
+            ret = schema.getQueryDefForTable(queryName);
+
         if (ret != null && getContainerFilterName() != null)
             ret.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
-        if (ret == null)
-        {
-            ret = schema.getQueryDefForTable(queryName);
-        }
+
         return ret;
     }
 
