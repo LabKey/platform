@@ -64,32 +64,30 @@ Ext.define('LABKEY.app.model.Filter', {
                 }
             }
 
-            if (Ext.isArray(arr)) {
-                Ext.each(arr, function (measure) {
-                    if (Ext.isDefined(measure) && measure && Ext.isDefined(measure.filterArray)) {
-                        if (Ext.isArray(measure.filterArray)) {
-                            var filters = [];
-                            Ext.each(measure.filterArray, function (filter) {
-                                if (Ext.isString(filter)) {
-                                    if (filter === "_null") {
-                                        filters.push(null);
-                                    }
-                                    else {
-                                        var build = LABKEY.Filter.getFiltersFromUrl(filter, 'query');
-                                        if (Ext.isArray(build)) {
-                                            filters.push(build[0]); // assume single filters
-                                        }
-                                    }
+
+            Ext.each(arr, function (measure) {
+                if (measure && !Ext.isEmpty(measure.filterArray)) {
+                    var filters = [];
+                    Ext.each(measure.filterArray, function (filter) {
+                        if (Ext.isString(filter)) {
+                            if (filter === "_null") {
+                                filters.push(null);
+                            }
+                            else {
+                                var build = LABKEY.Filter.getFiltersFromUrl(filter, 'query');
+                                if (Ext.isArray(build)) {
+                                    filters.push(build[0]); // assume single filters
                                 }
-                                else if (Ext.isDefined(filter)) {
-                                    filters.push(filter);
-                                }
-                            });
-                            measure.filterArray = filters;
+                            }
                         }
-                    }
-                });
-            }
+                        else if (Ext.isDefined(filter)) {
+                            filters.push(filter);
+                        }
+                    });
+                     measure.filterArray = filters;
+                }
+            });
+
 
             return arr;
         }},
