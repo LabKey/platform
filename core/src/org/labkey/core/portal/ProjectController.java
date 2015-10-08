@@ -454,8 +454,11 @@ public class ProjectController extends SpringActionController
             FolderType ft = getContainer().getFolderType();
             String iconPath = ft.getFolderIconPath();
             WebdavResource dir = WebdavService.get().getRootResolver().lookup(Path.parse(iconPath));
-            File iconFile = dir.getFile();
-
+            File iconFile = null;
+            if (null != dir)
+            {
+                iconFile = dir.getFile();
+            }
             if (!NetworkDrive.exists(iconFile))
             {
                 iconFile = new File(ModuleLoader.getServletContext().getRealPath(FolderType.NONE.getFolderIconPath()));  //fall back to default
