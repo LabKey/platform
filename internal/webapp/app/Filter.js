@@ -3,7 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-// This file is used outside of the application environment, so ExtJS 4.X must be referenced as Ext4.
 Ext.define('LABKEY.app.model.Filter', {
     extend: 'Ext.data.Model',
 
@@ -102,6 +101,9 @@ Ext.define('LABKEY.app.model.Filter', {
 
     statics : {
 
+        // This flag is used while cds/fb_refinement is under development
+        USE_MODEL: false,
+
         getErrorCallback : function () {
             return function(response)
             {
@@ -123,17 +125,14 @@ Ext.define('LABKEY.app.model.Filter', {
         },
 
         /**
-         * Save a participant group/filter either to a study-backed module (dataspace) or
-         * for Argos.
+         * Save a participant group/filter.
          *
-         * @param config, an object which takes the following configuation properties.
+         * @param config, an object which takes the following configuration properties.
          * @param {Object} [config.mdx] mdx object against which participants are queried
-         * @param  {Boolean} [config.isArgos] - Optional.  If true, then save as part of the argos schema,
-         *         otherwise use study participant groups.
-         * @param {Function} [config.failure] Optional.  Function called when the save action fails.  If not specified
+         * @param {Function} [config.failure] Optional. Function called when the save action fails. If not specified
          *        then a default function will be provided
          * @param {Function} [config.success] Function called when the save action is successful
-         * @param {Object} [config.group] group definition.  The group object should have the following fields
+         * @param {Object} [config.group] group definition. The group object should have the following fields
          *         label - name of the group
          *         participantIds - array of participant Ids
          *         description - optional description for the group
@@ -148,209 +147,32 @@ Ext.define('LABKEY.app.model.Filter', {
                 throw "You must specify mdx, group, and success members in the config";
 
             var group = config.group;
-            var mdx = config.mdx;
-            var m = LABKEY.app.model.Filter;
-
-            var controller = config.isArgos ? 'argos' : 'participant-group';
-            var action = config.isArgos ? 'createPatientGroup' : 'createParticipantCategory';
-            var jsonData =  {
-                label : group.label,
-                participantIds : [],
-                description : group.description,
-                ownerId : LABKEY.user.id,
-                type : 'list',
-                visibility : group.visibility,
-                filters : m.toJSON(group.filters, group.isLive)
-            };
-            if (config.isArgos && group.share !== undefined) {
-
-                jsonData['sharePrincipalIds'] = group.share.principals;
-                jsonData['shareSendEmail'] = group.share.sendEmail;
-            }
 
             // setup config for save call
             var requestConfig = {
-                url: LABKEY.ActionURL.buildURL(controller, action),
+                url: LABKEY.ActionURL.buildURL('participant-group', 'createParticipantCategory'),
                 method: 'POST',
                 success: config.success,
-                failure: config.failure || m.getErrorCallback(),
-                jsonData: jsonData,
-                headers: {"Content-Type": 'application/json', "X-LABKEY-CSRF":LABKEY.CSRF}
+                failure: config.failure || LABKEY.app.model.Filter.getErrorCallback(),
+                jsonData: {
+                    label: config.group.label,
+                    participantIds: [],
+                    description: config.group.description,
+                    ownerId: LABKEY.user.id,
+                    type: 'list',
+                    visibility: config.group.visibility,
+                    filters: LABKEY.app.model.Filter.toJSON(config.group.filters, config.group.isLive)
+                },
+                headers: {"Content-Type": 'application/json'}
             };
 
-            if (config.isArgos && group.isLive) {
-                //
-                // for Argos we don't bother sending participant IDs if the group is live (save as query)
-                //
-                Ext.Ajax.request(requestConfig);
-            }
-            else {
-                //
-                // for study-backed modules we always save participant IDs so fetch them first
-                //
-                mdx.queryParticipantList({
-                    useNamedFilters : ['statefilter'],
-                    success : function(cs) {
-                        // add the fetched participant ids to our json data
-                        requestConfig.jsonData.participantIds = Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions),'name');
-                        Ext.Ajax.request(requestConfig);
-                    }
-                });
-            }
-        },
-
-        /**
-         * Updates a participant group for non-study backed modules
-         *
-         * @param config, an object which takes the following configuration properties.
-         * @param {Object} [config.mdx] mdx object against which participants are queried
-         * @param {String} [config.subjectName] subject name for the cube
-         * @param {Function} [config.failure] Optional.  Function called when the save action fails.  If not specified
-         *        then a default function will be provided
-         * @param {Function} [config.success] Function called when the save action is successful
-         * @param {Object} [config.group] group definition.  The group object should have the following fields
-         *         rowId - the id of the category.  Assumes a 1:1 mapping between the group and category
-         *         label - name of the group
-         *         participantIds - array of participant Ids
-         *         description - optional description for the group
-         *         filters - array of LABKEY.app.model.Filter instances to apply
-         *         isLive - boolean, true if this is a query or false if just a group of participant ids.
-         */
-        doGroupUpdate : function(config) {
-            if (!config)
-                throw "You must specify a config object";
-
-            if (!config.mdx || !config.group || !config.success)
-                throw "You must specify mdx, group, and success members in the config";
-
-            var group = config.group;
-            var mdx = config.mdx;
-            var subjectName = config.subjectName;
-            var m = LABKEY.app.model.Filter;
-
-            // setup config for save call
-            var requestConfig = {
-                url: LABKEY.ActionURL.buildURL('argos', 'updatePatientGroup'),
-                method: 'POST',
-                success: config.success,
-                failure: config.failure || m.getErrorCallback(),
-                jsonData: {
-                    rowId : group.rowId,
-                    label : group.label,
-                    participantIds : [],
-                    description : group.description,
-                    visibility : group.visibility,
-                    ownerId : LABKEY.user.id,
-                    type : 'list',
-                    filters : m.toJSON(group.filters, group.isLive)
-                },
-                headers: {'Content-Type': 'application/json'}
-            };
-
-            if (group.isLive) {
-                // don't bother sending participant ids for live filters
-                Ext.Ajax.request(requestConfig);
-            }
-            else {
-                mdx.queryParticipantList({
-                    filter : m.getOlapFilters(group.filters, subjectName),
-                    success : function(cs) {
-                        // add the fetched participant ids to our json data
-                        requestConfig.jsonData.participantIds = Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions),'name');
-                        Ext.Ajax.request(requestConfig);
-                    }
-                });
-            }
-        },
-
-        /**
-         * Updates a participant group's visibility option for non-study backed modules
-         *
-         * @param config, an object which takes the following configuration properties.
-         * @param {Function} [config.success] Function called when the update action is successful
-         * @param {Function} [config.failure] Function called when the update action fails.  If not specified
-         *        then a default function will be provided
-         * @param {Object} [config.group] group definition.  The group object should have the following fields
-         *         rowId - the id of the category.  Assumes a 1:1 mapping between the group and category
-         *         visibility - the enum value of the visibility option, must be one of: {hidden, grid, dashboard)
-         */
-        updateGroupVisibility : function(config) {
-            if (!config)
-                throw "You must specify a config object";
-
-            if (!config.group || !config.success)
-                throw "You must specify group, and success members in the config";
-
-            var group = config.group;
-            var m = LABKEY.app.model.Filter;
-
-            Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('argos', 'updatePatientGroupVisibility'),
-                method: 'POST',
-                success: config.success,
-                failure: config.failure || m.getErrorCallback(),
-                jsonData: {
-                    rowId : group.rowId,
-                    visibility : group.visibility
-                },
-                headers: {'Content-Type': 'application/json'}
-            });
-        },
-
-        /**
-         * Modifies the participants in a participant group for a study-backed module.
-         */
-        doParticipantUpdate : function(mdx, successFn, failureFn, grpData, subjectName) {
-            var m = LABKEY.app.model.Filter;
-            mdx.queryParticipantList({
-                filter : m.getOlapFilters(mdx, m.fromJSON(grpData.filters), subjectName),
-                group : grpData,
-                success : function (cs, mdx, config) {
-                    var group = config.group;
-                    var ids = Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions),'name');
-                    LABKEY.ParticipantGroup.updateParticipantGroup({
-                        rowId : group.rowId,
-                        participantIds : ids,
-                        success : function(group, response) {
-                            if (Ext.isFunction(successFn))
-                                successFn.call(this, group);
-                        },
-                        failure : function() {
-                            if (Ext.isFunction(failureFn)) {
-                                failureFn.apply(this, arguments);
-                            }
-                        }
-                    });
+            config.mdx.queryParticipantList({
+                useNamedFilters : [LABKEY.app.constant.STATE_FILTER],
+                success : function(cs) {
+                    // add the fetched participant ids to our json data
+                    requestConfig.jsonData.participantIds = Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions), 'name');
+                    Ext.Ajax.request(requestConfig);
                 }
-            });
-        },
-
-        /**
-         * Deletes participant categories
-         *
-         * @param config an object which takes the following configuration properties.
-         * @param {Array} [config.categoryIds] array of rowids for each category to delete
-         * @param {Function} [config.failure] Optional.  Function called when the save action fails.  If not specified
-         *        then a default function will be provided
-         * @param {Function} [config.success] Function called when the delete action is successful
-         */
-        deleteGroups : function(config) {
-            if (!config)
-                throw "You must specify a config object";
-
-            if (!config.categoryIds || !config.success)
-                throw "You must specify categoryIds and success members in the config";
-
-            var m = LABKEY.app.model.Filter;
-            Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('argos', 'deletePatientGroups'),
-                method: 'POST',
-                success: config.success,
-                failure: config.failure || m.getErrorCallback(),
-                jsonData: {
-                    categoryIds : config.categoryIds
-                },
-                headers: {'Content-Type': 'application/json'}
             });
         },
 
@@ -454,12 +276,13 @@ Ext.define('LABKEY.app.model.Filter', {
             return  M.dfProvider.fn.call(M.dfProvider.scope, filter, data);
         },
 
-        getOlapFilter : function(mdx, data, subjectName) {
+        getOlapFilter : function(mdx, model, subjectName) {
             if (!Ext.isDefined(mdx) || mdx.$className !== 'LABKEY.query.olap.MDX') {
                 console.error('must provide mdx to getOlapFilter');
             }
 
-            var M = LABKEY.app.model.Filter;
+            var M = LABKEY.app.model.Filter,
+                data = model.data;
 
             var filter = {
                 filterType: data.isWhereFilter === true ? 'WHERE' : 'COUNT'
@@ -469,7 +292,7 @@ Ext.define('LABKEY.app.model.Filter', {
 
                 if (Ext.isDefined(M.dfProvider)) {
                     // TODO: Figure out how this works with perspectives, maybe it doesn't care at all?
-                    filter = M._buildGetDataFilter(filter, data);
+                    filter = M._buildGetDataFilter(filter, M.USE_MODEL ? model : data);
                 }
                 else {
                     console.error('Failed to register a data filter provider. See', M + '.registerDataFilterProvider()');
@@ -540,6 +363,10 @@ Ext.define('LABKEY.app.model.Filter', {
         },
 
         getOlapFilters : function(mdx, datas, subjectName) {
+            if (LABKEY.app.model.Filter.USE_MODEL === true) {
+                throw 'LABKEY.app.model.Filter.getOlapFilters support for USE_MODEL is not yet implemented';
+            }
+
             if (!Ext.isFunction(mdx.getDimension)) {
                 console.error('must provide mdx to getOlapFilter');
             }
@@ -768,7 +595,7 @@ Ext.define('LABKEY.app.model.Filter', {
     },
 
     getOlapFilter : function(mdx, subjectName) {
-        return LABKEY.app.model.Filter.getOlapFilter(mdx, this.data, subjectName);
+        return LABKEY.app.model.Filter.getOlapFilter(mdx, this, subjectName);
     },
 
     getHierarchy : function() {
@@ -1058,7 +885,7 @@ Ext.define('LABKEY.app.model.Filter', {
                                 }
                             });
                             measure.filterArray = jsonFilters;
-                        };
+                        }
                     }
                 }
             });
