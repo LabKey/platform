@@ -911,9 +911,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         ExpSampleSetImpl ss = getSampleSet(c, name);
         if (ss == null && !c.isProject())
-            ss = getSampleSet(c, name);
+            ss = getSampleSet(c.getProject(), name);
         if (ss == null && !c.equals(ContainerManager.getSharedContainer()))
-            ss = getSampleSet(c, name);
+            ss = getSampleSet(ContainerManager.getSharedContainer(), name);
         return ss;
     }
 
