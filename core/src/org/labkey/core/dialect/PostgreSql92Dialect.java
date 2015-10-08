@@ -17,6 +17,7 @@ package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -27,9 +28,8 @@ import java.util.Set;
 public class PostgreSql92Dialect extends PostgreSql91Dialect
 {
     @Override
-    public String getAdminWarningMessage()
+    public void addAdminWarningMessages(Collection<String> messages)
     {
-        return null;
     }
 
     @NotNull

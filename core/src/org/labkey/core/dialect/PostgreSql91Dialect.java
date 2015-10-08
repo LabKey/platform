@@ -115,9 +115,9 @@ public class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public String getAdminWarningMessage()
+    public void addAdminWarningMessages(Collection<String> messages)
     {
-        return "LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + ". " + PostgreSqlDialectFactory.RECOMMENDED;
+        messages.add("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + ". " + PostgreSqlDialectFactory.RECOMMENDED);
     }
 
     @Override

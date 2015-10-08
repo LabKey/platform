@@ -92,6 +92,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     {
         Unknown(false),
         Express(false),
+        Standard(false),
         Developer(true),
         Enterprise(true);
 
@@ -256,7 +257,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public String getProductName()
     {
-        return "Microsoft SQL Server";
+        return MicrosoftSqlServerDialectFactory.PRODUCT_NAME;
     }
 
     @Override
@@ -1182,11 +1183,14 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         GroupConcatInstallationManager.ensureGroupConcat(context);
     }
 
-    @Nullable
     @Override
-    public String getAdminWarningMessage()
+    public void addAdminWarningMessages(Collection<String> messages)
     {
-        return _groupConcatInstalled ? null : "The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server. " + new HelpTopic("groupconcatinstall").getSimpleLinkHtml("View installation instructions.");
+        if (!_groupConcatInstalled)
+            messages.add("The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server. " + new HelpTopic("groupconcatinstall").getSimpleLinkHtml("View installation instructions."));
+
+        if ("2008R2".equals(getProductVersion()))
+            messages.add("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED);
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package org.labkey.bigiron.mssql;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -45,11 +46,14 @@ import java.util.Set;
 */
 public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 {
+    private static final Logger LOG = Logger.getLogger(MicrosoftSqlServerDialectFactory.class);
+    public static final String PRODUCT_NAME = "Microsoft SQL Server";
+
     private volatile TableResolver _tableResolver = new StandardTableResolver();
 
     private String getProductName()
     {
-        return "Microsoft SQL Server";
+        return PRODUCT_NAME;
     }
 
     @Override
@@ -65,7 +69,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         }
     }
 
-    private final String _recommended = getProductName() + " 2014 is the recommended version.";
+    static final String RECOMMENDED = PRODUCT_NAME + " 2014 is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
@@ -104,7 +108,12 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                 return new MicrosoftSqlServer2012Dialect(_tableResolver);
 
             if (version >= 105)
+            {
+                if (logWarnings)
+                    LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
+
                 return new MicrosoftSqlServer2008R2Dialect(_tableResolver);
+            }
         }
 
         throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
