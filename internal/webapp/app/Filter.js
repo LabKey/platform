@@ -726,7 +726,7 @@ Ext.define('LABKEY.app.model.Filter', {
                             }
                             else {
                                 // equivalent if they have the same URL prefix -- value can change
-                                if (pm.getURLParameterName().toLowerCase() !== fpm.getURLParameterName().toLowerCase()) {
+                                if (fpm && pm.getURLParameterName().toLowerCase() !== fpm.getURLParameterName().toLowerCase()) {
                                     _mergeMeasures = false;
                                     break;
                                 }
