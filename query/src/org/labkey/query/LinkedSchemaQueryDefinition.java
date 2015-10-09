@@ -25,6 +25,7 @@ import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -198,16 +199,16 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    public ActionURL urlFor(QueryAction action)
-    {
-        // Disallow all table URLs
-        return null;
-    }
-
-    @Override
     public ActionURL urlFor(QueryAction action, Container container)
     {
-        // Disallow all table URLs
+        // Allow execute and export URLs
+        if (action == QueryAction.executeQuery ||
+                action == QueryAction.exportRowsExcel ||
+                action == QueryAction.exportRowsXLSX ||
+                action == QueryAction.exportRowsTsv ||
+                action == QueryAction.printRows)
+            return QueryService.get().urlDefault(container, action, getSchemaName(), getName());
+
         return null;
     }
 

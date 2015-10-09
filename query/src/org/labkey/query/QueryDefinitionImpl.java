@@ -746,12 +746,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public ActionURL urlFor(QueryAction action, Container container, Map<String, Object> pks)
     {
         ActionURL url = urlFor(action, container);
+        if (url == null)
+            return null;
+
         for (Map.Entry<String, Object> pk : pks.entrySet())
         {
             if (pk.getValue() != null)
-            {
                 url.addParameter(pk.getKey(), pk.getValue().toString());
-            }
         }
         return url;
     }
@@ -760,7 +761,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         StringExpression expr = null;
         TableInfo table = null;
-        if (action == QueryAction.detailsQueryRow || action == QueryAction.updateQueryRow)
+        if (action == QueryAction.detailsQueryRow || action == QueryAction.updateQueryRow || action == QueryAction.updateQueryRows)
         {
             table = getTable(null, true);
             if (table != null)
@@ -772,9 +773,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                         break;
 
                     case updateQueryRow:
-                        expr = table.getUpdateURL(null, container);
-                        break;
-
                     case updateQueryRows:
                         expr = table.getUpdateURL(null, container);
                         break;
