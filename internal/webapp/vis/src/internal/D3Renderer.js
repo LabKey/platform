@@ -12,11 +12,11 @@ LABKEY.vis.internal.Axis = function() {
     // This emulates a lot of the d3.svg.axis() functionality, but adds in the ability for us to have tickHovers,
     // different colored tick & gridlines, etc.
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
-        tickRectCls, tickRectHeightOffset = 6, tickRectWidthOffset = 8, tickClick, axisSel, tickSel, textSel, gridLineSel,
+        tickRectCls, tickRectHeightOffset = 12, tickRectWidthOffset = 8, tickClick, axisSel, tickSel, textSel, gridLineSel,
         borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits,
         tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
         tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1,
-        fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10;
+        fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10, adjustedStarts, adjustedEnds;
 
     var axis = function(selection) {
         var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i,
@@ -183,15 +183,79 @@ LABKEY.vis.internal.Axis = function() {
 
         addEvents(textEls);
 
-        var addTickAreaRects = function (anchors)
+
+        //Issue 24497: Adjust axis categorical selection area. Change the x and width of hotspot so that selection capability is more discoverable.
+        // Each hotspot extends halfway to its neighbor.
+        //The first hotspot starts half way between xaxis start and the x of the 1st label. The last hotspot ends halfway between xaxis end and the end of the last label.
+        var adjustTickPosition = function() {
+            var starts = [];
+            var ends = [];
+            var axisStart=100, axisEnd=1000;
+
+            selection.selectAll('.grid-rect').each(function() {
+                if (this) {
+                    axisStart = this.getBBox().x;
+                    axisEnd = this.getBBox().width + axisStart;
+                }
+            });
+
+            textSel.selectAll(tickHover ? 'a' : 'g').each(function() {
+                if (this) {
+                    starts.push(this.getBBox().x);
+                    ends.push(this.getBBox().width + this.getBBox().x);
+                }
+            });
+
+            adjustedStarts = [];
+            adjustedEnds = [];
+            for (var i = 0; i < starts.length; i++) {
+                if (i < starts.length -1) {
+                    adjustedEnds.push(ends[i] + (starts[i + 1] - ends[i]) / 2);
+                }
+                else {
+                    adjustedEnds[i] = ends[i] + (axisEnd - ends[i])/2;
+                }
+                if (i > 0) {
+                    adjustedStarts.push(starts[i] - (starts[i] - ends[i - 1]) / 2);
+                }
+                else {
+                    adjustedStarts[i] = starts[i] - (starts[i] - axisStart)/2;
+                }
+            }
+
+        };
+
+        var addTickAreaRects = function (anchors, needAdjustment)
         {
             anchors.selectAll('rect.' + (tickRectCls?tickRectCls:"tick-rect")).remove();
 
+            //Issue 24497: Adjust axis categorical selection area. Since overlap labels are already crowded on xaxis, there is no need to expand horizontal selection area for them.
+            if (needAdjustment) {
+                adjustTickPosition();
+            }
+
+            var currentIndex = -1;
             anchors.insert("rect", "text")
                     .attr('class', (tickRectCls?tickRectCls:"tick-rect"))
-                    .attr('x', function() { return this.nextSibling.getBBox().x - tickRectWidthOffset/2; })
-                    .attr('y', function() { return this.nextSibling.getBBox().y - tickRectHeightOffset/2; })
-                    .attr('width', function() { return this.nextSibling.getBBox().width + tickRectWidthOffset; })
+                    .attr('x', function() {
+                        currentIndex = currentIndex + 1;
+                        var test = this.nextSibling.getBBox();
+                        if (needAdjustment) {
+                            return adjustedStarts[currentIndex];
+                        }
+                        return this.nextSibling.getBBox().x - tickRectWidthOffset/2;
+                    })
+                    .attr('y', function() {
+                        currentIndex = -1;
+                        return this.nextSibling.getBBox().y - tickRectHeightOffset/2;
+                    })
+                    .attr('width', function() {
+                        currentIndex = currentIndex + 1;
+                        if (needAdjustment) {
+                            return adjustedEnds[currentIndex] - adjustedStarts[currentIndex];
+                        }
+                        return this.nextSibling.getBBox().width + tickRectWidthOffset;
+                    })
                     .attr('height', function() { return this.nextSibling.getBBox().height + tickRectHeightOffset; })
                     .attr('fill-opacity', 0);
 
@@ -213,22 +277,23 @@ LABKEY.vis.internal.Axis = function() {
             addEvents(anchors.select('rect.highlight'));
         };
 
-        if (tickHover || tickClick || tickMouseOver || tickMouseOut) {
-            addTickAreaRects(textAnchors);
-            addHighlightRects(textAnchors);
-        }
-
         if (orientation == 'bottom') {
             hasOverlap = false;
-            for (i = 0; i < textEls[0].length-1; i++) {
+            for (i = 0; i < textEls[0].length - 1; i++) {
                 bBoxA = textEls[0][i].getBBox();
-                bBoxB = textEls[0][i+1].getBBox();
+                bBoxB = textEls[0][i + 1].getBBox();
                 if (bBoxA.x + bBoxA.width >= bBoxB.x) {
                     hasOverlap = true;
                     break;
                 }
             }
+        }
+        if (tickHover || tickClick || tickMouseOver || tickMouseOut) {
+            addTickAreaRects(textAnchors, !hasOverlap);
+            addHighlightRects(textAnchors);
+        }
 
+        if (orientation == 'bottom') {
             if (hasOverlap) {
                 textEls.attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';})
                         .attr('text-anchor', 'start');
