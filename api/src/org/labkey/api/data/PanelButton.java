@@ -111,4 +111,9 @@ public class PanelButton extends ActionButton
     {
         _subpanels.put(caption, view);
     }
+
+    public boolean hasSubPanels()
+    {
+        return !_subpanels.isEmpty();
+    }
 }

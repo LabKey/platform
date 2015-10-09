@@ -865,12 +865,12 @@ public class QueryView extends WebPartView<Object>
 
         if (_showExportButtons)
         {
-            ActionButton b = createExportButton(exportAsWebPage);
-            if (null != b)
+            PanelButton b = createExportButton(exportAsWebPage);
+            if (null != b && b.hasSubPanels())
                 bar.add(b);
-            b = createPrintButton();
-            if (null != b)
-                bar.add(b);
+            ActionButton p = createPrintButton();
+            if (null != p)
+                bar.add(p);
         }
 
         if (view.getDataRegion().getShowPagination())
@@ -1090,24 +1090,32 @@ public class QueryView extends WebPartView<Object>
     public PanelButton createExportButton(boolean exportAsWebPage)
     {
         PanelButton exportButton = new PanelButton("Export", getDataRegionName(), 132);
-        ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(
-                getDataRegionName(),
-                getExportRegionName(),
-                getSettings().getSelectionKey(),
-                getExcelColumnHeaderType(),
-                urlFor(QueryAction.exportRowsExcel),
-                urlFor(QueryAction.exportRowsXLSX),
-                _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null
-        );
-        exportButton.addSubPanel("Excel", new JspView<>("/org/labkey/api/query/excelExportOptions.jsp", excelBean));
+        ActionURL exportRowsXlsURL = urlFor(QueryAction.exportRowsExcel);
+        ActionURL exportRowsXlsxURL = urlFor(QueryAction.exportRowsXLSX);
+
+        if (exportRowsXlsURL != null && exportRowsXlsxURL != null)
+        {
+            ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(
+                    getDataRegionName(),
+                    getExportRegionName(),
+                    getSettings().getSelectionKey(),
+                    getExcelColumnHeaderType(),
+                    exportRowsXlsURL,
+                    exportRowsXlsxURL,
+                    _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null
+            );
+            exportButton.addSubPanel("Excel", new JspView<>("/org/labkey/api/query/excelExportOptions.jsp", excelBean));
+        }
 
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
-        if (exportAsWebPage)
+        if (tsvURL != null)
         {
-            tsvURL.replaceParameter("exportAsWebPage", "true");
+            if (exportAsWebPage)
+                tsvURL.replaceParameter("exportAsWebPage", "true");
+
+            TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), getSettings().getSelectionKey(), getColumnHeaderType(), tsvURL);
+            exportButton.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", textBean));
         }
-        TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), getSettings().getSelectionKey(), getColumnHeaderType(), tsvURL);
-        exportButton.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", textBean));
 
         if (_allowExportExternalQuery)
         {
@@ -1132,7 +1140,8 @@ public class QueryView extends WebPartView<Object>
                 }
             }
 
-            button.addSubPanel("Script", new JspView<>("/org/labkey/api/query/scriptExportOptions.jsp", options));
+            if (!options.isEmpty())
+                button.addSubPanel("Script", new JspView<>("/org/labkey/api/query/scriptExportOptions.jsp", options));
         }
     }
 
