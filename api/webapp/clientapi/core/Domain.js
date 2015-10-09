@@ -81,32 +81,47 @@ LABKEY.Domain = new function()
          * Create a new domain with the given design.
          * <b>Note: this is an experimental API and may change unexpectedly.</b>
          *
-         * @param {Function} success Required success callback.
-         * @param {Function} [failure] Failure callback.
-         * @param {String} kind The domain kind name to create.
-         * @param {LABKEY.Domain.DomainDesign} domainDesign The domain design to save.
-         * @param {Object} [options] Arguments used to create the specific domain type.
-         * @param {String} [containerPath] The container path in which to create the domain.
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {Function} config.success Required success callback.
+         * @param {Function} [config.failure] Failure callback.
+         * @param {String} config.kind The domain kind name to create.
+         * @param {LABKEY.Domain.DomainDesign} config.domainDesign The domain design to save.
+         * @param {Object} [config.options] Arguments used to create the specific domain type.
+         * @param {String} [config.containerPath] The container path in which to create the domain.
          * @ignore hide from JsDoc for now
          */
-        create : function (success, failure, kind, domainDesign, options, containerPath)
+        create : function (config)
         {
+            // old-style
+            if (arguments.length > 1)
+            {
+                config = {
+                    success: arguments[0],
+                    failure: arguments[1],
+                    kind: arguments[2],
+                    domainDesign: arguments[4],
+                    options: arguments[5],
+                    containerPath: arguments[6]
+                };
+            }
+
             createDomain(
-                success,
-                failure,
-                { kind: kind, domainDesign: domainDesign, options: options },
-                containerPath);
+                config.success,
+                config.failure,
+                { kind: config.kind, domainDesign: config.domainDesign, options: config.options },
+                config.containerPath);
         },
 
 	/**
 	* Gets a domain design.
-	* @param {Function} success Required. Function called if the
+     * @param {Object} config An object which contains the following configuration properties.
+	* @param {Function} config.success Required. Function called if the
 	*	"get" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
     *    which describes the fields of a domain.
-	* @param {Function} [failure] Function called if execution of the "get" function fails.
-	* @param {String} schemaName Name of the schema
-	* @param {String} queryName Name of the query
-	* @param {String} [containerPath] The container path in which the requested Domain is defined.
+	* @param {Function} [config.failure] Function called if execution of the "get" function fails.
+	* @param {String} config.schemaName Name of the schema
+	* @param {String} config.queryName Name of the query
+	* @param {String} [config.containerPath] The container path in which the requested Domain is defined.
 	*       If not supplied, the current container path will be used.
 	* @example Example:
 <pre name="code" class="xml">
@@ -134,33 +149,57 @@ LABKEY.Domain = new function()
 </pre>
 	  * @see LABKEY.Assay.AssayDesign
 	  */
-        get : function(success, failure, schemaName, queryName, containerPath)
+        get : function(config)
         {
+            if (arguments.length > 1)
+            {
+                config = {
+                    success: success,
+                    failure: failure,
+                    schemaName: schemaName,
+                    queryName: queryName,
+                    containerPath: containerPath
+                };
+            }
+
             getDomain(
-                success,
-                failure,
-                {schemaName:schemaName, queryName:queryName}, 
-                containerPath);
+                config.success,
+                config.failure,
+                {schemaName: config.schemaName, queryName: config.queryName},
+                config.containerPath);
         },
 
         /**
          * Saves the provided domain design
-         * @param {Function} success Required. Function called if this
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {Function} config.success Required. Function called if this
                   function executes successfully. No parameters will be passed to the success callback.
-         * @param {Function} [failure] Function called if execution of this function fails.
-         * @param {LABKEY.Domain.DomainDesign} domainDesign The domain design to save.
-         * @param {String} schemaName Name of the schema
-         * @param {String} queryName Name of the query
-         * @param {String} [containerPath] The container path in which the requested Domain is defined.
+         * @param {Function} [config.failure] Function called if execution of this function fails.
+         * @param {LABKEY.Domain.DomainDesign} config.domainDesign The domain design to save.
+         * @param {String} config.schemaName Name of the schema
+         * @param {String} config.queryName Name of the query
+         * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
          *       If not supplied, the current container path will be used.
          */
-        save : function(success, failure, domainDesign, schemaName, queryName, containerPath)
+        save : function(config)
         {
+            if (arguments.length > 1)
+            {
+                config = {
+                    success: success,
+                    failure: failure,
+                    domainDesign: domainDesign,
+                    schemaName: schemaName,
+                    queryName: queryName,
+                    containerPath: containerPath
+                };
+            }
+
             saveDomain(
-                success,
-                failure,
-                {domainDesign:domainDesign, schemaName:schemaName, queryName:queryName},
-                containerPath);
+                config.success,
+                config.failure,
+                {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName},
+                config.containerPath);
         }
     };
 
