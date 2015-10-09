@@ -157,10 +157,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (!getUser().isSiteAdmin() && !getContainer().hasPermission(getUser(), AdminPermission.class))
             {
                 //_illegalColumns.add("UserId");
-                _illegalColumns.add("Phone");
-                _illegalColumns.add("Mobile");
-                _illegalColumns.add("Pager");
-                _illegalColumns.add("IM");
+
                 _illegalColumns.add("Active");
                 _illegalColumns.add("LastLogin");
             }
