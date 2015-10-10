@@ -442,7 +442,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var initLabelElements = function() {
         labelElements = {}; labelBkgds = {};
         var fontFamily = plot.fontFamily ? plot.fontFamily : 'verdana, arial, helvetica, sans-serif';
-        var labelBkgd = this.canvas.append('g').attr('class', 'labelBkgd');
+        var labelBkgd = null;
         var labels = this.canvas.append('g').attr('class', plot.renderTo + '-labels');
 
         var appendLabelElement = function(name, defaultFontSize) {
@@ -460,8 +460,17 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return labelEl;
         };
 
-        var appendLabelBkgd = function(name, defaultWidth, defaultHeight) {
+        var appendLabelBkgd = function(name, canvas, defaultWidth, defaultHeight) {
             var labelBkgdEl = {}, width, height, x, y;
+
+            // No need to add rects if no color defined
+            if(!plot.labels[name] || !plot.labels[name].bkgdColor) {
+                return;
+            }
+
+            if(labelBkgd === null || labelBkgd.empty()) {
+                labelBkgd = canvas.insert('g', 'g.axis').attr('class', 'labelBkgd');
+            }
 
             if(name === 'x' || name === 'xTop') {
                 width = plot.labels[name] && plot.labels[name].bkgdWidth ? plot.labels[name].bkgdWidth : plot.grid.width;
@@ -496,11 +505,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return labelBkgdEl;
         };
 
-        labelBkgds.x = appendLabelBkgd('x', null, 30);
-        labelBkgds.xTop = appendLabelBkgd('xTop', null, 30);
-        labelBkgds.y = appendLabelBkgd('yLeft', 30, null);
+        labelBkgds.x = appendLabelBkgd('x', this.canvas, null, 30);
+        labelBkgds.xTop = appendLabelBkgd('xTop', this.canvas, null, 30);
+        labelBkgds.y = appendLabelBkgd('yLeft', this.canvas, 30, null);
         labelBkgds.yLeft = labelBkgds.y;
-        labelBkgds.yRight = appendLabelBkgd('yRight', 30, null);
+        labelBkgds.yRight = appendLabelBkgd('yRight', this.canvas, 30, null);
 
         labelElements.main = appendLabelElement('main', defaultMainFontSize);
         labelElements.x = appendLabelElement('x', defaultAxisFontSize);
