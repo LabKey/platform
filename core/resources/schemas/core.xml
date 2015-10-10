@@ -280,7 +280,7 @@
         <ns:inputLength>40</ns:inputLength>
         <ns:nullable>false</ns:nullable>
         <ns:isReadOnly>false</ns:isReadOnly>
-        <ns:description>The user's display name (defaults to email address).</ns:description>
+        <ns:description>The user's display name.</ns:description>
       </ns:column>
       <ns:column columnName="FirstName">
         <ns:columnTitle>First Name</ns:columnTitle>
