@@ -422,7 +422,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     {
         // NOTE: it's a little ambiguous how to factor code between persistRows() and createImportETL()
         data = new _DataIteratorBuilder(data, context);
-        return TableInsertDataIterator.create(data, this, _userSchema.getContainer(), context);
+        return TableInsertDataIterator.create(data, this, _userSchema.getContainer(), context, new CaseInsensitiveHashSet(getPkColumnNames()), null, null);
     }
 
 
