@@ -90,6 +90,8 @@ public class QuerySelect extends QueryRelation implements Cloneable
     private List<QExpr> _onExpressions;
 
     private Map<FieldKey, QueryRelation> _tables;
+    // Don't forget to recurse passing container filter into subqueries.
+    private List<QueryRelation> _subqueries = new ArrayList<>();
     private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<>();
     private SQLTableInfo _subqueryTable;
     private AliasManager _aliasManager;
@@ -179,6 +181,9 @@ public class QuerySelect extends QueryRelation implements Cloneable
 //        assert getParseErrors().size() == 0;
         super.setQuery(query);
         for (QueryRelation r : _tables.values())
+            r.setQuery(query);
+
+        for (QueryRelation r : _subqueries)
             r.setQuery(query);
     }
 
@@ -843,6 +848,7 @@ groupByLoop:
             {
                 sub = createSubquery((QQuery)expr, false, null);
                 ((QQuery)expr)._select = sub;
+                _subqueries.add(sub);
             }
             sub.declareFields();
             return;
@@ -1755,6 +1761,11 @@ groupByLoop:
     public void setContainerFilter(ContainerFilter containerFilter)
     {
         for (QueryRelation queryRelation : _tables.values())
+        {
+            queryRelation.setContainerFilter(containerFilter);
+        }
+
+        for (QueryRelation queryRelation : _subqueries)
         {
             queryRelation.setContainerFilter(containerFilter);
         }
