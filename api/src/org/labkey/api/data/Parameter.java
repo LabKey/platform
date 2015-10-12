@@ -725,7 +725,14 @@ public class Parameter implements AutoCloseable
         @Override
         public void close() throws SQLException
         {
-            _stmt.clearParameters();
+            try
+            {
+                _stmt.clearParameters();
+            }
+            catch (SQLException ignored)
+            {
+                // Don't blow up if the statement was already closed
+            }
             _stmt.close();
             afterClose();
         }
