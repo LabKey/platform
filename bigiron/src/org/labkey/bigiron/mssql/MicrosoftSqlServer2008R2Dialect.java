@@ -260,6 +260,13 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         return MicrosoftSqlServerDialectFactory.PRODUCT_NAME;
     }
 
+    @Nullable
+    @Override
+    public String getProductEdition()
+    {
+        return _edition.name() + " Edition";
+    }
+
     @Override
     public String getSQLScriptPath()
     {

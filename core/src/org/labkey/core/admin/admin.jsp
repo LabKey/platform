@@ -18,21 +18,21 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.CoreSchema" %>
+<%@ page import="org.labkey.api.module.DefaultModule" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.AdminLink" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.SettingsLinkType" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="java.util.Collection"%>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.module.DefaultModule" %>
-<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
@@ -73,11 +73,12 @@
         catch (Exception x)
         {
         }
+        String edition = bean.scope.getSqlDialect().getProductEdition();
     %>
         <tr><td colspan="2"><b>Core Database Configuration</b></td></tr>
         <tr><td class="labkey-form-label">Server URL</td><td id="databaseServerURL"><%=h(bean.scope.getURL())%></td></tr>
         <tr><td class="labkey-form-label">Product Name</td><td id="databaseProductName"><%=h(bean.scope.getDatabaseProductName())%></td></tr>
-        <tr><td class="labkey-form-label">Product Version</td><td id="databaseProductVersion"><%=h(bean.scope.getDatabaseProductVersion())%></td></tr>
+        <tr><td class="labkey-form-label">Product Version</td><td id="databaseProductVersion"><%=h(bean.scope.getDatabaseProductVersion()) + (null != edition ? " (" + edition + ")" : "")%></td></tr>
         <tr><td class="labkey-form-label">JDBC Driver Name</td><td id="databaseDriverName"><%=h(bean.scope.getDriverName())%></td></tr>
         <tr><td class="labkey-form-label">JDBC Driver Version</td><td id="databaseDriverVersion"><%=h(bean.scope.getDriverVersion())%></td></tr><%
         if (null != location)
