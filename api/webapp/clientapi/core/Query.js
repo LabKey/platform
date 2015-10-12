@@ -265,7 +265,7 @@ LABKEY.Query = new function()
                 dataObject.saveInSession = config.saveInSession;
 
             //set optional parameters
-            if (config.maxRows && config.maxRows >= 0)
+            if (config.maxRows !== undefined && config.maxRows >= 0)
                 dataObject.maxRows = config.maxRows;
             if (config.offset && config.offset > 0)
                 dataObject.offset = config.offset;

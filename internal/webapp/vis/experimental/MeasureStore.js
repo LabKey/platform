@@ -937,42 +937,38 @@
         }
 
         // LABKEY.Query.selectRows() wrapper
-        function _apiWrapper(originalConfig, apiFn, resultHandlerFn)
+        function _apiWrapper(originalConfig, apiFn, apiScope, resultHandlerFn)
         {
-            var apiConfig = {};
-            var onSuccess, onFailure, scope;
-            var measures, dimensions;
+            var apiConfig = {},
+                onSuccess, onFailure, scope,
+                measures, dimensions;
 
-            for (var p in originalConfig)
-            {
-                if (!originalConfig.hasOwnProperty(p))
-                    continue;
-                switch (p)
-                {
+            $.each(originalConfig, function(p, value) {
+                switch (p) {
                     case "measures":
-                        measures = originalConfig[p];
-                        apiConfig[p] = originalConfig[p];
+                        measures = value;
+                        apiConfig[p] = value;
                         break;
                     case "dimensions":
-                        dimensions = originalConfig[p];
+                        dimensions = value;
                         break;
                     case "success":
-                        onSuccess = originalConfig[p];
+                        onSuccess = value;
                         break;
                     case "failure":
-                        onFailure = originalConfig[p];
+                        onFailure = value;
                         break;
                     case "scope":
-                        scope = originalConfig[p];
+                        scope = value;
                         break;
                     default:
-                        apiConfig[p] = originalConfig[p];
+                        apiConfig[p] = value;
                 }
-            }
+            });
 
             apiConfig.success = function(results) {
                 var measureStore = resultHandlerFn(results, measures, dimensions);
-                if (onSuccess) {
+                if ($.isFunction(onSuccess)) {
                     onSuccess.call(scope || this, measureStore, measures, dimensions);
                 }
             };
@@ -983,7 +979,7 @@
                 }
             };
 
-            apiFn(apiConfig);
+            apiFn.call(apiScope || this, apiConfig);
         }
 
         function _handleSelectRowsResponse(results, measures, dimensions)
@@ -1237,12 +1233,12 @@
 
             selectRows : function(config)
             {
-                _apiWrapper(config, LABKEY.Query.selectRows, _handleSelectRowsResponse);
+                _apiWrapper(config, LABKEY.Query.selectRows, undefined, _handleSelectRowsResponse);
             },
 
             executeSql : function(config)
             {
-                _apiWrapper(config, LABKEY.Query.executeSql, _handleSelectRowsResponse);
+                _apiWrapper(config, LABKEY.Query.executeSql, undefined, _handleSelectRowsResponse);
             },
 
             // NOTE mdx is only supported for site admin at the moment
@@ -1258,18 +1254,23 @@
              */
             executeOlapQuery : function(config)
             {
-                _apiWrapper(config, LABKEY.query.olap.CubeManager.executeOlapQuery, _handleCellSetResponse);
+                _apiWrapper(config, LABKEY.query.olap.CubeManager.executeOlapQuery, undefined, _handleCellSetResponse);
             },
 
             // LABKEY.Query.Visualization.getData() wrapper
             // NOTE: getData() does not require that measures be marked with isMeasure and isDimension, but this
             // wrapper API does
-            getData : function(config, getDataFn)
+            getData : function(config, getDataFn, getDataScope)
             {
-                var getData = LABKEY.Query.Visualization.getData;
-                if (getDataFn && typeof getDataFn == "function")
+                var getData = LABKEY.Query.Visualization.getData,
+                    scope = this;
+
+                if ($.isFunction(getDataFn)) {
                     getData = getDataFn;
-                _apiWrapper(config, getData, _handleGetDataResponse);
+                    scope = getDataScope;
+                }
+
+                _apiWrapper(config, getData, scope, _handleGetDataResponse);
             },
 
             // NYI load from Ext.Store (listen to data change events?)
