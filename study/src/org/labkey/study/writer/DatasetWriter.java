@@ -220,7 +220,7 @@ public class DatasetWriter implements InternalStudyWriter
             {
                 createAlternateIdColumns(ti, columns, ctx.getContainer());
             }
-            if (ctx.getVisitIds() != null && !ctx.getVisitIds().isEmpty())
+            if (!def.isDemographicData() && ctx.getVisitIds() != null && !ctx.getVisitIds().isEmpty())
             {
                 filter.addInClause(FieldKey.fromParts("VisitRowId"), ctx.getVisitIds());
             }
