@@ -371,7 +371,7 @@ public class ModuleLoader implements Filter
         for (Module m : _modules)
         {
             ModuleContext ctx = getModuleContext(m);
-            if (ctx.getInstalledVersion() < m.getVersion())
+            if (ctx.isNewInstall() || ctx.getInstalledVersion() < m.getVersion())
             {
                 modulesRequiringUpgrade.add(ctx.getName());
             }
@@ -1392,12 +1392,7 @@ public class ModuleLoader implements Filter
                 setUpgradeUser(user);
 
                 ModuleUpgrader upgrader = new ModuleUpgrader(modules);
-                upgrader.upgradeInBackground(new Runnable(){
-                    public void run()
-                    {
-                        completeUpgrade(true);
-                    }
-                });
+                upgrader.upgradeInBackground(() -> completeUpgrade(true));
             }
         }
     }
@@ -1439,7 +1434,7 @@ public class ModuleLoader implements Filter
             }
             catch (RuntimeSQLException e)
             {
-                // This happened a couple times on the HIPC server; decorate exception with the problem module name
+                // This should be fixed now (see #24473), but leave detailed logging in place just in case
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, module.getName(), false);
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
