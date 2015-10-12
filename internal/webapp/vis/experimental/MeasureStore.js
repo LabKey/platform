@@ -994,57 +994,54 @@
                 });
             }
 
-            // UNDO: there's not really an advantage to pre constructing the dimensions
-            //if (null == dimensions)
-            //{
-            //    dimensions = [];
-            //    results.metaData.fields.forEach(function(field)
-            //    {
-            //        if (field.dimension || field.recommendedVariable)
-            //            dimensions.push(field.name);
-            //    });
-            //}
+            var responseMetadata = {
+                schemaName: results.schemaName,
+                queryName: results.queryName
+            };
+
+            // TODO: Remove this backwards compatibility once cds/fb_refinement is ready
+            if (results.columnAliases !== undefined) {
+                responseMetadata.columnAliases = results.columnAliases;
+            }
 
             return new MeasureStore({
-                //dimensions: dimensions,
                 measures: measures,
                 records: results.rows,
-                responseMetadata: {
-                    schemaName: results.schemaName,
-                    queryName: results.queryName
-                }
+                responseMetadata: responseMetadata
             });
         }
 
         function _handleGetDataResponse(results, measures, dimensions)
         {
-            var measureSpecs = measures;
-            measures = [];
-            dimensions = [];
+            var _measures = [];
 
-            measureSpecs.forEach(function(m)
+            measures.forEach(function(m)
             {
                 var _measure = m.measure,
                     name = ('alias' in _measure) ? _measure.alias : _generateAlias(_measure);
 
                 if (_measure.isMeasure === true) {
-                    measures.push(name);
+                    _measures.push(name);
                 }
-                // there's not really an advantage to pre constructing the dimensions
-                //else if (_measure.isDimension === true) {
-                //    dimensions.push(name);
-                //}
             });
 
+            var responseMetadata = {
+                schemaName: results.schemaName,
+                queryName: results.queryName
+            };
+
+            // TODO: Remove this backwards compatibility once cds/fb_refinement is ready
+            if (results.columnAliasMap !== undefined) {
+                responseMetadata.columnAliasMap = results.columnAliasMap;
+            }
+            else {
+                responseMetadata.columnAliases = results.columnAliases;
+            }
+
             return new MeasureStore({
-                //dimensions: dimensions,
-                measures: measures,
+                measures: _measures,
                 records: results.rows,
-                responseMetadata: {
-                    schemaName: results.schemaName,
-                    queryName: results.queryName,
-                    columnAliasMap: results.columnAliasMap
-                }
+                responseMetadata: responseMetadata
             });
         }
 
@@ -1108,8 +1105,6 @@
             });
 
             return new MeasureStore({
-                // there's not really an advantage to pre constructing the dimensions
-                //dimensions: dimensions,
                 measures: measures,
                 records: rows
             });
