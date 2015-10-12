@@ -2768,9 +2768,8 @@ public class QueryController extends SpringActionController
             boolean metaDataOnly = false;
             if (null != form.getMaxRows() && form.getMaxRows() >= 0)
             {
-                settings.setShowRows(ShowRows.PAGINATED);
-                settings.setMaxRows(Table.ALL_ROWS == form.getMaxRows() ? 1 : form.getMaxRows());
-                metaDataOnly = (Table.ALL_ROWS == form.getMaxRows());
+                settings.setMaxRows(form.getMaxRows());
+                metaDataOnly = Table.NO_ROWS == form.getMaxRows();
             }
 
             int offset = 0;
