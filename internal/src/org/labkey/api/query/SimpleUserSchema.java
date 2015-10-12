@@ -393,11 +393,12 @@ public class SimpleUserSchema extends UserSchema
             return _objectUriCol;
         }
 
-        // UNDONE: Domain could live in /Shared, /Project, or current container (or for workbooks in parent container).
+        // UNDONE: Domain could live in /Shared, /Project, or current container (note: for workbooks always use parent container).
         // UNDONE: Not yet supported.
         protected Container getDomainContainer()
         {
-            return getContainer();
+            Container c = getContainer();
+            return c == null ? null : c.isWorkbook() ? c.getParent() : c;
         }
 
         @Override

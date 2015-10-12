@@ -156,7 +156,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         @Override
         public Container getDomainContainer(Container c)
         {
-            return c;
+            return _queryTable.getDomainContainer();
         }
 
     }

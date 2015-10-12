@@ -957,7 +957,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         checkLocked();
 
         if (xmlCol.isSetConceptURI())
-            conceptURI = xmlCol.getConceptURI();
+            setConceptURI(xmlCol.getConceptURI());
         if (xmlCol.isSetRangeURI())
             rangeURI = xmlCol.getRangeURI();
 
