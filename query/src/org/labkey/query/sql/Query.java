@@ -207,6 +207,7 @@ public class Query
 
     public void setContainerFilter(ContainerFilter containerFilter)
     {
+        ContainerFilter.logSetContainerFilter(containerFilter, getClass().getSimpleName(), StringUtils.defaultString(_name, "anonymous"));
         _containerFilter = containerFilter;
     }
 

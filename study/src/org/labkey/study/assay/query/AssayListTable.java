@@ -16,6 +16,7 @@
 
 package org.labkey.study.assay.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;

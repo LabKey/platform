@@ -144,6 +144,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public void setContainerFilter(ContainerFilter containerFilter)
     {
+        String name="anonymous";
+        if (null != _queryDef && null != _queryDef.getName())
+            name = _queryDef.getName();
+        ContainerFilter.logSetContainerFilter(containerFilter, getClass().getSimpleName(), name);
         _containerFilter = containerFilter;
     }
 

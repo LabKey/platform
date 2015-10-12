@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -87,6 +88,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     public void setContainerFilter(@NotNull ContainerFilter containerFilter)
     {
         checkLocked();
+        ContainerFilter.logSetContainerFilter(containerFilter, "Query", StringUtils.defaultString(_relation._query._name, "anonymous"));
         _containerFilter = containerFilter;
         _relation.setContainerFilter(containerFilter);
     }
