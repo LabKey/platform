@@ -84,7 +84,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
                     // if this query is inherited then we might want to pick up the view category from a parent directory,
                     // how do we know where the query/table is defined?
                     // TODO general way to find the correct parent directory
-                    if (null == vc && !context.getContainer().isProject() && StringUtils.equalsIgnoreCase("study",view.getSchemaName()))
+                    if (null == vc && !context.getContainer().isProject())
                     {
                         Container project = context.getContainer().getProject();
                         if (null != project && project.isDataspace())
