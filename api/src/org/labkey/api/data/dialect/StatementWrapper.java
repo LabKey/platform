@@ -2607,7 +2607,36 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         assert isAssertEnabled = true;
 
         // Make a copy of the parameters list (it gets modified below) and switch to zero-based list (_parameters is a one-based list)
-        List<Object> zeroBasedList = null != _parameters ? new ArrayList<>(_parameters.getUnderlyingList()) : null;
+        List<Object> zeroBasedList;
+
+        if (null != _parameters)
+        {
+            zeroBasedList = new ArrayList<>(_parameters.size());
+
+            // Translate parameters that can't be cached (for now, just JDBC arrays). I'd rather stash the original parameters and send
+            // those to the query profiler, but this would require one or more non-standard methods on StatementWrapper. See #24314.
+            for (Object o : _parameters)
+            {
+                if (o instanceof Array)
+                {
+                    try
+                    {
+                        o = ((Array) o).getArray();
+                    }
+                    catch (SQLException e)
+                    {
+                        _log.error("Could not retrieve array", e);
+                    }
+                }
+
+                zeroBasedList.add(o);
+            }
+        }
+        else
+        {
+            zeroBasedList = null;
+        }
+
         QueryProfiler.getInstance().track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread(), queryLogging);
 
         if (x != null)

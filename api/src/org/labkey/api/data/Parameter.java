@@ -43,7 +43,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -323,21 +322,7 @@ public class Parameter implements AutoCloseable
                 String typeName = dialect.getJDBCArrayType(array[0]);
                 final Array jdbcArray = _stmt.getConnection().createArrayOf(typeName, array);
                 // Set up to close it
-                _autoCloseable = new AutoCloseable()
-                {
-                    @Override
-                    public void close() throws SQLException
-                    {
-                        try
-                        {
-                            jdbcArray.free();
-                        }
-                        catch (SQLFeatureNotSupportedException ignored)
-                        {
-                            // As of 6/9/14, the Postgres JDBC method doesn't support this method
-                        }
-                    }
-                };
+                _autoCloseable = jdbcArray::free;
                 value = jdbcArray;
             }
 
