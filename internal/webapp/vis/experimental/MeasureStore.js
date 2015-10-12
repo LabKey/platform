@@ -614,7 +614,7 @@
             _dimensions: null,
             _measures: null,
             _records: null,
-            _responseMetadata: null,    // schemaName, queryName, columnAliases, etc.
+            _responseMetadata: null,    // schemaName, queryName, columnAliasMap, etc.
             _columnMap: null,           // column alias to index
             _columns: null,             // {name:foo, index:i, aggregator:constructor}
             // UNKNOWN: check at runtime
@@ -1011,8 +1011,7 @@
                 records: results.rows,
                 responseMetadata: {
                     schemaName: results.schemaName,
-                    queryName: results.queryName,
-                    columnAliases: results.columnAliases
+                    queryName: results.queryName
                 }
             });
         }
@@ -1044,7 +1043,7 @@
                 responseMetadata: {
                     schemaName: results.schemaName,
                     queryName: results.queryName,
-                    columnAliases: results.columnAliases
+                    columnAliasMap: results.columnAliasMap
                 }
             });
         }
