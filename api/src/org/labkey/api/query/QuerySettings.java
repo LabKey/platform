@@ -685,6 +685,7 @@ public class QuerySettings
 
     public void setContainerFilterName(String name)
     {
+        ContainerFilter.logSetContainerFilter(null, "QuerySettings", name);
         _containerFilterName = name;
     }
 

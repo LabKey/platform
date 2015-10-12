@@ -482,6 +482,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     protected void _setContainerFilter(@NotNull ContainerFilter filter)
     {
         checkLocked();
+        ContainerFilter.logSetContainerFilter(filter, getClass().getSimpleName(), getName());
         _containerFilter = filter;
         applyContainerFilter(_containerFilter);
         if (getRealTable().supportsContainerFilter() && getRealTable() instanceof ContainerFilterable)

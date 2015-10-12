@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
@@ -23,6 +25,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.GUID;
@@ -52,6 +55,11 @@ public abstract class ContainerFilter
     public boolean includeWorkbooks()
     {
         return true;
+    }
+
+    public boolean useCTE()
+    {
+        return false;
     }
 
     /**
@@ -128,25 +136,42 @@ public abstract class ContainerFilter
     /** Create an expression for a WHERE clause */
     public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container)
     {
-        return getSQLFragment(schema, containerColumnSQL, container, true, true);
+        return getSQLFragment(schema, containerColumnSQL, container, true);
     }
 
     /**
      * Create an expression for a WHERE clause
-     * @param useJDBCParameters whether or not to use JDBC parameters for the container ids, or embed them directly.
      * Generally parameters are preferred, but can cause perf problems in certain cases
      * @param allowNulls - if looking at ALL rows, whether to allow nulls in the Container column
      */
+    @Deprecated
     public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean useJDBCParameters, boolean allowNulls)
+    {
+        return getSQLFragment(schema, containerColumnSQL, container, allowNulls);
+    }
+
+    public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean allowNulls)
     {
         SecurityLogger.indent("ContainerFilter");
         Collection<GUID> ids = getIds(container);
         SecurityLogger.outdent();
-        return getSQLFragment(schema, container, containerColumnSQL, ids, useJDBCParameters, allowNulls,includeWorkbooks());
+        return getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls,includeWorkbooks());
     }
 
     // instances of ContainerFilterWithUser will call this getSQLFragment after GetIds with a specific permission to check against the user
-    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean useJDBCParameters, boolean allowNulls, boolean includeWorkbooks)
+    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean allowNulls, boolean includeWorkbooks)
+    {
+        SQLFragment f = _getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls, includeWorkbooks);
+        if (_log.isTraceEnabled())
+        {
+            SQLFragment comment = new SQLFragment(f);
+            comment.appendComment(toString(), schema.getSqlDialect());
+            f = comment;
+        }
+        return f;
+    }
+
+    protected SQLFragment _getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean allowNulls, boolean includeWorkbooks)
     {
         if (ids == null)
         {
@@ -176,9 +201,28 @@ public abstract class ContainerFilter
                 return new SQLFragment(containerColumnSQL).append("=").append(first);
         }
 
-        // Revert to in-lining values if there are lots of values, so as not to blow the total JDBC parameter limit
-        // for SQLServer
-        useJDBCParameters = useJDBCParameters && ids.size() < 10;
+        SQLFragment list = new SQLFragment();
+        String comma = "";
+        boolean verbose = AppProps.getInstance().isDevMode() && ids.size() <= 3;
+        for (GUID containerId : ids)
+        {
+            list.append(comma);
+            list.append("(");
+            if (verbose)
+            {
+                Container c = ContainerManager.getForId(containerId);
+                if (null != c)
+                    list.append(c);
+                else
+                    list.append("'").append(containerId.toString()).append("'");
+            }
+            else
+            {
+                list.append("'").append(containerId.toString()).append("'");
+            }
+            list.append(")");
+            comma = ", ";
+        }
 
         SQLFragment select = new SQLFragment();
 
@@ -187,54 +231,36 @@ public abstract class ContainerFilter
             select.append("SELECT c.EntityId FROM ");
             select.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
             // Need to add cast to make Postgres happy
-            select.append(" INNER JOIN (SELECT CAST(x.Id AS ");
+            select.append(" INNER JOIN (SELECT CAST(Id AS ");
             select.append(schema.getSqlDialect().getGuidType());
-            select.append(") AS Id FROM (");
-            String separator = "";
-            for (GUID containerId : ids)
-            {
-                select.append(separator);
-                separator = " UNION\n\t\t";
-                select.append("SELECT ");
-                if (useJDBCParameters)
-                {
-                    select.append("?");
-                    select.add(containerId);
-                }
-                else
-                {
-                    select.append("'");
-                    select.append(containerId);
-                    select.append("'");
-                }
-                select.append(" AS Id");
-            }
+            select.append(") AS Id FROM (VALUES ");
+            select.append(list);
+            select.append(") as _containerids_ (Id) ");
             // Filter based on the container's ID, or the container is a child of the ID and of type workbook
-            select.append(") x) x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type = '");
+            select.append(") x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type = '");
             select.append(Container.TYPE.workbook.toString());
             select.append("')");
         }
+        else if (ids.size() < 10 || !useCTE())
+        {
+            SQLFragment result = new SQLFragment(containerColumnSQL);
+            result.append(" IN (").append(list).append(")");
+            return result;
+        }
         else
         {
-            String comma = "";
             select.append ("SELECT EntityId FROM (VALUES ");
-            for (GUID containerId : ids)
-            {
-                select.append(comma); comma = ",";
-                select.append("('").append(containerId.toString()).append("')");
-            }
-            select.append(") AS _ids(EntityId)");
+            select.append(list);
+            select.append(") AS _containerids_ (EntityId)");
         }
 
-
-        boolean useCTE = false;
-        if (useCTE)
+        if (useCTE())
         {
             SQLFragment result = new SQLFragment(containerColumnSQL);
             String shortName = null != this.getType() ? this.getType().name() : this.getClass().getSimpleName();
             String cteKey = this.getClass().getName()+":"+ container.getId();
             String token = result.addCommonTableExpression(cteKey, "cte" + shortName + System.identityHashCode(this), select);
-            result.append(" IN (SELECT entityId");
+            result.append(" IN (SELECT EntityId");
             result.append(" FROM ").append(token);
             result.append(")");
             return result;
@@ -412,20 +438,15 @@ public abstract class ContainerFilter
 
         public SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Container container, Class<? extends Permission> permission, Set<Role> roles)
         {
-            return getSQLFragment(schema, new SQLFragment(containerColumnFieldKey.toString()), container, permission, roles);
+            return getSQLFragment(schema, new SQLFragment(containerColumnFieldKey.toString()), container, permission, roles, true);
         }
 
-        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, Set<Role> roles)
-        {
-            return getSQLFragment(schema, containerColumnSQL, container, permission, roles, true, true);
-        }
-
-        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, Set<Role> roles, boolean useJDBCParameters, boolean allowNulls)
+        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, Set<Role> roles, boolean allowNulls)
         {
             SecurityLogger.indent("ContainerFilter");
             Collection<GUID> ids = getIds(container, permission, roles);
             SecurityLogger.outdent();
-            return getSQLFragment(schema, container, containerColumnSQL, ids, useJDBCParameters, allowNulls,includeWorkbooks());
+            return getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls, includeWorkbooks());
         }
 
         // each ContainerFilterWithUser subclass should override
@@ -541,11 +562,11 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, Set<Role> roles, boolean useJDBCParameters, boolean allowNulls)
+        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, Set<Role> roles, boolean allowNulls)
         {
             if (_user.isSiteAdmin() && container.isRoot())
                 return new SQLFragment("1 = 1");
-            return super.getSQLFragment(schema,containerColumnSQL,container, permission, roles, useJDBCParameters,allowNulls);
+            return super.getSQLFragment(schema,containerColumnSQL, container, permission, roles, allowNulls);
         }
 
         @Override
@@ -973,5 +994,16 @@ public abstract class ContainerFilter
             }
             return _filter.getSQLFragment(_schema, _fieldKey, _container, columnMap);
         }
+    }
+
+
+    static final Logger _log = Logger.getLogger(ContainerFilter.class);
+
+    // helper so that ContainerFilter logging can be traced using one logger class
+    public static void logSetContainerFilter(ContainerFilter cf, String... parts)
+    {
+        if (!_log.isDebugEnabled())
+            return;
+        _log.debug("setContainerFilter( " + StringUtils.join(parts, " ") + ", " + String.valueOf(cf) + " )");
     }
 }

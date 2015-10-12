@@ -83,4 +83,10 @@ public class DelegatingContainerFilter extends ContainerFilter.ContainerFilterWi
 
         return currentContainer;
     }
+
+    @Override
+    public String toString()
+    {
+        return "DelegatingContainerFilter: source=" + _source.getName();
+    }
 }
