@@ -498,7 +498,7 @@ public class QuerySettings
         if (queryName == null)
             return null;
 
-        QueryDefinition ret = schema.getQueryDefs().get(queryName);
+        QueryDefinition ret = schema.getQueryDef(queryName);
         if (ret == null)
             ret = schema.getQueryDefForTable(queryName);
 

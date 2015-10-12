@@ -451,6 +451,12 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return new CaseInsensitiveHashMap<>(QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName()));
     }
 
+    @Nullable
+    public QueryDefinition getQueryDef(@NotNull String queryName)
+    {
+        return QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName(), queryName);
+    }
+
     /** override this method to return schema specific QuerySettings object */
     protected QuerySettings createQuerySettings(String dataRegionName, String queryName, String viewName)
     {

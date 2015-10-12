@@ -154,11 +154,11 @@ LABKEY.Domain = new function()
             if (arguments.length > 1)
             {
                 config = {
-                    success: success,
-                    failure: failure,
-                    schemaName: schemaName,
-                    queryName: queryName,
-                    containerPath: containerPath
+                    success: arguments[0],
+                    failure: arguments[1],
+                    schemaName: arguments[2],
+                    queryName: arguments[3],
+                    containerPath: arguments[4]
                 };
             }
 
@@ -186,12 +186,12 @@ LABKEY.Domain = new function()
             if (arguments.length > 1)
             {
                 config = {
-                    success: success,
-                    failure: failure,
-                    domainDesign: domainDesign,
-                    schemaName: schemaName,
-                    queryName: queryName,
-                    containerPath: containerPath
+                    success: arguments[0],
+                    failure: arguments[1],
+                    domainDesign: arguments[2],
+                    schemaName: arguments[3],
+                    queryName: arguments[4],
+                    containerPath: arguments[5]
                 };
             }
 

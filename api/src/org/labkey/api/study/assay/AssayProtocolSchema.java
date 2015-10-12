@@ -165,6 +165,26 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return result;
     }
 
+    @Override
+    @Nullable
+    public QueryDefinition getQueryDef(@NotNull String queryName)
+    {
+        // Get all the custom queries from the standard locations
+        QueryDefinition qdef = super.getQueryDef(queryName);
+        if (qdef != null)
+            return qdef;
+
+        // Add in ones that are associated with the assay type
+        List<QueryDefinition> providerQueryDefs = getFileBasedAssayProviderScopedQueries();
+        for (QueryDefinition providerQueryDef : providerQueryDefs)
+        {
+            if (queryName.equals(providerQueryDef.getName()))
+                return providerQueryDef;
+        }
+
+        return null;
+    }
+
     /**
      * @return all of the custom query definitions associated with the assay provider/type,
      * which will be exposed for each assay design
