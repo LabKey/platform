@@ -1994,7 +1994,7 @@ public class QueryController extends SpringActionController
                 else
                 {
                     // Otherwise, save it in the current container
-                    container = getContainer();
+                    container = getContainer().isWorkbook() ? getContainer().getParent() : getContainer();
                 }
 
                 if (container == null)

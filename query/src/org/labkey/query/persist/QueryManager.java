@@ -246,6 +246,10 @@ public class QueryManager
         List<CstmView> views = new ArrayList<>();
 
         getCstmViewsInContainer(views, container, schemaName, queryName, owner, false, sharedOnly);
+        if (container.isWorkbook())
+        {
+            getCstmViewsInContainer(views, container.getParent(), schemaName, queryName, owner, false, sharedOnly);
+        }
 
         if (!inheritable)
             return views;

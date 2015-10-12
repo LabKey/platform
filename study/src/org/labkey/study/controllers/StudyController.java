@@ -641,7 +641,7 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("studyNavigator");
-            return root.addChild("Overview:" + _study.getLabel());
+            return root.addChild("Overview: " + _study.getLabel());
         }
     }
 
