@@ -441,6 +441,11 @@ public abstract class SqlDialect
 
     public abstract String getProductName();
 
+    public @Nullable String getProductEdition()
+    {
+        return null;
+    }
+
     public abstract String getSQLScriptPath();
 
     // Note: SQLFragment and StringBuilder both implement Appendable
