@@ -26,6 +26,7 @@ import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.IndexOptions;
@@ -1076,12 +1077,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             Directory directory = WritableIndexManagerImpl.openDirectory(SearchPropertyManager.getPrimaryIndexDirectory().toPath());
-            IndexUpgrader upgrader = new IndexUpgrader(directory);
-            upgrader.upgrade();
+
+            if (DirectoryReader.indexExists(directory))
+            {
+                IndexUpgrader upgrader = new IndexUpgrader(directory);
+                upgrader.upgrade();
+            }
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 
