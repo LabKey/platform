@@ -844,6 +844,16 @@ LABKEY.Utils = new function()
             return s.replace(/([-.*+?\^${}()|\[\]\/\\])/g, "\\$1");
         },
 
+        getMeasureAlias : function(measure, override) {
+            if (measure.alias && !override) {
+                return measure.alias;
+            }
+            else {
+                var alias = measure.schemaName + '_' + measure.queryName + '_' + measure.name;
+                return alias.replace(/\//g, '_');
+            }
+        },
+
         // private
         collapseExpand: collapseExpand,
         notifyExpandCollapse: notifyExpandCollapse,
