@@ -583,10 +583,11 @@ public abstract class VisitManager
             {
                 sti = d.getStorageTableInfo();
             }
-            catch (Exception x)
+            catch (IllegalArgumentException x)
             {
                 // 19189: IllegalArgumentException in org.labkey.api.exp.api.StorageProvisioner.createTableInfo()
-                // parial fix, but see 14603 and related
+                // partial fix, but see 14603 and related
+                LOGGER.warn("Unable to get storage table info", x);
             }
             if (null == sti)
                 continue;
