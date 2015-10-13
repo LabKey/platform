@@ -24,25 +24,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ConnectionWrapper;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.InClauseGenerator;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.ParameterMarkerInClauseGenerator;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableChange;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TempTableInClauseGenerator;
-import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -1364,7 +1346,7 @@ public class PostgreSql91Dialect extends SqlDialect
         sqlf.add(procName);
 
         /* DOES NOT HANDLE OVERLOADED FUNCTIONS! */
-        try (ResultSet rs = (new SqlSelector(scope,sqlf)).getResultSet())
+        try (ResultSet rs = (new MetadataSqlSelector(scope,sqlf)).getResultSet())
         {
             while (rs.next())
             {
