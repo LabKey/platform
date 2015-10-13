@@ -24,7 +24,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.message.digest.DailyMessageDigest;
@@ -73,12 +72,10 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.data.QueryLoggingAuditTypeProvider;
 import org.labkey.query.audit.QueryAuditProvider;
 import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
-import org.labkey.api.data.ScopeQueryLoggingProfilerListener;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.jdbc.QueryDriver;
@@ -269,9 +266,6 @@ public class QueryModule extends DefaultModule
         AuditLogService.registerAuditType(new QueryAuditProvider());
         AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
 
-        AuditLogService.registerAuditType(new QueryLoggingAuditTypeProvider());
-        QueryProfiler.getInstance().addListener(new ScopeQueryLoggingProfilerListener());
-
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());
         DailyMessageDigest.getInstance().addProvider(ReportAndDatasetChangeDigestProvider.get());
         // Note: DailyMessageDigest timer is initialized by the AnnouncementModule
@@ -300,12 +294,11 @@ public class QueryModule extends DefaultModule
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
+        return new HashSet<Class>(Arrays.asList(
                 Query.QueryTestCase.class,
                 QueryServiceImpl.TestCase.class,
                 RolapReader.RolapTest.class,
-                RolapTestCase.class,
-                ScopeQueryLoggingProfilerListener.TestCase.class
+                RolapTestCase.class
         ));
     }
 
@@ -313,7 +306,7 @@ public class QueryModule extends DefaultModule
     @NotNull
     public Set<Class> getUnitTests()
     {
-        return new HashSet<>(Arrays.asList(
+        return new HashSet<Class>(Arrays.asList(
                 SqlParser.SqlParserTestCase.class,
                 JdbcType.TestCase.class,
                 QNode.TestCase.class,

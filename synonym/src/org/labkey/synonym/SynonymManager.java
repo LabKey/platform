@@ -26,8 +26,8 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo.ImportedKey;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.MetadataSqlSelector;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.dialect.ForeignKeyResolver;
 import org.labkey.api.data.dialect.StandardForeignKeyResolver;
 import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
@@ -195,7 +195,7 @@ public class SynonymManager
 
             // Another option would be to add "INNER JOIN master.dbo.sysdatabases" to the SELECT DISTINCT COALESCE query below.
             // That might be a bit cleaner, but this code approach lets us detect these invalid synonyms and log a warning.
-            final Set<String> validDatabaseNames = new CaseInsensitiveHashSet(new MetadataSqlSelector(scope, new SQLFragment("SELECT Name FROM master.dbo.sysdatabases")).getCollection(String.class));
+            final Set<String> validDatabaseNames = new CaseInsensitiveHashSet(new SqlSelector(scope, new SQLFragment("SELECT Name FROM master.dbo.sysdatabases")).getCollection(String.class));
 
             // A synonym in this scope might target other databases. We need to construct SQL that joins each synonym definition
             // to the sys.objects table its own target database, so generate a crazy UNION query with one SELECT clause per
@@ -217,7 +217,7 @@ public class SynonymManager
             final SQLFragment sql = new SQLFragment();
 
             // Select the distinct target databases for all synonyms... and then build the UNION query
-            new MetadataSqlSelector(scope, "SELECT DISTINCT COALESCE(PARSENAME(base_object_name, 3), DB_NAME(DB_ID())) AS TargetDatabase FROM sys.synonyms").forEach(dbName -> {
+            new SqlSelector(scope, "SELECT DISTINCT COALESCE(PARSENAME(base_object_name, 3), DB_NAME(DB_ID())) AS TargetDatabase FROM sys.synonyms").forEach(dbName -> {
                 if (!validDatabaseNames.contains(dbName))
                 {
                     LOG.error("One or more synonyms are defined as targeting database \"" + dbName + "\", which doesn't exist. These synonyms will be ignored.");
@@ -240,7 +240,7 @@ public class SynonymManager
             final Map<String, Map<String, Synonym>> synonymMap = new HashMap<>();
             final Map<String, Map<String, MultiMap<String, Synonym>>> reverseMap = new HashMap<>();
 
-            new MetadataSqlSelector(scope, sql).forEach(synonym -> {
+            new SqlSelector(scope, sql).forEach(synonym -> {
                 Map<String, Synonym> map = synonymMap.get(synonym.getSchemaName());
 
                 if (null == map)

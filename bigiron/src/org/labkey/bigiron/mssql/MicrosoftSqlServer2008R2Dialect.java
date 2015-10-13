@@ -30,7 +30,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.InlineInClauseGenerator;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MetadataSqlSelector;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -1612,7 +1611,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                     sql.add(tableNamePattern);
                 }
 
-                return new MetadataSqlSelector(scope, sql).getResultSet();
+                return new SqlSelector(scope, sql).getResultSet();
             }
 
             @Override
@@ -1629,7 +1628,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                     sql.add(columnNamePattern);
                 }
 
-                return new MetadataSqlSelector(scope, sql).getResultSet();
+                return new SqlSelector(scope, sql).getResultSet();
             }
         };
     }
