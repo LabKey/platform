@@ -22,4 +22,6 @@ import org.labkey.api.view.ActionURL;
 public interface DataIntegrationUrls extends UrlProvider
 {
     ActionURL getBeginURL(Container container);
+
+    ActionURL getViewJobsURL(Container container);
 }
