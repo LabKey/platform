@@ -1488,18 +1488,3 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
         });
     }
 });
-
-Ext4.define('LABKEY.MeasureUtil', {
-
-    singleton : true,
-    getAlias : function(measure, override) {
-
-        if (measure.alias && !override)
-            return measure.alias;
-        else
-        {
-            var alias = measure.schemaName + '_' + measure.queryName + '_' + measure.name;
-            return alias.replace(/\//g, '_');
-        }
-    }
-});

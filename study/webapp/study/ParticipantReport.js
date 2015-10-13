@@ -848,7 +848,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     getColumnFromMeasure : function(measure, measureToColMap) {
 
         // try the more specific alias, else fall back to the less granular name mapping
-        var alias = LABKEY.MeasureUtil.getAlias(measure);
+        var alias = LABKEY.Utils.getMeasureAlias(measure);
 
         var mappedColName = measureToColMap[alias];
         if (!mappedColName)
