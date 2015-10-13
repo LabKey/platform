@@ -198,6 +198,7 @@ Ext.define('LABKEY.app.model.Filter', {
             });
         },
 
+        // TODO: Remove once cds/fb_refinement is merged (and continue to ensure there are no other usages)
         getGridHierarchy : function(data) {
             var gf = data['gridFilter'];
             if (!Ext.isEmpty(gf)) {
@@ -810,10 +811,6 @@ Ext.define('LABKEY.app.model.Filter', {
 
     usesCaching : function(subjectName) {
         return LABKEY.app.model.Filter.usesMemberName(this.data, subjectName);
-    },
-
-    getGridHierarchy : function() {
-        return LABKEY.app.model.Filter.getGridHierarchy(this.data);
     },
 
     getGridLabel : function() {
