@@ -59,12 +59,19 @@ public class DataIntegrationController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(DataIntegrationController.class);
 
 
+    @SuppressWarnings("UnusedDeclaration")
     public static class DataIntegrationUrlsImpl implements DataIntegrationUrls
     {
         @Override
         public ActionURL getBeginURL(Container container)
         {
             return new ActionURL(BeginAction.class, container);
+        }
+
+        @Override
+        public ActionURL getViewJobsURL(Container container)
+        {
+            return new ActionURL(viewJobsAction.class, container);
         }
     }
 
@@ -142,7 +149,7 @@ public class DataIntegrationController extends SpringActionController
         @Override
         public void validate(TransformViewForm form, BindException errors)
         {
-            ScheduledPipelineJobDescriptor d = null;
+            ScheduledPipelineJobDescriptor d;
 
             if (form.getTransformId() == null || form.getTransformRunId() == null)
             {

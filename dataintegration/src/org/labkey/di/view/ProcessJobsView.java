@@ -16,6 +16,8 @@
 package org.labkey.di.view;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.Sort;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
@@ -31,6 +33,7 @@ public class ProcessJobsView extends VBox
         DataIntegrationQuerySchema schema = new DataIntegrationQuerySchema(user, container);
         QuerySettings settings = new QuerySettings(getViewContext(), "processJobs", DataIntegrationQuerySchema.TRANSFORMHISTORY_TABLE_NAME);
 
+        settings.getBaseSort().insertSortColumn(FieldKey.fromParts("DateRun"), Sort.SortDirection.DESC);
         QueryView processedJobsGrid = new QueryView(schema, settings, null);
         HtmlView buttons = new HtmlView(
                 PageFlowUtil.button("Scheduler").href(DataIntegrationController.BeginAction.class, container).toString()
