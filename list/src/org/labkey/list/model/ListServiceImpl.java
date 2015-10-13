@@ -65,9 +65,11 @@ public class ListServiceImpl implements ListService.Interface
     @Nullable
     public ListDefinition getList(Container container, String name)
     {
-        ListDef def = ListManager.get().getList(container, name);
-        if (null != def)
-            return new ListDefinitionImpl(def);
+        for (ListDef def : ListManager.get().getLists(container))
+        {
+            if (name.equalsIgnoreCase(def.getName()))       // DB stores actual name, but can be referenced with different case (#24476)
+                return new ListDefinitionImpl(def);
+        }
         return null;
     }
 
