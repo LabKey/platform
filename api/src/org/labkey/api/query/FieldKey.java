@@ -50,14 +50,7 @@ public class FieldKey extends QueryKey<FieldKey>
 {
     private static final String DIVIDER = "/";
 
-    private static final QueryKey.Factory<FieldKey> FACTORY = new QueryKey.Factory<FieldKey>()
-    {
-        @Override
-        public FieldKey create(FieldKey parent, String name)
-        {
-            return new FieldKey(parent, name);
-        }
-    };
+    private static final QueryKey.Factory<FieldKey> FACTORY = FieldKey::new;
 
     /**
      * same as fromString() but URL encoded
@@ -210,16 +203,11 @@ public class FieldKey extends QueryKey<FieldKey>
         return CASE_INSENSITIVE_ORDER.compare(this, o);
     }
 
-    public static final Comparator<FieldKey> CASE_INESNSITIVE_STRING_ORDER = new Comparator<FieldKey>()
-    {
-        @Override
-        public int compare(FieldKey a, FieldKey b)
-        {
-            if (a==b) return 0;
-            if (null==a) return -1;
-            if (null==b) return 1;
-            return String.CASE_INSENSITIVE_ORDER.compare(a.toString(), b.toString());
-        }
+    public static final Comparator<FieldKey> CASE_INSENSITIVE_STRING_ORDER = (a, b) -> {
+        if (a==b) return 0;
+        if (null==a) return -1;
+        if (null==b) return 1;
+        return String.CASE_INSENSITIVE_ORDER.compare(a.toString(), b.toString());
     };
 
 
