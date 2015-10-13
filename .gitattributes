@@ -320,6 +320,7 @@ api/src/org/labkey/api/data/LookupColumn.java -text
 api/src/org/labkey/api/data/MVDisplayColumn.java -text
 api/src/org/labkey/api/data/MVDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/MenuButton.java -text
+api/src/org/labkey/api/data/MetadataSqlSelector.java -text
 api/src/org/labkey/api/data/MethodInfo.java -text
 api/src/org/labkey/api/data/MultiValuedDisplayColumn.java -text
 api/src/org/labkey/api/data/MultiValuedForeignKey.java -text
@@ -349,6 +350,8 @@ api/src/org/labkey/api/data/PropertySchema.java -text
 api/src/org/labkey/api/data/PropertyStorageSpec.java -text
 api/src/org/labkey/api/data/PropertyStore.java -text
 api/src/org/labkey/api/data/QueryLogging.java -text
+api/src/org/labkey/api/data/QueryLoggingAuditTypeEvent.java -text
+api/src/org/labkey/api/data/QueryLoggingAuditTypeProvider.java -text
 api/src/org/labkey/api/data/RemappingDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/RenderColumn.java -text
 api/src/org/labkey/api/data/RenderContextDecorator.java -text
@@ -371,6 +374,7 @@ api/src/org/labkey/api/data/SchemaNameCache.java -text
 api/src/org/labkey/api/data/SchemaTableInfoCache.java -text
 api/src/org/labkey/api/data/SchemaTableInfoFactory.java -text
 api/src/org/labkey/api/data/SchemaXmlCacheHandler.java -text
+api/src/org/labkey/api/data/ScopeQueryLoggingProfilerListener.java -text
 api/src/org/labkey/api/data/SelectQueryAuditEvent.java -text
 api/src/org/labkey/api/data/SelectQueryAuditProvider.java -text
 api/src/org/labkey/api/data/Selector.java -text

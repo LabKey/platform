@@ -36,16 +36,19 @@ public class QueryLogging
     private SelectQueryAuditEvent _selectQueryAuditEvent;       // allows this to be set with derived
     private boolean _hasBeenValidated = false;
     private final boolean _readOnly;
+    private final boolean _metadataQuery;
 
     public QueryLogging()
     {
         _readOnly = false;
+        _metadataQuery = false;
     }
 
-    private QueryLogging(boolean validated)
+    private QueryLogging(boolean validated, boolean metadataQuery)
     {
         _readOnly = true;
         _hasBeenValidated = validated;
+        _metadataQuery = metadataQuery;
     }
 
     public void setQueryLogging(User user, Container container, String comment, Set<ColumnLogging> columnLoggings,
@@ -69,6 +72,11 @@ public class QueryLogging
     public boolean isReadOnly()
     {
         return _readOnly;
+    }
+
+    public boolean isMetadataQuery()
+    {
+        return _metadataQuery;
     }
 
     @Nullable
@@ -117,8 +125,9 @@ public class QueryLogging
         _queryId = queryId;
     }
 
-    private static final QueryLogging _emptyQueryLogging = new QueryLogging(false);
-    private static final QueryLogging _noValidationNeededQueryLogging = new QueryLogging(true);
+    private static final QueryLogging _emptyQueryLogging = new QueryLogging(false, false);
+    private static final QueryLogging _noValidationNeededQueryLogging = new QueryLogging(true, false);
+    private static final QueryLogging _metadataQueryLogging = new QueryLogging(false, true);
 
     public static QueryLogging emptyQueryLogging()
     {
@@ -129,6 +138,8 @@ public class QueryLogging
     {
         return _noValidationNeededQueryLogging;
     }
+
+    public static QueryLogging metadataQueryLogging() { return _metadataQueryLogging; }
 
     @NotNull
     public SelectQueryAuditEvent getSelectQueryAuditEvent()
