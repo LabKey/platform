@@ -35,35 +35,38 @@ public interface AuditTypeProvider
      * The audit event name associated with this audit provider. Must be
      * unique within the system.
      */
-    public String getEventName();
-    public String getLabel();
-    public String getDescription();
+    String getEventName();
+    String getLabel();
+    String getDescription();
 
     /**
      * Perform any initialization of the provider at registration time such as
      * domain creation.
      * @param user User useed when saving the backing Domain.
      */
-    public void initializeProvider(User user);
+    void initializeProvider(User user);
 
-    public Domain getDomain();
-    public TableInfo createTableInfo(UserSchema schema);
+    Domain getDomain();
+    TableInfo createTableInfo(UserSchema schema);
 
     /**
      * Conversion from legacy untyped event fields to new provider specific
      * fields
      */
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event);
+    default <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
+    {
+        throw new UnsupportedOperationException("Postdates migration, no need to convert");
+    }
 
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap);
+    <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap);
 
-    public <K extends AuditTypeEvent> Class<K> getEventClass();
+    <K extends AuditTypeEvent> Class<K> getEventClass();
 
     /**
      * Mapping from old audit table names ("intKey1", "key1", and "Property/Foo" to the new column names.)
      */
     Map<FieldKey, String> legacyNameMap();
 
-    public ActionURL getAuditUrl();
+    ActionURL getAuditUrl();
 
 }

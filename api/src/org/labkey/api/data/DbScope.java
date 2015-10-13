@@ -123,6 +123,7 @@ public class DbScope
     private final SchemaTableInfoCache _tableCache;
     private final Map<Thread, List<TransactionImpl>> _transaction = new WeakHashMap<>();
     private final DataSourceProperties _props;
+    private final boolean _logQueries;
 
     private SqlDialect _dialect;
 
@@ -201,6 +202,7 @@ public class DbScope
         _schemaCache = null;
         _tableCache = null;
         _props = null;
+        _logQueries = false;
     }
 
 
@@ -208,7 +210,7 @@ public class DbScope
     // add a getter & setter to this bean, and then do something with the typed value in DbScope.
     public static class DataSourceProperties
     {
-        private boolean _logging = false;
+        private boolean _logQueries = false;
         private String _displayName = null;
 
         public DataSourceProperties()
@@ -220,14 +222,14 @@ public class DbScope
             return map.isEmpty() ? new DataSourceProperties() : BeanObjectFactory.Registry.getFactory(DataSourceProperties.class).fromMap(map);
         }
 
-        public boolean isLogging()
+        public boolean isLogQueries()
         {
-            return _logging;
+            return _logQueries;
         }
 
-        public void setLogging(boolean logging)
+        public void setLogQueries(boolean logQueries)
         {
-            _logging = logging;
+            _logQueries = logQueries;
         }
 
         public @Nullable String getDisplayName()
@@ -280,6 +282,7 @@ public class DbScope
             _props = props;
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
+            _logQueries = props.isLogQueries();
         }
     }
 
@@ -346,6 +349,11 @@ public class DbScope
     public DataSourceProperties getProps()
     {
         return _props;
+    }
+
+    public boolean isLogQueries()
+    {
+        return _logQueries;
     }
 
     /**
@@ -984,7 +992,13 @@ public class DbScope
                             dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
                     }
 
-                    addScope(dsName, dataSources.get(dsName), DataSourceProperties.get(dsProperties));
+                    DataSourceProperties dsPropertiesBean = DataSourceProperties.get(dsProperties);
+                    if (dsName.equals(labkeyDsName) && dsPropertiesBean.isLogQueries())
+                    {
+                        LOG.warn("Ignoring unsupported parameter in labkey.xml to log queries for LabKey DataSource \"" + labkeyDsName + "\"");
+                        dsPropertiesBean.setLogQueries(false);
+                    }
+                    addScope(dsName, dataSources.get(dsName), dsPropertiesBean);
                 }
                 catch (Exception e)
                 {
