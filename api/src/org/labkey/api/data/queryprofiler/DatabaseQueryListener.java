@@ -29,44 +29,15 @@ import org.labkey.api.security.User;
  */
 public interface DatabaseQueryListener<T>
 {
-    /**
-     * @return whether this listener cares about the query based on sql string
-     */
-    default boolean matches(String sql)
-    {
-        return true;
-    }
-
-    /**
-     * @return whether this listener cares about the query based on Dbscope properties
-     */
-    default boolean matches(QueryLogging queryLogging)
-    {
-        return true;
-    }
-
-    /**
-     * @return whether this listener cares about the query based on QueryLogging properties
-     */
-    default boolean matches(DbScope scope)
-    {
-        return true;
-    }
-
-    /**
-     * @return whether this listener cares about the query based on dbscope properties, sql string, and queryLogging properties
-     */
-    default boolean matches(@Nullable DbScope scope, String sql, QueryLogging queryLogging)
-    {
-        return matches(scope) && matches(sql) && matches(queryLogging);
-    }
+    /** @return whether this listener cares about the query */
+    public boolean matches(String sql);
 
     /** Called when a matching query is run against the database. */
-    void queryInvoked(DbScope scope, String sql, User user, Container container, @Nullable T environment, QueryLogging queryLogging);
+    public void queryInvoked(DbScope scope, String sql, User user, Container container, @Nullable T environment, QueryLogging queryLogging);
 
     /** @return a custom context, which will be provided if and when the queryInvoked() method is called. This will be called
      * from the originating thread (not an asychronous thread that might actually be running the query), so it can
      * gather information from ThreadLocals if needed */
     @Nullable
-    T getEnvironment();
+    public T getEnvironment();
 }

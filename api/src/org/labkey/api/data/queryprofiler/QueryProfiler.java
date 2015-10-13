@@ -189,7 +189,7 @@ public class QueryProfiler
 
         for (DatabaseQueryListener listener : _listeners)
         {
-            if (listener.matches(scope, sql, queryLogging))
+            if (listener.matches(sql))
             {
                 Map<DatabaseQueryListener, Object> listenersEnvironment = (Map)QueryService.get().getEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS);
                 Object listenerEnvironment;
