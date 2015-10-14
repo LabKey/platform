@@ -37,6 +37,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
@@ -1485,6 +1486,9 @@ public class UserController extends SpringActionController
                     {
                         QuerySettings settings = new QuerySettings(getViewContext(), "auditHistory");
                         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_USER), _detailsUserId);
+                        if (getContainer().isRoot())
+                            settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
+
 
                         List<FieldKey> columns = new ArrayList<>();
 
