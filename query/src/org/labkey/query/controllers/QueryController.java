@@ -2206,7 +2206,7 @@ public class QueryController extends SpringActionController
             if (updateService == null)
                 throw new UnsupportedOperationException("Unable to delete - no QueryUpdateService registered for " + form.getSchemaName() + "." + form.getQueryName());
 
-            Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), true);
+            Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), null, true, true);
             List<ColumnInfo> pks = table.getPkColumns();
             int numPks = pks.size();
 
