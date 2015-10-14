@@ -475,13 +475,10 @@ public class StatementDataIterator extends AbstractDataIterator
                 {
                     if (x instanceof BatchUpdateException && null != x.getNextException())
                         x = x.getNextException();
-                    if (StringUtils.startsWith(x.getSQLState(), "22") || RuntimeSQLException.isConstraintException(x))
-                    {
-                        //noinspection ThrowableResultOfMethodCallIgnored
-                        getRowError().addGlobalError(x);
-                        _context.checkShouldCancel();
-                    }
-                    throw new RuntimeSQLException(x);
+                    // NOTE some constraint exceptions are recoverable (especially on sql server), but treat all sql exceptions as fatal
+                    //noinspection ThrowableResultOfMethodCallIgnored
+                    getRowError().addGlobalError(x);
+                    throw _context.getErrors();
                 }
             }
             assert _queue.isClosed();
