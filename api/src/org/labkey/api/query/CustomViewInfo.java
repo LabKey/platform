@@ -199,6 +199,9 @@ public interface CustomViewInfo
     /** Returns true if this custom view is editable. */
     boolean isEditable();
 
+    /** Returns true if this custom view can be overridden through the UI. This is normally true to database views and only true for file-based views that opt-in. */
+    boolean isOverridable();
+
     /** Returns true if the custom view is in session state. */
     boolean isSession();
 
