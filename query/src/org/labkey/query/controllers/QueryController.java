@@ -5685,7 +5685,7 @@ public class QueryController extends SpringActionController
             }
             catch (SQLException | BadSqlGrammarException e)
             {
-                // Don't send these to mothershipe; see #20861
+                // Don't send these to mothership; see #20861
                 errors.reject(ERROR_MSG, e.getMessage());
                 return response;
             }

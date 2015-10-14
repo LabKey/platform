@@ -29,8 +29,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.query.persist.QueryManager;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+
+import java.sql.SQLException;
 
 /**
  * User: dave
@@ -75,11 +78,21 @@ public class ValidateQueryAction extends ApiAction<ValidateQueryAction.ValidateQ
 
     public ApiResponse execute(ValidateQueryForm form, BindException errors) throws Exception
     {
-        // TODO: Shouldn't this try/catch(SQLException & BadSqlGrammarException)? Similar to #20861
-        QueryManager.get().validateQuery(table, form.isIncludeAllColumns());
+        ApiSimpleResponse response = new ApiSimpleResponse();
+        try
+        {
+            QueryManager.get().validateQuery(table, form.isIncludeAllColumns());
+            response.put("valid", true);
+        }
+        catch (SQLException | BadSqlGrammarException e)
+        {
+            // Don't send these to mothership; see #20861
+            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            response.put("valid", false);
+        }
 
         //if we got here, the query is OK
-        return new ApiSimpleResponse("valid", true);
+        return response;
     }
 
 
