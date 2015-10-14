@@ -425,7 +425,17 @@ function runner() {
         updateIdSelects();
     };
 
-    var validateKey = function() {
+    var checkSubmit = function() {
+        if (!validateBeforeSubmit()) {
+            var submitButton = document.getElementById("submit-form-btn");
+            // re-enable button to let user correct problem
+            LABKEY.Utils.replaceClass(submitButton, 'labkey-disabled-button', 'labkey-button');
+            return false;
+        }
+        return true;
+    }
+
+    var validateBeforeSubmit = function() {
         var name = document.getElementById("name").value;
 
         var insertOnlyChoice = document.getElementById("insertOnlyChoice");
@@ -584,7 +594,7 @@ function runner() {
 
         // initialize form submit
         var formEl = Ext.get('sampleSetUploadForm');
-        formEl.dom.onsubmit = validateKey;
+        formEl.dom.onsubmit = checkSubmit;
 
         // initialize the textarea
         var textbox = Ext.get('textbox');
