@@ -301,8 +301,7 @@ public class SynonymManager
             // Additional logging to track down repro for #23100
             if (null == reverseMap)
             {
-                Exception e = new Exception("Synonym exception");
-                LOG.error("No reverse map from " + _synonymScope + " to " + _targetScope + ", trying to resolve " + fkName + " (" + pkSchemaName + "." + pkTableName + "." + pkColumnName + " -> " + colName + ")", e);
+                LOG.info("No reverse map from " + _synonymScope + " to " + _targetScope + ", trying to resolve " + fkName + " (" + pkSchemaName + "." + pkTableName + "." + pkColumnName + " -> " + colName + ")");
             }
             else
             {
