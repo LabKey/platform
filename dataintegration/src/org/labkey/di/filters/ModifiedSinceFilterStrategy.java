@@ -16,6 +16,7 @@
 package org.labkey.di.filters;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Aggregate;
@@ -37,6 +38,7 @@ import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.TransformUtils;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.etl.xml.FilterType;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
@@ -212,17 +214,25 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         Aggregate max = new Aggregate(tsCol, Aggregate.Type.MAX);
 
         TableSelector ts = new TableSelector(table, Collections.singleton(tsCol), f, null);
-        Map<String, List<Aggregate.Result>> results = ts.getAggregates(Arrays.asList(max));
+        Map<String, List<Aggregate.Result>> results;
+
+        // Issue 24301, from exception 21337. A misconfigured timestamp column can fail in lots of ways.
+        // Perhaps getAggregates() itself could be hardened, but we'd still want it to throw something so the caller could deal with the error appropriately.
+        try
+        {
+            results = ts.getAggregates(Arrays.asList(max));
+        }
+        catch (DataIntegrityViolationException ex)
+        {
+            throw new IllegalArgumentException("Timestamp column '"+ _table.getName() + "." + tsCol.getColumnName()+"' contains value not castable to a legal type.", ex);
+        }
+
         List<Aggregate.Result> list = results.get(tsCol.getName());
 
         // Diagnostic for 20659, from exception 17683. The aggregates resultset doesn't include the tsCol name.
         if (list == null)
         {
-            StringBuilder sb = new StringBuilder("Timestamp column '" + tsCol.getName() + "' not found in aggregate results for table '" + _table.getName() + "'\n");
-            sb.append("Legal types are date, time, timestamp (rowversion), and integer.\nText fields will pass this check but immediately fail on casting to a date.\nAvailable columns:\n");
-            for (String column : results.keySet())
-                sb.append(column).append("\n");
-            throw new IllegalArgumentException(sb.toString());
+            throw new IllegalArgumentException(makeBadTsColMessage("Timestamp column '" + tsCol.getName() + "' not found in aggregate results for table '" + _table.getName(), results));
         }
         Aggregate.Result maxResult = list.get(0);
 
@@ -241,12 +251,22 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             }
             catch (ParseException e)
             {
-                throw new IllegalArgumentException("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a date, timestamp or integer: " + incrementalEndTimestamp.toString());
+                throw new IllegalArgumentException(makeBadTsColMessage("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a legal type: " + incrementalEndTimestamp.toString(), results));
             }
         }
         else
-            throw new IllegalArgumentException("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a date, timestamp or integer: " + incrementalEndTimestamp.toString());
+            throw new IllegalArgumentException(makeBadTsColMessage("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a legal type: " + incrementalEndTimestamp.toString(), results));
         return timestamps;
+    }
+
+    @NotNull
+    private String makeBadTsColMessage(String specificMsg, Map<String, List<Aggregate.Result>> results)
+    {
+        StringBuilder sb = new StringBuilder(specificMsg + "'\n");
+        sb.append("Legal types are date, time, datetime, timestamp, rowversion, and integer.\nText fields will pass the datatype check but immediately fail on the cast attempt.\nAvailable columns:\n");
+        for (String column : results.keySet())
+            sb.append(column).append("\n");
+        return sb.toString();
     }
 
     Object getLastSuccessfulIncrementalEndTimestampJson(boolean deleted)
