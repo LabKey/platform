@@ -3552,7 +3552,7 @@ div.headermenu a.labkey-menu-text-link img {
 
 .x4-menu-item-icon.fa
 {
-    margin-top: 0.28em;
+    margin-top: 3px;
 }
 
 /* dont allow the up down arrows to show as disabled until bug 24434 has been fixed */
