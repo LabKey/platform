@@ -51,8 +51,6 @@ import java.util.Set;
  */
 public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> implements DomainProvider
 {
-    boolean useConceptPicker = true;
-
     public static class PD extends PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>
     {
         public PD(RootPanel rootPanel, Saveable<GWTDomain> owner, LookupServiceAsync service)
@@ -64,7 +62,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             super(rootPanel, owner, service, new GWTPropertyDescriptor(), alwaysAllowImportSchema);
         }
-
     }
 
     public static final String currentFolder = "[current folder]";
@@ -84,7 +81,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         private final String _description;
         private final String _fontClass;
 
-        private FieldStatus(String description, String fontClass)
+        FieldStatus(String description, String fontClass)
         {
             _description = description;
             _fontClass = fontClass;
@@ -320,13 +317,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         setBoldText(_table, 0, col++, "Label");
         _table.getFlexCellFormatter().setWidth(0, col, "155px");
         setBoldText(_table, 0, col++, "Type");
-
-        if (!useConceptPicker)
-        {
-            _table.getFlexCellFormatter().setColSpan(0, col, 2);
-            setBoldText(_table, 0, col, "Lookup");
-            col += 2;
-        }
 
         _readOnly = false;
         refreshButtons(_buttonPanel);
@@ -962,75 +952,33 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         Widget type;
         if (readOnly || !isTypeEditable(rowObject))
         {
-            if (useConceptPicker)
-            {
-                type = new Label(ConceptPicker.getDisplayString(pd));
-            }
-            else
-            {
-                type = new Label(TypePicker.getDisplayString(pd.getRangeURI()));
-            }
+            type = new Label(ConceptPicker.getDisplayString(pd));
         }
         else
         {
-            if (useConceptPicker)
+            ConceptPicker picker = new ConceptPicker.Bound(_lookupService, "ff_type" + index, pd);
+            picker.addListener(Events.Focus, listener);
+            picker.addListener(Events.KeyPress, listener);
+            picker.addListener(Events.Change, new Listener<FieldEvent>()
             {
-                ConceptPicker picker = new ConceptPicker.Bound(_lookupService, "ff_type" + index, pd);
-                picker.addListener(Events.Focus, listener);
-                picker.addListener(Events.KeyPress, listener);
-                picker.addListener(Events.Change, new Listener<FieldEvent>()
+                public void handleEvent(FieldEvent be)
                 {
-                    public void handleEvent(FieldEvent be)
-                    {
-                        // UNDONE: this is a terrible place to put this call.  ConceptPicker.Bound updates the type of
-                        // the underlying property descriptor in a change listener like this one, so updating measure
-                        // and dimension here introduces a dependency on listener order.
-                        pd.guessMeasureAndDimension();
-                        fireChangeEvent();
-                    }
-                });
-                picker.setAllowAttachmentProperties(_domain.isAllowAttachmentProperties());
-                picker.setAllowFileLinkProperties(_domain.isAllowFileLinkProperties());
-                picker.setAllowFlagProperties(_domain.isAllowFlagProperties());
-                // distinguish between RangeEditable and any ConceptEditable
-                picker.setIsRangeEditable(isRangeEditable(rowObject));
-                type = picker;
-            }
-            else
-            {
-                BoundTypePicker typePicker = new BoundTypePicker(pd, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
-                typePicker.addFocusHandler(listener);
-                typePicker.setRangeURI(pd.getRangeURI());
-                typePicker.setEnabled(isRangeEditable(rowObject));
-                type = typePicker;
-            }
+                    // UNDONE: this is a terrible place to put this call.  ConceptPicker.Bound updates the type of
+                    // the underlying property descriptor in a change listener like this one, so updating measure
+                    // and dimension here introduces a dependency on listener order.
+                    pd.guessMeasureAndDimension();
+                    fireChangeEvent();
+                }
+            });
+            picker.setAllowAttachmentProperties(_domain.isAllowAttachmentProperties());
+            picker.setAllowFileLinkProperties(_domain.isAllowFileLinkProperties());
+            picker.setAllowFlagProperties(_domain.isAllowFlagProperties());
+            // distinguish between RangeEditable and any ConceptEditable
+            picker.setIsRangeEditable(isRangeEditable(rowObject));
+            type = picker;
         }
         _table.setWidget(tableRow, col, type);
         col++;
-
-        if (!useConceptPicker)
-        {
-            if (!readOnly)
-            {
-                FontButton l = getDownButton("lookup" + index, new ClickHandler()
-                {
-                    public void onClick(ClickEvent sender)
-                    {
-                        select(pd);
-                        editLookup(index);
-                   }
-                });
-                addTooltip(l, "Click to edit the lookup");
-                _table.setWidget(tableRow,col,l);
-            }
-            else
-            {
-                _table.setText(tableRow,col,"");
-            }
-            col++;
-            _table.setText(tableRow,col,pd.getLookupDescription());
-            col++;
-        }
 
         // blank cell
         _table.setHTML(tableRow, col,"&nbsp;");
@@ -1320,23 +1268,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return null == _rows ? 0 : _rows.size();
     }
 
-    public int getPropertyCount(boolean includeDeleted)
-    {
-        if (includeDeleted || null == _rows)
-            return getPropertyCount();
-        else
-        {
-            int numProps = 0;
-            for(int i = 0; i < _rows.size(); ++i)
-            {
-                if(!getRow(i).deleted)
-                    numProps += 1;
-            }
-            return numProps;
-        }
-    } //getPropertyCount(boolean)
-
-
     public Widget getWidget()
     {
         return _panel;
@@ -1401,27 +1332,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
      * Changes to the underlying objects (or edit state) are not reflected in the UI
      * without a call to refresh() or refreshRow().
      */
-
-    private class BoundTypePicker extends TypePicker implements ChangeListener
-    {
-        FieldType _p;
-
-        BoundTypePicker(FieldType pd, String id, boolean allowFileLinkProperties, boolean allowAttachmentProperties)
-        {
-            super(pd.getRangeURI(), allowFileLinkProperties, allowAttachmentProperties);
-            _p = pd;
-            DOM.setElementProperty(getElement(), "id", id);
-            addChangeListener(this);
-        }
-
-        public void onChange(Widget sender)
-        {
-            _p.setRangeURI(getRangeURI());
-            _p.setFormat(null);
-            _p.guessMeasureAndDimension();
-            refreshRow(_p);
-        }
-    }
 
 
     /** same as Tooltip except for override setPopupPosition()
@@ -1727,36 +1637,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
-
-    public void editLookup(int row)
-    {
-        if (null == _lookupService)
-            return;
-
-        final LookupEditor<FieldType> lookupEditor = createLookupEditor();
-
-        lookupEditor.init(getPropertyDescriptor(row));
-
-        lookupEditor.setPopupPositionAndShow(WindowUtil.createPositionCallback(lookupEditor));
-
-        fireChangeEvent();
-    }
-
-
-    protected LookupEditor<FieldType> createLookupEditor()
-    {
-        return new LookupEditor<FieldType>(_lookupService, new LookupListener<FieldType>()
-        {
-            public void lookupUpdated(FieldType pd)
-            {
-                int row = getRow(pd);
-                if (row != -1)
-                {
-                    refreshRow(pd);
-                }
-            }
-        }, true);
-    }
 
     public void addButton(ImageButton imageButton)
     {

@@ -21,13 +21,13 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import java.util.List;
 
 /**
- * I couldn't seems to get subclassing interfaces to work,
+ * I couldn't seem to get subclassing interfaces to work,
  * so just have the controller/designer wrap its service for
  * me
  */
 public interface LookupServiceAsync
 {
     public void getContainers(AsyncCallback<List<String>> async);
-    public void getSchemas(String containerId, AsyncCallback<List<String>> async);
+    public void getSchemas(String containerId, String defaultLookupSchemaName, AsyncCallback<List<String>> async);
     public void getTablesForLookup(String containerId, String schemaName, AsyncCallback<List<LookupService.LookupTable>> async);
 }

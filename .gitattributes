@@ -6651,7 +6651,6 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/ImportSchemaWizard.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/InferSchemaWizard.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LabKeyLinkHTML.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LinkButton.java -text
-internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupEditor.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupEditorPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupListener.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupService.java -text

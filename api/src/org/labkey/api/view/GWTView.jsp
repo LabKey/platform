@@ -16,13 +16,13 @@
  */
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.GWTView" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -57,5 +57,5 @@ String hashedPath = contextPath + "/" + jsPath + "?" + PageFlowUtil.getServerSes
         %><%=text(comma)%><%=PageFlowUtil.jsString(entry.getKey())%>:<%= PageFlowUtil.jsString(entry.getValue()) %><%
         comma=",\n\t";
     }
-%>};
+%>}
 </script>

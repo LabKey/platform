@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -30,6 +31,7 @@ import org.labkey.api.gwt.client.ui.LookupService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -40,9 +42,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -53,6 +53,7 @@ import java.util.Set;
  * Base class for building GWT editors that edit domains
  *
  * @see org.labkey.api.gwt.client.ui.PropertiesEditor in InternalGWT
+ * @see org.labkey.api.gwt.client.ui.LookupService
  */
 public class DomainEditorServiceBase extends BaseRemoteService
 {
@@ -86,7 +87,13 @@ public class DomainEditorServiceBase extends BaseRemoteService
     }
 
 
+    @Deprecated
     public List<String> getSchemas(String containerId)
+    {
+        return Collections.emptyList();
+    }
+
+    public List<String> getSchemas(String containerId, String defaultLookupSchemaName)
     {
         try
         {
@@ -95,15 +102,23 @@ public class DomainEditorServiceBase extends BaseRemoteService
             {
                 return Collections.emptyList();
             }
+            QuerySchema defaultLookupSchema = DefaultSchema.get(getUser(), c, null != defaultLookupSchemaName ? defaultLookupSchemaName : "lists");
+            DbScope defaultLookupScope = defaultLookupSchema.getDbSchema().getScope();
             Set<SchemaKey> schemaPaths = DefaultSchema.get(getUser(), c).getUserSchemaPaths(false);
-
             List<String> names = new ArrayList<>();
+
             for (SchemaKey schemaPath : schemaPaths)
             {
+                QuerySchema qs = DefaultSchema.get(getUser(), c, schemaPath);
+                DbScope scope = qs.getDbSchema().getScope();
+
+                // Return only schemas in the lookup scope, #18179
+                if (!defaultLookupScope.equals(scope))
+                    continue;
                 names.add(schemaPath.toString());
             }
 
-            return new ArrayList<>(names);
+            return names;
         }
         catch (RuntimeException x)
         {

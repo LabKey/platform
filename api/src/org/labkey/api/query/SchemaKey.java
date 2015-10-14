@@ -34,14 +34,7 @@ public class SchemaKey extends QueryKey<SchemaKey>
 {
     private static final String DIVIDER = ".";
 
-    private static final QueryKey.Factory<SchemaKey> FACTORY = new QueryKey.Factory<SchemaKey>()
-    {
-        @Override
-        public SchemaKey create(SchemaKey parent, String name)
-        {
-            return new SchemaKey(parent, name);
-        }
-    };
+    private static final QueryKey.Factory<SchemaKey> FACTORY = SchemaKey::new;
 
     /**
      * same as fromString() but URL encoded
@@ -132,16 +125,11 @@ public class SchemaKey extends QueryKey<SchemaKey>
      *   A/B
      *   B
      */
-    public static final Comparator<SchemaKey> CASE_INESNSITIVE_STRING_ORDER = new Comparator<SchemaKey>()
-    {
-        @Override
-        public int compare(SchemaKey a, SchemaKey b)
-        {
-            if (a==b) return 0;
-            if (null==a) return -1;
-            if (null==b) return 1;
-            return String.CASE_INSENSITIVE_ORDER.compare(a.toString(), b.toString());
-        }
+    public static final Comparator<SchemaKey> CASE_INSENSITIVE_STRING_ORDER = (a, b) -> {
+        if (a==b) return 0;
+        if (null==a) return -1;
+        if (null==b) return 1;
+        return String.CASE_INSENSITIVE_ORDER.compare(a.toString(), b.toString());
     };
 
     /**
@@ -222,11 +210,11 @@ public class SchemaKey extends QueryKey<SchemaKey>
             assertTrue(fromParts("b","a").compareTo(fromParts("a","b")) > 0);
             assertTrue(fromParts("a","b").compareTo(fromParts("a","c")) < 0);
 
-            // shorter sorts first, don't really care but that's easier given the datastructure
+            // shorter sorts first, don't really care but that's easier given the data structure
             assertTrue(SchemaKey.fromParts("z").compareTo(fromParts("a","b")) < 0);
             assertTrue(SchemaKey.fromParts("a","b").compareTo(fromParts("z")) > 0);
 
-            assertEquals(SchemaKey.fromParts("assay","Viral Loads", "Viral Loads").toString(), "assay.Viral Loads.Viral Loads");
+            assertEquals(SchemaKey.fromParts("assay", "Viral Loads", "Viral Loads").toString(), "assay.Viral Loads.Viral Loads");
         }
     }
 }

@@ -55,7 +55,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
 
     protected void setImportFile(ViewContext context)
     {
-        // Retrieve the file from the session now, so we can delete it later.  If we're importing in a background thread,
+        // Retrieve the file from the session now, so we can delete it later. If we're importing in a background thread,
         // we won't have a session at the end of import.
         HttpSession session = getViewContext().getSession();
         SessionTempFileHolder fileHolder = (SessionTempFileHolder)session.getAttribute("org.labkey.domain.tempFile");

@@ -275,7 +275,7 @@ final public class DefaultSchema extends AbstractSchema
                 if (r2 == null)
                     return r1;
 
-                Set<SchemaKey> names = new TreeSet<>(SchemaKey.CASE_INESNSITIVE_STRING_ORDER);
+                Set<SchemaKey> names = new TreeSet<>(SchemaKey.CASE_INSENSITIVE_STRING_ORDER);
                 names.addAll(r1);
                 names.addAll(r2);
                 return names;

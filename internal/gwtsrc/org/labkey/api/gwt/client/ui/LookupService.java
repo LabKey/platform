@@ -34,9 +34,9 @@ public interface LookupService extends RemoteService
     List<String> getContainers();
 
     /**
-     * @return list of schema names
+     * @return list of schema names in the same scope as defaultLookupSchemaName
      */
-    List<String> getSchemas(String containerId);
+    List<String> getSchemas(String containerId, String defaultLookupSchemaName);
 
     /**
      * @param containerId container

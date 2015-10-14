@@ -32,7 +32,7 @@ import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.shared.HandlerManager;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.Label;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -217,7 +217,7 @@ public class LookupEditorPanel extends LayoutContainer
 
         store.removeAll();
         
-        _service.getSchemas(folder, new ErrorDialogAsyncCallback<List<String>>()
+        _service.getSchemas(folder, getDefaultLookupSchemaName(), new ErrorDialogAsyncCallback<List<String>>()
         {
             public void onSuccess(List<String> l)
             {
@@ -511,11 +511,24 @@ public class LookupEditorPanel extends LayoutContainer
         
         _comboContainer.setStringValue(pd.getLookupContainer());
         if (_empty(pd.getLookupSchema()) && _empty(pd.getLookupQuery()))
-            _comboSchema.setStringValue("lists");
+        {
+            _comboSchema.setStringValue(getDefaultLookupSchemaName());
+            _comboTableName.setStringValue("");
+        }
         else
+        {
             _comboSchema.setStringValue(pd.getLookupSchema());
-        _comboTableName.setStringValue(pd.getLookupQuery());
+            _comboTableName.setStringValue(pd.getLookupQuery());
+        }
         updateUI();
+    }
+
+    private String getDefaultLookupSchemaName()
+    {
+        // If "schemaName" property is set (e.g., MetadataQueryAction/MetadataEditor) then use it as the default
+        // lookup schema; if not, default to lists.
+        String lookupSchemaName = PropertyUtil.getServerProperty("schemaName");
+        return (null != lookupSchemaName ? lookupSchemaName : "lists");
     }
 
 //    public GWTPropertyDescriptor getValue()

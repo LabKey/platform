@@ -28,7 +28,7 @@ import java.util.Map;
 */
 public class CachingLookupService implements LookupServiceAsync
 {
-    final LookupServiceAsync _impl;
+    private final LookupServiceAsync _impl;
 
     public CachingLookupService(LookupServiceAsync i)
     {
@@ -36,7 +36,7 @@ public class CachingLookupService implements LookupServiceAsync
     }
 
 
-    List<String> _containers = null;
+    private List<String> _containers = null;
 
     public void getContainers(final AsyncCallback<List<String>> async)
     {
@@ -61,17 +61,17 @@ public class CachingLookupService implements LookupServiceAsync
     }
 
 
-    Map<String,List<String>> schemas = new HashMap<String,List<String>>();
+    private final Map<String, List<String>> schemas = new HashMap<String, List<String>>();
 
-    public void getSchemas(final String containerId, final AsyncCallback<List<String>> async)
+    public void getSchemas(final String containerId, final String defaultLookupSchemaName, final AsyncCallback<List<String>> async)
     {
-        List<String> result = schemas.get(containerId);
+        List<String> result = schemas.get(containerId + "||" + defaultLookupSchemaName);
         if (null != result)
         {
             async.onSuccess(result);
             return;
         }
-        _impl.getSchemas(containerId, new AsyncCallback<List<String>>()
+        _impl.getSchemas(containerId, defaultLookupSchemaName, new AsyncCallback<List<String>>()
         {
             public void onFailure(Throwable caught)
             {
@@ -80,14 +80,14 @@ public class CachingLookupService implements LookupServiceAsync
 
             public void onSuccess(List<String> result)
             {
-                schemas.put(containerId, result);
+                schemas.put(containerId + "||" + defaultLookupSchemaName, result);
                 async.onSuccess(result);
             }
         });
     }
 
 
-    Map<String,List<LookupService.LookupTable>> tables = new HashMap<String,List<LookupService.LookupTable>>();
+    private final Map<String, List<LookupService.LookupTable>> tables = new HashMap<String, List<LookupService.LookupTable>>();
 
     public void getTablesForLookup(final String containerId, final String schemaName, final AsyncCallback<List<LookupService.LookupTable>> async)
     {
