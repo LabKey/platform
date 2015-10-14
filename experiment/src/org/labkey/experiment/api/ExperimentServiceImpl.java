@@ -77,6 +77,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -87,6 +88,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -2226,6 +2228,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             transaction.commit();
         }
+        SchemaKey schemaPath = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
+        QueryService.get().fireQueryDeleted(user, c, null, schemaPath, Collections.singleton(source.getName()));
+
     }
 
     public ExpRunImpl populateRun(final ExpRunImpl expRun)

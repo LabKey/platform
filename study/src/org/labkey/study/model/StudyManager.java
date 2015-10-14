@@ -2929,6 +2929,9 @@ public class StudyManager
             getVisitManager(study).updateParticipantVisits(user, Collections.<DatasetDefinition>emptySet());
         }
 
+        SchemaKey schemaPath = SchemaKey.fromParts(SCHEMA.getSchemaName());
+        QueryService.get().fireQueryDeleted(user, study.getContainer(), null, schemaPath, Collections.singleton(ds.getName()));
+
         unindexDataset(ds);
     }
 
