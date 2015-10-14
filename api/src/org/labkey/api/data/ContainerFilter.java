@@ -150,6 +150,11 @@ public abstract class ContainerFilter
         return getSQLFragment(schema, containerColumnSQL, container, allowNulls);
     }
 
+    /**
+     * Create an expression for a WHERE clause
+     * Generally parameters are preferred, but can cause perf problems in certain cases
+     * @param allowNulls - if looking at ALL rows, whether to allow nulls in the Container column
+     */
     public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean allowNulls)
     {
         SecurityLogger.indent("ContainerFilter");
@@ -929,6 +934,51 @@ public abstract class ContainerFilter
             return Type.AllFolders;
         }
     }
+
+
+    public static class InternalNoContainerFilter extends ContainerFilterWithUser
+    {
+        public InternalNoContainerFilter(User user)
+        {
+            super(user);
+        }
+
+        @Override
+        public SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Container container, Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            return new SQLFragment("1=1");
+        }
+
+        @Override
+        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container)
+        {
+            return new SQLFragment("1=1");
+        }
+
+        @Override
+        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean allowNulls)
+        {
+            return new SQLFragment("1=1");
+        }
+
+        @Override
+        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, Set<Role> roles, boolean allowNulls)
+        {
+            return new SQLFragment("1=1");
+        }
+
+        @Override
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        {
+            throw new IllegalStateException();
+        }
+
+        public Type getType()
+        {
+            return Type.AllFolders;
+        }
+    }
+
 
     public static Set<GUID> toIds(Collection<Container> containers)
     {

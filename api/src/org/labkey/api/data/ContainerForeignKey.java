@@ -28,6 +28,8 @@ import org.labkey.api.view.ActionURL;
  */
 public class ContainerForeignKey extends QueryForeignKey
 {
+    final User _user;
+
     static public ColumnInfo initColumn(ColumnInfo column, UserSchema schema)
     {
         return initColumn(column, schema, null);
@@ -60,6 +62,20 @@ public class ContainerForeignKey extends QueryForeignKey
     public ContainerForeignKey(Container c, User user)
     {
         super("core", c, null, user, "Containers", "EntityId", "DisplayName");
+        _user = user;
     }
 
+    @Override
+    public TableInfo getLookupTableInfo()
+    {
+        TableInfo containers = super.getLookupTableInfo();
+        ((ContainerFilterable)containers).setContainerFilter(new ContainerFilter.InternalNoContainerFilter(_user));
+        return containers;
+    }
+
+    @Override
+    protected void propagateContainerFilter(ColumnInfo foreignKey, TableInfo lookupTable)
+    {
+        /* let's not propagate */
+    }
 }

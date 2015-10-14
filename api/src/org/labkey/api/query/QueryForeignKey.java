@@ -121,7 +121,7 @@ public class QueryForeignKey implements ForeignKey
             if (null == lookupTable)
                 return null;
 
-            LookupForeignKey.propagateContainerFilter(foreignKey, lookupTable);
+            this.propagateContainerFilter(foreignKey, lookupTable);
         }
         catch (QueryParseException qpe)
         {
@@ -147,6 +147,13 @@ public class QueryForeignKey implements ForeignKey
 
         return LookupColumn.create(foreignKey, lookupTable.getColumn(getLookupColumnName(lookupTable)), lookupTable.getColumn(displayField), false, _joinType);
     }
+
+
+    protected void propagateContainerFilter(ColumnInfo foreignKey, TableInfo lookupTable)
+    {
+        LookupForeignKey.propagateContainerFilter(foreignKey, lookupTable);
+    }
+
 
     @Nullable
     @Override
