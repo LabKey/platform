@@ -739,7 +739,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             TransformDescriptor d = job.getTransformDescriptor();
             TransformRun run = TransformManager.get().getTransformRun(job.getContainer(), runId);
             String status = run.getStatus();
-            Integer expId = run.getExpRunId();
+            Integer expId = TransformManager.get().getExpRunIdForTransformRun(run);
             Integer jobId = run.getJobId();
 
             assertNotNull(run.getStartTime());
@@ -772,12 +772,11 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         private void verifyTransformExp(TransformRun transformRun, TransformPipelineJob transformJob)
         {
             TransformDescriptor d = transformJob.getTransformDescriptor();
-            ExpRun expRun = ExperimentService.get().getExpRun(transformRun.getExpRunId());
+            ExpRun expRun = ExperimentService.get().getExpRun(TransformManager.get().getExpRunIdForTransformRun(transformRun));
 
             //
             // verify run standard properties
             //
-            assertEquals(transformRun.getJobId().intValue(), expRun.getJobId().intValue());
             String expectedRunName = TransformPipelineJob.ETL_PREFIX + d.getDescription();
             assertTrue(String.format("Expected run name didn't match: expected '%s', got '%s'", expectedRunName, expRun.getName()),
                     expRun.getName().equalsIgnoreCase(expectedRunName));
@@ -791,7 +790,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             assert TestTask.recordsInsertedJob ==  prop.getFloatValue();
 
             // verify the variable map generated is correct from the TransformManager helper function
-            verifyVariableMap(TransformManager.get().getVariableMapForTransformJob(transformRun.getExpRunId()), mapProps);
+            verifyVariableMap(TransformManager.get().getVariableMapForTransformJob(transformRun), mapProps);
 
             //
             // verify data inputs: test job has two source inputs
@@ -864,7 +863,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             assertEquals(TestTask.recordsModified, prop.getFloatValue().intValue());
 
             // finally, verify that the VariableMap we build out of the protocol application properties is correct
-            verifyVariableMap(TransformManager.get().getVariableMapForTransformStep(transformRun.getExpRunId(), app.getName()), mapProps);
+            verifyVariableMap(TransformManager.get().getVariableMapForTransformStep(transformRun, app.getName()), mapProps);
        }
 
         private void verifyVariableMap(VariableMap varMap, Map<String, ObjectProperty> propMap)

@@ -63,7 +63,6 @@ public class TransformRun
     private User _modifiedBy;
     private Container _container;
     private Integer _jobId;
-    private Integer _expRunId = null;
     private String _transformRunLog = null;
 
     public int getTransformRunId()
@@ -194,16 +193,6 @@ public class TransformRun
     public Integer getJobId()
     {
         return _jobId;
-    }
-
-    public void setExpRunId(Integer expRunId)
-    {
-        _expRunId = expRunId;
-    }
-
-    public Integer getExpRunId()
-    {
-        return _expRunId;
     }
 
     public void setTransformRunStatusEnum(TransformRunStatus transformRunStatus)

@@ -111,12 +111,13 @@ abstract public class TransformBaseTable extends VirtualTable
         sql.append(_nameMap.get("ExecutionTime"));
         sql.append(", t.JobId AS ");
         sql.append(_nameMap.get("JobId"));
-        sql.append(", t.ExpRunId AS ");
+        sql.append(", e.RowId AS ");
         sql.append(_nameMap.get("ExpRunId"));
         sql.append(", t.TransformRunId");
         sql.append(" FROM ");
         sql.append(DataIntegrationQuerySchema.getTransformRunTableName());
         sql.append(" t\n");
+        sql.append(" JOIN exp.experimentRun e ON t.JobId = e.JobId\n");
         return sql.toString();
     }
 
@@ -131,19 +132,25 @@ abstract public class TransformBaseTable extends VirtualTable
     {
         StringBuilder sqlWhere = new StringBuilder();
         sqlWhere.append("WHERE ");
+        appendAlias(tableAlias, sqlWhere);
+        sqlWhere.append("Status <> '");
+        sqlWhere.append(TransformRun.TransformRunStatus.NO_WORK.getDisplayName());
+        sqlWhere.append("'");
+        sqlWhere.append(" AND ");
+        appendAlias(tableAlias, sqlWhere);
+        sqlWhere.append(" Container = '");
+        sqlWhere.append(_schema.getContainer().getId());
+        sqlWhere.append("'");
+        return sqlWhere.toString();
+    }
+
+    private void appendAlias(String tableAlias, StringBuilder sqlWhere)
+    {
         if (!StringUtils.isEmpty(tableAlias))
         {
             sqlWhere.append(tableAlias);
             sqlWhere.append(".");
         }
-        sqlWhere.append("Status <> '");
-        sqlWhere.append(TransformRun.TransformRunStatus.NO_WORK.getDisplayName());
-        sqlWhere.append("'");
-        sqlWhere.append(" AND ");
-        sqlWhere.append(" Container = '");
-        sqlWhere.append(_schema.getContainer().getId());
-        sqlWhere.append("'");
-        return sqlWhere.toString();
     }
 
     protected void addBaseColumns()

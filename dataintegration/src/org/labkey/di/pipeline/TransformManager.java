@@ -25,7 +25,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -37,12 +36,9 @@ import org.labkey.api.data.ParameterDescriptionImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
@@ -59,7 +55,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -789,43 +784,43 @@ public class TransformManager implements DataIntegrationService.Interface
         Table.update(user, DataIntegrationQuerySchema.getTransformRunTableInfo(), run, run.getTransformRunId());
     }
 
-
-    public Integer getLastSuccessfulTransformExpRun(String transformId, int version)
+    public VariableMap getVariableMapForTransformJob(TransformRun run)
     {
-        SimpleFilter f = new SimpleFilter();
-        Sort s = new Sort("-StartTime");
-        TableInfo ti = DataIntegrationQuerySchema.getTransformRunTableInfo();
-
-        f.addCondition(new FieldKey(null, "TransformId"), transformId, CompareType.EQUAL);
-        f.addCondition(new FieldKey(null, "TransformVersion"), version, CompareType.EQUAL);
-        f.addCondition(new FieldKey(null, "status"), "Complete", CompareType.EQUAL);
-
-        Integer[] expRunIds = new TableSelector(ti.getColumn("ExpRunId"), f, s).getArray(Integer.class);
-
-        if (expRunIds.length > 0)
-            return expRunIds[0];
-
+        Integer expRunId = getExpRunIdForTransformRun(run);
+        if (null != expRunId)
+        {
+            ExpRun expRun = ExperimentService.get().getExpRun(expRunId);
+            return new VariableMapImpl(null, expRun.getObjectProperties());
+        }
         return null;
-   }
-
-    public VariableMap getVariableMapForTransformJob(Integer expRunId)
-    {
-        ExpRun run = ExperimentService.get().getExpRun(expRunId);
-        return new VariableMapImpl(null, run.getObjectProperties());
     }
 
-
-    public VariableMap getVariableMapForTransformStep(Integer expRunId, String transformStepId)
+    public VariableMap getVariableMapForTransformStep(TransformRun run, String transformStepId)
     {
-        for (ExpProtocolApplication protocolApp : ExperimentService.get().getExpProtocolApplicationsForRun(expRunId))
+        Integer expRunId = getExpRunIdForTransformRun(run);
+        if (null != expRunId)
         {
-            if (StringUtils.equals(protocolApp.getName(), transformStepId))
+            for (ExpProtocolApplication protocolApp : ExperimentService.get().getExpProtocolApplicationsForRun(expRunId))
             {
-                return new VariableMapImpl(null, protocolApp.getObjectProperties());
+                if (StringUtils.equals(protocolApp.getName(), transformStepId))
+                {
+                    return new VariableMapImpl(null, protocolApp.getObjectProperties());
+                }
             }
         }
-
         return null;
+    }
+
+    Integer getExpRunIdForTransformRun(TransformRun run)
+    {
+        Integer expRunId = null;
+        List<? extends ExpRun> expRuns = ExperimentService.get().getExpRunsForJobId(run.getJobId());
+        // There should be at most 1.
+        if (!expRuns.isEmpty())
+        {
+            expRunId = expRuns.get(0).getRowId();
+        }
+        return expRunId;
     }
 
     public Map<String, String> truncateTargets(String id, User user, Container c)

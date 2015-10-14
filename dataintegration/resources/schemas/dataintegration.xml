@@ -34,7 +34,6 @@
             <column columnName="CreatedBy"/>
             <column columnName="Modified"/>
             <column columnName="ModifiedBy"/>
-            <column columnName="exprunid"/>
         </columns>
     </table>
     <table tableName="TransformConfiguration" tableDbType="TABLE">

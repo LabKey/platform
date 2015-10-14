@@ -55,7 +55,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
 {
     private final TransformDescriptor _etlDescriptor;
     private int _runId;
-    private Integer _expRunId;
+//    private Integer _expRunId;
     private Integer _recordCount;
     private TransformJobContext _transformJobContext;
     private final VariableMapImpl _variableMap = new VariableMapImpl(null);
@@ -130,7 +130,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     }
 
 
-    public void logRunFinish(TaskStatus status, Integer expRunId, Integer recordCount)
+    public void logRunFinish(TaskStatus status, Integer recordCount)
     {
         TransformRun run = getTransformRun();
         if (run != null)
@@ -138,7 +138,6 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
             // Mark that the job has finished successfully
             run.setStatus(status.toString());
             run.setEndTime(new Date());
-            run.setExpRunId(expRunId);
             run.setRecordCount(recordCount);
             update(run);
         }
@@ -172,7 +171,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     public boolean cancel(boolean mayInterruptIfRunning)
     {
         super.cancel(mayInterruptIfRunning);
-        logRunFinish(TaskStatus.cancelled, null, null);
+        logRunFinish(TaskStatus.cancelled, null);
         return true;
     }
 
@@ -189,7 +188,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         if (TaskStatus.error.equals(this.getActiveTaskStatus()))
             status = TaskStatus.error;
 
-        logRunFinish(status, _expRunId, _recordCount);
+        logRunFinish(status, _recordCount);
     }
 
 
@@ -280,9 +279,6 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         {
             recordCount += getRecordCountForAction(action);
         }
-
-        if (null != run)
-            _expRunId = run.getRowId();
 
         _recordCount = recordCount;
         super.clearActionSet(run);
