@@ -45,6 +45,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -607,7 +608,11 @@ public class Table
     }
 
 
-    // Returns a new Map<String, Object> if fieldsIn is a Map, otherwise returns modified version of fieldsIn.
+    /**
+     * @return a new Map&lt;String, Object&gt; if fieldsIn is a Map, otherwise returns modified version of fieldsIn.
+     * @throws RuntimeValidationException if there is a problem with the data that's detected before we try to actually do the insert
+     * @throws RuntimeSQLException if there is a problem communicating with the database or there is a constraint violation or similar error
+     */
     public static <K> K insert(@Nullable User user, TableInfo table, K fieldsIn)
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): ("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
@@ -643,6 +648,16 @@ public class Table
                 continue;
 
             Object value = fields.get(column.getName());
+
+            if (!column.isAutoIncrement() &&
+                    column.isRequired() &&
+                    (null == value || value instanceof String && 0 == ((String) value).length()) &&
+                    !Table.AUTOPOPULATED_COLUMN_NAMES.contains(column.getName()) &&
+                    column.getJdbcDefaultValue() == null)
+            {
+                throw new RuntimeValidationException("A value is required for field '" + column.getName() + "'", column.getName());
+            }
+
             columnSQL.append(comma);
             columnSQL.append(column.getSelectName());
             valueSQL.append(comma);

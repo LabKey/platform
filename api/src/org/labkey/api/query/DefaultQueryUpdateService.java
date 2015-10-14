@@ -276,20 +276,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             row.put(objectUriCol.getName(), lsid);
         }
 
-        for (ColumnInfo column : getDbTable().getColumns())
+        try
         {
-            Object value = row.get(column.getName());
-            if (!column.isAutoIncrement() &&
-                    column.isRequired() &&
-                    (null == value || value instanceof String && 0 == ((String) value).length()) &&
-                    !Table.AUTOPOPULATED_COLUMN_NAMES.contains(column.getName()) &&
-                    column.getJdbcDefaultValue() == null)
-            {
-                throw new ValidationException("A value is required for field '" + column.getName() + "'", column.getName());
-            }
+            return Table.insert(user, getDbTable(), row);
         }
-
-        return Table.insert(user, getDbTable(), row);
+        catch (RuntimeValidationException e)
+        {
+            throw e.getValidationException();
+        }
     }
 
     @Override
