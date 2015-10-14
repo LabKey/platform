@@ -182,6 +182,11 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return true;
     }
 
+    public boolean isOverridable()
+    {
+        return true;
+    }
+
     public boolean isSession()
     {
         return _inSession;

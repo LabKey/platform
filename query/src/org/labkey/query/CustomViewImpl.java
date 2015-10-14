@@ -76,7 +76,7 @@ import java.util.Map;
 /**
  * A custom view that's backed by a row in the database OR saved in the HTTP session for the user.
  */
-public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
+public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, EditableCustomView
 {
     private static final Logger _log = Logger.getLogger(CustomViewImpl.class);
 
@@ -421,6 +421,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         return _cstmView.getCustomViewId() == 0;
     }
 
+    @Override
     public void setCanInherit(boolean f)
     {
         edit().setFlags(_mgr.setCanInherit(_cstmView.getFlags(), f));
@@ -558,77 +559,6 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         return ret;
     }
 
-    public void update(ViewDocument doc, boolean saveFilterAndSort)
-    {
-        DgQuery view = doc.getView();
-        DgQuery.Select select = view.getSelect();
-
-        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> fields = new ArrayList<>();
-
-        for (DgColumn column : select.getColumnArray())
-        {
-            FieldKey key = FieldKey.fromString(column.getValue().getField().getStringValue());
-            Map<ColumnProperty, String> map = Collections.emptyMap();
-            if (column.getMetadata() != null)
-            {
-                ColumnType metadata = column.getMetadata();
-                map = new EnumMap<>(ColumnProperty.class);
-                if (metadata.getColumnTitle() != null)
-                {
-                    map.put(ColumnProperty.columnTitle, metadata.getColumnTitle());
-                }
-            }
-            fields.add(Pair.of(key, map));
-        }
-
-        setColumnProperties(fields);
-        if (!saveFilterAndSort)
-            return;
-
-        DgQuery.Where where = view.getWhere();
-        DgQuery.OrderBy orderBy = view.getOrderBy();
-        ActionURL url = new ActionURL();
-
-        for (DgCompare compare : where.getCompareArray())
-        {
-            String op = compare.getOp();
-            if (op == null)
-                op = "";
-
-            String value = compare.getLiteral();
-            if (value == null)
-            {
-                value = "";
-            }
-
-            url.addParameter(FILTER_PARAM_PREFIX + "." + compare.getField() + "~" + op, value);
-        }
-
-        StringBuilder sort = new StringBuilder();
-        String strComma = "";
-
-        for (DgOrderByString obs : orderBy.getFieldArray())
-        {
-            sort.append(strComma);
-            strComma = ",";
-            if ("DESC".equals(obs.getDir()))
-            {
-                sort.append("-");
-            }
-            sort.append(obs.getStringValue());
-        }
-
-        if (sort.length() != 0)
-        {
-            url.addParameter(FILTER_PARAM_PREFIX + ".sort", sort.toString());
-        }
-
-        if (view.isSetContainerFilterName())
-            url.addParameter(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME, view.getContainerFilterName());
-
-        setFilterAndSortFromURL(url, FILTER_PARAM_PREFIX);
-    }
-
     protected CstmView edit()
     {
         if (_dirty)
@@ -646,4 +576,9 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         return QueryManager.get().getQueryDependents(user, getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
     }
 
+    @Override
+    public CustomViewImpl getEditableViewInfo(User owner, boolean session)
+    {
+        return this;
+    }
 }

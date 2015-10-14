@@ -69,6 +69,12 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     }
 
     @Override
+    public boolean isOverridable()
+    {
+        return _customViewDef.isOverridable();
+    }
+
+    @Override
     public User getCreatedBy()
     {
         return null;
@@ -148,8 +154,8 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     @Override
     public boolean isEditable()
     {
-        //module custom views are not updatable
-        return false;
+        //module custom views are not updatable, unless the XML has flagged this as true
+        return isOverridable();
     }
 
     @Override

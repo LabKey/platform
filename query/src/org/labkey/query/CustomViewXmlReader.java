@@ -67,6 +67,7 @@ public class CustomViewXmlReader
     private List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> _colList = new ArrayList<>();
     private boolean _hidden = false;
     private boolean _canInherit = false;
+    private boolean _canOverride = false;
     private List<Pair<String,String>> _filters;
     private List<String> _sorts;
     private List<Aggregate> _aggregates;
@@ -111,6 +112,11 @@ public class CustomViewXmlReader
     public boolean canInherit()
     {
         return _canInherit;
+    }
+
+    public boolean canOverride()
+    {
+        return _canOverride;
     }
 
     public List<Pair<String, String>> getFilters()
@@ -253,6 +259,7 @@ public class CustomViewXmlReader
             reader._query = viewElement.getQuery();
             reader._hidden = viewElement.isSetHidden() && viewElement.getHidden();
             reader._canInherit = viewElement.isSetCanInherit() && viewElement.getCanInherit();
+            reader._canOverride = viewElement.isSetCanOverride() && viewElement.getCanOverride();
             reader._customIconUrl = viewElement.isSetCustomIconUrl() ? viewElement.getCustomIconUrl() : "/reports/grid.gif";
             reader._label = viewElement.getLabel();
             if (viewElement.isSetShowInDataViews())

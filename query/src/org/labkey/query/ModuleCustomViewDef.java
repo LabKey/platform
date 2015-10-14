@@ -93,6 +93,11 @@ public class ModuleCustomViewDef
         return _customView.isHidden();
     }
 
+    public boolean isOverridable()
+    {
+        return _customView.canOverride();
+    }
+
     public boolean isShowInDataViews()
     {
         return _customView.isShowInDataViews();

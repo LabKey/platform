@@ -438,6 +438,9 @@ public class QueryServiceImpl extends QueryService
             // The database custom views are in priority order so check if the view has already been added
             if (!views.containsKey(cstmView.getName()))
                 views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
+            //if the module-based view has set overridable=true, we allow the DB view to override it
+            else if (views.get(cstmView.getName()) instanceof ModuleCustomView && views.get(cstmView.getName()).isOverridable())
+                views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
         }
 
         return views;

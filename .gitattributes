@@ -1595,6 +1595,7 @@ query/src/org/labkey/query/CustomViewUtil.java -text
 query/src/org/labkey/query/CustomViewWriter.java -text
 query/src/org/labkey/query/CustomViewXmlReader.java -text
 query/src/org/labkey/query/DataViewsWebPartFactory.java -text
+query/src/org/labkey/query/EditableCustomView.java -text
 query/src/org/labkey/query/ExternalSchema.java -text
 query/src/org/labkey/query/ExternalSchemaDefImporterFactory.java -text
 query/src/org/labkey/query/ExternalSchemaDefWriterFactory.java -text

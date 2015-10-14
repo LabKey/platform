@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import com.drew.lang.annotations.Nullable;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.CustomView;
@@ -41,7 +42,7 @@ import java.util.Map;
  * User: Dave
  * Date: Jan 9, 2009
  */
-public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
+public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView, EditableCustomView
 {
     private QueryDefinition _queryDef;
 
@@ -66,6 +67,7 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         throw new UnsupportedOperationException("Can't set queryName on a module-based custom view!");
     }
 
+    @Override
     public void setCanInherit(boolean f)
     {
         throw new UnsupportedOperationException("Module-based custom views cannot inherit");
@@ -75,6 +77,12 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
     {
         throw new UnsupportedOperationException("Module-based custom views cannot be set to hidden. " +
                 "To suppress a module-based view, use Customize Folder to deactivate the module in this current folder.");
+    }
+
+    @Override
+    public boolean isOverridable()
+    {
+        return _customViewDef.isOverridable();
     }
 
     public void setColumns(List<FieldKey> columns)
@@ -90,9 +98,9 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
     @Override
     public boolean canEdit(Container c, Errors errors)
     {
-        if (errors != null)
+        if (errors != null && !isOverridable())
             errors.reject(null, "The module-based custom view '" + (getName() == null ? "<default>" : getName()) + "' is read-only and cannot be edited.");
-        return false;
+        return isOverridable();
     }
 
     public void applyFilterAndSortToURL(ActionURL url, String dataRegionName)
@@ -152,4 +160,24 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         return QueryManager.get().getQueryDependents(user, null, null, getSchemaPath(), Collections.singleton(getName()));
     }
 
+    @Override
+    @Nullable
+    public CustomViewImpl getEditableViewInfo(User owner, boolean session)
+    {
+        if (!isOverridable())
+        {
+            return null;
+        }
+
+        CustomViewImpl cview;
+        if (owner == null)
+            cview = (CustomViewImpl)_queryDef.createSharedCustomView(getName());
+        else
+            cview = (CustomViewImpl)_queryDef.createCustomView(owner, getName());
+
+        if (owner != null && session)
+            cview.isSession(true);
+
+        return cview;
+    }
 }

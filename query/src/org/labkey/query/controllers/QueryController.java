@@ -100,6 +100,7 @@ import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
+import org.labkey.query.EditableCustomView;
 import org.labkey.query.ExternalSchemaDocumentProvider;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableWriter;
@@ -1875,14 +1876,24 @@ public class QueryController extends SpringActionController
             }
 
             // NOTE: Updating, saving, and deleting the view may throw an exception
-            ((CustomViewImpl)view).update(jsonView, saveFilter);
+            CustomViewImpl cview;
+            if (view instanceof EditableCustomView && view.isOverridable())
+            {
+                cview = ((EditableCustomView)view).getEditableViewInfo(owner, session);
+            }
+            else
+            {
+                throw new IllegalArgumentException("View cannot be edited");
+            }
+
+            cview.update(jsonView, saveFilter);
             if (canSaveForAllUsers && !session)
             {
-                view.setCanInherit(inherit);
+                cview.setCanInherit(inherit);
             }
             isHidden = view.isHidden();
-            ((CustomViewImpl) view).setContainer(container);
-            view.save(getUser(), getViewContext().getRequest());
+            cview.setContainer(container);
+            cview.save(getUser(), getViewContext().getRequest());
             if (owner == null)
             {
                 // New view is shared so delete any previous custom view owned by the user with the same name.
