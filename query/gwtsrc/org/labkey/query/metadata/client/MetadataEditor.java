@@ -20,22 +20,22 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
-import com.google.gwt.user.client.ui.*;
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
-import org.labkey.api.gwt.client.ui.WebPartPanel;
-import org.labkey.api.gwt.client.ui.WindowUtil;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.VerticalPanel;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.Saveable;
+import org.labkey.api.gwt.client.ui.WebPartPanel;
+import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
-import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.ServiceUtil;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
 {
@@ -276,9 +276,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         if (_service == null)
         {
             _service = (MetadataServiceAsync) GWT.create(MetadataService.class);
-            Map<String, String> map = new HashMap<String, String>();
-            map.put("schemaName", _schemaName);
-            ServiceUtil.configureEndpoint(_service, "metadataService", "query", map);
+            ServiceUtil.configureEndpoint(_service, "metadataService", "query");
         }
         return _service;
     }
