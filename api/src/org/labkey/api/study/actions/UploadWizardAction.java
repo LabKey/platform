@@ -16,10 +16,11 @@
 
 package org.labkey.api.study.actions;
 
-    import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SpringActionController;
-    import org.labkey.api.collections.CaseInsensitiveHashSet;
-    import org.labkey.api.data.ActionButton;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
@@ -584,10 +585,17 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         public ModelAndView handleStep(FormType form, BindException errors) throws ServletException, ExperimentException
         {
-            if (!form.isResetDefaultValues() && validatePostedProperties(form.getBatchProperties(), errors))
-                return getRunPropertiesView(form, false, false, errors);
-            else
-                return getBatchPropertiesView(form, !form.isResetDefaultValues(), errors);
+            try
+            {
+                if (!form.isResetDefaultValues() && validatePostedProperties(form.getBatchProperties(), errors))
+                    return getRunPropertiesView(form, false, false, errors);
+            }
+            catch (ExperimentException e)
+            {
+                errors.addError(new LabkeyError(e));
+            }
+
+            return getBatchPropertiesView(form, !form.isResetDefaultValues(), errors);
         }
 
         public String getName()
@@ -679,7 +687,15 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         protected boolean validatePost(FormType form, BindException errors) throws ExperimentException
         {
-            return validatePostedProperties(form.getRunProperties(), errors);
+            try
+            {
+                return validatePostedProperties(form.getRunProperties(), errors);
+            }
+            catch (ExperimentException e)
+            {
+                errors.addError(new LabkeyError(e));
+                return false;
+            }
         }
 
         public String getName()

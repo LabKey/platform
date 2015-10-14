@@ -69,13 +69,20 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                 BindException batchErrors = new NullSafeBindException(form, "form");
                 // Collect the errors in a separate list because if otherwise we fail, the superclass will add them a
                 // second time during its reshow logic
-                if (validatePostedProperties(form.getBatchProperties(), batchErrors))
+                try
                 {
-                    List<ExpRun> runs = insertRuns(form, errors);
-                    if (batchErrors.getErrorCount() == 0 && errors.getErrorCount() == 0 && !runs.isEmpty())
+                    if (validatePostedProperties(form.getBatchProperties(), batchErrors))
                     {
-                        return afterRunCreation(form, runs.get(0), errors);
+                        List<ExpRun> runs = insertRuns(form, errors);
+                        if (batchErrors.getErrorCount() == 0 && errors.getErrorCount() == 0 && !runs.isEmpty())
+                        {
+                            return afterRunCreation(form, runs.get(0), errors);
+                        }
                     }
+                }
+                catch (ExperimentException e)
+                {
+                    errors.addError(new LabkeyError(e));
                 }
             }
 

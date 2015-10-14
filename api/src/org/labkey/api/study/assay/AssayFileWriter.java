@@ -187,9 +187,9 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                 {
                     MultipartFile multipartFile = entry.getValue();
                     String fileName = multipartFile.getOriginalFilename();
-                    if (!originalFileNames.add(fileName))
+                    if (!fileName.isEmpty() && !originalFileNames.add(fileName))
                     {
-                        throw new ExperimentException("The same file was uploaded twice - all files must be unique");
+                        throw new ExperimentException("The file '" + fileName + " ' was uploaded twice - all files must be unique");
                     }
                     if (!multipartFile.isEmpty())
                     {
