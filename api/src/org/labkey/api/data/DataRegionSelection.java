@@ -167,7 +167,7 @@ public class DataRegionSelection
                         result.addAll(sessionSelected);
 
                     if (clearSession)
-                        sessionSelected.removeAll(parameterSelected);
+                        sessionSelected.removeAll(result);
                 }
             }
         }
