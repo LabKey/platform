@@ -183,7 +183,7 @@
 
 /* General tab styling */
 .x-grouptabs-panel .x-grouptabs-expand {
-	background: transparent url('../ext-3.4.1/resources/images/access/tree/elbow-minus-nl.gif') no-repeat;
+	background: transparent url('../ext-3.4.1/resources/images/default/tree/elbow-minus-nl.gif') no-repeat;
 	width: 16px;
 	height: 16px;
 	position: absolute;
@@ -197,7 +197,7 @@
 }
 
 .x-grouptabs-expanded .x-grouptabs-expand {
-	background-image: url('../ext-3.4.1/resources/images/access/tree/elbow-minus-nl.gif');
+	background-image: url('../ext-3.4.1/resources/images/default/tree/elbow-minus-nl.gif');
 }
 
 /* GroupTabs sub group styling */

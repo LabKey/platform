@@ -394,7 +394,7 @@ public class DataRegion extends AbstractDataRegion
     public boolean getShowRecordSelectors(RenderContext ctx)
     {
         // Issue 11569: QueryView.showRecordSelectors should take metadata override buttons into account
-        return _showRecordSelectors || (_buttonBarPosition != ButtonBarPosition.NONE && (_gridButtonBar.hasRequiresSelectionButton(ctx) || _gridButtonBar.isAlwaysShowRecordSelectors()));
+        return _showRecordSelectors || (_buttonBarPosition != ButtonBarPosition.NONE && (_gridButtonBar.isAlwaysShowRecordSelectors() || _gridButtonBar.hasRequiresSelectionButton(ctx)));
     }
 
     public boolean getShowSelectMessage()

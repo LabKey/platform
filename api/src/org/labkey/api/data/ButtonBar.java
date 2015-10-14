@@ -309,4 +309,9 @@ public class ButtonBar extends DisplayElement
     {
         return _alwaysShowRecordSelectors;
     }
+
+    public void setAlwaysShowRecordSelectors(boolean alwaysShowRecordSelectors)
+    {
+        _alwaysShowRecordSelectors = alwaysShowRecordSelectors;
+    }
 }

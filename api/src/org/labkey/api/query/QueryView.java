@@ -811,7 +811,7 @@ public class QueryView extends WebPartView<Object>
             bar.add(createViewButton(_itemFilter));
         }
 
-        if (_showExportButtons)
+        if (showExportButtons())
         {
             ActionButton b = createPrintButton();
             if (null != b)
@@ -863,11 +863,15 @@ public class QueryView extends WebPartView<Object>
                 bar.add(deleteButton);
         }
 
-        if (_showExportButtons)
+        if (showExportButtons())
         {
             PanelButton b = createExportButton(exportAsWebPage);
             if (null != b && b.hasSubPanels())
+            {
+                // Issue 24530: Add record selectors for exporting selected items.  Assumes that all export panels support selection.
+                bar.setAlwaysShowRecordSelectors(true);
                 bar.add(b);
+            }
             ActionButton p = createPrintButton();
             if (null != p)
                 bar.add(p);
@@ -2153,6 +2157,7 @@ public class QueryView extends WebPartView<Object>
             Map<FieldKey, ColumnInfo> map = rc.getFieldMap();
             ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()), docType);
             ew.setFilenamePrefix(getSettings().getQueryName());
+            ew.setAutoSize(true);
             return ew;
         }
         catch (SQLException e)
@@ -2636,6 +2641,11 @@ public class QueryView extends WebPartView<Object>
     public void setShowExportButtons(boolean showExportButtons)
     {
         _showExportButtons = showExportButtons;
+    }
+
+    public boolean showExportButtons()
+    {
+        return _showExportButtons;
     }
 
     public void setShowDetailsColumn(boolean showDetailsColumn)
