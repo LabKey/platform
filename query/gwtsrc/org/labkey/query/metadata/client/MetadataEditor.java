@@ -33,7 +33,9 @@ import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
 {
@@ -274,7 +276,9 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         if (_service == null)
         {
             _service = (MetadataServiceAsync) GWT.create(MetadataService.class);
-            ServiceUtil.configureEndpoint(_service, "metadataService", "query");
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("schemaName", _schemaName);
+            ServiceUtil.configureEndpoint(_service, "metadataService", "query", map);
         }
         return _service;
     }

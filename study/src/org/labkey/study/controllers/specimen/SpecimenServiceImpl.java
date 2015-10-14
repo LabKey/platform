@@ -46,7 +46,6 @@ public class SpecimenServiceImpl extends DomainEditorServiceBase implements Spec
 {
     public SpecimenServiceImpl(ViewContext context)
     {
-
         super(context);
     }
 

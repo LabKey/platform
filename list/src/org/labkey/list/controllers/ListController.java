@@ -117,6 +117,7 @@ import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListImporter;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
+import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListWriter;
 import org.labkey.list.view.ListDefinitionForm;
 import org.labkey.list.view.ListImportServiceImpl;
