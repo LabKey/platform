@@ -127,6 +127,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 ExprColumn columnInfo = new ExprColumn(this, ExpDataTable.Column.Protocol.toString(), new SQLFragment(
                         "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
                         " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), JdbcType.VARCHAR);//, getColumn("SourceProtocolApplication"));
+                columnInfo.setSqlTypeName("lsidtype");
                 columnInfo.setFk(getExpSchema().getProtocolForeignKey("LSID"));
                 columnInfo.setDescription("Contains a reference to the protocol for the protocol application that created this sample");
                 columnInfo.setUserEditable(false);
@@ -345,7 +346,9 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         }
 
         ActionURL detailsUrl = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
-        setDetailsURL(new DetailsURL(detailsUrl, Collections.singletonMap("rowId", "RowId")));
+        DetailsURL url = new DetailsURL(detailsUrl, Collections.singletonMap("rowId", "RowId"));
+        nameCol.setURL(url);
+        setDetailsURL(url);
         setTitleColumn(Column.Name.toString());
 
         setDefaultVisibleColumns(defaultCols);
