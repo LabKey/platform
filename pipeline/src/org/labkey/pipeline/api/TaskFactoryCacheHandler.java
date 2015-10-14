@@ -118,6 +118,9 @@ import java.io.IOException;
                 if (taskId.getName() != null && taskId.getModuleName() != null)
                 {
                     Module module = ModuleLoader.getInstance().getModule(taskId.getModuleName());
+                    if (module == null)
+                        return null;
+
                     String configFileName = taskId.getName() + TASK_CONFIG_EXTENSION;
 
                     Path tasksDirPath = new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, MODULE_TASKS_DIR);
