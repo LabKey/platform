@@ -54,6 +54,9 @@ public class QueryLookupWrapper extends QueryRelation
     Map<String, ColumnType.Fk> _fkMap = new CaseInsensitiveHashMap<>();
     Map<FieldKey, RelationColumn> _selectedColumns = new HashMap<>();
 
+    // shim for creating lookup columns w/o a real TableInfo
+    SQLTableInfo _sti = null;
+
 
     QueryLookupWrapper(Query query, QueryRelation relation, @Nullable TableType md)
     {
@@ -292,6 +295,7 @@ public class QueryLookupWrapper extends QueryRelation
     @Override
     public void setContainerFilter(ContainerFilter containerFilter)
     {
+        getSqlTableInfo().setContainerFilter(containerFilter);
         _source.setContainerFilter(containerFilter);
     }
 
@@ -434,13 +438,20 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
+    private SQLTableInfo getSqlTableInfo()
+    {
+        if (null == _sti)
+            _sti = new SQLTableInfo(getSchema().getDbSchema(), getAlias());
+        return _sti;
+    }
+
+
     public QueryLookupColumn createQueryLookupColumn(FieldKey key, RelationColumn parent, @NotNull ForeignKey fk)
     {
         ColumnInfo fkCol;
         if (!(parent instanceof QueryLookupColumn))
         {
-            SQLTableInfo qti =  new SQLTableInfo(parent.getTable()._schema.getDbSchema(), parent.getTable().getAlias());
-            fkCol = new RelationColumnInfo(qti, parent);
+            fkCol = new RelationColumnInfo(getSqlTableInfo(), parent);
         }
         else
         {

@@ -36,9 +36,11 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -93,6 +95,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -869,8 +873,7 @@ public class Query
     private static class TestDataLoader extends DataLoader
     {
         private static final String[] COLUMNS = new String[] {"d", "seven", "twelve", "day", "month", "date", "duration", "guid"};
-        private static final String[] TYPES = new String[] {"double", "int", "int", "string", "string", "dateTime", "string", "string"};
-        private static final Class[] CLASSES = new Class[] {Double.class, Integer.class, Integer.class, String.class, String.class, Date.class, String.class, String.class};
+        private static final JdbcType[] TYPES = new JdbcType[] {JdbcType.DOUBLE, JdbcType.INTEGER, JdbcType.INTEGER, JdbcType.VARCHAR, JdbcType.VARCHAR, JdbcType.TIMESTAMP, JdbcType.VARCHAR, JdbcType.GUID};
         private static final String[] days = new String[] {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
         private static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 
@@ -900,7 +903,7 @@ public class Query
             }
             _columns = new ColumnDescriptor[COLUMNS.length];
             for (int i=0 ; i<_columns.length ; i++)
-                _columns[i] = new ColumnDescriptor(COLUMNS[i], CLASSES[i]);
+                _columns[i] = new ColumnDescriptor(COLUMNS[i], TYPES[i].getJavaClass());
             setScrollable(true);
         }
 
@@ -1450,12 +1453,26 @@ public class Query
                 DomainProperty p = d.addProperty();
                 p.setPropertyURI(d.getName() + hash + "#" + TestDataLoader.COLUMNS[i]);
                 p.setName(TestDataLoader.COLUMNS[i]);
-                p.setRangeURI(TestDataLoader.TYPES[i]);
+                p.setRangeURI(getPropertyType(TestDataLoader.TYPES[i]).getTypeUri());
                 if ("createdby".equals(TestDataLoader.COLUMNS[i]))
                 {
                     p.setLookup(new Lookup(l.getContainer(), "core", "SiteUsers"));
                 }
             }
+        }
+
+        private PropertyType getPropertyType(JdbcType jdbc)
+        {
+            switch (jdbc)
+            {
+                case VARCHAR : return PropertyType.STRING;
+                case TIMESTAMP : return PropertyType.DATE_TIME;
+                case INTEGER : return PropertyType.INTEGER;
+                case DOUBLE : return PropertyType.DOUBLE;
+                case GUID : return PropertyType.STRING;
+                default: fail();
+            }
+            return PropertyType.STRING;
         }
 
         @Before
@@ -1655,6 +1672,7 @@ public class Query
             }
         }
 
+
         @Test
         public void testContainerFilter() throws Exception
         {
@@ -1711,6 +1729,67 @@ public class Query
                     q.delete(user);
                 ResultSetUtil.close(rs);
             }
+
+            GUID testGUID = new GUID("01234567-ABCD-ABCD-ABCD-012345679ABC");
+            ContainerFilter custom = new ContainerFilter()
+            {
+                @Override
+                public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean allowNulls)
+                {
+                    return new SQLFragment(" ~~CONTAINERFILTER~~ ");
+                }
+
+                @Nullable
+                @Override
+                public Collection<GUID> getIds(Container currentContainer)
+                {
+                    return Collections.singletonList(testGUID);
+                }
+
+                @Nullable
+                @Override
+                public Type getType()
+                {
+                    return Type.AllFolders;
+                }
+            };
+
+            // TWO regression tests here
+            //    lookup (QueryLookupWrapper) TODO need to find a DelegatingContainerFilter usage (Folder is a bad case)
+            //    exists (subquery)
+            //
+
+            // Query.setContainerFilter()
+            QueryDefinition q = QueryService.get().createQueryDef(user, c, "issues", "testquery");
+            q.setContainerFilter(custom);
+            q.setSql("SELECT DISTINCT title, folder.name\n" +
+                    "FROM (SELECT DISTINCT issueid, title, folder FROM issues WHERE EXISTS (SELECT * FROM issues WHERE issueid=5)) x");
+            ArrayList<QueryException> errors = new ArrayList<>();
+            TableInfo t = q.getTable(errors, false);
+            assertTrue(errors.isEmpty());
+            SQLFragment sqlf = t.getFromSQL("$");
+            assertNotNull(sqlf);
+            String debugSql = sqlf.toDebugString();
+            assertFalse(debugSql.contains(testGUID.toString()));
+            assertTrue(debugSql.contains("CONTAINERFILTER"));
+            assertFalse(debugSql.contains(c.getId()));
+            assertEquals(2, StringUtils.countMatches(debugSql, "CONTAINERFILTER"));
+
+            // TableInfo.setContainerFilter()
+            q = QueryService.get().createQueryDef(user, c, "issues", "testquery");
+            q.setSql("SELECT DISTINCT title, folder.name\n" +
+                    "FROM (SELECT DISTINCT issueid, title, folder FROM issues WHERE EXISTS (SELECT * FROM issues WHERE issueid=5)) x");
+            errors = new ArrayList<>();
+            t = q.getTable(errors, false);
+            assertTrue(errors.isEmpty());
+            ((ContainerFilterable)t).setContainerFilter(custom);
+            sqlf = t.getFromSQL("$");
+            assertNotNull(sqlf);
+            debugSql = sqlf.toDebugString();
+            assertFalse(debugSql.contains(testGUID.toString()));
+            assertFalse(debugSql.contains(c.getId()));
+            assertTrue(debugSql.contains("CONTAINERFILTER"));
+            assertEquals(2, StringUtils.countMatches(debugSql, "CONTAINERFILTER"));
         }
 
         @Test
@@ -1760,6 +1839,7 @@ public class Query
             Assert.assertEquals("Expected to find " + Rsize + " rows in lists.R table", Rsize, count);
         }
 
+
         private void validateInvolvedColumns(String sql, @Nullable Container container, List<String> expectedInvolvedColumns) throws Exception
         {
             QuerySchema schema = lists;
@@ -1776,6 +1856,7 @@ public class Query
                 fail(x.getMessage() + "\n" + sql);
             }
         }
+
 
         private void mockSelect(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap,
                                   boolean strictColumnList, List<String> expectedColumns) throws SQLException

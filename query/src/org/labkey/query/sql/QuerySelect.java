@@ -93,7 +93,9 @@ public class QuerySelect extends QueryRelation implements Cloneable
     // Don't forget to recurse passing container filter into subqueries.
     private List<QueryRelation> _subqueries = new ArrayList<>();
     private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<>();
-    private SQLTableInfo _subqueryTable;
+
+    // shim tableinfo used for creating expression columninfo
+    private SQLTableInfo _sti;
     private AliasManager _aliasManager;
 
     /**
@@ -112,7 +114,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
         // subqueryTable is only for expr.createColumnInfo()
         // should refactor so tableinfo is not necessary, maybe expr.setColumnAttributes(target)
-        _subqueryTable = new SQLTableInfo(_schema.getDbSchema(), alias) {
+        _sti = new SQLTableInfo(_schema.getDbSchema(), alias) {
             @Override
             public UserSchema getUserSchema()
             {
@@ -1760,6 +1762,8 @@ groupByLoop:
     @Override
     public void setContainerFilter(ContainerFilter containerFilter)
     {
+        _sti.setContainerFilter(containerFilter);
+
         for (QueryRelation queryRelation : _tables.values())
         {
             queryRelation.setContainerFilter(containerFilter);
@@ -2059,7 +2063,7 @@ groupByLoop:
             {
                 if (_colinfo == null)
                 {
-                    _colinfo = expr.createColumnInfo(_subqueryTable, _aliasManager.decideAlias(getAlias()), _query);
+                    _colinfo = expr.createColumnInfo(_sti, _aliasManager.decideAlias(getAlias()), _query);
                 }
                 to.copyAttributesFrom(_colinfo);
                 if (_selectStarColumn)

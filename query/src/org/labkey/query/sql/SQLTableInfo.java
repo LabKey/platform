@@ -21,9 +21,10 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.UserSchema;
 
 
-public class SQLTableInfo extends AbstractTableInfo
+/* This is a shim class to let Query interact with api's that require a TableInfo (like new ColumnInfo()) */
+public class SQLTableInfo extends AbstractTableInfo implements ContainerFilterable
 {
-    private SQLFragment _fromSQL;
+    private ContainerFilter _containerFilter;
 
     public SQLTableInfo(DbSchema schema, String name)
     {
@@ -38,18 +39,31 @@ public class SQLTableInfo extends AbstractTableInfo
     @NotNull
     public SQLFragment getFromSQL()
     {
-        return _fromSQL;
-    }
-
-    public void setFromSQL(SQLFragment sql)
-    {
-        _fromSQL = sql;
+        throw new IllegalStateException();
     }
 
     @Override
     public UserSchema getUserSchema()
     {
         return null;
+    }
+
+    @Override
+    public ContainerFilter getContainerFilter()
+    {
+        return _containerFilter;
+    }
+
+    @Override
+    public void setContainerFilter(@NotNull ContainerFilter containerFilter)
+    {
+        _containerFilter = containerFilter;
+    }
+
+    @Override
+    public boolean hasDefaultContainerFilter()
+    {
+        return false;
     }
 }
 

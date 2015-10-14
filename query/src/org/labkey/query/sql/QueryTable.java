@@ -357,13 +357,17 @@ public class QueryTable extends QueryRelation
     
     class TableColumn extends RelationColumn
     {
-        FieldKey _key;
-        ColumnInfo _col;
-        String _alias;
-        TableColumn _parent;
+        final FieldKey _key;
+        final ColumnInfo _col;
+        final String _alias;
+        final TableColumn _parent;
 
-        TableColumn(FieldKey key, ColumnInfo col, @Nullable TableColumn parent)
+        TableColumn(@NotNull FieldKey key, @NotNull ColumnInfo col, @Nullable TableColumn parent)
         {
+            if (null == key)
+                throw new NullPointerException("key is null");
+            if (null == col)
+                throw new NullPointerException("col is null");
             _key = key;
             _col = col;
             _alias = _aliasManager.decideAlias(col.getAlias());
