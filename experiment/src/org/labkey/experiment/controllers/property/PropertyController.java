@@ -192,6 +192,8 @@ public class PropertyController extends SpringActionController
             JSONObject jsonObj = getForm.getJsonObject();
 
             String kindName = jsonObj.getString("kind");
+            if (kindName == null)
+                throw new IllegalArgumentException("Domain kind required");
             GWTDomain newDomain = convertJsonToDomain(jsonObj);
             JSONObject jsOptions = jsonObj.optJSONObject("options");
             if (jsOptions == null)
