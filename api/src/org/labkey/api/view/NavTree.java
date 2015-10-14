@@ -235,7 +235,8 @@ public class NavTree implements Collapsible
 
     public void addChildren(Collection<NavTree> list)
     {
-        _children.addAll(list);
+        if (list != null)
+            _children.addAll(list);
     }
 
 
