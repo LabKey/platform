@@ -99,9 +99,9 @@ LABKEY.Domain = new function()
                     success: arguments[0],
                     failure: arguments[1],
                     kind: arguments[2],
-                    domainDesign: arguments[4],
-                    options: arguments[5],
-                    containerPath: arguments[6]
+                    domainDesign: arguments[3],
+                    options: arguments[4],
+                    containerPath: arguments[5]
                 };
             }
 
