@@ -542,9 +542,8 @@ public class QueryTable extends QueryRelation
 
         FieldKey fkContainer = new FieldKey(sibling.getFieldKey().getParent(), "container");
         FieldKey fkFolder = new FieldKey(sibling.getFieldKey().getParent(), "folder");
-        if (null != _resolve(fkFolder))
-            addSuggestedColumn(suggested, fkFolder);
-        else
+
+        if (null == addSuggestedColumn(suggested, fkFolder))
             addSuggestedColumn(suggested, fkContainer);
     }
 
