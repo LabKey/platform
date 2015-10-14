@@ -201,6 +201,14 @@
         } else {
             h.checked = false;
         };
+
+        // set autofocus to email field if email is blank otherwise set it to passowrd field
+        if (!document.getElementById('email').value)
+        {
+            document.getElementById('email').focus();
+        } else {
+            document.getElementById('password').focus();
+        }
     }
 
     $(onReady);
