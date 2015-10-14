@@ -1310,6 +1310,15 @@ public abstract class SqlDialect
         // By default do nothing
     }
 
+    public boolean isTableExists(DbScope scope, String schema, String name)
+    {
+        /* Does not handle overloaded functions for dialects that support them (Postgres) */
+        SQLFragment sqlf = new SQLFragment("SELECT 1 FROM information_schema.tables WHERE UPPER(table_schema) = UPPER(?) AND UPPER(table_name) = UPPER(?)");
+        sqlf.add(schema);
+        sqlf.add(name);
+        return new SqlSelector(scope, sqlf).exists();
+    }
+
     public abstract boolean isCaseSensitive();
     public abstract boolean isEditable();
     public abstract boolean isSqlServer();

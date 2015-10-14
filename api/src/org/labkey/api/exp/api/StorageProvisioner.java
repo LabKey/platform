@@ -193,23 +193,28 @@ public class StorageProvisioner
 
         String tableName = domain.getStorageTableName();
         if (null == tableName)
-        {
             return;
-        }
 
-        TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.DropTable);
+        if (scope.getSqlDialect().isTableExists(scope, schemaName, tableName))
+        {
+            TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.DropTable);
 
-        try (Transaction transaction = scope.ensureTransaction())
-        {
-            Connection con = transaction.getConnection();
-            execute(scope, con, change);
-            kind.invalidate(domain);
-            transaction.commit();
+            try (Transaction transaction = scope.ensureTransaction())
+            {
+                Connection con = transaction.getConnection();
+                execute(scope, con, change);
+                kind.invalidate(domain);
+                transaction.commit();
+            }
+            catch (RuntimeSQLException e)
+            {
+                log.warn(String.format("Failed to drop table in schema %s for domain %s - %s", schemaName, domain.getName(), e.getMessage()), e);
+                throw e;
+            }
         }
-        catch (RuntimeSQLException e)
+        else
         {
-            log.warn(String.format("Failed to drop table in schema %s for domain %s - %s", schemaName, domain.getName(), e.getMessage()), e);
-            throw e;
+            log.warn(String.format("Table %s in schema %s for domain %s does not exist. Ignoring drop.", tableName, schemaName, domain.getName()));
         }
     }
 
