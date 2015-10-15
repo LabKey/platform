@@ -308,7 +308,7 @@ public interface SearchService
          * modifiedSince == null -> full reindex
          * else incremental (either modified > modifiedSince, or modified > lastIndexed)
          */
-        void enumerateDocuments(IndexTask task, @NotNull Container c, Date since);
+        void enumerateDocuments(IndexTask task, @NotNull Container c, @Nullable Date modifiedSince);
 
         /**
          *if the full-text search is deleted, providers may need to clear
