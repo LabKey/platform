@@ -17,6 +17,7 @@ package org.labkey.wiki;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
@@ -93,7 +94,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(new WikiWebPartFactory(),
+        return new ArrayList<>(Arrays.asList(new WikiWebPartFactory(),
                 new WikiTOCFactory(),
                 new MenuWikiWebPartFactory()));
     }
@@ -211,15 +212,9 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
     }
 
 
-    public void enumerateDocuments(final SearchService.IndexTask task, final Container c, final Date modifiedSince)
+    public void enumerateDocuments(final SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
-        Runnable r = new Runnable()
-            {
-                public void run()
-                {
-                    getWikiManager().indexWikis(task, c, modifiedSince);
-                }
-            };
+        Runnable r = () -> getWikiManager().indexWikis(task, c, modifiedSince, null);
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 

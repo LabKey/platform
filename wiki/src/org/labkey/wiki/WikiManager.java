@@ -581,10 +581,9 @@ public class WikiManager implements WikiService
             unindexWiki(page.getEntityId());
             return;
         }
-        SearchService ss = getSearchService();
         Container c = getContainerService().getForId(page.getContainerId());
-        if (null != ss && null != c)
-            indexWikiContainerFast(ss.defaultTask(), c, null, page.getName().getSource());
+        if (null != c)
+            indexWikis(null, c, null, page.getName().getSource());
     }
 
 
@@ -601,24 +600,26 @@ public class WikiManager implements WikiService
     }
 
     
-    public void indexWikis(@NotNull final SearchService.IndexTask task, @NotNull Container c, final Date modifiedSince)
+    public void indexWikis(@Nullable SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, @Nullable String wikiName)
     {
-        assert null != c;
         final SearchService ss = getSearchService();
-        if (null == ss || null == c)
+        if (null == ss)
             return;
+
+        if (null == task)
+            task = ss.defaultTask();
 
         // Push a ViewContext onto the stack before indexing; wikis may need this to render embedded webpart
         try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(User.getSearchUser(), c, new ActionURL()))
         {
-            indexWikiContainerFast(task, c, modifiedSince, null);
+            indexWikiContainerFast(task, c, modifiedSince, wikiName);
         }
     }
 
 
-    public void indexWikiContainerFast(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, String name)
+    private void indexWikiContainerFast(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, @Nullable String wikiName)
     {
-        LOG.debug("indexWikiContainerFast(" + name + ")");
+        LOG.debug("indexWikiContainerFast(" + wikiName + ")");
 
         SQLFragment f = new SQLFragment();
         f.append("SELECT P.entityid, P.container, P.name, owner$.searchterms as owner, createdby$.searchterms as createdby, P.created, modifiedby$.searchterms as modifiedby, P.modified,")
@@ -635,10 +636,10 @@ public class WikiManager implements WikiService
         {
             f.append(" AND ").append(since);
         }
-        if (null != name)
+        if (null != wikiName)
         {
             f.append(" AND P.name = ?");
-            f.add(name);
+            f.add(wikiName);
         }
 
         HashMap<String, AttachmentParent> ids = new HashMap<>();
@@ -649,23 +650,23 @@ public class WikiManager implements WikiService
         {
             while (rs.next())
             {
-                name = rs.getString("name");
-                assert null != name;
+                wikiName = rs.getString("name");
+                assert null != wikiName;
 
-                if (SecurityManager.TERMS_OF_USE_WIKI_NAME.equals(name))
+                if (SecurityManager.TERMS_OF_USE_WIKI_NAME.equals(wikiName))
                     continue;
 
                 String entityId = rs.getString("entityid");
                 assert null != entityId;
 
-                LOG.debug("Indexing wiki " + name + ":" + entityId);
+                LOG.debug("Indexing wiki " + wikiName + ":" + entityId);
 
                 String wikiTitle = rs.getString("title");
                 String searchTitle;
                 if (null == wikiTitle)
-                    searchTitle = wikiTitle = name;
+                    searchTitle = wikiTitle = wikiName;
                 else
-                    searchTitle = wikiTitle + " " + name;   // Always search on wiki title or name
+                    searchTitle = wikiTitle + " " + wikiName;   // Always search on wiki title or name
                 String body = rs.getString("body");
                 if (null == body)
                     body = "";
@@ -677,13 +678,13 @@ public class WikiManager implements WikiService
 
                 try
                 {
-                    WikiWebdavProvider.WikiPageResource r = new RenderedWikiResource(c, name, entityId, body, rendererType, props);
+                    WikiWebdavProvider.WikiPageResource r = new RenderedWikiResource(c, wikiName, entityId, body, rendererType, props);
                     task.addResource(r, SearchService.PRIORITY.item);
                 }
                 catch (Throwable t)
                 {
                     // Log rendering exception and details about the culprit, but continue indexing wikis in this container
-                    LOG.error("Could not render wiki \"" + name + "\" in folder \"" + c.getPath() + "\"");
+                    LOG.error("Could not render wiki \"" + wikiName + "\" in folder \"" + c.getPath() + "\"");
                     ExceptionUtil.logExceptionToMothership(null, t);
                     continue;
                 }
@@ -697,7 +698,7 @@ public class WikiManager implements WikiService
                 Wiki parent = new Wiki();
                 parent.setContainer(c.getId());
                 parent.setEntityId(entityId);
-                parent.setName(new HString(name, false));
+                parent.setName(new HString(wikiName, false));
                 ids.put(entityId, parent);
                 titles.put(entityId, wikiTitle);
             }

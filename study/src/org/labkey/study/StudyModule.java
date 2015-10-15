@@ -76,9 +76,7 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -105,8 +103,8 @@ import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.CreateChildStudyAction;
 import org.labkey.study.controllers.DatasetController;
-import org.labkey.study.controllers.SharedStudyController;
 import org.labkey.study.controllers.ParticipantGroupController;
+import org.labkey.study.controllers.SharedStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.controllers.StudyDesignController;
@@ -187,7 +185,6 @@ import org.labkey.study.writer.SpecimenWriter;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
-import javax.servlet.ServletContext;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -763,7 +760,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         return new StudyUpgradeCode();
     }
 
-    public void enumerateDocuments(@NotNull final SearchService.IndexTask task, final Container c, final Date modifiedSince)
+    public void enumerateDocuments(@NotNull SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
     {
         StudyManager._enumerateDocuments(task, c);
     }

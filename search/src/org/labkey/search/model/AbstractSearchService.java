@@ -1302,27 +1302,23 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    // UNDONE: get last crawl time from Crawler? support incrementsl
+    // UNDONE: get last crawl time from Crawler? support incrementals
     public IndexTask indexProject(IndexTask in, final Container c)
     {
         final IndexTask task = null==in ? createTask("Index project " + c.getName()) : in;
 
-        Runnable r = new Runnable()
-        {
-            public void run()
+        Runnable r = () -> {
+            MultiMap<Container,Container> mmap = ContainerManager.getContainerTree(c);
+            Set<Container> set = new HashSet<>();
+            for (Container key : mmap.keySet())
             {
-                MultiMap<Container,Container> mmap = ContainerManager.getContainerTree(c);
-                Set<Container> set = new HashSet<>();
-                for (Container key : mmap.keySet())
-                {
-                    set.add(key);
-                    for (Container v : mmap.get(key))
-                        set.add(v);
-                }
-                for (Container i : set)
-                {
-                    indexContainer(task, i, null);
-                }
+                set.add(key);
+                for (Container v : mmap.get(key))
+                    set.add(v);
+            }
+            for (Container i : set)
+            {
+                indexContainer(task, i, null);
             }
         };
         task.addRunnable(r, PRIORITY.bulk);
