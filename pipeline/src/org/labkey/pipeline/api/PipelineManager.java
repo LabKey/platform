@@ -392,7 +392,7 @@ public class PipelineManager
                 _template.setStatus(_statusFile.getStatus());
                 _template.setTimeCreated(_statusFile.getCreated());
 
-                m.setTempate(_template, _c);
+                m.setTemplate(_template, _c);
 
                 m.addFrom(new Address[]{new InternetAddress(LookAndFeelProperties.getInstance(_c).getSystemEmailAddress())});
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(_recipients));
@@ -437,7 +437,7 @@ public class PipelineManager
                 _template.setStartTime(_min);
                 _template.setEndTime(_max);
 
-                m.setTempate(_template, _c);
+                m.setTemplate(_template, _c);
 
                 m.addFrom(new Address[]{new InternetAddress(LookAndFeelProperties.getInstance(_c).getSystemEmailAddress())});
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(_recipients));
