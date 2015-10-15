@@ -16,32 +16,46 @@
 package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableSelector;
 
 /**
  * Created by Marty on 2/25/2015.
  */
 public class TourCache
 {
-    private static final BlockingStringKeyCache<Object> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Tours", null);
+    private static final CommSchema _comm = CommSchema.getInstance();
+    private static final TourCacheLoader tourLoader = new TourCacheLoader<TourCollections>();
+    private static final BlockingStringKeyCache<Object> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Tours", tourLoader);
+    private static final TourCollections _emptyCollection = new TourCollections(new TableSelector(_comm.getTableInfoTours()));
 
-    public abstract static class TourCacheLoader<V> implements CacheLoader<String, V>
+    public static class TourCacheLoader<V> implements CacheLoader<String, V>
     {
-        abstract V load(String key, Container c);
-
         @Override
         public V load(String key, Object argument)
         {
-            return load(key, (Container)argument);
+            Container c = (Container) argument;
+            if (c == null)
+                return (V) _emptyCollection;
+
+            Selector selector = new TableSelector(_comm.getTableInfoTours(), SimpleFilter.createContainerFilter(c), null);
+
+            if (selector.getRowCount() > 0)
+                return (V) new TourCollections(selector);
+            else
+                return (V) _emptyCollection;
         }
     }
 
-    static TourCollections getTourCollections(Container c, TourCacheLoader<TourCollections> loader)
+    static TourCollections getTourCollections(Container c)
     {
-        return get(c, loader);
+        return get(c);
     }
 
     public static void uncache(Container c)
@@ -57,12 +71,12 @@ public class TourCache
     }
 
     @Nullable
-    private static <V> V get(Container c, TourCacheLoader<V> loader)
+    private static <V> V get(Container c)
     {
         if (c == null)
             return null;
 
-        return (V)BLOCKING_CACHE.get(getCacheKey(c), c, (TourCacheLoader<Object>)loader);
+        return (V) BLOCKING_CACHE.get(getCacheKey(c), c);
     }
 
 }

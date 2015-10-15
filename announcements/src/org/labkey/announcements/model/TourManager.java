@@ -32,27 +32,13 @@ public class TourManager
 {
     private static final CommSchema _comm = CommSchema.getInstance();
 
-
-    public TourManager()
+    private TourManager()
     {
     }
 
-    private static TourCache.TourCacheLoader<TourCollections> tourLoader = new TourCache.TourCacheLoader<TourCollections>()
-    {
-        @Override
-        TourCollections load(String key, Container c)
-        {
-            return new TourCollections(c);
-        }
-    };
-
     private static TourCollections getTourCollections(Container c)
     {
-        TourCollections collection = TourCache.getTourCollections(c, tourLoader);
-        if ( null == collection )
-            collection = new TourCollections(null);
-
-        return collection;
+        return TourCache.getTourCollections(c);
     }
 
     @Nullable
@@ -77,7 +63,7 @@ public class TourManager
     {
         TourModel tour = getTourCollections(c).getTourByRowId(rowId);
 
-        if(null == tour)
+        if (null == tour)
             return null;
 
         return tour.getJson();
@@ -88,7 +74,7 @@ public class TourManager
     {
         TourModel tour = getTourCollections(c).getTourByRowId(rowId);
 
-        if(null==tour || null==tour.getMode())
+        if (null == tour || null == tour.getMode())
             return null;
 
         return tour.getMode().toString();

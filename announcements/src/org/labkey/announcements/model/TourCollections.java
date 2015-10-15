@@ -17,12 +17,9 @@ package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.Selector;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,22 +35,18 @@ public class TourCollections
     private final List<TourModel> toursList = new ArrayList<>();
     private static final CommSchema _comm = CommSchema.getInstance();
 
-    public TourCollections(Container c)
+    public TourCollections(Selector tours)
     {
-        SimpleFilter filter = new SimpleFilter();
-        if (c == null)
-            return;
-        else
-            filter.addCondition(FieldKey.fromParts("Container"), c);
-
-        Selector selector = new TableSelector(_comm.getTableInfoTours(), filter, null);
-        TourModel[] tours = selector.getArray(TourModel.class);
-        for(TourModel tour : tours)
+        tours.forEach(new Selector.ForEachBlock<TourModel>()
         {
-            toursByRowId.put(tour.getRowId(), tour);
-            toursByEntityId.put(tour.getEntityId(), tour);
-            toursList.add(tour);
-        }
+            @Override
+            public void exec(TourModel tour) throws SQLException
+            {
+                toursByRowId.put(tour.getRowId(), tour);
+                toursByEntityId.put(tour.getEntityId(), tour);
+                toursList.add(tour);
+            }
+        }, TourModel.class);
     }
 
     @Nullable
