@@ -709,10 +709,7 @@ public class IssuesController extends SpringActionController
         sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
         sb.append("</table></div>");
 
-        //Add comment to the related issue only if its a new relation
-        //This is a fix to: Issue 23759: Updating an issue results in a new comment in every related issue
-        if(!prevRelated.equals(newRelated))
-            relatedIssue.addComment(user, sb.toString());
+        relatedIssue.addComment(user, sb.toString());
 
         relatedIssue.setRelatedIssues(newRelated);
         return relatedIssue;
@@ -766,7 +763,7 @@ public class IssuesController extends SpringActionController
             }
 
             // get previous related issue ids before updating
-            Set<Integer> prevRelatedIds = issue.getRelatedIssues();
+            Set<Integer> prevRelatedIds = prevIssue.getRelatedIssues();
 
             boolean ret = relatedIssueHandler(issue, user, errors);
             if (!ret) return false;
@@ -813,11 +810,16 @@ public class IssuesController extends SpringActionController
                 }
 
                 // this list represents all the ids which will need related handling for a droping a relatedIssue entry
-                prevRelatedIds.removeAll(newRelatedIds);
-                for (int curIssueId : prevRelatedIds)
+                if(!prevRelatedIds.equals(newRelatedIds))
                 {
-                    Issue relatedIssue = relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, true);
-                    IssueManager.saveIssue(user, getContainer(), relatedIssue);
+                    Collection<Integer> prevIssues = new ArrayList<>();
+                    prevIssues.addAll(prevRelatedIds);
+                    prevIssues.removeAll(newRelatedIds);
+                    for (int curIssueId : prevIssues)
+                    {
+                        Issue relatedIssue = relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, true);
+                        IssueManager.saveIssue(user, getContainer(), relatedIssue);
+                    }
                 }
 
                 transaction.commit();
