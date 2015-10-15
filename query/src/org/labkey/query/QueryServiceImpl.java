@@ -1171,6 +1171,35 @@ public class QueryServiceImpl extends QueryService
             columnMap.put(FieldKey.fromString("Container"), containerColumn);
         }
 
+        // foreign keys
+        for (ColumnInfo column : columns)
+        {
+            FieldKey fkOuter = column.getFieldKey();
+            while (null != (fkOuter=fkOuter.getParent()))
+            {
+                // resolve parent column, and find its foreignKey
+                ColumnInfo colOuter = columnMap.get(fkOuter);
+                if (null == colOuter)
+                    continue;
+                ForeignKey foreignKey = colOuter.getFk();
+                if (null == foreignKey)
+                    continue;
+                // ask foreignKey for its suggested columns
+                Set<FieldKey> set = foreignKey.getSuggestedColumns();
+                if (null == set)
+                    continue;
+                for (FieldKey fieldKey : set)
+                {
+                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
+                    if (col != null)
+                    {
+                        ret.add(col);
+                        allInvolvedColumns.add(col);
+                    }
+                }
+            }
+        }
+
         if (filter != null)
         {
             for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
