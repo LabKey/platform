@@ -26,6 +26,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.FileNameUniquifier;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -34,9 +35,7 @@ import org.labkey.data.xml.query.QueryType;
 import org.labkey.folder.xml.FolderDocument;
 
 import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: adam
@@ -62,7 +61,7 @@ public class QueryWriter extends BaseFolderWriter
     {
         Container c = ctx.getContainer();
         List<QueryDefinition> queries = QueryService.get().getQueryDefs(ctx.getUser(), c);
-        Map<String, QueryDefinition> queryExportMap = new HashMap<>();
+        FileNameUniquifier fileNameUniquifier = new FileNameUniquifier();
 
         if (queries.size() > 0)
         {
@@ -72,11 +71,7 @@ public class QueryWriter extends BaseFolderWriter
             for (QueryDefinition query : queries)
             {
                 // issue 20662: handle query name collisions across schemas
-                String queryExportName = query.getName();
-                int index = 1;
-                while (queryExportMap.containsKey(queryExportName))
-                    queryExportName = query.getName() + "-" + index++;
-                queryExportMap.put(queryExportName, query);
+                String queryExportName = fileNameUniquifier.uniquify(query.getName());
 
                 try (PrintWriter pw = queriesDir.getPrintWriter(queryExportName + FILE_EXTENSION))
                 {
