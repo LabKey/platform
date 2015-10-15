@@ -102,6 +102,7 @@ import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.EditableCustomView;
 import org.labkey.query.ExternalSchemaDocumentProvider;
+import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableWriter;
 import org.labkey.query.TableXML;
@@ -4529,7 +4530,7 @@ public class QueryController extends SpringActionController
             {
                 form.reset();
                 CustomView shadowed = form.getCustomView();
-                if (shadowed != null && shadowed.isEditable())
+                if (shadowed != null && shadowed.isEditable() && !(shadowed instanceof ModuleCustomView))
                 {
                     if (!shadowed.isShared() || getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
                         shadowed.delete(getUser(), getViewContext().getRequest());
