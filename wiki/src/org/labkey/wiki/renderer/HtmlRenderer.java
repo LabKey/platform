@@ -81,7 +81,7 @@ public class HtmlRenderer implements WikiRenderer
         text = text.replaceAll("<!--*>|<!>", "");
 
         LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>();
-        FormattedHtml formattedHtml = handleLabkeySubstitutions(text);
+        FormattedHtml formattedHtml = handleLabKeySubstitutions(text);
         boolean volatilePage = formattedHtml.isVolatile();
         cds.addAll(formattedHtml.getClientDependencies());
 
@@ -191,7 +191,7 @@ public class HtmlRenderer implements WikiRenderer
     // <any word>='<any value>', allowing whitespace before, after, and in-between
     private static final Pattern _paramPattern = Pattern.compile("\\s*(\\w+)\\s*=\\s*'(.*)'\\s*");
 
-    private FormattedHtml handleLabkeySubstitutions(String text)
+    private FormattedHtml handleLabKeySubstitutions(String text)
     {
         if (text == null)
             return new FormattedHtml("");
