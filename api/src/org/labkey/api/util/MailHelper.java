@@ -465,7 +465,7 @@ public class MailHelper
             setBodyContent(message, "text/html; charset=UTF-8");
         }
 
-        public void setTempate(EmailTemplate template, Container c) throws Exception
+        public void setTemplate(EmailTemplate template, Container c) throws Exception
         {
             String body = template.renderBody(c);
             setTextContent(body);

@@ -17,7 +17,6 @@
 package org.labkey.api.security;
 
 import org.labkey.api.util.MailHelper;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.data.Container;
 
@@ -50,7 +49,7 @@ public class SecurityMessage
             _template.setRecipient(getTo());
             _template.setOptionPrefix(getMessagePrefix());
 
-            m.setTempate(_template, c);
+            m.setTemplate(_template, c);
 
             return m;
         }
