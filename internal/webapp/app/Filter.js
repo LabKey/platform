@@ -294,7 +294,7 @@ Ext.define('LABKEY.app.model.Filter', {
                     filter = M._buildGetDataFilter(filter, M.USE_MODEL ? model : data);
                 }
                 else {
-                    console.error('Failed to register a data filter provider. See', M + '.registerDataFilterProvider()');
+                    console.error('Failed to register a data filter provider. See LABKEY.app.model.Filter.registerDataFilterProvider()');
                 }
             }
             else {
