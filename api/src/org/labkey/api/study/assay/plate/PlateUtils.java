@@ -319,14 +319,20 @@ public class PlateUtils
      */
     private static String getGridAnnotation(List<Map<String, Object>> rows, int dataRow)
     {
-        Map<String, Object> row = rows.get(dataRow-1);
-        RowMap<Object> rowMap = (RowMap<Object>)row;
-
-        for (Object value : rowMap.values())
+        if (dataRow > 1)
         {
-            if (value != null && value instanceof String)
+            Map<String, Object> row = rows.get(dataRow-1);
+            if (row instanceof RowMap)
             {
-                return (String)value;
+                RowMap<Object> rowMap = (RowMap<Object>)row;
+
+                for (Object value : rowMap.values())
+                {
+                    if (value != null && value instanceof String)
+                    {
+                        return (String)value;
+                    }
+                }
             }
         }
         return DEFAULT_GRID_NAME;
