@@ -523,7 +523,13 @@ public class ProjectController extends SpringActionController
             handlePost(form, errors);
             URLHelper successURL = getSuccessURL(form);
             if (null != successURL)
+            {
+                //Don't return to the deleted page
+                if(form.getPageId().equalsIgnoreCase(successURL.getParameter("pageId")))
+                    successURL.deleteParameter("pageId");
+
                 return HttpView.redirect(successURL);
+            }
             return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
