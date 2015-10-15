@@ -492,7 +492,7 @@ public class SpecimenUtils
 
         MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
         message.setFrom(new InternetAddress(settings.getReplyToEmailAddress(getUser())));
-        message.setBodyContent(template.renderBody(getContainer()), "text/html");
+        message.setHtmlContent(template.renderBody(getContainer()));
         message.setSubject(template.renderSubject(getContainer()));
 
         boolean first = true;

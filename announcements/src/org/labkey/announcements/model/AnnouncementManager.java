@@ -452,12 +452,12 @@ public class AnnouncementManager
             EmailNotificationPage page = createEmailNotificationTemplate("emailNotificationPlain.jsp", false, c, recipient, settings, perm, parent, a, removeURL, currentRendererType, reason);
             JspView view = new JspView(page);
             view.setFrame(WebPartView.FrameType.NOT_HTML);
-            m.setTemplateContent(request, view, "text/plain");
+            m.setTextContent(request, view);
 
             page = createEmailNotificationTemplate("emailNotification.jsp", true, c, recipient, settings, perm, parent, a, removeURL, currentRendererType, reason);
             view = new JspView(page);
             view.setFrame(WebPartView.FrameType.NONE);
-            m.setTemplateContent(request, view, "text/html; charset=UTF-8");
+            m.setHtmlContent(request, view);
 
             return m;
         }

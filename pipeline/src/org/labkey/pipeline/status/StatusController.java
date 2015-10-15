@@ -857,8 +857,8 @@ public class StatusController extends SpringActionController
 
                 final String message = (form.getEscalationMessage() == null ? "" : form.getEscalationMessage() + "\n\n") +
                         "Job details can be found:\n\n" + form.getDetailsUrl();
-                m.setBodyContent(message, "text/plain");
-                m.setBodyContent(PageFlowUtil.filter(message, true, true), "text/html");
+                m.setTextContent(message);
+                m.setHtmlContent(message);
                 m.setSubject(form.getEscalationSubject());
                 m.addFrom(new Address[]{new InternetAddress(getUser().getEmail(), getUser().getFullName())});
 

@@ -231,7 +231,14 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
             try
             {
                 JSONObject part = contents.getJSONObject(i);
-                msg.setBodyContent(part.getString(MsgContent.content.name()), part.getString(MsgContent.type.name()));
+                if (part.getString(MsgContent.type.name()) != null && part.getString(MsgContent.type.name()).trim().toLowerCase().startsWith("text/plain"))
+                {
+                    msg.setTextContent(part.getString(MsgContent.content.name()));
+                }
+                else
+                {
+                    msg.setHtmlContent(part.getString(MsgContent.content.name()));
+                }
             }
             catch (JSONException je)
             {

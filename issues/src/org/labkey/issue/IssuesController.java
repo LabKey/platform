@@ -1398,7 +1398,7 @@ public class IssuesController extends SpringActionController
                     m.setHeader("References", references);
                     String body = template.renderBody(getContainer());
 
-                    m.setBodyContent(body,"text/plain");
+                    m.setTextContent(body);
                     StringBuilder html = new StringBuilder();
                     html.append("<html><head></head><body>");
                     html.append(PageFlowUtil.filter(body,true,true));
@@ -1411,7 +1411,7 @@ public class IssuesController extends SpringActionController
                             "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(getContainer()).singularName) + "\"></meta>\n" +
                             "</div>\n");
                     html.append("</body></html>");
-                    m.setBodyContent(html.toString(),"text/html");
+                    m.setEncodedHtmlContent(html.toString());
 
                     MailHelper.send(m, getUser(), getContainer());
                 }
