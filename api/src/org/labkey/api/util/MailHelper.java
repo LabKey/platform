@@ -20,6 +20,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
@@ -368,7 +369,7 @@ public class MailHelper
             _isMultipart = mp;
         }
 
-        public void setTemplateContent(HttpServletRequest request, HttpView view, String type) throws Exception
+        private void setTemplateContent(HttpServletRequest request, HttpView view, String type) throws Exception
         {
             // set the frame type to none to remove the extra div that gets added otherwise.
             if (view instanceof JspView)
@@ -405,6 +406,16 @@ public class MailHelper
             else
                 setContent(response.getContentAsString(), type);
         }
+
+        public void setTextContent(HttpServletRequest request, HttpView view) throws Exception
+        {
+            setTemplateContent(request, view, "text/plain");
+        }
+
+        public void setHtmlContent(HttpServletRequest request, HttpView view) throws Exception
+        {
+            setTemplateContent(request, view, "text/html; charset=UTF-8");
+        }
     }
 
     public static class MultipartMessage extends MimeMessage
@@ -414,7 +425,7 @@ public class MailHelper
             super(session);
         }
 
-        public void setBodyContent(String message, String type) throws Exception
+        private void setBodyContent(String message, String type) throws Exception
         {
             Object content;
             try
@@ -437,6 +448,29 @@ public class MailHelper
 
             if (content instanceof Multipart)
                 ((Multipart) content).addBodyPart(body);
+        }
+
+        public void setTextContent(String message) throws Exception
+        {
+            setBodyContent(message, "text/plain");
+        }
+
+        public void setHtmlContent(String message) throws Exception
+        {
+            setBodyContent(PageFlowUtil.filter(message, true, true), "text/html; charset=UTF-8");
+        }
+
+        public void setEncodedHtmlContent(String message) throws Exception
+        {
+            setBodyContent(message, "text/html; charset=UTF-8");
+        }
+
+        public void setTempate(EmailTemplate template, Container c) throws Exception
+        {
+            String body = template.renderBody(c);
+            setTextContent(body);
+            setHtmlContent(body);
+            setSubject(template.renderSubject(c));
         }
     }
 

@@ -50,11 +50,7 @@ public class SecurityMessage
             _template.setRecipient(getTo());
             _template.setOptionPrefix(getMessagePrefix());
 
-            String body = _template.renderBody(c);
-            m.setBodyContent(body, "text/plain");
-            m.setBodyContent(PageFlowUtil.filter(body, true, true), "text/html");
-
-            m.setSubject(_template.renderSubject(c));
+            m.setTempate(_template, c);
 
             return m;
         }
