@@ -109,7 +109,7 @@
         </tr>
         <tr id="visibleSections">
             <td class="labkey-form-label">Visible Report Sections:<%=PageFlowUtil.helpPopup("Show Report sections",
-                    "Some views contain mutiple sections such as: images, text, console output. For these types of views, you can select which section(s) to " +
+                    "Some views contain multiple sections such as: images, text, console output. For these types of views, you can select which section(s) to " +
                             "display by selecting them from the list.")%></td>
             <td><select id="showSection" multiple="true" onchange="selectSection()"></select></td>
         </tr>

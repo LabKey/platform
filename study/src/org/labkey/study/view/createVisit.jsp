@@ -57,7 +57,7 @@ field in the uploaded data and that subject's StartDate.
 %>
 Use this form to create a new visit. A visit is a point in time defined in the study protocol. All data uploaded
 to this study must be assigned to a visit. The assignment happens using a "Sequence Number" (otherwise known as Visit Id) that
-is uploaded along with the data. This form allows you to define a range of sequence numbers that will be correspond to the visit.
+is uploaded along with the data. This form allows you to define a range of sequence numbers that corresponds to the visit.
 <%
     }
 %>
