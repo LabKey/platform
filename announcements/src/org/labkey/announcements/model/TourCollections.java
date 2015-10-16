@@ -16,10 +16,9 @@
 package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Selector;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -34,18 +33,14 @@ public class TourCollections
     private final Map<String, TourModel> toursByEntityId = new HashMap<>();
     private final List<TourModel> toursList = new ArrayList<>();
 
-    public TourCollections(Selector tours)
+    public TourCollections(Collection<TourModel> tours)
     {
-        tours.forEach(new Selector.ForEachBlock<TourModel>()
+        for(TourModel tour : tours)
         {
-            @Override
-            public void exec(TourModel tour) throws SQLException
-            {
-                toursByRowId.put(tour.getRowId(), tour);
-                toursByEntityId.put(tour.getEntityId(), tour);
-                toursList.add(tour);
-            }
-        }, TourModel.class);
+            toursByRowId.put(tour.getRowId(), tour);
+            toursByEntityId.put(tour.getEntityId(), tour);
+            toursList.add(tour);
+        }
     }
 
     @Nullable

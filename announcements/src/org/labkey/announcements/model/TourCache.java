@@ -15,7 +15,7 @@
  */
 package org.labkey.announcements.model;
 
-import org.jetbrains.annotations.Nullable;
+import com.drew.lang.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
@@ -25,37 +25,39 @@ import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 
+import java.util.Collection;
+import java.util.Collections;
+
 /**
  * Created by Marty on 2/25/2015.
  */
 public class TourCache
 {
     private static final CommSchema _comm = CommSchema.getInstance();
-    private static final TourCacheLoader tourLoader = new TourCacheLoader<TourCollections>();
-    private static final BlockingStringKeyCache<Object> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Tours", tourLoader);
-    private static final TourCollections _emptyCollection = new TourCollections(new TableSelector(_comm.getTableInfoTours()));
+    private static final TourCacheLoader tourLoader = new TourCacheLoader();
+    private static final BlockingStringKeyCache<TourCollections> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Tours", tourLoader);
+    private static final TourCollections _emptyCollection = new TourCollections(Collections.emptyList());
 
-    public static class TourCacheLoader<V> implements CacheLoader<String, V>
+    public static class TourCacheLoader implements CacheLoader<String, TourCollections>
     {
         @Override
-        public V load(String key, Object argument)
+        public TourCollections load(String key, Object argument)
         {
             Container c = (Container) argument;
-            if (c == null)
-                return (V) _emptyCollection;
 
             Selector selector = new TableSelector(_comm.getTableInfoTours(), SimpleFilter.createContainerFilter(c), null);
+            Collection<TourModel> tours = selector.getCollection(TourModel.class);
 
-            if (selector.getRowCount() > 0)
-                return (V) new TourCollections(selector);
+            if (!tours.isEmpty())
+                return new TourCollections(tours);
             else
-                return (V) _emptyCollection;
+                return _emptyCollection;
         }
     }
 
-    static TourCollections getTourCollections(Container c)
+    static @NotNull TourCollections getTourCollections(@NotNull Container c)
     {
-        return get(c);
+        return BLOCKING_CACHE.get(getCacheKey(c), c);
     }
 
     public static void uncache(Container c)
@@ -68,15 +70,6 @@ public class TourCache
     private static String getCacheKey(Container c)
     {
         return "tours/" + c.getId();
-    }
-
-    @Nullable
-    private static <V> V get(Container c)
-    {
-        if (c == null)
-            return null;
-
-        return (V) BLOCKING_CACHE.get(getCacheKey(c), c);
     }
 
 }
