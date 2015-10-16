@@ -635,14 +635,14 @@ public abstract class VisitManager
         new SqlExecutor(schema).execute(sqlUpdateStartDates, startDateParam, getStudy().getContainer());
     }
 
-    protected static TableInfo getSpecimenTable(StudyImpl study)
+    protected static TableInfo getSpecimenTable(StudyImpl study, User user)
     {
         // If this is an ancillary study, the specimen table may be subject to special filtering, so we need to use
         // the query table, rather than the underlying database table.  We don't do this in all cases for performance
         // reasons.
-        if (study.isAncillaryStudy())       // TODO: maybe we can always use SimpleSpecimen
+        if (study.isAncillaryStudy() && null != user)
         {
-            StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(study, null, false);
+            StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(study, user, false);
             studyQuerySchema.setDontAliasColumns(true);
             return studyQuerySchema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
         }
@@ -666,7 +666,7 @@ public abstract class VisitManager
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
             TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-            TableInfo tableSpecimen = getSpecimenTable(study);
+            TableInfo tableSpecimen = getSpecimenTable(study, null);
 
             SQLFragment ptids = new SQLFragment();
             SQLFragment studyDataPtids = studyDataPtids(study.getDatasets());

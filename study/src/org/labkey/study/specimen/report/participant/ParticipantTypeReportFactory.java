@@ -106,7 +106,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 
     protected List<? extends SpecimenTypeSummary.TypeCount> getSelectedTypes()
     {
-        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(getContainer());
+        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(getContainer(), getUser());
         if (_selectedType == null || _selectedType.equals(ALL_PRIMARY_TYPES_FORM_VALUE))
             return summary.getPrimaryTypes();
         if (_selectedType.equals(ALL_DERIVATIVE_TYPES_FORM_VALUE))
@@ -151,7 +151,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     protected Pair<String, String> getSpecimenTypePicker()
     {
         StringBuilder builder = new StringBuilder();
-        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(getContainer());
+        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(getContainer(), getUser());
         builder.append("<select name=\"selectedType\">\n");
         builder.append("<option value=\"" + ALL_PRIMARY_TYPES_FORM_VALUE + "\"");
         builder.append(ALL_PRIMARY_TYPES_FORM_VALUE.equals(_selectedType) ? "SELECTED" : "");

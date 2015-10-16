@@ -219,7 +219,7 @@ public class SequenceVisitManager extends VisitManager
         SqlDialect d = schema.getSqlDialect();
         Container container = getStudy().getContainer();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-        TableInfo tableSpecimen = getSpecimenTable(getStudy());
+        TableInfo tableSpecimen = getSpecimenTable(getStudy(), user);
         StudyUnionTableInfo tableStudyData = (StudyUnionTableInfo)StudySchema.getInstance().getTableInfoStudyData(getStudy(), user);
 
         //

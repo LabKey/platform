@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.Sort;
@@ -232,7 +233,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         Map<Integer, NameLabelPair> typeMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container);
+        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container, getUserSchema().getUser());
         List<? extends SpecimenTypeSummary.TypeCount> primaryTypes = summary.getPrimaryTypes();
 
         for (SpecimenTypeSummary.TypeCount type : primaryTypes)
@@ -281,7 +282,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         Map<Integer, NameLabelPair> typeMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container);
+        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container, getUserSchema().getUser());
         List<? extends SpecimenTypeSummary.TypeCount> types = summary.getDerivatives();
 
         for (SpecimenTypeSummary.TypeCount type : types)
@@ -344,5 +345,11 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     public boolean supportsContainerFilter()
     {
         return false;
+    }
+
+    @Override
+    protected void applyContainerFilter(ContainerFilter filter)
+    {
+        // Because these Pivot tables pull from tables that have already been filtered, don't apply any such filter here
     }
 }

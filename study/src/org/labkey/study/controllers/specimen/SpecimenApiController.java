@@ -599,7 +599,7 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(SpecimenApiForm form, BindException errors) throws Exception
         {
             Container container = form.getViewContext().getContainer();
-            SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container);
+            SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container, getUser());
             final Map<String, Object> response = new HashMap<>();
 
             List<Map<String, Object>> primaryTypes = new ArrayList<>();

@@ -1595,16 +1595,16 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(Integer.class);
     }
 
-    public SpecimenTypeSummary getSpecimenTypeSummary(Container container)
+    public SpecimenTypeSummary getSpecimenTypeSummary(Container container, @NotNull User user)
     {
-        StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), null, false);
+        StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), user, false);
         TableInfo tableInfoSpecimenWrap = studyQuerySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         if (null == tableInfoSpecimenWrap)
             throw new IllegalStateException("SpecimenDetail table not found.");
 
-        TableInfo additiveTableInfo = StudySchema.getInstance().getTableInfoSpecimenAdditive(container);
-        TableInfo derivativeTableInfo = StudySchema.getInstance().getTableInfoSpecimenDerivative(container);
-        TableInfo primaryTypeTableInfo = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container);
+        TableInfo additiveTableInfo = studyQuerySchema.getTable(StudyQuerySchema.SPECIMEN_ADDITIVE_TABLE_NAME);
+        TableInfo derivativeTableInfo = studyQuerySchema.getTable(StudyQuerySchema.SPECIMEN_DERIVATIVE_TABLE_NAME);
+        TableInfo primaryTypeTableInfo = studyQuerySchema.getTable(StudyQuerySchema.SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
         String tableInfoSelectName = "SpecimenWrap";
 
         // TODO: consider caching

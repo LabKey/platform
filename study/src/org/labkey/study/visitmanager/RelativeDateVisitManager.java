@@ -150,7 +150,7 @@ public class RelativeDateVisitManager extends VisitManager
         Container container = getStudy().getContainer();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo tableStudyData = StudySchema.getInstance().getTableInfoStudyData(getStudy(), user);
-        TableInfo tableSpecimen = getSpecimenTable(getStudy());
+        TableInfo tableSpecimen = getSpecimenTable(getStudy(), user);
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         String tableParticipantVisitSelectName = tableParticipantVisit.getSelectName();
         String tableParticipantSelectName = tableParticipant.getSelectName();
