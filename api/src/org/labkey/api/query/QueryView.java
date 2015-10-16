@@ -582,10 +582,18 @@ public class QueryView extends WebPartView<Object>
                     expandedURL.addParameter("exportType", EXCEL_WEB_QUERY_EXPORT_TYPE);
                     expandedURL.addParameter("exportRegion", getDataRegionName());
                     ret.addParameter("queryViewActionURL", expandedURL.getLocalURIString());
+
+                    // NOTE: Default export will export all rows, but the user may choose to export ShowRows.SELECTED in the export panel
+                    ret.deleteParameter(getExportRegionName() + ".maxRows");
+                    ret.replaceParameter(getExportRegionName() + ".showRows", ShowRows.ALL.toString());
                     break;
                 }
                 ActionURL expandedURL = getViewContext().cloneActionURL();
                 addParamsByPrefix(ret, expandedURL, getDataRegionName() + ".", DATAREGIONNAME_DEFAULT + ".");
+
+                // NOTE: Default export will export all rows, but the user may choose to export ShowRows.SELECTED in the export panel
+                ret.deleteParameter(DATAREGIONNAME_DEFAULT + ".maxRows");
+                ret.replaceParameter(DATAREGIONNAME_DEFAULT + ".showRows", ShowRows.ALL.toString());
                 break;
             }
             case createRReport:
@@ -2413,6 +2421,12 @@ public class QueryView extends WebPartView<Object>
 
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
+
+        // Backwards compatibility for export URLs that don't specify a showRows value, see issue 24523
+        if (getViewContext().getRequest().getParameter(getSettings().getDataRegionName() + ".showRows") == null)
+        {
+            getSettings().setShowRows(ShowRows.ALL);
+        }
 
         // We're not sure if we're dealing with a version of Excel that can handle more than 65535 rows.
         // Assume that it can, and rely on the fact that Excel throws out rows if there are more than it can handle
