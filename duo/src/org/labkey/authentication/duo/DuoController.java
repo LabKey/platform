@@ -21,6 +21,7 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -93,6 +94,8 @@ public class DuoController extends SpringActionController
                 dirtyProps.add(DuoManager.Key.IntegrationKey.toString());
             if (!config.getSecretKey().equalsIgnoreCase(DuoManager.getSecretKey()))
                 dirtyProps.add(DuoManager.Key.SecretKey.toString());
+            if (!config.getSecretKey().equalsIgnoreCase(DuoManager.getOption()))
+                dirtyProps.add(DuoManager.Key.Option.toString());
 
             if (!dirtyProps.isEmpty())
             {
@@ -126,6 +129,7 @@ public class DuoController extends SpringActionController
         private String secretKey = DuoManager.getSecretKey();
         private String applicationKey = DuoManager.getApplicationKey();//Application key and Application Secret key (as sometimes used in Duo docs) are synonymous.
         private String apiHostname = DuoManager.getAPIHostname();
+        private String option = DuoManager.getOption();
 
         public String getSecretKey()
         {
@@ -171,6 +175,15 @@ public class DuoController extends SpringActionController
             this.apiHostname = apiHostname;
         }
 
+        public String getOption()
+        {
+            return option;
+        }
+        @SuppressWarnings("UnusedDeclaration")
+        public void setOption(String option)
+        {
+            this.option = option;
+        }
     }
 
 
@@ -259,9 +272,16 @@ public class DuoController extends SpringActionController
         public boolean handlePost(DuoForm form, BindException errors) throws Exception
         {
             String returnedUser = DuoManager.verifySignedResponse(form.getSig_response(), form.isTest(), errors);
+            String userIdentityOption = DuoManager.getOption();
+            User duoUser = null;
 
-            User duoUser = UserManager.getUser(Integer.parseInt(returnedUser));
             User primaryAuthUser = AuthenticationManager.getPrimaryAuthenticationUser(getViewContext().getSession());
+
+            if(userIdentityOption.equals(DuoManager.USER_OPTION_USERID))
+                duoUser = UserManager.getUser(Integer.parseInt(returnedUser));
+            else
+                duoUser = UserManager.getUser(new ValidEmail(returnedUser));
+
 
             boolean success = (duoUser != null && duoUser.equals(primaryAuthUser));
 
@@ -337,9 +357,25 @@ public class DuoController extends SpringActionController
         public ModelAndView getView(DuoForm form, boolean reshow, BindException errors) throws Exception
         {
             String sig_response = form.getSig_response();
-            int userId = Integer.valueOf(DuoManager.verifySignedResponse(sig_response, true, errors).trim());
-            if(getUser().getUserId() == userId)
-                form.setStatus(true);
+            String verifiedSignedResponse = DuoManager.verifySignedResponse(sig_response, true, errors).trim();
+
+            String userIdentityOption = DuoManager.getOption();
+
+            if(userIdentityOption.equals(DuoManager.USER_OPTION_USERID))
+            {
+                if(getUser().getUserId() == Integer.valueOf(verifiedSignedResponse))
+                    form.setStatus(true);
+            }
+            else if(userIdentityOption.equals(DuoManager.USER_OPTION_USERNAME))
+            {
+                if(DuoManager.getUserName(getUser()).equals(verifiedSignedResponse))
+                    form.setStatus(true);
+            }
+            else if(userIdentityOption.equals(DuoManager.USER_OPTION_FULL_EMAIL_ADDRESS))
+            {
+                if(getUser().getEmail().equals(verifiedSignedResponse))
+                    form.setStatus(true);
+            }
 
             return new JspView<>("/org/labkey/authentication/duo/testResultDuo.jsp", form, errors);
         }

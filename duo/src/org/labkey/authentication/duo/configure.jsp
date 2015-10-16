@@ -37,6 +37,16 @@
             <td class="labkey-form-label">API Hostname<%=PageFlowUtil.helpPopup("API Hostname", "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.")%></td>
             <td><input type="text" name="apiHostname"  size="50" value="<%=h(bean.getApiHostname())%>"></td>
         </tr>
+        <tr>
+            <td class="labkey-form-label">Option<%=PageFlowUtil.helpPopup("Option", "Choose the way LabKey will match with Duo accounts.")%></td>
+            <td>
+                <select name="option">
+                    <option value="UserID" <%= selected("UserID".equals(bean.getOption()))%> >User ID</option>
+                    <option value="UserName" <%= selected("UserName".equals(bean.getOption()))%> >User Name</option>
+                    <option value="FullEmailAddress" <%= selected("FullEmailAddress".equals(bean.getOption()))%> >Full Email Address</option>
+                </select>
+            </td>
+        </tr>
         <tr><td colspan="2">&nbsp;</td></tr>
         <tr>
             <td colspan=2>

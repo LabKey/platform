@@ -28,6 +28,10 @@ public class DuoManager
 {
     private static final Logger LOG = Logger.getLogger(DuoManager.class);
     private static final String DUO_AUTHENTICATION_CATEGORY_KEY = "DuoAuthentication";
+    protected static final String USER_OPTION_USERID = "UserID";
+    protected static final String USER_OPTION_FULL_EMAIL_ADDRESS = "FullEmailAddress";
+    protected static final String USER_OPTION_USERNAME = "UserName";
+
 
     public enum Key {
         IntegrationKey, // an id grouping for users
@@ -48,7 +52,8 @@ public class DuoManager
                     {
                         return ModuleLoader.getServletContext().getInitParameter("org.labkey.authentication.duo." + Bypass.toString());
                     }
-                };
+                },
+        Option;
 
         public String getDefault(){return "";}
     }
@@ -61,6 +66,7 @@ public class DuoManager
         map.put(Key.SecretKey.toString(), config.getSecretKey());
         map.put(Key.ApplicationKey.toString(), config.getApplicationKey());
         map.put(Key.APIHostname.toString(), config.getApiHostname());
+        map.put(Key.Option.toString(), config.getOption());
         map.save();
     }
     private static Map<String, String> getProperties()
@@ -98,6 +104,11 @@ public class DuoManager
         return getProperty(Key.APIHostname);
     }
 
+    public static String getOption()
+    {
+        return getProperty(Key.Option);
+    }
+
     private static String generateApplicationKey()
     {
         return RandomStringUtils.randomAlphanumeric(64);
@@ -110,7 +121,21 @@ public class DuoManager
 
     public static String generateSignedRequest(User u)
     {
-        return DuoWeb.signRequest(getIntegrationKey(), getSecretKey(), getApplicationKey(), Integer.toString(u.getUserId()));
+        String userIdentity;
+        String userIdentityOptionSelected = getOption();
+        if(userIdentityOptionSelected.equals(USER_OPTION_USERNAME))
+            userIdentity = getUserName(u);
+        else if(userIdentityOptionSelected.equals(USER_OPTION_FULL_EMAIL_ADDRESS))
+            userIdentity= u.getEmail();
+        else
+            userIdentity = Integer.toString(u.getUserId());
+
+        return DuoWeb.signRequest(getIntegrationKey(), getSecretKey(), getApplicationKey(), userIdentity);
+    }
+
+    public static String getUserName(User u)
+    {
+        return u.getName().split("@")[0];
     }
 
     public static String verifySignedResponse(String signedResponse, boolean test, BindException errors)
