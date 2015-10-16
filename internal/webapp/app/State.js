@@ -628,18 +628,26 @@ Ext.define('LABKEY.app.controller.State', {
         return filterset;
     },
 
-    removeFilter : function(filterId, hierarchyName, uniqueName) {
+    removeFilter : function(filterId, hierarchyName, uniqueName)
+    {
         var filters = this.getFilters();
         var fs = this._removeHelper(filters, filterId, hierarchyName, uniqueName);
 
-        if (fs.length > 0) {
+        // fire filterremove, but only after filterchange fires.
+        // This ensures consistent order of events.
+        this.on('filterchange', function()
+        {
+            this.fireEvent('filterremove', this.getFilters());
+        }, this, {single: true});
+
+        if (fs.length > 0)
+        {
             this.setFilters(fs);
         }
-        else {
+        else
+        {
             this.clearFilters();
         }
-
-        this.fireEvent('filterremove', this.getFilters());
     },
 
     removeSelection : function(filterId, hierarchyName, uniqueName) {
