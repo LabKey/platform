@@ -138,7 +138,7 @@ public class ChartAxisOptionsPanel extends AbstractChartPanel
         });
         hp = new HorizontalPanel();
         hp.add(_multiPlot);
-        hp.add(new HelpPopup("Mutiple Plots", "Each vertical axis measurement will be plotted with the horizontal measurement on a separate chart"));
+        hp.add(new HelpPopup("Multiple Plots", "Each vertical axis measurement will be plotted with the horizontal measurement on a separate chart"));
 
         panel.getFlexCellFormatter().setColSpan(row, 0, 2);
         panel.setWidget(row++, 0, hp);
