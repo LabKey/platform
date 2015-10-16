@@ -702,7 +702,7 @@ Ext.define('LABKEY.app.controller.State', {
 
                 var proceed = true;
                 Ext.each(olapFilters, function(of) {
-                    if ((!of.getData && !of.getDataCDS && !of.sql) && !Ext.isEmpty(of.arguments)) {
+                    if ((!of.getData && !of.getDataCDS && !of.sql) && Ext.isEmpty(of.arguments)) {
                         console.error('Empty arguments on filter. Unable to process app filter.');
                         proceed = false;
                     }
