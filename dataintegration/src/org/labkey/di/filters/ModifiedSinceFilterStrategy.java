@@ -226,6 +226,10 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         {
             throw new IllegalArgumentException("Timestamp column '"+ _table.getName() + "." + tsCol.getColumnName()+"' contains value not castable to a legal type.", ex);
         }
+        catch (Exception ex)
+        {
+            throw new IllegalArgumentException("Problem with configured timestamp column '"+ _table.getName() + "." + tsCol.getColumnName(), ex);
+        }
 
         List<Aggregate.Result> list = results.get(tsCol.getName());
 
