@@ -204,12 +204,12 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         }
     }
 
-    protected ExperimentException createParseError(File dataFile, String msg) throws ExperimentException
+    protected ExperimentException createParseError(File dataFile, String msg)
     {
         return createParseError(dataFile, msg, null);
     }
 
-    protected ExperimentException createParseError(File dataFile, String msg, @Nullable Exception cause) throws ExperimentException
+    protected ExperimentException createParseError(File dataFile, String msg, @Nullable Exception cause)
     {
         StringBuilder fullMessage = new StringBuilder("There was an error parsing ");
         fullMessage.append(dataFile.getName()).append(".\n");
