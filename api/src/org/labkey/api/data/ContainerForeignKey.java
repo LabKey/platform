@@ -69,7 +69,8 @@ public class ContainerForeignKey extends QueryForeignKey
     public TableInfo getLookupTableInfo()
     {
         TableInfo containers = super.getLookupTableInfo();
-        ((ContainerFilterable)containers).setContainerFilter(new ContainerFilter.InternalNoContainerFilter(_user));
+        if (null != containers)
+            ((ContainerFilterable)containers).setContainerFilter(new ContainerFilter.InternalNoContainerFilter(_user));
         return containers;
     }
 
