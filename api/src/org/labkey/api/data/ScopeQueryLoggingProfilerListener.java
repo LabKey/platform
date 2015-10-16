@@ -19,14 +19,18 @@ import com.drew.lang.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.data.queryprofiler.DatabaseQueryListener;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
-import java.util.Map;
+import java.util.Date;
+import java.util.List;
 
 /**
  * User: tgaluhn
@@ -90,17 +94,36 @@ public class ScopeQueryLoggingProfilerListener implements DatabaseQueryListener
 
     public static class TestCase extends Assert
     {
-        @Test  // This doesn't test anything yet, just shows how to get & use a dbscope that will log queries
-        public void testLogging() throws Exception
+        @Test
+        public void testNormalQueryLogging() throws Exception
         {
-            DbScope loggingScope = makeLoggingScope();
-
-            Map<String, Object> myMap = new SqlSelector(loggingScope, "SELECT 1").getMap();
-            // Verify sql is logged as expected.
-            // Another test would be that we're not logging MetadataSqlSelector queries against the loggingScope
+            final String SQL = "SELECT 1";
+            Date now = new Date();
+            new SqlSelector(makeLoggingScope(), SQL).getResultSet();
+            assertTrue("SQL wasn't logged", isSqlLogged(SQL, now));
         }
 
-        protected DbScope makeLoggingScope() throws ServletException, SQLException
+        @Test
+        public void testMetadataQueryLogging() throws Exception
+        {
+            // The sql is arbitrary. The use of MetadataSqlSelector flags it as a metadata retrieving query
+            final String METADATA_SQL = "SELECT 'metadata'";
+            Date now = new Date();
+            new MetadataSqlSelector(makeLoggingScope(), METADATA_SQL).getResultSet();
+            assertFalse("Metadata SQL was logged", isSqlLogged(METADATA_SQL, now));
+        }
+
+        private boolean isSqlLogged(String sql, Date start)
+        {
+            ViewContext context = HttpView.currentView().getViewContext();
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("created"), start, CompareType.GT);
+            filter.addCondition(FieldKey.fromParts("SQL"), sql);
+            List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(context.getContainer(), context.getUser(), QueryLoggingAuditTypeProvider.EVENT_NAME, filter, null);
+
+            return !events.isEmpty();
+        }
+
+        private DbScope makeLoggingScope() throws ServletException, SQLException
         {
             DbScope.DataSourceProperties dsp = new DbScope.DataSourceProperties();
             dsp.setLogQueries(true);
