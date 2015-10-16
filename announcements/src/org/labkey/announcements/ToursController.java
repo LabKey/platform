@@ -123,7 +123,7 @@ public class ToursController extends SpringActionController
             if (Integer.parseInt(json.getString("rowId")) < 0)
                 model = new TourModel();
             else
-                model = TourManager.getTour(getContainer(), Integer.parseInt(json.getString("rowId")));
+                model = TourManager.getTourFromDb(getContainer(), Integer.parseInt(json.getString("rowId")));
 
             if( null == model)
                 model = new TourModel();

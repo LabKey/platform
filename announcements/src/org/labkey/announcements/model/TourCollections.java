@@ -16,11 +16,11 @@
 package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Selector;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +33,6 @@ public class TourCollections
     private final Map<Integer, TourModel> toursByRowId = new HashMap<>();
     private final Map<String, TourModel> toursByEntityId = new HashMap<>();
     private final List<TourModel> toursList = new ArrayList<>();
-    private static final CommSchema _comm = CommSchema.getInstance();
 
     public TourCollections(Selector tours)
     {
@@ -63,6 +62,6 @@ public class TourCollections
 
     public List<TourModel> getTourList()
     {
-        return toursList;
+        return Collections.unmodifiableList(toursList);
     }
 }

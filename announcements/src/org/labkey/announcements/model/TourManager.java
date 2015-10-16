@@ -19,7 +19,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 
@@ -39,6 +43,23 @@ public class TourManager
     private static TourCollections getTourCollections(Container c)
     {
         return TourCache.getTourCollections(c);
+    }
+
+    public static TourModel getTourFromDb(Container c, int rowId)
+    {
+        SimpleFilter filter;
+        if (null != c)
+        {
+            filter = SimpleFilter.createContainerFilter(c);
+        }
+        else
+        {
+            filter = new SimpleFilter();
+        }
+        filter.addCondition(FieldKey.fromParts("rowId"), rowId);
+        Selector selector = new TableSelector(_comm.getTableInfoTours(), filter, null);
+
+        return selector.getObject(TourModel.class);
     }
 
     @Nullable
