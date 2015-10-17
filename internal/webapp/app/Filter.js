@@ -695,7 +695,13 @@ Ext.define('LABKEY.app.model.Filter', {
 
                             // they are both null, OK
                         }
-                        else {
+                        else if (fpm === null)
+                        {
+                            _mergeMeasures = false;
+                            break;
+                        }
+                        else
+                        {
                             // equivalent if they have the same alias
                             if (pm.measure && fpm.measure) {
                                 if (pm.measure.alias !== fpm.measure.alias) {
