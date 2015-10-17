@@ -999,6 +999,11 @@
                 queryName: results.queryName
             };
 
+            // TODO: Remove this backwards compatibility once cds/fb_refinement is ready
+            if (results.columnAliases !== undefined) {
+                responseMetadata.columnAliases = results.columnAliases;
+            }
+
             return new MeasureStore({
                 measures: measures,
                 records: results.rows,
@@ -1023,8 +1028,15 @@
             var responseMetadata = {
                 schemaName: results.schemaName,
                 queryName: results.queryName,
-                columnAliasMap: results.columnAliasMap
             };
+
+            // TODO: Remove this backwards compatibility once cds/fb_refinement is ready
+            if (results.columnAliasMap !== undefined) {
+                responseMetadata.columnAliasMap = results.columnAliasMap;
+            }
+            else {
+                responseMetadata.columnAliases = results.columnAliases;
+            }
 
             return new MeasureStore({
                 measures: _measures,
