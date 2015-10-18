@@ -31,6 +31,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -45,6 +46,10 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     public static final String SHARED_STUDY_CONTAINER_FILTER_KEY = "sharedStudyContainerFilter.";
 
     private final List<GUID> _containerIds;
+
+    // ideally this would always be set true, but it needs to be tested for each type
+    // we really care about optimizing datasets
+    private final boolean _allowOptimizePermissionsCheck;
 
     public DataspaceContainerFilter(User user, Study sharedStudy)
     {
@@ -63,14 +68,31 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
                 containerIds = (List) o;
         }
 
-        _containerIds = containerIds;
+        _containerIds = null==containerIds ? null : new ArrayList<>(containerIds);
+        _allowOptimizePermissionsCheck = false;
     }
 
     public DataspaceContainerFilter(User user, List<GUID> containerIds)
     {
         super(user);
-        _containerIds = containerIds;
+        _containerIds = null==containerIds ? null : new ArrayList<>(containerIds);
+        _allowOptimizePermissionsCheck = false;
     }
+
+    private DataspaceContainerFilter(DataspaceContainerFilter src, boolean allowOptimize)
+    {
+        super(src._user);
+        _containerIds = src._containerIds;
+        _allowOptimizePermissionsCheck = allowOptimize;
+    }
+
+
+    // This only works for provisioned, project scoped tables, e.g. datasets
+    public DataspaceContainerFilter getCanOptimizeDatasetContainerFilter()
+    {
+        return new DataspaceContainerFilter(this,true);
+    }
+
 
     public boolean isSubsetOfStudies()
     {
@@ -81,6 +103,12 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     public boolean includeWorkbooks()
     {
         return false;
+    }
+
+    @Override
+    public boolean useCTE()
+    {
+        return true;
     }
 
     @Override
@@ -101,32 +129,34 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
             allowedContainers.addAll(super.getIds(currentContainer, perm, roles));
         }
 
-        Set<GUID> studyContainers = null;
-        if (currentContainer.isProject())
+        if (_allowOptimizePermissionsCheck)
         {
-            // only if it is a project do we use the studiesCache
-            studyContainers = studiesCache.get(currentContainer.getId());
-        }
-        else
-        {
-            // see if the current container is a study
-            Study study = StudyService.get().getStudy(currentContainer);
-            if (study != null)
-                studyContainers = Collections.singleton(currentContainer.getEntityId());
-        }
+            Set<GUID> studyContainers = null;
+            if (currentContainer.isProject())
+            {
+                // only if it is a project do we use the studiesCache
+                studyContainers = studiesCache.get(currentContainer.getId());
+            }
+            else
+            {
+                // see if the current container is a study
+                Study study = StudyService.get().getStudy(currentContainer);
+                if (study != null)
+                    studyContainers = Collections.singleton(currentContainer.getEntityId());
+            }
 
-        if (null == studyContainers)
-        {
-            studyContainers = Collections.emptySet();
+            if (null == studyContainers)
+            {
+                studyContainers = Collections.emptySet();
+            }
+
+            // OPTIMIZATION: intersect the containers with permissions with the actual list of studies
+            // OPTIMIZATION: check if the list is a superset of all studies (e.g. no containers are filtered)
+            allowedContainers.retainAll(studyContainers);
+
+            if (allowedContainers.containsAll(studyContainers))
+                return null;
         }
-
-        // OPTIMIZATION: intersect the containers with permissions with the actual list of studies
-        // OPTIMIZATION: check if the list is a superset of all studies (e.g. no containers are filtered)
-        allowedContainers.retainAll(studyContainers);
-
-// TODO this optimization works for datasets
-//        if (allowedContainers.containsAll(studyContainers))
-//            return null;
 
         return allowedContainers;
     }
