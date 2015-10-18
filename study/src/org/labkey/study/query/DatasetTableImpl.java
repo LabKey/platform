@@ -63,6 +63,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
+import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AbstractAssayProvider;
@@ -579,6 +580,16 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
 
+    protected void _setContainerFilter(@NotNull ContainerFilter filter)
+    {
+        checkLocked();
+
+        if (filter instanceof DataspaceContainerFilter)
+            filter = ((DataspaceContainerFilter)filter).getCanOptimizeDatasetContainerFilter();
+
+        super._setContainerFilter(filter);
+    }
+
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
@@ -589,7 +600,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public ContainerFilter getDefaultContainerFilter()
     {
-        return super.getDefaultContainerFilter();
+        ContainerFilter f = super.getDefaultContainerFilter();
+        if (f instanceof DataspaceContainerFilter)
+            f = ((DataspaceContainerFilter)f).getCanOptimizeDatasetContainerFilter();
+        return f;
     }
 
 
@@ -1022,8 +1036,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             return _tableInfo;
         }
     }
-
-
 
 
     @NotNull
