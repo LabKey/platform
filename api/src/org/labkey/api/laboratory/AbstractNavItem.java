@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.ldk;
+package org.labkey.api.laboratory;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -21,11 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.laboratory.DataProvider;
-import org.labkey.api.laboratory.LaboratoryService;
-import org.labkey.api.ldk.NavItem;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 

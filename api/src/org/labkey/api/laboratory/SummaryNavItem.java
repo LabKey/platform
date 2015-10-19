@@ -16,7 +16,6 @@
 package org.labkey.api.laboratory;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.ldk.NavItem;
 import org.labkey.api.security.User;
 
 /**

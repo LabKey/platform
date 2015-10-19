@@ -18,7 +18,6 @@ package org.labkey.api.laboratory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.ldk.NavItem;
 import org.labkey.api.security.User;
 
 import java.util.Collections;
