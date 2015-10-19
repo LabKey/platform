@@ -96,7 +96,7 @@ public class StorageProvisioner
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId());
             if (null == dd)
             {
-                Logger.getLogger(StorageProvisioner.class).warn("Can't find domain desciptor: " + domain.getTypeId() + " " + domain.getTypeURI());
+                Logger.getLogger(StorageProvisioner.class).warn("Can't find domain descriptor: " + domain.getTypeId() + " " + domain.getTypeURI());
                 transaction.commit();
                 return null;
             }
