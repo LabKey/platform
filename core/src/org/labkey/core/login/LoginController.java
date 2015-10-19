@@ -759,6 +759,273 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    public class SetPasswordApiAction extends MutatingApiAction<SetPasswordForm>
+    {
+        ValidEmail _email = null;
+
+        @Override
+        public Object execute(SetPasswordForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            ActionURL currentUrl = getViewContext().getActionURL();
+            String rawEmail = form.getEmail();
+
+            // Some plain text email clients get confused by the encoding... explicitly look for encoded name
+            if (null == rawEmail)
+                rawEmail = currentUrl.getParameter("amp;email");
+
+            ValidEmail email;
+
+            try
+            {
+                email = new ValidEmail(rawEmail);
+            }
+            catch (InvalidEmailException e)
+            {
+                errors.reject("setPassword", "Invalid email address: " + (null == rawEmail ? "" : rawEmail));
+                response.put("success", false);
+                response.put("message", errors.getMessage());
+                return response;
+            }
+
+            try
+            {
+                String verification = form.getVerification();
+
+                if (SecurityManager.verify(email, verification))
+                {
+                    _email = email;
+
+                    if (UserManager.getUser(_email) == null)
+                    {
+                        errors.reject("setPassword", "This user doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+                        response.put("success", false);
+                        response.put("message", errors.getMessage());
+                        return response;
+                    }
+                }
+                else
+                {
+                    if (!SecurityManager.loginExists(email))
+                        errors.reject("setPassword", "This email address doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+                    else if (SecurityManager.isVerified(email))
+                        errors.reject("setPassword", "This email address has already been verified.");
+                    else if (null == verification || verification.length() < SecurityManager.tempPasswordLength)
+                        errors.reject("setPassword", "Make sure you've copied the entire link into your browser's address bar.");
+                    else
+                        // Incorrect verification string
+                        errors.reject("setPassword", "Verification failed.  Make sure you've copied the entire link into your browser's address bar.");
+
+                    response.put("success", false);
+                    response.put("message", errors.getMessage());
+                    return response;
+                }
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            HttpServletRequest request = getViewContext().getRequest();
+
+            // Pull straight from the request to minimize logging of passwords (in Spring, bean utils, etc.)
+            String password = request.getParameter("password");
+            String password2 = request.getParameter("password2");
+
+            Collection<String> messages = new LinkedList<>();
+            User user = UserManager.getUser(_email);
+
+            if (!DbLoginManager.getPasswordRule().isValidToStore(password, password2, user, messages))
+            {
+                for (String message : messages)
+                    errors.reject("password", message);
+
+                response.put("success", false);
+                response.put("message", errors.getMessage());
+                return response;
+            }
+
+            try
+            {
+                SecurityManager.setPassword(_email, password);
+            }
+            catch (SecurityManager.UserManagementException e)
+            {
+                errors.reject("password", "Setting password failed: " + e.getMessage() + ".  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
+                response.put("success", false);
+                response.put("message", errors.getMessage());
+                return response;
+            }
+
+            afterPasswordSet(errors, user);
+
+            if (errors.hasErrors())
+            {
+                response.put("success", false);
+                response.put("message", errors.getMessage());
+                return response;
+            }
+
+            // Should log user in only for initial user, choose password, and forced change password scenarios, but not for scenarios
+            // where a user is already logged in (normal change password, admins initializing another user's password, etc.)
+            if (getUser().isGuest())
+            {
+                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
+
+                if (result.getStatus() == AuthenticationManager.AuthenticationStatus.Success)
+                {
+                    // This user has passed primary authentication
+                    AuthenticationManager.setPrimaryAuthenticationUser(request, user);
+                }
+            }
+
+            response.put("success", true);
+            return response;
+
+        }
+
+        public void afterPasswordSet(BindException errors, User user)
+        {
+            try
+            {
+                SecurityManager.setVerification(_email, null);
+                UserManager.addToUserHistory(user, "Verified and chose a password.");
+            }
+            catch (SecurityManager.UserManagementException e)
+            {
+                errors.reject("password", "Resetting verification failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
+            }
+        }
+
+    }
+
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
+    public class ResetPasswordApiAction extends MutatingApiAction<LoginForm>
+    {
+        @Override
+        public Object execute(LoginForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            ValidEmail _email = null;
+            User _user = null;
+
+            final String rawEmail = form.getEmail();
+
+            if (null == rawEmail)
+            {
+                errors.reject("reset", "You must enter an email address");
+                response.put("success", false);
+                response.put("message", errors.getMessage());
+                return response;
+            }
+
+            try
+            {
+                _email = new ValidEmail(rawEmail);
+
+                if (SecurityManager.isLdapEmail(_email))
+                {
+                    // ldap authentication users must reset through their ldap administrator
+                    errors.reject("reset", "Reset Password failed: " + _email + " is an LDAP email address. Please contact your LDAP administrator to reset the password for this account.");
+                    response.put("success", false);
+                    response.put("message", errors.getMessage());
+                    return response;
+                }
+                else if (!SecurityManager.loginExists(_email))
+                {
+                    errors.reject("reset", "Reset Password failed: " + _email + " does not have a password.");
+                    response.put("success", false);
+                    response.put("message", errors.getMessage());
+                    return response;
+                }
+                else
+                {
+                    _user = UserManager.getUser(_email);
+
+                    // We've validated that a login exists, so the user better not be null... but crashweb #8379 indicates this can happen.
+                    if (null == _user)
+                    {
+                        errors.reject("reset", "This account does not exist.");
+                        response.put("success", false);
+                        response.put("message", errors.getMessage());
+                        return response;
+                    }
+                    else if (!_user.isActive())
+                    {
+                        errors.reject("reset", "The password for this account may not be reset because this account has been deactivated. Please contact your administrator to re-activate this account.");
+                        response.put("success", false);
+                        response.put("message", errors.getMessage());
+                        return response;
+                    }
+                }
+            }
+            catch (InvalidEmailException e)
+            {
+                errors.reject("reset", "Reset Password failed: " + rawEmail + " is not a valid email address.");
+                response.put("success", false);
+                response.put("message", errors.getMessage());
+                return response;
+            }
+
+            StringBuilder sbReset = new StringBuilder();
+            try
+            {
+                // Create a placeholder password that's impossible to guess and a separate email
+                // verification key that gets emailed.
+                String verification = SecurityManager.createTempPassword();
+                SecurityManager.setVerification(_email, verification);
+                try
+                {
+                    Container c = getContainer();
+                    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+                    final SecurityMessage message = SecurityManager.getResetMessage(false);
+                    ActionURL verificationURL = SecurityManager.createModuleVerificationURL(c, _email, verification, null, form.getProvider());
+
+                    final User system = new User(laf.getSystemEmailAddress(), 0);
+                    system.setFirstName(laf.getCompanyName());
+                    SecurityManager.sendEmail(c, system, message, _email.getEmailAddress(), verificationURL);
+
+                    if (!_user.getEmail().equals(_email.getEmailAddress()))
+                    {
+                        final SecurityMessage adminMessage = SecurityManager.getResetMessage(true);
+                        message.setTo(_email.getEmailAddress());
+                        SecurityManager.sendEmail(c, _user, adminMessage, _user.getEmail(), verificationURL);
+                    }
+                    sbReset.append("An email has been sent to you with instructions for how to reset your password. ");
+                    UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password.");
+                }
+                catch (ConfigurationException e)
+                {
+                    sbReset.append("Failed to send password reset email at this time due to a server configuration problem. <br>");
+                    sbReset.append("Please contact your administrator at <a href=mailto:\"" + LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress()
+                            + "\">" + LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress() + "</a>");
+                    UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password, but sending the email failed.");
+                }
+                catch (MessagingException e)
+                {
+                    sbReset.append("Failed to send email due to: <pre>").append(e.getMessage()).append("</pre>");
+                    UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password, but sending the email failed.");
+                }
+            }
+            catch (SecurityManager.UserManagementException e)
+            {
+                sbReset.append(": failed to reset password due to: ").append(e.getMessage());
+                UserManager.addToUserHistory(UserManager.getUser(_email), _email + " attempted to reset the password, but the reset failed: " + e.getMessage());
+            }
+            response.put("success", true);
+            response.put("message", sbReset.toString());
+            return response;
+        }
+
+    }
+
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
     public class AcceptTermsOfUseApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
@@ -1158,9 +1425,14 @@ public class LoginController extends SpringActionController
         private boolean remember;
         private String email;
         private String password;
+        private String provider;
         private boolean approvedTermsOfUse;
         private SecurityManager.TermsOfUseType termsOfUseType;
 
+        public void setProvider(String provider)
+        {
+            this.provider = provider;
+        }
         public void setEmail(String email)
         {
             this.email = email;
@@ -1169,6 +1441,11 @@ public class LoginController extends SpringActionController
         public void setTermsOfUseType(SecurityManager.TermsOfUseType type) { this.termsOfUseType = type; }
 
         public SecurityManager.TermsOfUseType getTermsOfUseType() { return this.termsOfUseType; }
+
+        public String getProvider()
+        {
+            return this.provider;
+        }
 
         public String getEmail()
         {
