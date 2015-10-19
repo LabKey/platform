@@ -1,0 +1,10 @@
+
+.x4-grid-row-before-selected .x4-grid-td {
+    border-bottom-style: solid;
+    border-bottom-color: #c0c0c0;
+}
+
+.x4-grid-row-selected .x4-grid-td {
+    border-bottom-style: solid;
+    border-bottom-color: #c0c0c0;
+}
