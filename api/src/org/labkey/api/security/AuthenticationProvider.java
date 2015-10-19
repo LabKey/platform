@@ -57,6 +57,11 @@ public interface AuthenticationProvider
         AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
     }
 
+    interface ResetPasswordProvider extends AuthenticationProvider
+    {
+        ActionURL getAPIVerificationURL(Container c);
+    }
+
     interface SecondaryAuthenticationProvider extends AuthenticationProvider
     {
         /**

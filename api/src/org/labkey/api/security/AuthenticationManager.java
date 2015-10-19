@@ -36,6 +36,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
+import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
@@ -345,6 +346,14 @@ public class AuthenticationManager
             return null; // Not an SSO provider
     }
 
+    public static @Nullable ResetPasswordProvider getResetPasswordProvider(String name)
+    {
+        for (AuthenticationProvider provider : _allProviders)
+            if (provider.getName().equals(name) && provider instanceof ResetPasswordProvider)
+                return (ResetPasswordProvider)provider;
+
+        return null;
+    }
 
     private static final String AUTHENTICATION_CATEGORY = "Authentication";
     private static final String PROVIDERS_KEY = "Authentication";

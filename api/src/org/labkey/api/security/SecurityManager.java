@@ -46,6 +46,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
@@ -549,6 +550,25 @@ public class SecurityManager
         return PageFlowUtil.urlProvider(LoginUrls.class).getVerificationURL(c, email, verification, extraParameters);
     }
 
+    public static ActionURL createModuleVerificationURL(Container c, ValidEmail email, String verification, @Nullable Pair<String, String>[] extraParameters, String provider)
+    {
+        ActionURL defaultUrl = createVerificationURL(c, email, verification, extraParameters);
+        if (provider == null)
+            return defaultUrl;
+
+        ResetPasswordProvider urlProvider =  AuthenticationManager.getResetPasswordProvider(provider);
+        if (urlProvider == null)
+            return defaultUrl;
+
+        ActionURL verificationUrl = urlProvider.getAPIVerificationURL(c);
+        verificationUrl.addParameter("verification", verification);
+        verificationUrl.addParameter("email", email.getEmailAddress());
+
+        if (null != extraParameters)
+            verificationUrl.addParameters(extraParameters);
+
+        return verificationUrl;
+    }
 
     // Test if non-LDAP email has been verified
     public static boolean isVerified(ValidEmail email)
