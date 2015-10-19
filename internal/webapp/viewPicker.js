@@ -88,6 +88,8 @@ function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includ
                 columnCombo.clearValue();
         }
     }
+
+    LABKEY.Utils.signalWebDriverTest("schemaCombo-loaded");
 }
 
 function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, columnCombo, folderCombo, customizePanel)
@@ -177,6 +179,8 @@ function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, column
                 columnCombo.clearValue();
         }
     }
+
+    LABKEY.Utils.signalWebDriverTest("queryCombo-loaded");
 }
 
 var defaultViewLabel = "[default view]";
@@ -243,6 +247,8 @@ function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCom
     }
 
     viewCombo.setValue(initialView);
+
+    LABKEY.Utils.signalWebDriverTest("viewCombo-loaded");
 }
 
 function populateColumns(columnCombo, details)
@@ -279,6 +285,8 @@ function populateColumns(columnCombo, details)
             columnCombo.fireEvent('select', columnCombo, record, queryColumnIndex);
         }
     }
+
+    LABKEY.Utils.signalWebDriverTest("columnCombo-loaded");
 }
 
 function populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, details, includeSchema, customizePanel)
@@ -333,6 +341,8 @@ function populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folder
     folderCombo.setValue(initialFolder);
     var record = folderCombo.getStore().getAt(folderComboIndex);
     folderCombo.fireEvent('select', folderCombo, record, folderComboIndex);
+
+    LABKEY.Utils.signalWebDriverTest("folderCombo-loaded");
 }
 
 function populateFoldersWithTree(folder, records, level)
