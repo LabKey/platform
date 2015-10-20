@@ -108,6 +108,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -1172,33 +1173,38 @@ public class QueryServiceImpl extends QueryService
         }
 
         // foreign keys
+        // pass one - collect columns with foreign keys
+        Map<FieldKey,ColumnInfo> columnsWithLookups = new TreeMap<>();
         for (ColumnInfo column : columns)
         {
             FieldKey fkOuter = column.getFieldKey();
             while (null != (fkOuter=fkOuter.getParent()))
             {
-                // resolve parent column, and find its foreignKey
+                if (columnsWithLookups.containsKey(fkOuter))
+                    break;
                 ColumnInfo colOuter = columnMap.get(fkOuter);
-                if (null == colOuter)
-                    continue;
-                ForeignKey foreignKey = colOuter.getFk();
-                if (null == foreignKey)
-                    continue;
-                // ask foreignKey for its suggested columns
-                Set<FieldKey> set = foreignKey.getSuggestedColumns();
-                if (null == set)
-                    continue;
-                for (FieldKey fieldKey : set)
+                if (null != colOuter && null != colOuter.getFk())
+                    columnsWithLookups.put(fkOuter, colOuter);
+            }
+        }
+        // pass two - get suggested columns
+        for (ColumnInfo column : columnsWithLookups.values())
+        {
+            ForeignKey foreignKey = column.getFk();
+            Set<FieldKey> set = foreignKey.getSuggestedColumns();
+            if (null == set)
+                continue;
+            for (FieldKey fieldKey : set)
+            {
+                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
+                if (col != null)
                 {
-                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
-                    if (col != null)
-                    {
-                        ret.add(col);
-                        allInvolvedColumns.add(col);
-                    }
+                    ret.add(col);
+                    allInvolvedColumns.add(col);
                 }
             }
         }
+
 
         if (filter != null)
         {
