@@ -61,7 +61,7 @@ import java.util.Set;
 // identify tests that exercise the code paths that will be changed.
 public class StatementUtils
 {
-    static Logger _log = Logger.getLogger(StatementUtils.class);
+    private static final Logger _log = Logger.getLogger(StatementUtils.class);
 
     public enum Operation {insert, update, merge}
     public static String OWNEROBJECTID = "exp$object$ownerobjectid";
@@ -80,7 +80,7 @@ public class StatementUtils
     // variable/parameter tracking helpers
     boolean useVariables = false;
     final Map<String, Object> _constants = new CaseInsensitiveHashMap<>();
-    final Map<String, ParameterHolder> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ParameterHolder>());
+    final Map<String, ParameterHolder> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
 
 
     //
@@ -1038,8 +1038,8 @@ public class StatementUtils
 
         void init()
         {
-            issues = DbSchema.get("issues").getTable("issues");
-            test = DbSchema.get("test").getTable("testtable2");
+            issues = DbSchema.get("issues", DbSchemaType.Module).getTable("issues");
+            test = DbSchema.get("test", DbSchemaType.Module).getTable("testtable2");
             container = JunitUtil.getTestContainer();
             user = TestContext.get().getUser();
         }
