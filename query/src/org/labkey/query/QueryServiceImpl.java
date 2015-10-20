@@ -616,9 +616,9 @@ public class QueryServiceImpl extends QueryService
     }
 
     @Override
-    public String getCustomViewNameFromEntityId(String entityId) throws SQLException
+    public String getCustomViewNameFromEntityId(Container container, String entityId) throws SQLException
     {
-        CstmView view = QueryManager.get().getCustomView(entityId);
+        CstmView view = QueryManager.get().getCustomView(container, entityId);
         return view != null ? view.getName() : null;
     }
 
@@ -743,7 +743,7 @@ public class QueryServiceImpl extends QueryService
                 throw new IllegalStateException(viewFileName + ": Must specify a view name");
 
             // Get all shared views on this query with the same name
-            CstmView[] views = mgr.getCstmViews(container, qd.getSchemaName(), qd.getName(), viewName, null, false, true);
+            List<CstmView> views = mgr.getCstmViews(container, qd.getSchemaName(), qd.getName(), viewName, null, false, true);
 
             // Delete them
             for (CstmView view : views)

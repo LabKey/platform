@@ -4874,11 +4874,11 @@ public class QueryController extends SpringActionController
                 if (!getContainer().hasPermission(getUser(), AdminPermission.class))
                     throw new UnauthorizedException();
             }
-            CstmView[] existing = QueryManager.get().getCstmViews(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false, false);
+            List<CstmView> existing = QueryManager.get().getCstmViews(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false, false);
             CstmView view;
-            if (existing.length != 0)
+            if (!existing.isEmpty())
             {
-                view = existing[0];
+                view = existing.get(0);
             }
             else
             {

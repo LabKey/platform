@@ -90,7 +90,7 @@ public class QueryDataViewProvider extends AbstractQueryDataViewProvider
         {
             try
             {
-                CstmView view = QueryManager.get().getCustomView(id);
+                CstmView view = QueryManager.get().getCustomView(container, id);
                 if (view != null)
                 {
                     if (view.isShared())

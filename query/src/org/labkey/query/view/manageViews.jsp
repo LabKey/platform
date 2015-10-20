@@ -62,12 +62,12 @@
 
     if (getViewContext().hasPermission(UpdatePermission.class))
     {
-        views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, null, false, true)));
+        views.addAll(mgr.getCstmViews(c, schemaName, queryName, null, null, false, true));
     }
 
     if (!user.isGuest())
     {
-        views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, user, false, false)));
+        views.addAll(mgr.getCstmViews(c, schemaName, queryName, null, user, false, false));
     }
 
     // UNDONE: Requires queryName for now.  We need a method to get all session views in a container.

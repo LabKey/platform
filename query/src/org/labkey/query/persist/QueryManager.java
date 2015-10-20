@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -196,20 +197,16 @@ public class QueryManager
         return new TableSelector(getTableInfoQuerySnapshotDef()).getObject(id, QuerySnapshotDef.class);
     }
 
-    public CstmView getCustomView(int id) throws SQLException
+    public CstmView getCustomView(Container container, int id) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(getTableInfoCustomView().getColumn("CustomViewId"), id);
-        CstmView view = new TableSelector(getTableInfoCustomView()).getObject(id, CstmView.class);
+        CstmView view = CustomViewCache.getCstmView(container, id);
         _log.debug(view);
         return view;
     }
 
-    public CstmView getCustomView(String entityId) throws SQLException
+    public CstmView getCustomView(Container container, String entityId) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(getTableInfoCustomView().getColumn("EntityId"), entityId);
-        CstmView view = new TableSelector(getTableInfoCustomView(), filter, null).getObject(CstmView.class);
+        CstmView view = CustomViewCache.getCstmViewByEntityId(container, entityId);
         _log.debug(view);
         return view;
     }
@@ -272,26 +269,29 @@ public class QueryManager
         if (sharedOnly)
         {
             // Get only shared custom views
-            views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, null, inheritable, true)));
+            views.addAll(getCstmViews(container, schemaName, queryName, null, null, inheritable, true));
         }
         else
         {
             if (user != null)
             {
                 // Custom views owned by the user first, then add shared custom views
-                views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, user, inheritable, false)));
-                views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, null, inheritable, true)));
+                views.addAll(getCstmViews(container, schemaName, queryName, null, user, inheritable, false));
+                views.addAll(getCstmViews(container, schemaName, queryName, null, null, inheritable, true));
             }
             else
             {
                 // Get all custom views regardless of owner
-                views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, null, inheritable, false)));
+                views.addAll(getCstmViews(container, schemaName, queryName, null, null, inheritable, false));
             }
         }
     }
 
-    public CstmView[] getCstmViews(Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable String viewName, @Nullable User user, boolean inheritableOnly, boolean sharedOnly)
+    public List<CstmView> getCstmViews(Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable String viewName, @Nullable User user, boolean inheritableOnly, boolean sharedOnly)
     {
+        List<CstmView> oldViews = new ArrayList<>();
+        List<CstmView> newViews = CustomViewCache.getCstmViews(container, schemaName, queryName, viewName, user, inheritableOnly, sharedOnly);
+
         CstmView.Key key = new CstmView.Key(container);
         if (schemaName != null)
             key.setSchema(schemaName);
@@ -316,22 +316,50 @@ public class QueryManager
                 key.setUser(user);
         }
 
-        return key.select();
+        oldViews.addAll(Arrays.asList(key.select()));
+        validateCacheResults(oldViews, newViews, container, schemaName, queryName);
+
+        return newViews;
+    }
+
+    // temporary check to test new cache implementation consistency with previous solution
+    private void validateCacheResults(List<CstmView> oldViews, List<CstmView> newViews, Container container, String schemaName, String queryName)
+    {
+        Comparator<CstmView> idComparator = (o1, o2) -> {
+            return o1.getCustomViewId() - o2.getCustomViewId();
+        };
+
+        // new collection is unmodifiable
+        List<CstmView> newViewsCopy = new ArrayList<>(newViews);
+        Collections.sort(oldViews, idComparator);
+        Collections.sort(newViewsCopy, idComparator);
+
+        if (!oldViews.equals(newViewsCopy))
+        {
+            throw new IllegalStateException("Inconsistent number of custom views returned from new cache for folder: " + container.getPath() + " | schema: " + schemaName + " | query: " + queryName + " new size " + newViews.size() + " vs. " + oldViews.size());
+        }
     }
 
     public CstmView update(User user, CstmView view)
     {
-        return Table.update(user, getTableInfoCustomView(), view, view.getCustomViewId());
+        CstmView cstmView = Table.update(user, getTableInfoCustomView(), view, view.getCustomViewId());
+        CustomViewCache.uncache(ContainerManager.getForId(cstmView.getContainerId()));
+
+        return cstmView;
     }
 
     public CstmView insert(User user, CstmView view)
     {
-        return Table.insert(user, getTableInfoCustomView(), view);
+        CstmView cstmView = Table.insert(user, getTableInfoCustomView(), view);
+        CustomViewCache.uncache(ContainerManager.getForId(cstmView.getContainerId()));
+
+        return cstmView;
     }
 
     public void delete(@Nullable User user, CstmView view)
     {
         Table.delete(getTableInfoCustomView(), view.getCustomViewId());
+        CustomViewCache.uncache(ContainerManager.getForId(view.getContainerId()));
     }
 
     public ExternalSchemaDef getExternalSchemaDef(int id)

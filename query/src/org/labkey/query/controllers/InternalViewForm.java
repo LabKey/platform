@@ -34,7 +34,7 @@ public class InternalViewForm extends ViewForm
         if (_view != null)
             return _view;
         QueryManager mgr = QueryManager.get();
-        CstmView view = mgr.getCustomView(_customViewId);
+        CstmView view = mgr.getCustomView(getContainer(), _customViewId);
         checkEdit(getViewContext(), view);
         _view = view;
         return _view;

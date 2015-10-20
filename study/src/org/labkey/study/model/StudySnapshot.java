@@ -255,7 +255,7 @@ public class StudySnapshot
             loadSpecimens(def, refresh);
             loadStudyObjects(def);
             loadLists(ctx, def);
-            loadViews(def);
+            loadViews(ctx, def);
             loadReports(ctx, def);
             loadFolderObjects(def);
             loadPublishOptions(ctx);
@@ -352,7 +352,7 @@ public class StudySnapshot
             }
         }
 
-        private void loadViews(ChildStudyDefinition def)
+        private void loadViews(StudyExportContext ctx, ChildStudyDefinition def)
         {
             if (def.isViewsAll())
             {
@@ -365,7 +365,7 @@ public class StudySnapshot
                 {
                     try
                     {
-                        String viewName = QueryService.get().getCustomViewNameFromEntityId(entityid);
+                        String viewName = QueryService.get().getCustomViewNameFromEntityId(ctx.getContainer(), entityid);
                         if (viewName != null)
                             views.add(viewName);
                     }
