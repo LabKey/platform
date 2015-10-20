@@ -29,6 +29,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.data.xml.PermissionType;
 import org.labkey.data.xml.folderType.FolderTabDocument;
+import org.labkey.data.xml.folderType.PermissionClassType;
 import org.labkey.data.xml.folderType.SelectorDocument;
 import org.labkey.data.xml.folderType.SelectorsDocument;
 
@@ -62,6 +63,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
         super(name, caption);
     }
 
+    @SuppressWarnings("unchecked")
     public SimpleFolderTab(FolderTabDocument.FolderTab tab, int defaultIndex)
     {
         super(tab.getName(), tab.getCaption());
@@ -114,12 +116,24 @@ public class SimpleFolderTab extends FolderTab.PortalPage
         if (tab.isSetPermissions())
         {
             List<Class<? extends Permission>> permissions = new ArrayList<>();
-            for (PermissionType.Enum permEntry : tab.getPermissions().getPermissionArray())
+            for (PermissionClassType permEntry : tab.getPermissions().getPermissionArray())
             {
-                org.labkey.api.security.SecurityManager.PermissionTypes perm = SecurityManager.PermissionTypes.valueOf(permEntry.toString());
-                Class<? extends Permission> permClass = perm.getPermission();
-                if (permClass != null)
-                    permissions.add(permClass);
+                String permClassName = permEntry.getName();
+                if (null != permClassName)
+                {
+                    try
+                    {
+                        Class permClass = Class.forName(permClassName);
+                        if (Permission.class.isAssignableFrom(permClass))
+                        {
+                            permissions.add(permClass);
+                        }
+                    }
+                    catch (ClassNotFoundException e)
+                    {
+                        // ignore
+                    }
+                }
             }
 
             if (permissions.size() > 0)
