@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.template.BodyTemplate" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page session="true" %>
 <%
     BodyTemplate me = (BodyTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();

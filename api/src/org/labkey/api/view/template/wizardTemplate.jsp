@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.WizardTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page session="true" %>
 <%
     WizardTemplate me = (WizardTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();

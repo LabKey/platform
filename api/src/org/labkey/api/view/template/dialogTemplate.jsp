@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.ViewServlet" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page session="true" %>
 <%
     DialogTemplate me = (DialogTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();

@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page session="true" %>
 <%
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
