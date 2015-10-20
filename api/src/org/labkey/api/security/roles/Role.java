@@ -43,41 +43,41 @@ public interface Role extends Parameter.JdbcParameterValue
      * @return A unique name for this role
      */
     @NotNull
-    public String getUniqueName();
+    String getUniqueName();
 
     /**
      * Returns a short friendly name suitable for display in a user interface.
      * @return The role's name.
      */
     @NotNull
-    public String getName();
+    String getName();
 
     /**
      * Returns a description of the role for display in a user interface.
      * @return The role's description.
      */
     @NotNull
-    public String getDescription();
+    String getDescription();
 
     /**
      * Returns the set of permission classes the role grants.
      * @return The permissions granted by the role.
      */
     @NotNull
-    public Set<Class<? extends Permission>> getPermissions();
+    Set<Class<? extends Permission>> getPermissions();
 
     /**
      * Adds a new permission to this role. Modules may use this method to add permissions defined by the module to system-defined roles
      * @param perm The new permission
      */
-    public void addPermission(@NotNull Class<? extends Permission> perm);
+    void addPermission(@NotNull Class<? extends Permission> perm);
 
     /**
      * Returns a reference to the module in which this role was defined.
      * @return The source module.
      */
     @NotNull
-    public Module getSourceModule();
+    Module getSourceModule();
 
     /**
      * Returns true if this role may be assigned to groups/users. If this returns false, the role should not be displayed in a
@@ -85,7 +85,7 @@ public interface Role extends Parameter.JdbcParameterValue
      * assigned by the system based on context (e.g., Owner).
      * @return True if this role is assignable.
      */
-    public boolean isAssignable();
+    boolean isAssignable();
 
     /**
      * Returns a set of user principals that should never be assigned to this role. This is typically used to prohibit assigning
@@ -93,7 +93,7 @@ public interface Role extends Parameter.JdbcParameterValue
      * @return A set of principals that should not be assigned to this role
      */
     @NotNull
-    public Set<UserPrincipal> getExcludedPrincipals();
+    Set<UserPrincipal> getExcludedPrincipals();
 
     /**
      * @return Whether this role is applicable to the policy. For example, some roles might only make sense in the context of a
