@@ -467,8 +467,10 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             }
         }
 
-        if (this.focusTask)
-            Ext.TaskMgr.start(this.focusTask);
+        //Issue 24550: always select the first filter field, and also select text if present
+        if (this.inputs[0]) {
+            this.inputs[0].focus(true, 100, this.inputs[0]);
+        }
 
         this.changed = false;
     },
