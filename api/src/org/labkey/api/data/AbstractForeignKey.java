@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
@@ -25,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: kevink
@@ -184,7 +186,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         catch (CloneNotSupportedException e)
         {
             assert false : "Silly programmer, clone not supported for " + this.getClass().getName();
-            e.printStackTrace();
+            Logger.getLogger(AbstractForeignKey.class).error(e);
             return null;
         }
     }
@@ -239,6 +241,11 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         if (_suggestedFields == null)
             return null;
 
-        return Collections.unmodifiableSet(_suggestedFields);
+        if (null == _remappedFields)
+            return Collections.unmodifiableSet(_suggestedFields);
+
+        return _suggestedFields.stream()
+            .map(this::getRemappedField)
+            .collect(Collectors.toSet());
     }
 }
