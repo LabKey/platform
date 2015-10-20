@@ -264,6 +264,8 @@ public class QueryLookupWrapper extends QueryRelation
         String comma = "";
         for (RelationColumn col : _selectedColumns.values())
         {
+            if (0 == col.ref.count())
+                continue;
             sql.append(comma);
             if (col instanceof QueryLookupColumn)
                 col.declareJoins(_source.getAlias(), joins);
