@@ -69,7 +69,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -122,10 +121,10 @@ public class SecurityApiActions
             return response;
         }
 
-        protected Map<String,Object> getContainerPerms(Container container, Group[] groups, boolean recurse)
+        protected Map<String, Object> getContainerPerms(Container container, Group[] groups, boolean recurse)
         {
             SecurityPolicy policy = container.getPolicy();
-            Map<String,Object> containerPerms = new HashMap<>();
+            Map<String, Object> containerPerms = new HashMap<>();
             containerPerms.put("path", container.getPath());
             containerPerms.put("id", container.getId());
             containerPerms.put("name", container.getName());
@@ -134,7 +133,7 @@ public class SecurityApiActions
 
             if(recurse && container.hasChildren())
             {
-                List<Map<String,Object>> childPerms = new ArrayList<>();
+                List<Map<String, Object>> childPerms = new ArrayList<>();
                 for (Container child : container.getChildren())
                 {
                     if (child.hasPermission(getUser(), ReadPermission.class))
@@ -329,7 +328,7 @@ public class SecurityApiActions
 
             for(Group group : groups)
             {
-                Map<String,Object> groupInfo = new HashMap<>();
+                Map<String, Object> groupInfo = new HashMap<>();
                 groupInfo.put("id", group.getUserId());
                 groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
 
@@ -360,7 +359,7 @@ public class SecurityApiActions
             //recurse children if desired
             if(recurse && container.hasChildren())
             {
-                List<Map<String,Object>> childPerms = new ArrayList<>();
+                List<Map<String, Object>> childPerms = new ArrayList<>();
                 for(Container child : container.getChildren())
                 {
                     if (child.hasPermission(getUser(), ReadPermission.class))
@@ -431,7 +430,7 @@ public class SecurityApiActions
 
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            ArrayList<Map<String,Object>> rolesProps = new ArrayList<>();
+            ArrayList<Map<String, Object>> rolesProps = new ArrayList<>();
 
             for(Role role : RoleManager.getAllRoles())
             {
@@ -439,7 +438,7 @@ public class SecurityApiActions
                     rolesProps.add(getRoleProps(role));
             }
 
-            List<Map<String,Object>> permsProps = new ArrayList<>();
+            List<Map<String, Object>> permsProps = new ArrayList<>();
             for(Permission perm : _allPermissions)
             {
                 permsProps.add(getPermissionProps(perm));
@@ -450,9 +449,9 @@ public class SecurityApiActions
             return resp;
         }
 
-        public Map<String,Object> getRoleProps(Role role)
+        public Map<String, Object> getRoleProps(Role role)
         {
-            Map<String,Object> props = new HashMap<>();
+            Map<String, Object> props = new HashMap<>();
             props.put("uniqueName", role.getUniqueName());
             props.put("name", role.getName());
             props.put("description", role.getDescription());
@@ -479,9 +478,9 @@ public class SecurityApiActions
             return props;
         }
 
-        public Map<String,Object> getPermissionProps(Permission perm)
+        public Map<String, Object> getPermissionProps(Permission perm)
         {
-            Map<String,Object> props = new HashMap<>();
+            Map<String, Object> props = new HashMap<>();
             props.put("uniqueName", perm.getUniqueName());
             props.put("name", perm.getName());
             props.put("description", perm.getDescription());
@@ -531,9 +530,9 @@ public class SecurityApiActions
             return new ApiSimpleResponse("resources", getResourceProps(container));
         }
 
-        protected Map<String,Object> getResourceProps(SecurableResource resource)
+        protected Map<String, Object> getResourceProps(SecurableResource resource)
         {
-            Map<String,Object> props = new HashMap<>();
+            Map<String, Object> props = new HashMap<>();
             props.put("resourceClass", resource.getClass().getName());
             props.put("id", resource.getResourceId());
             props.put("name", resource.getResourceName());
@@ -543,7 +542,7 @@ public class SecurityApiActions
             props.put("children", getChildrenProps(resource));
 
             SecurableResource parent = resource.getParentResource();
-            if(null != parent)
+            if (null != parent)
             {
                 props.put("parentId", parent.getResourceId());
                 props.put("parentContainerPath", parent.getResourceContainer().getPath());
@@ -579,12 +578,12 @@ public class SecurityApiActions
             return props;
         }
 
-        protected List<Map<String,Object>> getChildrenProps(SecurableResource resource)
+        protected List<Map<String, Object>> getChildrenProps(SecurableResource resource)
         {
-            List<Map<String,Object>> childProps = new ArrayList<>();
+            List<Map<String, Object>> childProps = new ArrayList<>();
             for(SecurableResource child : resource.getChildResources(getUser()))
             {
-                if(_includeSubfolders || !(child instanceof Container))
+                if (_includeSubfolders || !(child instanceof Container))
                     childProps.add(getResourceProps(child));
             }
             return childProps;
@@ -594,7 +593,6 @@ public class SecurityApiActions
     public static class PolicyIdForm
     {
         private String _resourceId;
-        private boolean _findNearest = true;
 
         public String getResourceId()
         {
@@ -605,16 +603,6 @@ public class SecurityApiActions
         {
             _resourceId = resourceId;
         }
-
-        public boolean getFindNearest()
-        {
-            return _findNearest;
-        }
-
-        public void setFindNearest(boolean findNearest)
-        {
-            _findNearest = findNearest;
-        }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -622,39 +610,19 @@ public class SecurityApiActions
     {
         public ApiResponse execute(PolicyIdForm form, BindException errors) throws Exception
         {
-            if(null == form.getResourceId())
+            if (null == form.getResourceId())
                 throw new IllegalArgumentException("You must supply a resourceId parameter!");
 
             Container container = getContainer();
             User user = getUser();
 
-            SecurableResource resource;
-            SecurityPolicy policy;
-
-            // try to resolve the resource -- at the moment, we can only resolve SOME resources, see #24103
-            resource = container.findSecurableResource(form.getResourceId(), user);
-
-            if (null != resource)
-            {
-                // get the policy associated with the resource
-                policy = SecurityPolicyManager.getPolicy(resource, form.getFindNearest());
-            }
-            else if (!form.getFindNearest())
-            {
-                // Backup approach for finding the policy directly associated with a ResourceId (no inheritance), without a SecurableResource... this is temporary!
-                policy = SecurityPolicyManager.getPolicy(container, form.getResourceId());
-
-                if (null == policy)
-                {
-                    // I don't like this, but we should send back an empty policy...
-                    policy = new SecurityPolicy(form.getResourceId(), null, container.getId(), Collections.emptyList(), null);
-                }
-            }
-            else
-            {
+            //resolve the resource
+            SecurableResource resource = container.findSecurableResource(form.getResourceId(), user);
+            if (null == resource)
                 throw new IllegalArgumentException("The requested resource does not exist within this container!");
-            }
 
+            //get the policy
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
             //FIX: 8077 - if this is a subfolder and the policy is inherited from the project
@@ -679,27 +647,23 @@ public class SecurityApiActions
             else
                 resp.put("policy", policy.toMap());
 
-            // If we don't have a resource we can't resolve roles. This is temporary... until we have a real way to resolve all SecurableResources
-            if (null != resource)
+            List<String> relevantRoles = new ArrayList<>();
+
+            if (container.isRoot() && !resource.equals(container))
             {
-                List<String> relevantRoles = new ArrayList<>();
-
-                if (container.isRoot() && !resource.equals(container))
-                {
-                    // ExternalIndex case
-                    relevantRoles.add(RoleManager.getRole(ReaderRole.class).getUniqueName());
-                }
-                else
-                {
-                    for (Role role : RoleManager.getAllRoles())
-                    {
-                        if (role.isAssignable() && role.isApplicable(policy, resource))
-                            relevantRoles.add(role.getUniqueName());
-                    }
-                }
-
-                resp.put("relevantRoles", relevantRoles);
+                // ExternalIndex case
+                relevantRoles.add(RoleManager.getRole(ReaderRole.class).getUniqueName());
             }
+            else
+            {
+                for (Role role : RoleManager.getAllRoles())
+                {
+                    if (role.isAssignable() && role.isApplicable(policy, resource))
+                        relevantRoles.add(role.getUniqueName());
+                }
+            }
+
+            resp.put("relevantRoles", relevantRoles);
 
             return resp;
         }
@@ -707,14 +671,14 @@ public class SecurityApiActions
 
     public static class SavePolicyForm implements CustomApiForm
     {
-        private Map<String,Object> _props;
+        private Map<String, Object> _props;
 
         public void bindProperties(Map<String, Object> props)
         {
             _props = props;
         }
 
-        public Map<String,Object> getProps()
+        public Map<String, Object> getProps()
         {
             return _props;
         }
@@ -737,11 +701,11 @@ public class SecurityApiActions
 
             //resolve the resource
             String resourceId = (String)form.getProps().get("resourceId");
-            if(null == resourceId || resourceId.length() == 0)
+            if (null == resourceId || resourceId.length() == 0)
                 throw new IllegalArgumentException("You must include a resourceId as a top-level property!");
 
             SecurableResource resource = container.findSecurableResource(resourceId, user);
-            if(null == resource)
+            if (null == resource)
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
             //ensure that user has admin permission on resource
@@ -853,7 +817,7 @@ public class SecurityApiActions
         protected void writeAuditEvent(int principalId, Role role, RoleModification mod, SecurableResource resource)
         {
             UserPrincipal principal = SecurityManager.getPrincipal(principalId);
-            if(null == principal)
+            if (null == principal)
                 return;
 
             StringBuilder sb = new StringBuilder("The user/group ");
@@ -889,11 +853,11 @@ public class SecurityApiActions
 
             //resolve the resource
             String resourceId = form.getResourceId();
-            if(null == resourceId || resourceId.length() == 0)
+            if (null == resourceId || resourceId.length() == 0)
                 throw new IllegalArgumentException("You must include a resourceId as a top-level property!");
 
             SecurableResource resource = container.findSecurableResource(resourceId, user);
-            if(null == resource)
+            if (null == resource)
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
             //ensure that user has admin permission on resource
@@ -916,7 +880,7 @@ public class SecurityApiActions
                     + " was deleted. It will now inherit the security policy of " +
                     parentResource);
             event.setContainerId(resource.getResourceContainer().getId());
-            if(null != resource.getResourceContainer().getProject())
+            if (null != resource.getResourceContainer().getProject())
                 event.setProjectId(resource.getResourceContainer().getProject().getId());
             event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
             event.setCreatedBy(getUser());
@@ -962,11 +926,11 @@ public class SecurityApiActions
         public ApiResponse execute(NameForm form, BindException errors) throws Exception
         {
             Container container = getContainer();
-            if(!container.isRoot() && !container.isProject())
+            if (!container.isRoot() && !container.isProject())
                 throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project or root level.");
 
             String name = StringUtils.trimToNull(form.getName());
-            if(null == name)
+            if (null == name)
                 throw new IllegalArgumentException("You must specify a name parameter!");
 
             Group newGroup = SecurityManager.createGroup(getContainer().getProject(), name);
@@ -991,7 +955,7 @@ public class SecurityApiActions
     {
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
         {
-            if(form.getId() < 0)
+            if (form.getId() < 0)
                 throw new IllegalArgumentException("You must specify an id parameter!");
 
             Group group = SecurityManager.getGroup(form.getId());
@@ -1023,7 +987,7 @@ public class SecurityApiActions
     {
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
         {
-            if(form.getId() < 0)
+            if (form.getId() < 0)
                 throw new IllegalArgumentException("You must specify an id parameter!");
 
             User user = UserManager.getUser(form.getId());
@@ -1196,7 +1160,7 @@ public class SecurityApiActions
         public Group getGroup(GroupMemberForm form)
         {
             Group group = SecurityManager.getGroup(form.getGroupId());
-            if(null == group)
+            if (null == group)
                 throw new IllegalArgumentException("Invalid group id (" + form.getGroupId() + ")");
             Container c = getContainer();
             if ((c.isRoot() && null == group.getContainer()) || c.getId().equals(group.getContainer()))
@@ -1207,7 +1171,7 @@ public class SecurityApiActions
         public UserPrincipal getPrincipal(int principalId)
         {
             UserPrincipal principal = SecurityManager.getPrincipal(principalId);
-            if(null == principal)
+            if (null == principal)
                 throw new IllegalArgumentException("Invalid principal id (" + principalId + ")");
             return principal;
         }
