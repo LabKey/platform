@@ -99,7 +99,7 @@ public class ScopeQueryLoggingProfilerListener implements DatabaseQueryListener
         {
             final String SQL = "SELECT 1";
             Date now = new Date();
-            new SqlSelector(makeLoggingScope(), SQL).getResultSet();
+            new SqlSelector(makeLoggingScope(), SQL).getMap();
             assertTrue("SQL wasn't logged", isSqlLogged(SQL, now));
         }
 
@@ -109,7 +109,7 @@ public class ScopeQueryLoggingProfilerListener implements DatabaseQueryListener
             // The sql is arbitrary. The use of MetadataSqlSelector flags it as a metadata retrieving query
             final String METADATA_SQL = "SELECT 'metadata'";
             Date now = new Date();
-            new MetadataSqlSelector(makeLoggingScope(), METADATA_SQL).getResultSet();
+            new MetadataSqlSelector(makeLoggingScope(), METADATA_SQL).getMap();
             assertFalse("Metadata SQL was logged", isSqlLogged(METADATA_SQL, now));
         }
 
