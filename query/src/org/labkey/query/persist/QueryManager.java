@@ -577,6 +577,7 @@ public class QueryManager
         Table.delete(getTableInfoQuerySnapshotDef(), filter);
         QuerySnapshotCache.uncache(c);
         Table.delete(getTableInfoCustomView(), filter);
+        CustomViewCache.uncache(c);
         Table.delete(getTableInfoQueryDef(), filter);
         Table.delete(getTableInfoExternalSchema(), filter);
         Table.delete(getTableInfoOlapDef(), filter);
