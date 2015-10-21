@@ -762,8 +762,8 @@ public class ModuleLoader implements Filter
         if (StringUtils.isBlank(m.getLicense()))
             missing.add("License");
 
-        if (StringUtils.isBlank(m.getLicenseUrl()))
-            missing.add("LicenseURL");
+//        if (StringUtils.isBlank(m.getLicenseUrl()))
+//            missing.add("LicenseURL");
 
         return missing.isEmpty() ? null : missing;
     }
