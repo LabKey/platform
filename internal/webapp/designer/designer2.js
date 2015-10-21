@@ -2662,13 +2662,21 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config) {
         for (var i = 0; i < targetContainers.length; i++)
         {
             var targetContainer = targetContainers[i];
-            containerData[i] = [targetContainers[i].path];
+            if (targetContainers[i].type != 'workbook')
+            {
+                containerData.push([targetContainers[i].path]);
+            }
         }
     }
     else
     {
         // Assume view should be saved to current container
-        containerData[0] = LABKEY.ActionURL.getContainer();
+        if (LABKEY.Security.currentContainer.type == 'workbook'){
+            containerData.push([LABKEY.Security.currentContainer.parentPath]);
+        }
+        else {
+            containerData.push([LABKEY.ActionURL.getContainer()]);
+        }
     }
 
     var containerStore = new Ext.data.ArrayStore({
