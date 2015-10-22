@@ -63,8 +63,8 @@ public class PythonExportScriptModel extends ExportScriptModel
     // Our python client api expects filters with operators in the middle
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
-        return "[" + PageFlowUtil.jsString(name) + ", "
-                + operator.getPreferredUrlKey() + ", '" + PageFlowUtil.jsString(value) + "']";
+        return "[" + PageFlowUtil.jsString(name) + ", '"
+                + operator.getPreferredUrlKey() + "', " + PageFlowUtil.jsString(value) + "]";
     }
 
     public String getColumns()
