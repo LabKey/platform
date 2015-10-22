@@ -21,6 +21,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.OORDisplayColumnFactory;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.ExperimentException;
@@ -37,6 +40,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Plate;
 import org.labkey.api.study.PlateService;
@@ -310,7 +314,15 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
         Map<Integer, String> cutoffs = getCutoffFormats(protocol, run);
 
-        List<Plate> plates = useRunForPlates ? createPlates(run, nabTemplate) : createPlates(dataFile, nabTemplate);
+        List<Plate> plates;
+        if (useRunForPlates && isWellDataPopulated(run))
+        {
+            plates = createPlates(run, nabTemplate);
+        }
+        else
+        {
+            plates = createPlates(dataFile, nabTemplate);
+        }
 
         // Copy all properties from the input materials on the appropriate sample wellgroups; the NAb data processing
         // code uses well-group properties internally.
@@ -945,5 +957,12 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     public static String getWellgroupNameVirusNameCombo(String wellgroupName, String virusName)
     {
         return wellgroupName + ":" + virusName;
+    }
+
+    private boolean isWellDataPopulated(ExpRun run)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(run.getContainer());
+        filter.addCondition(FieldKey.fromString("runId"), run.getRowId());
+        return (new TableSelector(DilutionManager.getTableInfoWellData(), filter, null).getRowCount() > 0);
     }
 }
