@@ -51,13 +51,13 @@ public class CustomViewCache
             new TableSelector(QueryManager.get().getTableInfoCustomView(), SimpleFilter.createContainerFilter(c), null).forEach(cstmView -> {
 
                 List<CstmView> viewMap = ensureViewList(customViews, cstmView.getSchema(), cstmView.getQueryName());
-                List<CstmView> inheritableViewMap = ensureViewList(inheritableCustomViews, cstmView.getSchema(), cstmView.getQueryName());
 
                 viewMap.add(cstmView);
                 rowIdMap.put(cstmView.getCustomViewId(), cstmView);
                 entityIdMap.put(cstmView.getEntityId(), cstmView);
                 if ((cstmView.getFlags() & QueryManager.FLAG_INHERITABLE) != 0)
                 {
+                    List<CstmView> inheritableViewMap = ensureViewList(inheritableCustomViews, cstmView.getSchema(), cstmView.getQueryName());
                     inheritableViewMap.add(cstmView);
                 }
 

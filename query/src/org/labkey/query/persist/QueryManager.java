@@ -87,18 +87,25 @@ public class QueryManager
     public QueryDef getQueryDef(Container container, String schema, String name, boolean customQuery)
     {
         // Metadata for built-in tables is stored with a NULL value for the SQL
+        QueryDef newQueryDef = QueryDefCache.getQueryDef(container, schema, name, customQuery);
         QueryDef.Key key = new QueryDef.Key(container, customQuery);
         key.setSchema(schema);
         key.setQueryName(name);
 
-        return key.selectObject();
+        QueryDef oldQueryDef = key.selectObject();
+
+        validateQueryDefCacheResults(Collections.singletonList(oldQueryDef), Collections.singletonList(newQueryDef), container, schema);
+        return newQueryDef;
     }
 
     /**
      * @param customQuery whether to look for custom queries or modified metadata on built-in tables
      */
-    public QueryDef[] getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
+    public List<QueryDef> getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
     {
+        List<QueryDef> oldDefs;
+        List<QueryDef> newDefs = QueryDefCache.getQueryDefs(container, schema, inheritableOnly, includeSnapshots, customQuery);
+
         // Metadata for built-in tables is stored with a NULL value for the SQL
         QueryDef.Key key = new QueryDef.Key(container, customQuery);
         if (schema != null)
@@ -121,7 +128,28 @@ public class QueryManager
         if (mask != 0 || value != 0)
             key.setFlagMask(mask, value);
 
-        return key.select();
+        oldDefs = Arrays.asList(key.select());
+        validateQueryDefCacheResults(oldDefs, newDefs, container, schema);
+
+        return newDefs;
+    }
+
+    // temporary check to test new cache implementation consistency with previous solution
+    private void validateQueryDefCacheResults(List<QueryDef> oldDefs, List<QueryDef> newDefs, Container container, String schemaName)
+    {
+        Comparator<QueryDef> idComparator = (o1, o2) -> {
+            return o1.getQueryDefId() - o2.getQueryDefId();
+        };
+
+        // new collection is unmodifiable
+        List<QueryDef> newDefsCopy = new ArrayList<>(newDefs);
+        Collections.sort(oldDefs, idComparator);
+        Collections.sort(newDefsCopy, idComparator);
+
+        if (!oldDefs.equals(newDefsCopy))
+        {
+            throw new IllegalStateException("Inconsistent number of query definitions returned from new cache for folder: " + container.getPath() + " | schema: " + schemaName + " new size " + newDefs.size() + " vs. " + oldDefs.size());
+        }
     }
 
     public Collection<QuerySnapshotDef> getQuerySnapshots(@Nullable Container container, @Nullable String schemaName)
@@ -149,17 +177,22 @@ public class QueryManager
 
     public QueryDef insert(User user, QueryDef queryDef)
     {
-        return Table.insert(user, getTableInfoQueryDef(), queryDef);
+        QueryDef def = Table.insert(user, getTableInfoQueryDef(), queryDef);
+        QueryDefCache.uncache(ContainerManager.getForId(def.getContainerId()));
+        return def;
     }
 
     public QueryDef update(User user, QueryDef queryDef)
     {
-        return Table.update(user, getTableInfoQueryDef(), queryDef, queryDef.getQueryDefId());
+        QueryDef def = Table.update(user, getTableInfoQueryDef(), queryDef, queryDef.getQueryDefId());
+        QueryDefCache.uncache(ContainerManager.getForId(def.getContainerId()));
+        return def;
     }
 
     public void delete(User user, QueryDef queryDef)
     {
         Table.delete(getTableInfoQueryDef(), queryDef.getQueryDefId());
+        QueryDefCache.uncache(ContainerManager.getForId(queryDef.getContainerId()));
     }
 
     public void delete(User user, QuerySnapshotDef querySnapshotDef)
@@ -289,7 +322,7 @@ public class QueryManager
 
     public List<CstmView> getCstmViews(Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable String viewName, @Nullable User user, boolean inheritableOnly, boolean sharedOnly)
     {
-        List<CstmView> oldViews = new ArrayList<>();
+        List<CstmView> oldViews;
         List<CstmView> newViews = CustomViewCache.getCstmViews(container, schemaName, queryName, viewName, user, inheritableOnly, sharedOnly);
 
         CstmView.Key key = new CstmView.Key(container);
@@ -316,7 +349,7 @@ public class QueryManager
                 key.setUser(user);
         }
 
-        oldViews.addAll(Arrays.asList(key.select()));
+        oldViews = Arrays.asList(key.select());
         validateCacheResults(oldViews, newViews, container, schemaName, queryName);
 
         return newViews;
@@ -579,6 +612,7 @@ public class QueryManager
         Table.delete(getTableInfoCustomView(), filter);
         CustomViewCache.uncache(c);
         Table.delete(getTableInfoQueryDef(), filter);
+        QueryDefCache.uncache(c);
         Table.delete(getTableInfoExternalSchema(), filter);
         Table.delete(getTableInfoOlapDef(), filter);
     }
