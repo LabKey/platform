@@ -15,9 +15,9 @@
  */
 package org.labkey.core.admin.miniprofiler;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.Marshal;
@@ -37,7 +37,6 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -45,6 +44,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -122,6 +122,34 @@ public class MiniProfilerController extends SpringActionController
 
     @RequiresSiteAdmin
     @CSRF
+    public class SettingsAction extends ApiAction<MiniProfiler.Settings>
+    {
+        public SettingsAction()
+        {
+            setSupportedMethods(new String[] { "GET", "POST", "DELETE" });
+        }
+
+        @Override
+        public Object execute(MiniProfiler.Settings settings, BindException errors) throws Exception
+        {
+            String msg = null;
+            if (isDelete())
+            {
+                MiniProfiler.resetSettings();
+                msg = "Reset mini-profiler settings";
+            }
+            else if (isPost())
+            {
+                MiniProfiler.saveSettings(settings);
+                msg = "Saved mini-profiler settings";
+            }
+
+            return success(msg, MiniProfiler.getSettings());
+        }
+    }
+
+    @RequiresSiteAdmin
+    @CSRF
     public class ResetAction extends SimpleRedirectAction
     {
         @Override
@@ -134,17 +162,22 @@ public class MiniProfilerController extends SpringActionController
 
     @RequiresSiteAdmin
     @CSRF
-    public class SetEnabledAction extends SimpleRedirectAction<EnabledForm>
+    public class EnabledAction extends ApiAction<EnabledForm>
     {
-        public URLHelper getRedirectURL(EnabledForm form) throws Exception
+        @Override
+        public Object execute(EnabledForm form, BindException errors) throws Exception
         {
             MiniProfiler.Settings settings = MiniProfiler.getSettings();
-            settings.setEnabled(form.isEnabled());
-            MiniProfiler.saveSettings(settings);
-            return new ActionURL(ManageAction.class, null);
+            if (isPost())
+            {
+                settings.setEnabled(form.isEnabled());
+                MiniProfiler.saveSettings(settings);
+            }
+            return success(Collections.singletonMap("enabled", settings.isEnabled()));
         }
     }
 
+    @JsonIgnoreProperties("apiVersion")
     public static class EnabledForm
     {
         private boolean _enabled;
