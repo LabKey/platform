@@ -1469,6 +1469,8 @@ Ext4.define('File.panel.Browser', {
                         pa.data.link.enabled = enabled;
                     }
 
+                    // 24432: Admins see allowed to perform all actions regardless
+                    // of whether they are marked as enabled/disabled
                     if (this.adminUser || enabled) {
                         this.pipelineActions.push(pa);
                         this.actionMap[pa.getId()] = pa;
