@@ -1556,7 +1556,7 @@ public class PageFlowUtil
         if (resources == null)
             resources = new LinkedHashSet<>();
 
-        // Add mini-profilter as depenency if enabled
+        // Add mini-profiler as dependency if enabled
         long currentId = -1;
         if (MiniProfiler.isEnabled(context))
         {
