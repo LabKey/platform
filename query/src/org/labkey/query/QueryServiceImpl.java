@@ -400,7 +400,7 @@ public class QueryServiceImpl extends QueryService
             boolean includeInherited, boolean sharedOnly, boolean alwaysUseTitlesForLoadingCustomViews)
     {
         // Check for a custom query that matches
-        Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(owner, container, schema, false, true);
+        Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(user, container, schema, false, true);
         QueryDefinition qd = queryDefs.get(new Pair<>(schema, query));
         if (qd == null)
         {
