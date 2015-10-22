@@ -37,7 +37,7 @@ LABKEY.Ajax = new function ()
         if (config.hasOwnProperty('method') && config.method !== null) {
             method = config.method.toUpperCase();
         } else {
-            method = jsonData === null ? 'GET' : 'POST';
+            method = (jsonData === null || jsonData === undefined) ? 'GET' : 'POST';
         }
 
         if (params !== undefined || params !== null) {
