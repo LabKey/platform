@@ -72,7 +72,7 @@ import java.util.Map;
 public class ExcelLoader extends DataLoader
 {
     public static FileType FILE_TYPE = new FileType(Arrays.asList(".xlsx", ".xls"), ".xlsx",
-           Arrays.asList("application/" + ExcelFactory.SUB_TYPE_BIFF8, "application/" + ExcelFactory.SUB_TYPE_XSSF));
+            Arrays.asList("application/" + ExcelFactory.SUB_TYPE_BIFF8, "application/" + ExcelFactory.SUB_TYPE_XSSF, "application/" + ExcelFactory.SUB_TYPE_BIFF5));
 
     static {
         FILE_TYPE.setExtensionsMutuallyExclusive(false);
