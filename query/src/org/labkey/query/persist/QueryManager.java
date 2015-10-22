@@ -141,12 +141,13 @@ public class QueryManager
             return o1.getQueryDefId() - o2.getQueryDefId();
         };
 
-        // new collection is unmodifiable
+        // collections are unmodifiable
+        List<QueryDef> oldDefsCopy = new ArrayList<>(oldDefs);
         List<QueryDef> newDefsCopy = new ArrayList<>(newDefs);
-        Collections.sort(oldDefs, idComparator);
+        Collections.sort(oldDefsCopy, idComparator);
         Collections.sort(newDefsCopy, idComparator);
 
-        if (!oldDefs.equals(newDefsCopy))
+        if (!oldDefsCopy.equals(newDefsCopy))
         {
             throw new IllegalStateException("Inconsistent number of query definitions returned from new cache for folder: " + container.getPath() + " | schema: " + schemaName + " new size " + newDefs.size() + " vs. " + oldDefs.size());
         }
