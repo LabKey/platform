@@ -35,6 +35,25 @@ LABKEY.vis.internal.Axis = function() {
             }
         }
 
+        // Issue 23016: if you have a large number of tick labels (ex. categorical x-axis), only show 25 since
+        //      overlapping text isn't helpful
+        if (data.length > 25)
+        {
+            var factor = Math.floor(data.length / 25),
+                tempData = [];
+            for (var i = 0; i < data.length; i++)
+            {
+                if (i % factor == 0)
+                {
+                    tempData.push(data[i]);
+                }
+            }
+            data = tempData;
+
+            // and increase the rotation if we are showing that many labels
+            tickOverlapRotation = Math.max(tickOverlapRotation, 45);
+        }
+
         gridLineData = data;
 
         if (tickDigits)
