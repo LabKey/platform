@@ -191,26 +191,47 @@
                 return false;
             };
 
-            var enableExportSelected = function() {
-                if (exportSelectedEl.is(':disabled')) {
-                    exportSelectedEl.prop('checked', true);
-                    exportSelectedEl.prop('disabled', false);
-                    exportSelectedLabelEl.removeClass();
+            var enableExportSelected = function (enabled) {
+                if (enabled)
+                {
+                    if (exportSelectedEl.is(':disabled')) {
+                        exportSelectedEl.prop('checked', true);
+                        exportSelectedEl.prop('disabled', false);
+                        exportSelectedLabelEl.removeClass();
+                    }
                 }
-            };
-
-            var disableExportSelected = function() {
-                exportSelectedEl.prop('checked', false);
-                exportSelectedEl.prop('disabled', true);
-                exportSelectedLabelEl.addClass('labkey-disabled');
+                else
+                {
+                    exportSelectedEl.prop('checked', false);
+                    exportSelectedEl.prop('disabled', true);
+                    exportSelectedLabelEl.addClass('labkey-disabled');
+                }
             };
 
             var exportButtonEl = $("#<%=h(exportButtonId)%>");
             exportButtonEl.click(doExcelExport);
 
             dr.on('selectchange', function(dr, selectedCount) {
-                selectedCount > 0 ? enableExportSelected() : disableExportSelected();
+                if (!iqyExportEl.is(':checked'))
+                    enableExportSelected(selectedCount > 0);
             });
+
+            var changeHandler = function (e) {
+                var target = $(e.target);
+                dr.getSelected({
+                    success: function (d) {
+                        if (d.selected && d.selected.length > 0)
+                            enableExportSelected(target.val());
+                    }
+                });
+            };
+
+            <%-- When xls or xlsx option is chosen, enable the "export selected" checkbox if there is selection.
+                 When iqy is chosen, diable the "export selected" checkbox. --%>
+            xlsExportEl.change(changeHandler);
+            xlsxExportEl.change(changeHandler);
+            iqyExportEl.change(function () { enableExportSelected(false); });
+
         });
 
     })(jQuery);
