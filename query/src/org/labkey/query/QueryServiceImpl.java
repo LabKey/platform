@@ -976,7 +976,7 @@ public class QueryServiceImpl extends QueryService
         List<QueryDefinition> ret = new ArrayList<>();
         HttpSession session = request.getSession(true);
 
-        if(session != null)
+        if (session != null)
         {
             Map<String, SessionQuery> sessionQueries = getSessionQueryMap(session, container, schemaName);
             for (Entry<String, SessionQuery> entry : sessionQueries.entrySet())
