@@ -445,7 +445,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         }
     }
 
-    public void createLink(String name, Path target)
+    public void createLink(String name, Path target, @Nullable String indexPage)
     {
         throw new UnsupportedOperationException();
     }

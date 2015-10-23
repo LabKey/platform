@@ -42,7 +42,12 @@ public class WebdavService
     CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<>();
     private Set<String> _preGzippedExtensions = new CaseInsensitiveHashSet();
 
-    final static WebdavService _instance = new WebdavService();
+    final static WebdavService _instance;
+    static
+    {
+        _instance = new WebdavService();
+        ServiceRegistry.get().registerService(WebdavService.class, _instance);
+    }
 
     public static WebdavService get()
     {
@@ -75,7 +80,7 @@ public class WebdavService
 
 
     /**
-     * This is where the root of the container hierachy is rooted
+     * This is where the root of the container hierarchy is rooted
      * in the webapp namespace.
      *
      * This used to really be the servletPath, before we started
@@ -117,7 +122,7 @@ public class WebdavService
      * @param from
      * @param target
      */
-    public void addLink(@NotNull Path from, Path target)
+    public void addLink(@NotNull Path from, @NotNull Path target, String indexPage)
     {
         if (null == target || from.equals(target))
         {
@@ -132,7 +137,7 @@ public class WebdavService
             throw new IllegalArgumentException(from.toString());
         if (!(rParent instanceof AbstractWebdavResource))
             throw new IllegalArgumentException(from.toString());
-        ((AbstractWebdavResource)rParent).createLink(from.getName(), target);
+        ((AbstractWebdavResource)rParent).createLink(from.getName(), target, indexPage);
     }
 
 

@@ -16,6 +16,7 @@
 package org.labkey.api.webdav;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
@@ -94,38 +95,45 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     }
 
     final static Path pathIndexHtml = new Path("index.html");
-    
+
+    @Override
+    public boolean allowHtmlListing()
+    {
+        // must return false or we won't call welcome()
+        return false;
+    }
+
     public WebdavResource welcome()
     {
         return lookup(pathIndexHtml);
     }
 
-    
-    public WebdavResource lookup(Path path)
+    public LookupResult lookupEx(Path path)
     {
         Path normalized = path.normalize();
 
         WebdavResource r = _allStaticFiles.get(normalized);
-        if (r == null)
+        if (null != r)
+            return new LookupResult(this, r);
+
+        LookupResult result = resolve(normalized);
+        if (null == result || null == result.resource)
+            return null;
+        r = result.resource;
+        if (r.exists())
         {
-            r = resolve(normalized);
-            if (null == r)
-                return null;
-            if (r.exists())
-            {
-                if (null != r.getFile())
-                    _log.debug(normalized + " -> " + r.getFile().getPath());
-                else
-                    _log.debug(normalized + " -> " + r.toString());
-                if (r instanceof _PublicResource)
-                    _allStaticFiles.put(normalized,r);
-            }
+            if (null != r.getFile())
+                _log.debug(normalized + " -> " + r.getFile().getPath());
+            else
+                _log.debug(normalized + " -> " + r.toString());
+            if (r instanceof _PublicResource)
+                _allStaticFiles.put(normalized,r);
         }
-        return r;
+        return result;
     }
 
 
-    private WebdavResource resolve(Path path)
+    private LookupResult resolve(Path path)
     {
         if (!initialized.get())
             init();
@@ -142,11 +150,11 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             if (r instanceof SymbolicLink)
             {
                 Path remainder = path.subpath(i+1,path.getNameCount());
-                r = ((SymbolicLink)r).lookup(remainder);
-                break;
+                LookupResult result = ((SymbolicLink)r).lookupEx(remainder);
+                return result;
             }
         }
-        return r;
+        return new LookupResult(this,r);
     }
         
 
@@ -328,7 +336,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                             if (name.startsWith(".") || name.equals("WEB-INF") || name.equals("META-INF"))
                                 continue;
                             if (!map.containsKey(name))
-                                map.put(name, new ArrayList<File>());
+                                map.put(name, new ArrayList<>());
                             map.get(name).add(f);
                         }
                     }
@@ -348,8 +356,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
 
 
-        @Override
-        public void createLink(String name, Path target)
+        public void createLink(String name, Path target, String indexPage)
         {
             synchronized (_lock)
             {
@@ -359,7 +366,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 // _children is not synchronized so don't add put, create a new map
                 Map<String,WebdavResource> children = new CaseInsensitiveTreeMap<>();
                 children.putAll(originalChildren);
-                children.put(name, new SymbolicLink(getPath().append(name), target));
+                children.put(name, new SymbolicLink(getPath().append(name), target, true, indexPage));
                 CHILDREN_CACHE.put(getPath(), children);
             }
         }
@@ -441,7 +448,6 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
         public InputStream getInputStream(User user) throws IOException
         {
-            assert isFile();
             if (isFile())
                 return new FileInputStream(_files.get(0));
             return null;
@@ -478,110 +484,35 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     }
 
 
-/*
-    class ServletResource extends _PublicResource
-    {
-        URL _url;
-        boolean _file;
-
-        ServletResource(Path path)
-        {
-            super(path);
-            _url = getResource(path);
-        }
-
-        @Override
-        public WebdavResolver getResolver()
-        {
-            return ModuleStaticResolverImpl.this;
-        }
-
-        public boolean exists()
-        {
-            return _url != null;
-        }
-
-        public boolean isCollection()
-        {
-            return false;
-        }
-
-        public WebdavResource find(String name)
-        {
-            return null;
-        }
-
-        public boolean isFile()
-        {
-            return true;
-        }
-
-        public Collection<String> listNames()
-        {
-            return Collections.emptyList();
-        }
-
-        public Collection<WebdavResource> list()
-        {
-            return Collections.emptyList();
-        }
-
-        public long getCreated()
-        {
-            return Long.MIN_VALUE;
-        }
-
-        public long getLastModified()
-        {
-            return Long.MIN_VALUE;
-        }
-
-        public InputStream getInputStream(User user) throws IOException
-        {
-            if (exists())
-                return _url.openStream();
-            return null;
-        }
-
-        public long copyFrom(User user, FileStream in) throws IOException
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        public long getContentLength() throws IOException
-        {
-            return _url.openConnection().getContentLength();
-        }
-    }
-*/
 
 
-    public class SymbolicLink extends AbstractWebdavResourceCollection
+
+    public class SymbolicLink extends AbstractWebdavResourceCollection implements WebdavResolver
     {
         final Path _target;
+        final String _indexPage;
+        final boolean _readOnly;
 
         SymbolicLink(Path path, WebdavResolver resolver)
         {
             super(path, resolver);
             _target = null;
+            _indexPage = null;
+            _readOnly = false;
         }
 
-        SymbolicLink(Path path, Path target)
+        SymbolicLink(Path path, Path target, boolean ro, @Nullable String indexPage)
         {
             super(path, (WebdavResolver)null);
             _target = target;
+            _indexPage = indexPage;
+            _readOnly = ro;
         }
         
-        public WebdavResource lookup(Path relpath)
-        {
-            Path full = null==_target ? getPath().append(relpath) : _target.append(relpath);
-            WebdavResolver resolver = null == getResolver() ? ModuleStaticResolverImpl.this : getResolver();
-            return resolver.lookup(full);
-        }
-
         public WebdavResource find(String name)
         {
-            return lookup(new Path(name));
+            LookupResult res = lookupEx(new Path(name));
+            return null == res ? null : res.resource;
         }
 
         public boolean exists()
@@ -596,27 +527,69 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 return Collections.emptyList();
             return r.listNames();
         }
-    }
 
+        //
+        // Resolver methods
+        //
 
-    /*
-    URL getResource(Path path)
-    {
-        ServletContext c = ViewServlet.getViewServletContext();
-        if (c != null)
+        @Override
+        public boolean requiresLogin()
         {
-            try
-            {
-                return c.getResource(path.toString());
-            }
-            catch (MalformedURLException x)
-            {
-                ;
-            }
+            return false;
         }
-        return null;
+
+        @Override
+        public Path getRootPath()
+        {
+            return getPath();
+        }
+
+        @Override
+        public LookupResult lookupEx(Path relpath)
+        {
+            Path full = null==_target ? getPath().append(relpath) : _target.append(relpath);
+            WebdavResolver innerResolver = null == getResolver() ? ModuleStaticResolverImpl.this : getResolver();
+            LookupResult inner = innerResolver.lookupEx(full);
+            WebdavResource r = inner.resource;
+            if (_readOnly)
+            {
+                if (null == inner.resource)
+                    r = new WebdavResourceReadOnly(new WebdavResolverImpl.UnboundResource(full));
+                else
+                    r = new WebdavResourceReadOnly(r);
+            }
+            return new LookupResult(this, r);
+        }
+
+        @Override
+        public boolean allowHtmlListing()
+        {
+            // for now just overload meaning of null==_indexPage
+            return null == _indexPage;
+        }
+
+        @Override
+        public WebdavResource welcome()
+        {
+            return find(defaultWelcomePage());
+        }
+
+        @Nullable
+        @Override
+        public String defaultWelcomePage()
+        {
+            if (null != _indexPage)
+                return _indexPage;
+            return "index.html";
+        }
+
+        @Override
+        public String toString()
+        {
+            return super.toString();
+        }
     }
-    */
+
 
 
     public static class TestCase extends Assert
@@ -642,7 +615,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             assertTrue(rI == null || !rI.exists());
             
             // This test depends on knowing some existing webapp directories
-            s.addLink(new Path("I"), new Path("_icons"));
+            s.addLink(new Path("I"), new Path("_icons"), null);
             rI = s.lookup(new Path("I"));
             assertNotNull(rI);
             assertTrue(rI.isCollection());

@@ -1753,6 +1753,7 @@ api/src/org/labkey/api/webdav/HistoryImpl.java -text
 api/src/org/labkey/api/webdav/SimpleDocumentResource.java -text
 api/src/org/labkey/api/webdav/WebdavResolver.java -text
 api/src/org/labkey/api/webdav/WebdavResource.java -text
+api/src/org/labkey/api/webdav/WebdavResourceReadOnly.java -text
 api/src/org/labkey/api/webdav/WebdavService.java -text
 api/src/org/labkey/api/wiki/FormattedHtml.java -text
 api/src/org/labkey/api/wiki/MacroProvider.java -text

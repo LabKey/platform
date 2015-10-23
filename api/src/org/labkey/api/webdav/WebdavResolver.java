@@ -30,11 +30,38 @@ import java.util.Date;
  */
 public interface WebdavResolver extends Resolver
 {
+    public static class LookupResult
+    {
+        public final WebdavResolver resolver;
+        public final WebdavResource resource;
+        public LookupResult(WebdavResolver r, WebdavResource res)
+        {
+            this.resolver = r;
+            this.resource = res;
+        }
+    }
+
     boolean requiresLogin();
     Path getRootPath();
-    @Nullable WebdavResource lookup(Path path);
-    @Nullable WebdavResource welcome();
 
+    default @Nullable WebdavResource lookup(Path path)
+    {
+        LookupResult r = lookupEx(path);
+        return null==r ? null : r.resource;
+    }
+
+    @Nullable LookupResult lookupEx(Path path);
+
+    @Nullable WebdavResource welcome();
+    default @Nullable String defaultWelcomePage()
+    {
+        return "index.html";
+    }
+
+    default boolean allowHtmlListing()
+    {
+        return true;
+    }
 
     public static interface History
     {
@@ -44,8 +71,6 @@ public interface WebdavResolver extends Resolver
         String getHref();       // optional detail link
     }
 
-
     // marker interfaces for web folder
     public static interface WebFolder {}
-
 }

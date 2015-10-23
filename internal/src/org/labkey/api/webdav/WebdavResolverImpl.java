@@ -96,7 +96,7 @@ public class WebdavResolverImpl implements WebdavResolver
         return _rootPath;
     }
 
-    public WebdavResource lookup(Path fullPath)
+    public LookupResult lookupEx(Path fullPath)
     {
         if (fullPath == null || !fullPath.startsWith(getRootPath()))
             return null;
@@ -104,7 +104,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
         WebdavResource root = getRoot();
         if (path.size() == 0)
-            return root;
+            return new LookupResult(this,root);
 
         // start at the root and work down, to avoid lots of cache misses
         WebdavResource resource = root;
@@ -113,12 +113,12 @@ public class WebdavResolverImpl implements WebdavResolver
             WebdavResource r = resource.find(name);
             // short circuit the descent at last web folder
             if (null == r  || r instanceof UnboundResource)
-                return new UnboundResource(fullPath);
+                return new LookupResult(this,new UnboundResource(fullPath));
             resource = r;
         }
         if (null == resource)
             resource = new UnboundResource(fullPath);
-        return resource;
+        return new LookupResult(this,resource);
     }
 
 
