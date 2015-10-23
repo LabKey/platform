@@ -36,6 +36,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.DefaultSystemMaintenanceTask;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
@@ -1483,7 +1484,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    private static class SearchServiceMaintenanceTask implements SystemMaintenance.MaintenanceTask
+    private static class SearchServiceMaintenanceTask extends DefaultSystemMaintenanceTask
     {
         public String getDescription()
         {
@@ -1495,15 +1496,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             return "SearchService";
         }
-
-        @Override
-        public boolean canDisable()
-        {
-            return true;
-        }
-
-        @Override
-        public boolean hideFromAdminPage() { return false; }
 
         public void run()
         {

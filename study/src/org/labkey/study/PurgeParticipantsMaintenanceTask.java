@@ -15,6 +15,7 @@
  */
 package org.labkey.study;
 
+import org.labkey.api.util.DefaultSystemMaintenanceTask;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -24,7 +25,7 @@ import org.labkey.study.visitmanager.VisitManager;
  * User: jeckels
  * Date: 7/27/11
  */
-public class PurgeParticipantsMaintenanceTask implements SystemMaintenance.MaintenanceTask
+public class PurgeParticipantsMaintenanceTask extends DefaultSystemMaintenanceTask
 {
     @Override
     public String getDescription()
@@ -37,15 +38,6 @@ public class PurgeParticipantsMaintenanceTask implements SystemMaintenance.Maint
     {
         return "PurgeStudyParticipants";
     }
-
-    @Override
-    public boolean canDisable()
-    {
-        return true;
-    }
-
-    @Override
-    public boolean hideFromAdminPage() { return false; }
 
     @Override
     public void run()

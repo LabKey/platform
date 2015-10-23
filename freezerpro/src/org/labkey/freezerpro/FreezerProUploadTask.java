@@ -21,6 +21,7 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.DefaultSystemMaintenanceTask;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.DateUtil;
@@ -31,7 +32,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
-public class FreezerProUploadTask implements SystemMaintenance.MaintenanceTask
+public class FreezerProUploadTask extends DefaultSystemMaintenanceTask
 {
     private static Set<String> _freezerProContainerIds = new ConcurrentHashSet<>();
     private static final String FREEZER_PRO_STATIC_TASK_PROPERTIES = "FreezerProStaticTaskSettings";

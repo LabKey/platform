@@ -20,6 +20,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyReloadSource;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.DefaultSystemMaintenanceTask;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.SystemMaintenance;
 
@@ -30,7 +31,7 @@ import java.util.Set;
 /**
  * Created by klum on 5/22/2015.
  */
-public class RedcapMaintenanceTask implements SystemMaintenance.MaintenanceTask
+public class RedcapMaintenanceTask extends DefaultSystemMaintenanceTask
 {
     private Logger _log = Logger.getLogger(RedcapMaintenanceTask.class);
     private static Set<String> _redcapContainerIds = new ConcurrentHashSet<>();

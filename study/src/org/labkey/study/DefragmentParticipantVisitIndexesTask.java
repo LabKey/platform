@@ -18,12 +18,13 @@ package org.labkey.study;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.util.DefaultSystemMaintenanceTask;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 
 /**
  * Created by adam on 9/29/2015.
  */
-public class DefragmentParticipantVisitIndexesTask implements MaintenanceTask
+public class DefragmentParticipantVisitIndexesTask extends DefaultSystemMaintenanceTask
 {
     @Override
     public String getDescription()
@@ -35,18 +36,6 @@ public class DefragmentParticipantVisitIndexesTask implements MaintenanceTask
     public String getName()
     {
         return "DefragmentParticipantVisitIndexes";
-    }
-
-    @Override
-    public boolean canDisable()
-    {
-        return true;
-    }
-
-    @Override
-    public boolean hideFromAdminPage()
-    {
-        return false;
     }
 
     @Override

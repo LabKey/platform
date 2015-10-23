@@ -74,6 +74,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.DefaultSystemMaintenanceTask;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -1120,7 +1121,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
     }
 
-    private static class ReportServiceMaintenanceTask implements SystemMaintenance.MaintenanceTask
+    private static class ReportServiceMaintenanceTask extends DefaultSystemMaintenanceTask
     {
         public String getDescription()
         {
@@ -1132,15 +1133,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             return "ReportService";
         }
-
-        @Override
-        public boolean canDisable()
-        {
-            return true;
-        }
-
-        @Override
-        public boolean hideFromAdminPage() { return false; }
 
         public void run()
         {
