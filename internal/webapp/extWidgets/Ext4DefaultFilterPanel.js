@@ -354,6 +354,18 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
         return store;
     },
 
+    getOriginalFilters : function() {
+        var clonedFilters = [];
+
+        if (this.filterArray) {
+            Ext.each(this.filterArray, function(filter) {
+                clonedFilters.push(LABKEY.Filter.create(filter.getColumnName(), filter.getValue(), filter.getFilterType()));
+            });
+        }
+
+        return clonedFilters;
+    },
+
     getFilters : function () {
         var inputFields = this.getInputFields();
         var combos = this.getFilterCombos();

@@ -31,6 +31,16 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
         this.items = [this.getGrid()];
     },
 
+    getOriginalFilters : function() {
+        var clonedFilters = [];
+
+        Ext.each(this.filters, function(filter) {
+            clonedFilters.push(LABKEY.Filter.create(filter.getColumnName(), filter.getValue(), filter.getFilterType()));
+        });
+
+        return clonedFilters;
+    },
+
     getFilters : function() {
         var grid = this.getGrid();
         var filters = [];
