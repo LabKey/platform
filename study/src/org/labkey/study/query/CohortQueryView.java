@@ -24,6 +24,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -54,7 +55,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         setShowPagination(false);
         setShowPaginationCount(false);
 
-        canEditDelete = getUser().isSiteAdmin() && StudyManager.getInstance().showCohorts(getContainer(), getUser());
+        canEditDelete = getContainer().hasPermission(user, AdminPermission.class) && StudyManager.getInstance().showCohorts(getContainer(), getUser());
         setShowUpdateColumn(canEditDelete);
     }
 
@@ -62,7 +63,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
     {
         super.populateButtonBar(view, bar);
 
-        if (allowEditing())
+        if (allowEditing() && canEditDelete)
         {
             ActionURL insertURL = new ActionURL(CohortController.InsertAction.class, getSchema().getContainer());
             ActionButton insertButton = new ActionButton(insertURL, "Insert New");
