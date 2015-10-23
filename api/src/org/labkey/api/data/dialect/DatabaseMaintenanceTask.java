@@ -20,10 +20,11 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DefaultSystemMaintenanceTask;
 import org.labkey.api.util.SystemMaintenance;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
+class DatabaseMaintenanceTask extends DefaultSystemMaintenanceTask
 {
     private static final Logger _log = Logger.getLogger(DatabaseMaintenanceTask.class);
 
@@ -37,15 +38,6 @@ class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
     {
         return "Database";
     }
-
-    @Override
-    public boolean canDisable()
-    {
-        return true;
-    }
-
-    @Override
-    public boolean hideFromAdminPage() { return false; }
 
     public void run()
     {

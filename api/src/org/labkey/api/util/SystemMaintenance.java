@@ -38,7 +38,6 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -199,6 +198,7 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, Ca
     private final static String SET_NAME = "SystemMaintenance";
     private final static String TIME_PROPERTY_NAME = "MaintenanceTime";
     private final static String DISABLED_TASKS_PROPERTY_NAME = "DisabledTasks";
+    private final static String ENABLED_TASKS_PROPERTY_NAME = "EnabledTasks";
 
     public static SystemMaintenanceProperties getProperties()
     {
@@ -219,6 +219,7 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, Ca
 
         writableProps.put(TIME_PROPERTY_NAME, time);
         writableProps.put(DISABLED_TASKS_PROPERTY_NAME, StringUtils.join(disabled, ","));
+        writableProps.put(ENABLED_TASKS_PROPERTY_NAME, StringUtils.join(enabled, ","));
 
         writableProps.save();
         setTimer();
@@ -227,15 +228,31 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, Ca
     public static class SystemMaintenanceProperties
     {
         private Date _systemMaintenanceTime;
-        private Set<String> _disabledTasks;
+        private Set<String> _disabledTasks = new HashSet<>();
 
         private SystemMaintenanceProperties(Map<String, String> props)
         {
+            Set<String> enabledTasks = new HashSet<>();
             Date time = SystemMaintenance.parseSystemMaintenanceTime(props.get(TIME_PROPERTY_NAME));
             _systemMaintenanceTime = (null == time ? SystemMaintenance.parseSystemMaintenanceTime("2:00") : time);
 
             String disabled = props.get(DISABLED_TASKS_PROPERTY_NAME);
-            _disabledTasks = (null == disabled ? Collections.<String>emptySet() : new HashSet<>(Arrays.asList(disabled.split(","))));
+            String enabled = props.get(ENABLED_TASKS_PROPERTY_NAME);
+
+            if (disabled != null)
+                _disabledTasks.addAll(Arrays.asList(disabled.split(",")));
+            if (enabled != null)
+                enabledTasks.addAll(Arrays.asList(enabled.split(",")));
+
+            for (MaintenanceTask task : getTasks())
+            {
+                // set the default disabled state if the task has not explicitly been set
+                if (!_disabledTasks.contains(task.getName()) && !enabledTasks.contains(task.getName()))
+                {
+                    if (task.canDisable() && !task.isEnabledByDefault())
+                        _disabledTasks.add(task.getName());
+                }
+            }
         }
 
         public @NotNull Date getSystemMaintenanceTime()
@@ -407,6 +424,11 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, Ca
 
         // Can this task be disabled?
         boolean canDisable();
+
+        /**
+         * returns the default enabled state
+         */
+        boolean isEnabledByDefault();
 
         // Hide this from the Admin page (because it will be controlled from elsewhere)
         boolean hideFromAdminPage();
