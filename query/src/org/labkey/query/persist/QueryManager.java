@@ -201,7 +201,10 @@ public class QueryManager
         Table.delete(getTableInfoQuerySnapshotDef(), querySnapshotDef.getRowId());
         QuerySnapshotCache.uncache(querySnapshotDef);
         if (querySnapshotDef.getQueryDefId() != null)
+        {
             Table.delete(getTableInfoQueryDef(), querySnapshotDef.getQueryDefId());
+            QueryDefCache.uncache(querySnapshotDef.lookupContainer());
+        }
     }
 
     public QuerySnapshotDef insert(User user, QueryDef queryDef, QuerySnapshotDef snapshotDef)
