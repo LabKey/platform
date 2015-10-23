@@ -93,6 +93,11 @@ public class CrawlerTest extends Assert
             return new FileSystemResource(path, new File(_base, path.toString()), _policy);
         }
 
+        public LookupResult lookupEx(Path path)
+        {
+            return new LookupResult(this, lookup(path));
+        }
+
         public WebdavResource welcome()
         {
             return null;

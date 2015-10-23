@@ -285,7 +285,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AnalyticsServiceImpl.register();
         ServiceRegistry.get().registerService(SiteValidationService.class, new SiteValidationServiceImpl());
 
-        ModuleStaticResolverImpl.get();
+        WebdavService.get().setResolver(ModuleStaticResolverImpl.get());
 
         DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider(this)
         {
@@ -668,7 +668,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UserController.registerAdminConsoleLinks();
         LoggerController.registerAdminConsoleLinks();
 
-        WebdavService.get().setResolver(WebdavResolverImpl.get());
         FolderTypeManager.get().registerFolderType(this, new WorkbookFolderType());
 
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
