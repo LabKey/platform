@@ -678,10 +678,12 @@ Ext.define('LABKEY.app.model.Filter', {
         if (data.isPlot || fdata.isPlot || data.isGrid || fdata.isGrid) {
             if (data.isPlot === fdata.isPlot && data.isGrid === fdata.isGrid) {
 
+                var _mergeMeasures = true;
+
                 // if plot, check plotMeasures and gridFilter properties
                 if (data.isPlot) {
 
-                    var _mergeMeasures = true, pm, fpm;
+                    var pm, fpm;
 
                     for (var i=0; i < data.plotMeasures.length; i++) {
                         pm = data.plotMeasures[i];
@@ -740,12 +742,32 @@ Ext.define('LABKEY.app.model.Filter', {
                             }
                         }
                     }
-
-                    _merge = _mergeMeasures;
                 }
                 else {
-                    _merge = true;
+                    // isGrid -- check gridFilters
+                    for (i=0; i < data.gridFilter.length; i++) {
+                        pm = data.gridFilter[i];
+                        fpm = fdata.gridFilter[i];
+
+                        if (pm === null) {
+                            if (fpm !== null) {
+                                _mergeMeasures = false;
+                                break;
+                            }
+
+                            // they are both null, OK
+                        }
+                        else {
+                            // equivalent if they have the same URL prefix -- value can change
+                            if (fpm && pm.getURLParameterName().toLowerCase() !== fpm.getURLParameterName().toLowerCase()) {
+                                _mergeMeasures = false;
+                                break;
+                            }
+                        }
+                    }
                 }
+
+                _merge = _mergeMeasures;
             }
         }
         else if (data.hierarchy && fdata.hierarchy && data.hierarchy === fdata.hierarchy) {
