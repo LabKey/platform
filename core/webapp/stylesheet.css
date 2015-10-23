@@ -3737,3 +3737,8 @@ div span.labkey-main-menu-icon {
     font-size: 0.8em;
 }
 
+/* dont show the box around disabled toolbar button icons */
+.x4-box-target .x4-btn-default-toolbar-small-disabled
+{
+    border-color: transparent;
+}
