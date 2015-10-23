@@ -41,6 +41,7 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCache.CacheId;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.PathBasedModuleResourceCache;
@@ -106,6 +107,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
@@ -243,9 +245,9 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, @NotNull Container container, @Nullable String schemaName, boolean inheritable, boolean includeSnapshots)
+    private Map<Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, @NotNull Container container, @Nullable String schemaName, boolean inheritable, boolean includeSnapshots)
     {
-        Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<>();
+        Map<Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<>();
 
         // session queries have highest priority
         HttpServletRequest request = HttpView.currentRequest();
@@ -253,7 +255,7 @@ public class QueryServiceImpl extends QueryService
         {
             for (QueryDefinition qdef : getAllSessionQueries(request, user, container, schemaName))
             {
-                Map.Entry<String, String> key = new Pair<>(schemaName, qdef.getName());
+                Entry<String, String> key = new Pair<>(schemaName, qdef.getName());
                 ret.put(key, qdef);
             }
         }
@@ -264,7 +266,7 @@ public class QueryServiceImpl extends QueryService
             Path path = createSchemaPath(SchemaKey.fromString(schemaName));
             for (QueryDefinition queryDef : getFileBasedQueryDefs(user, container, schemaName, path))
             {
-                Map.Entry<String, String> key = new Pair<>(schemaName, queryDef.getName());
+                Entry<String, String> key = new Pair<>(schemaName, queryDef.getName());
                 if (!ret.containsKey(key))
                     ret.put(key, queryDef);
             }
@@ -273,7 +275,7 @@ public class QueryServiceImpl extends QueryService
         // look in the database for query definitions
         for (QueryDef queryDef : QueryManager.get().getQueryDefs(container, schemaName, false, includeSnapshots, true))
         {
-            Map.Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
+            Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
             if (!ret.containsKey(key))
                 ret.put(key, new CustomQueryDefinitionImpl(user, container, queryDef));
         }
@@ -289,13 +291,13 @@ public class QueryServiceImpl extends QueryService
             containerCur = containerCur.getParent();
             if (null == containerCur)
             {
-                assert false : "Unexpected null parent container: " + containerCur.getPath();
+                assert false : "Unexpected null parent container encountered while resolving this container path: " + container.getPath();
                 break;
             }
 
             for (QueryDef queryDef : QueryManager.get().getQueryDefs(containerCur, schemaName, true, includeSnapshots, true))
             {
-                Map.Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
+                Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
 
                 if (!ret.containsKey(key))
                     ret.put(key, new CustomQueryDefinitionImpl(user, container, queryDef));
@@ -305,7 +307,7 @@ public class QueryServiceImpl extends QueryService
         // look in the Shared project
         for (QueryDef queryDef : QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots, true))
         {
-            Map.Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
+            Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
 
             if (!ret.containsKey(key))
                 ret.put(key, new CustomQueryDefinitionImpl(user, container, queryDef));
@@ -400,7 +402,7 @@ public class QueryServiceImpl extends QueryService
             boolean includeInherited, boolean sharedOnly, boolean alwaysUseTitlesForLoadingCustomViews)
     {
         // Check for a custom query that matches
-        Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(user, container, schema, false, true);
+        Map<Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(user, container, schema, false, true);
         QueryDefinition qd = queryDefs.get(new Pair<>(schema, query));
         if (qd == null)
         {
@@ -663,33 +665,28 @@ public class QueryServiceImpl extends QueryService
         @Override
         public CacheLoader<String, Collection<ModuleCustomViewDef>> getResourceLoader()
         {
-            return new CacheLoader<String, Collection<ModuleCustomViewDef>>()
-            {
-                @Override
-                public Collection<ModuleCustomViewDef> load(String key, Object argument)
+            return (key, argument) -> {
+                CacheId id = ModuleResourceCache.parseCacheKey(key);
+
+                // Remove "/*" added by getCacheKey()
+                String name = id.getName();
+                Resource queryDir = id.getModule().getModuleResource(name.substring(0, name.length() - 2));
+
+                Collection<? extends Resource> viewResources = getModuleCustomViews(queryDir);
+
+                if (viewResources.isEmpty())
                 {
-                    ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
+                    return Collections.emptyList();
+                }
+                else
+                {
+                    Pair<String, String> schemaQuery = (Pair<String, String>)argument;
+                    Collection<ModuleCustomViewDef> viewDefs = new LinkedList<>();
 
-                    // Remove "/*" added by getCacheKey()
-                    String name = id.getName();
-                    Resource queryDir = id.getModule().getModuleResource(name.substring(0, name.length() - 2));
+                    for (Resource view : viewResources)
+                        viewDefs.add(new ModuleCustomViewDef(view, schemaQuery.first, schemaQuery.second));
 
-                    Collection<? extends Resource> viewResources = getModuleCustomViews(queryDir);
-
-                    if (viewResources.isEmpty())
-                    {
-                        return Collections.emptyList();
-                    }
-                    else
-                    {
-                        Pair<String, String> schemaQuery = (Pair<String, String>)argument;
-                        Collection<ModuleCustomViewDef> viewDefs = new LinkedList<>();
-
-                        for (Resource view : viewResources)
-                            viewDefs.add(new ModuleCustomViewDef(view, schemaQuery.first, schemaQuery.second));
-
-                        return Collections.unmodifiableCollection(viewDefs);
-                    }
+                    return Collections.unmodifiableCollection(viewDefs);
                 }
             };
         }
@@ -890,7 +887,7 @@ public class QueryServiceImpl extends QueryService
         Map<String, SessionQuery> queries = getSessionQueryMap(session, container, schemaName);
         String queryName = null;
         SessionQuery sq = new SessionQuery(sql, metadataXml);
-        for (Map.Entry<String, SessionQuery> query : queries.entrySet())
+        for (Entry<String, SessionQuery> query : queries.entrySet())
         {
             if (query.getValue().equals(sq))
             {
@@ -982,7 +979,7 @@ public class QueryServiceImpl extends QueryService
         if(session != null)
         {
             Map<String, SessionQuery> sessionQueries = getSessionQueryMap(session, container, schemaName);
-            for (Map.Entry<String, SessionQuery> entry : sessionQueries.entrySet())
+            for (Entry<String, SessionQuery> entry : sessionQueries.entrySet())
                 ret.add(createTempQueryDefinition(user, container, schemaName, entry.getKey(), entry.getValue()));
         }
 
@@ -1118,17 +1115,17 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public List<DisplayColumn> getDisplayColumns(@NotNull TableInfo table, Collection<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields)
+    public List<DisplayColumn> getDisplayColumns(@NotNull TableInfo table, Collection<Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields)
     {
         List<DisplayColumn> ret = new ArrayList<>();
         Set<FieldKey> fieldKeys = new HashSet<>();
 
-        for (Map.Entry<FieldKey, ?> entry : fields)
+        for (Entry<FieldKey, ?> entry : fields)
             fieldKeys.add(entry.getKey());
 
         Map<FieldKey, ColumnInfo> columns = getColumns(table, fieldKeys);
 
-        for (Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>> entry : fields)
+        for (Entry<FieldKey, Map<CustomView.ColumnProperty, String>> entry : fields)
         {
             ColumnInfo column = columns.get(entry.getKey());
 
@@ -2018,7 +2015,7 @@ public class QueryServiceImpl extends QueryService
 
         Set<ColumnInfo> dataLoggingColumns = new HashSet<>();
         Set<ColumnInfo> extraSelectDataLoggingColumns = new HashSet<>();
-        for (Map.Entry<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMapEntry : shouldLogNameToDataLoggingMap.entrySet())
+        for (Entry<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMapEntry : shouldLogNameToDataLoggingMap.entrySet())
         {
             for (FieldKey fieldKey : shouldLogNameToDataLoggingMapEntry.getValue())
             {
@@ -2127,7 +2124,7 @@ public class QueryServiceImpl extends QueryService
         fromFrag.append(getfromsql);
         fromFrag.append(" ");
 
-		for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
+		for (Entry<String, SQLFragment> entry : joins.entrySet())
 		{
 			fromFrag.append("\n").append(entry.getValue());
 		}
@@ -2419,7 +2416,7 @@ public class QueryServiceImpl extends QueryService
                             Map<String, Object> originalRow = new HashMap<>();
                             Map<String, Object> modifiedRow = new HashMap<>();
 
-                            for (Map.Entry<String, Object> entry : row.entrySet())
+                            for (Entry<String, Object> entry : row.entrySet())
                             {
                                 if (updatedRow.containsKey(entry.getKey()))
                                 {

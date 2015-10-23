@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * User: adam
@@ -36,9 +35,9 @@ import java.util.Arrays;
 // arguments... all quotes and backslashes remain as specified.  This code includes a hack to detect and handle commands
 // that include a space in the path.
 //
-// For 13.2, we always invoke this code in an attempt to keep legacy reports working. In 13.3 (once we've validated that
-// the code below works in the vast majority of cases), we should correct existing commands (quoting them, etc.) in the
-// reports and remove the special hack.
+// For 13.2, we invoked this code in an attempt to keep legacy reports working. In 13.3 (after validating that the code
+// below works in the vast majority of cases), we added an upgrade task to correct existing commands (quoting them, etc.)
+// in the reports. We'll remove this class in 16.1.
 public class WindowsCommandLineSplitter implements CommandLineSplitter
 {
     @Override
