@@ -797,12 +797,17 @@
             },
 
             /**
-             * Returns one object per key in dimension dimName
+             * Returns one object per key in dimension dimName.
+             * If nonAggregated set to true, return all records from the measure store without grouping.
              */
-            select : function(dimName)
+            select : function(dimName, nonAggregated)
             {
                 var dim = this.getDimension(dimName),
-                    group = this._group(dim),
+                    index = 0,
+                    uniqueKeyFn = function(val) {
+                        return val + '|' + index++;
+                    },
+                    group = this._group(dim, (nonAggregated === true ? uniqueKeyFn : undefined)),
                     entries = group.all(),
                     ret, me = this;
 
@@ -1408,7 +1413,13 @@
 
             members : function(dim) {},
 
-            select : function(dimName)
+            /*
+             * Select records from this AxisMeasureStore based on grouping by the selected dimName.
+             * If the nonAggregated param is true, return all records without doing any aggregation.
+             * @param dimName
+             * @param [nonAggregated]
+             */
+            select : function(dimName, nonAggregated)
             {
                 var dimArray = [],
                     results,
@@ -1451,7 +1462,7 @@
                     //var entries = group.all();
                     //group.dispose();
                     //return entries;
-                    return measureStore.select(dimArray);
+                    return measureStore.select(dimArray, nonAggregated);
                 });
 
                 //
