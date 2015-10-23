@@ -877,6 +877,7 @@ public class AuthenticationManager
         private final URLHelper _returnUrl;
         private final String _urlhash;
         private final boolean _skipProfile;
+        private final long _createDate;
 
         private LoginReturnProperties()
         {
@@ -888,6 +889,7 @@ public class AuthenticationManager
             _returnUrl = returnUrl;
             _urlhash = urlhash;
             _skipProfile = skipProfile;
+            _createDate = DateUtil.now().getTimeInMillis();
         }
 
         public URLHelper getReturnUrl()
@@ -904,6 +906,12 @@ public class AuthenticationManager
         {
             return _skipProfile;
         }
+
+        public boolean isExpired()
+        {
+            return ((DateUtil.now().getTimeInMillis() - _createDate) > 300000);  // expire after 5 minutes
+        }
+
     }
 
 
