@@ -9,7 +9,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.authentication.cas.CasController.CasConfigureForm" %>
+<%@ page import="org.labkey.cas.CasController.CasConfigureForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<CasConfigureForm> me = (JspView<CasConfigureForm>)HttpView.currentView();

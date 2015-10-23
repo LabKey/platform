@@ -2,7 +2,7 @@
  * Copyright (c) 2015 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
-package org.labkey.authentication.saml;
+package org.labkey.saml;
 
 import com.onelogin.saml.Certificate;
 import org.apache.commons.lang3.StringUtils;
@@ -26,7 +26,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.saml.SamlModule;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -119,7 +118,7 @@ public class SamlController extends SpringActionController
         @Override
         public ModelAndView getView(Config configForm, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/authentication/saml/configureSAML.jsp", configForm, errors);
+            return new JspView<>("/org/labkey/saml/configureSAML.jsp", configForm, errors);
         }
 
         @Override

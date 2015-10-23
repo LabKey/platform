@@ -3,7 +3,7 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 
-package org.labkey.authentication.oauth;
+package org.labkey.oauth;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
@@ -36,7 +36,6 @@ import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.oauth.OAuthModule;
 import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletRequest;

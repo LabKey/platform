@@ -12,8 +12,6 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.authentication.saml.SamlController;
-import org.labkey.authentication.saml.SamlProvider;
 
 import java.util.Collection;
 import java.util.Collections;

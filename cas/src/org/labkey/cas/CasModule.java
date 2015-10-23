@@ -10,8 +10,6 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.authentication.cas.CasAuthenticationProvider;
-import org.labkey.authentication.cas.CasController;
 
 import java.util.Collection;
 import java.util.Collections;
