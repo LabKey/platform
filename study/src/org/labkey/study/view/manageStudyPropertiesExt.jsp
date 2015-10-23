@@ -61,7 +61,7 @@
 
 Ext4.QuickTips.init();
 
-var canEdit = <%=q(canEdit?"true":"false")%>;
+var canEdit = <%=canEdit%>;
 var editableFormPanel = canEdit;
 var studyPropertiesFormPanel = null;
 var timepointType = "<%=h(timepointType)%>";
