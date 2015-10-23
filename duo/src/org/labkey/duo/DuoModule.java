@@ -6,18 +6,13 @@
 package org.labkey.duo;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.authentication.duo.DuoController;
-import org.labkey.authentication.duo.DuoProvider;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
 
 public class DuoModule extends DefaultModule
 {

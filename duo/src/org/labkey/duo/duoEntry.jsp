@@ -8,8 +8,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.authentication.duo.DuoController.DuoForm" %>
-<%@ page import="org.labkey.authentication.duo.DuoManager" %>
+<%@ page import="org.labkey.duo.DuoController.DuoForm" %>
+<%@ page import="org.labkey.duo.DuoManager" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

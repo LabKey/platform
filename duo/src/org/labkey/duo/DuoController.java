@@ -2,7 +2,7 @@
  * Copyright (c) 2015 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
-package org.labkey.authentication.duo;
+package org.labkey.duo;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
@@ -62,7 +62,7 @@ public class DuoController extends SpringActionController
         @Override
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/authentication/duo/configure.jsp", form, errors);
+            return new JspView<>("/org/labkey/duo/configure.jsp", form, errors);
         }
 
         @Override
@@ -265,7 +265,7 @@ public class DuoController extends SpringActionController
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);
             getPageConfig().setHelpTopic(new HelpTopic("duoTwoFactor"));
-            return new JspView<>("/org/labkey/authentication/duo/duoEntry.jsp", form, errors);
+            return new JspView<>("/org/labkey/duo/duoEntry.jsp", form, errors);
         }
 
         @Override
@@ -327,7 +327,7 @@ public class DuoController extends SpringActionController
         {
             form.setTest(true);
             form.setSig_request(DuoManager.generateSignedRequest(getUser()));
-            return new JspView<>("/org/labkey/authentication/duo/duoEntry.jsp", form, errors);
+            return new JspView<>("/org/labkey/duo/duoEntry.jsp", form, errors);
         }
 
         public boolean handlePost(DuoForm form, BindException errors) throws Exception
@@ -377,7 +377,7 @@ public class DuoController extends SpringActionController
                     form.setStatus(true);
             }
 
-            return new JspView<>("/org/labkey/authentication/duo/testResultDuo.jsp", form, errors);
+            return new JspView<>("/org/labkey/duo/testResultDuo.jsp", form, errors);
         }
 
         public boolean handlePost(DuoForm form, BindException errors) throws Exception
