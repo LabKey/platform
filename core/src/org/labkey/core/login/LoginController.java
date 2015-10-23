@@ -550,8 +550,14 @@ public class LoginController extends SpringActionController
 
                 // Create LoginReturnProperties if we have a returnURL
                 if (null != returnURL)
-                    properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
-
+                {
+                    properties = AuthenticationManager.getLoginReturnProperties(request);
+                    // create or update only if more than 5 minutes since any previously stashed LoginReturnProperties for this session. Prevents bogus redirects as in issue: 23782
+                    if (null == properties || properties.isExpired())
+                    {
+                        properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
+                    }
+               }
                 // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
                 // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
                 if (!isGuest)
@@ -657,6 +663,20 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(LoginForm form, BindException errors) throws Exception
         {
+            // allow clients using loginApi to store a returnURL at the start of the login that can be utilized after any SSO or secondary logins have finished
+            URLHelper returnURL = form.getReturnURLHelper();
+            if (null != returnURL)
+            {
+                HttpServletRequest request = getViewContext().getRequest();
+                LoginReturnProperties properties = AuthenticationManager.getLoginReturnProperties(request);
+                // create or update only if more than 5 minutes since any previously stashed LoginReturnProperties for this session. Prevents bogus redirects as in issue: 23782
+                if (null == properties || properties.isExpired())
+                {
+                    properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
+                    AuthenticationManager.setLoginReturnProperties(request, properties);
+                }
+            };
+
             // TODO: check during upgrade?
             Project termsProject = getTermsOfUseProject(form);
 
