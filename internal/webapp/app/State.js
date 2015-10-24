@@ -703,10 +703,7 @@ Ext.define('LABKEY.app.controller.State', {
         this.onReady(function() { // wtb promises
             this.onMDXReady(function(mdx) {
 
-                var olapFilters = [];
-                Ext.each(this.filters, function(ff) {
-                    olapFilters.push(ff.getOlapFilter(mdx, this.subjectName));
-                }, this);
+                var olapFilters = this.generateFilterSet(mdx, this.filters, this.subjectName);
 
                 var proceed = true;
                 Ext.each(olapFilters, function(of) {
@@ -812,12 +809,7 @@ Ext.define('LABKEY.app.controller.State', {
 
         this.onMDXReady(function(mdx) {
 
-            var sels = [];
-
-            for (var s=0; s < this.selections.length; s++) {
-                // construct the query
-                sels.push(this.selections[s].getOlapFilter(mdx, this.subjectName));
-            }
+            var sels = this.generateFilterSet(mdx, this.selections, this.subjectName);
 
             if (sels.length == 0) {
                 mdx.clearNamedFilter(LABKEY.app.constant.SELECTION_FILTER);
@@ -863,9 +855,7 @@ Ext.define('LABKEY.app.controller.State', {
 
                 this.privatefilters[name] = newSelectors;
 
-                for (s=0; s < newSelectors.length; s++) {
-                    filters.push(newSelectors[s].getOlapFilter(mdx, this.subjectName));
-                }
+                filters = this.generateFilterSet(mdx, newSelectors, this.subjectName);
             }
 
             if (Ext.isArray(selection))
@@ -942,5 +932,24 @@ Ext.define('LABKEY.app.controller.State', {
     /* WARNING: Not currently clone safe */
     getSessionColumns : function() {
         return this.SESSION_COLUMNS;
+    },
+
+    /**
+     * Takes the set of filters given and generates the appropriate OLAP filter configuration for requests.
+     * This can be overridden to change the behavior of filter mapping (a.k.a. not every filter needs to map 1-1
+     * to the OLAP filter).
+     * @param {LABKEY.query.olap.MDX} mdx
+     * @param {Array} filters Set of filters for which configurations need to be generated
+     * @param {String} subjectName
+     * @returns {Array}
+     */
+    generateFilterSet : function(mdx, filters, subjectName) {
+        var configs = [];
+
+        for (var i=0; i < filters.length; i++) {
+            configs.push(filters[i].getOlapFilter(mdx, subjectName));
+        }
+
+        return configs;
     }
 });
