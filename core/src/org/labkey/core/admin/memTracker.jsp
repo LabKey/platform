@@ -170,7 +170,7 @@
                         }
             %>
                     </td>
-                    <td><%=h(DateUtil.formatDuration(currentMillis - reference.getAllocationTime()))%></td>
+                    <td valign=top><%=h(DateUtil.formatDuration(currentMillis - reference.getAllocationTime()))%></td>
                     <td>
                         <div id='stackTogglePanel<%= counter %>' style='cursor:pointer'><%= text(secondLine) %></div>
                         <div id="stackContentPanel<%= counter %>" style="display:none;"><%= text(htmlStack) %></div>
