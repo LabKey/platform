@@ -22,6 +22,9 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.MemBean" %>
+<%@ page import="java.util.Date" %>
+<%@ page import="org.apache.http.impl.cookie.DateUtils" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
@@ -135,9 +138,11 @@
                     <th>&nbsp;</th>
                     <th align="left">Object Class</th>
                     <th align="left">Object toString()</th>
+                    <th align="left">Age</th>
                     <th align="left">Allocation Stack</th>
                 </tr>
             <%
+                    long currentMillis = System.currentTimeMillis();
                     int counter = 1;
                     for (MemTracker.HeldReference reference : bean.references)
                     {
@@ -167,6 +172,7 @@
                         }
             %>
                     </td>
+                    <td><%=h(DateUtil.formatDuration(currentMillis - reference.getAllocationTime()))%></td>
                     <td>
                         <div id='stackTogglePanel<%= counter %>' style='cursor:pointer'><%= text(secondLine) %></div>
                         <div id="stackContentPanel<%= counter %>" style="display:none;"><%= text(htmlStack) %></div>
