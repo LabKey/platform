@@ -385,14 +385,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     }
 
 
-    @Override
-    public String toString()
-    {
-        return "ViewContext";
-    }
-
-
-    // 
+    //
     //  Error formatting (SPRING) should 
     //
 
