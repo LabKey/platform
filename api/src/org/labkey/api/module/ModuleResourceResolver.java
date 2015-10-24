@@ -28,7 +28,6 @@ import org.labkey.api.resource.ClassResourceCollection;
 import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.Path;
 
 import java.io.File;
@@ -54,25 +53,20 @@ public class ModuleResourceResolver implements Resolver
     private final Module _module;
     private final MergedDirectoryResource _root;
     private final ClassResourceCollection[] _classes;
-    private final CacheLoader<String, Resource> RESOURCE_LOADER = new CacheLoader<String, Resource>()
-    {
-        @Override
-        public Resource load(String key, @Nullable Object argument)
-        {
-            Path normalized = (Path)argument;
-            Resource r = resolve(normalized);
+    private final CacheLoader<String, Resource> RESOURCE_LOADER = (key, argument) -> {
+        Path normalized = (Path)argument;
+        Resource r = resolve(normalized);
 
-            // Register a listener on every directory we encounter
-            if (null != r && r.exists() && r.isCollection())
-                registerListener(r);
+        // Register a listener on every directory we encounter
+        if (null != r && r.exists() && r.isCollection())
+            registerListener(r);
 
-            if (null == r)
-                LOG.debug("missed resource: " + key);
-            else if (r.exists())
-                LOG.debug("resolved resource: " + key + " -> " + r);
+        if (null == r)
+            LOG.debug("missed resource: " + key);
+        else if (r.exists())
+            LOG.debug("resolved resource: " + key + " -> " + r);
 
-            return r;
-        }
+        return r;
     };
 
     ModuleResourceResolver(Module module, List<File> dirs, Class... classes)
@@ -102,21 +96,16 @@ public class ModuleResourceResolver implements Resolver
 
     private void remove(final String fullPath)
     {
-        CACHE.removeUsingFilter(new Filter<String>()
-        {
-            @Override
-            public boolean accept(String key)
+        CACHE.removeUsingFilter(key -> {
+            String moduleName = _module.getName();
+
+            if (key.startsWith(moduleName))
             {
-                String moduleName = _module.getName();
-
-                if (key.startsWith(moduleName))
-                {
-                    String shortPath = key.substring(moduleName.length() + 1);
-                    return fullPath.endsWith(shortPath);
-                }
-
-                return false;
+                String shortPath = key.substring(moduleName.length() + 1);
+                return fullPath.endsWith(shortPath);
             }
+
+            return false;
         });
     }
 
