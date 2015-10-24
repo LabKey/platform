@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.MemTracker"%>
+<%@ page import="org.labkey.api.util.DateUtil"%>
+<%@ page import="org.labkey.api.util.MemTracker" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.MemBean" %>
-<%@ page import="java.util.Date" %>
-<%@ page import="org.apache.http.impl.cookie.DateUtils" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
