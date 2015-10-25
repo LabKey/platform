@@ -27,7 +27,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Maps to a schema name.  The full string is seperated by dots, where
+ * Maps to a schema name.  The full string is separated by dots, where
  * each token is a schema in the schema hierarchy.
  */
 public class SchemaKey extends QueryKey<SchemaKey>
