@@ -44,7 +44,7 @@ import java.util.Map;
  */
 public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView, EditableCustomView
 {
-    private QueryDefinition _queryDef;
+    private final QueryDefinition _queryDef;
 
     public ModuleCustomView(QueryDefinition queryDef, ModuleCustomViewDef customViewDef)
     {

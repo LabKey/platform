@@ -217,7 +217,7 @@ public class QueryModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
                 new QueryWebPartFactory(),
                 new ReportsWebPartFactory(),
                 new DataViewsWebPartFactory()
@@ -329,7 +329,7 @@ public class QueryModule extends DefaultModule
     @Override
     public ActionURL getTabURL(Container c, User user)
     {
-        // Don't show Query nav trails to users that aren't admins or developers since they almost certainly don't want
+        // Don't show Query nav trails to users who aren't admins or developers since they almost certainly don't want
         // to go to those links
         if (c.hasPermission(user, AdminPermission.class) || user.isDeveloper())
         {
