@@ -27,6 +27,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryService.Environment;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
@@ -344,7 +345,7 @@ public class ViewServlet extends HttpServlet
         if (null != c)
         {
             url.setContainer(c);
-            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, c);
+            QueryService.get().setEnvironment(Environment.CONTAINER, c);
         }
 
         // lastfilter
@@ -572,12 +573,7 @@ public class ViewServlet extends HttpServlet
             module.dispatch(request, mockResponse, url);
             return mockResponse;
         }
-        catch (ServletException x)
-        {
-            _logError("error", x);
-            throw x;
-        }
-        catch (IOException x)
+        catch (ServletException | IOException x)
         {
             _logError("error", x);
             throw x;
@@ -586,6 +582,10 @@ public class ViewServlet extends HttpServlet
         {
             _logError("error", x);
             throw new ServletException(x);
+        }
+        finally
+        {
+            QueryService.get().clearEnvironment();
         }
     }
 
