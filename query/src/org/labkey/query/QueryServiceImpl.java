@@ -45,6 +45,8 @@ import org.labkey.api.module.ModuleResourceCache.CacheId;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.PathBasedModuleResourceCache;
+import org.labkey.api.module.QueryBasedModuleResourceCache;
+import org.labkey.api.module.QueryBasedModuleResourceCacheHandler;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
@@ -121,6 +123,7 @@ public class QueryServiceImpl extends QueryService
     private static final Cache<String, Collection<? extends Resource>> MODULE_RESOURCES_CACHE = CacheManager.getCache(50000, CacheManager.DAY, "Module resources cache");
     private static final Cache<String, ModuleQueryDef> MODULE_QUERY_DEFS_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query defs cache");
     private static final PathBasedModuleResourceCache<Collection<ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view defs cache", new CustomViewResourceCacheHandler());
+    private static final QueryBasedModuleResourceCache<ModuleCustomViewDef> NEW_MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path("queries"), "Module custom view defs cache", new CustomViewResourceCacheHandler2());
     private static final Cache<String, ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query metadata defs cache");
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
@@ -591,30 +594,40 @@ public class QueryServiceImpl extends QueryService
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)
     {
         Collection<Module> modules = container.getActiveModules();
-        Collection<Module> allModules = new HashSet<>(modules);
-        allModules.addAll(Arrays.asList(extraModules));
+        Collection<Module> currentModules = new HashSet<>(modules);
+        currentModules.addAll(Arrays.asList(extraModules));
 
-        allModules = reorderModules(allModules);
+        currentModules = reorderModules(currentModules);
 
         String schema = qd.getSchema().getSchemaName();
         Pair<String, String> schemaQuery = Pair.of(schema, query);
 
         List<CustomView> customViews = new LinkedList<>();
+        List<CustomView> customViews2 = new LinkedList<>();
 
-        // TODO: Instead of caching a separate list for each module + query combination, we should cache the full list of views defined on this
+        // TODO: Instead of caching a separate list for each module + query combination, we could cache the full list of views defined on this
         // query in ALL modules... and then filter for active at this level. This probably requires a new variant of PathBasedModuleResourceCache.
 
-        for (Module module : allModules)
+        for (Module module : currentModules)
         {
             Collection<ModuleCustomViewDef> views = MODULE_CUSTOM_VIEW_CACHE.getResource(module, path, schemaQuery);
+            Collection<ModuleCustomViewDef> newViews = NEW_MODULE_CUSTOM_VIEW_CACHE.getResource(module, path);
 
             // CacheLoader returns empty collection (not null) for non-existent directories
             //noinspection ConstantConditions
             for (ModuleCustomViewDef view : views)
                 customViews.add(new ModuleCustomView(qd, view));
+
+            // CacheLoader returns empty collection (not null) for non-existent directories
+            //noinspection ConstantConditions
+            for (ModuleCustomViewDef view : newViews)
+                customViews2.add(new ModuleCustomView(qd, view));
         }
 
-        return customViews;
+        if (customViews.size() != customViews2.size())
+            throw new IllegalStateException("Inconsistent number of custom views at " + path + ": " + customViews.size() + " vs. " + customViews2.size());
+
+        return customViews2;
     }
 
     @Override
@@ -685,6 +698,50 @@ public class QueryServiceImpl extends QueryService
 
                     for (Resource view : viewResources)
                         viewDefs.add(new ModuleCustomViewDef(view, schemaQuery.first, schemaQuery.second));
+
+                    return Collections.unmodifiableCollection(viewDefs);
+                }
+            };
+        }
+
+        @Nullable
+        @Override
+        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return null;
+        }
+    }
+
+    private static class CustomViewResourceCacheHandler2 implements QueryBasedModuleResourceCacheHandler<ModuleCustomViewDef>
+    {
+        @Override
+        public boolean isResourceFile(String filename)
+        {
+            return filename.endsWith(CustomViewXmlReader.XML_FILE_EXTENSION);
+        }
+
+        @Override
+        public CacheLoader<Path, Collection<ModuleCustomViewDef>> getResourceLoader()
+        {
+            return (path, argument) -> {
+                Module module = (Module)argument;
+                Resource queryDir = module.getModuleResource(path);
+
+                Collection<? extends Resource> viewResources = getModuleCustomViews(queryDir);
+
+                if (viewResources.isEmpty())
+                {
+                    return Collections.emptyList();
+                }
+                else
+                {
+                    String schema = path.get(1);
+                    String query = path.get(2);
+
+                    Collection<ModuleCustomViewDef> viewDefs = new LinkedList<>();
+
+                    for (Resource view : viewResources)
+                        viewDefs.add(new ModuleCustomViewDef(view, schema, query));
 
                     return Collections.unmodifiableCollection(viewDefs);
                 }
