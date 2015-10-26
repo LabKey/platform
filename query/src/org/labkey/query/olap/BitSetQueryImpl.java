@@ -2157,7 +2157,7 @@ public class BitSetQueryImpl
                             levelColumn += "id";
                         }
 
-                        for (int i=1; i < metaData.getColumnCount(); i++)
+                        for (int i=1; i <= metaData.getColumnCount(); i++)
                         {
                             if (metaData.getColumnName(i).toLowerCase().contains(levelColumn))
                             {
