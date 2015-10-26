@@ -59,6 +59,7 @@
  *          <li><strong>sortFn:</strong> If scaleType is "discrete", the sortFn can be used to order the values of the domain</li>
  *          <li><strong>tickFormat:</strong> Add axis label formatting.</li>
  *          <li><strong>tickDigits:</strong> Convert axis tick to exponential form if equal or greater than number of digits</li>
+ *          <li><strong>tickLabelMax:</strong> Maximum number of tick labels to show for a categorical axis.</li>
  *          <li><strong>tickHoverText:</strong>: Adds hover text for axis labels.</li>
  *          <li><strong>tickCls:</strong> Add class to axis label.</li>
  *          <li><strong>tickRectCls:</strong> Add class to mouse area rectangle around axis label.</li>
@@ -338,6 +339,7 @@ boxPlot.render();
                 newScale.trans = origScale.trans ? origScale.trans : 'linear';
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
                 newScale.tickDigits = origScale.tickDigits ? origScale.tickDigits : null;
+                newScale.tickLabelMax = origScale.tickLabelMax ? origScale.tickLabelMax : null;
                 newScale.tickHoverText = origScale.tickHoverText ? origScale.tickHoverText : null;
                 newScale.tickCls = origScale.tickCls ? origScale.tickCls : null;
                 newScale.tickRectCls = origScale.tickRectCls ? origScale.tickRectCls : null;

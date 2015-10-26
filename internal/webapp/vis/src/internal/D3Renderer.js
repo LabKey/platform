@@ -13,7 +13,7 @@ LABKEY.vis.internal.Axis = function() {
     // different colored tick & gridlines, etc.
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
         tickRectCls, tickRectHeightOffset = 12, tickRectWidthOffset = 8, tickClick, axisSel, tickSel, textSel, gridLineSel,
-        borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits,
+        borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickLabelMax,
         tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
         tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1,
         fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10, adjustedStarts, adjustedEnds;
@@ -35,11 +35,11 @@ LABKEY.vis.internal.Axis = function() {
             }
         }
 
-        // Issue 23016: if you have a large number of tick labels (ex. categorical x-axis), only show 25 since
-        //      overlapping text isn't helpful
-        if (data.length > 25)
+        // Issue 23016: if you have a large number of tick labels (ex. categorical x-axis),
+        // only show 25 since overlapping text isn't helpful
+        if (tickLabelMax != undefined && data.length > tickLabelMax)
         {
-            var factor = Math.floor(data.length / 25),
+            var factor = Math.floor(data.length / tickLabelMax),
                 tempData = [];
             for (var i = 0; i < data.length; i++)
             {
@@ -358,6 +358,7 @@ LABKEY.vis.internal.Axis = function() {
     axis.ticks = function(t) {ticks = t; return axis;};
     axis.tickFormat = function(f) {tickFormat = f; return axis;};
     axis.tickDigits = function(h) {tickDigits = h; return axis;};
+    axis.tickLabelMax = function(h) {tickLabelMax = h; return axis;};
     axis.tickHover = function(h) {tickHover = h; return axis;};
     axis.tickCls = function(c) {tickCls = c; return axis;};
     axis.tickRectCls = function(c) {tickRectCls = c; return axis;};
@@ -621,6 +622,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (plot.scales[name].tickDigits) {
                 indAxis.tickDigits(plot.scales[name].tickDigits);
+            }
+
+            if (plot.scales[name].tickLabelMax) {
+                indAxis.tickLabelMax(plot.scales[name].tickLabelMax);
             }
 
             if (plot.scales[name].tickHoverText) {
