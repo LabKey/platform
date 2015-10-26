@@ -1,5 +1,6 @@
 package org.labkey.query.persist;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -107,7 +108,12 @@ public class CustomViewCache
                         // view name specified
                         if (viewName != null)
                         {
-                            List<CstmView> views = viewList.stream().filter(view -> viewName.equals(view.getName())).collect(Collectors.toList());
+                            List<CstmView> views;
+                            // special case requesting the default view
+                            if (StringUtils.isEmpty(viewName))
+                                views = viewList.stream().filter(view -> view.getName() == null).collect(Collectors.toList());
+                            else
+                                views = viewList.stream().filter(view -> viewName.equals(view.getName())).collect(Collectors.toList());
                             return Collections.unmodifiableList(views);
                         }
                         else

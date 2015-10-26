@@ -25,6 +25,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -34,6 +35,8 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: dave
@@ -79,17 +82,20 @@ public class ValidateQueryAction extends ApiAction<ValidateQueryAction.ValidateQ
     public ApiResponse execute(ValidateQueryForm form, BindException errors) throws Exception
     {
         ApiSimpleResponse response = new ApiSimpleResponse();
-        try
+        List<QueryParseException> parseErrors = new ArrayList<>();
+        List<QueryParseException> parseWarnings = new ArrayList<>();
+
+        QueryManager.get().validateQuery(table, form.isIncludeAllColumns(), parseErrors, parseWarnings);
+        for (QueryParseException e : parseErrors)
         {
-            QueryManager.get().validateQuery(table, form.isIncludeAllColumns());
-            response.put("valid", true);
+            errors.reject(SpringActionController.ERROR_MSG, "ERROR: " + e.getMessage());
         }
-        catch (SQLException | BadSqlGrammarException e)
+
+        for (QueryParseException e : parseWarnings)
         {
-            // Don't send these to mothership; see #20861
-            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-            response.put("valid", false);
+            errors.reject(SpringActionController.ERROR_MSG, "WARNING: " + e.getMessage());
         }
+        response.put("valid", parseErrors.isEmpty() && parseWarnings.isEmpty());
 
         //if we got here, the query is OK
         return response;

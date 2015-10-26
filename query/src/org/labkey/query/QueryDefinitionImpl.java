@@ -384,7 +384,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
 
 
-    static QueryParseException wrapParseException(Throwable e, boolean metadataExists)
+    public static QueryParseException wrapParseException(Throwable e, boolean metadataExists)
     {
         if (e instanceof MetadataParseException)
         {

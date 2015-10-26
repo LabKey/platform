@@ -39,7 +39,9 @@ import org.labkey.api.query.CustomViewChangeListener;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -733,7 +735,8 @@ public class QueryManager
         }
     };
 
-    public void validateQuery(SchemaKey schemaPath, String queryName, User user, Container container) throws SQLException, QueryParseException
+    public boolean validateQuery(SchemaKey schemaPath, String queryName, User user, Container container, @NotNull List<QueryParseException> errors,
+                                 @Nullable List<QueryParseException> warnings)
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
         if (null == schema)
@@ -743,10 +746,11 @@ public class QueryManager
         if (null == table)
             throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaPath.toDisplayString() + "'!");
 
-        validateQuery(table, true);
+        return validateQuery(table, true, errors, warnings);
     }
 
-    public void validateQuery(TableInfo table, boolean testAllColumns) throws SQLException, QueryParseException
+    public boolean validateQuery(TableInfo table, boolean testAllColumns, @NotNull List<QueryParseException> errors,
+                                 @Nullable List<QueryParseException> warnings)
     {
         Collection<QueryService.ParameterDecl> params = table.getNamedParameters();
         Map<String,Object> parameters = new HashMap<>();
@@ -782,15 +786,30 @@ public class QueryManager
         try (ResultSet rs = selector.getResultSet())
         {
         }
+        catch (SQLException e)
+        {
+            errors.add(new QueryParseException(e.getMessage(), e, 0, 0));
+        }
+
+        UserSchema schema = table.getUserSchema();
+        if (schema != null)
+        {
+            QueryDefinition queryDef = schema.getQueryDef(table.getName());
+            if (queryDef != null)
+            {
+                queryDef.validateQuery(schema, errors, warnings);
+            }
+        }
+        return errors.isEmpty();
     }
 
     /**
      * Experimental.  The goal is to provide a more thorough validation of query metadata, including warnings of potentially
      * invalid conditions, like autoincrement columns set userEditable=true.
      */
-    public Set<String> validateQueryMetadata(SchemaKey schemaPath, String queryName, User user, Container container)
+    public boolean validateQueryMetadata(SchemaKey schemaPath, String queryName, User user, Container container,
+                                             @NotNull List<QueryParseException> errors, @Nullable List<QueryParseException> warnings)
     {
-        Set<String> queryErrors = new HashSet<>();
         Set<ColumnInfo> columns = new HashSet<>();
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
         if (null == schema)
@@ -808,23 +827,23 @@ public class QueryManager
         }
         catch(QueryParseException e)
         {
-            queryErrors.add(e.toString());
+            errors.add(e);
         }
 
         for (ColumnInfo col : columns)
         {
-            queryErrors.addAll(validateColumn(col, user, container, table));
+            validateColumn(col, user, container, table, errors, warnings);
         }
 
-        return queryErrors;
+        return errors.isEmpty();
     }
 
     /**
      * Experimental.  See validateQueryMetadata()
      */
-    public Set<String> validateColumn(ColumnInfo col, User user, Container container, @Nullable TableInfo parentTable)
+    public boolean validateColumn(ColumnInfo col, User user, Container container, @Nullable TableInfo parentTable,
+                                      @NotNull List<QueryParseException> errors, @Nullable List<QueryParseException> warnings)
     {
-        Set<String> queryErrors = new HashSet<>();
         if(parentTable == null)
             parentTable = col.getParentTable();
 
@@ -832,7 +851,7 @@ public class QueryManager
         String publicQuery = col.getParentTable().getPublicName() != null ? col.getParentTable().getPublicName() : col.getParentTable().getName();
         String errorBase = "for column '" + col.getFieldKey() + "' in " + publicSchema + "." + publicQuery + ": ";
 
-        queryErrors.addAll(validateFk(col, user, container, parentTable));
+        validateFk(col, user, container, parentTable, errors, warnings);
 
         List<String> specialCols = new ArrayList<>();
         specialCols.add("container");
@@ -844,19 +863,19 @@ public class QueryManager
         if(specialCols.contains(col.getName()))
         {
             if(col.isUserEditable())
-                queryErrors.add("INFO: " + errorBase + " column is user editable, which is not expected based on its name");
+                warnings.add(new QueryParseWarning(errorBase + " column is user editable, which is not expected based on its name", null, 0,0));
             if(col.isShownInInsertView())
-                queryErrors.add("INFO: " + errorBase + " column has shownInInsertView set to true, which is not expected based on its name");
+                warnings.add(new QueryParseWarning(errorBase + " column has shownInInsertView set to true, which is not expected based on its name", null, 0, 0));
             if(col.isShownInUpdateView())
-                queryErrors.add("INFO: " + errorBase + " column has shownInUpdateView set to true, which is not expected based on its name");
+                warnings.add(new QueryParseWarning(errorBase + " column has shownInUpdateView set to true, which is not expected based on its name", null, 0, 0));
         }
 
         if(col.isAutoIncrement() && col.isUserEditable())
-            queryErrors.add("ERROR: " + errorBase + " column is autoIncrement, but has userEditable set to true");
+            errors.add(new QueryParseException(errorBase + " column is autoIncrement, but has userEditable set to true", null, 0, 0));
         if(col.isAutoIncrement() && col.isShownInInsertView())
-            queryErrors.add("WARNING: " + errorBase + " column is autoIncrement, but has shownInInsertView set to true");
+            warnings.add(new QueryParseWarning(errorBase + " column is autoIncrement, but has shownInInsertView set to true", null, 0, 0));
         if(col.isAutoIncrement() && col.isShownInUpdateView())
-            queryErrors.add("WARNING: " + errorBase + " column is autoIncrement, but has shownInUpdateView set to true");
+            warnings.add(new QueryParseWarning(errorBase + " column is autoIncrement, but has shownInUpdateView set to true", null, 0, 0));
 
 //        if(col.isShownInInsertView() && !col.isUserEditable())
 //            queryErrors.add("INFO: " + errorBase + " has shownInInsertView=true, but it is not userEditable");
@@ -873,27 +892,27 @@ public class QueryManager
             if(col.getDisplayWidth() != null && Integer.parseInt(col.getDisplayWidth()) > 200 && !"textarea".equalsIgnoreCase(col.getInputType()))
             {
                 if (col.isUserEditable() && col.getJdbcType() != null && col.getJdbcType().getJavaClass() == String.class)
-                    queryErrors.add("INFO: " + errorBase + " column has a displayWidth > 200, but does not use a textarea as the inputType");
+                    warnings.add(new QueryParseWarning(errorBase + " column has a displayWidth > 200, but does not use a textarea as the inputType", null, 0, 0));
             }
         }
         catch (NumberFormatException e)
         {
-            queryErrors.add("INFO: " + errorBase + " column has a blank value for displayWidth: '" + col.getDisplayWidth() + "'");
+            warnings.add(new QueryParseWarning(errorBase + " column has a blank value for displayWidth: '" + col.getDisplayWidth() + "'", null, 0, 0));
         }
-        return queryErrors;
+        return errors.isEmpty();
     }
 
     /**
      * Experimental.  See validateQueryMetadata()
      */
-    public Set<String> validateFk(ColumnInfo col, User user, Container container, TableInfo parentTable)
-    {
-        Set<String> queryErrors = new HashSet<>();
+    public boolean validateFk(ColumnInfo col, User user, Container container, TableInfo parentTable,
+                              @NotNull List<QueryParseException> errors, @Nullable List<QueryParseException> warnings)
 
+    {
         //NOTE: this is the same code that writes JSON to the client
         JSONObject o = JsonWriter.getLookupInfo(col, false);
         if (o == null)
-            return queryErrors;
+            return true;
 
         boolean isPublic = o.getBoolean("isPublic");
         SchemaKey schemaPath = SchemaKey.fromString(o.getString("schemaName"));
@@ -906,61 +925,53 @@ public class QueryManager
         Container lookupContainer = containerPath == null ? container : ContainerManager.getForPath(containerPath);
         if (lookupContainer == null)
         {
-            queryErrors.add("ERROR: " + errorBase + " Unable to find container" + containerPath);
+            errors.add(new QueryParseException(errorBase + " Unable to find container" + containerPath, null, 0, 0));
         }
 
         //String publicSchema = col.getParentTable().getPublicSchemaName() != null ? col.getParentTable().getPublicSchemaName() : col.getParentTable().getSchema().toString();
         //String publicQuery = col.getParentTable().getPublicName() != null ? col.getParentTable().getPublicName() : col.getParentTable().getName();
         if (col.getFk() == null)
-            return queryErrors;
+            return errors.isEmpty();
 
         if (!isPublic)
         {
-            queryErrors.add("INFO: " + errorBase + " has a lookup to a non-public table: " + schemaPath.toDisplayString() + "." + queryName);
-            return queryErrors;
+            warnings.add(new QueryParseWarning(errorBase + " has a lookup to a non-public table: " + schemaPath.toDisplayString() + "." + queryName, null, 0, 0));
+            return errors.isEmpty();
         }
 
         UserSchema userSchema = QueryService.get().getUserSchema(user, lookupContainer, schemaPath);
         if (userSchema == null)
         {
-            queryErrors.add("ERROR: " + errorBase + " unable to find the user schema: " + schemaPath.toDisplayString());
-            return queryErrors;
+            errors.add(new QueryParseException(errorBase + " unable to find the user schema: " + schemaPath.toDisplayString(), null, 0, 0));
+            return errors.isEmpty();
         }
 
         TableInfo fkTable = userSchema.getTable(queryName);
         if(fkTable == null)
         {
-            queryErrors.add("ERROR: " + errorBase + " has a lookup to a table that does not exist: " + schemaPath.toDisplayString() + "." + queryName);
-            return queryErrors;
+            errors.add(new QueryParseException(errorBase + " has a lookup to a table that does not exist: " + schemaPath.toDisplayString() + "." + queryName, null, 0, 0));
+            return errors.isEmpty();
         }
 
         //a FK can have a table non-visible to the client, so long as public is set to false
         if (fkTable.isPublic()){
             String fkt = schemaPath.toDisplayString() + "." + queryName;
 
-            try
-            {
-                QueryManager.get().validateQuery(schemaPath, queryName, user, lookupContainer);
-            }
-            catch (Exception e)
-            {
-                queryErrors.add("ERROR: " + errorBase + " has a foreign key to a table that fails query validation: " + fkt + ". The error was: " + e.getMessage());
-            }
-
+            QueryManager.get().validateQuery(schemaPath, queryName, user, lookupContainer, errors, warnings);
             if (displayColumn != null)
             {
                 FieldKey displayFieldKey = FieldKey.fromString(displayColumn);
                 Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(fkTable, Collections.singleton(displayFieldKey));
                 if (!cols.containsKey(displayFieldKey))
                 {
-                    queryErrors.add("ERROR: " + errorBase + " reports a foreign key with displayColumn of " + displayColumn + " in the table " + schemaPath.toDisplayString() + "." + queryName + ", but the column does not exist");
+                    errors.add(new QueryParseException(errorBase + " reports a foreign key with displayColumn of " + displayColumn + " in the table " + schemaPath.toDisplayString() + "." + queryName + ", but the column does not exist", null, 0, 0));
                 }
                 else
                 {
                     ColumnInfo ci = cols.get(displayFieldKey);
                     if (!displayColumn.equals(ci.getFieldKey().toString()))
                     {
-                        queryErrors.add("WARNING: " + errorBase + ", the lookup to " + schemaPath.toDisplayString() + "." + queryName + "' did not match the expected case, which was '" + ci.getFieldKey().toString()  + "'. Actual: '" + displayColumn + "'");
+                        warnings.add(new QueryParseWarning(errorBase + ", the lookup to " + schemaPath.toDisplayString() + "." + queryName + "' did not match the expected case, which was '" + ci.getFieldKey().toString()  + "'. Actual: '" + displayColumn + "'", null, 0, 0));
                     }
                 }
             }
@@ -971,31 +982,32 @@ public class QueryManager
                 Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(fkTable, Collections.singleton(keyFieldKey));
                 if (!cols.containsKey(keyFieldKey))
                 {
-                    queryErrors.add("ERROR: " + errorBase + " reports a foreign key with keyColumn of " + keyColumn + " in the table " + schemaPath.toDisplayString() + "." + queryName + ", but the column does not exist");
+                    errors.add(new QueryParseException(errorBase + " reports a foreign key with keyColumn of " + keyColumn + " in the table " + schemaPath.toDisplayString() + "." + queryName + ", but the column does not exist", null, 0, 0));
                 }
                 else
                 {
                     ColumnInfo ci = cols.get(keyFieldKey);
                     if (!keyColumn.equals(ci.getFieldKey().toString()))
                     {
-                        queryErrors.add("WARNING: " + errorBase + ", the lookup to " + schemaPath.toDisplayString() + "." + queryName + "' did not match the expected case, which was '" + ci.getFieldKey().toString()  + "'. Actual: '" + keyColumn + "'");
+                        warnings.add(new QueryParseWarning(errorBase + ", the lookup to " + schemaPath.toDisplayString() + "." + queryName + "' did not match the expected case, which was '" + ci.getFieldKey().toString()  + "'. Actual: '" + keyColumn + "'", null, 0, 0));
                     }
                 }
             }
             else
             {
-                queryErrors.add("INFO: " + errorBase + ", there is a lookup where the keyColumn is blank");
+                warnings.add(new QueryParseWarning(errorBase + ", there is a lookup where the keyColumn is blank", null, 0, 0));
             }
         }
 
-        return queryErrors;
+        return errors.isEmpty();
     }
 
     /**
      * Experimental.  The goal is to provide a more thorough validation of saved views, including errors like invalid
      * column names or case errors (which cause problems for case-sensitive js)
      */
-    public Set<String> validateQueryViews(SchemaKey schemaPath, String queryName, User user, Container container) throws SQLException, QueryParseException
+    public boolean validateQueryViews(SchemaKey schemaPath, String queryName, User user, Container container,
+                                          @NotNull List<QueryParseException> errors, @Nullable List<QueryParseException> warnings) throws SQLException, QueryParseException
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
         if (null == schema)
@@ -1006,12 +1018,10 @@ public class QueryManager
             throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schema.getSchemaName() + "'!");
 
         //validate views
-        Set<String> queryErrors = new HashSet<>();
         List<CustomView> views = QueryService.get().getCustomViews(user, container, null, schema.getSchemaName(), queryName, true);
-
         for (CustomView v : views)
         {
-            validateViewColumns(user, container, v, "columns", v.getColumns(), queryErrors, table);
+            validateViewColumns(user, container, v, "columns", v.getColumns(), table, errors, warnings);
 
             if (!StringUtils.isEmpty(v.getFilterAndSort()))
             {
@@ -1023,27 +1033,28 @@ public class QueryManager
                     {
                         filterCols.add(f.getField());
                     }
-                    validateViewColumns(user, container, v, "filter", filterCols, queryErrors, table);
+                    validateViewColumns(user, container, v, "filter", filterCols, table, errors, warnings);
 
                     List<FieldKey> sortCols = new ArrayList<>();
                     for (Sort.SortField f : fs.getSort())
                     {
                         sortCols.add(f.getFieldKey());
                     }
-                    validateViewColumns(user, container, v, "sort", sortCols, queryErrors, table);
+                    validateViewColumns(user, container, v, "sort", sortCols, table, errors, warnings);
 
                 }
                 catch (URISyntaxException e)
                 {
-                    queryErrors.add("ERROR: unable to process the filter/sort section of view: " + v.getName());
+                    errors.add(new QueryParseException("unable to process the filter/sort section of view: " + v.getName(), null, 0, 0));
                 }
             }
         }
 
-        return queryErrors;
+        return errors.isEmpty();
     }
 
-    private void validateViewColumns(User user, Container container, CustomView v, String identifier, List<FieldKey> viewCols, Set<String> queryErrors, TableInfo sourceTable)
+    private void validateViewColumns(User user, Container container, CustomView v, String identifier, List<FieldKey> viewCols, TableInfo sourceTable,
+                                     @NotNull List<QueryParseException> errors, @Nullable List<QueryParseException> warnings) throws SQLException, QueryParseException
     {
         //verify columns match, accounting for case
         Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(sourceTable, viewCols);
@@ -1068,12 +1079,12 @@ public class QueryManager
             }
 
             if (!found){
-                queryErrors.add("ERROR: In the saved view '" + (v.getName() == null ? "default" : v.getName()) + "', in the " + identifier + " section, the column '" + f.toString() + "' in " + v.getSchemaName() + "." + v.getQueryName() + " could not be matched to a column");
+                errors.add(new QueryParseException("ERROR: In the saved view '" + (v.getName() == null ? "default" : v.getName()) + "', in the " + identifier + " section, the column '" + f.toString() + "' in " + v.getSchemaName() + "." + v.getQueryName() + " could not be matched to a column", null, 0, 0));
                 continue;
             }
 
             if (!matchCase){
-                queryErrors.add("WARNING: In the saved view '" + (v.getName() == null ? "default" : v.getName()) + "', in the " + identifier + " section, the column '" + f.toString() + "' in " + v.getSchemaName() + "." + v.getQueryName() + "' did not match the expected case, which was '" + fk + "'");
+                warnings.add(new QueryParseWarning("WARNING: In the saved view '" + (v.getName() == null ? "default" : v.getName()) + "', in the " + identifier + " section, the column '" + f.toString() + "' in " + v.getSchemaName() + "." + v.getQueryName() + "' did not match the expected case, which was '" + fk + "'", null, 0, 0));
             }
 
             //queryErrors.addAll(validateColumn(c, user, container));

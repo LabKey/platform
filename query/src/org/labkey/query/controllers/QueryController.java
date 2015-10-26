@@ -5679,26 +5679,32 @@ public class QueryController extends SpringActionController
             }
 
             ApiSimpleResponse response = new ApiSimpleResponse();
+            List<QueryParseException> parseErrors = new ArrayList<>();
+            List<QueryParseException> parseWarnings = new ArrayList<>();
 
-            try
+            if (!QueryManager.get().validateQuery(table, true, parseErrors, parseWarnings))
             {
-                QueryManager.get().validateQuery(table, true);
-            }
-            catch (SQLException | BadSqlGrammarException e)
-            {
-                // Don't send these to mothership; see #20861
-                errors.reject(ERROR_MSG, e.getMessage());
+                for (QueryParseException e : parseErrors)
+                {
+                    errors.reject(ERROR_MSG, "ERROR: " + e.getMessage());
+                }
                 return response;
             }
 
             SchemaKey schemaKey = SchemaKey.fromString(form.getSchemaName());
-            Set<String> queryErrors = QueryManager.get().validateQueryMetadata(schemaKey, form.getQueryName(), getUser(), getContainer());
-            queryErrors.addAll(QueryManager.get().validateQueryViews(schemaKey, form.getQueryName(), getUser(), getContainer()));
+            QueryManager.get().validateQueryMetadata(schemaKey, form.getQueryName(), getUser(), getContainer(), parseErrors, parseWarnings);
+            QueryManager.get().validateQueryViews(schemaKey, form.getQueryName(), getUser(), getContainer(), parseErrors, parseWarnings);
 
-            for (String e : queryErrors)
+            for (QueryParseException e : parseErrors)
             {
-                errors.reject(ERROR_MSG, e);
+                errors.reject(ERROR_MSG, "ERROR: " + e.getMessage());
             }
+
+            for (QueryParseException e : parseWarnings)
+            {
+                errors.reject(ERROR_MSG, "WARNING: " + e.getMessage());
+            }
+
             return response;
         }
     }

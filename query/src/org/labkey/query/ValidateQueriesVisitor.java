@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaTreeWalker;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
@@ -75,19 +76,23 @@ public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
     public Boolean visitTable(TableInfo table, Path path, Logger logger)
     {
         _totalCount++;
-        try
+        List<QueryParseException> errors = new ArrayList<>();
+        List<QueryParseException> warnings = new ArrayList<>();
+        if (!_mgr.validateQuery(table, true, errors, warnings))
         {
-            _mgr.validateQuery(table, true);
+            for (QueryParseException error : errors)
+            {
+                String msg = String.format("Query %s.%s failed validation!", table.getPublicSchemaName(), table.getName());
+                if (logger != null)
+                    logger.warn("VALIDATION ERROR: " + msg, error.getCause());
+                _warnings.add(Pair.of(msg, error.getCause()));
+            }
+            return false;
+        }
+        else
+        {
             _validCount++;
             return true;
-        }
-        catch (Throwable t)
-        {
-            String msg = String.format("Query %s.%s failed validation!", table.getPublicSchemaName(), table.getName());
-            if (logger != null)
-                logger.warn("VALIDATION ERROR: " + msg, t);
-            _warnings.add(Pair.of(msg, t));
-            return false;
         }
     }
 
