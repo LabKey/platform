@@ -3828,7 +3828,20 @@ public class StudyManager
         }
         return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
     }
-    
+
+    public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
+                                          DataIteratorContext context,
+                                          DatasetDefinition.CheckForDuplicates checkDuplicates,
+                                          QCState defaultQCState, StudyImportContext studyImportContext)
+            throws IOException, ServletException, SQLException
+    {
+        parseData(user, def, loader, columnMap);
+        Logger logger = null != context.getConfigParameters()
+                ? (Logger)context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger)
+                : null;
+        return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
+    }
+
 
     /** @deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated

@@ -65,6 +65,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
@@ -1966,6 +1967,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
+            Map<Enum,Object> contextConfig = context.getConfigParameters();
+            if (null == contextConfig)
+                contextConfig = Collections.emptyMap();
+
             // might want to make allow importManagedKey an explicit option, for now allow for GUID
             boolean allowImportManagedKey = isForUpdate || getKeyManagementType() == KeyManagementType.GUID;
             boolean isManagedKey = getKeyType() == KeyType.SUBJECT_VISIT_OTHER && getKeyManagementType() != KeyManagementType.None;
@@ -2001,8 +2006,20 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 {
                     inputColumn.setPropertyURI(match.getPropertyURI());
 
-                    if (match == lsidColumn || match==seqnumColumn || match==containerColumn)
+                    if (match == lsidColumn || match==seqnumColumn)
                         continue;
+
+                    // We usually ignore incoming containerColumn.  However, if we're in a dataspace study
+                    // we can internally target multiple containers
+
+                    if (match==containerColumn)
+                    {
+                        boolean targetMultiple = Boolean.TRUE == contextConfig.get(QueryUpdateService.ConfigParameters.TargetMultipleContainers);
+                        JdbcType jdbcType = inputColumn.getJdbcType();
+                        if (_study.isDataspaceStudy() && targetMultiple && (JdbcType.GUID==jdbcType||JdbcType.VARCHAR==jdbcType))
+                            it.addColumn(in);
+                        continue;
+                    }
 
                     if (match == keyColumn && isManagedKey && !allowImportManagedKey)
                     {

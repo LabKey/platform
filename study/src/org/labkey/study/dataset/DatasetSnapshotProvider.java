@@ -33,6 +33,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
@@ -52,7 +53,6 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -212,6 +212,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 if (view != null && !errors.hasErrors() && view.getTable() != null)
                 {
+                    // TODO call updateSnapshot() instead of duplicating code
                     Results results = getResults(context, view, qsDef, def);
 
                     // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
@@ -220,16 +221,29 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     tsvWriter.setApplyFormats(false);
                     tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
                     tsvWriter.write(sb);
+                    Map<FieldKey,ColumnInfo> fieldMap = tsvWriter.getFieldMap();
 
                     try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
                     {
-                            // import the data
-                        BatchValidationException ve = new BatchValidationException();
-                        StudyManager.getInstance().importDatasetData(context.getUser(), def, new TabLoader(sb, true),
-                                new CaseInsensitiveHashMap<String>(), ve, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null,
-                                QueryUpdateService.InsertOption.INSERT, null, null);
+                        DataIteratorContext dataIteratorContext = new DataIteratorContext();
+                        dataIteratorContext.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+                        if (study.isDataspaceStudy())
+                        {
+                            if (!fieldMap.containsKey(new FieldKey(null, "container")))
+                            {
+                                errors.reject(SpringActionController.ERROR_MSG, "Dataspace snapshot query must have a column called 'container'");
+                                return;
+                            }
+                            Map<Enum,Object> config = Collections.singletonMap(QueryUpdateService.ConfigParameters.TargetMultipleContainers, Boolean.TRUE);
+                            dataIteratorContext.setConfigParameters(config);
+                        }
+                        StudyManager.getInstance().importDatasetData(context.getUser(), def,
+                                new TabLoader(sb, true), new CaseInsensitiveHashMap<>(),
+                                dataIteratorContext,
+                                DatasetDefinition.CheckForDuplicates.sourceAndDestination,
+                                null, null);
 
-                        for (ValidationException e : ve.getRowErrors())
+                        for (ValidationException e : dataIteratorContext.getErrors().getRowErrors())
                             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
 
                         if (!errors.hasErrors())
@@ -397,6 +411,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         if (def != null)
         {
             StudyImpl study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
+            if (null == study)
+                throw new IllegalStateException("study not found");
 
             // purge the dataset rows then recreate the new one...
             DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
@@ -423,22 +439,35 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         tsvWriter.setApplyFormats(false);
                         tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
                         tsvWriter.write(sb);
+                        Map<FieldKey,ColumnInfo> fieldMap = tsvWriter.getFieldMap();
 
                         try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
                         {
                             int numRowsDeleted;
                             List<String> newRows;
 
-                            List<String> importErrors = new ArrayList<>();
                             numRowsDeleted = StudyManager.getInstance().purgeDataset(dsDef, form.getViewContext().getUser());
 
-                            // import the new data
-                            newRows = StudyManager.getInstance().importDatasetData(form.getViewContext().getUser(),
-                                    dsDef, new TabLoader(sb, true), new CaseInsensitiveHashMap<String>(),
-                                    importErrors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null, null, null);
+                            DataIteratorContext dataIteratorContext = new DataIteratorContext();
+                            dataIteratorContext.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+                            if (study.isDataspaceStudy())
+                            {
+                                if (!fieldMap.containsKey(new FieldKey(null, "container")))
+                                {
+                                    errors.reject(SpringActionController.ERROR_MSG, "Dataspace snapshot query must have a column called 'container'");
+                                    return null;
+                                }
+                                Map<Enum,Object> config = Collections.singletonMap(QueryUpdateService.ConfigParameters.TargetMultipleContainers, Boolean.TRUE);
+                                dataIteratorContext.setConfigParameters(config);
+                            }
+                            newRows = StudyManager.getInstance().importDatasetData(form.getViewContext().getUser(), dsDef,
+                                new TabLoader(sb, true), new CaseInsensitiveHashMap<String>(),
+                                dataIteratorContext,
+                                DatasetDefinition.CheckForDuplicates.sourceAndDestination,
+                                null, null);
 
-                            for (String error : importErrors)
-                                errors.reject(SpringActionController.ERROR_MSG, error);
+                            for (ValidationException error : dataIteratorContext.getErrors().getRowErrors())
+                                errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
 
                             if (errors.hasErrors())
                                 return null;
