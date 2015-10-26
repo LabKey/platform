@@ -1622,7 +1622,7 @@ public class Table
             TestDataIterator extract = new TestDataIterator();
             SimpleTranslator translate = new SimpleTranslator(extract, dic);
             translate.selectAll();
-            translate.addBuiltInColumns(JunitUtil.getTestContainer(), TestContext.get().getUser(), testTable, false);
+            translate.addBuiltInColumns(dic, JunitUtil.getTestContainer(), TestContext.get().getUser(), testTable, false);
 
             DataIteratorBuilder load = TableInsertDataIterator.create(
                     translate,

@@ -75,7 +75,10 @@ public interface QueryUpdateService
         Logger,
         TransactionSize,    // For configurations which support granular transaction boundaries, the # of target rows to write between commits
         TrimString,         // (Bool) Trim strings on insert
-        TrimStringRight     // (Bool) TrimRight strings on insert
+        TrimStringRight,     // (Bool) TrimRight strings on insert
+
+        // used by Dataspace currently
+        TargetMultipleContainers    // (Bool) allow multi container import
     }
 
 

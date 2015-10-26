@@ -791,7 +791,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             t = new SimpleTranslator(in, context);
             t.selectAll();
         }
-        t.addBuiltInColumns(c, user, target, false);
+        t.addBuiltInColumns(context, c, user, target, false);
         return t;
     }
 
@@ -829,7 +829,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * so matching columns in the input are ignored.
      * @param allowPassThrough indicates that columns in the input iterator should not be ignored
      */
-    public void addBuiltInColumns(@Nullable Container c, @NotNull User user, @NotNull TableInfo target, boolean allowPassThrough)
+    public void addBuiltInColumns(DataIteratorContext context, @Nullable Container c, @NotNull User user, @NotNull TableInfo target, boolean allowPassThrough)
     {
         final String containerId = null == c ? null : c.getId();
         final Integer userId = null == user ? 0 : user.getUserId();
@@ -844,8 +844,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         for (int i=1 ; i<_outputColumns.size() ; i++)
             outputCols.put(_outputColumns.get(i).getKey().getName(), i);
 
-        addBuiltinColumn(SpecialColumn.Container,  false, target, inputCols, outputCols, containerCallable);
-//        addBuiltinColumn(SpecialColumn.Owner,      allowPassThrough, target, inputCols, outputCols, userCallable);
+        boolean allowTargetContainers = null != context.getConfigParameters() && Boolean.TRUE==context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TargetMultipleContainers);
+
+        addBuiltinColumn(SpecialColumn.Container, allowTargetContainers, target, inputCols, outputCols, containerCallable);
         addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable);
         addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable);
         addBuiltinColumn(SpecialColumn.Created,    allowPassThrough, target, inputCols, outputCols, tsCallable);

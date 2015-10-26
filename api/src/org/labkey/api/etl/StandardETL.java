@@ -218,7 +218,7 @@ public class StandardETL implements DataIteratorBuilder
         SimpleTranslator convert = new SimpleTranslator(input, context);
         convert.setDebugName("StandardETL convert");
         convert.setMvContainer(_c);
-        ValidatorIterator validate = new ValidatorIterator(convert, context, _c, _user);
+        ValidatorIterator validate = new ValidatorIterator(LoggingDataIterator.wrap(convert), context, _c, _user);
         validate.setDebugName("StandardETL validate");
 
         for (TranslateHelper pair : targetCols)
