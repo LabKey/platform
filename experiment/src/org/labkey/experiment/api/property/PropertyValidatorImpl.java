@@ -141,7 +141,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
         ValidatorKind kind = getType();
         List<ValidationError> errors = new ArrayList<>();
 
-        if (!kind.isValid(this, errors))
+        if (kind != null && !kind.isValid(this, errors))
         {
             throw new ValidationException(errors);
         }

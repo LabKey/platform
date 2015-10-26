@@ -15,6 +15,7 @@
  */
 package org.labkey.core.query;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -31,7 +32,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleModule;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
@@ -41,9 +41,12 @@ import org.labkey.api.security.UserUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.core.CoreController;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -55,6 +58,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
 {
     public static final String NAME = "CoreUsersTable";
     private static final Set<String> _reservedNames = new HashSet<>();
+    private static final List<PropertyDescriptorSpec> _requiredProperties = new ArrayList<>();
 
     static {
         _reservedNames.add("Email");
@@ -69,6 +73,14 @@ public class UsersDomainKind extends SimpleTableDomainKind
         _reservedNames.add("DisplayName");
         _reservedNames.add("LastLogin");
         _reservedNames.add("Active");
+
+        _requiredProperties.add(new PropertyDescriptorSpec("FirstName", PropertyType.STRING, 64, false));
+        _requiredProperties.add(new PropertyDescriptorSpec("LastName", PropertyType.STRING, 64, false));
+        _requiredProperties.add(new PropertyDescriptorSpec("Phone", PropertyType.STRING, 64, false));
+        _requiredProperties.add(new PropertyDescriptorSpec("Mobile", PropertyType.STRING, 64, false));
+        _requiredProperties.add(new PropertyDescriptorSpec("Pager", PropertyType.STRING, 64, true));
+        _requiredProperties.add(new PropertyDescriptorSpec("IM", PropertyType.STRING, 64, true));
+        _requiredProperties.add(new PropertyDescriptorSpec("Description", PropertyType.STRING, 255, true));
     }
 
     @Override
@@ -162,34 +174,54 @@ public class UsersDomainKind extends SimpleTableDomainKind
 
     public static void ensureDomain(ModuleContext context)
     {
-        if (ModuleLoader.getInstance().isNewInstall())
+        DbScope scope = CoreSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             User user = context.getUpgradeUser();
+            if (user == null)
+                user = UserManager.getGuestUser();
+
             String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), user);
             Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
 
-
             if (domain == null)
             {
-                try
+                domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
+                domain.save(user);
+            }
+
+            // ensure required fields
+            Map<String, DomainProperty> existingProps = new CaseInsensitiveHashMap<>();
+            boolean dirty = false;
+            for (DomainProperty dp : domain.getProperties())
+            {
+                existingProps.put(dp.getName(), dp);
+            }
+
+            for (PropertyDescriptorSpec pd : _requiredProperties)
+            {
+                DomainProperty existingProp = existingProps.get(pd.getName());
+                if (existingProp == null)
                 {
-                    domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
-
-                    createPropertyDescriptor(domain, user, "FirstName", PropertyType.STRING, 64, false);
-                    createPropertyDescriptor(domain, user, "LastName", PropertyType.STRING, 64, false);
-                    createPropertyDescriptor(domain, user, "Phone", PropertyType.STRING, 64, false);
-                    createPropertyDescriptor(domain, user, "Mobile", PropertyType.STRING, 64, false);
-                    createPropertyDescriptor(domain, user, "Pager", PropertyType.STRING, 64, true);
-                    createPropertyDescriptor(domain, user, "IM", PropertyType.STRING, 64, true);
-                    createPropertyDescriptor(domain, user, "Description", PropertyType.STRING, 255, true);
-
-                    domain.save(context.getUpgradeUser());
+                    dirty = true;
+                    pd.createPropertyDescriptor(domain, user);
                 }
-                catch (Exception e)
+                else if (!existingProp.getName().equals(pd.getName()))
                 {
-                    throw new RuntimeException(e);
+                    // differs by case, need to remove this old prop in favor of our managed property
+                    dirty = true;
+                    existingProp.delete();
+                    pd.createPropertyDescriptor(domain, user);
                 }
             }
+
+            if (dirty)
+                domain.save(user);
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
         }
     }
 
@@ -226,25 +258,6 @@ public class UsersDomainKind extends SimpleTableDomainKind
         catch (Exception e)
         {
             throw new RuntimeException(e);
-        }
-    }
-
-    private static void createPropertyDescriptor(Domain domain, User user, String name, PropertyType type, int scale, boolean hidden)
-    {
-        String propertyURI = UsersDomainKind.createPropertyURI("core", CoreQuerySchema.USERS_TABLE_NAME, getDomainContainer(), user);
-
-        DomainProperty prop = domain.addProperty();
-        prop.setName(name);
-        prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
-        prop.setScale(scale);
-        prop.setPropertyURI(propertyURI);
-
-        if (hidden)
-        {
-            prop.setShownInDetailsView(false);
-            prop.setShownInInsertView(false);
-            prop.setShownInUpdateView(false);
-            prop.setHidden(true);
         }
     }
 
@@ -285,5 +298,60 @@ public class UsersDomainKind extends SimpleTableDomainKind
             return null;
         }
         return (namespacePrefix.equalsIgnoreCase(SimpleModule.NAMESPACE_PREFIX + "-core") && objectId.equalsIgnoreCase("users")) ? Handler.Priority.MEDIUM : null;
+    }
+
+    private static class PropertyDescriptorSpec
+    {
+        private String _name;
+        private PropertyType _type;
+        private int _scale;
+        private boolean _hidden;
+
+        public PropertyDescriptorSpec(String name, PropertyType type, int scale, boolean hidden)
+        {
+            _name = name;
+            _type = type;
+            _scale = scale;
+            _hidden = hidden;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public PropertyType getType()
+        {
+            return _type;
+        }
+
+        public int getScale()
+        {
+            return _scale;
+        }
+
+        public boolean isHidden()
+        {
+            return _hidden;
+        }
+
+        public void createPropertyDescriptor(Domain domain, User user)
+        {
+            String propertyURI = UsersDomainKind.createPropertyURI("core", CoreQuerySchema.USERS_TABLE_NAME, getDomainContainer(), user);
+
+            DomainProperty prop = domain.addProperty();
+            prop.setName(_name);
+            prop.setType(PropertyService.get().getType(domain.getContainer(), _type.getXmlName()));
+            prop.setScale(_scale);
+            prop.setPropertyURI(propertyURI);
+
+            if (_hidden)
+            {
+                prop.setShownInDetailsView(false);
+                prop.setShownInInsertView(false);
+                prop.setShownInUpdateView(false);
+                prop.setHidden(true);
+            }
+        }
     }
 }
