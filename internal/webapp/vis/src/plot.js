@@ -584,7 +584,9 @@ boxPlot.render();
     var getLogScale = function (domain, range) {
         var scale, scaleWrapper, increment = false;
 
-        if (domain[0] == 0) {
+        // domain[0] can be (-1, 0) since we decrement lower bound when upper and lower is the same, see getContinuousDomain
+        // domain must not include or cross zero
+        if (domain[0] <= 0) {
             increment = true;
             domain[0] = domain[0] + 1;
             domain[1] = domain[1] + 1;
@@ -596,7 +598,8 @@ boxPlot.render();
         scaleWrapper = function(val) {
             if(val != null && val >= 0) {
                 if (increment == true) {
-                    return scale(val + 1);
+                    // since we increment the domain by 1, the orignial data should multiply by 10, instead of increment by 1
+                    return scale(val * 10);
                 }
 
                 return scale(val);
@@ -615,7 +618,8 @@ boxPlot.render();
 
             if (allTicks.length < 2) {
                 //make sure that at least 2 tick marks are shown for reference
-                return [Math.ceil(scale.domain()[0]), Math.floor(scale.domain()[1])];
+                // skip rounding down if rounds down to 0, which is not allowed for log
+                return [Math.ceil(scale.domain()[0]), Math.abs(scale.domain()[1]) < 1 ? scale.domain()[1] : Math.floor(scale.domain()[1])];
             }
             else if(allTicks.length < 10){
                 return allTicks;
