@@ -94,6 +94,14 @@ Ext4.define('LABKEY.query.browser.Tree', {
                 node.hidden = false;
             }
         }, this);
+
+        this.on('afterrender', function() {
+            LABKEY.Utils.signalWebDriverTest('queryTreeRendered');
+        }, this);
+
+        this.on('selectionchange', function() {
+            LABKEY.Utils.signalWebDriverTest('queryTreeSelectionChange');
+        }, this);
     },
 
     onShowHidden : function(cb, showHidden) {
