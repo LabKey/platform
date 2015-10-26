@@ -167,13 +167,19 @@ public class MiniProfilerController extends SpringActionController
         @Override
         public Object execute(EnabledForm form, BindException errors) throws Exception
         {
-            MiniProfiler.Settings settings = MiniProfiler.getSettings();
+            boolean enabled;
             if (isPost())
             {
+                MiniProfiler.Settings settings = MiniProfiler.getSettings();
                 settings.setEnabled(form.isEnabled());
                 MiniProfiler.saveSettings(settings);
+                enabled = settings.isEnabled();
             }
-            return success(Collections.singletonMap("enabled", settings.isEnabled()));
+            else
+            {
+                enabled = MiniProfiler.isEnabled(getViewContext());
+            }
+            return success(Collections.singletonMap("enabled", enabled));
         }
     }
 
