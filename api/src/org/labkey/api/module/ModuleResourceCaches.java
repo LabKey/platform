@@ -76,6 +76,21 @@ public class ModuleResourceCaches
     }
 
     /**
+     * Create a new QueryBasedModuleResourceCache. This is used to cache file-system resources that are associated with
+     * specific queries.
+     *
+     * @param root Path representing the module resource directory
+     * @param description Short description of the cache
+     * @param handler QueryBasedModuleResourceCacheHandler that customizes this cache's behavior
+     * @param <T> Object type that this cache handles
+     * @return A QueryBasedModuleResourceCache
+     */
+    public static <T> QueryBasedModuleResourceCache<T> createQueryBasedCache(Path root, String description, QueryBasedModuleResourceCacheHandler<T> handler)
+    {
+        return new QueryBasedModuleResourceCache<>(root, description, handler);
+    }
+
+    /**
      * Create a new ModuleResourceDirectory for a given path.
      * @param path Path representing the module resource directory
      * @return A ModuleResourceDirectory

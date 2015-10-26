@@ -841,6 +841,8 @@ api/src/org/labkey/api/module/ModuleResourceResolver.java -text
 api/src/org/labkey/api/module/ModuleUpgrader.java -text
 api/src/org/labkey/api/module/MultiPortalFolderType.java -text
 api/src/org/labkey/api/module/PathBasedModuleResourceCache.java -text
+api/src/org/labkey/api/module/QueryBasedModuleResourceCache.java -text
+api/src/org/labkey/api/module/QueryBasedModuleResourceCacheHandler.java -text
 api/src/org/labkey/api/module/ResourceFinder.java -text
 api/src/org/labkey/api/module/SafeFlushResponseWrapper.java -text
 api/src/org/labkey/api/module/SchemaUpdateType.java -text
