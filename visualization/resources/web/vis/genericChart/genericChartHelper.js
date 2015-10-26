@@ -87,31 +87,59 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject)
             subjectColumn = LABKEY.moduleContext.study.subject.columnName;
 
-        if (chartType === "box_plot") {
-            scales.x = {scaleType: 'discrete', sortFn: descreteSortFn}; // Force discrete x-axis scale for box plots.
+        if (chartType === "box_plot")
+        {
+            scales.x = {
+                scaleType: 'discrete', // Force discrete x-axis scale for box plots.
+                sortFn: descreteSortFn,
+                tickLabelMax: 25
+            };
+
             var yMin = d3.min(data, aes.y);
             var yMax = d3.max(data, aes.y);
             var yPadding = ((yMax - yMin) * .1);
-            if (savedScales.y.trans == "log"){
+            if (savedScales.y.trans == "log")
+            {
                 // When subtracting padding we have to make sure we still produce valid values for a log scale.
                 // log([value less than 0]) = NaN.
                 // log(0) = -Infinity.
-                if(yMin - yPadding > 0){
+                if (yMin - yPadding > 0)
+                {
                     yMin = yMin - yPadding;
                 }
-            } else {
+            }
+            else
+            {
                 yMin = yMin - yPadding;
             }
 
-            scales.y = {min: yMin, max: yMax + yPadding, scaleType: 'continuous', trans: savedScales.y.trans};
-        } else {
-            if (measures.x.normalizedType == "float" || measures.x.normalizedType == "int") {
-                scales.x = {scaleType: 'continuous', trans: savedScales.x.trans};
-            } else {
-                scales.x = {scaleType: 'discrete', sortFn: descreteSortFn};
+            scales.y = {
+                min: yMin,
+                max: yMax + yPadding,
+                scaleType: 'continuous',
+                trans: savedScales.y.trans
+            };
+        }
+        else {
+            if (measures.x.normalizedType == "float" || measures.x.normalizedType == "int")
+            {
+                scales.x = {
+                    scaleType: 'continuous',
+                    trans: savedScales.x.trans
+                };
+            } else
+            {
+                scales.x = {
+                    scaleType: 'discrete',
+                    sortFn: descreteSortFn,
+                    tickLabelMax: 25
+                };
             }
 
-            scales.y = {scaleType: 'continuous', trans: savedScales.y.trans};
+            scales.y = {
+                scaleType: 'continuous',
+                trans: savedScales.y.trans
+            };
         }
 
         for (var i = 0; i < fields.length; i++) {
