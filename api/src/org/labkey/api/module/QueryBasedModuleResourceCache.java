@@ -69,8 +69,8 @@ public final class QueryBasedModuleResourceCache<T>
         final CacheLoader<Path, Collection<T>> loader = handler.getResourceLoader();
 
         // Wrap the provided cache loader with a cache loader that recurses all resource directories and registers listeners
-        // on first vist directories. This approach ensures we skip this bookkeeping when objects are simply retrieved from
-        // the cache.
+        // on first visit to each directory. This approach ensures we skip this bookkeeping when objects are simply retrieved
+        // from the cache.
         CacheLoader<Module, Map<Path, Collection<T>>> wrapper = new CacheLoader<Module, Map<Path, Collection<T>>>()
         {
             @Override
@@ -83,8 +83,8 @@ public final class QueryBasedModuleResourceCache<T>
                     Map<Path, Collection<T>> map = new HashMap<>();
                     recurse(module, rootResource, map);
 
-                    // TODO: Resize?
-                    return Collections.unmodifiableMap(map);
+                    // Copy to a new HashMap to size the map appropriately
+                    return Collections.unmodifiableMap(new HashMap<>(map));
                 }
 
                 return Collections.emptyMap();
@@ -122,8 +122,7 @@ public final class QueryBasedModuleResourceCache<T>
     @NotNull
     public Collection<T> getResource(Module module, Path path)
     {
-        Path root = path.subpath(0, 1);
-        Map<Path, Collection<T>> map = _cache.get(module, root);
+        Map<Path, Collection<T>> map = _cache.get(module, null);
         Collection<T> collection = map.get(path);
 
         return null != collection ? collection : Collections.emptyList();
@@ -136,7 +135,7 @@ public final class QueryBasedModuleResourceCache<T>
     }
 
     // Clear the whole cache
-    public void clear()
+    private void clear()
     {
         _cache.clear();
     }
