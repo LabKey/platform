@@ -140,7 +140,7 @@ public class SamlController extends SpringActionController
 
             if (!dirtyProps.isEmpty())
             {
-//                SamlManager.saveCertificate(config.getCertData().trim());
+                SamlManager.saveCertificate(config.getParsedCertData(config.getCertData()));
                 SamlManager.saveProperties(config);
                 StringBuilder sb = new StringBuilder();
                 for (String prop : dirtyProps)
@@ -250,7 +250,7 @@ public class SamlController extends SpringActionController
         private String getCertDataWithHeaders(String cert)
         {
             StringBuffer str = new StringBuffer();
-            if(!cert.contains("-----BEGIN CERTIFICATE-----"))
+            if(StringUtils.isNotEmpty(cert) && !cert.contains("-----BEGIN CERTIFICATE-----"))
             {
                 str.append("-----BEGIN CERTIFICATE-----\n");
                 str.append(cert);

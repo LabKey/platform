@@ -8,9 +8,11 @@ import com.onelogin.AccountSettings;
 import com.onelogin.AppSettings;
 import com.onelogin.saml.AuthRequest;
 import com.onelogin.saml.Response;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
@@ -38,7 +40,7 @@ public class SamlManager
 {
     public static final String SAML_RESPONSE_PARAMETER = "SAMLResponse";
     protected static final String SAML_PROPERTIES_NORMAL_CATEGORY_KEY= "SAMLNormalProperties";
-//    protected static final String SAML_PROPERTIES_ENCRYPTED_CATEGORY_KEY= "SAMLEncryptedProperties";
+    protected static final String SAML_PROPERTIES_ENCRYPTED_CATEGORY_KEY= "SAMLEncryptedProperties";
 
     private static final Logger LOG = Logger.getLogger(SamlManager.class);
 
@@ -126,13 +128,13 @@ public class SamlManager
         }
     }
 
-//    public static void saveCertificate(String certificate)
-//    {
-//       PropertyManager.PropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(SAML_PROPERTIES_ENCRYPTED_CATEGORY_KEY, true);
-//       map.clear();
-//       map.put(Key.Certificate.toString(), certificate.trim());
-//       map.save();
-//    }
+    public static void saveCertificate(String certificate)
+    {
+       PropertyManager.PropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(SAML_PROPERTIES_ENCRYPTED_CATEGORY_KEY, true);
+       map.clear();
+       map.put(Key.Certificate.toString(), Base64.encodeBase64String(Base64.decodeBase64(certificate.getBytes(StringUtilsLabKey.DEFAULT_CHARSET))));
+       map.save();
+    }
 
     public static void saveProperties(SamlController.Config config)
     {
@@ -142,7 +144,6 @@ public class SamlManager
         map.put(Key.IssuerUrl.toString(), config.getIssuerUrl());
         map.put(Key.SamlRequestParamName.toString(), config.getRequestParamName());
         map.put(Key.SamlResponseParamName.toString(), config.getResponseParamName());
-        map.put(Key.Certificate.toString(), config.getParsedCertData(config.getCertData()).trim());
         map.save();
     }
 
@@ -159,8 +160,8 @@ public class SamlManager
 
     private static Map<String, String> getProperties(boolean encrypted)
     {
-//        if(encrypted)
-//            return PropertyManager.getEncryptedStore().getProperties(SAML_PROPERTIES_ENCRYPTED_CATEGORY_KEY);
+        if(encrypted)
+            return PropertyManager.getEncryptedStore().getProperties(SAML_PROPERTIES_ENCRYPTED_CATEGORY_KEY);
 
         return PropertyManager.getNormalStore().getProperties(SAML_PROPERTIES_NORMAL_CATEGORY_KEY);
     }
