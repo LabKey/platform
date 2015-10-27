@@ -129,10 +129,10 @@ public class QueryDefCache
             if (mask != 0)
             {
                 if ((queryDef.getFlags() & mask) == value)
-                    queries.add(queryDef);
+                    queries.add(queryDef.clone());
             }
             else
-                queries.add(queryDef);
+                queries.add(queryDef.clone());
         }
 
         return Collections.unmodifiableList(queries);
@@ -143,7 +143,8 @@ public class QueryDefCache
     {
         assert schemaName != null : "schemaName must be specified";
 
-        return QUERY_DEF_DB_CACHE.get(container).getQueryMap(schemaName, customQuery).get(name);
+        QueryDef def = QUERY_DEF_DB_CACHE.get(container).getQueryMap(schemaName, customQuery).get(name);
+        return def != null ? def.clone() : null;
     }
 
     public static void uncache(Container c)
