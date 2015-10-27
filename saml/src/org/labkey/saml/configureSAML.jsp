@@ -72,7 +72,7 @@
         <tr>
             <td colspan=2>
                 <%= button("Save").submit(true) %>
-                <%= button("Cancel").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
+                <%= button("Done").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
             </td>
         </tr>
         <tr><td colspan="2">&nbsp;</td></tr>

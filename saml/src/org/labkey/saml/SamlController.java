@@ -22,6 +22,7 @@ import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -106,7 +107,7 @@ public class SamlController extends SpringActionController
             Certificate cert = new Certificate();
             try
             {
-                cert.loadCertificate(config.getCertData()); //check to see if its a valid certificate
+                cert.loadCertificate(config.getParsedCertData(config.getCertData())); //check to see if its a valid certificate
             }
             catch (CertificateException e)
             {
@@ -139,7 +140,7 @@ public class SamlController extends SpringActionController
 
             if (!dirtyProps.isEmpty())
             {
-                SamlManager.saveCertificate(config.getCertData());
+//                SamlManager.saveCertificate(config.getCertData().trim());
                 SamlManager.saveProperties(config);
                 StringBuilder sb = new StringBuilder();
                 for (String prop : dirtyProps)
@@ -186,7 +187,12 @@ public class SamlController extends SpringActionController
 
         public String getCertData()
         {
-            return getParsedCertData(certData);
+            String certDataWithHeaders = getCertDataWithHeaders(certData);
+
+            if(certDataWithHeaders != null)
+                return certDataWithHeaders;
+
+            return certData;
         }
 
         public String getIdPSsoUrl()
@@ -233,7 +239,7 @@ public class SamlController extends SpringActionController
             this.responseParamName = responseParamName;
         }
 
-        private String getParsedCertData(String cert)
+        public String getParsedCertData(String cert)
         {
             String newCertStr = new String (cert);
             String replacedStr = newCertStr.replace("-----BEGIN CERTIFICATE-----", "");
@@ -241,6 +247,18 @@ public class SamlController extends SpringActionController
             return replacedStr.trim();
         }
 
+        private String getCertDataWithHeaders(String cert)
+        {
+            StringBuffer str = new StringBuffer();
+            if(!cert.contains("-----BEGIN CERTIFICATE-----"))
+            {
+                str.append("-----BEGIN CERTIFICATE-----\n");
+                str.append(cert);
+                str.append("\n-----END CERTIFICATE-----");
+                return str.toString();
+            }
+            return null;
+        }
     }
 
     @CSRF
@@ -255,14 +273,14 @@ public class SamlController extends SpringActionController
 
             final HttpServletRequest request = getViewContext().getRequest();
             if (request instanceof MultipartHttpServletRequest)
-                files = (Map<String, MultipartFile>)((MultipartHttpServletRequest) request).getFileMap();
+                files = (Map<String, MultipartFile>) ((MultipartHttpServletRequest) request).getFileMap();
 
             MultipartFile certFile = files.get("file");
             byte[] certBytes = null;
-            if(certFile != null)
+            if (certFile != null)
                 certBytes = certFile.getBytes();
 
-            return new String(certBytes);
+            return new String(certBytes, StringUtilsLabKey.DEFAULT_CHARSET);
         }
     }
 
