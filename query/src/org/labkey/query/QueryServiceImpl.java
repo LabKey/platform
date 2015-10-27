@@ -1285,12 +1285,13 @@ public class QueryServiceImpl extends QueryService
                 ColumnInfo col = resolveFieldKey(field.getFieldKey(), table, columnMap, unresolvedColumns, manager);
                 if (col != null)
                 {
-                    ret = resolveSortColumns(col, columnMap, manager, ret, allInvolvedColumns, false);
+                    ret.add(col);
+                    resolveSortColumns(col, columnMap, manager, ret, allInvolvedColumns, false);
                 }
                 //the column might be displayed, but also used as a sort.  if so, we need to ensure we include sortFieldKeys
                 else if (columnMap.containsKey(field.getFieldKey()))
                 {
-                    ret = resolveSortColumns(columnMap.get(field.getFieldKey()), columnMap, manager, ret, allInvolvedColumns, true);
+                    resolveSortColumns(columnMap.get(field.getFieldKey()), columnMap, manager, ret, allInvolvedColumns, true);
                 }
             }
         }
