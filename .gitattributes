@@ -228,6 +228,7 @@ core/resources/schemas/dbscripts/sqlserver/core-14.30-15.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-15.20-15.21.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-15.21-15.22.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-15.22-15.23.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-15.23-15.24.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
