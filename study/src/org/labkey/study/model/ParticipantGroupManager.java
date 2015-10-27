@@ -303,7 +303,7 @@ public class ParticipantGroupManager
                     if (cls.isShared())
                     {
                         item.setImageSrc(new ResourceURL("/reports/grid.gif"));
-                        item.setImageCls("fa fa-table");
+                        item.setImageCls("fa fa-users");
                     }
                 }
                 else if (null != groups && groups.length == 1)
@@ -313,7 +313,7 @@ public class ParticipantGroupManager
                     if (cls.isShared())
                     {
                         item.setImageSrc(new ResourceURL("/reports/grid.gif"));
-                        item.setImageCls("fa fa-table");
+                        item.setImageCls("fa fa-users");
                     }
                 }
             }
@@ -322,16 +322,18 @@ public class ParticipantGroupManager
             if (CohortManager.getInstance().hasCohortMenu(context.getContainer(), context.getUser()) &&
                     container.hasPermission(context.getUser(), AdminPermission.class))
             {
-                button.addMenuItem("Manage Cohorts", new ActionURL(CohortController.ManageCohortsAction.class, container));
+                NavTree item = button.addMenuItem("Manage Cohorts", new ActionURL(CohortController.ManageCohortsAction.class, container));
+                item.setImageCls("fa fa-cog");
             }
 
             if (container.hasPermission(user, ReadPermission.class) && !user.isGuest())
             {
-                button.addMenuItem("Manage " + study.getSubjectNounSingular() + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, container));
+                NavTree item = button.addMenuItem("Manage " + study.getSubjectNounSingular() + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, container));
+                item.setImageCls("fa fa-cog");
                 if (hasCreateGroupFromSelection)
                 {
                     button.addSeparator();
-                    NavTree item = new NavTree("Create " + study.getSubjectNounSingular() + " Group");
+                    item = new NavTree("Create " + study.getSubjectNounSingular() + " Group");
                     button.addMenuItem(item);
 
                     NavTree fromSeletion = item.addChild("From Selected " + study.getSubjectNounPlural());

@@ -3742,3 +3742,8 @@ div span.labkey-main-menu-icon {
 {
     border-color: transparent;
 }
+
+a div.x4-menu-item-icon.fa-users
+{
+    background-image: none;
+}
