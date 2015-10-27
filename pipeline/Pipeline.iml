@@ -14,6 +14,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="Internal" />
+    <orderEntry type="module" module-name="Core-API" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>

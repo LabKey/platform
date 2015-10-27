@@ -180,6 +180,7 @@ import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.security.SecurityController;
+import org.labkey.core.security.validators.PermissionsValidator;
 import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
@@ -323,6 +324,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             addController("testsecondary", TestSecondaryController.class);
             AuthenticationManager.registerProvider(new TestSecondaryProvider(), Priority.Low);
+        }
+
+        SiteValidationService svc = ServiceRegistry.get().getService(SiteValidationService.class);
+        if (null != svc)
+        {
+            svc.registerProvider("core", new PermissionsValidator());
         }
     }
 

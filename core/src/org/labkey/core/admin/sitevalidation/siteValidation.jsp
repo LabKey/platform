@@ -66,6 +66,9 @@
                 <% for (SiteValidationResult result : moduleErrors) { %>
                 <li>
                     <span class="labkey-error"><%=h(result.getMessage())%></span>
+                    <% if (null != result.getLink()) { %>
+                    <span><%=textLink("Fix", result.getLink())%></span>
+                    <% } %>
                 </li>
                 <% } %>
                 <% } %></ul></li>
@@ -116,7 +119,11 @@
                                     <li>Errors:
                                     <ul>
                                     <% for (SiteValidationResult result : containerErrors) { %>
-                                    <li><span class="labkey-error"><%=h(result.getMessage())%></span></li>
+                                        <li><span class="labkey-error"><%=h(result.getMessage())%></span>
+                                        <% if (null != result.getLink()) { %>
+                                        <span><%=textLink("Fix", result.getLink())%></span>
+                                        <% } %>
+                                    </li>
                                     <% } %></ul></li>
                                 <% } %>
                                 <% if (containerWarnings.size() > 0) { %>

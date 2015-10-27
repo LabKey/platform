@@ -105,11 +105,12 @@ public class SiteValidationServiceImpl implements SiteValidationService
         Collections.sort(allChildren);
         for (Container c : allChildren)
         {
-            for (Pair<String, SiteValidationProvider> pair : containerValidators)
-            {
-                if (pair.getValue().shouldRun(c, u))
-                    subtreeResults.put(StringUtils.substringAfter(c.getPath(), "/"), pair.getValue().runValidation(c, u));
-            }
+            containerValidators.stream().filter(pair -> pair.getValue().shouldRun(c, u)).forEach(pair -> {
+
+                SiteValidationResultList resultList = pair.getValue().runValidation(c, u);
+                if (null != resultList)
+                    subtreeResults.put(StringUtils.substringAfter(c.getPath(), "/"), resultList);
+            });
         }
         return subtreeResults;
     }

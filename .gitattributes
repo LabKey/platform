@@ -468,6 +468,7 @@ core/src/org/labkey/core/security/group.jsp -text
 core/src/org/labkey/core/security/groupDiagram.jsp -text
 core/src/org/labkey/core/security/permissions.jsp -text
 core/src/org/labkey/core/security/renameGroup.jsp -text
+core/src/org/labkey/core/security/validators/PermissionsValidator.java -text
 core/src/org/labkey/core/statistics/DefaultCurveFit.java -text
 core/src/org/labkey/core/statistics/NoCurveFit.java -text
 core/src/org/labkey/core/statistics/ParameterCurveFit.java -text
@@ -1276,6 +1277,7 @@ pipeline/src/org/labkey/pipeline/status/StatusDataRegion.java -text
 pipeline/src/org/labkey/pipeline/status/deleteStatus.jsp -text
 pipeline/src/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp -text
 pipeline/src/org/labkey/pipeline/status/escalateJobFailure.jsp -text
+pipeline/src/org/labkey/pipeline/validators/PipelineSetupValidator.java -text
 pipeline/src/org/labkey/pipeline/xstream/FileXStreamConverter.java -text
 pipeline/src/org/labkey/pipeline/xstream/TaskIdXStreamConverter.java -text
 pipeline/src/org/labkey/pipeline/xstream/URIXStreamConverter.java -text

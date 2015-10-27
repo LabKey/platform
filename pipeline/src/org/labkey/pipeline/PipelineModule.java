@@ -17,6 +17,7 @@ package org.labkey.pipeline;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -71,6 +72,7 @@ import org.labkey.pipeline.mule.PipelineJobRunnerGlobus;
 import org.labkey.pipeline.mule.RemoteServerStartup;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
+import org.labkey.pipeline.validators.PipelineSetupValidator;
 import org.labkey.pipeline.xml.ExecTaskType;
 import org.labkey.pipeline.xml.ScriptTaskType;
 import org.quartz.SchedulerException;
@@ -222,6 +224,11 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         WebdavService.get().addProvider(new PipelineWebdavProvider());
 
         ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileListener.Type.filePathForwardSlash, "RowId"));
+        SiteValidationService svc = ServiceRegistry.get().getService(SiteValidationService.class);
+        if (null != svc)
+        {
+            svc.registerProvider(getName(), new PipelineSetupValidator());
+        }
     }
 
 

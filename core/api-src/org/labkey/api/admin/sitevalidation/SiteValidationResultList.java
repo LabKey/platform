@@ -120,4 +120,10 @@ public class SiteValidationResultList
 
         return sb.toString();
     }
+
+    @Nullable
+    public SiteValidationResultList nullIfEmpty()
+    {
+        return getResults().isEmpty() ? null : this;
+    }
 }
