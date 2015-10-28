@@ -50,6 +50,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -108,6 +109,50 @@ public class TestController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             return new ActionListView();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Test Actions", actionURL(BeginAction.class));
+            return root;
+        }
+    }
+
+
+    private static final List<ViewContext> LEAKED_VIEW_CONTEXTS = new LinkedList<>();
+
+    /**
+     * Invoking this action leaks a single ViewContext. Clear leaks by invoking ClearLeaksAction.
+     */
+    @RequiresPermission(AdminPermission.class)
+    public class LeakAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            ViewContext ctx = getViewContext();
+            LEAKED_VIEW_CONTEXTS.add(ctx);
+            return new HtmlView("One ViewContext leaked: " + ctx.toString());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Test Actions", actionURL(BeginAction.class));
+            return root;
+        }
+    }
+
+
+    /**
+     * Clears all ViewContexts leaked by ClearLeaksAction.
+     */
+    @RequiresPermission(AdminPermission.class)
+    public class ClearLeaksAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            int count = LEAKED_VIEW_CONTEXTS.size();
+            LEAKED_VIEW_CONTEXTS.clear();
+            return new HtmlView("Cleared " + count + " leaked ViewContexts");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -680,7 +725,7 @@ public class TestController extends SpringActionController
                 form.setAttrvalue1("_blank");
             }
 
-            return new JspView("/org/labkey/core/test/buttons.jsp", form);
+            return new JspView<>("/org/labkey/core/test/buttons.jsp", form);
         }
 
         @Override
