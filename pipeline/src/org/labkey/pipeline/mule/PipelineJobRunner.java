@@ -35,7 +35,7 @@ public class PipelineJobRunner
         }
         finally
         {
-            DbScope.closeAllConnectionsForCurrentThread();
+            DbScope.finishedWithThread();
         }
     }
 }
