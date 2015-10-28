@@ -249,7 +249,7 @@ public class JobRunner implements Executor
             }
             finally
             {
-                DbScope.closeAllConnectionsForCurrentThread();
+                DbScope.finishedWithThread();
             }
         }
     }

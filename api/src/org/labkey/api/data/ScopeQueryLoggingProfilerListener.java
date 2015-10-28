@@ -23,9 +23,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.data.queryprofiler.DatabaseQueryListener;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -43,13 +41,9 @@ public class ScopeQueryLoggingProfilerListener implements DatabaseQueryListener
     private final ThreadLocal<Boolean> _reentrancyPreventer = new ThreadLocal<>();
 
     @Override
-    public ContainerContext getEnvironment()
+    public String getEnvironment()
     {
-        if (HttpView.hasCurrentView())
-        {
-            return HttpView.currentContext();
-        }
-        return ContainerManager.getRoot();
+        return "hello"; // Nothing special is about the context is needed here; user and container are already passed in the call to query invoked.
     }
 
     @Override
@@ -115,10 +109,11 @@ public class ScopeQueryLoggingProfilerListener implements DatabaseQueryListener
 
         private boolean isSqlLogged(String sql, Date start)
         {
-            ViewContext context = HttpView.currentView().getViewContext();
+            Container c = HttpView.currentView().getViewContext().getContainer();
+            User u = HttpView.currentView().getViewContext().getUser();
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("created"), start, CompareType.GT);
             filter.addCondition(FieldKey.fromParts("SQL"), sql);
-            List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(context.getContainer(), context.getUser(), QueryLoggingAuditTypeProvider.EVENT_NAME, filter, null);
+            List<AuditTypeEvent> events = AuditLogService.get().getAuditEvents(c, u, QueryLoggingAuditTypeProvider.EVENT_NAME, filter, null);
 
             return !events.isEmpty();
         }

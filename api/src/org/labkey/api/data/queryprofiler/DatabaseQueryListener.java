@@ -38,7 +38,7 @@ public interface DatabaseQueryListener<T>
     }
 
     /**
-     * @return whether this listener cares about the query based on Dbscope properties
+     * @return whether this listener cares about the query based on QueryLogging properties
      */
     default boolean matches(QueryLogging queryLogging)
     {
@@ -46,7 +46,7 @@ public interface DatabaseQueryListener<T>
     }
 
     /**
-     * @return whether this listener cares about the query based on QueryLogging properties
+     * @return whether this listener cares about the query based on Dbscope properties
      */
     default boolean matches(DbScope scope)
     {

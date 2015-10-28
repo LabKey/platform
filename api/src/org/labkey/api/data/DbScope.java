@@ -31,6 +31,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceResolver;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.test.TestWhen;
@@ -1245,6 +1246,15 @@ public class DbScope
                 t = scope.getCurrentTransactionImpl();
             }
         }
+    }
+
+    /**
+     * Shut down connections and clear all environments
+     */
+    public static void finishedWithThread()
+    {
+        closeAllConnectionsForCurrentThread();
+        QueryService.get().clearEnvironment();
     }
 
     /**
