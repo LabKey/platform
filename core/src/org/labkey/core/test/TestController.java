@@ -77,6 +77,14 @@ public class TestController extends SpringActionController
     }
 
 
+    private NavTree navTrail(NavTree root, String currentActionName)
+    {
+        (new BeginAction()).appendNavTrail(root);
+        root.addChild(currentActionName);
+
+        return root;
+    }
+
     // Test action
     @RequiresPermission(ReadPermission.class)
     public class TestAction extends SimpleViewAction<Object>
@@ -136,8 +144,7 @@ public class TestController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Test Actions", actionURL(BeginAction.class));
-            return root;
+            return navTrail(root, "Leak");
         }
     }
 
@@ -157,8 +164,7 @@ public class TestController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Test Actions", actionURL(BeginAction.class));
-            return root;
+            return navTrail(root, "Clear Leaks");
         }
     }
 
@@ -168,13 +174,7 @@ public class TestController extends SpringActionController
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
             List<ActionDescriptor> descriptors = new ArrayList<>(_actionResolver.getActionDescriptors());
-            Collections.sort(descriptors, new Comparator<ActionDescriptor>(){
-                @Override
-                public int compare(ActionDescriptor ad1, ActionDescriptor ad2)
-                {
-                    return ad1.getPrimaryName().compareTo(ad2.getPrimaryName());
-                }
-            });
+            Collections.sort(descriptors, (ad1, ad2) -> ad1.getPrimaryName().compareTo(ad2.getPrimaryName()));
 
             for (ActionDescriptor ad : descriptors)
             {
@@ -216,9 +216,7 @@ public class TestController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            (new BeginAction()).appendNavTrail(root);
-            root.addChild("Form Test (" + _enctype + ")");
-            return root;
+            return navTrail(root, "Form Test (" + _enctype + ")");
         }
     }
 
@@ -249,9 +247,7 @@ public class TestController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            (new BeginAction()).appendNavTrail(root);
-            root.addChild("Spring tags test");
-            return root;
+            return navTrail(root, "Spring tags test");
         }
     }
 
@@ -310,9 +306,7 @@ public class TestController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            (new BeginAction()).appendNavTrail(root);
-            root.addChild("Form Test");
-            return root;
+            return navTrail(root, "Form Test");
         }
     }
 
@@ -513,9 +507,7 @@ public class TestController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            (new BeginAction()).appendNavTrail(root)
-                    .addChild("perm " + _action + " test");
-            return root;
+            return navTrail(root, "perm " + _action + " test");
         }
     }
 
