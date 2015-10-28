@@ -27,7 +27,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DefaultSystemMaintenanceTask;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.SystemMaintenance;
 import org.labkey.study.importer.SpecimenRefreshPipelineJob;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
