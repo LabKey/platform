@@ -351,7 +351,7 @@ public class MailHelper
      */
     public static class ViewMessage extends MimeMessage
     {
-        private boolean _isMultipart;
+        private final boolean _isMultipart;
 
         public ViewMessage(Session session, boolean isMultipart)
         {
@@ -364,12 +364,7 @@ public class MailHelper
             this(session, false);
         }
 
-        public void setMultipart(boolean mp)
-        {
-            _isMultipart = mp;
-        }
-
-        private void setTemplateContent(HttpServletRequest request, HttpView view, String type) throws Exception
+        private void setBodyContent(HttpServletRequest request, HttpView view, String type) throws Exception
         {
             // set the frame type to none to remove the extra div that gets added otherwise.
             if (view instanceof JspView)
@@ -409,12 +404,12 @@ public class MailHelper
 
         public void setTextContent(HttpServletRequest request, HttpView view) throws Exception
         {
-            setTemplateContent(request, view, "text/plain");
+            setBodyContent(request, view, "text/plain");
         }
 
         public void setHtmlContent(HttpServletRequest request, HttpView view) throws Exception
         {
-            setTemplateContent(request, view, "text/html; charset=UTF-8");
+            setBodyContent(request, view, "text/html; charset=UTF-8");
         }
     }
 
@@ -425,7 +420,7 @@ public class MailHelper
             super(session);
         }
 
-        private void setBodyContent(String message, String type) throws Exception
+        private void setBodyContent(String message, String type) throws MessagingException
         {
             Object content;
             try
@@ -450,22 +445,22 @@ public class MailHelper
                 ((Multipart) content).addBodyPart(body);
         }
 
-        public void setTextContent(String message) throws Exception
+        public void setTextContent(String message) throws MessagingException
         {
             setBodyContent(message, "text/plain");
         }
 
-        public void setHtmlContent(String message) throws Exception
+        public void setHtmlContent(String unencodedHtml) throws MessagingException
         {
-            setBodyContent(PageFlowUtil.filter(message, true, true), "text/html; charset=UTF-8");
+            setBodyContent(PageFlowUtil.filter(unencodedHtml, true, true), "text/html; charset=UTF-8");
         }
 
-        public void setEncodedHtmlContent(String message) throws Exception
+        public void setEncodedHtmlContent(String encodedHtml) throws MessagingException
         {
-            setBodyContent(message, "text/html; charset=UTF-8");
+            setBodyContent(encodedHtml, "text/html; charset=UTF-8");
         }
 
-        public void setTemplate(EmailTemplate template, Container c) throws Exception
+        public void setTemplate(EmailTemplate template, Container c) throws MessagingException
         {
             String body = template.renderBody(c);
             setTextContent(body);
@@ -475,39 +470,38 @@ public class MailHelper
     }
 
 
-    // Sends one or more email messages in a background thread.  Add message(s) to the emailer, then call start().
+    /**
+     * Sends one or more email messages in a background thread. Add message(s) to the emailer, then call start().
+     */
     public static class BulkEmailer extends Thread
     {
-        private Map<Collection<String>, ViewMessage> _map = new HashMap<>(10);
-        private User _user;
+        private final Map<Collection<String>, MimeMessage> _map = new HashMap<>(10);
+        private final User _user;
 
-        public BulkEmailer()
-        {
-        }
-
-        public void setUser(User user)
+        // User is for audit purposes
+        public BulkEmailer(User user)
         {
             _user = user;
         }
 
         // Send message to multiple recipients
-        public void addMessage(Collection<String> emails, ViewMessage m)
+        public void addMessage(Collection<String> emails, MimeMessage m)
         {
             _map.put(emails, m);
         }
 
         // Send message to single recipient
-        public void addMessage(String email, ViewMessage m)
+        public void addMessage(String email, MimeMessage m)
         {
-            _map.put(PageFlowUtil.set(email), m);
+            _map.put(Collections.singleton(email), m);
         }
 
         public void run()
         {
-            for (Map.Entry<Collection<String>, ViewMessage> entry : _map.entrySet())
+            for (Map.Entry<Collection<String>, MimeMessage> entry : _map.entrySet())
             {
                 Collection<String> emails = entry.getKey();
-                ViewMessage m = entry.getValue();
+                MimeMessage m = entry.getValue();
 
                 for (String email : emails)
                 {
