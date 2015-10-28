@@ -438,9 +438,9 @@ public class ViewServlet extends HttpServlet
     }
 
 
-    public static HttpServletRequest mockRequest(String method, ActionURL url, @Nullable User user, @Nullable Map<String, Object> headers, @Nullable String postData)
+    public static HttpServletRequest mockRequest(String method, @Nullable ActionURL url, @Nullable User user, @Nullable Map<String, Object> headers, @Nullable String postData)
     {
-        MockRequest request = new MockRequest(getViewServletContext(), method, url);
+        MockRequest request = new MockRequest(getViewServletContext(), method, null != url ? url : null);
         UniqueID.initializeRequestScopedUID(request);
 
         AppProps.Interface props = AppProps.getInstance();
