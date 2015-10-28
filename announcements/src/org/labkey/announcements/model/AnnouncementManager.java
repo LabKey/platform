@@ -57,6 +57,7 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.MailHelper.BulkEmailer;
 import org.labkey.api.util.MailHelper.ViewMessage;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -382,8 +383,7 @@ public class AnnouncementManager
 
                 if (!recipients.isEmpty())
                 {
-                    MailHelper.BulkEmailer emailer = new MailHelper.BulkEmailer();
-                    emailer.setUser(user);    // For audit purposes
+                    BulkEmailer emailer = new BulkEmailer(user);
 
                     String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                     String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
