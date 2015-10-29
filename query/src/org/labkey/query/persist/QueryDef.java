@@ -16,8 +16,6 @@
 
 package org.labkey.query.persist;
 
-import org.labkey.api.data.CacheKey;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.MemTracker;
@@ -32,39 +30,6 @@ public class QueryDef extends Entity implements Cloneable
         schema,
         name,
         queryDefId,
-    }
-
-    static public class Key extends CacheKey<QueryDef, Column>
-    {
-        public Key(Container container, boolean customQuery)
-        {
-            super(QueryManager.get().getTableInfoQueryDef(), QueryDef.class, container);
-
-            if (customQuery)
-            {
-                addIsNotNull(Column.sql);
-            }
-            else
-            {
-                // Metadata for built-in tables is stored with a NULL value for the SQL
-                addIsNull(Column.sql);
-            }
-        }
-
-        public void setSchema(String schema)
-        {
-            addCondition(Column.schema, schema);
-        }
-
-        public void setQueryName(String queryName)
-        {
-            addCaseInsensitive(Column.name, queryName);
-        }
-
-        public void setQueryDefId(int id)
-        {
-            addCondition(Column.queryDefId, id);
-        }
     }
 
     public QueryDef()

@@ -39,43 +39,6 @@ public final class CstmView extends Entity implements Cloneable, Serializable
         flags
     }
 
-    public static class Key extends CacheKey<CstmView, Column>
-    {
-        public Key(Container container)
-        {
-            super(QueryManager.get().getTableInfoCustomView(), CstmView.class, container);
-        }
-        public void setSchema(String schema)
-        {
-            addCondition(Column.schema, schema);
-        }
-        public void setQueryName(String queryName)
-        {
-            addCaseInsensitive(Column.queryname, queryName);
-        }
-        public void setName(String name)
-        {
-            // Blank name means default view(s) (null means don't filter on name)
-            if (0 == name.length())
-                addIsNull(Column.name);
-            else
-                addCondition(Column.name, name);
-        }
-
-        public void setShared(boolean shared)
-        {
-            if (shared)
-                addIsNull(Column.customviewowner);
-            else
-                addIsNotNull(Column.customviewowner);
-        }
-
-        public void setUser(@NotNull User user)
-        {
-            addCondition(Column.customviewowner, user.getUserId());
-        }
-    }
-
     String _schema;
     String _queryName;
     int _customViewId;

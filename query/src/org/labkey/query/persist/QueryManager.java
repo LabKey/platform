@@ -57,7 +57,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -88,16 +87,7 @@ public class QueryManager
      */
     public QueryDef getQueryDef(Container container, String schema, String name, boolean customQuery)
     {
-        // Metadata for built-in tables is stored with a NULL value for the SQL
-        QueryDef newQueryDef = QueryDefCache.getQueryDef(container, schema, name, customQuery);
-        QueryDef.Key key = new QueryDef.Key(container, customQuery);
-        key.setSchema(schema);
-        key.setQueryName(name);
-
-        QueryDef oldQueryDef = key.selectObject();
-
-        validateQueryDefCacheResults(Collections.singletonList(oldQueryDef), Collections.singletonList(newQueryDef), container, schema);
-        return newQueryDef;
+        return QueryDefCache.getQueryDef(container, schema, name, customQuery);
     }
 
     /**
@@ -105,54 +95,7 @@ public class QueryManager
      */
     public List<QueryDef> getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
     {
-        List<QueryDef> oldDefs;
-        List<QueryDef> newDefs = QueryDefCache.getQueryDefs(container, schema, inheritableOnly, includeSnapshots, customQuery);
-
-        // Metadata for built-in tables is stored with a NULL value for the SQL
-        QueryDef.Key key = new QueryDef.Key(container, customQuery);
-        if (schema != null)
-        {
-            key.setSchema(schema);
-        }
-
-        int mask = 0;
-        int value = 0;
-
-        if (inheritableOnly)
-        {
-            mask |= FLAG_INHERITABLE;
-            value |= FLAG_INHERITABLE;
-        }
-
-        if (!includeSnapshots)
-            mask |= FLAG_SNAPSHOT;
-
-        if (mask != 0 || value != 0)
-            key.setFlagMask(mask, value);
-
-        oldDefs = Arrays.asList(key.select());
-        validateQueryDefCacheResults(oldDefs, newDefs, container, schema);
-
-        return newDefs;
-    }
-
-    // temporary check to test new cache implementation consistency with previous solution
-    private void validateQueryDefCacheResults(List<QueryDef> oldDefs, List<QueryDef> newDefs, Container container, String schemaName)
-    {
-        Comparator<QueryDef> idComparator = (o1, o2) -> {
-            return o1.getQueryDefId() - o2.getQueryDefId();
-        };
-
-        // collections are unmodifiable
-        List<QueryDef> oldDefsCopy = new ArrayList<>(oldDefs);
-        List<QueryDef> newDefsCopy = new ArrayList<>(newDefs);
-        Collections.sort(oldDefsCopy, idComparator);
-        Collections.sort(newDefsCopy, idComparator);
-
-        if (!oldDefsCopy.equals(newDefsCopy))
-        {
-            throw new IllegalStateException("Inconsistent number of query definitions returned from new cache for folder: " + container.getPath() + " | schema: " + schemaName + " new size " + newDefs.size() + " vs. " + oldDefs.size());
-        }
+        return QueryDefCache.getQueryDefs(container, schema, inheritableOnly, includeSnapshots, customQuery);
     }
 
     public Collection<QuerySnapshotDef> getQuerySnapshots(@Nullable Container container, @Nullable String schemaName)
@@ -328,55 +271,7 @@ public class QueryManager
 
     public List<CstmView> getCstmViews(Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable String viewName, @Nullable User user, boolean inheritableOnly, boolean sharedOnly)
     {
-        List<CstmView> oldViews;
-        List<CstmView> newViews = CustomViewCache.getCstmViews(container, schemaName, queryName, viewName, user, inheritableOnly, sharedOnly);
-
-        CstmView.Key key = new CstmView.Key(container);
-        if (schemaName != null)
-            key.setSchema(schemaName);
-        if (queryName != null)
-            key.setQueryName(queryName);
-        if (viewName != null)
-            key.setName(viewName);
-        if (inheritableOnly)
-        {
-            key.setFlagMask(FLAG_INHERITABLE, FLAG_INHERITABLE);
-        }
-
-        if (sharedOnly)
-        {
-            // Get shared custom views (customviewowner is null in database)
-            key.setShared(sharedOnly);
-        }
-        else
-        {
-            // Get custom views owned by the user or, if user is null, get all custom views (shared or not).
-            if (user != null)
-                key.setUser(user);
-        }
-
-        oldViews = Arrays.asList(key.select());
-        validateCacheResults(oldViews, newViews, container, schemaName, queryName);
-
-        return newViews;
-    }
-
-    // temporary check to test new cache implementation consistency with previous solution
-    private void validateCacheResults(List<CstmView> oldViews, List<CstmView> newViews, Container container, String schemaName, String queryName)
-    {
-        Comparator<CstmView> idComparator = (o1, o2) -> {
-            return o1.getCustomViewId() - o2.getCustomViewId();
-        };
-
-        // new collection is unmodifiable
-        List<CstmView> newViewsCopy = new ArrayList<>(newViews);
-        Collections.sort(oldViews, idComparator);
-        Collections.sort(newViewsCopy, idComparator);
-
-        if (!oldViews.equals(newViewsCopy))
-        {
-            throw new IllegalStateException("Inconsistent number of custom views returned from new cache for folder: " + container.getPath() + " | schema: " + schemaName + " | query: " + queryName + " new size " + newViews.size() + " vs. " + oldViews.size());
-        }
+        return CustomViewCache.getCstmViews(container, schemaName, queryName, viewName, user, inheritableOnly, sharedOnly);
     }
 
     public CstmView update(User user, CstmView view)

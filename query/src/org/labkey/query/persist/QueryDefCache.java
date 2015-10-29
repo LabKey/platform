@@ -36,12 +36,13 @@ public class QueryDefCache
         // schemaName, queryDefName keys
         Map<String, Map<String, QueryDef>> _queryDefs;
         Map<String, Map<String, QueryDef>> _customQueryDefs;
+        Map<Integer, QueryDef> _queryDefIdMap;
 
         private QueryDefCollections(Container c)
         {
             Map<String, Map<String, QueryDef>> queryDefs = new HashMap<>();
             Map<String, Map<String, QueryDef>> customQueryDefs = new HashMap<>();
-            Map<Integer, QueryDef> rowIdMap = new HashMap<>();
+            Map<Integer, QueryDef> queryDefIdMap = new HashMap<>();
 
             new TableSelector(QueryManager.get().getTableInfoQueryDef(), SimpleFilter.createContainerFilter(c), null).forEach(queryDef -> {
 
@@ -55,11 +56,13 @@ public class QueryDefCache
                     Map<String, QueryDef> queryDefMap = ensureQueryDefMap(queryDefs, queryDef.getSchema());
                     queryDefMap.put(queryDef.getName(), queryDef);
                 }
+                queryDefIdMap.put(queryDef.getQueryDefId(), queryDef);
 
             }, QueryDef.class);
 
             _queryDefs = Collections.unmodifiableMap(queryDefs);
             _customQueryDefs = Collections.unmodifiableMap(customQueryDefs);
+            _queryDefIdMap = Collections.unmodifiableMap(queryDefIdMap);
         }
 
         private Map<String, QueryDef> ensureQueryDefMap(Map<String, Map<String, QueryDef>> queryDefs, String schemaName)
@@ -145,6 +148,12 @@ public class QueryDefCache
 
         QueryDef def = QUERY_DEF_DB_CACHE.get(container).getQueryMap(schemaName, customQuery).get(name);
         return def != null ? def.clone() : null;
+    }
+
+    public static @Nullable
+    QueryDef getQueryDefById(Container container, int queryDefId)
+    {
+        return QUERY_DEF_DB_CACHE.get(container)._queryDefIdMap.get(queryDefId);
     }
 
     public static void uncache(Container c)

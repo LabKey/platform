@@ -29,6 +29,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryDefCache;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
 
@@ -129,9 +130,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         {
             if (_queryDef == null)
             {
-                QueryDef.Key key = new QueryDef.Key(getContainer(), true);
-                key.setQueryDefId(_snapshotDef.getQueryDefId());
-                _queryDef = key.selectObject();
+                _queryDef = QueryDefCache.getQueryDefById(getContainer(), _snapshotDef.getQueryDefId());
             }
             if (_queryDef == null)
             {
