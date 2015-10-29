@@ -798,16 +798,11 @@
 
             /**
              * Returns one object per key in dimension dimName.
-             * If nonAggregated set to true, return all records from the measure store without grouping.
              */
-            select : function(dimName, nonAggregated)
+            select : function(dimName)
             {
                 var dim = this.getDimension(dimName),
-                    index = 0,
-                    uniqueKeyFn = function(val) {
-                        return val + '|' + index++;
-                    },
-                    group = this._group(dim, (nonAggregated === true ? uniqueKeyFn : undefined)),
+                    group = this._group(dim),
                     entries = group.all(),
                     ret, me = this;
 
@@ -1032,7 +1027,7 @@
 
             var responseMetadata = {
                 schemaName: results.schemaName,
-                queryName: results.queryName,
+                queryName: results.queryName
             };
 
             // TODO: Remove this backwards compatibility once cds/fb_refinement is ready
@@ -1041,6 +1036,12 @@
             }
             else {
                 responseMetadata.columnAliases = results.columnAliases;
+            }
+
+            // TODO add flag for when to add this and what the property name should be
+            for (var i = 0; i < results.rows.length; i++)
+            {
+                results.rows[i]['_rowIndex'] = {value: i};
             }
 
             return new MeasureStore({
@@ -1415,11 +1416,8 @@
 
             /*
              * Select records from this AxisMeasureStore based on grouping by the selected dimName.
-             * If the nonAggregated param is true, return all records without doing any aggregation.
-             * @param dimName
-             * @param [nonAggregated]
              */
-            select : function(dimName, nonAggregated)
+            select : function(dimName)
             {
                 var dimArray = [],
                     results,
@@ -1462,7 +1460,7 @@
                     //var entries = group.all();
                     //group.dispose();
                     //return entries;
-                    return measureStore.select(dimArray, nonAggregated);
+                    return measureStore.select(dimArray);
                 });
 
                 //
