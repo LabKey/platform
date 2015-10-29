@@ -2668,6 +2668,21 @@ public class WikiController extends SpringActionController
             containerProps.put("name", container.getName());
             containerProps.put("id", container.getId());
             containerProps.put("path", container.getPath());
+
+            if (form.getCurrentPage() != null)
+            {
+                Wiki wiki = WikiSelectManager.getWiki(getContainer(), form.getCurrentPage());
+                if (wiki != null)
+                {
+                    WikiVersion version = wiki.getLatestVersion();
+                    if (version != null)
+                    {
+                        containerProps.put("wikititle", version.getTitle());
+                        containerProps.put("wikibody", version.getBody());
+                    }
+                }
+
+            }
             response.put("container", containerProps);
 
             //include the user's TOC displayed preference
