@@ -38,18 +38,18 @@ import java.util.Set;
 public interface ImpersonationContext extends Serializable
 {
     /** @return whether the user is impersonating someone or some group, or working as their normal self */
-    public boolean isImpersonating();
-    public boolean isAllowedGlobalRoles();
+    boolean isImpersonating();
+    boolean isAllowedGlobalRoles();
     /** @return if non-null, the container to which the impersonation should be restricted */
-    public @Nullable Container getImpersonationProject();
+    @Nullable Container getImpersonationProject();
     /** @return the user who is actually performing the operation, not the user that they might be impersonating */
-    public User getAdminUser();
-    public String getNavTreeCacheKey();  // Caching permission-related state is very tricky with impersonation; context needs to provide the cache key suffix
+    User getAdminUser();
+    String getNavTreeCacheKey();  // Caching permission-related state is very tricky with impersonation; context needs to provide the cache key suffix
     /** @return the URL to which the user should be returned when their impersonation context changes to another context */
-    public URLHelper getReturnURL();
-    public int[] getGroups(User user);
-    public Set<Role> getContextualRoles(User user, SecurityPolicy policy);
-    public ImpersonationContextFactory getFactory();
+    URLHelper getReturnURL();
+    int[] getGroups(User user);
+    Set<Role> getContextualRoles(User user, SecurityPolicy policy);
+    ImpersonationContextFactory getFactory();
     /** Responsible for adding menu items to allow the user to initiate or stop impersonating, based on the current state */
-    public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL);
+    void addMenu(NavTree menu, Container c, User user, ActionURL currentURL);
 }

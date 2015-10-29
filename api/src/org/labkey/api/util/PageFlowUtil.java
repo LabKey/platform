@@ -2044,13 +2044,13 @@ public class PageFlowUtil
             json.put("project", projectProps);
         }
 
-        json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
-
         json.put("tours", getTourJson(container));
         json.put("serverName", StringUtils.isNotEmpty(appProps.getServerName()) ? appProps.getServerName() : "Labkey Server");
         json.put("versionString", appProps.getLabKeyVersionString());
+
         if (request != null)
         {
+            json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
             if ("post".equalsIgnoreCase(request.getMethod()))
                 json.put("postParameters", request.getParameterMap());
             String tok = CSRFUtil.getExpectedToken(request, null);
