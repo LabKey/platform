@@ -440,7 +440,7 @@ public class ViewServlet extends HttpServlet
 
     public static HttpServletRequest mockRequest(String method, @Nullable ActionURL url, @Nullable User user, @Nullable Map<String, Object> headers, @Nullable String postData)
     {
-        MockRequest request = new MockRequest(getViewServletContext(), method, null != url ? url : null);
+        MockRequest request = new MockRequest(getViewServletContext(), method, url);
         UniqueID.initializeRequestScopedUID(request);
 
         AppProps.Interface props = AppProps.getInstance();
@@ -481,7 +481,7 @@ public class ViewServlet extends HttpServlet
 
         private MockRequest(ServletContext servletContext, String method, ActionURL actionURL)
         {
-            super(servletContext, method, actionURL.getURIString());
+            super(servletContext, method, null != actionURL ? actionURL.getURIString() : null);
             _actionURL = actionURL;
         }
 
