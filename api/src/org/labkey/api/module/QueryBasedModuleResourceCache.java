@@ -27,6 +27,7 @@ import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.Path;
 
 import java.util.Collection;
@@ -76,18 +77,29 @@ public final class QueryBasedModuleResourceCache<T>
             @Override
             public Map<Path, Collection<T>> load(Module module, @Nullable Object argument)
             {
-                Resource rootResource = module.getModuleResource(_root);
+                Map<Path, Collection<T>> map = new HashMap<>();
 
-                if (null != rootResource && rootResource.isCollection())
+                // Load from top-level <root> directory
+                loadFromResourceRoot(module, module.getModuleResource(_root), map);
+
+                // Need to load from "assay/*/<root>" as well
+                Resource assayRoot = module.getModuleResource(AssayService.ASSAY_DIR_NAME);
+
+                if (null != assayRoot && assayRoot.isCollection())
                 {
-                    Map<Path, Collection<T>> map = new HashMap<>();
-                    recurse(module, rootResource, map);
-
-                    // Copy to a new HashMap to size the map appropriately
-                    return Collections.unmodifiableMap(new HashMap<>(map));
+                    assayRoot.list().stream()
+                        .filter(Resource::isCollection)
+                        .forEach(dir -> loadFromResourceRoot(module, dir.find(_root.getName()), map));
                 }
 
-                return Collections.emptyMap();
+                // Copy to a new HashMap to size the map appropriately
+                return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(new HashMap<>(map));
+            }
+
+            private void loadFromResourceRoot(Module module, Resource rootResource, Map<Path, Collection<T>> map)
+            {
+                if (null != rootResource && rootResource.isCollection())
+                    recurse(module, rootResource, map);
             }
 
             private void recurse(Module module, Resource dir, Map<Path, Collection<T>> map)
@@ -107,7 +119,9 @@ public final class QueryBasedModuleResourceCache<T>
                 }
 
                 Collection<T> loadedResource = loader.load(path, module);
-                map.put(path, loadedResource);
+
+                if (null != loadedResource)
+                    map.put(path, loadedResource);
 
                 dir.list().stream()
                     .filter(Resource::isCollection)
