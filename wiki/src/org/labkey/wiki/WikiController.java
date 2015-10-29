@@ -2679,6 +2679,7 @@ public class WikiController extends SpringActionController
                     {
                         containerProps.put("wikititle", version.getTitle());
                         containerProps.put("wikibody", version.getBody());
+                        containerProps.put("wikihtml", version.getHtml(getContainer(), wiki));
                     }
                 }
 
