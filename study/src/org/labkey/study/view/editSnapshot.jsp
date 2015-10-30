@@ -37,7 +37,7 @@
     ViewContext context = getViewContext();
 
     QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), bean.getSchemaName(), bean.getSnapshotName());
-    QueryDefinition queryDef = def.getQueryDefinition(getUser());
+    QueryDefinition queryDef = def != null ? def.getQueryDefinition(getUser()) : null;
 
     boolean showHistory = BooleanUtils.toBoolean(getActionURL().getParameter("showHistory"));
     String historyLabel = showHistory ? "Hide History" : "Show History";
