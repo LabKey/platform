@@ -74,7 +74,7 @@ public class SurveyModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 15.20;
+        return 15.30;
     }
 
     @Override
@@ -87,7 +87,7 @@ public class SurveyModule extends DefaultModule
     @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
                 new SurveyDesignWebPartFactory(),
                 new SurveysWebPartFactory()
         ));

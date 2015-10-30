@@ -32,7 +32,6 @@ import org.labkey.demo.model.Person;
 import org.labkey.demo.view.DemoWebPart;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -48,7 +47,7 @@ public class DemoModule extends DefaultModule
 
     public double getVersion()
     {
-        return 15.20;
+        return 15.30;
     }
 
     protected void init()

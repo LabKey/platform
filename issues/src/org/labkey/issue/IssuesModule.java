@@ -62,7 +62,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     public double getVersion()
     {
-        return 15.20;
+        return 15.30;
     }
 
     protected void init()
@@ -154,13 +154,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     public void enumerateDocuments(final SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
-        Runnable r = new Runnable()
-            {
-                public void run()
-                {
-                    IssueManager.indexIssues(task, c, modifiedSince);
-                }
-            };
+        Runnable r = () -> IssueManager.indexIssues(task, c, modifiedSince);
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 

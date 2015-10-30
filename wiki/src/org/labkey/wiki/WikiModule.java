@@ -80,7 +80,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 15.21;
+        return 15.30;
     }
 
     protected void init()
@@ -206,7 +206,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<Class>(Arrays.asList(
+        return new HashSet<>(Arrays.asList(
                 WikiManager.TestCase.class,
                 RadeoxRenderer.RadeoxRenderTest.class));
     }

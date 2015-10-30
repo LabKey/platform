@@ -192,6 +192,7 @@ core/resources/schemas/dbscripts/postgresql/core-13.30-14.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-14.20-14.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-14.30-15.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-15.20-15.21.sql -text
+core/resources/schemas/dbscripts/postgresql/core-15.20-15.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-15.21-15.22.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
@@ -226,6 +227,7 @@ core/resources/schemas/dbscripts/sqlserver/core-13.30-14.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-14.20-14.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-14.30-15.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-15.20-15.21.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-15.20-15.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-15.21-15.22.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-15.22-15.23.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-15.23-15.24.sql -text
@@ -540,6 +542,7 @@ dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.00-13.2
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.20-13.30.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-13.30-14.10.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-15.20-15.21.sql -text
+dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-15.20-15.30.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-15.21-15.22.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-0.00-13.10.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-13.10-13.20.sql -text
@@ -547,6 +550,7 @@ dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.00-13.20
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.20-13.30.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-13.30-14.10.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-15.20-15.21.sql -text
+dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-15.20-15.30.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-15.21-15.22.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.00-13.10.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-13.10-13.20.sql -text

@@ -29,7 +29,7 @@ public class FreezerProModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 15.20;
+        return 15.30;
     }
 
     @Override
