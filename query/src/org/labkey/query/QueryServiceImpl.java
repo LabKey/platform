@@ -40,11 +40,7 @@ import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
-import org.labkey.api.module.ModuleResourceCache.CacheId;
-import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.PathBasedModuleResourceCache;
 import org.labkey.api.module.QueryBasedModuleResourceCache;
 import org.labkey.api.module.QueryBasedModuleResourceCacheHandler;
 import org.labkey.api.query.*;
@@ -122,8 +118,7 @@ public class QueryServiceImpl extends QueryService
 {
     private static final Cache<String, Collection<? extends Resource>> MODULE_RESOURCES_CACHE = CacheManager.getCache(50000, CacheManager.DAY, "Module resources cache");
     private static final Cache<String, ModuleQueryDef> MODULE_QUERY_DEFS_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query defs cache");
-    private static final PathBasedModuleResourceCache<Collection<ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view defs cache", new CustomViewResourceCacheHandler());
-    private static final QueryBasedModuleResourceCache<ModuleCustomViewDef> NEW_MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module custom view defs cache", new CustomViewResourceCacheHandler2());
+    private static final QueryBasedModuleResourceCache<ModuleCustomViewDef> NEW_MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module custom view defs cache", new CustomViewResourceCacheHandler());
     private static final Cache<String, ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query metadata defs cache");
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
@@ -599,35 +594,25 @@ public class QueryServiceImpl extends QueryService
 
         currentModules = reorderModules(currentModules);
 
-        String schema = qd.getSchema().getSchemaName();
-        Pair<String, String> schemaQuery = Pair.of(schema, query);
-
         List<CustomView> customViews = new LinkedList<>();
-        List<CustomView> customViews2 = new LinkedList<>();
 
         // TODO: Instead of caching a separate list for each module + query combination, we could cache the full list of views defined on this
         // query in ALL modules... and then filter for active at this level. This probably requires a new variant of PathBasedModuleResourceCache.
 
         for (Module module : currentModules)
         {
-            Collection<ModuleCustomViewDef> views = MODULE_CUSTOM_VIEW_CACHE.getResource(module, path, schemaQuery);
-            Collection<ModuleCustomViewDef> newViews = NEW_MODULE_CUSTOM_VIEW_CACHE.getResource(module, path);
+            Collection<ModuleCustomViewDef> views = NEW_MODULE_CUSTOM_VIEW_CACHE.getResource(module, path);
 
             // CacheLoader returns empty collection (not null) for non-existent directories
             //noinspection ConstantConditions
-            for (ModuleCustomViewDef view : views)
-                customViews.add(new ModuleCustomView(qd, view));
-
-            // CacheLoader returns empty collection (not null) for non-existent directories
-            //noinspection ConstantConditions
-            for (ModuleCustomViewDef view : newViews)
-                customViews2.add(new ModuleCustomView(qd, view));
+            customViews.addAll(
+                views.stream()
+                    .map(view -> new ModuleCustomView(qd, view))
+                    .collect(Collectors.toList())
+            );
         }
 
-        if (customViews.size() != customViews2.size())
-            throw new IllegalStateException("Inconsistent number of custom views at " + path + ": " + customViews.size() + " vs. " + customViews2.size());
-
-        return customViews2;
+        return customViews;
     }
 
     @Override
@@ -652,67 +637,7 @@ public class QueryServiceImpl extends QueryService
         return result;
     }
 
-    private static class CustomViewResourceCacheHandler implements ModuleResourceCacheHandler<Path, Collection<ModuleCustomViewDef>>
-    {
-        @Override
-        public boolean isResourceFile(String filename)
-        {
-            return filename.endsWith(CustomViewXmlReader.XML_FILE_EXTENSION);
-        }
-
-        @Override
-        public String getResourceName(Module module, String filename)
-        {
-            // We're invalidating the whole list of custom views, not individual views... so leave resource name blank
-            return "";
-        }
-
-        @Override
-        public String createCacheKey(Module module, Path path)
-        {
-            // We're retrieving/caching/invalidating a list of custom views, not individual views, so append "*" to the
-            // requested path. This causes the listener to be registered in "path", not its parent.
-            return ModuleResourceCache.createCacheKey(module, path.append("*").toString());
-        }
-
-        @Override
-        public CacheLoader<String, Collection<ModuleCustomViewDef>> getResourceLoader()
-        {
-            return (key, argument) -> {
-                CacheId id = ModuleResourceCache.parseCacheKey(key);
-
-                // Remove "/*" added by getCacheKey()
-                String name = id.getName();
-                Resource queryDir = id.getModule().getModuleResource(name.substring(0, name.length() - 2));
-
-                Collection<? extends Resource> viewResources = getModuleCustomViews(queryDir);
-
-                if (viewResources.isEmpty())
-                {
-                    return Collections.emptyList();
-                }
-                else
-                {
-                    Pair<String, String> schemaQuery = (Pair<String, String>)argument;
-                    Collection<ModuleCustomViewDef> viewDefs = new LinkedList<>();
-
-                    for (Resource view : viewResources)
-                        viewDefs.add(new ModuleCustomViewDef(view, schemaQuery.first, schemaQuery.second));
-
-                    return Collections.unmodifiableCollection(viewDefs);
-                }
-            };
-        }
-
-        @Nullable
-        @Override
-        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
-        {
-            return null;
-        }
-    }
-
-    private static class CustomViewResourceCacheHandler2 implements QueryBasedModuleResourceCacheHandler<ModuleCustomViewDef>
+    private static class CustomViewResourceCacheHandler implements QueryBasedModuleResourceCacheHandler<ModuleCustomViewDef>
     {
         @Override
         public boolean isResourceFile(String filename)
@@ -738,10 +663,10 @@ public class QueryServiceImpl extends QueryService
                     String schema = path.get(1);
                     String query = path.get(2);
 
-                    Collection<ModuleCustomViewDef> viewDefs = new LinkedList<>();
-
-                    for (Resource view : viewResources)
-                        viewDefs.add(new ModuleCustomViewDef(view, schema, query));
+                    Collection<ModuleCustomViewDef> viewDefs = viewResources
+                        .stream()
+                        .map(view -> new ModuleCustomViewDef(view, schema, query))
+                        .collect(Collectors.toCollection(LinkedList::new));
 
                     return Collections.unmodifiableCollection(viewDefs);
                 }
@@ -861,22 +786,8 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-
-    // TODO: Delete... not needed!
-    private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)
-    {
-        Map<String, QuerySnapshotDefinition> ret = new LinkedHashMap<>();
-
-        for (QuerySnapshotDef queryDef : QueryManager.get().getQuerySnapshots(container, schemaName))
-            ret.put(queryDef.getName(), new QuerySnapshotDefImpl(queryDef));
-
-        return ret;
-    }
-
     public @Nullable QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String snapshotName)
     {
-        // TODO: Remove old approach
-        QuerySnapshotDefinition qsdOld = getAllQuerySnapshotDefs(container, schema).get(snapshotName);
         QuerySnapshotDef def = QueryManager.get().getQuerySnapshotDef(container, schema, snapshotName);
 
         return null != def ? new QuerySnapshotDefImpl(def) : null;
@@ -1663,7 +1574,7 @@ public class QueryServiceImpl extends QueryService
     // Use a WeakHashMap to cache QueryDefs. This means that the cache entries will only be associated directly
     // with the exact same UserSchema instance, regardless of whatever UserSchema.equals() returns. This means
     // that the scope of the cache is very limited, and this is a very conservative cache.
-    private Map<ObjectIdentityCacheKey, WeakReference<Map<String, List<QueryDef>>>> _metadataCache = Collections.synchronizedMap(new WeakHashMap<ObjectIdentityCacheKey, WeakReference<Map<String, List<QueryDef>>>>());
+    private Map<ObjectIdentityCacheKey, WeakReference<Map<String, List<QueryDef>>>> _metadataCache = Collections.synchronizedMap(new WeakHashMap<>());
 
     /** Hides whatever the underlying key might do for .equals() and .hashCode() and instead relies on pointer equality */
     private static class ObjectIdentityCacheKey
@@ -2063,7 +1974,7 @@ public class QueryServiceImpl extends QueryService
                 {
                     shouldLogNameLoggings.add(columnLogging);
                     if (!shouldLogNameToDataLoggingMap.containsKey(column))
-                        shouldLogNameToDataLoggingMap.put(column, new HashSet<FieldKey>());
+                        shouldLogNameToDataLoggingMap.put(column, new HashSet<>());
                     shouldLogNameToDataLoggingMap.get(column).addAll(columnLogging.getDataLoggingColumns());
                     if (null == columnLoggingComment)
                         columnLoggingComment = columnLogging.getLoggingComment();

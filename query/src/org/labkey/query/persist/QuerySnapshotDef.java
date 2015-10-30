@@ -16,11 +16,11 @@
 package org.labkey.query.persist;
 
 import org.labkey.api.data.Entity;
-import org.labkey.api.data.CacheKey;
-import org.labkey.api.data.Container;
 import org.labkey.api.util.UnexpectedException;
 
-import java.util.Date;/*
+import java.util.Date;
+
+/*
  * User: Karl Lum
  * Date: Jul 14, 2008
  * Time: 1:08:03 PM
@@ -31,19 +31,6 @@ public class QuerySnapshotDef extends Entity implements Cloneable
     public enum Column
     {
         schema
-    }
-
-    static public class Key extends CacheKey<QuerySnapshotDef, Column>
-    {
-        public Key(Container container)
-        {
-            super(QueryManager.get().getTableInfoQuerySnapshotDef(), QuerySnapshotDef.class, container);
-        }
-
-        public void setSchema(String schema)
-        {
-            addCondition(Column.schema, schema);
-        }
     }
 
     private int _rowId;
