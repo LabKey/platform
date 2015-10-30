@@ -53,16 +53,6 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
         addCondition(column, value, CompareType.EQUAL);
     }
 
-    public void addIsNull(C column)
-    {
-        addCondition(column, null, CompareType.ISBLANK);
-    }
-
-    public void addIsNotNull(C column)
-    {
-        addCondition(column, null, CompareType.NONBLANK);
-    }
-
     public void addCaseInsensitive(C column, String value)
     {
         String selectName = column.name();
@@ -87,26 +77,6 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
             _toString.append("=");
             _toString.append(PageFlowUtil.encode(Objects.toString(value, "")));
         }
-    }
-
-
-    private void addBitMaskFilter(ColumnInfo column, int mask, int value)
-    {
-        SQLFragment ret = new SQLFragment("(((");
-        ret.append(column.getAlias());
-        ret.append(") &");
-        ret.append(mask);
-        ret.append(") = ");
-        ret.append(value);
-        ret.append(")");
-        _filter.addWhereClause(ret.getSQL(), ret.getParams().toArray(), column.getFieldKey());
-        addConditionToString(column.getName() + "&" + mask, value);
-    }
-
-
-    public void setFlagMask(int mask, int value)
-    {
-        addBitMaskFilter(_table.getColumn("flags"), mask, value);
     }
 
 
