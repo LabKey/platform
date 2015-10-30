@@ -1278,6 +1278,7 @@ api/src/org/labkey/api/security/UserUrls.java -text
 api/src/org/labkey/api/security/ValidEmail.java -text
 api/src/org/labkey/api/security/impersonation/AbstractImpersonationContext.java -text
 api/src/org/labkey/api/security/impersonation/AbstractImpersonationContextFactory.java -text
+api/src/org/labkey/api/security/impersonation/DisallowGlobalRolesContext.java -text
 api/src/org/labkey/api/security/impersonation/GroupImpersonationContextFactory.java -text
 api/src/org/labkey/api/security/impersonation/ImpersonationContext.java -text
 api/src/org/labkey/api/security/impersonation/ImpersonationContextFactory.java -text

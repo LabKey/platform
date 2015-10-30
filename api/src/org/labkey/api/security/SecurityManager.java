@@ -49,6 +49,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
+import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -407,6 +408,10 @@ public class SecurityManager
                 if (null != factory)
                 {
                     sessionUser.setImpersonationContext(factory.getImpersonationContext());
+                }
+                else if (StringUtils.equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles"), "true"))
+                {
+                    sessionUser.setImpersonationContext(new DisallowGlobalRolesContext());
                 }
 
                 u = sessionUser;
