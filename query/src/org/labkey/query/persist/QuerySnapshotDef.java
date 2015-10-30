@@ -28,11 +28,6 @@ import java.util.Date;
 
 public class QuerySnapshotDef extends Entity implements Cloneable
 {
-    public enum Column
-    {
-        schema
-    }
-
     private int _rowId;
     private Integer _queryDefId;
     private String _name;

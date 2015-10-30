@@ -16,38 +16,24 @@
 
 package org.labkey.query.persist;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.CacheKey;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 
 import java.io.Serializable;
 
 public final class CstmView extends Entity implements Cloneable, Serializable
 {
-    public enum Column
-    {
-        container,
-        schema,
-        queryname,
-        name,
-        customviewowner,
-        flags
-    }
-
-    String _schema;
-    String _queryName;
-    int _customViewId;
-    Integer _owner;
+    private String _schema;
+    private String _queryName;
+    private int _customViewId;
+    private Integer _owner;
 
     private String _name;
-    String _columns;
-    String _filter;
-    int _flags;
+    private String _columns;
+    private String _filter;
+    private int _flags;
 
     public int getCustomViewId()
     {

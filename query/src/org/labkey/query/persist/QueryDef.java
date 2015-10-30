@@ -23,15 +23,6 @@ import org.labkey.api.util.UnexpectedException;
 
 public class QueryDef extends Entity implements Cloneable
 {
-    public enum Column
-    {
-        container,
-        sql,
-        schema,
-        name,
-        queryDefId,
-    }
-
     public QueryDef()
     {
         assert MemTracker.getInstance().put(this);
