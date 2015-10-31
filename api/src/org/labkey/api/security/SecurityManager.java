@@ -409,9 +409,9 @@ public class SecurityManager
                 {
                     sessionUser.setImpersonationContext(factory.getImpersonationContext());
                 }
-                else if (StringUtils.equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles"), "true"))
+                else if ("true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
                 {
-                    sessionUser.setImpersonationContext(new DisallowGlobalRolesContext());
+                    sessionUser.setImpersonationContext(DisallowGlobalRolesContext.get());
                 }
 
                 u = sessionUser;

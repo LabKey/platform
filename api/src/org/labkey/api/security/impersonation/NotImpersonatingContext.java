@@ -37,6 +37,17 @@ import java.util.Set;
  */
 public class NotImpersonatingContext implements ImpersonationContext
 {
+    private static final NotImpersonatingContext INSTANCE = new NotImpersonatingContext();
+
+    public static NotImpersonatingContext get()
+    {
+        return INSTANCE;
+    }
+
+    protected NotImpersonatingContext()
+    {
+    }
+
     @Override
     public boolean isImpersonating()
     {

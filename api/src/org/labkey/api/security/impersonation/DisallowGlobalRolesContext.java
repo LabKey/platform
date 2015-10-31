@@ -5,10 +5,21 @@ package org.labkey.api.security.impersonation;
  */
 
 /**
- * A "not impersonating" context that disallows all global roles like Site Admin and Developer
+ * A "not impersonating" context that disallows all global roles (i.e., Site Admin and Developer)
  */
 public class DisallowGlobalRolesContext extends NotImpersonatingContext
 {
+    private static final DisallowGlobalRolesContext INSTANCE = new DisallowGlobalRolesContext();
+
+    public static DisallowGlobalRolesContext get()
+    {
+        return INSTANCE;
+    }
+
+    private DisallowGlobalRolesContext()
+    {
+    }
+
     @Override
     public boolean isAllowedGlobalRoles()
     {

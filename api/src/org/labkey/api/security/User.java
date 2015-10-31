@@ -58,7 +58,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     private GUID entityId;
 
-    private ImpersonationContext _impersonationContext = new NotImpersonatingContext();
+    private ImpersonationContext _impersonationContext = NotImpersonatingContext.get();
 
     public static final User guest = new GuestUser("guest", "guest");
     // Search user is guest plus Reader everywhere
