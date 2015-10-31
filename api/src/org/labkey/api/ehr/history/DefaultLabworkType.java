@@ -17,6 +17,7 @@ package org.labkey.api.ehr.history;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -28,6 +29,7 @@ import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -73,17 +75,15 @@ public class DefaultLabworkType implements LabworkType
     protected String _normalRangeStatusField = null;
 
     private static final Logger _log = Logger.getLogger(DefaultLabworkType.class);
+    @NotNull
+    private final Module _declaringModule;
 
-    public DefaultLabworkType(String name, String schemaName, String queryName)
+        public DefaultLabworkType(String name, String schemaName, String queryName, Module declaringModule)
     {
         _name = name;
         _schemaName = schemaName;
         _queryName = queryName;
-    }
-
-    public DefaultLabworkType(String schemaName, String queryName)
-    {
-        this(queryName, schemaName, queryName);
+        _declaringModule = declaringModule;
     }
 
     protected TableInfo getTableInfo(Container c, User u)
@@ -108,6 +108,12 @@ public class DefaultLabworkType implements LabworkType
     public String getName()
     {
         return _name;
+    }
+
+    @Override
+    public boolean isEnabled(Container c)
+    {
+        return c.getActiveModules().contains(_declaringModule);
     }
 
     public List<String> getResults(Container c, User u, String runId, boolean redacted)

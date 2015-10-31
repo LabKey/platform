@@ -25,6 +25,7 @@ import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -49,9 +50,9 @@ public class SortingLabworkType extends DefaultLabworkType
 
     private Map<String, Integer> _tests = null;
 
-    public SortingLabworkType(String name, String schemaName, String queryName, String testType)
+    public SortingLabworkType(String name, String schemaName, String queryName, String testType, Module declaringModule)
     {
-        super(name, schemaName, queryName);
+        super(name, schemaName, queryName, declaringModule);
 
         _testType = testType;
     }

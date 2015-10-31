@@ -31,6 +31,8 @@ public interface LabworkType
 {
     public String getName();
 
+    public boolean isEnabled(Container c);
+
     public List<String> getResults(Container c, User u, String runId, boolean redacted);
 
     public Map<String, List<String>> getResults(Container c, User u, List<String> runIds, boolean redacted);

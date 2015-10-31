@@ -604,6 +604,7 @@ public class ExceptionUtil
             if (isGuest && type == UnauthorizedException.Type.sendBasicAuth && !overrideBasicAuth)
             {
                 headers.put("WWW-Authenticate", "Basic realm=\"" + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription() + "\"");
+
                 if (isGET)
                     message = "You must log in to view this content.";
             }
