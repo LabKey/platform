@@ -54,6 +54,7 @@ import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -99,7 +100,20 @@ public class QueryManager
 
     public Collection<QuerySnapshotDef> getQuerySnapshots(@Nullable Container container, @Nullable String schemaName)
     {
-        return QuerySnapshotCache.getQuerySnapshotDefs(container, schemaName);
+        QuerySnapshotDef.Key key = new QuerySnapshotDef.Key(container);
+        if (schemaName != null)
+        {
+            key.setSchema(schemaName);
+        }
+
+        Collection<QuerySnapshotDef> defs = QuerySnapshotCache.getQuerySnapshotDefs(container, schemaName);
+
+        Collection<QuerySnapshotDef> oldDefs = Arrays.asList(key.select());
+
+        if (!new ArrayList<>(defs).equals(new ArrayList<>(oldDefs)))
+            throw new IllegalStateException("Inconsistent number of query snapshots in " + container + "|" + schemaName + ": " + defs.size() + " vs. " + oldDefs.size());
+
+        return defs;
     }
 
     public QuerySnapshotDef getQuerySnapshotDef(@NotNull Container container, @NotNull String schemaName, @NotNull String snapshotName)
