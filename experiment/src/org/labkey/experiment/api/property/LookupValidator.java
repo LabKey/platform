@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -33,6 +34,7 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.User;
+import org.labkey.experiment.api.ExpMaterialTableImpl;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -74,15 +76,17 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
 
     private static class LookupKey
     {
-        private String _schema;
-        private String _query;
-        private String _container;
+        private final String _schema;
+        private final String _query;
+        private final String _container;
+        private final JdbcType _type;
 
         public LookupKey(PropertyDescriptor field)
         {
             _schema = field.getLookupSchema();
             _query = field.getLookupQuery();
             _container = field.getLookupContainer();
+            _type = field.getJdbcType();
         }
 
         @Override
@@ -95,6 +99,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
 
             if (_container != null ? !_container.equals(that._container) : that._container != null) return false;
             if (_query != null ? !_query.equals(that._query) : that._query != null) return false;
+            if (_type != null ? !_type.equals(that._type) : that._type != null) return false;
             return !(_schema != null ? !_schema.equals(that._schema) : that._schema != null);
         }
 
@@ -104,6 +109,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
             int result = _schema != null ? _schema.hashCode() : 0;
             result = 31 * result + (_query != null ? _query.hashCode() : 0);
             result = 31 * result + (_container != null ? _container.hashCode() : 0);
+            result = 31 * result + (_type != null ? _type.hashCode() : 0);
             return result;
         }
     }
@@ -156,7 +162,18 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
                         }
                         else
                         {
-                            Collection<Object> keys = new TableSelector(keyCols.get(0)).getCollection(keyCols.get(0).getJavaObjectClass());
+                            ColumnInfo lookupTargetCol = keyCols.get(0);
+                            // Hack for sample sets - see also revision 37612
+                            if (lookupTargetCol.getJdbcType() != field.getJdbcType() && field.getJdbcType().isText() && _tableInfo instanceof ExpMaterialTableImpl)
+                            {
+                                ColumnInfo nameCol = _tableInfo.getColumn(ExpMaterialTableImpl.Column.Name.toString());
+                                assert nameCol != null : "Could not find Name column in SampleSet table";
+                                if (nameCol != null)
+                                {
+                                    lookupTargetCol = nameCol;
+                                }
+                            }
+                            Collection<?> keys = new TableSelector(lookupTargetCol).getCollection(lookupTargetCol.getJavaObjectClass());
                             addAll(keys);
                         }
                     }
@@ -191,14 +208,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
                 return true;
             }
 
-            if (value == null)
-            {
-                errors.add(new PropertyValidationError("No value specified for field '" + field.getNonBlankCaption() + "', which must be set to a value from the lookup '" + field.getLookupSchema() + "." + field.getLookupQuery() + "'", field.getNonBlankCaption()));
-            }
-            else
-            {
-                errors.add(new PropertyValidationError("Value '" + value + "' was not present in lookup '" + field.getLookupSchema() + "." + field.getLookupQuery() + "' for field '" + field.getNonBlankCaption() + "'", field.getNonBlankCaption()));
-            }
+            errors.add(new PropertyValidationError("Value '" + value + "' was not present in lookup target '" + field.getLookupSchema() + "." + field.getLookupQuery() + "' for field '" + field.getNonBlankCaption() + "'", field.getNonBlankCaption()));
         }
         return true;
     }
