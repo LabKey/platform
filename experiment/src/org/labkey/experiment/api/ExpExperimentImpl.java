@@ -22,13 +22,11 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.URLHelper;
 
 import java.util.ArrayList;
@@ -144,7 +142,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
             {
                 if (_object.getBatchProtocolId() != null && run.getProtocol().getRowId() != _object.getBatchProtocolId().intValue())
                 {
-                    throw new IllegalArgumentException("Attempting to add a run of a different protocol to a batch.");
+                    throw new IllegalArgumentException("Attempting to add a run of a different protocol (LSID: " + run.getProtocol().getLSID() + ") to a batch (LSID: " + getBatchProtocol().getLSID() + ")");
                 }
             }
 

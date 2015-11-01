@@ -696,7 +696,13 @@ public class XarReader extends AbstractXarImporter
         if (experimentLSID != null)
         {
             ExpExperiment e = ExperimentService.get().getExpExperiment(experimentLSID);
-            e.addRuns(getUser(), new ExpRunImpl(run));
+            ExpProtocol batchProtocol = e.getBatchProtocol();
+            // Not an ideal fix, but avoid wiring up a run to an experiment that's a batch for a different protocol on
+            // this server. See issue 24588
+            if (batchProtocol == null || run.getProtocolLSID().equals(batchProtocol.getLSID()))
+            {
+                e.addRuns(getUser(), new ExpRunImpl(run));
+            }
         }
 
         runContext.setCurrentRun(new ExpRunImpl(run));
