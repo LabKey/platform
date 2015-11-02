@@ -1610,6 +1610,13 @@ Ext4.define('File.panel.Browser', {
             items: items,
             autoShow: true,
             buttons: [{
+                text: 'Import via XML',
+                handler: function() {
+                    this.submitForm(Ext4.getCmp(actionPanelId), actionMap, true);
+                    win.close();
+                },
+                scope: this
+            }, {
                 text: 'Import',
                 handler: function() {
                     this.submitForm(Ext4.getCmp(actionPanelId), actionMap);
@@ -1626,22 +1633,22 @@ Ext4.define('File.panel.Browser', {
         });
     },
 
-    submitForm : function(panel, actionMap) {
+    submitForm : function(panel, actionMap, useXml) {
         // client side validation
         var selection = panel.getForm().getValues();
         var action = actionMap[selection.importAction];
 
         if (Ext4.isObject(action)) {
-            this.executeImportAction(action);
+            this.executeImportAction(action, useXml);
         }
         else {
             console.warn('failed to find action for submission.');
         }
     },
 
-    executeImportAction : function(action) {
+    executeImportAction : function(action, useXml) {
         if (action) {
-            var selections = this.getGridSelection(), i;
+            var selections = this.getGridSelection();
             var link = action.getLink();
 
             //
@@ -1662,7 +1669,7 @@ Ext4.define('File.panel.Browser', {
                 form.setAttribute("method", "post");
                 form.setAttribute("action", link.href);
 
-                for (i=0; i < selections.length; i++)
+                for (var i=0; i < selections.length; i++)
                 {
                     var files = action.getFiles();
                     for (var j = 0; j < files.length; j++)
@@ -1681,6 +1688,13 @@ Ext4.define('File.panel.Browser', {
                 hiddenField.setAttribute("name", "X-LABKEY-CSRF");
                 hiddenField.setAttribute("value", LABKEY.CSRF);
                 form.appendChild(hiddenField);
+                if (useXml)
+                {
+                    var hiddenFormatField = document.createElement("input");
+                    hiddenFormatField.setAttribute("name", "format");
+                    hiddenFormatField.setAttribute("value", "xml");
+                    form.appendChild(hiddenFormatField);
+                }
                 document.body.appendChild(form);
                 form.submit();
             }
