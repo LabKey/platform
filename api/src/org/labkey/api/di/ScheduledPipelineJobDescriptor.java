@@ -40,9 +40,10 @@ public interface ScheduledPipelineJobDescriptor<C extends ContainerUser>
     int getVersion();
     Map<ParameterDescription,Object> getDeclaredVariables();
     boolean isStandalone();
+    boolean isSiteScope();
 
-    public ScheduleBuilder getScheduleBuilder();
-    public String getScheduleDescription();
+    ScheduleBuilder getScheduleBuilder();
+    String getScheduleDescription();
 
     // these are used to create a job that can be scheduled in Quartz
     Class<? extends org.quartz.Job> getQuartzJobClass();
