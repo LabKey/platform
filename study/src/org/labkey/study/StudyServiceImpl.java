@@ -809,7 +809,7 @@ public class StudyServiceImpl implements StudyService.Service
         }
         catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
         {
-            throw new IllegalStateException("Unable to construct class instance.");
+            throw new IllegalStateException("Unable to construct class instance.", e);
         }
         return createUnionTable(schemaDefault, tables.values(), tables.keySet(), publicName, kind, filterFragmentMap,
                 dontAliasColumns, useParticipantIdName);
