@@ -25,6 +25,7 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.di.DataIntegrationUrls;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
@@ -32,6 +33,7 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -248,6 +250,12 @@ public class DataIntegrationController extends SpringActionController
     static ScheduledPipelineJobDescriptor getDescriptor(TransformConfigurationForm form)
     {
         return TransformManager.get().getDescriptor(form.getTransformId());
+    }
+
+    public static void registerAdminConsoleLinks()
+    {
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "etl- all job histories", new ActionURL(viewJobsAction.class, ContainerManager.getRoot()));
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "etl- run site scope etls", new ActionURL(BeginAction.class, ContainerManager.getRoot()));
     }
 
     @RequiresPermission(AdminPermission.class)

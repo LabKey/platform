@@ -110,6 +110,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final boolean _loadReferencedFiles;
     private final boolean _gatedByStep;
     private final boolean _standalone;
+    private final boolean _siteScope;
     private static final String XAR_EXT = ".etl.xar.xml";
 
     // declared variables
@@ -128,13 +129,14 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                                CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
                                Map<ParameterDescription, Object> declaredVariables) throws XmlException, IOException
     {
-        this(id, name, description, moduleName, interval, cron, defaultFactory, stepMetaDatas, declaredVariables, false, false, true);
+        this(id, name, description, moduleName, interval, cron, defaultFactory, stepMetaDatas, declaredVariables, false, false, true, false);
     }
 
+    // TODO: Create a descriptor builder
     public TransformDescriptor(String id, String name, String description, String moduleName, Long interval,
                                CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
                                Map<ParameterDescription, Object> declaredVariables,
-                               boolean loadReferencedFiles, boolean gatedByStep, boolean standalone) throws XmlException, IOException
+                               boolean loadReferencedFiles, boolean gatedByStep, boolean standalone, boolean siteScope) throws XmlException, IOException
     {
         _id = id;
         _name = name;
@@ -149,6 +151,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         _loadReferencedFiles = loadReferencedFiles;
         _gatedByStep = gatedByStep;
         _standalone = standalone;
+        _siteScope = siteScope;
     }
 
 
@@ -202,6 +205,12 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     public boolean isStandalone()
     {
         return _standalone;
+    }
+
+    @Override
+    public boolean isSiteScope()
+    {
+        return _siteScope;
     }
 
     @Override

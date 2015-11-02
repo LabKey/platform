@@ -47,6 +47,7 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.PipelineJob;
@@ -123,10 +124,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -190,40 +193,40 @@ public class TransformManager implements DataIntegrationService.Interface
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
             options.setValidateStrict();
             EtlDocument document = EtlDocument.Factory.parse(inputStream, options);
-            EtlType etlXML = document.getEtl();
+            EtlType etlXml = document.getEtl();
 
             // handle default transform
-            FilterType ft = etlXML.getIncrementalFilter();
+            FilterType ft = etlXml.getIncrementalFilter();
             if (null != ft)
                 defaultFactory = createFilterFactory(ft);
             if (null == defaultFactory)
                 defaultFactory = new SelectAllFilterStrategy.Factory(null);
 
             // schedule
-            if (null != etlXML.getSchedule())
+            if (null != etlXml.getSchedule())
             {
-                if (null != etlXML.getSchedule().getPoll())
+                if (null != etlXml.getSchedule().getPoll())
                 {
-                    String s = etlXML.getSchedule().getPoll().getInterval();
+                    String s = etlXml.getSchedule().getPoll().getInterval();
                     if (StringUtils.isNumeric(s))
                         interval = Long.parseLong(s) * 60 * 1000;
                     else
                         interval = DateUtil.parseDuration(s);
                 }
-                else if (null != etlXML.getSchedule().getCron())
+                else if (null != etlXml.getSchedule().getCron())
                 {
                     try
                     {
-                        cron = new CronExpression(etlXML.getSchedule().getCron().getExpression());
+                        cron = new CronExpression(etlXml.getSchedule().getCron().getExpression());
                     }
                     catch (ParseException x)
                     {
-                        throw new XmlException("Could not parse cron expression: " + etlXML.getSchedule().getCron().getExpression(), x);
+                        throw new XmlException("Could not parse cron expression: " + etlXml.getSchedule().getCron().getExpression(), x);
                     }
                 }
             }
 
-            TransformsType transforms = etlXML.getTransforms();
+            TransformsType transforms = etlXml.getTransforms();
             boolean hasGateStep = false;
             if (null != transforms)
             {
@@ -238,9 +241,9 @@ public class TransformManager implements DataIntegrationService.Interface
             }
 
             Map<ParameterDescription,Object> declaredVariables = new LinkedHashMap<>();
-            if (null != etlXML.getParameters())
+            if (null != etlXml.getParameters())
             {
-                for (ParameterType xmlp : etlXML.getParameters().getParameterArray())
+                for (ParameterType xmlp : etlXml.getParameters().getParameterArray())
                 {
                     String name = xmlp.getName();
                     try
@@ -261,7 +264,7 @@ public class TransformManager implements DataIntegrationService.Interface
             // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
             XmlBeansUtil.validateXmlDocument(document, "ETL '" + resource.getPath() + "'");
 
-            return new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXML.getLoadReferencedFiles(), hasGateStep, etlXML.getStandalone());
+            return new TransformDescriptor(configId, etlXml.getName(), etlXml.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXml.getLoadReferencedFiles(), hasGateStep, etlXml.getStandalone(), etlXml.getSiteScope());
         }
     }
 
@@ -349,9 +352,20 @@ public class TransformManager implements DataIntegrationService.Interface
     @NotNull
     public Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
     {
-        return DESCRIPTOR_CACHE.getResources(c);
+        if (!c.isRoot())
+        {
+            return DESCRIPTOR_CACHE.getResources(c);
+        }
+        else
+        {
+            Collection<ScheduledPipelineJobDescriptor> descriptors = new LinkedList<>();
+            for (Module module : ModuleLoader.getInstance().getModules())
+            {
+                descriptors.addAll(DESCRIPTOR_CACHE.getResources(module).stream().filter(ScheduledPipelineJobDescriptor::isSiteScope).collect(Collectors.toList()));
+            }
+            return Collections.unmodifiableCollection(descriptors);
+        }
     }
-
 
     @Nullable
     public ScheduledPipelineJobDescriptor getDescriptor(String id)

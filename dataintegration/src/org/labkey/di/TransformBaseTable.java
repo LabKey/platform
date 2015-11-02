@@ -18,6 +18,7 @@ package org.labkey.di;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -62,6 +63,7 @@ abstract public class TransformBaseTable extends VirtualTable
     {
         HashMap<String, String> colMap = new HashMap<>();
         colMap.put("TransformId", "Name");
+        colMap.put("Container", "Folder");
         colMap.put("TransformVersion", "Version");
         colMap.put("RecordCount", "RecordsProcessed");
         colMap.put("ExecutionTime", "ExecutionTime");
@@ -98,6 +100,8 @@ abstract public class TransformBaseTable extends VirtualTable
         sql.append(_nameMap.get("TransformId"));
         sql.append(", t.TransformVersion AS ");
         sql.append(_nameMap.get("TransformVersion"));
+        sql.append(", t.Container AS ");
+        sql.append(_nameMap.get("Container"));
         sql.append(", t.StartTime AS ");
         sql.append(_nameMap.get("StartTime"));
         sql.append(", t.Status AS ");
@@ -136,11 +140,14 @@ abstract public class TransformBaseTable extends VirtualTable
         sqlWhere.append("Status <> '");
         sqlWhere.append(TransformRun.TransformRunStatus.NO_WORK.getDisplayName());
         sqlWhere.append("'");
-        sqlWhere.append(" AND ");
-        appendAlias(tableAlias, sqlWhere);
-        sqlWhere.append(" Container = '");
-        sqlWhere.append(_schema.getContainer().getId());
-        sqlWhere.append("'");
+        if (!_schema.getContainer().isRoot())
+        {
+            sqlWhere.append(" AND ");
+            appendAlias(tableAlias, sqlWhere);
+            sqlWhere.append(" Container = '");
+            sqlWhere.append(_schema.getContainer().getId());
+            sqlWhere.append("'");
+        }
         return sqlWhere.toString();
     }
 
@@ -159,6 +166,15 @@ abstract public class TransformBaseTable extends VirtualTable
         ColumnInfo transformId = new ColumnInfo(_nameMap.get("TransformId"), this);
         transformId.setJdbcType(JdbcType.VARCHAR);
         addColumn(transformId);
+
+        // container
+        if (_schema.getContainer().isRoot())
+        {
+            ColumnInfo container = new ColumnInfo(_nameMap.get("Container"), this);
+            container.setJdbcType(JdbcType.VARCHAR);
+            container.setFk(new ContainerForeignKey(_schema));
+            addColumn(container);
+        }
 
         // version
         ColumnInfo transformVersion = new ColumnInfo(_nameMap.get("TransformVersion"), this);

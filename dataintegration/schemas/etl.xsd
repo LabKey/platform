@@ -26,6 +26,11 @@
                 <documentation>ETL can be run on its own, rather than a subcomponent that can only be queued from another ETL.</documentation>
             </annotation>
         </attribute>
+        <attribute name="siteScope" type="boolean" default="false">
+            <annotation>
+                <documentation>ETL can run at a site level scope, not just in a container.</documentation>
+            </annotation>
+        </attribute>
     </complexType>
 
     <complexType name="SourceObjectType">

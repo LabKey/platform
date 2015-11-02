@@ -106,6 +106,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
         DataIntegrationQuerySchema.register(this);
         TransformDataType.register();
         DataIntegrationService.get().registerStepProviders();
+        DataIntegrationController.registerAdminConsoleLinks();
     }
 
 
