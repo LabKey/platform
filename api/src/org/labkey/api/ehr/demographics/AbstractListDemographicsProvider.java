@@ -44,14 +44,9 @@ abstract public class AbstractListDemographicsProvider extends AbstractDemograph
 {
     protected String _propName;
 
-    public AbstractListDemographicsProvider(String schemaName, String queryName, String propName)
+    public AbstractListDemographicsProvider(Module owner, String schemaName, String queryName, String propName)
     {
-        this(schemaName, queryName, propName, null);
-    }
-
-    public AbstractListDemographicsProvider(String schemaName, String queryName, String propName, @Nullable Module module)
-    {
-        super(module, schemaName, queryName);
+        super(owner, schemaName, queryName);
         _propName = propName;
     }
 

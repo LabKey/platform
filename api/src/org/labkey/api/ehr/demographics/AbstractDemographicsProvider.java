@@ -59,12 +59,7 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
 
     public AbstractDemographicsProvider(Module owner, String schemaName, String queryName)
     {
-        this(schemaName, queryName);
         _owner = owner;
-    }
-
-    public AbstractDemographicsProvider(String schemaName, String queryName)
-    {
         _schemaName = schemaName;
         _queryName = queryName;
     }
