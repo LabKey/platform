@@ -466,6 +466,7 @@ public class LoginController extends SpringActionController
             catch (ConfigurationException e)
             {
                 errors.reject(ERROR_MSG, "There was a problem sending the registration email.  Please contact your administrator.");
+                _log.error("Error adding self registered user", e);
             }
             response.put("success", !errors.hasErrors());
             if (!errors.hasErrors())
