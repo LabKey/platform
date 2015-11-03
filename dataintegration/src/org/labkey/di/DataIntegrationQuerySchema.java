@@ -118,6 +118,12 @@ public class DataIntegrationQuerySchema extends UserSchema
     {
         DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
         {
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                return true;
+            }
+
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new DataIntegrationQuerySchema(schema.getUser(), schema.getContainer());
