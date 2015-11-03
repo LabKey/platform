@@ -71,8 +71,8 @@
         <tr><td>&nbsp;</td></tr>
         <tr>
             <td colspan=2>
-                <%= button("Save").submit(true) %>
-                <%= button("Done").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
+                <%= button("Save").submit(true).onClick("return goToConfigureURL()") %>
+                <%= button("Cancel").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
             </td>
         </tr>
         <tr><td colspan="2">&nbsp;</td></tr>
@@ -80,6 +80,11 @@
 </labkey:form>
 
 <script type="text/javascript">
+
+    function goToConfigureURL()
+    {
+        return (window.location = <%=q(urlProvider(LoginUrls.class).getConfigureURL().toString())%>);
+    }
 
     function Expand(obj){
         if (!obj.savesize)
