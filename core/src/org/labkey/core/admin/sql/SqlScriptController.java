@@ -317,7 +317,7 @@ public class SqlScriptController extends SpringActionController
                 {
                     for (SqlScript script : provider.getScripts(schema))
                     {
-                        Collection<String> warnings = script.getSchema().getSqlDialect().getScriptWarnings(script.getContents());
+                        Collection<String> warnings = script.getSchema().getSqlDialect().getScriptWarnings(script.getDescription(), script.getContents());
 
                         if (!warnings.isEmpty())
                         {
@@ -620,7 +620,7 @@ public class SqlScriptController extends SpringActionController
             }
 
             String consolidated = sb.toString();
-            _errors = _schema.getSqlDialect().getScriptWarnings(consolidated);
+            _errors = _schema.getSqlDialect().getScriptWarnings(getFilename(), consolidated);
             return consolidated;
         }
 
@@ -1032,7 +1032,7 @@ public class SqlScriptController extends SpringActionController
         protected void renderScript(SqlScript script, PrintWriter out)
         {
             String contents = script.getContents();
-            Collection<String> warnings = script.getSchema().getSqlDialect().getScriptWarnings(contents);
+            Collection<String> warnings = script.getSchema().getSqlDialect().getScriptWarnings(script.getDescription(), contents);
             out.println(getErrorHtml(warnings));
 
             out.println("<pre>");
