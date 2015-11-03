@@ -136,27 +136,27 @@ public class SqlScriptRunner
 
     public interface SqlScript extends Comparable<SqlScript>
     {
-        public DbSchema getSchema();
-        public double getFromVersion();
-        public double getToVersion();
-        public String getContents();
-        public String getErrorMessage();
-        public String getDescription();
-        public SqlScriptProvider getProvider();
-        public boolean isValidName();
-        public boolean isIncremental();
+        DbSchema getSchema();
+        double getFromVersion();
+        double getToVersion();
+        String getContents();
+        String getErrorMessage();
+        String getDescription();
+        SqlScriptProvider getProvider();
+        boolean isValidName();
+        boolean isIncremental();
     }
 
 
     public interface SqlScriptProvider
     {
-        public @NotNull Collection<DbSchema> getSchemas();
-        public @NotNull List<SqlScript> getScripts(@NotNull DbSchema schema) throws SqlScriptException;
-        public SqlScript getScript(DbSchema schema, String description);
-        public String getProviderName();
-        public @Nullable SqlScript getDropScript(DbSchema schema);
-        public @Nullable SqlScript getCreateScript(DbSchema schema);
-        public UpgradeCode getUpgradeCode();
-        public double getInstalledVersion();
+        @NotNull Collection<DbSchema> getSchemas();
+        @NotNull List<SqlScript> getScripts(@NotNull DbSchema schema) throws SqlScriptException;
+        SqlScript getScript(DbSchema schema, String description);
+        String getProviderName();
+        @Nullable SqlScript getDropScript(DbSchema schema);
+        @Nullable SqlScript getCreateScript(DbSchema schema);
+        UpgradeCode getUpgradeCode();
+        double getInstalledVersion();
     }
 }

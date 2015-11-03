@@ -860,7 +860,7 @@ public abstract class SqlDialect
         return StringUtils.lowerCase(getSqlTypeNameFromObject(object));
     }
 
-    public Collection<String> getScriptWarnings(String sql)
+    public Collection<String> getScriptWarnings(String name, String sql)
     {
         return Collections.emptyList();
     }
