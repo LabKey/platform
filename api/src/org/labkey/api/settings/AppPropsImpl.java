@@ -546,7 +546,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     @Override
     public boolean getUseContainerRelativeURL()
     {
-        return lookupBooleanValue(USE_CONTAINER_RELATIVE_URL, false);
+        return lookupBooleanValue(USE_CONTAINER_RELATIVE_URL, true);
     }
 
     @Override
