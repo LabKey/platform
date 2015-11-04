@@ -1,8 +1,0 @@
-participant_id,redcap_event_name,redcap_survey_identifier,prescreening_survey_timestamp,dob,email,has_diabetes,consent___1,prescreening_survey_complete,participant_info_survey_timestamp,first_name,last_name,address,telephone_1,ethnicity,race,sex,height,weight,participant_info_survey_complete,participant_morale_questionnaire_timestamp,pmq1,pmq2,choices,life,job,family,participant_morale_questionnaire_complete,complete_study,withdraw_date,withdraw_reason,date_visit_4,discharge_date_4,discharge_summary_4,study_comments,completion_data_complete
-1,initial_data_arm_1,,"2015-06-29 14:58:27",2013-04-26,redcap@labkey.test,0,1,2,"2013-04-30 16:22:17",First,Participant,Here,"(425) 555-1234",2,1,1,,,2,,,,,,,,,,,,,,,,
-1,week_1_arm_1,,,,,,,,,,,,,,,,,,,"2013-04-30 16:25:59",2,2,3,3,3,3,2,,,,,,,,
-1,week_2_arm_1,,,,,,,,,,,,,,,,,,,"2013-04-30 16:25:29",0,4,3,3,3,3,2,,,,,,,,
-1,week_3_arm_1,,,,,,,,,,,,,,,,,,,"2013-04-30 16:27:10",0,4,,,,,2,,,,,,,,
-1,week_4_arm_1,,,,,,,,,,,,,,,,,,,"2013-04-30 16:27:22",1,5,,,,,2,,,,,,,,
-1,final_data_arm_1,,,,,,,,,,,,,,,,,,,,,,,,,,,1,2013-04-26,1,2013-04-26,,0,,2
-2,initial_data_arm_1,,"2013-04-30 16:28:42",2013-04-30,tchad@labkey.com,0,1,2,,,,,,,,,,,0,,,,,,,,,,,,,,,,
