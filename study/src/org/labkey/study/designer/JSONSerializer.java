@@ -351,9 +351,6 @@ public class JSONSerializer
         ArrayList<XmlError> errors = new ArrayList();
         opts.setErrorListener(errors);
         boolean valid = doc.validate(opts);
-        for (XmlError err : errors)
-            System.out.println(err.getMessage());
-
         return valid;
     }
 }

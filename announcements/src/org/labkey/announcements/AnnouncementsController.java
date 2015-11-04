@@ -19,6 +19,7 @@ package org.labkey.announcements;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -1752,7 +1753,7 @@ public class AnnouncementsController extends SpringActionController
                     }
                     catch (Exception e)
                     {
-                        e.printStackTrace();
+                        Logger.getLogger(AnnouncementsController.class).error(e);
                     }
                 }
             };

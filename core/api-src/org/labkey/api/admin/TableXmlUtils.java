@@ -533,7 +533,7 @@ public class TableXmlUtils
         catch (Exception e)
         {
             rlOut.addError("ERROR: Exception in compare: ").append(e.getMessage());
-            e.printStackTrace();
+            Logger.getLogger(TableXmlUtils.class).warn(e);
         }
     }
 

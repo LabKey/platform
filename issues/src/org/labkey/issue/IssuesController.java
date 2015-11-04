@@ -2264,7 +2264,6 @@ public class IssuesController extends SpringActionController
             }
             catch (SQLException x)
             {
-                x.printStackTrace();
                 throw new ServletException(x);
             }
         }

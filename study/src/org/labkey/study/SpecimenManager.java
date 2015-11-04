@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections15.comparators.ComparableComparator;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
@@ -2744,7 +2745,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                     }
                     catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
                     {
-                        e.printStackTrace();
+                        Logger.getLogger(SpecimenManager.class).error(e);
                     }
                 }
                 ret.add(summary);
