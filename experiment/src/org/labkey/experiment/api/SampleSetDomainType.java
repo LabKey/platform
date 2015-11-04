@@ -34,6 +34,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 
 import java.sql.SQLException;
@@ -157,4 +158,13 @@ public class SampleSetDomainType extends AbstractDomainKind
         return ss.getType();
     }
 
+    @Override
+    public void deleteDomain(User user, Domain domain)
+    {
+        ExpSampleSet ss = ExperimentService.get().getSampleSet(domain.getTypeURI());
+        if (ss == null)
+            throw new NotFoundException("Sample Set not found: " + domain);
+
+        ss.delete(user);
+    }
 }

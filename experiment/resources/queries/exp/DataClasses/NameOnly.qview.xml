@@ -1,0 +1,10 @@
+<customView xmlns="http://labkey.org/data/xml/queryCustomView"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        hidden="true">
+    <columns>
+        <column name="Name" />
+    </columns>
+    <sorts>
+        <sort column="Name" />
+    </sorts>
+</customView>

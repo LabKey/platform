@@ -662,6 +662,7 @@ experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleInfo.java -te
 experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleSetService.java -text
 experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleSetServiceAsync.java -text
 experiment/module.properties -text
+experiment/resources/queries/exp/DataClasses/NameOnly.qview.xml -text
 experiment/resources/queries/exp/RunGroups/NameOnly.qview.xml -text
 experiment/resources/queries/exp/SampleSets/NameOnly.qview.xml -text
 experiment/resources/schemas/dbscripts/postgresql/exp-0.00-13.20.sql -text
@@ -673,6 +674,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-15.10-15.11.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-15.10-15.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-15.11-15.12.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-15.12-15.13.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-15.30-15.31.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -696,6 +698,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-15.10-15.11.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-15.10-15.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-15.11-15.12.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-15.12-15.13.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-15.30-15.31.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
@@ -718,6 +721,7 @@ experiment/src/org/labkey/experiment/ConfirmDeleteView.java -text
 experiment/src/org/labkey/experiment/CustomProperties.jsp -text
 experiment/src/org/labkey/experiment/CustomPropertiesView.java -text
 experiment/src/org/labkey/experiment/CustomPropertyRenderer.java -text
+experiment/src/org/labkey/experiment/DataClassWebPart.java -text
 experiment/src/org/labkey/experiment/DataFileSizeDisplayColumn.java -text
 experiment/src/org/labkey/experiment/DataFileURLDisplayColumn.java -text
 experiment/src/org/labkey/experiment/DataURLRelativizer.java -text
@@ -741,6 +745,7 @@ experiment/src/org/labkey/experiment/LineageGraphDisplayColumn.java -text
 experiment/src/org/labkey/experiment/MoveRunsBean.java -text
 experiment/src/org/labkey/experiment/NoPipelineRootSetView.java -text
 experiment/src/org/labkey/experiment/Parameters.jsp -text
+experiment/src/org/labkey/experiment/ParentChildView.java -text
 experiment/src/org/labkey/experiment/ProtocolApplicationDisplayColumn.java -text
 experiment/src/org/labkey/experiment/ProtocolApplications.jsp -text
 experiment/src/org/labkey/experiment/ProtocolDetails.jsp -text
@@ -763,9 +768,14 @@ experiment/src/org/labkey/experiment/addXarFile.jsp -text
 experiment/src/org/labkey/experiment/api/AbstractProtocolOutputImpl.java -text
 experiment/src/org/labkey/experiment/api/AbstractRunInput.java -text
 experiment/src/org/labkey/experiment/api/Data.java -text
+experiment/src/org/labkey/experiment/api/DataClass.java -text
+experiment/src/org/labkey/experiment/api/DataClassDomainKind.java -text
 experiment/src/org/labkey/experiment/api/DataInput.java -text
 experiment/src/org/labkey/experiment/api/DataLinkColumn.java -text
 experiment/src/org/labkey/experiment/api/ExpChildObjectImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpDataClassDataTableImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpDataClassImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpDataClassTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataFileColumn.java -text
 experiment/src/org/labkey/experiment/api/ExpDataImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataInputTableImpl.java -text

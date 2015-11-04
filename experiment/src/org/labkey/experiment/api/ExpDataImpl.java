@@ -42,7 +42,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements ExpData
 {
@@ -65,6 +67,13 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public ExpDataImpl(Data data)
     {
         super(data);
+    }
+
+    @Nullable
+    @Override
+    public String getDescription()
+    {
+        return _object.getDescription();
     }
 
     @Nullable
@@ -110,13 +119,18 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public void save(User user)
     {
-        if (getRowId() == 0)
+        boolean isNew = getRowId() == 0;
+        save(user, ExperimentServiceImpl.get().getTinfoData());
+
+        if (isNew)
         {
-            _object = Table.insert(user, ExperimentServiceImpl.get().getTinfoData(), _object);
-        }
-        else
-        {
-            _object = Table.update(user, ExperimentServiceImpl.get().getTinfoData(), _object, getRowId());
+            ExpDataClassImpl dataClass = getDataClass();
+            if (dataClass != null)
+            {
+                Map<String, Object> map = new HashMap<>();
+                map.put("lsid", getLSID());
+                Table.insert(user, dataClass.getTinfo(), map);
+            }
         }
     }
 
@@ -211,6 +225,16 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public boolean isGenerated()
     {
         return _object.isGenerated();
+    }
+
+    @Override
+    @Nullable
+    public ExpDataClassImpl getDataClass()
+    {
+        if (_object.getClassId() != null)
+            return ExperimentServiceImpl.get().getDataClass(_object.getClassId());
+
+        return null;
     }
 
     public void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException

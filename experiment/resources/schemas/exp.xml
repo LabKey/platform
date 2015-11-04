@@ -29,7 +29,13 @@
       <ns:column columnName="Name">
           <ns:description>Contains a short name for this data object</ns:description>
       </ns:column>
+      <ns:column columnName="Description">
+          <ns:description>Contains a description for this data object</ns:description>
+      </ns:column>
       <ns:column columnName="CpasType"/>
+      <ns:column columnName="ClassId">
+          <ns:description>Contains a reference to the DataClass this Data is a member of, if available</ns:description>
+      </ns:column>
       <ns:column columnName="SourceApplicationId">
           <ns:description>Contains a reference to the ProtocolApplication that created this data object, if available</ns:description>
       </ns:column>
@@ -303,6 +309,8 @@
     <ns:description>Contains one row per material input in a protocol application for a run in this folder.</ns:description>
   </ns:table>
   <ns:table tableName="MaterialSource" tableDbType="TABLE">
+    <ns:gridUrl>/experiment/listMaterialSources.view</ns:gridUrl>
+    <ns:tableUrl>/experiment/showMaterialSource.view?rowId=${RowId}</ns:tableUrl>
     <ns:columns>
       <ns:column columnName="RowId">
           <ns:description>Contains a unique id for this sample set</ns:description>
@@ -352,6 +360,25 @@
       </ns:column>
     </ns:columns>
     <ns:description>Contains a row per sample set, a collection of samples.</ns:description>
+  </ns:table>
+  <ns:table tableName="DataClass" tableDbType="TABLE">
+    <ns:gridUrl>/experiment/listDataClass.view</ns:gridUrl>
+    <ns:columns>
+      <ns:column columnName="RowId">
+        <ns:description>Contains a unique id for this DataClass</ns:description>
+        <ns:isHidden>true</ns:isHidden>
+      </ns:column>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="MaterialSourceId"/>
+      <ns:column columnName="NameExpression"/>
+    </ns:columns>
   </ns:table>
   <ns:table tableName="PropertyDescriptor" tableDbType="TABLE">
     <ns:columns>
@@ -845,7 +872,9 @@
       <ns:column columnName="RowId"/>
       <ns:column columnName="LSID"/>
       <ns:column columnName="Name"/>
+      <ns:column columnName="Description"/>
       <ns:column columnName="CpasType"/>
+      <ns:column columnName="ClassId"/>
       <ns:column columnName="SourceApplicationId"/>
       <ns:column columnName="DataFileUrl"/>
       <ns:column columnName="RunId"/>

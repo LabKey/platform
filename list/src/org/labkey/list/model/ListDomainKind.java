@@ -23,24 +23,38 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: Nick
@@ -170,6 +184,8 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
     abstract PropertyStorageSpec getKeyProperty(ListDefinition list);
 
+    abstract KeyType getKeyType();
+
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
@@ -266,5 +282,96 @@ public abstract class ListDomainKind extends AbstractDomainKind
     public boolean isDeleteAllDataOnFieldImport()
     {
         return true;
+    }
+
+    @Override
+    public boolean canCreateDefinition(User user, Container container)
+    {
+        return container.hasPermission("ListDomainKind.canCreateDefinition", user, DesignListPermission.class);
+    }
+
+    @Override
+    public boolean canEditDefinition(User user, Domain domain)
+    {
+        Container c = domain.getContainer();
+        return c.hasPermission("ListDomainKind.canEditDefinition", user, DesignListPermission.class);
+    }
+
+    @Override
+    public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
+    {
+        return PageFlowUtil.urlProvider(ListUrls.class).getCreateListURL(container);
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user)
+    {
+        String name = domain.getName();
+        String keyName = arguments.containsKey("keyName") ? (String)arguments.get("keyName") : null;
+
+        if (name == null)
+            throw new IllegalArgumentException("List name must not be null");
+
+        if (keyName == null)
+            throw new IllegalArgumentException("List keyName must not be null");
+
+        ListDefinition list = ListService.get().createList(container, name, getKeyType());
+        list.setKeyName(keyName);
+        list.setDescription(domain.getDescription());
+
+        // TODO: lots of optional stuff we could set: discussionSetting, allowDelete, allowUpload, ...
+
+        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            Domain d = list.getDomain();
+
+            Set<String> reservedNames = getReservedPropertyNames(d);
+            Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
+
+            Map<DomainProperty, Object> defaultValues = new HashMap<>();
+            Set<String> propertyUris = new HashSet<>();
+            for (GWTPropertyDescriptor pd : properties)
+            {
+                String propertyName = pd.getName().toLowerCase();
+                if (lowerReservedNames.contains(propertyName))
+                {
+                    if (pd.getLabel() == null)
+                        pd.setLabel(pd.getName());
+                    pd.setName("_" + pd.getName());
+                }
+
+                DomainProperty dp = DomainUtil.addProperty(d, pd, defaultValues, propertyUris, null);
+            }
+
+            list.save(user);
+            DefaultValueService.get().setDefaultValues(container, defaultValues);
+
+            tx.commit();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return list.getDomain();
+    }
+
+    @Override
+    public void deleteDomain(User user, Domain domain)
+    {
+        ListDefinition list = ListService.get().getList(domain);
+        if (list == null)
+            throw new NotFoundException("List not found: " + domain.getTypeURI());
+
+        try
+        {
+            list.delete(user);
+        }
+        catch (DomainNotFoundException e)
+        {
+            throw new NotFoundException(e.getMessage());
+        }
     }
 }

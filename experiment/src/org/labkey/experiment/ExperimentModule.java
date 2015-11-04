@@ -55,6 +55,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
@@ -101,7 +102,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 15.30;
+        return 15.31;
     }
 
     protected void init()
@@ -117,6 +118,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         SamplesSchema.register(this);
         ExpSchema.register(this);
         PropertyService.get().registerDomainKind(new SampleSetDomainType());
+        PropertyService.get().registerDomainKind(new DataClassDomainKind());
     }
 
     public boolean hasScripts()
@@ -172,6 +174,14 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 return view;
             }
         });
+
+        result.add(new AlwaysAvailableWebPartFactory("Data Classes", false, false, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT) {
+            public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+            {
+                return new DataClassWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx, webPart);
+            }
+        });
+
         BaseWebPartFactory narrowProtocolFactory = new BaseWebPartFactory(PROTOCOL_WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
         {
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)

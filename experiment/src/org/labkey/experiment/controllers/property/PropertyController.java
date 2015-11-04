@@ -26,6 +26,8 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -249,6 +251,20 @@ public class PropertyController extends SpringActionController
                 errors.reject(ERROR_MSG, msg);
 
             return new ApiSimpleResponse();
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class DeleteDomainAction extends ApiAction<GetForm>
+    {
+        public Object execute(GetForm form, BindException errors) throws Exception
+        {
+            String queryName = form.getQueryName();
+            String schemaName = form.getSchemaName();
+
+            deleteDomain(schemaName, queryName, getContainer(), getUser());
+            return success("Domain deleted");
         }
     }
 
@@ -512,6 +528,26 @@ public class PropertyController extends SpringActionController
             throw new IllegalArgumentException("No domain kind matches URI '" + original.getDomainURI() + "'");
 
         return kind.updateDomain(original, update, container, user);
+    }
+
+    private static void deleteDomain(String schemaName, String queryName, Container container, User user)
+    {
+        String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, container, user);
+        if (domainURI == null)
+            throw new NotFoundException("Could not find domain for schemaName=" + schemaName + ", queryName=" + queryName);
+
+        DomainKind kind = PropertyService.get().getDomainKind(domainURI);
+        if (kind == null)
+            throw new IllegalArgumentException("No domain kind matches URI '" + domainURI + "'");
+
+        Domain d = PropertyService.get().getDomain(container, domainURI);
+        if (d == null)
+            throw new NotFoundException("Could not find domain for " + domainURI);
+
+        if (!kind.canDeleteDefinition(user, d))
+            throw new UnauthorizedException("You don't have permission to delete this domain");
+
+        kind.deleteDomain(user, d);
     }
 
     @NotNull

@@ -51,11 +51,13 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpProtocolOutput;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentListener;
@@ -68,6 +70,8 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
@@ -98,6 +102,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -105,6 +110,7 @@ import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -146,6 +152,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 public class ExperimentServiceImpl implements ExperimentService.Interface
 {
@@ -350,6 +357,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         for (int rowid : rowids)
             ids.add(rowid);
         return getExpDatas(ids);
+    }
+
+    public List<ExpDataImpl> getExpDatasByLSID(Collection<String> lsids)
+    {
+        if (lsids.size() == 0)
+            return null;
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("LSID"), lsids, CompareType.IN), null).getArrayList(Data.class));
     }
 
     public List<ExpDataImpl> getExpDatas(Collection<Integer> rowids)
@@ -811,6 +825,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpSampleSetTableImpl(name, schema);
     }
 
+    @Override
+    public ExpDataClassTable createDataClassTable(String name, UserSchema schema)
+    {
+        return new ExpDataClassTableImpl(name, schema);
+    }
+
     public ExpProtocolTableImpl createProtocolTable(String name, UserSchema schema)
     {
         return new ExpProtocolTableImpl(name, schema);
@@ -824,6 +844,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpMaterialTable createMaterialTable(String name, UserSchema schema)
     {
         return new ExpMaterialTableImpl(name, schema);
+    }
+
+    @Override
+    public ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ExpDataClass dataClass)
+    {
+        return new ExpDataClassDataTableImpl(name, schema, (ExpDataClassImpl)dataClass);
     }
 
     public ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema schema)
@@ -856,6 +882,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             return "Experiment";
         if (clazz == ExpSampleSet.class)
             return "SampleSet";
+        if (clazz == ExpDataClass.class)
+            return ExpDataClassImpl.NAMESPACE_PREFIX;
         if (clazz == ExpProtocolApplication.class)
             return "ProtocolApplication";
         throw new IllegalArgumentException("Invalid class " + clazz.getName());
@@ -963,6 +991,128 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 new SqlExecutor(getExpSchema()).execute(sql, materialSourceLSID, container);
             }
         }
+    }
+
+    @Override
+    public List<ExpDataClassImpl> getDataClasses(Container container, User user, boolean includeOtherContainers)
+    {
+        SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
+        List<DataClass> classes = new TableSelector(getTinfoDataClass(), filter, null).getArrayList(DataClass.class);
+        // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
+        return Collections.unmodifiableList(classes.stream().map(ExpDataClassImpl::new).sorted().collect(Collectors.toList()));
+    }
+
+    @Override
+    public ExpDataClassImpl getDataClass(Container c, String dataClassName)
+    {
+        return getDataClass(c, null, dataClassName, false);
+    }
+
+    @Override
+    public ExpDataClassImpl getDataClass(Container c, @NotNull User user, String dataClassName)
+    {
+        return getDataClass(c, user, dataClassName, true);
+    }
+
+    private ExpDataClassImpl getDataClass(Container c, @Nullable User user, String dataClassName, boolean includeOtherContainers)
+    {
+        SimpleFilter filter = createContainerFilter(c, user, includeOtherContainers)
+                .addCondition(FieldKey.fromParts("name"), dataClassName);
+
+        DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
+        if (dataClass == null)
+            return null;
+
+        return new ExpDataClassImpl(dataClass);
+    }
+
+    @Override
+    public ExpDataClassImpl getDataClass(int rowId)
+    {
+        DataClass dataClass = new TableSelector(getTinfoDataClass()).getObject(rowId, DataClass.class);
+        if (dataClass == null)
+            return null;
+
+        return new ExpDataClassImpl(dataClass);
+    }
+
+    @Override
+    public ExpDataClassImpl getDataClass(String lsid)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
+        DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
+        if (dataClass == null)
+            return null;
+
+        return new ExpDataClassImpl(dataClass);
+    }
+
+    @Override
+    public List<? extends ExpData> getExpDatas(ExpDataClass dataClass)
+    {
+        Domain d = dataClass.getDomain();
+        if (d == null)
+            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+
+        TableInfo table = ((ExpDataClassImpl)dataClass).getTinfo();
+        if (table == null)
+            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT * FROM ").append(getTinfoData(), "d")
+                .append(", ").append(table, "t")
+                .append(" WHERE t.lsid = d.lsid")
+                .append(" AND d.classId = ?").add(dataClass.getRowId());
+
+        List<Data> datas = new SqlSelector(table.getSchema().getScope(), sql).getArrayList(Data.class);
+
+        return datas.stream().map(ExpDataImpl::new).collect(Collectors.toList());
+    }
+
+    @Override
+    public ExpData getExpData(ExpDataClass dataClass, String name)
+    {
+        Domain d = dataClass.getDomain();
+        if (d == null)
+            throw new IllegalStateException("No domain for MaterialTypeSet '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+
+        TableInfo table = ((ExpDataClassImpl)dataClass).getTinfo();
+        if (table == null)
+            throw new IllegalStateException("No table for MaterialTypeSet '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT * FROM ").append(getTinfoData(), "d")
+                .append(", ").append(table, "t")
+                .append(" WHERE t.lsid = d.lsid")
+                .append(" AND d.classId = ?").add(dataClass.getRowId())
+                .append(" AND d.Name = ?").add(name);
+
+        Data data = new SqlSelector(table.getSchema().getScope(), sql).getObject(Data.class);
+
+        return new ExpDataImpl(data);
+    }
+
+    @Override
+    public ExpData getExpData(ExpDataClass dataClass, int rowId)
+    {
+        Domain d = dataClass.getDomain();
+        if (d == null)
+            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+
+        TableInfo table = ((ExpDataClassImpl)dataClass).getTinfo();
+        if (table == null)
+            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT * FROM ").append(getTinfoData(), "d")
+                .append(", ").append(table, "t")
+                .append(" WHERE t.lsid = d.lsid")
+                .append(" AND d.classId = ?").add(dataClass.getRowId())
+                .append(" AND d.rowId = ?").add(rowId);
+
+        Data data = new SqlSelector(table.getSchema().getScope(), sql).getObject(Data.class);
+
+        return new ExpDataImpl(data);
     }
 
     public ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs)
@@ -1098,6 +1248,109 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
+    @Override
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start)
+    {
+        if (isUnknownMaterial(start))
+            return Pair.of(Collections.emptySet(), Collections.emptySet());
+
+        List<ExpRun> runsToInvestigate = new ArrayList<>();
+        ExpRun parentRun = start.getRun();
+        if (parentRun != null)
+            runsToInvestigate.add(parentRun);
+
+        Set<ExpRun> investigatedRuns = new HashSet<>();
+
+        final Set<ExpData> parentData = new HashSet<>();
+        final Set<ExpMaterial> parentMaterials = new HashSet<>();
+        while (!runsToInvestigate.isEmpty())
+        {
+            ExpRun predecessorRun = runsToInvestigate.remove(0);
+            investigatedRuns.add(predecessorRun);
+
+            for (ExpData d : predecessorRun.getDataInputs().keySet())
+            {
+                ExpRun dRun = d.getRun();
+                if (dRun != null && !investigatedRuns.contains(dRun))
+                    runsToInvestigate.add(dRun);
+
+                parentData.add(d);
+            }
+            for (ExpMaterial m : removeUnknownMaterials(predecessorRun.getMaterialInputs().keySet()))
+            {
+                ExpRun mRun = m.getRun();
+                if (mRun != null && !investigatedRuns.contains(mRun))
+                    runsToInvestigate.add(mRun);
+
+                parentMaterials.add(m);
+            }
+        }
+        return Pair.of(parentData, parentMaterials);
+
+    }
+
+    @Override
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start)
+    {
+        if (isUnknownMaterial(start))
+            return Pair.of(Collections.emptySet(), Collections.emptySet());
+
+        List<ExpRun> runsToInvestigate = new ArrayList<>();
+        if (start instanceof ExpData)
+            runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingDataIds(Arrays.asList(start.getRowId())));
+        else if (start instanceof ExpMaterial)
+            runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(start.getRowId()));
+
+        runsToInvestigate.remove(start.getRun());
+        Set<ExpData> childDatas = new HashSet<>();
+        Set<ExpMaterial> childMaterials = new HashSet<>();
+
+        Set<ExpRun> investigatedRuns = new HashSet<>();
+        while (!runsToInvestigate.isEmpty())
+        {
+            ExpRun childRun = runsToInvestigate.remove(0);
+            if (!investigatedRuns.contains(childRun))
+            {
+                investigatedRuns.add(childRun);
+
+                List<ExpMaterial> materialOutputs = removeUnknownMaterials(childRun.getMaterialOutputs());
+                childMaterials.addAll(materialOutputs);
+
+                List<ExpData> dataOutputs = childRun.getDataOutputs();
+                childDatas.addAll(dataOutputs);
+
+                runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(materialOutputs));
+                runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingDatas(dataOutputs));
+            }
+        }
+
+        if (start instanceof ExpData)
+            childDatas.remove(start);
+        else if (start instanceof ExpMaterial)
+            childMaterials.remove(start);
+
+        return Pair.of(childDatas, childMaterials);
+    }
+
+    private boolean isUnknownMaterial(ExpProtocolOutput output)
+    {
+        return "Unknown".equals(output.getName()) &&
+                ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE.equals(output.getLSIDNamespacePrefix());
+    }
+
+    private List<ExpMaterial> removeUnknownMaterials(Iterable<ExpMaterial> materials)
+    {
+        // Filter out the generic unknown material, which is just a placeholder and doesn't represent a real
+        // parent
+        ArrayList<ExpMaterial> result = new ArrayList<>();
+        for (ExpMaterial material : materials)
+        {
+            if (!isUnknownMaterial(material))
+                result.add(material);
+        }
+        return result;
+    }
+
     /**
      * @return the data objects that were attached to the run that should be attached to the run in its new folder
      */
@@ -1206,6 +1459,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public TableInfo getTinfoData()
     {
         return getExpSchema().getTable("Data");
+    }
+
+    public TableInfo getTinfoDataClass()
+    {
+        return getExpSchema().getTable("DataClass");
     }
 
     public TableInfo getTinfoDataInput()
@@ -1529,6 +1787,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new Lsid(generateLSID(container, ExpSampleSet.class, sourceName));
     }
 
+    public Lsid getDataClassLsid(String name, Container container)
+    {
+        return new Lsid(generateLSID(container, ExpDataClass.class, name));
+    }
+
     // TODO: @NotNull Collection<Integer> selectedRunIds
     public void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds)
     {
@@ -1833,24 +2096,51 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             SimpleFilter rowIdFilter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), selectedDataIds);
             List<Data> datas = new TableSelector(getTinfoData(), rowIdFilter, null).getArrayList(Data.class);
 
+            Map<Integer, List<String>> lsidsByClass = new LinkedHashMap<>();
+
             beforeDeleteData(ExpDataImpl.fromDatas(datas));
             for (Data data : datas)
             {
                 if (!data.getContainer().equals(container))
                 {
-                    throw new SQLException("Attemping to delete a Data from another container");
+                    throw new SQLException("Attempting to delete a Data from another container");
                 }
                 OntologyManager.deleteOntologyObjects(container, data.getLSID());
+
+                if (data.getClassId() != null)
+                {
+                    List<String> byClass = lsidsByClass.get(data.getClassId());
+                    if (byClass == null)
+                        lsidsByClass.put(data.getClassId(), byClass = new ArrayList<>(10));
+                    byClass.add(data.getLSID());
+                }
             }
 
             SqlDialect dialect = getExpSchema().getSqlDialect();
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
-            SQLFragment dataInputSQL = new SQLFragment("DELETE FROM exp.DataInput WHERE DataId ");
+            SQLFragment dataInputSQL = new SQLFragment("DELETE FROM ").append(getTinfoDataInput()).append(" WHERE DataId ");
             dialect.appendInClauseSql(dataInputSQL, selectedDataIds);
             executor.execute(dataInputSQL);
 
-            SQLFragment dataSQL = new SQLFragment("DELETE FROM exp.Data WHERE RowId ");
+            // DELETE FROM provisioned dataclass tables
+            for (Integer classId : lsidsByClass.keySet())
+            {
+                ExpDataClass dataClass = getDataClass(classId);
+                if (dataClass == null)
+                    throw new SQLException("DataClass not found '" + classId + "'");
+
+                List<String> lsids = lsidsByClass.get(classId);
+                if (!lsids.isEmpty())
+                {
+                    TableInfo t = ((ExpDataClassImpl)dataClass).getTinfo();
+                    SQLFragment sql = new SQLFragment("DELETE FROM ").append(t).append(" WHERE lsid ");
+                    dialect.appendInClauseSql(sql, lsids);
+                    executor.execute(sql);
+                }
+            }
+
+            SQLFragment dataSQL = new SQLFragment("DELETE FROM ").append(getTinfoData()).append(" WHERE RowId ");
             dialect.appendInClauseSql(dataSQL, selectedDataIds);
             executor.execute(dataSQL);
 
@@ -1925,6 +2215,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         List<ExpExperimentImpl> exps = getExperiments(c, user, false, true, true);
         List<ExpSampleSetImpl> sampleSets = getSampleSets(c, user, false);
+        List<ExpDataClassImpl> dataClasses = getDataClasses(c, user, false);
 
         sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ?";
         int[] protIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
@@ -1961,6 +2252,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
             Table.delete(getTinfoActiveMaterialSource(), containerFilter);
+
+            // Delete DataClasses and their exp.Data members
+            for (ExpDataClassImpl dataClass : dataClasses)
+            {
+                dataClass.delete(user);
+            }
 
             // Delete all the experiments/run groups/batches
             for (ExpExperimentImpl exp : exps)
@@ -2085,17 +2382,19 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new Lsid("SampleSource", "Default").toString();
     }
 
+
+    @Override
     public List<ExpRunImpl> getRunsUsingDatas(List<ExpData> datas)
     {
         if (datas.isEmpty())
-        {
             return Collections.emptyList();
-        }
 
-        List<Integer> ids = new LinkedList<>();
-        for (ExpData data : datas)
-            ids.add(data.getRowId());
+        List<Integer> ids = datas.stream().map(ExpData::getRowId).collect(Collectors.toList());
+        return getRunsUsingDataIds(ids);
+    }
 
+    public List<ExpRunImpl> getRunsUsingDataIds(List<Integer> ids)
+    {
         SimpleFilter.InClause in1 = new SimpleFilter.InClause(FieldKey.fromParts("DataID"), ids);
         SimpleFilter.InClause in2 = new SimpleFilter.InClause(FieldKey.fromParts("RowId"), ids);
 
@@ -2110,12 +2409,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
+    @Override
     public List<ExpRunImpl> getRunsUsingMaterials(List<ExpMaterial> materials)
     {
-        int[] ids = new int[materials.size()];
-        for (int i = 0; i < materials.size(); i++)
-            ids[i] = materials.get(i).getRowId();
+        if (materials.isEmpty())
+            return Collections.emptyList();
 
+        int[] ids = materials.stream().mapToInt(ExpMaterial::getRowId).toArray();
         return getRunsUsingMaterials(ids);
     }
 
@@ -2151,6 +2451,44 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ret;
     }
 
+    @Override
+    public List<ExpRunImpl> getRunsUsingDataClasses(Collection<ExpDataClass> dataClasses)
+    {
+        List<Integer> rowIds = dataClasses.stream().map(ExpObject::getRowId).collect(Collectors.toList());
+
+        SQLFragment sql = new SQLFragment("IN (SELECT RowId FROM ");
+        sql.append(getTinfoData(), "d");
+        sql.append(" WHERE d.classId ");
+        getExpSchema().getSqlDialect().appendInClauseSql(sql, rowIds);
+        sql.append(")");
+        return ExpRunImpl.fromRuns(getRunsForDataList(sql));
+
+    }
+
+    private List<ExperimentRun> getRunsForDataList(SQLFragment dataRowIdSQL)
+    {
+        SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        sql.append(getTinfoExperimentRun(), "er");
+        sql.append(" WHERE \n RowId IN (SELECT RowId FROM ");
+        sql.append(getTinfoExperimentRun(), "er2");
+        sql.append(" WHERE RowId IN (SELECT pa.RunId FROM ");
+        sql.append(getTinfoProtocolApplication(), "pa");
+        sql.append(", ");
+        sql.append(getTinfoDataInput(), "di");
+        sql.append(" WHERE di.TargetApplicationId = pa.RowId AND di.DataID ");
+        sql.append(dataRowIdSQL);
+        sql.append(")");
+        sql.append("\n UNION \n (SELECT pa.RunId FROM ");
+        sql.append(getTinfoProtocolApplication(), "pa");
+        sql.append(", ");
+        sql.append(getTinfoData(), "d");
+        sql.append(" WHERE d.SourceApplicationId = pa.RowId AND d.RowId ");
+        sql.append(dataRowIdSQL);
+        sql.append("))");
+        return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
+    }
+
+    @Override
     public List<ExpRunImpl> getRunsUsingSampleSets(ExpSampleSet... sources)
     {
         List<String> materialSourceIds = new ArrayList<>(sources.length);
@@ -2190,15 +2528,32 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
     }
 
+    private void deleteDomainObjects(Container c, String lsid) throws ExperimentException
+    {
+        //Delete everything the ontology knows about this
+        //includes all properties where this is the owner.
+        // BUGBUG? What about objects in subfolders?
+        OntologyManager.deleteOntologyObjects(c, lsid);
+        if (OntologyManager.getDomainDescriptor(lsid, c) != null)
+        {
+            try
+            {
+                OntologyManager.deleteType(lsid, c);
+            }
+            catch (DomainNotFoundException e)
+            {
+                throw new ExperimentException(e);
+            }
+        }
+    }
+
     public void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException
     {
         ExpSampleSet source = getSampleSet(rowId);
         if (null == source)
             throw new IllegalArgumentException("Can't find SampleSet with rowId " + rowId);
         if (!source.getContainer().equals(c))
-        {
             throw new ExperimentException("Trying to delete a SampleSet from a different container");
-        }
 
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
@@ -2207,20 +2562,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             Collection<Integer> materialIds = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Collections.singleton("RowId"), materialFilter, null).getCollection(Integer.class);
             deleteMaterialByRowIds(user, c, materialIds);
 
-            //Delete everything the ontology knows about this
-            //includes all properties where this is the owner.
-            OntologyManager.deleteOntologyObjects(source.getContainer(), source.getLSID());
-            if (OntologyManager.getDomainDescriptor(source.getLSID(), c) != null)
-            {
-                try
-                {
-                    OntologyManager.deleteType(source.getLSID(), c);
-                }
-                catch (DomainNotFoundException e)
-                {
-                    throw new ExperimentException(e);
-                }
-            }
+            deleteDomainObjects(source.getContainer(), source.getLSID());
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
             executor.execute("DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", source.getLSID());
@@ -2231,6 +2573,34 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         SchemaKey schemaPath = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
         QueryService.get().fireQueryDeleted(user, c, null, schemaPath, Collections.singleton(source.getName()));
 
+    }
+
+    public void deleteDataClass(int rowId, Container c, User user) throws ExperimentException
+    {
+        ExpDataClass dataClass = getDataClass(rowId);
+        if (null == dataClass)
+            throw new IllegalArgumentException("Can't find DataClass with rowId " + rowId);
+        if (!dataClass.getContainer().equals(c))
+            throw new ExperimentException("Trying to delete a DataClass from a different container");
+
+        Domain d = dataClass.getDomain();
+
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+        {
+            // Delete all exp.Data from the DataClass
+            SimpleFilter dataClassFilter = new SimpleFilter(FieldKey.fromParts("classId"), dataClass.getRowId());
+            Collection<Integer> dataIds = new TableSelector(ExperimentServiceImpl.get().getTinfoData(), Collections.singleton("RowId"), dataClassFilter, null).getCollection(Integer.class);
+            deleteDataByRowIds(c, dataIds);
+
+            d.delete(user);
+
+            deleteDomainObjects(dataClass.getContainer(), dataClass.getLSID());
+
+            SqlExecutor executor = new SqlExecutor(getExpSchema());
+            executor.execute("DELETE FROM " + getTinfoDataClass() + " WHERE RowId = ?", rowId);
+
+            transaction.commit();
+        }
     }
 
     public ExpRunImpl populateRun(final ExpRunImpl expRun)
@@ -2935,41 +3305,65 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         throw new IllegalArgumentException("Could not find childProtocol of type " + ExpProtocol.ApplicationType.ProtocolApplication);
     }
 
+    @Override
     public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException
+    {
+        return derive(inputMaterials, Collections.emptyMap(), outputMaterials, Collections.emptyMap(), info, log);
+    }
+
+    @Override
+    public ExpRun derive(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
+                                Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
+                                ViewBackgroundInfo info, Logger log)
+            throws ExperimentException
     {
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !pipeRoot.isValid())
+            throw new ExperimentException("The child folder, " + info.getContainer().getPath() + ", must have a valid pipeline root");
+
+        if (outputDatas.isEmpty() && outputMaterials.isEmpty())
+            throw new IllegalArgumentException("You must derive at least one child data or material");
+
+        if (inputDatas.isEmpty() && inputMaterials.isEmpty())
+            throw new IllegalArgumentException("You must derive from at least one parent data or material");
+
+        for (ExpData expData : inputDatas.keySet())
         {
-            throw new ExperimentException("The child sample's folder, " + info.getContainer().getPath() + ", must have a valid pipeline root");
+            if (outputDatas.containsKey(expData))
+                throw new ExperimentException("The data " + expData.getName() + " cannot be an input to its own derivation.");
         }
-        if (outputMaterials.isEmpty())
-        {
-            throw new IllegalArgumentException("You must derive at least one child material");
-        }
-        if (inputMaterials.isEmpty())
-        {
-            throw new IllegalArgumentException("You must derive from at least one parent material");
-        }
+
         for (ExpMaterial expMaterial : inputMaterials.keySet())
         {
             if (outputMaterials.containsKey(expMaterial))
-            {
                 throw new ExperimentException("The material " + expMaterial.getName() + " cannot be an input to its own derivation.");
-            }
         }
 
         StringBuilder name = new StringBuilder("Derive ");
-        if (outputMaterials.size() == 1)
+        if (outputDatas.isEmpty())
         {
-            name.append(" sample");
+            if (outputMaterials.size() == 1)
+                name.append(" sample ");
+            else
+                name.append(outputMaterials.size()).append(" samples ");
         }
-        else
+        else if (outputMaterials.isEmpty())
         {
-            name.append(outputMaterials.size());
-            name.append(" samples");
+            if (outputDatas.size() == 1)
+                name.append(" data ");
+            else
+                name.append(outputDatas.size()).append(" data ");
         }
-        name.append(" from ");
+        name.append("from ");
         String nameSeparator = " ";
+
+        for (ExpData data : inputDatas.keySet())
+        {
+            name.append(nameSeparator);
+            name.append(data.getName());
+            nameSeparator = ", ";
+        }
+
         for (ExpMaterial material : inputMaterials.keySet())
         {
             name.append(nameSeparator);
@@ -2982,8 +3376,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         run.setProtocol(protocol);
         run.setFilePathRoot(pipeRoot.getRootPath());
 
-        return saveSimpleExperimentRun(run, inputMaterials, Collections.<ExpData, String>emptyMap(), outputMaterials, Collections.<ExpData, String>emptyMap(),
-                Collections.<ExpData, String>emptyMap(), info, log, true);
+        return saveSimpleExperimentRun(run, inputMaterials, inputDatas, outputMaterials, outputDatas,
+                Collections.<ExpData, String>emptyMap(), info, log, false);
     }
 
     @Override
@@ -3100,9 +3494,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name);
         DomainKind kind = domain.getDomainKind();
         Set<String> reservedNames = kind.getReservedPropertyNames(domain);
-        Set<String> lowerReservedNames = new HashSet<>(reservedNames.size());
-        for (String s : reservedNames)
-            lowerReservedNames.add(s.toLowerCase());
+        Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
 
         boolean hasNameProperty = false;
         String idUri1 = null, idUri2 = null, idUri3 = null, parentUri = null;
@@ -3171,6 +3563,68 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
 
         return ss;
+    }
+
+    public ExpDataClass createDataClass(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, Integer sampleSetId, String nameExpression)
+            throws ExperimentException
+    {
+        ExpDataClass existing = getDataClass(c, u, name, true);
+        if (existing != null)
+            throw new IllegalArgumentException("DataClass '" + name + "' already exists");
+
+        if (sampleSetId != null)
+        {
+            ExpSampleSet ss = ExperimentService.get().getSampleSet(sampleSetId);
+            if (ss == null)
+                throw new IllegalArgumentException("SampleSet '" + sampleSetId + "' not found");
+
+            if (!ss.getContainer().equals(c))
+                throw new IllegalArgumentException("Associated SampleSet must be defined in the same container as this DataClass");
+        }
+
+        Lsid lsid = getDataClassLsid(name, c);
+        Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name);
+        DomainKind kind = domain.getDomainKind();
+
+        Set<String> reservedNames = kind.getReservedPropertyNames(domain);
+        Set<String> lowerReservedNames = reservedNames.stream().map(String::
+                toLowerCase).collect(Collectors.toSet());
+
+        Map<DomainProperty, Object> defaultValues = new HashMap<>();
+        Set<String> propertyUris = new HashSet<>();
+        for (GWTPropertyDescriptor pd : properties)
+        {
+            String propertyName = pd.getName().toLowerCase();
+            if (lowerReservedNames.contains(propertyName))
+                throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name");
+
+            DomainProperty dp = DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
+        }
+
+        DataClass dataClass = new DataClass();
+        dataClass.setLSID(lsid.toString());
+        dataClass.setName(name);
+        dataClass.setDescription(description);
+        if (sampleSetId != null)
+            dataClass.setMaterialSourceId(sampleSetId);
+        if (nameExpression != null)
+            dataClass.setNameExpression(nameExpression);
+        dataClass.setContainer(c);
+
+        ExpDataClassImpl impl = new ExpDataClassImpl(dataClass);
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            OntologyManager.ensureObject(c, lsid.toString());
+
+            domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
+            domain.save(u);
+            impl.save(u);
+            DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
+
+            tx.commit();
+        }
+
+        return impl;
     }
 
     public List<ExpProtocolImpl> getExpProtocols(Container... containers)

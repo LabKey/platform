@@ -48,4 +48,10 @@ public class IntegerListDomainKind extends ListDomainKind
 
         return key;
     }
+
+    @Override
+    public ListDefinition.KeyType getKeyType()
+    {
+        return ListDefinition.KeyType.AutoIncrementInteger;
+    }
 }

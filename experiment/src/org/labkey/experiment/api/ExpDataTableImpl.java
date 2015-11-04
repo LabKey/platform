@@ -28,6 +28,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -41,6 +42,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -64,6 +66,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     protected boolean _runSpecified;
     protected ExpRun _run;
     protected DataType _type;
+    protected ExpDataClass _dataClass;
 
     public ExpDataTableImpl(String name, UserSchema schema)
     {
@@ -77,6 +80,8 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     {
         addColumn(Column.RowId).setHidden(true);
         addColumn(Column.Name);
+        addColumn(Column.Description);
+        addColumn(Column.DataClass);
         ExpSchema schema = getExpSchema();
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey());
         ColumnInfo lsidColumn = addColumn(Column.LSID);
@@ -159,6 +164,14 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
+            case Description:
+                return wrapColumn(alias, _rootTable.getColumn("Description"));
+            case DataClass:
+            {
+                ColumnInfo c = wrapColumn(alias, _rootTable.getColumn("classId"));
+                c.setFk(new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), getContainer(), getUserSchema().getUser(), ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
+                return c;
+            }
             case Protocol:
                 ExprColumn col = new ExprColumn(this, Column.Protocol.toString(), new SQLFragment(
                         "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
@@ -461,6 +474,16 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         if (_type != null)
         {
             addCondition(new SQLFragment("LSID LIKE " + getSqlDialect().concatenate("'urn:lsid:%:'", "?", "'%'"), _type.getNamespacePrefix()), FieldKey.fromParts("LSID"));
+        }
+    }
+
+    public void setDataClass(ExpDataClass dataClass)
+    {
+        _dataClass = dataClass;
+        getFilter().deleteConditions(FieldKey.fromParts("classId"));
+        if (_dataClass != null)
+        {
+            addCondition(getColumn("classId"), _dataClass.getRowId());
         }
     }
 

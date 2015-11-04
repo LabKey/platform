@@ -191,7 +191,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
-            return _allowablePermissions.contains(perm) && _userSchema.getContainer().hasPermission(user, perm);
+            return isAllowedPermission(perm) && _userSchema.getContainer().hasPermission(user, perm);
         return false;
     }
 

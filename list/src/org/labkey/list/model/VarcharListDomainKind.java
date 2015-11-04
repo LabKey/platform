@@ -42,4 +42,10 @@ public class VarcharListDomainKind extends ListDomainKind
         key.setPrimaryKey(true);
         return key;
     }
+
+    @Override
+    public ListDefinition.KeyType getKeyType()
+    {
+        return ListDefinition.KeyType.Varchar;
+    }
 }
