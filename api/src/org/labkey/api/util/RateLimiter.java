@@ -207,7 +207,6 @@ public class RateLimiter
             // count should be about 1.0
             RateAccumulator counter = l._long;
             double a = counter.getRate(_end);
-            System.out.println(a);
             assertTrue(a < 2.0);
             assertTrue(a > 0.1);
         }
@@ -220,7 +219,6 @@ public class RateLimiter
             for (int i=0 ; i<10 ; i++)
             {
                 l.add(1,true);
-                System.out.println(System.currentTimeMillis()-start);
             }
             long finish = System.currentTimeMillis();
             long duration = finish-start;

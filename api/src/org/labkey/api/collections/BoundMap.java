@@ -17,6 +17,8 @@ package org.labkey.api.collections;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
@@ -352,31 +354,35 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
     }
 
 
-    public static void main(String[] args)
+    public static class TestCase extends Assert
     {
-        TestBean bean = new TestBean();
-        Map<String,Object> m = new BoundMap(bean);
+        @Test
+        public void test()
+        {
+            TestBean bean = new TestBean();
+            Map<String,Object> m = new BoundMap(bean);
 
-        System.out.println("i=" + m.get("i"));
-        System.out.println("j=" + m.get("j"));
-        System.out.println("s=" + m.get("s"));
+            assertEquals(0,m.get("i"));
+            assertNull(m.get("j"));
+            assertNull(m.get("s"));
 
-        bean.i = 1;
-        bean.j = 2;
-        bean.s = "fred";
+            bean.i = 1;
+            bean.j = 2;
+            bean.s = "fred";
 
-        System.out.println("i=" + m.get("i"));
-        System.out.println("j=" + m.get("j"));
-        System.out.println("s=" + m.get("s"));
+            assertEquals(1,m.get("i"));
+            assertEquals(2, m.get("j"));
+            assertEquals("fred",m.get("s"));
 
-        m.put("i", "3");
-        m.put("j", 4);
-        m.put("s", "velma");
-        m.put("t", "shaggy");
+            m.put("i", "3");
+            m.put("j", 4);
+            m.put("s", "velma");
+            m.put("t", "shaggy");
 
-        System.out.println("i=" + bean.i);
-        System.out.println("j=" + bean.j);
-        System.out.println("s=" + bean.s);
-        System.out.println("t=" + m.get("t"));
+            assertEquals(3,m.get("i"));
+            assertEquals(4, m.get("j"));
+            assertEquals("velma", m.get("s"));
+            assertEquals("shaggy", m.get("t"));
+        }
     }
 }

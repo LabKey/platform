@@ -26,6 +26,7 @@
 package org.labkey.api.script;
 
 import com.sun.phobos.script.util.ExtendedScriptException;
+import org.apache.log4j.Logger;
 import org.labkey.api.util.ExceptionUtil;
 import org.mozilla.javascript.*;
 
@@ -44,6 +45,7 @@ import javax.script.ScriptException;
 // kevink: Essentially the same as the original, with changes marked with kevink
 final class RhinoCompiledScript extends CompiledScript
 {
+    private final Logger _log = Logger.getLogger(RhinoCompiledScript.class);
 
     private RhinoScriptEngine engine;
     private Script script;
@@ -65,7 +67,7 @@ final class RhinoCompiledScript extends CompiledScript
             Object ret = script.exec(cx, scope);
             result = engine.unwrapReturnValue(ret);
         } catch (JavaScriptException jse) {
-            if (DEBUG) jse.printStackTrace();
+            _log.debug(jse);
             int line = (line = jse.lineNumber()) == 0 ? -1 : line;
             Object value = jse.getValue();
             String str = (value != null && value.getClass().getName().equals("org.mozilla.javascript.NativeError") ?
@@ -76,7 +78,7 @@ final class RhinoCompiledScript extends CompiledScript
             ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             throw ex;
         } catch (RhinoException re) {
-            if (DEBUG) re.printStackTrace();
+            _log.debug(re);
             int line = (line = re.lineNumber()) == 0 ? -1 : line;
             // kevink: supress mothership logging.
             ScriptException ex = new ExtendedScriptException(re, re.toString(), re.sourceName(), line);

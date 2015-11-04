@@ -54,7 +54,6 @@ public class JunitUtil
         }
         catch (IOException x)
         {
-            x.printStackTrace();
             assert null == "couldn't clone object " + o.toString();
             return null;
         }
@@ -155,27 +154,5 @@ public class JunitUtil
 
         if (iterations.intValue() != expected)
             throw new IllegalStateException("Did not execute runnable the expected number of times: " + iterations + " vs. " + expected);
-    }
-
-    public static void main(String[] args) throws Exception
-    {
-        String html = "<html><body>\n<form><br><input name=A value=1><input name=B value=2><input type=hidden name=C value=3><img src=fred.png>\n</form></body></html>";
-        ArrayList<String> errors = new ArrayList<>();
-        String tidy = TidyUtil.convertHtmlToXml(html, errors);
-        System.out.println(tidy);
-        Document doc = tidyAsDocument(html);
-
-        Element rootElem = doc.getDocumentElement();
-        XPathFactory xFactory = XPathFactory.newInstance();
-        XPath xpath = xFactory.newXPath();
-        NodeList list = (NodeList) xpath.evaluate("/html/body/form/input", rootElem, XPathConstants.NODESET);
-        int len = list.getLength();
-        for (int i = 0; i < len; i++)
-        {
-            Node n = list.item(i);
-            String name = getAttributeValue(n, "name");
-            String value = getAttributeValue(n, "value");
-            System.err.println(n.getNodeName() + " " + name + "=" + value);
-        }
     }
 }

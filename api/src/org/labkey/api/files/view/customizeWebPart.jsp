@@ -48,8 +48,6 @@
     boolean medium = false;
     boolean large = false;
 
-    System.out.println(form.getSize());
-
     if (form.getSize() == 350)
         small = true;
     else if(form.getSize() == 650)

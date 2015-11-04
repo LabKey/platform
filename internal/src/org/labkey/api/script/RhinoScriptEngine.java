@@ -27,6 +27,7 @@ package org.labkey.api.script;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.phobos.script.util.*;
 import com.sun.phobos.script.util.ExtendedScriptException;
+import org.apache.log4j.Logger;
 import org.labkey.api.util.ExceptionUtil;
 import org.mozilla.javascript.*;
 
@@ -57,6 +58,7 @@ import java.util.Map;
 public class RhinoScriptEngine extends AbstractScriptEngine
         implements Invocable, Compilable
 {
+    private final Logger _log = Logger.getLogger(RhinoScriptEngine.class);
 
     public static final boolean DEBUG = false;
     private static final String TOPLEVEL_SCRIPT_NAME = "META-INF/toplevel.js";
@@ -192,7 +194,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine
             filename = filename == null ? "<Unknown source>" : filename;
             ret = cx.evaluateReader(scope, preProcessScriptSource(reader), filename , 1,  null);
         } catch (JavaScriptException jse) {
-            if (DEBUG) jse.printStackTrace();
+            _log.debug(jse);
             int line = (line = jse.lineNumber()) == 0 ? -1 : line;
             Object value = jse.getValue();
             String str = (value != null && value.getClass().getName().equals("org.mozilla.javascript.NativeError") ?
@@ -203,7 +205,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine
             ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             throw ex;
         } catch (RhinoException re) {
-            if (DEBUG) re.printStackTrace();
+            _log.debug(re);
             int line = (line = re.lineNumber()) == 0 ? -1 : line;
             // kevink: supress mothership logging.
             ScriptException ex = new ExtendedScriptException(re, re.toString(), re.sourceName(), line);
@@ -273,7 +275,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine
                                       wrapArguments(args));
             return unwrapReturnValue(result);
         } catch (JavaScriptException jse) {
-            if (DEBUG) jse.printStackTrace();
+            _log.debug(jse);
             int line = (line = jse.lineNumber()) == 0 ? -1 : line;
             Object value = jse.getValue();
             String str = (value != null && value.getClass().getName().equals("org.mozilla.javascript.NativeError") ?
@@ -284,7 +286,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine
             ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             throw ex;
         } catch (RhinoException re) {
-            if (DEBUG) re.printStackTrace();
+            _log.debug(re);
             int line = (line = re.lineNumber()) == 0 ? -1 : line;
             // kevink: Throw our exception class to supress mothership logging.
             ScriptException ex = new ExtendedScriptException(re, re.toString(), re.sourceName(), line);
@@ -373,7 +375,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine
             Script scr = cx.compileReader(scope, preProcessScriptSource(script), filename, 1, null);
             ret = new RhinoCompiledScript(this, scr);
         } catch (Exception e) {
-            if (DEBUG) e.printStackTrace();
+            _log.debug(e);
             throw new ScriptException(e);
         } finally {
             cx.exit();
@@ -430,7 +432,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine
                 cx.evaluateReader(topLevel, reader, scriptName, 1, null);
             }
             catch (Exception e) {
-                if (DEBUG) e.printStackTrace();
+                _log.debug(e);
             }
             finally {
                 try {
