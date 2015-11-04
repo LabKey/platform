@@ -248,4 +248,28 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             .map(this::getRemappedField)
             .collect(Collectors.toSet());
     }
+
+    @Override
+    public boolean allowImportByAlternateKey()
+    {
+        TableInfo lookupTable = getLookupTableInfo();
+        if (lookupTable == null)
+            return false;
+
+        List<ColumnInfo> pkCols = lookupTable.getPkColumns();
+        if (pkCols.size() != 1)
+            return false;
+
+        List<ColumnInfo> akCols = lookupTable.getAlternateKeyColumns();
+        if (akCols.size() != 1)
+            return false;
+
+        ColumnInfo pkCol = pkCols.get(0);
+        ColumnInfo akCol = akCols.get(0);
+        if (pkCol == akCol)
+            return false;
+
+        return !pkCol.getJdbcType().isText() && akCol.getJdbcType().isText();
+    }
+
 }

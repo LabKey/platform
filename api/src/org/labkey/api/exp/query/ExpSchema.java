@@ -32,6 +32,11 @@ public class ExpSchema extends AbstractExpSchema
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
 
 
+    public enum NestedSchemas
+    {
+        data,
+        materials
+    }
 
     public enum TableType
     {
@@ -88,6 +93,14 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo createTable(ExpSchema expSchema, String queryName)
             {
                 ExpSampleSetTable ret = ExperimentService.get().createSampleSetTable(SampleSets.toString(), expSchema);
+                return expSchema.setupTable(ret);
+            }
+        },
+        DataClasses
+        {
+            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            {
+                ExpDataClassTable ret = ExperimentService.get().createDataClassTable(DataClasses.toString(), expSchema);
                 return expSchema.setupTable(ret);
             }
         },
@@ -231,6 +244,39 @@ public class ExpSchema extends AbstractExpSchema
         }
 
         return null;
+    }
+
+    @Override
+    public Set<String> getSchemaNames()
+    {
+        if (_restricted)
+            return Collections.emptySet();
+
+        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        names.addAll(super.getSchemaNames());
+        names.add(NestedSchemas.materials.name());
+        names.add(NestedSchemas.data.name());
+        return names;
+    }
+
+    public QuerySchema getSchema(NestedSchemas schema)
+    {
+        return getSchema(schema.name());
+    }
+
+    public QuerySchema getSchema(String name)
+    {
+        if (_restricted)
+            return null;
+
+        // CONSIDER: also support hidden "samples" schema ?
+        if (name.equals(NestedSchemas.materials.name()))
+            return new SamplesSchema(SchemaKey.fromParts(getName(), NestedSchemas.materials.name()), getUser(), getContainer(), null);
+
+        if (name.equals(NestedSchemas.data.name()))
+            return new DataClassUserSchema(getContainer(), getUser());
+
+        return super.getSchema(name);
     }
 
     public ExpDataTable getDatasTable()

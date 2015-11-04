@@ -104,4 +104,9 @@ public interface ForeignKey
      */
     @Nullable
     Set<FieldKey> getSuggestedColumns();
+
+    /**
+     * Return true if this ForeignKey could be imported by alternate key value.
+     */
+    default boolean allowImportByAlternateKey() { return false; }
 }

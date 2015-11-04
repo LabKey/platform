@@ -27,7 +27,6 @@ import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -55,6 +54,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -451,27 +451,96 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     }
 
+    enum RemapMissingBehavior
+    {
+        /** Every incoming value must have an entry in the map. */
+        Error,
+
+        /** Incoming values without a map entry will be replaced with null. */
+        Null,
+
+        /** Incoming values without a map entry will pass through. */
+        OriginalValue
+    }
+
+    protected class RemapPostConvertColumn extends SimpleConvertColumn
+    {
+        final SimpleConvertColumn _convertCol;
+        final ColumnInfo _toCol;
+        final RemapMissingBehavior _missing;
+        Map<?, ?> _map = null;
+
+        public RemapPostConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing)
+        {
+            super(convertCol.fieldName, convertCol.index, convertCol.type);
+//            assert _data.getColumnInfo(fromIndex).getFk() != null && _data.getColumnInfo(fromIndex).getFk().allowImportByAlternateKey();
+            _convertCol = convertCol;
+            _toCol = toCol;
+            _missing = missing;
+        }
+
+        private Map<?,?> getMap()
+        {
+            if (_map == null)
+            {
+                TableInfo targetTable = _toCol.getFkTableInfo();
+                List<ColumnInfo> mapCols = new ArrayList<>();
+                mapCols.add(targetTable.getAlternateKeyColumns().get(0));
+                mapCols.add(targetTable.getPkColumns().get(0));
+                Map<?, ?> map = new TableSelector(targetTable, mapCols, null, null).getValueMap();
+                _map = map;
+            }
+            return _map;
+        }
+
+        @Override
+        protected Object convert(Object o)
+        {
+            try
+            {
+                return _convertCol.convert(o);
+            }
+            catch (ConversionException ex)
+            {
+                return mappedValue(o);
+            }
+        }
+
+        private Object mappedValue(Object k)
+        {
+            if (null == k)
+                return null;
+            Object v = getMap().get(k);
+            if (null != v || getMap().containsKey(k))
+                return v;
+            switch (_missing)
+            {
+                case Null:          return null;
+                case OriginalValue: return k;
+                case Error:
+                default:            throw new ConversionException("Could not translate value: " + String.valueOf(k));
+            }
+        }
+    }
+
     protected class RemapColumn implements Supplier
     {
-        //final int _index;
         final Supplier _inputColumn;
         final Map<?, ?> _map;
-        final boolean _strict;
+        final RemapMissingBehavior _missing;
 
-        // strict == true means every incoming value must have an entry in the map
-        // string == false means incoming values without a map entry will pass through
-        public RemapColumn(final int index, Map<?, ?> map, boolean strict)
+        public RemapColumn(final int index, Map<?, ?> map, RemapMissingBehavior missing)
         {
             _inputColumn = _data.getSupplier(index);
             _map = map;
-            _strict = strict;
+            _missing = missing;
         }
 
-        public RemapColumn(Supplier call, Map<?, ?> map, boolean strict)
+        public RemapColumn(Supplier call, Map<?, ?> map, RemapMissingBehavior missing)
         {
             _inputColumn = call;
             _map = map;
-            _strict = strict;
+            _missing = missing;
         }
 
         @Override
@@ -483,9 +552,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             Object v = _map.get(k);
             if (null != v || _map.containsKey(k))
                 return v;
-            if (!_strict)
-                return k;
-            throw new ConversionException("Could not translate value: " + String.valueOf(k));
+            switch (_missing)
+            {
+                case Null:          return null;
+                case OriginalValue: return k;
+                case Error:
+                default:            throw new ConversionException("Could not translate value: " + String.valueOf(k));
+            }
         }
     }
     
@@ -576,6 +649,19 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             addColumn(i);
     }
 
+    public void selectAll(@NotNull Set<String> skipColumns)
+    {
+        for (int i=1 ; i<=_data.getColumnCount() ; i++)
+        {
+            ColumnInfo c = _data.getColumnInfo(i);
+            String name = c.getName();
+            if (skipColumns.contains(name))
+                continue;
+
+            addColumn(c, i);
+        }
+    }
+
 
     public void removeColumn(int index)
     {
@@ -636,7 +722,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         else
             c = new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType());
 
-        boolean multiValue = col.getFk() instanceof MultiValuedForeignKey;
+        ForeignKey fk = col.getFk();
+        if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
+        {
+            RemapMissingBehavior missing = col.isRequired() ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
+            c = new RemapPostConvertColumn(c, fromIndex, col, missing);
+        }
+
+        boolean multiValue = fk instanceof MultiValuedForeignKey;
         if (multiValue)
         {
             // convert input into Collection of jdbcType values
@@ -648,14 +741,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addConvertColumn(ColumnInfo col, int fromIndex, int mvIndex, boolean mv)
     {
-
         SimpleConvertColumn c;
         if (mv)
             c = new MissingValueConvertColumn(col.getName(), fromIndex, mvIndex, col.getJdbcType());
         else
             c = new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType());
 
-        boolean multiValue = col.getFk() instanceof MultiValuedForeignKey;
+        ForeignKey fk = col.getFk();
+        if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
+        {
+            RemapMissingBehavior missing = col.isRequired() ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
+            c = new RemapPostConvertColumn(c, fromIndex, col, missing);
+        }
+
+        boolean multiValue = fk instanceof MultiValuedForeignKey;
         if (multiValue)
         {
             // convert input into Collection of jdbcType values
@@ -692,11 +791,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addConvertColumn(col, fromIndex, mv);
     }
 
-    public int addConvertColumn(String name, int fromIndex, int mvIndex, PropertyDescriptor pd, PropertyType pt)
+    // Add convert column using the target column's name.
+    public int addConvertColumn(ColumnInfo col, int fromIndex, int mvIndex, PropertyDescriptor pd, PropertyType pt)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
-        col.setName(name);
-        col.setJdbcType(pt.getJdbcType());
+        final String name = col.getName();
 
         boolean trimString = false;
         boolean trimStringRight = false;
@@ -705,17 +803,23 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             trimString = _context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TrimString) == Boolean.TRUE;
             trimStringRight = _context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TrimStringRight) == Boolean.TRUE;
         }
+
+        SimpleConvertColumn c;
         if (PropertyType.STRING == pt && (trimString || trimStringRight))
-            return addColumn(col, new PropertyConvertAndTrimColumn(name, fromIndex, mvIndex, pd, pt, !trimString));
+            c = new PropertyConvertAndTrimColumn(name, fromIndex, mvIndex, pd, pt, !trimString);
         else
-            return addColumn(col, new PropertyConvertColumn(name, fromIndex, mvIndex, pd, pt));
+            c = new PropertyConvertColumn(name, fromIndex, mvIndex, pd, pt);
+
+        ForeignKey fk = col.getFk();
+        if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
+        {
+            RemapMissingBehavior missing = col.isRequired() ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
+            c = new RemapPostConvertColumn(c, fromIndex, col, missing);
+        }
+
+        return addColumn(col, c);
     }
 
-
-    public int addConvertColumn(String name, int fromIndex, PropertyDescriptor pd, PropertyType pt)
-    {
-        return addConvertColumn(name, fromIndex, 0, pd, pt);
-    }
 
 
     public int addCoaleseColumn(String name, int fromIndex, Supplier second)
@@ -746,6 +850,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addColumn(col, new TimestampColumn());
     }
 
+    /**
+     * Translate values from the source data iterator to those contained in the in-memory <code>map</code>.
+     * @param fromIndex Source column to wrap.
+     * @param map Mapping from source to value.
+     * @param missing Tell me how to handle incoming values not present in the map.
+     */
+    public int addRemapColumn(int fromIndex, @NotNull Map<?, ?> map, RemapMissingBehavior missing)
+    {
+        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        RemapColumn remap = new RemapColumn(fromIndex, map, missing);
+        return addColumn(col, remap);
+    }
 
     public int addSharedTableLookupColumn(int fromIndex, @Nullable FieldKey extraColumnFieldKey, @Nullable ForeignKey fk,
                                           @NotNull Map<Object, Object> dataspaceTableIdMap)

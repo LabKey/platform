@@ -214,7 +214,7 @@ public class DataRegion extends AbstractDataRegion
         addDisplayColumn(index, col.getRenderer());
     }
 
-    public void addColumns(List<ColumnInfo> cols)
+    public void addColumns(Collection<ColumnInfo> cols)
     {
         for (ColumnInfo col : cols)
             addDisplayColumn(col.getRenderer());

@@ -528,6 +528,14 @@ public class DomainUtil
             throw new RuntimeException(e);
         }
 
+        if (to.getPropertyDescriptor().getPropertyType() == null)
+        {
+            String msg = "Unrecognized type '" + from.getRangeURI() + "' for property '" + from.getName() + "'";
+            if (errors == null)
+                throw new IllegalArgumentException(msg);
+            return;
+        }
+
         if (from.getLookupQuery() != null)
         {
             String containerId = from.getLookupContainer();

@@ -117,7 +117,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * For instance for a flow result it might return (container, run, sample, stim, populationName) rather
      * than (container, analysisId)
      *
-     * NOTE: unlike PK, this does not guaranttee that columns are NON-NULL
+     * NOTE: unlike PK, this does not guarantee that columns are NON-NULL
      * NOTE: Postgres does not consider rows with NULL values to be "equal" so NULLs may be repeated!
      */
     @NotNull List<ColumnInfo> getAlternateKeyColumns();

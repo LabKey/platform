@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
@@ -45,6 +46,14 @@ public abstract class CacheClearingQueryUpdateService implements QueryUpdateServ
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         return _service.getRows(user, container, keys);
+    }
+
+    @Override
+    public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+    {
+        int ret = _service.loadRows(user, container, rows, context, extraScriptContext);
+        clearCache();
+        return ret;
     }
 
     @Override

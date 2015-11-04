@@ -66,6 +66,12 @@ public abstract class AbstractDomainKind extends DomainKind
     }
 
     @Override
+    public boolean canDeleteDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, AdminPermission.class);
+    }
+
+    @Override
     public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
     {
         String domainURI = generateDomainURI(schemaName, queryName, container, user);
@@ -100,6 +106,11 @@ public abstract class AbstractDomainKind extends DomainKind
     }
 
     @Override
+    public void deleteDomain(User user, Domain domain)
+    {
+    }
+
+    @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
         return Collections.emptySet();
@@ -107,6 +118,12 @@ public abstract class AbstractDomainKind extends DomainKind
 
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container)
     {
         return Collections.emptySet();
     }

@@ -41,9 +41,9 @@ public class DataIteratorContext
 
     final BatchValidationException _errors;
     boolean _failFast = true;
-    boolean _verbose = false;   // allow more than one error per field (across all rows)
-    boolean _supportAutoIncrementKey = false;  // when true, iterators will treat an auto-incremented key as a normal provided key
-                                               // making it the responsibility of the Context creator to manage auto-incrementing.
+    boolean _verbose = false;
+    boolean _supportAutoIncrementKey = false;
+    boolean _allowImportLookupByAlternateKey = false;
 
     int _maxRowErrors = 1;
 
@@ -106,6 +106,7 @@ public class DataIteratorContext
         return _verbose;
     }
 
+    /** When true, allow more than one error per field (across all rows) */
     public void setVerbose(boolean verbose)
     {
         _verbose = verbose;
@@ -121,9 +122,24 @@ public class DataIteratorContext
         return _supportAutoIncrementKey;
     }
 
+    /**
+     * When true, iterators will treat an auto-incremented key as a normal provided key
+     * making it the responsibility of the Context creator to manage auto-incrementing.
+     */
     public void setSupportAutoIncrementKey(boolean supportAutoIncrementKey)
     {
         _supportAutoIncrementKey = supportAutoIncrementKey;
+    }
+
+    public boolean isAllowImportLookupByAlternateKey()
+    {
+        return _allowImportLookupByAlternateKey;
+    }
+
+    /** When true, allow importing lookup columns by the lookup table's alternate key instead of by primary key. */
+    public void setAllowImportLookupByAlternateKey(boolean allowImportLookupByAlternateKey)
+    {
+        _allowImportLookupByAlternateKey = allowImportLookupByAlternateKey;
     }
 
     /** if this etl should be killed, will execute <code>throw _errors;</code> */

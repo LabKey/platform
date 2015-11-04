@@ -95,6 +95,18 @@ public final class TableExtension
 
     public ColumnInfo addExtensionColumn(ColumnInfo baseCol, @Nullable String newColName)
     {
+        ColumnInfo aliased = wrapExtensionColumn(baseCol, newColName);
+        return _primaryTable.addColumn(aliased);
+    }
+
+    public ColumnInfo wrapExtensionColumn(String baseColName, @Nullable String newColName)
+    {
+        ColumnInfo baseCol = _extensionTable.getColumn(baseColName);
+        return wrapExtensionColumn(baseCol, newColName);
+    }
+
+    public ColumnInfo wrapExtensionColumn(ColumnInfo baseCol, @Nullable String newColName)
+    {
         newColName = Objects.toString(newColName, baseCol.getName());
 
         ColumnInfo lookupCol = _extensionFK.createLookupColumn(_extensionCol, baseCol.getName());
@@ -102,7 +114,7 @@ public final class TableExtension
         if (lookupCol.isHidden() || baseCol.isHidden())
             aliased.setHidden(true);
 
-        return _primaryTable.addColumn(aliased);
+        return aliased;
     }
 
     public String getLookupColumnName()

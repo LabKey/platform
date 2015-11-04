@@ -15,12 +15,12 @@
  */
 package org.labkey.api.exp.query;
 
-import org.labkey.api.module.Module;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.ContainerFilter;
 
 /**
  * User: jeckels
@@ -32,7 +32,12 @@ public abstract class AbstractExpSchema extends UserSchema
 
     public AbstractExpSchema(String name, String description, User user, Container container, DbSchema dbSchema)
     {
-        super(name, description, user, container, dbSchema);
+        this(SchemaKey.fromParts(name), description, user, container, dbSchema);
+    }
+
+    public AbstractExpSchema(SchemaKey path, String description, User user, Container container, DbSchema dbSchema)
+    {
+        super(path, description, user, container, dbSchema, null);
         _cacheTableInfos = false;
     }
 

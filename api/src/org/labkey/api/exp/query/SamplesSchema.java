@@ -36,7 +36,7 @@ import java.util.Map;
 
 public class SamplesSchema extends AbstractExpSchema
 {
-    public static final String SCHEMA_NAME = "Samples";
+    public static final String SCHEMA_NAME = "samples";
     public static final String SCHEMA_DESCR = "Contains data about the samples used in experiment runs.";
 
     static private Map<String, ExpSampleSet> getSampleSetMap(Container container, User user)
@@ -52,7 +52,7 @@ public class SamplesSchema extends AbstractExpSchema
 
     static public void register(final Module module)
     {
-        DefaultSchema.registerProvider("Samples", new DefaultSchema.SchemaProvider(module) {
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module) {
             @Override
             public boolean isAvailable(DefaultSchema schema, Module module)
             {
@@ -79,7 +79,12 @@ public class SamplesSchema extends AbstractExpSchema
 
     private SamplesSchema(User user, Container container, Map<String, ExpSampleSet> sampleSetMap)
     {
-        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
+        this(SchemaKey.fromParts(SCHEMA_NAME), user, container, sampleSetMap);
+    }
+
+    /*package*/ SamplesSchema(SchemaKey path, User user, Container container, Map<String, ExpSampleSet> sampleSetMap)
+    {
+        super(path, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
         _sampleSetMap = sampleSetMap;
     }
 
@@ -112,7 +117,7 @@ public class SamplesSchema extends AbstractExpSchema
         if (_containerFilter != null)
             ret.setContainerFilter(_containerFilter);
         ret.populate(ss, true);
-        ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<QueryException>());
+        ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
         return ret;
     }
 
@@ -125,7 +130,7 @@ public class SamplesSchema extends AbstractExpSchema
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), SamplesSchema.this);
                 ret.populate(ss, false);
                 ret.setContainerFilter(ContainerFilter.EVERYTHING);
-                ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<QueryException>());
+                ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
                 return ret;
             }
 

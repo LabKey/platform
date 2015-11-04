@@ -673,6 +673,7 @@ api/src/org/labkey/api/exp/api/AssayJSONConverter.java -text
 api/src/org/labkey/api/exp/api/DataType.java -text
 api/src/org/labkey/api/exp/api/DefaultExperimentDataHandler.java -text
 api/src/org/labkey/api/exp/api/ExpData.java -text
+api/src/org/labkey/api/exp/api/ExpDataClass.java -text
 api/src/org/labkey/api/exp/api/ExpDataRunInput.java -text
 api/src/org/labkey/api/exp/api/ExpExperiment.java -text
 api/src/org/labkey/api/exp/api/ExpMaterial.java -text
@@ -715,6 +716,9 @@ api/src/org/labkey/api/exp/property/Type.java -text
 api/src/org/labkey/api/exp/property/ValidatorContext.java -text
 api/src/org/labkey/api/exp/property/ValidatorKind.java -text
 api/src/org/labkey/api/exp/query/AbstractExpSchema.java -text
+api/src/org/labkey/api/exp/query/DataClassUserSchema.java -text
+api/src/org/labkey/api/exp/query/ExpDataClassDataTable.java -text
+api/src/org/labkey/api/exp/query/ExpDataClassTable.java -text
 api/src/org/labkey/api/exp/query/ExpDataInputTable.java -text
 api/src/org/labkey/api/exp/query/ExpDataTable.java -text
 api/src/org/labkey/api/exp/query/ExpExperimentTable.java -text
@@ -1819,6 +1823,7 @@ api/webapp/clientapi/core/Experiment.js -text
 api/webapp/clientapi/core/FieldKey.js -text
 api/webapp/clientapi/core/Filter.js -text
 api/webapp/clientapi/core/GetData.js -text
+api/webapp/clientapi/core/List.js -text
 api/webapp/clientapi/core/Message.js -text
 api/webapp/clientapi/core/MultiRequest.js -text
 api/webapp/clientapi/core/ParticipantGroup.js -text

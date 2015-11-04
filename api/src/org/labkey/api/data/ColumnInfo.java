@@ -32,6 +32,7 @@ import org.labkey.api.data.dialect.ForeignKeyResolver;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -1328,6 +1329,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return sb.toString();
     }
 
+    // UNDONE: Do we still need DomainProperty for this?
+    public boolean isRequiredForInsert(@Nullable DomainProperty dp)
+    {
+        if (isCalculated() || isAutoIncrement() || isVersionColumn() || null != getJdbcDefaultValue())
+            return false;
+        return !isNullable() || (null != dp && dp.isRequired());
+    }
+
     static public class SchemaForeignKey implements ForeignKey
     {
         private final DbScope _scope;
@@ -1650,7 +1659,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
                 if (col.fk != null)
                 {
-                    _log.warn("More than one FK defined for column " + parentTable.getName() + col.getName() + ". Skipping constraint " + key.fkName);
+                    _log.warn("More than one FK defined for column " + parentTable.getName() + "." + col.getName() + ". Skipping constraint " + key.fkName);
                     continue;
                 }
 

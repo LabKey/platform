@@ -36,6 +36,8 @@ import org.labkey.api.exp.LsidType;
 import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpExperimentTable;
@@ -55,6 +57,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -109,10 +112,16 @@ public class ExperimentService
         ExpData getExpData(int rowid);
         ExpData getExpData(String lsid);
         List<? extends ExpData> getExpDatas(int... rowid);
+        List<? extends ExpData> getExpDatasByLSID(Collection<String> lsids);
         List<? extends ExpData> getExpDatas(Collection<Integer> rowid);
         List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
         @NotNull
         List<? extends ExpData> getExpDatasUnderPath(@NotNull File path, @Nullable Container c);
+
+        /** Get all ExpData that are members of the ExpDataClass. */
+        List<? extends ExpData> getExpDatas(ExpDataClass dataClass);
+        ExpData getExpData(ExpDataClass dataClass, String name);
+        ExpData getExpData(ExpDataClass dataClass, int rowId);
 
         /**
          * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
@@ -122,6 +131,26 @@ public class ExperimentService
         ExpData createData(Container container, @NotNull DataType type, @NotNull String name, boolean generated);
         ExpData createData(Container container, String name, String lsid);
         ExpData createData(URI uri, XarSource source) throws XarFormatException;
+
+        /**
+         * Create a new DataClass with the provided properties.
+         */
+        ExpDataClass createDataClass(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, Integer sampleSetId, String nameExpression)
+                throws ExperimentException, SQLException;
+
+        List<? extends ExpDataClass> getDataClasses(Container container, User user, boolean includeOtherContainers);
+
+        /** Get a DataClass by name within the definition container. */
+        ExpDataClass getDataClass(Container definitionContainer, String dataClassName);
+
+        /**
+         * Get a DataClass by name within scope -- current, project, and shared.
+         * Requires a user to check for container read permission.
+         */
+        ExpDataClass getDataClass(Container scope, User user, String dataClassName);
+
+        ExpDataClass getDataClass(int rowId);
+        ExpDataClass getDataClass(String lsid);
 
         /**
          * Get materials with the given names, optionally within the provided sample set.
@@ -200,6 +229,9 @@ public class ExperimentService
          */
         Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... type);
 
+        Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start);
+        Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start);
+
 
         /**
          * The following methods return TableInfo's suitable for using in queries.
@@ -212,6 +244,8 @@ public class ExperimentService
         ExpDataTable createDataTable(String name, UserSchema schema);
         ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema);
         ExpSampleSetTable createSampleSetTable(String name, UserSchema schema);
+        ExpDataClassTable createDataClassTable(String name, UserSchema schema);
+        ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ExpDataClass dataClass);
         ExpProtocolTable createProtocolTable(String name, UserSchema schema);
         ExpExperimentTable createExperimentTable(String name, UserSchema schema);
         ExpMaterialTable createMaterialTable(String name, UserSchema schema);
@@ -248,6 +282,7 @@ public class ExperimentService
         TableInfo getTinfoExperimentRun();
         TableInfo getTinfoRunList();
         TableInfo getTinfoData();
+        TableInfo getTinfoDataClass();
         TableInfo getTinfoDataInput();
         TableInfo getTinfoPropertyDescriptor();
         TableInfo getTinfoAssayQCFlag();
@@ -262,6 +297,7 @@ public class ExperimentService
         ExpRun getCreatingRun(File file, Container c);
         List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds);
         List<? extends ExpRun> getRunsUsingSampleSets(ExpSampleSet... sampleSets);
+        List<? extends ExpRun> getRunsUsingDataClasses(Collection<ExpDataClass> dataClasses);
 
         /**
          * @return the subset of these runs which are supposed to be deleted when one of their inputs is deleted.
@@ -317,6 +353,10 @@ public class ExperimentService
          */
         public ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun expRun, String name);
         public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
+        public ExpRun derive(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
+                            Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
+                            ViewBackgroundInfo info, Logger log)
+            throws ExperimentException;
 
         public void registerExperimentMaterialListener(ExperimentMaterialListener listener);
         public void registerExperimentDataHandler(ExperimentDataHandler handler);

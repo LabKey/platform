@@ -118,7 +118,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     /*
-     * construct the core ETL tranformation pipeline for this table, may be just StandardETL.
+     * construct the core ETL transformation pipeline for this table, may be just StandardETL.
      * does NOT handle triggers or the insert/update iterator.
      */
     public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
@@ -234,6 +234,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
     }
 
+
+    @Override
+    public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+    {
+        return _importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
+    }
 
     @Override
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws SQLException

@@ -9,6 +9,7 @@
         <script path="clientapi/core/Experiment.js"/>
         <script path="clientapi/core/FieldKey.js"/>
         <script path="clientapi/core/Filter.js"/>
+        <script path="clientapi/core/List.js"/>
         <script path="clientapi/core/Message.js"/>
         <script path="clientapi/core/MultiRequest.js"/>
         <script path="clientapi/core/ParticipantGroup.js"/>

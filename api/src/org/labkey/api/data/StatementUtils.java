@@ -76,6 +76,7 @@ public class StatementUtils
     boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardETL
     boolean _selectIds = false;
     boolean _allowUpdateAutoIncrement = false;
+    boolean _allowInsertByLookupDisplayValue = false;
 
     // variable/parameter tracking helpers
     boolean useVariables = false;
@@ -145,6 +146,12 @@ public class StatementUtils
     public StatementUtils allowSetAutoIncrement(boolean b)
     {
         _allowUpdateAutoIncrement = b;
+        return this;
+    }
+
+    public StatementUtils allowInsertByLookupDisplayValue(boolean b)
+    {
+        _allowInsertByLookupDisplayValue = b;
         return this;
     }
 

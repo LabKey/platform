@@ -144,7 +144,7 @@ public class StandardETL implements DataIteratorBuilder
 
 
         /*
-         * NOTE: sbouldn't really need DomainProperty here,
+         * NOTE: shouldn't really need DomainProperty here,
          * but not all information is available on the ColumnInfo
          * notably we need PropertyValidators
          *
@@ -232,7 +232,7 @@ public class StandardETL implements DataIteratorBuilder
             else if (null == pair.dp)
                 indexConvert = convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv,  supportsMV);
             else
-                indexConvert = convert.addConvertColumn(pair.target.getName(), pair.indexFrom, pair.indexMv, pair.dp.getPropertyDescriptor(), pair.dp.getPropertyDescriptor().getPropertyType());
+                indexConvert = convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pair.dp.getPropertyDescriptor(), pair.dp.getPropertyDescriptor().getPropertyType());
 
             List<ColumnValidator> validators = ColumnValidators.create(pair.target, pair.dp);
             validate.addValidators(indexConvert, validators);
@@ -245,8 +245,6 @@ public class StandardETL implements DataIteratorBuilder
 
     boolean isRequiredForInsert(@NotNull ColumnInfo col, @Nullable DomainProperty dp)
     {
-        if (col.isAutoIncrement() || col.isVersionColumn() || null != col.getJdbcDefaultValue())
-            return false;
-        return !col.isNullable() || (null != dp && dp.isRequired());
+        return col.isRequiredForInsert(dp);
     }
 }

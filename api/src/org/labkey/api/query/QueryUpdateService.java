@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
@@ -95,6 +96,9 @@ public interface QueryUpdateService
      */
     public List<Map<String,Object>> getRows(User user, Container container, List<Map<String,Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
+
+    public int loadRows(User user, Container container, DataIteratorBuilder rows,
+                       DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException;
 
     /**
      * Inserts the given values as new rows into the source table of this query.

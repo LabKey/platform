@@ -64,6 +64,8 @@ abstract public class DomainKind implements Handler<String>
 
     abstract public boolean canEditDefinition(User user, Domain domain);
 
+    abstract public boolean canDeleteDefinition(User user, Domain domain);
+
     // Override to customize the nav trail on shared pages like edit domain
     abstract public void appendNavTrail(NavTree root, Container c, User user);
 
@@ -107,6 +109,14 @@ abstract public class DomainKind implements Handler<String>
      */
     abstract public List<String> updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user);
 
+    /**
+     * Delete a Domain and it's associated data.
+     * @param domain
+     * @param user
+     * @param domain The domain to delete
+     */
+    abstract public void deleteDomain(User user, Domain domain);
+
     abstract public Set<PropertyStorageSpec> getBaseProperties();
 
     /**
@@ -128,6 +138,8 @@ abstract public class DomainKind implements Handler<String>
             properties.add(pss.getName());
         return properties;
     }
+
+    public abstract Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container);
 
     /**
      * If domains of this kind should get hard tables automatically provisioned, this returns

@@ -30,6 +30,9 @@ public interface ExpData extends ExpProtocolOutput
 {
     public static final String DEFAULT_CPAS_TYPE = "Data";
 
+    @Nullable
+    String getDescription();
+
     DataType getDataType();
     URI getDataFileURI();
 
@@ -51,5 +54,9 @@ public interface ExpData extends ExpProtocolOutput
      */
     boolean isGenerated();
 
+    @Nullable
+    ExpDataClass getDataClass();
+
     void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException, SQLException;
+
 }

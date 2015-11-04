@@ -30,6 +30,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reader.DataLoader;
@@ -99,6 +100,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected String _successMessageSuffix = "inserted";
     protected boolean _targetHasBeenSet = false;    // You can only set target TableInfo or NoTableInfo once
     protected boolean _hideTsvCsvCombo = false;
+    protected boolean _importIdentity = false;
+    protected boolean _importLookupByAlternateKey = false;
 
     protected void setTarget(TableInfo t) throws ServletException
     {
@@ -245,6 +248,13 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         String module = getViewContext().getRequest().getParameter("module");
         String moduleResource = getViewContext().getRequest().getParameter("moduleResource");
+
+        // TODO: once importData() is refactored to accept DataIteratorContext, change importIdentity into local variable
+        if (getViewContext().getRequest().getParameter("importIdentity") != null)
+            _importIdentity = Boolean.valueOf(getViewContext().getRequest().getParameter("importIdentity"));
+
+        if (getViewContext().getRequest().getParameter("importByLookupAlternateKey") != null)
+            _importLookupByAlternateKey = Boolean.valueOf(getViewContext().getRequest().getParameter("importByLookupAlternateKey"));
 
         try
         {
@@ -417,10 +427,18 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     {
         if (_target != null)
         {
+            DataIteratorContext context = new DataIteratorContext(errors);
+            context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+            context.setAllowImportLookupByAlternateKey(_importLookupByAlternateKey);
+            if (_importIdentity)
+            {
+                context.setInsertOption(QueryUpdateService.InsertOption.IMPORT_IDENTITY);
+                context.setSupportAutoIncrementKey(true);
+            }
+
             try (DbScope.Transaction transaction = _target.getSchema().getScope().ensureTransaction())
             {
-//                List res = _updateService.insertRows(getUser(), getContainer(), dl.load(), errors, new HashMap<String, Object>());
-                int count = _updateService.importRows(getUser(), getContainer(), dl, errors, null, new HashMap<String, Object>());
+                int count = _updateService.loadRows(getUser(), getContainer(), dl, context, new HashMap<>());
                 if (errors.hasErrors())
                     return 0;
                 transaction.commit();

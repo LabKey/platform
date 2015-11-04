@@ -204,6 +204,12 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     }
 
     @Override
+    public boolean canDeleteDefinition(User user, Domain domain)
+    {
+        return false;
+    }
+
+    @Override
     public void appendNavTrail(NavTree root, Container c, User user)
     {
     }
@@ -226,6 +232,11 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     }
 
     @Override
+    public void deleteDomain(User user, Domain domain)
+    {
+    }
+
+    @Override
     public DbScope getScope()
     {
         DbSchema schema = DbSchema.get(getStorageSchemaName(), DbSchemaType.Provisioned);
@@ -240,6 +251,12 @@ public abstract class AbstractAuditDomainKind extends DomainKind
 
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container)
     {
         return Collections.emptySet();
     }

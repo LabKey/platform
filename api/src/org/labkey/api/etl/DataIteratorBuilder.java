@@ -26,7 +26,14 @@ public interface DataIteratorBuilder
 {
     DataIterator getDataIterator(DataIteratorContext context);
 
-    public static class Wrapper implements DataIteratorBuilder
+    static DataIteratorBuilder wrap(DataIterator di)
+    {
+        if (di instanceof DataIteratorBuilder)
+            return (DataIteratorBuilder)di;
+        return new Wrapper(di);
+    }
+
+    class Wrapper implements DataIteratorBuilder
     {
         final DataIterator di;
 
