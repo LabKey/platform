@@ -253,8 +253,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         if (getViewContext().getRequest().getParameter("importIdentity") != null)
             _importIdentity = Boolean.valueOf(getViewContext().getRequest().getParameter("importIdentity"));
 
-        if (getViewContext().getRequest().getParameter("importByLookupAlternateKey") != null)
-            _importLookupByAlternateKey = Boolean.valueOf(getViewContext().getRequest().getParameter("importByLookupAlternateKey"));
+        if (getViewContext().getRequest().getParameter("importLookupByAlternateKey") != null)
+            _importLookupByAlternateKey = Boolean.valueOf(getViewContext().getRequest().getParameter("importLookupByAlternateKey"));
 
         try
         {
