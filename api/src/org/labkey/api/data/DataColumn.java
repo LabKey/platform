@@ -265,6 +265,7 @@ public class DataColumn extends DisplayColumn
         out.write("LABKEY.DataRegions[" + regionName + "]._openFilter(" + columnName + ");");
     }
 
+    @Override
     public String getClearFilter(RenderContext ctx)
     {
         if (_filterColumn == null)
@@ -701,17 +702,16 @@ public class DataColumn extends DisplayColumn
         return PageFlowUtil.filter(value);
     }
 
-    public void renderSortHandler(RenderContext ctx, Writer out, Sort.SortDirection sort) throws IOException
+    @Override
+    public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
     {
         if (_sortColumns == null || _sortColumns.size() == 0)
-        {
-            return;
-        }
-        String uri;
+            return "";
+
         String regionName = ctx.getCurrentRegion().getName();
         String fieldKey = _displayColumn.getFieldKey().toString();
-        uri = "doSort("+ PageFlowUtil.jsString(regionName) + "," + PageFlowUtil.jsString(fieldKey) + ",'" + h(sort.getDir()) + "')";
-        out.write(uri);
+        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "]" +
+                ".changeSort(" + PageFlowUtil.jsString(fieldKey) + ", '" + h(sort.getDir()) + "')";
     }
 
     public void renderTitle(RenderContext ctx, Writer out) throws IOException

@@ -3055,17 +3055,6 @@ function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singul
 }
 
 
-function doSort(tableName, fieldKey, sortDirection)
-{
-    if (!tableName || !fieldKey)
-        return;
-
-    var dr = LABKEY.DataRegions[tableName];
-    if (!dr)
-        return;
-    dr.changeSort(fieldKey, sortDirection);
-}
-
 LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
 
     constructor: function (config)

@@ -88,12 +88,6 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderSortHandler(RenderContext ctx, Writer out, Sort.SortDirection sort) throws IOException
-    {
-        _column.renderSortHandler(ctx, out, sort);
-    }
-
-    @Override
     public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException
     {
         _column.renderFilterOnClick(ctx, out);

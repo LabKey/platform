@@ -81,8 +81,6 @@ public abstract class DisplayColumn extends RenderColumn
 
     public abstract boolean isEditable();
 
-    public abstract void renderSortHandler(RenderContext ctx, Writer out, Sort.SortDirection sort) throws IOException;
-
     public abstract void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException;
 
     public abstract void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException;
@@ -992,16 +990,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
     {
-        StringWriter writer = new StringWriter();
-        try
-        {
-            renderSortHandler(ctx, writer, sort);
-        }
-        catch (Exception e)
-        {
-            writer.write(e.getMessage());
-        }
-        return writer.toString();
+        return "";
     }
 
     public String getFilterOnClick(RenderContext ctx)
