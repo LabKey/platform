@@ -153,11 +153,13 @@ if (!LABKEY.DataRegions)
             userContainerFilter: undefined, // TODO: Incorporate this with the standard containerFilter
 
             filters: undefined,
-            removeableFilters: undefined,
             userFilters: {},
 
             parameters: undefined,
-            userSort: undefined
+            userSort: undefined,
+
+            title: undefined,
+            titleHref: undefined
         };
 
         if (!config || !LABKEY.Utils.isString(config.name)) {
@@ -269,7 +271,7 @@ if (!LABKEY.DataRegions)
 
     /**
      * Removes all the filters for a particular field
-     * @param {string or FieldKey} fieldKey the name of the field from which all filters should be removed
+     * @param {string|FieldKey} fieldKey the name of the field from which all filters should be removed
      */
     Proto.clearFilter = function(fieldKey) {
         fieldKey = _resolveFieldKey(this, fieldKey);
@@ -2242,7 +2244,7 @@ if (!LABKEY.DataRegions)
         });
     };
 
-    var _load = function(region, callback, scope) {
+    var _load = function(region, callback, scope, failure, failScope) {
 
         var params = _getAsyncParams(region);
         var jsonData = _getAsyncBody(region, params);
@@ -2257,7 +2259,7 @@ if (!LABKEY.DataRegions)
 
         LABKEY.Ajax.request({
             timeout: (region.timeout == undefined) ? 30000 : region.timeout,
-            url: LABKEY.ActionURL.buildURL('project', 'getWebPart', region.containerPath),
+            url: LABKEY.ActionURL.buildURL('project', 'getWebPart.api', region.containerPath),
             method: 'POST',
             params: params,
             jsonData: jsonData,
@@ -2272,10 +2274,10 @@ if (!LABKEY.DataRegions)
                 //}
 
                 var target = $('#' + renderTo);
-                var me = this;
 
                 if (target.length > 0) {
 
+                    //this.unmask();
                     //if (dr) {
                     //    dr.destroy();
                     //}
@@ -2286,10 +2288,21 @@ if (!LABKEY.DataRegions)
                             callback.call(scope);
                         }
 
-                        $(me).trigger('success', me);
-                    });
+                        $(this).trigger('success', this);
+                    }, this);
+                }
+                else {
+                    // not finding element considered a failure
+                    if ($.isFunction(failure)) {
+                        failure.call(failScope || this, response /* json */, response, undefined /* options */, target);
+                    }
                 }
             },
+            failure: LABKEY.Utils.getCallbackWrapper(function(json, response, options) {
+                if ($.isFunction(failure)) {
+                    failure.call(failScope || this, json, response, options, $('#' + renderTo));
+                }
+            }, region, true),
             scope: region
         });
     };
@@ -2366,7 +2379,7 @@ if (!LABKEY.DataRegions)
             params[name + '.async'] = true;
 
             if (LABKEY.Utils.isString(region.frame)) {
-                params["webpart.frame"] = region.frame
+                params["webpart.frame"] = region.frame;
             }
 
             // Sorts configured by the user when interacting with the grid. We need to pass these as URL parameters.
@@ -2383,6 +2396,14 @@ if (!LABKEY.DataRegions)
             // TODO: Get rid of this and incorporate it with the normal containerFilter checks
             if (region.userContainerFilter) {
                 params[name + CONTAINER_FILTER_NAME] = region.userContainerFilter;
+            }
+
+            if (region.title) {
+                params.title = region.title;
+            }
+
+            if (region.titleHref) {
+                params.titleHref = region.titleHref;
             }
 
             if (region.parameters) {
@@ -3097,19 +3118,29 @@ if (!LABKEY.DataRegions)
 
         var _config = config || {};
 
+        // TODO: Support sql, removeableSort, removeableContainerFilter
         var defaults = {
             renderTo: undefined,
             dataRegionName: LABKEY.Utils.id('aqwp'),
             returnURL: window.location.href,
             _success: LABKEY.Utils.getOnSuccess(_config),
             _failure: LABKEY.Utils.getOnFailure(_config),
-            filters: [],
+            filters: undefined,
+            removeableFilters: undefined,
             errorType: 'html',
             parameters: undefined,
-            sql: undefined
+            sql: undefined,
+            suppressRenderErrors: false,
+            title: 'webpart.title',
+            titleHref: 'webpart.titleHref'
         };
 
         var settings = $.extend({}, defaults, _config);
+
+        // if 'filters' is not specified and 'filterArray' is, use it 'filterArray'
+        if (!$.isArray(settings.filters) && $.isArray(_config.filterArray)) {
+            settings.filters = _config.filterArray;
+        }
 
         for (var s in settings) {
             if (settings.hasOwnProperty(s)) {
@@ -3117,14 +3148,23 @@ if (!LABKEY.DataRegions)
             }
         }
 
+        var userFilters = {};
+        if ($.isArray(this.removeableFilters)) {
+            LABKEY.Filter.appendFilterParams(userFilters, this.removeableFilters, this.dataRegionName);
+        }
+
         // TODO: Figure out strategy for changing the defaults for a region backing a QWP (e.g. frame is 'portal' not 'none')
 
-        this.region = LABKEY.DataRegions.create({
+        this.region = LABKEY.DataRegion2.create({
             name: this.dataRegionName,
             schemaName: this.schemaName,
             queryName: this.queryName,
             allowHeaderLock: true,
             frame: 'portal', // default
+            filters: this.filters,
+            userFilters: userFilters,
+            title: this.title,
+            titleHref: this.titleHref,
             async: true
         });
 
@@ -3141,7 +3181,31 @@ if (!LABKEY.DataRegions)
 
         if (this.renderTo) {
             this.region.renderTo = this.renderTo;
-            _load(this.region, function() { }, this);
+            _load(this.region, function() {
+
+                // success - fire render event
+                // TODO: Because I don't understand trigger this causes this render function to loop indefinitely
+                // obviously, we need more of a custom event bus. We don't care about the element...
+                //$(this).trigger($.Event('render'), [this]);
+
+            }, this, function(json, response, options, renderEl) {
+
+                // failure - do weird stuff
+                if (renderEl.length > 0) {
+                    if ($.isFunction(this._failure)) {
+                        this._failure.call(this.scope || this, json, response, options);
+                    }
+                    else if (this.errorType === 'html') {
+                        renderEl.html('<div class="labkey-error">' + LABKEY.Utils.encodeHtml(json.exception) + '</div>');
+                    }
+                }
+                else {
+                    if (!this.suppressRenderErrors) {
+                        LABKEY.Utils.alert('Rendering Error', 'The element "' + this.renderTo + '" does not exist!');
+                    }
+                }
+
+            }, this);
         }
         else {
             throw '"renderTo" must be specified either upon construction or when calling LABKEY.QueryWebpart2.render.';
