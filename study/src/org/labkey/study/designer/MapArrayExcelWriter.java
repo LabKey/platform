@@ -127,12 +127,6 @@ public class MapArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public void renderSortHandler(RenderContext ctx, Writer out, Sort.SortDirection sort) throws IOException
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
         public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException
         {
             throw new UnsupportedOperationException("This is for excel only.");
