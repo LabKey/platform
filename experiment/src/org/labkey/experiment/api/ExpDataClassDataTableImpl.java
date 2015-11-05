@@ -1,6 +1,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,6 +16,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableExtension;
@@ -28,15 +30,12 @@ import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.etl.WrapperDataIterator;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -91,10 +90,13 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ExpDataClassImpl dataClass)
     {
-        super(name, dataClass.getTinfo(), schema, dataClass);
+        super(name, ExperimentService.get().getTinfoData(), schema, dataClass);
         _dataClass = dataClass;
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
+
+        // Filter exp.data to only those rows that are members of the DataClass
+        addCondition(new SimpleFilter(FieldKey.fromParts("classId"), _dataClass.getRowId()));
     }
 
     @NotNull
@@ -110,7 +112,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         {
             case RowId:
             {
-                ColumnInfo c = _extension.wrapExtensionColumn("RowId", alias);
+                ColumnInfo c = wrapColumn(alias, getRealTable().getColumn("RowId"));
                 c.setKeyField(true);
                 c.setHidden(true);
                 return c;
@@ -129,7 +131,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             case Name:
             {
-                ColumnInfo c = _extension.wrapExtensionColumn(column.name(), alias);
+                ColumnInfo c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 // TODO: Name is editable in insert view, but not in update view
                 return c;
             }
@@ -137,12 +139,12 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             case Created:
             case Modified:
             case Description:
-                return _extension.wrapExtensionColumn(column.name(), alias);
+                return wrapColumn(alias, getRealTable().getColumn(column.name()));
 
             case CreatedBy:
             case ModifiedBy:
             {
-                ColumnInfo c = _extension.wrapExtensionColumn(column.name(), alias);
+                ColumnInfo c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 c.setFk(new UserIdForeignKey(getUserSchema()));
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
@@ -152,7 +154,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             case DataClass:
             {
-                ColumnInfo c = _extension.wrapExtensionColumn("classId", alias);
+                ColumnInfo c = wrapColumn(alias, getRealTable().getColumn("classId"));
                 c.setFk(new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), getContainer(), getUserSchema().getUser(), ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
@@ -165,7 +167,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             case Folder:
             {
-                ColumnInfo c = _extension.wrapExtensionColumn("Container", "Container");
+                ColumnInfo c = wrapColumn("Container", getRealTable().getColumn("Container"));
                 c.setLabel("Folder");
                 ContainerForeignKey.initColumn(c, getUserSchema());
                 return c;
@@ -194,9 +196,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         // Need to add the LSID column before creating the TableExtension otherwise creating the TableExtension will fail.
         ColumnInfo lsidCol = addColumn(Column.LSID);
 
-        TableInfo expData = ExperimentService.get().getTinfoData();
-        _extension = TableExtension.create(this, expData,
-                "lsid", "lsid", LookupColumn.JoinType.leftOuter);
+        TableInfo extTable = _dataClass.getTinfo();
+        _extension = TableExtension.create(this, extTable,
+                "lsid", "lsid", LookupColumn.JoinType.inner);
 
         LinkedHashSet<FieldKey> defaultVisible = new LinkedHashSet<>();
         defaultVisible.add(FieldKey.fromParts(Column.Name));
@@ -216,14 +218,14 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
         // Add the domain columns
         Collection<ColumnInfo> cols = new ArrayList<>(20);
-        for (ColumnInfo col : getRealTable().getColumns())
+        for (ColumnInfo col : extTable.getColumns())
         {
             // Skip the lookup column itself, LSID, and exp.data.rowid -- it is added above
             String colName = col.getName();
             if (colName.equalsIgnoreCase(_extension.getLookupColumnName()) || colName.equalsIgnoreCase("rowid"))
                 continue;
 
-            cols.add(addWrapColumn(col));
+            cols.add(_extension.addExtensionColumn(col, null));
         }
 
         HashMap<String,DomainProperty> properties = new HashMap<>();
@@ -581,114 +583,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         return new DataClassDataUpdateService(this);
     }
 
-    private class _DataClassDataUpdateService extends DefaultQueryUpdateService
-    {
-
-        private final TableInfo _expData;
-        private Integer _ownerObjectId;
-
-        public _DataClassDataUpdateService(ExpDataClassDataTableImpl table)
-        {
-            super(table, ExpDataClassDataTableImpl.this.getRealTable());
-            _expData = ExperimentService.get().getTinfoData();
-        }
-
-        int getOwnerObjectId()
-        {
-            if (_ownerObjectId == null)
-                _ownerObjectId = OntologyManager.ensureObject(_dataClass.getContainer(), _dataClass.getLSID());
-            return _ownerObjectId;
-        }
-
-        @Override
-        protected Map<String, Object> _select(Container container, Object[] keys) throws SQLException, ConversionException
-        {
-            TableInfo t = getDbTable();
-
-            SQLFragment sql = new SQLFragment()
-                    .append("SELECT t.*, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
-                    .append(" FROM ").append(ExperimentService.get().getTinfoData(), "d")
-                    .append(" LEFT OUTER JOIN ").append(t, "t")
-                    .append(" ON d.lsid = t.lsid")
-                    .append(" WHERE d.Container=?").add(container.getEntityId())
-                    .append(" AND d.rowid=?").add(keys[0]);
-
-            return new SqlSelector(getDbTable().getSchema(), sql).getObject(Map.class);
-        }
-
-        @Override
-        protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws SQLException, ValidationException
-        {
-            String name = (String)row.get("Name");
-            String lsid = (String)row.get("LSID");
-            if (lsid == null)
-            {
-                lsid = ExperimentService.get().generateGuidLSID(c, ExpData.class);
-
-                row.put("LSID", lsid);
-            }
-
-            row.put("classId", _dataClass.getRowId());
-
-            int objectId = OntologyManager.ensureObject(c, lsid, getOwnerObjectId()); // maybe not necessary
-            Map<String, Object> ret0 = Table.insert(user, _expData, row);
-            Map<String, Object> ret1 = Table.insert(user, getDbTable(), row);
-
-            // Insert comment -- TODO: use hard table column
-            if (row.containsKey("Flag"))
-            {
-                PropertyDescriptor pd = ExperimentProperty.COMMENT.getPropertyDescriptor();
-                String value = (String)row.get("Flag");
-                if (value != null)
-                {
-                    ObjectProperty oprop = new ObjectProperty(lsid, c, pd, value);
-                    OntologyManager.insertProperties(c, lsid, oprop);
-                }
-            }
-
-            Map<String, Object> ret = new CaseInsensitiveHashMap<>();
-            ret.putAll(ret0);
-
-            Integer rowId = (Integer)ret.remove("rowId");
-
-            ret.putAll(ret1);
-
-            // CONSIDER: Performing a insert, select, then update will kill performance -- can we use DataIterator framework?
-            // Evaluate name expression after insertion so we can use ${RowId} or other auto-inc columns.
-            if (name == null && _dataClass.getNameExpression() != null)
-            {
-                String nameExpr = _dataClass.getNameExpression();
-                StringExpression expr = StringExpressionFactory.create(nameExpr);
-                name = expr.eval(ret);
-
-                Map<String, Object> m = new HashMap<>();
-                m.put("name", name);
-                Table.update(user, _expData, m, rowId);
-            }
-
-            return ret;
-        }
-
-        @Override
-        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
-        {
-            return super._update(user, c, row, oldRow, keys);
-        }
-
-        @Override
-        protected void _delete(Container c, Map<String, Object> row) throws InvalidKeyException
-        {
-            String lsid = (String)row.get("lsid");
-            if (lsid == null)
-                throw new InvalidKeyException("lsid required");
-
-            // NOTE: The provisioned table row will be deleted in ExperimentServiceImpl.deleteDataByRowIds()
-            //Table.delete(getDbTable(), new SimpleFilter(FieldKey.fromParts("lsid"), lsid));
-            ExpData data = ExperimentService.get().getExpData(lsid);
-            data.delete(getUserSchema().getUser());
-        }
-    }
-
     private class DataClassDataUpdateService extends DefaultQueryUpdateService
     {
         public DataClassDataUpdateService(ExpDataClassDataTableImpl table)
@@ -721,11 +615,12 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         @Override
         protected Map<String, Object> _select(Container container, Object[] keys) throws SQLException, ConversionException
         {
-            TableInfo t = getDbTable();
+            TableInfo d = getDbTable();
+            TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
 
             SQLFragment sql = new SQLFragment()
-                    .append("SELECT t.*, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
-                    .append(" FROM ").append(ExperimentService.get().getTinfoData(), "d")
+                    .append("SELECT t.*, d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
+                    .append(" FROM ").append(d, "d")
                     .append(" LEFT OUTER JOIN ").append(t, "t")
                     .append(" ON d.lsid = t.lsid")
                     .append(" WHERE d.Container=?").add(container.getEntityId())
@@ -735,16 +630,42 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         }
 
         @Override
+        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+        {
+            // LSID was stripped by super.updateRows() and is needed to insert into the dataclass provisioned table
+            String lsid = (String)oldRow.get("lsid");
+            if (lsid == null)
+                throw new ValidationException("lsid required to update row");
+
+            // update exp.data
+            Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, row, oldRow, keys));
+
+            // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
+            keys = new Object[] { };
+            TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
+            ret.putAll(Table.update(user, t, row, keys, filter, Level.DEBUG));
+
+            return ret;
+        }
+
+        @Override
         protected void _delete(Container c, Map<String, Object> row) throws InvalidKeyException
         {
             String lsid = (String)row.get("lsid");
             if (lsid == null)
-                throw new InvalidKeyException("lsid required");
+                throw new InvalidKeyException("lsid required to delete row");
 
             // NOTE: The provisioned table row will be deleted in ExperimentServiceImpl.deleteDataByRowIds()
             //Table.delete(getDbTable(), new SimpleFilter(FieldKey.fromParts("lsid"), lsid));
             ExpData data = ExperimentService.get().getExpData(lsid);
             data.delete(getUserSchema().getUser());
+        }
+
+        @Override
+        protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
+        {
+            return ExperimentServiceImpl.get().truncateDataClass(_dataClass, container);
         }
     }
 }

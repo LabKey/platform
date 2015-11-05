@@ -1055,7 +1055,7 @@ public class QueryServiceImpl extends QueryService
     public LinkedHashMap<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields, @NotNull Collection<ColumnInfo> existingColumns)
     {
         assert null != (existingColumns = Collections.unmodifiableCollection(existingColumns));
-        assert Table.checkAllColumns(table, existingColumns, "QueryServiceImpl.getColumns() existingColums", false);
+        assert Table.checkAllColumns(table, existingColumns, "QueryServiceImpl.getColumns() existingColumns", false);
 
         AliasManager manager = new AliasManager(table, existingColumns);
         LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<>();
@@ -1358,7 +1358,6 @@ public class QueryServiceImpl extends QueryService
 
         for (LinkedSchemaDef def : defs)
         {
-            Container sourceContainer = def.lookupSourceContainer();
             try
             {
                 UserSchema schema = LinkedSchema.get(user, c, def);

@@ -1449,7 +1449,6 @@ public class ExperimentController extends SpringActionController
 
             DataRegion dr = new DataRegion();
             dr.setTable(table);
-            dr.addColumns(ExperimentServiceImpl.get().getTinfoData().getUserEditableColumns());
             dr.addColumns(table.getColumns());
             dr.removeColumns("RowId", "Created", "CreatedBy", "Modified", "ModifiedBy", "DataFileUrl", "Run", "LSID", "CpasType", "SourceApplicationId", "Folder", "Generated");
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));

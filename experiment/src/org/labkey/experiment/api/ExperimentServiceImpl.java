@@ -2242,6 +2242,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
 
             OntologyManager.deleteAllObjects(c, user);
+
+            // Delete DataClasses and their exp.Data members
+            // Need to delete DataClass before SampleSets since they may be referenced by the DataClass
+            for (ExpDataClassImpl dataClass : dataClasses)
+            {
+                dataClass.delete(user);
+            }
+
             // delete material sources
             // now call the specialized function to delete the Materials that belong to the Material Source,
             // including the toplevel properties of the Materials, of which there are often many
@@ -2252,12 +2260,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
             Table.delete(getTinfoActiveMaterialSource(), containerFilter);
-
-            // Delete DataClasses and their exp.Data members
-            for (ExpDataClassImpl dataClass : dataClasses)
-            {
-                dataClass.delete(user);
-            }
 
             // Delete all the experiments/run groups/batches
             for (ExpExperimentImpl exp : exps)
@@ -2575,6 +2577,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     }
 
+    public int truncateDataClass(ExpDataClass dataClass, Container c)
+    {
+        assert getExpSchema().getScope().isTransactionActive();
+
+        // Delete all exp.Data from the DataClass
+        SimpleFilter dataClassFilter = new SimpleFilter(FieldKey.fromParts("classId"), dataClass.getRowId());
+        Collection<Integer> dataIds = new TableSelector(ExperimentServiceImpl.get().getTinfoData(), Collections.singleton("RowId"), dataClassFilter, null).getCollection(Integer.class);
+        deleteDataByRowIds(c, dataIds);
+        return dataIds.size();
+    }
+
     public void deleteDataClass(int rowId, Container c, User user) throws ExperimentException
     {
         ExpDataClass dataClass = getDataClass(rowId);
@@ -2587,10 +2600,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            // Delete all exp.Data from the DataClass
-            SimpleFilter dataClassFilter = new SimpleFilter(FieldKey.fromParts("classId"), dataClass.getRowId());
-            Collection<Integer> dataIds = new TableSelector(ExperimentServiceImpl.get().getTinfoData(), Collections.singleton("RowId"), dataClassFilter, null).getCollection(Integer.class);
-            deleteDataByRowIds(c, dataIds);
+            truncateDataClass(dataClass, c);
 
             d.delete(user);
 
