@@ -244,6 +244,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -583,9 +584,15 @@ public class ExperimentController extends SpringActionController
             {
                 SimpleDisplayColumn idCols = new SimpleDisplayColumn();
                 idCols.setCaption("Id Column(s)");
-                String names = _source.getIdCols().stream().map(DomainProperty::getName).collect(Collectors.joining(", "));
-                idCols.setDisplayHtml(PageFlowUtil.filter(names));
-                detailsView.getDataRegion().addDisplayColumn(idCols);
+                String names = _source.getIdCols().stream()
+                        .filter(Objects::nonNull)
+                        .map(DomainProperty::getName)
+                        .collect(Collectors.joining(", "));
+                if (!names.isEmpty())
+                {
+                    idCols.setDisplayHtml(PageFlowUtil.filter(names));
+                    detailsView.getDataRegion().addDisplayColumn(idCols);
+                }
             }
 
             if (_source.getParentCol() != null)
