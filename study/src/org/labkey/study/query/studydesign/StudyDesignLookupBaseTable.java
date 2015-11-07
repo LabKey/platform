@@ -21,8 +21,9 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DatabaseTableType;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
@@ -110,6 +111,12 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
         public StudyDesignLookupsQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
         {
             super(queryTable, dbTable);
+        }
+
+        @Override
+        public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+        {
+            return importRows(user, container, rows, context.getErrors(), context.getConfigParameters(), extraScriptContext);
         }
 
         @Override
