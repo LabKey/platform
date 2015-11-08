@@ -77,10 +77,11 @@ public class ApiQueryResponse implements ApiResponse
     protected DataRegion _dataRegion;
     private boolean _includeDetailsColumn;
     private boolean _includeUpdateColumn;
+    private boolean _includeDisplayValues;
 
     public ApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo,
                             String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly,
-                            boolean includeDetailsColumn, boolean includeUpdateColumn)
+                            boolean includeDetailsColumn, boolean includeUpdateColumn, boolean includeDisplayValues)
     {
         _viewContext = view.getViewContext();
         _schemaEditable = schemaEditable;
@@ -92,6 +93,7 @@ public class ApiQueryResponse implements ApiResponse
         _metaDataOnly = metaDataOnly;
         _includeDetailsColumn = includeDetailsColumn;
         _includeUpdateColumn = includeUpdateColumn;
+        _includeDisplayValues = includeDisplayValues;
         view.exportToApiResponse(this);
     }
 
@@ -202,6 +204,20 @@ public class ApiQueryResponse implements ApiResponse
         _displayColumns = displayColumns;
         if (null != dataRegion.getTotalRows())
             _rowCount = dataRegion.getTotalRows();
+
+        if (isIncludeDisplayValues())
+        {
+            List<DisplayColumn> displayValueColumns = new ArrayList<>();
+            for (DisplayColumn dc : _displayColumns)
+            {
+                if (dc.getColumnInfo() != null && !dc.getColumnInfo().equals(dc.getDisplayColumnInfo()))
+                {
+                    displayValueColumns.add(dc.getDisplayColumnInfo().getRenderer());
+                }
+            }
+
+            _displayColumns.addAll(displayValueColumns);
+        }
 
         _ctx = ctx;
         _ctx.setCache(false);
@@ -519,6 +535,11 @@ public class ApiQueryResponse implements ApiResponse
     public boolean isIncludeDetailsColumn()
     {
         return _includeDetailsColumn;
+    }
+
+    public boolean isIncludeDisplayValues()
+    {
+        return _includeDisplayValues;
     }
 
     protected String getColumnName(DisplayColumn dc)

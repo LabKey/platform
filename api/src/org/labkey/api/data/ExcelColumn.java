@@ -58,7 +58,6 @@ public class ExcelColumn extends RenderColumn
     private int _simpleType = TYPE_UNKNOWN;
     private CellStyle _style = null;
     private boolean _autoSize = false;
-    private int _autoSizeWidth = 0;
     private String _name = null;
     private String _caption = null;
     private final Map<ConditionalFormat, CellStyle> _formats = new HashMap<>();
@@ -429,90 +428,15 @@ public class ExcelColumn extends RenderColumn
 
     // Note: width of the column will be adjusted once per call to ExcelWriter.render(), which potentially means
     // multiple times per sheet.  This shouldn't be a problem, though.
-    protected void adjustWidth(Sheet sheet, int column, int startRow, int endRow)
+    protected void adjustWidth(Sheet sheet, int column)
     {
         if (_autoSize)
         {
-            calculateAutoSize(sheet, column, startRow, endRow);
-            // Maximum allowed is 255 characters. Width is in 1/256 of a character, so multiply by 256
-            sheet.setColumnWidth(column, Math.min(_autoSizeWidth + 1, 255) * 256);
+            sheet.autoSizeColumn(column);
         }
         else
         {
             sheet.setColumnWidth(column, 10 * 256);
-        }
-    }
-
-    //
-    // Calculates the "autosize" column width, the width that approximates the width of the contents of cells in
-    // this column.  Several caveats here:
-    //
-    // 1. This assumes all data is in Arial 10-point normal font
-    // 2. It only counts the number of characters; it doesn't know the exact font display width on the client PC.
-    // 3. It's not very efficient; for each cell, it reads the contents, converts it to the appropriate
-    //    Java object, and then applies the appropriate Format to determine the displayed width.
-    // 4. Be extra careful with long String columns; there's no absolute maximum, so you could end up with
-    //    very wide columns.
-    //
-    // The results are actually fairly good and performance seems reasonable.  But setting display widths
-    // in the schema XML file may be preferable.
-    //
-    private void calculateAutoSize(Sheet sheet, int column, int startRow, int endRow)
-    {
-        Format format = null;
-
-        // In some cases (e.g., exporting multiple MS2 runs), this method is called multiple times for a given sheet.
-        // Maintaining _autoSizeWidth as a member variable between calls ensures that the width
-        if (0 == _autoSizeWidth)
-            _autoSizeWidth = _caption != null ? _caption.length() : 10;  // Start with caption width as minimum
-
-        switch (_simpleType)
-        {
-            case(TYPE_DATE):
-                format = FastDateFormat.getInstance(getFormatString());
-                break;
-            case(TYPE_INT):
-            case(TYPE_DOUBLE):
-                format = new DecimalFormat(getFormatString());
-                break;
-        }
-
-        // Assumes column has same cell type from startRow to endRow, and that cell type matches the Excel column type (which it should, since we just wrote it)
-        for (int row = startRow; row <= endRow; row++)
-        {
-            Cell cell = getRow(sheet, row).getCell(column);
-            if (cell != null)
-            {
-                String formatted = null;
-
-                // Need to be careful here, checking _simpleType again and verifying legal values. See #18561 for an example
-                // of a problem that occurred because we assumed all date values could be formatted by FastDateFormat.
-                switch (cell.getCellType())
-                {
-                    case(Cell.CELL_TYPE_NUMERIC):
-                        switch (_simpleType)
-                        {
-                            case(TYPE_DATE):
-                                if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell))
-                                    formatted = format.format(cell.getDateCellValue());
-                                break;
-                            case(TYPE_INT):
-                            case(TYPE_DOUBLE):
-                                formatted = format.format(cell.getNumericCellValue());
-                                break;
-                        }
-                        break;
-                    case(Cell.CELL_TYPE_ERROR):
-                        formatted = FormulaError.forInt(cell.getErrorCellValue()).getString();
-                        break;
-                    default:
-                        formatted = cell.getStringCellValue();
-                        break;
-                }
-
-                if (null != formatted && formatted.length() > _autoSizeWidth)
-                    _autoSizeWidth = formatted.length();
-            }
         }
     }
 

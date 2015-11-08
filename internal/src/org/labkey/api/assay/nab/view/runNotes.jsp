@@ -91,6 +91,8 @@
     if (bean.needsDupFileNote())
     {
         QueryView duplicateDataFileView = bean.getDuplicateDataFileView(getViewContext());
+        if (duplicateDataFileView != null)
+        {
 %>
 <tr>
     <td class="labkey-form-label">
@@ -100,5 +102,6 @@
     </td>
 </tr>
 <%
+        }
     }
 %>

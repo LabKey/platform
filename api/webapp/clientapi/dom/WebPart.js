@@ -287,7 +287,7 @@
         wpConfig.partName = 'Report';
 
         // for convenience, support these wp properties in config
-        $.each(['renderTo', 'success', 'failure'], function(prop)
+        $.each(['renderTo', 'success', 'failure'], function(index, prop)
         {
             if (LABKEY.Utils.isDefined(config[prop]))
             {
@@ -297,7 +297,7 @@
 
         // then merge the partConfig options. we document specific Report-specific options for clarity to the user
         wpConfig.partConfig = $.extend({}, config.reportProperties);
-        $.each(['reportId', 'reportName', 'schemaName', 'queryName', 'title'], function(prop)
+        $.each(['reportId', 'reportName', 'schemaName', 'queryName', 'title'], function(index, prop)
         {
             if (LABKEY.Utils.isDefined(config[prop]))
             {

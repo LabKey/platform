@@ -1019,23 +1019,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 xAxis = plot.scales.x;
             }
 
-            if (xAxis.scaleType == 'continuous')
+            if (xAxis.scaleType == 'continuous' && xAxis.trans == 'linear')
             {
                 // We need to add some padding to the scale in order for us to actually be able to select all of the points.
                 // If we don't, any points that lie exactly at the edge of the chart will be unselectable.
-                // Note: for log scale only adjust the top/right edge if the domain value is > 1.
-                if (xAxis.trans == 'linear')
-                {
-                    xScale = xAxis.scale.copy();
-                    xScale.domain([xScale.invert(plot.grid.leftEdge - scalePadding), xScale.invert(plot.grid.rightEdge + scalePadding)]);
-                    xScale.range([plot.grid.leftEdge - scalePadding, plot.grid.rightEdge + scalePadding]);
-                }
-                else if (xAxis.trans == 'log' && xAxis.scale.domain()[1] > 1)
-                {
-                    xScale = xAxis.scale;
-                    xScale.domain([xScale.invert(plot.grid.leftEdge), xScale.invert(plot.grid.rightEdge + scalePadding)]);
-                    xScale.range([plot.grid.leftEdge, plot.grid.rightEdge + scalePadding]);
-                }
+                xScale = xAxis.scale.copy();
+                xScale.domain([xScale.invert(plot.grid.leftEdge - scalePadding), xScale.invert(plot.grid.rightEdge + scalePadding)]);
+                xScale.range([plot.grid.leftEdge - scalePadding, plot.grid.rightEdge + scalePadding]);
             }
             else
             {
@@ -1048,21 +1038,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 yAxis = plot.scales.yRight;
             }
 
-            if (yAxis.scaleType == 'continuous')
+            if (yAxis.scaleType == 'continuous' && yAxis.trans == 'linear')
             {
                 // See the note above.
-                if (yAxis.trans == 'linear')
-                {
-                    yScale = yAxis.scale.copy();
-                    yScale.domain([yScale.invert(plot.grid.bottomEdge + scalePadding), yScale.invert(plot.grid.topEdge - scalePadding)]);
-                    yScale.range([plot.grid.bottomEdge + scalePadding, plot.grid.topEdge - scalePadding]);
-                }
-                else if (yAxis.trans == 'log' && yAxis.scale.domain()[1] > 1)
-                {
-                    yScale = yAxis.scale;
-                    yScale.domain([yScale.invert(plot.grid.bottomEdge), yScale.invert(plot.grid.topEdge - scalePadding)]);
-                    yScale.range([plot.grid.bottomEdge, plot.grid.topEdge - scalePadding]);
-                }
+                yScale = yAxis.scale.copy();
+                yScale.domain([yScale.invert(plot.grid.bottomEdge + scalePadding), yScale.invert(plot.grid.topEdge - scalePadding)]);
+                yScale.range([plot.grid.bottomEdge + scalePadding, plot.grid.topEdge - scalePadding]);
             }
             else
             {

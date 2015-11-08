@@ -258,7 +258,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     public DilutionAssayRun getAssayResults(ExpRun run, User user, @Nullable StatsService.CurveFitType fit) throws ExperimentException
     {
-        return getAssayResults(run, user, null, fit, true);
+        return getAssayResults(run, user, getDataFile(run), fit, true);
     }
 
     public File getDataFile(ExpRun run)
@@ -336,7 +336,10 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         // code uses well-group properties internally.
         Map<ExpMaterial, List<WellGroup>> inputs = getMaterialWellGroupMapping(provider, plates, run.getMaterialInputs());
 
-        return createDilutionAssayRun(provider, run, plates, user, cutoffs, fit, runProperties, inputs);
+        DilutionAssayRun assay = createDilutionAssayRun(provider, run, plates, user, cutoffs, fit, runProperties, inputs);
+        assay.setDataFile(dataFile);
+
+        return assay;
     }
 
     /**

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay.nab;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
@@ -69,6 +70,7 @@ import java.util.Set;
  */
 public class RenderAssayBean extends RenderAssayForm
 {
+    private static final Logger LOG = Logger.getLogger(RenderAssayBean.class);
     private ViewContext _context;
     private DilutionAssayRun _assay;
     private boolean _printView;
@@ -196,14 +198,19 @@ public class RenderAssayBean extends RenderAssayForm
     {
         if (isDuplicateDataFile())
         {
-            ExpProtocol protocol = _assay.getProtocol();
-            AssayProtocolSchema schema = AssayService.get().getProvider(protocol).createProtocolSchema(context.getUser(), context.getContainer(), protocol, null);
-            QuerySettings setting = ExperimentRunListView.getRunListQuerySettings(schema, context, AssayProtocolSchema.RUNS_TABLE_NAME, true);
+            if (_assay.getDataFile() != null)
+            {
+                ExpProtocol protocol = _assay.getProtocol();
+                AssayProtocolSchema schema = AssayService.get().getProvider(protocol).createProtocolSchema(context.getUser(), context.getContainer(), protocol, null);
+                QuerySettings setting = ExperimentRunListView.getRunListQuerySettings(schema, context, AssayProtocolSchema.RUNS_TABLE_NAME, true);
 
-            return new DuplicateDataFileRunView(schema, setting, _assay, _assay.getRun());
+                return new DuplicateDataFileRunView(schema, setting, _assay, _assay.getRun());
+            }
+            else
+                LOG.error("The assay: '" + _assay.getProtocol().getName() + "' run: " + _assay.getRun().getRowId() + " folder: '" + context.getContainer().getPath() + "' uses a data file by the same name as other runs but the data file could not be found");
+
         }
-        else
-            return null;
+        return null;
     }
 
     public HttpView getControlsView()

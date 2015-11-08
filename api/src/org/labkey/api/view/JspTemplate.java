@@ -16,6 +16,10 @@
 package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.reports.report.JavaScriptReport;
+import org.labkey.api.reports.report.RReport;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -50,7 +54,26 @@ public class JspTemplate<ModelClass> extends JspView<ModelClass>
     public String render() throws Exception
     {
         StringWriter out = new StringWriter();
-        include(this, out, new MockHttpServletRequest(), new MockHttpServletResponse());
+        // Tomcat 8 Jasper rejects requests other than GET, POST, or HEAD... so, make this mock request a GET. #24750
+        include(this, out, new MockHttpServletRequest("GET", null), new MockHttpServletResponse());
         return out.getBuffer().toString().trim();
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void test() throws Exception
+        {
+            String test = (new JspTemplate("/org/labkey/api/view/jspTemplateTest.jsp")).render();
+            assertEquals("This is a JSP used by the JspTemplate.TestCase", test);
+
+            RReport r = new RReport();
+            assertTrue(r.getDefaultScript().length() > 200);
+            assertTrue(r.getDesignerHelpHtml().length() > 1000);
+
+            JavaScriptReport js = new JavaScriptReport();
+            assertTrue(js.getDefaultScript().length() > 500);
+            assertTrue(js.getDesignerHelpHtml().length() > 1000);
+        }
     }
 }

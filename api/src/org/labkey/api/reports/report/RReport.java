@@ -587,7 +587,7 @@ public class RReport extends ExternalScriptEngineReport
         return "LabKey Server automatically exports query data into a data frame called \"labkey.data\". You can download the data via this link to help with the development of your R script.";
     }
 
-    public @Nullable String getDesignerHelpHtml()
+    public @NotNull String getDesignerHelpHtml()
     {
         try
         {

@@ -61,7 +61,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
                                     boolean includeLookupInfo, String schemaName, String queryName,
                                     long offset, List<FieldKey> fieldKeys, boolean metaDataOnly, boolean includeDetailsColumn, boolean includeUpdateColumn)
     {
-        super(view, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn);
+        super(view, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn, false);
     }
 
     public void includeStyle(boolean withStyle)

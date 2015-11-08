@@ -628,15 +628,11 @@ public class ExcelWriter implements ExportWriter
 
         try
         {
-            int firstGridRow = getCurrentRow();
-
             try
             {
                 renderCommentLines(sheet);
                 renderSheetHeaders(sheet, visibleColumns.size());
                 renderColumnCaptions(sheet, visibleColumns);
-
-                firstGridRow = getCurrentRow();
 
                 renderGrid(sheet, visibleColumns);
             }
@@ -645,7 +641,7 @@ public class ExcelWriter implements ExportWriter
                 // Just continue on
             }
 
-            adjustColumnWidths(sheet, firstGridRow, visibleColumns);
+            adjustColumnWidths(sheet, visibleColumns);
 
             if (null != getFooter())
             {
@@ -662,12 +658,12 @@ public class ExcelWriter implements ExportWriter
     }
 
 
-    public void adjustColumnWidths(Sheet sheet, int firstGridRow, List visibleColumns)
+    public void adjustColumnWidths(Sheet sheet, List visibleColumns)
     {
-        int lastGridRow = getCurrentRow() - 1;
-
         for (int column = visibleColumns.size() - 1; column >= 0; column--)
-            ((ExcelColumn) visibleColumns.get(column)).adjustWidth(sheet, column, firstGridRow, lastGridRow);
+        {
+            ((ExcelColumn) visibleColumns.get(column)).adjustWidth(sheet, column);
+        }
     }
 
 

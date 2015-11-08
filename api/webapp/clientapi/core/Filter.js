@@ -163,9 +163,9 @@ LABKEY.Filter = new function()
                 hour = dateVal.getHours();
                 minute = dateVal.getMinutes();
             }
-            var str = "" + year + "-" + this.twoDigit(month) + "-" + this.twoDigit(day);
+            var str = "" + year + "-" + twoDigit(month) + "-" + twoDigit(day);
             if (hour != 0 || minute != 0)
-                str += " " + this.twoDigit(hour) + ":" + this.twoDigit(minute);
+                str += " " + twoDigit(hour) + ":" + twoDigit(minute);
 
             return str;
         }
@@ -184,6 +184,14 @@ LABKEY.Filter = new function()
         }
         else
             return value;
+    }
+
+    function twoDigit(num)
+    {
+        if (num < 10)
+            return "0" + num;
+        else
+            return "" + num;
     }
 
     var urlMap = {};

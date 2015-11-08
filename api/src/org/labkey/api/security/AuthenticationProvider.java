@@ -59,7 +59,11 @@ public interface AuthenticationProvider
 
     interface ResetPasswordProvider extends AuthenticationProvider
     {
-        ActionURL getAPIVerificationURL(Container c);
+        /**
+         * @param isAddUser true for adding user, otherwise for resetting pw for existing user
+         */
+        ActionURL getAPIVerificationURL(Container c, boolean isAddUser);
+
     }
 
     interface SecondaryAuthenticationProvider extends AuthenticationProvider

@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.JavaScriptExportScriptModel;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.*;
@@ -76,7 +77,7 @@ public class JavaScriptReport extends ScriptReport
     }
 
     @Override
-    public String getDesignerHelpHtml()
+    public @NotNull String getDesignerHelpHtml()
     {
         try
         {

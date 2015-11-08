@@ -1706,6 +1706,7 @@ api/src/org/labkey/api/view/WebPartConfigurationException.java -text
 api/src/org/labkey/api/view/WebPartFactory.java -text
 api/src/org/labkey/api/view/WebTheme.java -text
 api/src/org/labkey/api/view/WebThemeManager.java -text
+api/src/org/labkey/api/view/jspTemplateTest.jsp -text
 api/src/org/labkey/api/view/menu/ContainerMenu.java -text
 api/src/org/labkey/api/view/menu/FolderAdminMenu.java -text
 api/src/org/labkey/api/view/menu/FolderMenu.java -text

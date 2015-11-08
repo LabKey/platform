@@ -555,7 +555,7 @@ public class SecurityManager
         return PageFlowUtil.urlProvider(LoginUrls.class).getVerificationURL(c, email, verification, extraParameters);
     }
 
-    public static ActionURL createModuleVerificationURL(Container c, ValidEmail email, String verification, @Nullable Pair<String, String>[] extraParameters, String provider)
+    public static ActionURL createModuleVerificationURL(Container c, ValidEmail email, String verification, @Nullable Pair<String, String>[] extraParameters, String provider, boolean isAddUser)
     {
         ActionURL defaultUrl = createVerificationURL(c, email, verification, extraParameters);
         if (provider == null)
@@ -565,7 +565,7 @@ public class SecurityManager
         if (urlProvider == null)
             return defaultUrl;
 
-        ActionURL verificationUrl = urlProvider.getAPIVerificationURL(c);
+        ActionURL verificationUrl = urlProvider.getAPIVerificationURL(c, isAddUser);
         verificationUrl.addParameter("verification", verification);
         verificationUrl.addParameter("email", email.getEmailAddress());
 
@@ -2504,10 +2504,15 @@ public class SecurityManager
         return sm;
     }
 
+    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, @Nullable Pair<String, String>[] extraParameters) throws Exception
+    {
+        return addUser(context, email, sendMail, mailPrefix, extraParameters, null, true);
+    }
+
     /**
      * @return null if the user already exists, or a message indicating success/failure
      */
-    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, @Nullable Pair<String, String>[] extraParameters) throws Exception
+    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, @Nullable Pair<String, String>[] extraParameters, String provider, boolean isAddUser) throws Exception
     {
         if (UserManager.userExists(email))
         {
@@ -2529,7 +2534,7 @@ public class SecurityManager
                 Container c = context.getContainer();
                 messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(c, email, mailPrefix);
 
-                sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters);
+                sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters, provider, isAddUser);
             }
 
             User newUser = newUserStatus.getUser();
@@ -2575,7 +2580,9 @@ public class SecurityManager
             message.append("Failed to create user ").append(email).append(": ").append(e.getMessage());
         }
 
-        if (messageContentsURL != null)
+        // showRegistrationEmail uses default provider to generate verificationUrl
+        // hide showRegistrationEmail link if provider is specified for now
+        if (messageContentsURL != null && provider == null)
         {
             String href = "<a href=" + PageFlowUtil.filter(messageContentsURL) + " target=\"_blank\">here</a>";
             message.append(" Click ").append(href).append(" to see the email.");
@@ -2586,10 +2593,15 @@ public class SecurityManager
 
     public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, Pair<String, String>[] extraParameters) throws Exception
     {
+        sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters, null, true);
+    }
+
+    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, Pair<String, String>[] extraParameters, String provider, boolean isAddUser) throws Exception
+    {
         Container c = context.getContainer();
         User currentUser = context.getUser();
 
-        ActionURL verificationURL = createVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters);
+        ActionURL verificationURL = createModuleVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters, provider, isAddUser);
 
         SecurityManager.sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
         if (!currentUser.getEmail().equals(email.getEmailAddress()))
