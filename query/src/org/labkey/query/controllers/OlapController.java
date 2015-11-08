@@ -70,9 +70,11 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
@@ -129,6 +131,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 /**
@@ -1177,12 +1180,19 @@ public class OlapController extends SpringActionController
 
     private Collection<String> getContainerCollection(ContainerFilter cf)
     {
+        if (cf instanceof DataspaceContainerFilter)
+        {
+            DataspaceContainerFilter dscf = (DataspaceContainerFilter)cf;
+            Collection<GUID> guids = dscf.getIds(getContainer(),ReadPermission.class, null);
+            List<String> ret = guids.stream().map(GUID::toString).collect(Collectors.toList());
+            return Collections.unmodifiableCollection(ret);
+        }
         // TODO optimize, this is round-about since cf probabaly implements getIds() internally
         DbSchema core = CoreSchema.getInstance().getSchema();
         SQLFragment sqlf = new SQLFragment("SELECT entityid FROM core.containers WHERE ");
         sqlf.append(cf.getSQLFragment(core, new FieldKey(null, "entityid"), getContainer(), new HashMap<FieldKey,ColumnInfo>()));
         ArrayList<String> list = new SqlSelector(core, sqlf).getArrayList(String.class);
-        return list;
+        return Collections.unmodifiableCollection(list);
     }
 
     // TODO: Move all this app stuff somewhere else out of olap land

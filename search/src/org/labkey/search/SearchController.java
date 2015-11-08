@@ -732,7 +732,7 @@ public class SearchController extends SpringActionController
                 {
                     //UNDONE: paging, rowlimit etc
                     int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
-                    result = ss.search(query, null, getUser(), getContainer(), form.getSearchScope(),
+                    result = ss.search(query, ss.getCategories(form.getCategory()), getUser(), getContainer(), form.getSearchScope(),
                         form.getOffset(), limit);
                 }
                 catch (Exception x)

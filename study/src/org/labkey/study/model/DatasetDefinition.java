@@ -2072,6 +2072,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             Integer indexPTID = outputMap.get(DatasetDefinition.getParticipantIdURI());
             Integer indexKeyProperty = null==keyColumn ? null : outputMap.get(keyColumn.getPropertyURI());
             Integer indexVisitDate = outputMap.get(DatasetDefinition.getVisitDateURI());
+            Integer indexContainer = outputMap.get("container");
             Integer indexReplace = outputMap.get("replace");
 
             // do a conversion for PTID aliasing
@@ -2086,7 +2087,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             }
 
             // For now, just specify null for sequence num index... we'll add it below
-            it.setSpecialOutputColumns(translatedIndexPTID, null, indexVisitDate, indexKeyProperty);
+            it.setSpecialOutputColumns(translatedIndexPTID, null, indexVisitDate, indexKeyProperty, indexContainer);
             it.setTimepointType(timetype);
 
             /* NOTE: these columns must be added in dependency order
@@ -2256,6 +2257,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         // these columns are used to compute derived columns, should occur early in the output list
         Integer indexPtidOutput, indexSequenceNumOutput, indexVisitDateOutput, indexKeyPropertyOutput;
+        Integer indexContainerOutput;
         // for returning lsid list
         Integer indexLSIDOutput;
 
@@ -2268,12 +2270,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             _maxPTIDLength = getTableInfo(this.user, false).getColumn("ParticipantID").getScale();
         }
 
-        void setSpecialOutputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty)
+        void setSpecialOutputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty, Integer indexContainer)
         {
             this.indexPtidOutput = indexPTID;
             this.indexSequenceNumOutput = indexSequenceNum;
             this.indexVisitDateOutput = indexVisitDate;
             this.indexKeyPropertyOutput = indexKeyProperty;
+            this.indexContainerOutput = indexContainer;
         }
 
         void setTimepointType(TimepointType timetype)
@@ -2454,12 +2457,41 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         class LSIDColumn implements Callable
         {
-            String _urnPrefix = getURNPrefix();
+            Map<String,String> map = new HashMap<>();
+
+            String getURNPrefix()
+            {
+                Container c = null;
+                String entityId = null;
+                if (isShared() && getDataSharingEnum() == DataSharing.PTID)
+                {
+                    c = getDefinitionContainer();
+                    entityId = c.getId();
+                }
+                else if (null == indexContainerOutput)
+                {
+                    c = getContainer();
+                    entityId = c.getId();
+                }
+                else
+                {
+                    entityId = getOutputString(indexContainerOutput);
+                }
+                String urn = map.get(entityId);
+                if (null != urn)
+                    return urn;
+                if (null == c)
+                    c = ContainerManager.getForId(entityId);
+                String id = null==c ? entityId : String.valueOf(c.getRowId());
+                urn = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + id + ":" + getDatasetId() + ".";
+                map.put(entityId, urn);
+                return urn;
+            }
 
             @Override
             public Object call() throws Exception
             {
-                StringBuilder sb = new StringBuilder(_urnPrefix);
+                StringBuilder sb = new StringBuilder(getURNPrefix());
                 assert null!=indexPtidOutput || hasErrors();
 
                 String ptid = null==indexPtidOutput ? "" : getOutputString(indexPtidOutput);
@@ -2701,17 +2733,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
-    /** @return the LSID prefix to be used for this dataset's rows */
-    public String getURNPrefix()
-    {
-        Container c = getContainer();
-        if (isShared() && getDataSharingEnum() == DataSharing.PTID)
-            c = getDefinitionContainer();
-        return "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + c.getRowId() + ":" + getDatasetId() + ".";
-    }
-
-
-     /** @return a SQL expression that generates the LSID for a dataset row */
+    /** @return a SQL expression that generates the LSID for a dataset row */
     public SQLFragment generateLSIDSQL()
     {
         if (null == getStorageTableInfo())
@@ -2719,7 +2741,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         List<SQLFragment> parts = new ArrayList<>();
         parts.add(new SQLFragment("''"));
-        parts.add(new SQLFragment("?", getURNPrefix()));
+        parts.add(new SQLFragment("?", "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-"));
+        parts.add(new SQLFragment("(SELECT RowId FROM Core.Containers WHERE EntityId = Container)"));
+        parts.add(new SQLFragment("':" + String.valueOf(getDatasetId()) + ".'"));
         parts.add(new SQLFragment("participantid"));
 
         if (!isDemographicData())
@@ -2749,7 +2773,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             }
         }
 
-        return StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[parts.size()]));
+        SQLFragment ret = StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[parts.size()]));
+        return ret;
     }
 
 

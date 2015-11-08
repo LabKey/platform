@@ -1299,6 +1299,17 @@ public class SecurityController extends SpringActionController
         private String _cloneUser;
         private boolean _skipProfile;
         private String _message = null;
+        private String _provider = null;
+
+        public void setProvider(String provider)
+        {
+            this._provider = provider;
+        }
+
+        public String getProvider()
+        {
+            return this._provider;
+        }
 
         public void setNewUsers(String newUsers)
         {
@@ -1412,7 +1423,7 @@ public class SecurityController extends SpringActionController
 
             for (ValidEmail email : emails)
             {
-                String result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams.<Pair<String, String>>toArray(new Pair[extraParams.size()]));
+                String result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams.<Pair<String, String>>toArray(new Pair[extraParams.size()]), form.getProvider(), true);
 
                 if (result == null)
                 {

@@ -1004,7 +1004,7 @@ public class LoginController extends SpringActionController
                     Container c = getContainer();
                     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
                     final SecurityMessage message = SecurityManager.getResetMessage(false);
-                    ActionURL verificationURL = SecurityManager.createModuleVerificationURL(c, _email, verification, null, form.getProvider());
+                    ActionURL verificationURL = SecurityManager.createModuleVerificationURL(c, _email, verification, null, form.getProvider(), false);
 
                     final User system = new User(laf.getSystemEmailAddress(), 0);
                     system.setFirstName(laf.getCompanyName());

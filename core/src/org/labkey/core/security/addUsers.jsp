@@ -33,6 +33,11 @@
     LABKEY.requiresScript('completion.js');
 </script>
 <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function() {
+        if (LABKEY.ActionURL.getParameter('provider')) {
+            document.getElementById('provider').value = LABKEY.ActionURL.getParameter('provider');
+        }
+    });
     var permissionLink_hide = '<a href="#blank" style="display:none" onclick="showUserAccess();">permissions<\/a>';
     var permissionLink_show = '<a href="#blank" class="labkey-button" onclick="showUserAccess();"><span>permissions</span><\/a>';
 
@@ -129,5 +134,16 @@
             </td>
         </tr>
     </table>
+    <%
+        if (form.getProvider() != null)
+        {
+            %><input type="hidden" name="provider" id="provider" value=<%=form.getProvider()%>><%
+        }
+        else
+        {
+            %><input type="hidden" name="provider" id="provider"><%
+        }
+    %>
+
 </labkey:form>
 <script for=window event=onload type="text/javascript">try {document.getElementById("newUsers").focus();} catch(x){}</script>

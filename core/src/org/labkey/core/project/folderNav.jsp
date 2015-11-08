@@ -92,7 +92,7 @@
                     %><%=getTrailLink(containers.get(p), user)%><%
                 }
                 String title = containers.get(size - 1).isWorkbook() ? containers.get(size - 1).getName() : containers.get(size - 1).getTitle();
-                %><span style="color: black;">ffff<%=h(title)%></span><%
+                %><span style="color: black;"><%=h(title)%></span><%
             }
         %>
     </div>

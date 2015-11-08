@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -77,6 +78,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.query.DatasetQuerySettings;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.DatasetWriter;
 import org.springframework.validation.BindException;
 
@@ -212,6 +214,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 if (view != null && !errors.hasErrors() && view.getTable() != null)
                 {
+                    StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, context.getUser(), false);
+                    TableInfo table = view.getTable();
+                    if (table instanceof ContainerFilterable && table.supportsContainerFilter())
+                        ((ContainerFilterable)table).setContainerFilter(studySchema.getDefaultContainerFilter());
+
                     // TODO call updateSnapshot() instead of duplicating code
                     Results results = getResults(context, view, qsDef, def);
 
@@ -240,7 +247,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         StudyManager.getInstance().importDatasetData(context.getUser(), def,
                                 new TabLoader(sb, true), new CaseInsensitiveHashMap<>(),
                                 dataIteratorContext,
-                                DatasetDefinition.CheckForDuplicates.sourceAndDestination,
+                                study.isDataspaceStudy() ? DatasetDefinition.CheckForDuplicates.never : DatasetDefinition.CheckForDuplicates.sourceOnly,
                                 null, null);
 
                         for (ValidationException e : dataIteratorContext.getErrors().getRowErrors())
@@ -431,6 +438,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             errors.reject(SpringActionController.ERROR_MSG, "Unable to create a TableInfo for the source query, it may no longer exist.");
                             return null;
                         }
+                        StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, form.getViewContext().getUser(), false);
+                        TableInfo table = view.getTable();
+                        if (table instanceof ContainerFilterable && table.supportsContainerFilter())
+                            ((ContainerFilterable)table).setContainerFilter(studySchema.getDefaultContainerFilter());
+
                         Results results = getResults(form.getViewContext(), view, def, dsDef);
 
                         // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
@@ -463,7 +475,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             newRows = StudyManager.getInstance().importDatasetData(form.getViewContext().getUser(), dsDef,
                                 new TabLoader(sb, true), new CaseInsensitiveHashMap<String>(),
                                 dataIteratorContext,
-                                DatasetDefinition.CheckForDuplicates.sourceAndDestination,
+                                study.isDataspaceStudy() ? DatasetDefinition.CheckForDuplicates.never : DatasetDefinition.CheckForDuplicates.sourceOnly,
                                 null, null);
 
                             for (ValidationException error : dataIteratorContext.getErrors().getRowErrors())

@@ -110,6 +110,7 @@ import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.ContactWebPart;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
@@ -817,7 +818,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 StatementUtils.TestCase.class,
                 StatementDataIterator.TestCase.class,
                 Encryption.TestCase.class,
-                NotificationServiceImpl.TestCase.class
+                NotificationServiceImpl.TestCase.class,
+                JspTemplate.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());

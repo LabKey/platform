@@ -1015,7 +1015,7 @@ public class StudyQuerySchema extends UserSchema
     }
 
     /** for tables that support container filter, the default container filter in this study */
-    ContainerFilter getDefaultContainerFilter()
+    public ContainerFilter getDefaultContainerFilter()
     {
         return ContainerFilter.CURRENT;
     }

@@ -18,6 +18,7 @@ package org.labkey.study.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;

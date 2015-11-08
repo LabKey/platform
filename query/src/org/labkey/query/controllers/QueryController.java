@@ -2475,6 +2475,7 @@ public class QueryController extends SpringActionController
         private String _containerFilter;
         private boolean _includeTotalCount = true;
         private boolean _includeStyle = false;
+        private boolean _includeDisplayValues = false;
 
         public Integer getStart()
         {
@@ -2544,6 +2545,16 @@ public class QueryController extends SpringActionController
         public void setIncludeUpdateColumn(boolean includeUpdateColumn)
         {
             _includeUpdateColumn = includeUpdateColumn;
+        }
+
+        public boolean isIncludeDisplayValues()
+        {
+            return _includeDisplayValues;
+        }
+
+        public void setIncludeDisplayValues(boolean includeDisplayValues)
+        {
+            _includeDisplayValues = includeDisplayValues;
         }
     }
 
@@ -2619,7 +2630,8 @@ public class QueryController extends SpringActionController
             {
                 return new ApiQueryResponse(view, isEditable, true,
                         form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
-                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
+                        form.isIncludeDisplayValues());
             }
         }
     }
@@ -2823,7 +2835,8 @@ public class QueryController extends SpringActionController
             else
                 return new ApiQueryResponse(view, isEditable,
                         false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
-                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
+                        form.isIncludeDisplayValues());
         }
     }
 

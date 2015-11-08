@@ -2332,7 +2332,6 @@ study/src/org/labkey/study/model/CustomParticipantView.java -text
 study/src/org/labkey/study/model/DatasetDefinition.java -text
 study/src/org/labkey/study/model/DatasetDefinitionEntry.java -text
 study/src/org/labkey/study/model/DatasetDomainKind.java -text
-study/src/org/labkey/study/model/DatasetImportHelper.java -text
 study/src/org/labkey/study/model/DatasetManager.java -text
 study/src/org/labkey/study/model/DatasetReorderer.java -text
 study/src/org/labkey/study/model/DateDatasetDomainKind.java -text
