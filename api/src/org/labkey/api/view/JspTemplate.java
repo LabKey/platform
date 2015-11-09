@@ -54,8 +54,14 @@ public class JspTemplate<ModelClass> extends JspView<ModelClass>
     public String render() throws Exception
     {
         StringWriter out = new StringWriter();
+        MockHttpServletResponse response = new MockHttpServletResponse();
         // Tomcat 8 Jasper rejects requests other than GET, POST, or HEAD... so, make this mock request a GET. #24750
-        include(this, out, new MockHttpServletRequest("GET", null), new MockHttpServletResponse());
+        include(this, out, new MockHttpServletRequest("GET", null), response);
+        String errorMessage = response.getErrorMessage();
+
+        if (null != errorMessage)
+            throw new IllegalStateException(errorMessage);
+
         return out.getBuffer().toString().trim();
     }
 
