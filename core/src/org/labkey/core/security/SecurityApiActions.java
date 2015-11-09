@@ -1286,7 +1286,7 @@ public class SecurityApiActions
                 throw new IllegalArgumentException(e.getMessage());
             }
 
-            String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null, null);
+            String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null);
             User user = UserManager.getUser(email);
             if (null == user)
                 throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");

@@ -663,7 +663,7 @@ public class SecurityController extends SpringActionController
                     List<User> addUsers = new ArrayList<>(addEmails.size());
                     for (ValidEmail email : addEmails)
                     {
-                        String addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix(), null);
+                        String addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix());
                         if (addMessage != null)
                             messages.add(addMessage);
 
@@ -1384,7 +1384,8 @@ public class SecurityController extends SpringActionController
             final String cloneUser = form.getCloneUser();
             if (cloneUser != null && cloneUser.length() > 0)
             {
-                try {
+                try
+                {
                     final ValidEmail emailToClone = new ValidEmail(cloneUser);
                     userToClone = UserManager.getUser(emailToClone);
                     if (userToClone == null)

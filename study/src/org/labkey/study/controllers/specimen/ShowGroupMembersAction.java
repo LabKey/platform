@@ -115,7 +115,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             {
                 if (getUser().isSiteAdmin())
                 {
-                    String result = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null, null);
+                    String result = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null);
                     newMembers.add(UserManager.getUser(email));
                 }
                 else

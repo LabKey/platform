@@ -904,7 +904,7 @@ public class PipelineController extends SpringActionController
                 {
                     try
                     {
-                        SecurityManager.addUser(getViewContext(), email, true, null, null);
+                        SecurityManager.addUser(getViewContext(), email, true, null);
                         u = UserManager.getUser(email);
                         if (u != null)
                             builder.append(email).append(';');
