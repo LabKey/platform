@@ -2504,9 +2504,9 @@ public class SecurityManager
         return sm;
     }
 
-    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, @Nullable Pair<String, String>[] extraParameters) throws Exception
+    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix) throws Exception
     {
-        return addUser(context, email, sendMail, mailPrefix, extraParameters, null, true);
+        return addUser(context, email, sendMail, mailPrefix, null, null, true);
     }
 
     /**
