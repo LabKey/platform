@@ -71,7 +71,7 @@ public class ApiMacro extends BaseLocaleMacro {
       mode = params.get("1").toLowerCase();
       klass = params.get("0");
     } else {
-      throw new IllegalArgumentException("api macro needs one or two paramaters");
+      throw new IllegalArgumentException("api macro needs one or two parameters");
     }
 
     ApiDoc.getInstance().expand(writer, klass, mode);

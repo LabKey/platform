@@ -68,7 +68,7 @@ public class PathDisplayColumn extends DataColumn
         if (!(o instanceof String))
             return null;
 
-        String[] parts = ((String)o).split(MultiValuedRenderContext.VALUE_DELIMETER_REGEX);
+        String[] parts = ((String)o).split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX);
         if (parts.length == 0)
             return null;
 

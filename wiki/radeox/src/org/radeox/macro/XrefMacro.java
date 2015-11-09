@@ -73,7 +73,7 @@ public class XrefMacro extends BaseLocaleMacro {
         lineNumber = Integer.parseInt(params.get("1"));
       }
     } else {
-      throw new IllegalArgumentException("xref macro needs one or two paramaters");
+      throw new IllegalArgumentException("xref macro needs one or two parameters");
     }
 
     XrefMapper.getInstance().expand(writer, klass, project, lineNumber);

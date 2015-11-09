@@ -57,7 +57,6 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
-import java.util.Collections;
 import java.util.Set;
 
 public class ParticipantTable extends BaseStudyTable
@@ -193,7 +192,7 @@ public class ParticipantTable extends BaseStudyTable
                     concatSQL.append(ExprColumn.STR_TABLE_ALIAS);
                     concatSQL.append(".ParticipantID) Y ORDER BY AliasValue");
 
-                    ExprColumn aliasesColumn = new ExprColumn(this, ALIASES_COLUMN_NAME, getSqlDialect().getSelectConcat(concatSQL, MultiValuedRenderContext.VALUE_DELIMETER), JdbcType.VARCHAR);
+                    ExprColumn aliasesColumn = new ExprColumn(this, ALIASES_COLUMN_NAME, getSqlDialect().getSelectConcat(concatSQL, MultiValuedRenderContext.VALUE_DELIMITER), JdbcType.VARCHAR);
                     aliasesColumn.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
                         @Override

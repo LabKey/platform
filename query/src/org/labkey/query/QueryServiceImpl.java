@@ -478,7 +478,7 @@ public class QueryServiceImpl extends QueryService
     private List<CustomView> _getCustomViews(final @NotNull User user, final Container container, final @Nullable User owner, final @Nullable String schemaName, final @Nullable String queryName,
             final boolean includeInherited,
             final boolean sharedOnly,
-            // TODO: this last paramater is a performance hack and need to be addressed,
+            // TODO: this last parameter is a performance hack and need to be addressed,
             // TODO: calling getTitle() can be ridiculously expensive, if alwaysUseTitlesForLoadingCustomViews==false,
             // TODO: then code may avoid expensive calls at the expense of some consistency
             final boolean alwaysUseTitlesForLoadingCustomViews)
