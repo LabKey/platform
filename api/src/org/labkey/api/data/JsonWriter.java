@@ -228,7 +228,7 @@ public class JsonWriter
             if (dc instanceof MultiValuedDisplayColumn || (cinfo.getParentTable() != null && cinfo.getParentTable().getSqlDialect() != null && !cinfo.getParentTable().getSqlDialect().isSortableDataType(cinfo.getSqlTypeName())))
             {
                 // Disallow faceted filtering when the column is multi-valued, as the value that comes out of the
-                // database likely has a different delimeter compared to what the user wants to see and therefore
+                // database likely has a different delimiter compared to what the user wants to see and therefore
                 // doesn't work very well.
 
                 // Similarly, SQLServer doesn't allow doing a SELECT DISTINCT on TEXT columns, so check the data type (they also can't be sorted)

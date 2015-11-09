@@ -30,7 +30,7 @@ import java.util.Map;
         ${Name:htmlEncode}
         ${MyParam:urlEncode}
 
-    We should add more functions and allow paramaterized functions. As we add fucntions, we should use the Ext names and
+    We should add more functions and allow parameterized functions. As we add functions, we should use the Ext names and
     parameters if at all possible.
 
  * User: adam

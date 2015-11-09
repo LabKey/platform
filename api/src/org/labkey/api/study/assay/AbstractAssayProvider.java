@@ -1110,7 +1110,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return true;
     }
 
-    private static final String SCRIPT_PATH_DELIMETER = "|";
+    private static final String SCRIPT_PATH_DELIMITER = "|";
 
     @Override
     public void setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException
@@ -1130,7 +1130,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 {
                     sb.append(separator);
                     sb.append(scriptFile.getAbsolutePath());
-                    separator = SCRIPT_PATH_DELIMETER;
+                    separator = SCRIPT_PATH_DELIMITER;
                 }
                 else
                     throw new ExperimentException("Script engine for the extension : " + ext + " has not been registered.\nFor documentation about how to configure a " +
@@ -1184,7 +1184,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             ObjectProperty transformScripts = protocol.getObjectProperties().get(ScriptType.TRANSFORM.getPropertyURI(protocol));
             if (transformScripts != null)
             {
-                for (String scriptPath : transformScripts.getStringValue().split("\\" + SCRIPT_PATH_DELIMETER))
+                for (String scriptPath : transformScripts.getStringValue().split("\\" + SCRIPT_PATH_DELIMITER))
                 {
                     result.add(new File(scriptPath));
                 }
@@ -1192,7 +1192,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             ObjectProperty validationScripts = protocol.getObjectProperties().get(ScriptType.VALIDATION.getPropertyURI(protocol));
             if (validationScripts != null)
             {
-                for (String scriptPath : validationScripts.getStringValue().split("\\" + SCRIPT_PATH_DELIMETER))
+                for (String scriptPath : validationScripts.getStringValue().split("\\" + SCRIPT_PATH_DELIMITER))
                 {
                     result.add(new File(scriptPath));
                 }

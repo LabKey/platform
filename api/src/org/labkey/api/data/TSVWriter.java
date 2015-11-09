@@ -145,7 +145,7 @@ public class TSVWriter extends TextWriter
      * the double quote character but may be the single quote character.
      * To not perform any quoting, set the quote character to <code>Character.UNASSIGNED</code>.
      * <p>
-     * Note: Excel will always quote a field if it includes comma even if it isn't the delimeter, but
+     * Note: Excel will always quote a field if it includes comma even if it isn't the delimiter, but
      * this algorithm doesn't to avoid unnecessary quoting.
      * 
      * @param value The raw value.

@@ -277,7 +277,7 @@ public class JSONTokener {
 
 
     /**
-     * Get the text up but not including one of the specified delimeter
+     * Get the text up but not including one of the specified delimiter
      * characters or the end of line, whichever comes first.
      * @param delimiters A set of delimiter characters.
      * @return A string, trimmed.

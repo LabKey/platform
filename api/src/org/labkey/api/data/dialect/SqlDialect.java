@@ -581,7 +581,7 @@ public abstract class SqlDialect
 
     // SelectConcat returns SQL that will generate a comma separated list of the results from the passed in select SQL.
     // This is not generally usable within a GROUP BY. Include distinct, order by, etc. in the selectSql if desired
-    public abstract SQLFragment getSelectConcat(SQLFragment selectSql, String delimeter);
+    public abstract SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter);
 
     public final void runSql(DbSchema schema, String sql, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
     {

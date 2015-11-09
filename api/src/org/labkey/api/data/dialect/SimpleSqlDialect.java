@@ -285,7 +285,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getSelectConcat(SQLFragment selectSql, String delimeter)
+    public SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
