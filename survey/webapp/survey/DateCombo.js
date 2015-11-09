@@ -206,7 +206,7 @@ Ext4.define('LABKEY.ext4.form.field.DatePicker', {
         this.date = Ext4.Date.parse(this.year + '-' + this.month + '-' + this.day, 'Y-n-j');
         var field = this.getComponent('dateField');
         if (this.date && field){
-            field.setValue(this.date.toDateString());
+            field.setValue(this.prefix ? this.prefix + this.date.toDateString() : this.date.toDateString());
         }
     }
 });
