@@ -2742,7 +2742,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         List<SQLFragment> parts = new ArrayList<>();
         parts.add(new SQLFragment("''"));
         parts.add(new SQLFragment("?", "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-"));
-        parts.add(new SQLFragment("(SELECT RowId FROM Core.Containers WHERE EntityId = Container)"));
+        parts.add(new SQLFragment("(SELECT CAST(RowId AS VARCHAR(15)) FROM Core.Containers WHERE EntityId = Container)"));
         parts.add(new SQLFragment("':" + String.valueOf(getDatasetId()) + ".'"));
         parts.add(new SQLFragment("participantid"));
 
