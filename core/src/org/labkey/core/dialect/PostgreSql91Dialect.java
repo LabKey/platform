@@ -461,21 +461,15 @@ public class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getSelectConcat(SQLFragment selectSql, String delimeter)
+    public SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter)
     {
         SQLFragment result = new SQLFragment("array_to_string(array(");
         result.append(selectSql);
         result.append("), '");
-        result.append(delimeter);
+        result.append(delimiter);
         result.append("')");
 
         return result;
-    }
-
-    // 8.4 added a built-in array_agg() aggregate function. TODO: drop our custom aggregate function.
-    protected String getArrayAggregateFunctionName()
-    {
-        return "array_agg";
     }
 
     @Override
@@ -490,7 +484,7 @@ public class PostgreSql91Dialect extends SqlDialect
         {
             result.append("core.sort(");   // TODO: Switch PostgreSQL 9.0 dialect to use ORDER BY option inside array aggregate instead of our custom function
         }
-        result.append(getArrayAggregateFunctionName()).append("(");
+        result.append("array_agg(");
         if (distinct)
         {
             result.append("DISTINCT ");
