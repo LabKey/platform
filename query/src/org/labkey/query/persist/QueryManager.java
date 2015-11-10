@@ -617,7 +617,7 @@ public class QueryManager
     };
 
     public boolean validateQuery(SchemaKey schemaPath, String queryName, User user, Container container, @NotNull List<QueryParseException> errors,
-                                 @Nullable List<QueryParseException> warnings)
+                                 @NotNull List<QueryParseException> warnings)
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
         if (null == schema)
@@ -631,7 +631,7 @@ public class QueryManager
     }
 
     public boolean validateQuery(TableInfo table, boolean testAllColumns, @NotNull List<QueryParseException> errors,
-                                 @Nullable List<QueryParseException> warnings)
+                                 @NotNull List<QueryParseException> warnings)
     {
         Collection<QueryService.ParameterDecl> params = table.getNamedParameters();
         Map<String,Object> parameters = new HashMap<>();
@@ -689,7 +689,7 @@ public class QueryManager
      * invalid conditions, like autoincrement columns set userEditable=true.
      */
     public boolean validateQueryMetadata(SchemaKey schemaPath, String queryName, User user, Container container,
-                                             @NotNull List<QueryParseException> errors, @Nullable List<QueryParseException> warnings)
+                                             @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings)
     {
         Set<ColumnInfo> columns = new HashSet<>();
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
@@ -723,7 +723,7 @@ public class QueryManager
      * Experimental.  See validateQueryMetadata()
      */
     public boolean validateColumn(ColumnInfo col, User user, Container container, @Nullable TableInfo parentTable,
-                                      @NotNull List<QueryParseException> errors, @Nullable List<QueryParseException> warnings)
+                                      @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings)
     {
         if(parentTable == null)
             parentTable = col.getParentTable();
@@ -787,7 +787,7 @@ public class QueryManager
      * Experimental.  See validateQueryMetadata()
      */
     public boolean validateFk(ColumnInfo col, User user, Container container, TableInfo parentTable,
-                              @NotNull List<QueryParseException> errors, @Nullable List<QueryParseException> warnings)
+                              @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings)
 
     {
         //NOTE: this is the same code that writes JSON to the client
@@ -888,7 +888,7 @@ public class QueryManager
      * column names or case errors (which cause problems for case-sensitive js)
      */
     public boolean validateQueryViews(SchemaKey schemaPath, String queryName, User user, Container container,
-                                          @NotNull List<QueryParseException> errors, @Nullable List<QueryParseException> warnings) throws SQLException, QueryParseException
+                                          @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings) throws SQLException, QueryParseException
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
         if (null == schema)
@@ -935,7 +935,7 @@ public class QueryManager
     }
 
     private void validateViewColumns(User user, Container container, CustomView v, String identifier, List<FieldKey> viewCols, TableInfo sourceTable,
-                                     @NotNull List<QueryParseException> errors, @Nullable List<QueryParseException> warnings) throws SQLException, QueryParseException
+                                     @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings) throws SQLException, QueryParseException
     {
         //verify columns match, accounting for case
         Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(sourceTable, viewCols);

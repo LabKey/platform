@@ -16,7 +16,6 @@
 package org.labkey.query.olap;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Entity;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
