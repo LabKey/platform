@@ -195,10 +195,10 @@ public class CoreQuerySchema extends UserSchema
         groups.addCondition(new SQLFragment("Type IN ('g','r')"));
         
         //filter out inactive
-        groups.addCondition(new SQLFragment("Active=?", true));
+        groups.addCondition(new SQLFragment("Active = ?", true));
 
-        //filter for container is null or container = current-container
-        groups.addCondition(new SQLFragment("Container IS NULL or Container=?", getContainer().getProject()));
+        // always include root plus current container's project
+        groups.addCondition(getRootPlusProjectCondition());
 
         //if guest add null filter
         if (getUser().isGuest())
@@ -212,7 +212,7 @@ public class CoreQuerySchema extends UserSchema
 
     public TableInfo getSiteUsers()
     {
-        FilteredTable users = _getUserTable();
+        FilteredTable<UserSchema> users = _getUserTable();
 
         // only site admins are allowed to see all site users, if the
         // user is a guest, return an empty set, else just filter to
@@ -325,12 +325,13 @@ public class CoreQuerySchema extends UserSchema
         }
         else
         {
-            Container container = getContainer();
-            Container project = container.isRoot() ? container : container.getProject();
             CoreSchema coreSchema = CoreSchema.getInstance();
 
-            members.addCondition(new SQLFragment("GroupId IN (SELECT UserId FROM " + coreSchema.getTableInfoPrincipals()
-                    + " WHERE Container=? OR Container IS NULL)", project.getId()));
+            SQLFragment groupIdSql = new SQLFragment("GroupId IN (SELECT UserId FROM " + coreSchema.getTableInfoPrincipals() + " WHERE ");
+            groupIdSql.append(getRootPlusProjectCondition());
+            groupIdSql.append(")");
+
+            members.addCondition(groupIdSql);
         }
 
         List<FieldKey> defCols = new ArrayList<>();
@@ -345,12 +346,28 @@ public class CoreQuerySchema extends UserSchema
     }
 
 
+    private SQLFragment getRootPlusProjectCondition()
+    {
+        SQLFragment sql = new SQLFragment("Container IS NULL");
+        Container project = getContainer().getProject();
+
+        // Include this condition outside the root
+        if (null != project)
+        {
+            sql.append(" OR Container = ?");
+            sql.add(project);
+        }
+
+        return sql;
+    }
+
+
     public TableInfo getUsers()
     {
         if (getContainer().isRoot())
             return getSiteUsers();
 
-        FilteredTable users = _getUserTable();
+        FilteredTable<UserSchema> users = _getUserTable();
 
         //if the user is a guest, add a filter to produce a null set
         if (getUser().isGuest())
@@ -435,7 +452,7 @@ public class CoreQuerySchema extends UserSchema
         return result;
     }
 
-    private FilteredTable _getUserTable()
+    private FilteredTable<UserSchema> _getUserTable()
     {
         UsersTable table = new UsersTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME));
         table.init();

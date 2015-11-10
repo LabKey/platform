@@ -591,7 +591,6 @@ public class UserController extends SpringActionController
                 settings.getBaseFilter().addAllClauses(new SimpleFilter(FieldKey.fromString("Active"), true));
             }
 
-            final boolean forExport2 = forExport;
             final boolean isSiteAdmin = getUser().isSiteAdmin();
             final boolean isProjectAdminOrBetter = isSiteAdmin || isProjectAdmin();
 
@@ -602,7 +601,7 @@ public class UserController extends SpringActionController
                 {
                     super.setupDataView(ret);
 
-                    if (!forExport2 && isProjectAdminOrBetter)
+                    if (!forExport && isProjectAdminOrBetter)
                     {
                         ActionURL permissions = new UserUrlsImpl().getUserAccessURL(getContainer());
                         permissions.addParameter("userId", "${UserId}");
