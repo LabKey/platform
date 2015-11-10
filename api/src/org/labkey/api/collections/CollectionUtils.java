@@ -146,7 +146,7 @@ public class CollectionUtils
 
             // MultiMaps
             assertModifiable(new MultiHashMap<>(), "a modifiable MultiMap (class org.apache.commons.collections15.multimap.MultiHashMap)");
-            assertModifiable(new MultiValueMap<String, String>(new HashMap<String, Collection<String>>()){
+            assertModifiable(new MultiValueMap<String, String>(new HashMap<>()){
                 @Override
                 protected Collection<String> createValueCollection()
                 {
