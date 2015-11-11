@@ -24,5 +24,5 @@ package org.labkey.api.wiki;
 public interface WikiRenderer
 {
     // TODO: Pass in "wiki page", "message", "issue", etc. so we can tailor any error messages
-    public FormattedHtml format(String text);
+    FormattedHtml format(String text);
 }

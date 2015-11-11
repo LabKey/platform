@@ -36,6 +36,7 @@ public class FormattedHtml
     private final boolean _volatile;
     private final String _html;
     private final Set<String> _wikiDependencies;
+    private final Set<String> _anchors;
     private final Set<ClientDependency> _clientDependencies;
 
     public FormattedHtml(String html)
@@ -45,24 +46,25 @@ public class FormattedHtml
 
     public FormattedHtml(String html, boolean isVolatile)
     {
-        this(html, isVolatile, Collections.<String>emptySet());
+        this(html, isVolatile, Collections.<String>emptySet(), Collections.emptySet());
     }
 
-    public FormattedHtml(String html, boolean isVolatile, @NotNull Set<String> wikiDependencies)
+    public FormattedHtml(String html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull Set<String> anchors)
     {
-        this(html, isVolatile, wikiDependencies, new LinkedHashSet<ClientDependency>());
+        this(html, isVolatile, wikiDependencies, anchors, new LinkedHashSet<>());
     }
 
     public FormattedHtml(String html, boolean isVolatile, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
     {
-        this(html, isVolatile, Collections.<String>emptySet(), clientDependencies);
+        this(html, isVolatile, Collections.<String>emptySet(), Collections.<String>emptySet(), clientDependencies);
     }
 
-    public FormattedHtml(String html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
+    public FormattedHtml(String html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull Set<String> anchors, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
     {
         _html = html;
         _volatile = isVolatile;
         _wikiDependencies = wikiDependencies;
+        _anchors = anchors;
         _clientDependencies = clientDependencies;
     }
 
@@ -80,6 +82,12 @@ public class FormattedHtml
     public Set<String> getWikiDependencies()
     {
         return _wikiDependencies;
+    }
+
+    @NotNull
+    public Set<String> getAnchors()
+    {
+        return _anchors;
     }
 
     @NotNull
