@@ -162,7 +162,10 @@ if (!LABKEY.DataRegions)
             userSort: undefined,
 
             title: undefined,
-            titleHref: undefined
+            titleHref: undefined,
+
+            allowChooseQuery: undefined,
+            allowChooseView: undefined
         };
 
         if (!config || !LABKEY.Utils.isString(config.name)) {
@@ -2295,7 +2298,7 @@ if (!LABKEY.DataRegions)
                             callback.call(scope);
                         }
 
-                        $(this).trigger('success', this);
+                        $(this).trigger('success', [this, response]);
                     }, this);
                 }
                 else {
@@ -2424,6 +2427,14 @@ if (!LABKEY.DataRegions)
 
             if (region.titleHref) {
                 params.titleHref = region.titleHref;
+            }
+
+            if (region.allowChooseQuery !== undefined) {
+                params.allowChooseQuery = region.allowChooseQuery === true;
+            }
+
+            if (region.allowChooseView !== undefined) {
+                params.allowChooseView = region.allowChooseView === true;
             }
 
             if (region.parameters) {
@@ -3141,6 +3152,9 @@ if (!LABKEY.DataRegions)
         // TODO: Support removeableSort, removeableContainerFilter
         var defaults = {
             renderTo: undefined,
+            allowChooseQuery: undefined,
+            allowChooseView: undefined,
+            allowHeaderLock: true,
             dataRegionName: LABKEY.Utils.id('aqwp'),
             returnURL: window.location.href,
             _success: LABKEY.Utils.getOnSuccess(_config),
@@ -3153,7 +3167,8 @@ if (!LABKEY.DataRegions)
             sql: undefined,
             aggregates: undefined,
             suppressRenderErrors: false,
-            maxRows: 0, // TODO: Ideally, this can be set to region default instead of explcitly the same
+            scope: this,
+            maxRows: 0, // TODO: Ideally, this can be set to region default instead of explicitly the same
             offset: 0,
             showRows: 'paginated',
             frame: 'webpart.frame',
@@ -3186,7 +3201,9 @@ if (!LABKEY.DataRegions)
             name: this.dataRegionName,
             schemaName: this.schemaName,
             queryName: this.queryName,
-            allowHeaderLock: true,
+            allowChooseQuery: this.allowChooseQuery,
+            allowChooseView: this.allowChooseView,
+            allowHeaderLock: this.allowHeaderLock,
             frame: this.frame,
             filters: this.filters,
             userFilters: userFilters,
@@ -3215,12 +3232,24 @@ if (!LABKEY.DataRegions)
         }
 
         if (this.renderTo) {
+            if (LABKEY.Utils.isString(this.renderTo)) {
+                this.renderTo = renderTo;
+            }
+            else if (LABKEY.Utils.isString(this.renderTo.id)) {
+                this.renderTo = this.renderTo.id; // support "Ext" elements
+            }
+            else {
+                throw 'Unsupported renderTo';
+            }
+        }
+
+        if (this.renderTo) {
             this.region.renderTo = this.renderTo;
 
             // hook 'success' for triggering 'render' event
-            this.region.on('success', function() {
+            this.region.on('success', function(region, response) {
                 if (this._success) {
-                    this._success.call()
+                    this._success.call(this.scope, region, response);
                 }
 
                 this.RENDER_LOCK = true;
@@ -3309,3 +3338,7 @@ LABKEY.AggregateTypes = {
      */
     MAX: 'max'
 };
+
+// Be sure to comment out DataRegion.js, QueryWebPart.js in clientapi/ext3.lib.xml
+//LABKEY.DataRegion = LABKEY.DataRegion2;
+//LABKEY.QueryWebPart = LABKEY.QueryWebPart2;
