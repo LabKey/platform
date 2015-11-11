@@ -45,8 +45,16 @@ import org.labkey.api.data.Table;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -117,6 +125,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public class WikiController extends SpringActionController
 {
@@ -2858,8 +2867,14 @@ public class WikiController extends SpringActionController
                 Wiki wiki = WikiSelectManager.getWiki(c, tree.getRowId());
                 FormattedHtml html = mgr.formatWiki(c, wiki, wiki.getLatestVersion());
 
+                Set<String> attachmentNames = wiki.getAttachments()
+                    .stream()
+                    .map(Attachment::getName)
+                    .collect(Collectors.toSet());
+
                 for (String name : html.getWikiDependencies())
-                    mmap.put(name, wiki);
+                    if (!(name.startsWith("#") ? html.getAnchors().contains(name) : attachmentNames.contains(name)))
+                        mmap.put(name, wiki);
             }
 
             StringBuilder html = new StringBuilder();

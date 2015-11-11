@@ -15,9 +15,9 @@
  */
 package org.labkey.wiki.renderer;
 
-import org.junit.Assert;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
@@ -78,6 +78,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     private static final String LINK_CLASS_NAME = "link";
     private static final String MISSING_CLASS_NAME = "missing";
     private static final String WIKI_DEPENDENCIES_KEY = "~~wiki.dependencies~~";
+    private static final String ANCHORS_KEY = "~~wiki.anchors~~";
 
     private String _wikiHrefPrefix = "?name=";
     private String _createPrefix = null;
@@ -114,13 +115,15 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         if (text == null)
             text = "";
 
-        Set<String> dependencies = new HashSet<>();
         RenderContext context = new BaseRenderContext();
         context.setRenderEngine(this);
+        Set<String> dependencies = new HashSet<>();
         context.set(WIKI_DEPENDENCIES_KEY, dependencies);
+        Set<String> anchors = new HashSet<>();
+        context.set(ANCHORS_KEY, anchors);
         String html = render(text, context);
 
-        return new FormattedHtml(html, false, dependencies);  // TODO: Are there wiki pages we don't want to cache?
+        return new FormattedHtml(html, false, dependencies, anchors);  // TODO: Are there wiki pages we don't want to cache?
     }
 
     public static class MyInitialRenderContext
@@ -350,6 +353,9 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                 StringBuilder buf = new StringBuilder();
                 buf.append("<a name=\"").append(PageFlowUtil.filter(name)).append("\"></a>");
                 writer.write(buf.toString());
+                @SuppressWarnings("unchecked")
+                Set<String> anchors = (Set<String>)macroParameter.getContext().get(ANCHORS_KEY);
+                anchors.add("#" + name);
             }
         }
 
@@ -729,7 +735,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
                         @SuppressWarnings({"unchecked"})
                         Set<String> dependencies = (Set<String>)renderContext.get(WIKI_DEPENDENCIES_KEY);
-                        dependencies.add(name);
+                        dependencies.add(name.isEmpty() && !hash.isEmpty() ? "#" + hash : name);
                     }
                 }
                 else

@@ -30,11 +30,9 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.query.persist.QueryManager;
-import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
