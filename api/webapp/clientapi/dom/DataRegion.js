@@ -130,6 +130,8 @@ if (!LABKEY.DataRegions)
              */
             showRows: "paginated",
 
+            sql: undefined,
+
             totalRows: undefined, // totalRows isn't available when showing all rows.
 
             /**
@@ -141,6 +143,7 @@ if (!LABKEY.DataRegions)
             // Asynchronous properties
             //
             async: false,
+            aggregates: undefined,
             buttonBar: undefined,
             frame: 'none',
             metadata: undefined,
@@ -212,6 +215,10 @@ if (!LABKEY.DataRegions)
         this._initPaging();
         this._initCustomViews();
         this._initPanes();
+    };
+
+    Proto.destroy = function() {
+        // currently a no-op, but should be used to clean-up after ourselves
     };
 
     /**
@@ -2314,14 +2321,21 @@ if (!LABKEY.DataRegions)
             json.sql = params.sql;
         }
 
-        if (region.buttonBar && (region.buttonBar.position || (region.buttonBar.items && region.buttonBar.items.length > 0))) {
+        if (region.buttonBar &&
+            (region.buttonBar.position || (region.buttonBar.items && region.buttonBar.items.length > 0))) {
             json.buttonBar = _processButtonBar(region);
         }
 
-        // 10505: add non-removable sorts and filters to json (not url params).  These will be handled in QueryWebPart.java
-        json.filters = {};
-        if (region.filters) {
-            LABKEY.Filter.appendFilterParams(json.filters, region.filters, region.name);
+        // 10505: add non-removable sorts and filters to json (not url params).
+        if (region.filters || region.aggregates) {
+            json.filters = {};
+
+            if (region.filters) {
+                LABKEY.Filter.appendFilterParams(json.filters, region.filters, region.name);
+            }
+            if (region.aggregates) {
+                LABKEY.Filter.appendAggregateParams(json.filters, region.aggregates, region.name);
+            }
         }
 
         if (region.metadata) {
@@ -2339,9 +2353,15 @@ if (!LABKEY.DataRegions)
         var params = {
             dataRegionName: region.name,
             "webpart.name": 'Query',
-            schemaName: region.schemaName,
-            queryName: region.queryName
+            schemaName: region.schemaName
         }, name = region.name;
+
+        if (region.queryName) {
+            params.queryName = region.queryName;
+        }
+        else if (region.sql) {
+            params.sql = region.sql;
+        }
 
         if (region.viewName) {
             params[name + VIEWNAME_PREFIX] = region.viewName;
@@ -3118,7 +3138,7 @@ if (!LABKEY.DataRegions)
 
         var _config = config || {};
 
-        // TODO: Support sql, removeableSort, removeableContainerFilter
+        // TODO: Support removeableSort, removeableContainerFilter
         var defaults = {
             renderTo: undefined,
             dataRegionName: LABKEY.Utils.id('aqwp'),
@@ -3126,18 +3146,24 @@ if (!LABKEY.DataRegions)
             _success: LABKEY.Utils.getOnSuccess(_config),
             _failure: LABKEY.Utils.getOnFailure(_config),
             filters: undefined,
+            /* filterOptRe: undefined, NO LONGER SUPPORTED */
             removeableFilters: undefined,
             errorType: 'html',
             parameters: undefined,
             sql: undefined,
+            aggregates: undefined,
             suppressRenderErrors: false,
+            maxRows: 0, // TODO: Ideally, this can be set to region default instead of explcitly the same
+            offset: 0,
+            showRows: 'paginated',
+            frame: 'webpart.frame',
             title: 'webpart.title',
             titleHref: 'webpart.titleHref'
         };
 
         var settings = $.extend({}, defaults, _config);
 
-        // if 'filters' is not specified and 'filterArray' is, use it 'filterArray'
+        // if 'filters' is not specified and 'filterArray' is, use 'filterArray'
         if (!$.isArray(settings.filters) && $.isArray(_config.filterArray)) {
             settings.filters = _config.filterArray;
         }
@@ -3156,16 +3182,21 @@ if (!LABKEY.DataRegions)
         // TODO: Figure out strategy for changing the defaults for a region backing a QWP (e.g. frame is 'portal' not 'none')
 
         this.region = LABKEY.DataRegion2.create({
+            async: true,
             name: this.dataRegionName,
             schemaName: this.schemaName,
             queryName: this.queryName,
             allowHeaderLock: true,
-            frame: 'portal', // default
+            frame: this.frame,
             filters: this.filters,
             userFilters: userFilters,
+            aggregates: this.aggregates,
             title: this.title,
             titleHref: this.titleHref,
-            async: true
+            sql: this.sql,
+            offset: this.offset,
+            maxRows: this.maxRows,
+            showRows: this.showRows
         });
 
         if (this.renderTo) {
@@ -3175,20 +3206,29 @@ if (!LABKEY.DataRegions)
 
     LABKEY.QueryWebPart2.prototype.render = function(renderTo) {
 
+        if (this.RENDER_LOCK) {
+            return;
+        }
+
         if (renderTo) {
             this.renderTo = renderTo;
         }
 
         if (this.renderTo) {
             this.region.renderTo = this.renderTo;
-            _load(this.region, function() {
 
-                // success - fire render event
-                // TODO: Because I don't understand trigger this causes this render function to loop indefinitely
-                // obviously, we need more of a custom event bus. We don't care about the element...
-                //$(this).trigger($.Event('render'), [this]);
+            // hook 'success' for triggering 'render' event
+            this.region.on('success', function() {
+                if (this._success) {
+                    this._success.call()
+                }
 
-            }, this, function(json, response, options, renderEl) {
+                this.RENDER_LOCK = true;
+                $(this).trigger('render', this);
+                this.RENDER_LOCK = false;
+            }, this);
+
+            _load(this.region, undefined, undefined, function(json, response, options, renderEl) {
 
                 // failure - do weird stuff
                 if (renderEl.length > 0) {
@@ -3214,6 +3254,10 @@ if (!LABKEY.DataRegions)
 
     LABKEY.QueryWebPart2.prototype.getDataRegion = function() {
         return this.region;
+    };
+
+    LABKEY.QueryWebPart2.prototype.on = function(event, callback, scope) {
+        $(this).bind(event, $.proxy(callback, scope));
     };
 
 })(jQuery);
