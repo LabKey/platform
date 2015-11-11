@@ -6,11 +6,82 @@
 Ext4.define('Study.window.ParticipantGroup', {
     extend : 'Ext.window.Window',
 
+    statics: {
+        /**
+         * Used via ParticipantGroupManager to initiate a window from a data region.
+         * Assumes usage only in the context of a study.
+         */
+        fromDataRegion : function(dataRegionName, fromSelection, isAdmin) {
+            var region = LABKEY.DataRegions[dataRegionName],
+                nounSingular = LABKEY.moduleContext.study.subject.nounSingular,
+                nounPlural = LABKEY.moduleContext.study.subject.nounPlural,
+                _isAdmin = isAdmin === true,
+                checked = [];
+
+            if (region) {
+
+                if (fromSelection) {
+                    checked = region.getChecked();
+                    if (checked.length < 1) {
+                        Ext4.Msg.alert('Selection Error', 'At least one ' + nounSingular + ' must be selected from the checkboxes in order to use this feature.');
+                        return;
+                    }
+                }
+
+                var params = LABKEY.ActionURL.getParameters(region.requestURL),
+                    jsonData = {
+                        schemaName: region.schemaName,
+                        queryName: region.queryName,
+                        viewName: region.viewName,
+                        dataRegionName: region.name,
+                        requestURL: region.requestURL
+                    };
+
+                if (fromSelection) {
+                    jsonData.selections = checked;
+                }
+                else {
+                    jsonData.selectAll = true;
+                }
+
+                Ext4.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL('participant-group', 'getParticipantsFromSelection.api', null, params),
+                    method: 'POST',
+                    jsonData: jsonData,
+                    success: function(response) {
+
+                        var json = Ext4.decode(response.responseText);
+
+                        // create a window
+                        Ext4.create('Study.window.ParticipantGroup', {
+                            subject: {
+                                nounSingular: nounSingular,
+                                nounPlural: nounPlural
+                            },
+                            categoryParticipantIds: json.ptids.join(', '),
+                            canEdit: true,
+                            hideDataRegion: true,
+                            isAdmin: _isAdmin,
+                            autoShow: true,
+                            listeners: {
+                                aftersave: function() {
+                                    region.clearSelected();
+                                    region.refresh();
+                                }
+                            }
+                        });
+                    },
+                    failure: LABKEY.Utils.displayAjaxErrorResponse
+                });
+            }
+        }
+    },
+
     constructor : function(config){
         Ext4.QuickTips.init();
         this.panelConfig = config;
-        this.addEvents('aftersave', 'closewindow');
-        if(config.category) {
+
+        if (config.category) {
             config.type = config.category.type;
             config.shared = config.category.shared;
         }
@@ -37,22 +108,15 @@ Ext4.define('Study.window.ParticipantGroup', {
             title : (config.canEdit ? 'Define ' : 'View ') + Ext4.htmlEncode(config.subject.nounSingular) + ' Group',
             layout : 'fit',
             autoScroll : true,
-            modal : true,
-            listeners: {
-                show: function(win){
-                    new Ext4.util.KeyNav(win.getEl(), {
-                        "enter" : function(e){
-                            win.saveCategory();
-                        },
-                        scope : this
-                    });
-                }
-            }
+            modal : true
         });
+
         this.callParent([config]);
+
+        this.addEvents('aftersave', 'closewindow');
     },
 
-    initComponent : function(){
+    initComponent : function() {
 
         var demoStore = Ext4.create('LABKEY.ext4.data.Store', {
             name : 'demoStore',
@@ -108,7 +172,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             sorters : {property : 'label', direction : 'ASC'},
             listeners:{
                 load: function(me){
-                    if(this.category && me.findExact('rowId', this.category.rowId) > -1){
+                    if (this.category && me.findExact('rowId', this.category.rowId) > -1){
                         categoryCombo.setValue(this.category.rowId);
                     }
                 },
@@ -256,19 +320,28 @@ Ext4.define('Study.window.ParticipantGroup', {
         });
 
         this.on('closewindow', this.close, this);
-        this.on('afterSave', this.close, this);
+        this.on('aftersave', this.close, this);
+        this.on('show', function(win) {
+            new Ext4.util.KeyNav(win.getEl(), {
+                'enter': function() {
+                    win.saveCategory();
+                },
+                scope: this
+            });
+        }, this, {single: true});
+        
         this.items = [simplePanel];
-        if(this.categoryParticipantIds) {
+        if (this.categoryParticipantIds) {
             simplePanel.queryById('participantIdentifiers').setValue(this.categoryParticipantIds);
         }
-        if(this.groupLabel){
+        if (this.groupLabel){
             simplePanel.queryById('groupLabel').setValue(this.groupLabel);
         }
         simplePanel.on('closewindow', this.close, this);
         this.callParent(arguments);
         //This class exists for testing purposes (e.g. ReportTest)
         this.cls = "doneLoadingTestMarker";
-        if(this.hideDataRegion){
+        if (this.hideDataRegion){
             this.on('donewithbuttons', function(){this.height = simplePanel.el.dom.scrollHeight + 25;});
         }
     },
@@ -286,14 +359,14 @@ Ext4.define('Study.window.ParticipantGroup', {
             categoryCombo = this.queryById('participantCategory'),
             categoryStore = categoryCombo.getStore();
 
-        if(categoryStore.findExact('label', categoryCombo.getRawValue()) > -1){
+        if (categoryStore.findExact('label', categoryCombo.getRawValue()) > -1){
             categoryCombo.select(categoryStore.findRecord('label', categoryCombo.getRawValue()));
         }
-        if(!label){
+        if (!label){
             Ext4.Msg.alert("Error", this.subject.nounSingular + " Group Label Required");
             return false;
         }
-        if(!idStr){
+        if (!idStr){
             Ext4.Msg.alert("Error", "One or more " + this.subject.nounSingular + " Identifiers required");
             return false;
         }
@@ -326,7 +399,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             success : LABKEY.Utils.getCallbackWrapper(function(data) {
                 this.getEl().unmask();
                 me.fireEvent('aftersave', data);
-                if(me.grid){
+                if (me.grid){
                     me.grid.getStore().load();
                 }
             }),
@@ -381,7 +454,6 @@ Ext4.define('Study.window.ParticipantGroup', {
             participantIds : ptids,
             categoryLabel : categoryLabel,
             categoryType : categoryType
-            //categoryShared : Ext4.getCmp('sharedBox').getValue()
         };
 
         if (fieldValues["filters"] != undefined)
@@ -402,7 +474,6 @@ Ext4.define('Study.window.ParticipantGroup', {
     displayQueryWebPart : function(queryName) {
 
         if (!this.hideDataRegion) {
-
 
             //QueryWebPart is an Ext 3 based component, so we need to include Ext 3 here.
             LABKEY.requiresExt3ClientAPI(function() {
@@ -470,7 +541,7 @@ Ext4.define('Study.window.ParticipantGroup', {
 
                 //append the selected ids to the current list
                 for(i = 0; i < data.rows.length; i++){
-                    if(tempIdsArray.indexOf(data.rows[i][this.subject.nounColumnName]) == -1){
+                    if (tempIdsArray.indexOf(data.rows[i][this.subject.nounColumnName]) == -1){
                         tempIds += (tempIds.length > 0 ? ", " : "") + data.rows[i][this.subject.nounColumnName];
                         tempIdsArray.push(data.rows[i][this.subject.nounColumnName]);
                     }

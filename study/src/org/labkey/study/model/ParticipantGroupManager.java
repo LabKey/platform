@@ -380,88 +380,20 @@ public class ParticipantGroupManager
 
     private String createNewParticipantGroupScript(ViewContext context, String dataRegionName, boolean fromSelection)
     {
-        StringBuilder sb = new StringBuilder();
+        boolean isAdmin = context.getContainer().hasPermission(context.getUser(), SharedParticipantGroupPermission.class) ||
+                context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
 
-        sb.append("LABKEY.requiresScript('study/ParticipantGroup.js', function(){");
-        sb.append(createNewParticipantGroupCallback(context, dataRegionName, fromSelection));
-        sb.append("},this);");
-
-        return sb.toString();
-    }
-
-    private String createNewParticipantGroupCallback(ViewContext context, String dataRegionName, boolean fromSelection)
-    {
-        Container container = context.getContainer();
-        Study study = StudyManager.getInstance().getStudy(container);
-
-        boolean isAdmin = container.hasPermission(context.getUser(), SharedParticipantGroupPermission.class) ||
-                container.hasPermission(context.getUser(), AdminPermission.class);
-
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("var dataRegion = LABKEY.DataRegions[").append(PageFlowUtil.jsString(dataRegionName)).append("];");
-        sb.append("if (dataRegion) {");
-
-        if (fromSelection)
-        {
-            sb.append("     var checked = dataRegion.getChecked();");
-            sb.append("     if (checked.length <= 0) {");
-            sb.append("         Ext.MessageBox.alert('Selection Error', 'At least one ").append(study.getSubjectNounSingular()).append(" must be selected from the checkboxes in order to use this feature.');");
-            sb.append("         return;");
-            sb.append("     }");
-        }
-
-        sb.append("         var dataRegionEl = Ext.get(").append(PageFlowUtil.jsString(dataRegionName)).append(");");
-        sb.append("         dataRegionEl.mask('getting selections...', 'x-mask-loading');");
-        sb.append("         Ext.Ajax.request({");
-        sb.append("             url: LABKEY.ActionURL.buildURL('participant-group', 'getParticipantsFromSelection.api', null, LABKEY.ActionURL.getParameters(dataRegion.requestURL)),");
-
-        // ask for either the selected participants or all the participants in the view
-        if (fromSelection)
-        {
-            sb.append("         jsonData: {selections:checked, schemaName: dataRegion.schemaName, queryName: dataRegion.queryName, ");
-            sb.append("                     viewName: dataRegion.viewName, dataRegionName: dataRegion.name, requestURL: dataRegion.requestURL},");
-        }
-        else
-        {
-            sb.append("         jsonData: {selectAll:true, schemaName: dataRegion.schemaName, queryName: dataRegion.queryName, ");
-            sb.append("                     viewName: dataRegion.viewName, dataRegionName: dataRegion.name, requestURL: dataRegion.requestURL},");
-        }
-        sb.append("             method: 'post', scope: this,");
-        sb.append("             failure: function(res, opt){dataRegionEl.unmask(); LABKEY.Utils.displayAjaxErrorResponse(res, opt);},");
-        sb.append("             success: function(res, opt) {");
-        sb.append("                 dataRegionEl.unmask();");
-        sb.append("                 var o = eval('var $=' + res.responseText + ';$;');");
-        sb.append("                 if (o.success && o.ptids) {");
-        sb.append("                     var stringPtids = '';");
-        sb.append("                     for (var i = 0; i < o.ptids.length; i++) {");
-        sb.append("                         if (i != o.ptids.length-1) { stringPtids += o.ptids[i] + ', '; }");
-        sb.append("                         else { stringPtids += o.ptids[i]; }");
-        sb.append("                     }");
-        sb.append("                     var dlg = Ext4.create('Study.window.ParticipantGroup', {");
-        sb.append("                             subject: {");
-        sb.append("                                 nounSingular:").append(PageFlowUtil.jsString(study.getSubjectNounSingular())).append(',');
-        sb.append("                                 nounPlural:").append(PageFlowUtil.jsString(study.getSubjectNounPlural()));
-        sb.append("                             },");
-        sb.append("                             categoryParticipantIds: stringPtids,");
-        sb.append("                             canEdit: true,"); // all users, even Readers, are allowed to create private ptid groups
-        sb.append("                             hideDataRegion:true,");
-        sb.append("                             isAdmin:").append(isAdmin);
-        sb.append("                     });");
-        sb.append("                     dlg.on('aftersave', function(c){dataRegion.clearSelected(); dataRegion.refresh();}, this);");
-        sb.append("                     dlg.show(this);");
-        sb.append("                 }");
-        sb.append("             }});");
-        sb.append("}");
-
-        return sb.toString();
+        return "LABKEY.requiresExt4Sandbox(function() {" +
+                "LABKEY.requiresScript('study/ParticipantGroup.js', function(){" +
+                " Study.window.ParticipantGroup.fromDataRegion(" + PageFlowUtil.jsString(dataRegionName) + "," + fromSelection + "," + isAdmin + "); " +
+                "},this);});";
     }
 
     /**
      * Returns the list participant categories that the specified user is allowed to see
      *
      * @param distinctCategories if true returns the unique (by label) set of categories. A private category will
-     *                           supercede a public category.
+     *                           supersede a public category.
      */
     public ParticipantCategoryImpl[] getParticipantCategories(Container c, User user, boolean distinctCategories)
     {
