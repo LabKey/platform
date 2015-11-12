@@ -136,38 +136,4 @@ public class QueryDef extends Entity implements Cloneable
             throw UnexpectedException.wrap(cnse);
         }
     }
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        QueryDef that = (QueryDef) o;
-
-        if (_sql != null ? !_sql.equals(that._sql) : that._sql != null) return false;
-        if (_metadata != null ? !_metadata.equals(that._metadata) : that._metadata != null) return false;
-        if (_schemaVersion != that._schemaVersion) return false;
-        if (_flags != that._flags) return false;
-        if (_name != null ? !_name.equals(that._name) : that._name != null) return false;
-        if (_description != null ? !_description.equals(that._description) : that._description != null) return false;
-        if (_schema != null ? !_schema.toString().equals(that._schema.toString()) : that._schema != null) return false;
-
-        return _queryDefId == that._queryDefId;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        int result = _queryDefId;
-
-        result = 31 * result + (_sql != null ? _sql.hashCode() : 0);
-        result = 31 * result + (_metadata != null ? _metadata.hashCode() : 0);
-        result = 31 * result + (int)_schemaVersion;
-        result = 31 * result + _flags;
-        result = 31 * result + (_name != null ? _name.hashCode() : 0);
-        result = 31 * result + (_description != null ? _description.hashCode() : 0);
-        result = 31 * result + (_schema != null ? _schema.toString().hashCode() : 0);
-
-        return result;
-    }
 }

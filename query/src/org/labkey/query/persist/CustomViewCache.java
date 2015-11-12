@@ -1,5 +1,7 @@
 package org.labkey.query.persist;
 
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,29 +39,29 @@ public class CustomViewCache
     private static class CustomViewCollections
     {
         // schemaName, queryName, viewName keys
-        Map<String, Map<String, List<CstmView>>> _customViews;
-        Map<String, Map<String, List<CstmView>>> _inheritableCustomViews;
-        Map<Integer, CstmView> _rowIdMap;
-        Map<String, CstmView> _entityIdMap;
+        private final Map<String, MultiMap<String, CstmView>> _customViews;
+        private final Map<String, MultiMap<String, CstmView>> _inheritableCustomViews;
+        private final Map<Integer, CstmView> _rowIdMap;
+        private final Map<String, CstmView> _entityIdMap;
 
         private CustomViewCollections(Container c)
         {
-            Map<String, Map<String, List<CstmView>>> customViews = new HashMap<>();
-            Map<String, Map<String, List<CstmView>>> inheritableCustomViews = new HashMap<>();
+            Map<String, MultiMap<String, CstmView>> customViews = new HashMap<>();
+            Map<String, MultiMap<String, CstmView>> inheritableCustomViews = new HashMap<>();
             Map<Integer, CstmView> rowIdMap = new HashMap<>();
             Map<String, CstmView> entityIdMap = new HashMap<>();
 
             new TableSelector(QueryManager.get().getTableInfoCustomView(), SimpleFilter.createContainerFilter(c), null).forEach(cstmView -> {
 
-                List<CstmView> viewMap = ensureViewList(customViews, cstmView.getSchema(), cstmView.getQueryName());
+                MultiMap<String, CstmView> viewMap = ensureViewMultiMap(customViews, cstmView.getSchema());
 
-                viewMap.add(cstmView);
+                viewMap.put(cstmView.getQueryName(), cstmView);
                 rowIdMap.put(cstmView.getCustomViewId(), cstmView);
                 entityIdMap.put(cstmView.getEntityId(), cstmView);
                 if ((cstmView.getFlags() & QueryManager.FLAG_INHERITABLE) != 0)
                 {
-                    List<CstmView> inheritableViewMap = ensureViewList(inheritableCustomViews, cstmView.getSchema(), cstmView.getQueryName());
-                    inheritableViewMap.add(cstmView);
+                    MultiMap<String, CstmView> inheritableViewMap = ensureViewMultiMap(inheritableCustomViews, cstmView.getSchema());
+                    inheritableViewMap.put(cstmView.getQueryName(), cstmView);
                 }
 
             }, CstmView.class);
@@ -70,26 +72,19 @@ public class CustomViewCache
             _inheritableCustomViews = Collections.unmodifiableMap(inheritableCustomViews);
         }
 
-        private List<CstmView> ensureViewList(Map<String, Map<String, List<CstmView>>> views,
-                                                    String schemaName, String queryName)
+        private MultiMap<String, CstmView> ensureViewMultiMap(Map<String, MultiMap<String, CstmView>> views, String schemaName)
         {
             if (!views.containsKey(schemaName))
             {
-                views.put(schemaName, new LinkedHashMap<>());
+                views.put(schemaName, new MultiHashMap<>());
             }
-            Map<String, List<CstmView>> queryMap = views.get(schemaName);
-
-            if (!queryMap.containsKey(queryName))
-            {
-                queryMap.put(queryName, new ArrayList<>());
-            }
-            return queryMap.get(queryName);
+            return views.get(schemaName);
         }
 
         private @NotNull
         Collection<CstmView> getCstmViews(String schemaName, String queryName, String viewName, boolean inheritableOnly)
         {
-            Map<String, Map<String, List<CstmView>>> customViewMap = inheritableOnly ? _inheritableCustomViews : _customViews;
+            Map<String, MultiMap<String, CstmView>> customViewMap = inheritableOnly ? _inheritableCustomViews : _customViews;
 
             if (schemaName == null)
             {
@@ -98,12 +93,12 @@ public class CustomViewCache
             }
             else if (customViewMap.containsKey(schemaName))
             {
-                Map<String, List<CstmView>> queryMap = customViewMap.get(schemaName);
+                MultiMap<String, CstmView> schemaMultiMap = customViewMap.get(schemaName);
                 if (queryName != null)
                 {
-                    if (queryMap.containsKey(queryName))
+                    if (schemaMultiMap.containsKey(queryName))
                     {
-                        List<CstmView> viewList = queryMap.get(queryName);
+                        Collection<CstmView> viewList = schemaMultiMap.get(queryName);
 
                         // view name specified
                         if (viewName != null)
@@ -123,13 +118,13 @@ public class CustomViewCache
                 else
                 {
                     // return all views for the schema
-                    List<CstmView> schemaViews = new ArrayList<>();
-                    queryMap.values().forEach(schemaViews::addAll);
+                    Collection<CstmView> schemaViews = new ArrayList<>();
+                    schemaViews.addAll(schemaMultiMap.values());
 
                     return schemaViews;
                 }
             }
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         private @Nullable CstmView getForRowId(int rowId)
@@ -189,11 +184,6 @@ public class CustomViewCache
     static @Nullable CstmView getCstmViewByEntityId(Container c, String entityId)
     {
         return CUSTOM_VIEW_DB_CACHE.get(c).getForEntityId(entityId);
-    }
-
-    static @NotNull Collection<CstmView> getCstmViews(Container c)
-    {
-        return CUSTOM_VIEW_DB_CACHE.get(c).getCstmViews();
     }
 
     public static void uncache(Container c)

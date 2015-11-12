@@ -34,9 +34,9 @@ public class QueryDefCache
     private static class QueryDefCollections
     {
         // schemaName, queryDefName keys
-        Map<String, Map<String, QueryDef>> _queryDefs;
-        Map<String, Map<String, QueryDef>> _customQueryDefs;
-        Map<Integer, QueryDef> _queryDefIdMap;
+        private final Map<String, Map<String, QueryDef>> _queryDefs;
+        private final Map<String, Map<String, QueryDef>> _customQueryDefs;
+        private final Map<Integer, QueryDef> _queryDefIdMap;
 
         private QueryDefCollections(Container c)
         {
@@ -94,7 +94,7 @@ public class QueryDefCache
             {
                 return Collections.unmodifiableCollection(queryDefs.get(schemaName).values());
             }
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         private @NotNull
@@ -106,7 +106,7 @@ public class QueryDefCache
             {
                 return queryDefs.get(schemaName);
             }
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         }
     }
 

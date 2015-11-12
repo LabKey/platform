@@ -167,40 +167,4 @@ public final class CstmView extends Entity implements Cloneable, Serializable
 //                v._name = null;
 //        }
     }
-
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        CstmView that = (CstmView) o;
-
-        if (_schema != null ? !_schema.equals(that._schema) : that._schema != null) return false;
-        if (_queryName != null ? !_queryName.equals(that._queryName) : that._queryName != null) return false;
-        if (_customViewId != that._customViewId) return false;
-        if (_owner != null ? !_owner.equals(that._owner) : that._owner != null) return false;
-
-        if (_name != null ? !_name.equals(that._name) : that._name != null) return false;
-        if (_columns != null ? !_columns.equals(that._columns) : that._columns != null) return false;
-        if (_filter != null ? !_filter.equals(that._filter) : that._filter != null) return false;
-
-        return _flags == that._flags;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        int result = _schema != null ? _schema.hashCode() : 0;
-
-        result = 31 * result + (_queryName != null ? _queryName.hashCode() : 0);
-        result = 31 * result + _customViewId;
-        result = 31 * result + (_owner != null ? _owner.hashCode() : 0);
-        result = 31 * result + (_name != null ? _name.hashCode() : 0);
-        result = 31 * result + (_columns != null ? _columns.hashCode() : 0);
-        result = 31 * result + (_filter != null ? _filter.hashCode() : 0);
-        result = 31 * result + _flags;
-
-        return result;
-    }
 }
