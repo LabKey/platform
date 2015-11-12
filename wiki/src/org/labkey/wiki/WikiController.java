@@ -123,7 +123,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -1933,7 +1935,7 @@ public class WikiController extends SpringActionController
 
             List<Map<String, String>> pages = new ArrayList<>(wikiMap.size());
 
-            for (Map.Entry<HString, HString> entry : wikiMap.entrySet())
+            for (Entry<HString, HString> entry : wikiMap.entrySet())
             {
                 String name = entry.getKey().getSource();
                 String title = entry.getValue().getSource();
@@ -2859,6 +2861,9 @@ public class WikiController extends SpringActionController
         {
             Container c = getContainer();
             MultiMap<String, Wiki> mmap = new MultiHashMap<>();
+            Map<Wiki, Collection<String>> unusedAttachments = new TreeMap<>((w1, w2) -> {
+                return w1.getName().compareToIgnoreCase(w2.getName());
+            });
             Set<WikiTree> trees = WikiSelectManager.getWikiTrees(c);
             WikiManager mgr = getWikiManager();
 
@@ -2872,16 +2877,71 @@ public class WikiController extends SpringActionController
                     .map(Attachment::getName)
                     .collect(Collectors.toSet());
 
+                // Make a copy that we'll mutate
+                Set<String> orphanedAttachments = new HashSet<>(attachmentNames);
+
                 for (String name : html.getWikiDependencies())
-                    if (!(name.startsWith("#") ? html.getAnchors().contains(name) : attachmentNames.contains(name)))
-                        mmap.put(name, wiki);
+                {
+                    if (name.startsWith("#"))
+                    {
+                        if (!html.getAnchors().contains(name))
+                            mmap.put(name, wiki);
+                    }
+                    else
+                    {
+                        if (attachmentNames.contains(name))
+                            orphanedAttachments.remove(name);
+                        else
+                            mmap.put(name, wiki);
+                    }
+                }
+
+                if (!orphanedAttachments.isEmpty())
+                {
+                    unusedAttachments.put(wiki, orphanedAttachments);
+                }
             }
 
             StringBuilder html = new StringBuilder();
-            html.append(renderTable(c, mmap, "Links to valid wikis", true));
-            html.append(renderTable(c, mmap, "Invalid links or links to non-wikis", false));
+            html.append(renderTable(c, mmap, "Invalid links", false));
+            html.append(renderUnusedAttachments(c, unusedAttachments));
+            html.append(renderTable(c, mmap, "Links to valid wikis, attachments, and anchors", true));
 
             return new HtmlView(html.toString());
+        }
+
+        private StringBuilder renderUnusedAttachments(Container c, Map<Wiki, Collection<String>> unusedAttachments)
+        {
+            StringBuilder html = new StringBuilder();
+            int row = 0;
+
+            for (Entry<Wiki, Collection<String>> entry : unusedAttachments.entrySet())
+            {
+                HString name = entry.getKey().getName();
+                Collection<String> unused = entry.getValue();
+
+                html.append("    <tr class=\"").append(row++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\"><td>");
+                html.append(getSimpleLink(name.getSource(), getPageURL(c, name)));
+                html.append("</td><td>");
+                String sep = "";
+
+                for (String attachmentName : unused)
+                {
+                    html.append(sep);
+                    html.append(PageFlowUtil.filter(attachmentName));
+                    sep = ", ";
+                }
+
+                html.append("</td></tr>\n");
+            }
+
+            if (html.length() > 0)
+            {
+                html.insert(0, "<table>\n<tr><td colspan=2><b>" + PageFlowUtil.filter("Unlinked Attachments") + "</b></td></tr>\n");
+                html.append("</table><br>\n");
+            }
+
+            return html;
         }
 
         private StringBuilder renderTable(Container c, MultiMap<String, Wiki> mmap, String title, boolean validWiki)
@@ -2889,6 +2949,7 @@ public class WikiController extends SpringActionController
             StringBuilder html = new StringBuilder();
             Set<String> names =  new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
             names.addAll(mmap.keySet());
+            int row = 0;
 
             for (String name : names)
             {
@@ -2896,7 +2957,7 @@ public class WikiController extends SpringActionController
 
                 if (null == page ^ validWiki)
                 {
-                    html.append("    <tr><td>");
+                    html.append("    <tr class=\"").append(row++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\"><td>");
                     html.append(getSimpleLink(name, getPageURL(c, new HString(name))));
                     Collection<Wiki> wikis = mmap.get(name);
 
@@ -2916,7 +2977,7 @@ public class WikiController extends SpringActionController
 
             if (html.length() > 0)
             {
-                html.insert(0, "<table>\n<tr><td colspan=2>").append(PageFlowUtil.filter(title)).append("</td></tr>\n");
+                html.insert(0, "<table>\n<tr><td colspan=2><b>" + PageFlowUtil.filter(title) + "</b></td></tr>\n");
                 html.append("</table><br>\n");
             }
 

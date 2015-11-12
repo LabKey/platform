@@ -735,7 +735,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
                         @SuppressWarnings({"unchecked"})
                         Set<String> dependencies = (Set<String>)renderContext.get(WIKI_DEPENDENCIES_KEY);
-                        dependencies.add(name.isEmpty() && !hash.isEmpty() ? "#" + hash : name);
+                        dependencies.add(name.isEmpty() && !hash.isEmpty() ? "#" + hash : name.trim());
                     }
                 }
                 else
