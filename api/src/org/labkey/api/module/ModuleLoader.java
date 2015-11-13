@@ -52,12 +52,15 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
+import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
@@ -397,6 +400,35 @@ public class ModuleLoader implements Filter
 
             if (!additionalSchemasRequiringUpgrade.isEmpty())
                 _log.info((modulesRequiringUpgrade.isEmpty() ? "Schemas" : "Additional schemas" ) + " requiring upgrade: " + additionalSchemasRequiringUpgrade.toString());
+
+            String upgradeUserParameter = System.getProperty("upgradeUser");
+
+            if (upgradeUserParameter != null)
+            {
+                ValidEmail upgradeUserEmail = new ValidEmail(upgradeUserParameter);
+                User upgradeUser = UserManager.getUser(upgradeUserEmail);
+
+                if (isNewInstall())
+                {
+                    // Must set the LSID authority early, since all audit LSIDs get created with this domain
+                    String email = upgradeUserEmail.getEmailAddress();
+                    int atSign = email.indexOf('@');
+                    String defaultDomain = email.substring(atSign + 1);
+                    WriteableAppProps appProps = AppProps.getWriteableInstance();
+                    appProps.setDefaultDomain(defaultDomain);
+                    appProps.setDefaultLsidAuthority(defaultDomain);
+                    appProps.save();
+
+                    upgradeUser = User.getSearchUser();
+                }
+                else
+                {
+                    if (null == upgradeUser)
+                        throw new ServletException("Invalid upgrade user; \"" + upgradeUserParameter + "\" is not a valid user.");
+                }
+
+                startNonCoreUpgrade(upgradeUser, Execution.Synchronous);
+            }
         }
 
         _log.info("LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
@@ -1380,7 +1412,7 @@ public class ModuleLoader implements Filter
     }
 
 
-    public void startNonCoreUpgrade(User user) throws Exception
+    public void startNonCoreUpgrade(User user, Execution execution) throws Exception
     {
         synchronized(UPGRADE_LOCK)
         {
@@ -1392,7 +1424,7 @@ public class ModuleLoader implements Filter
                 setUpgradeUser(user);
 
                 ModuleUpgrader upgrader = new ModuleUpgrader(modules);
-                upgrader.upgradeInBackground(() -> completeUpgrade(true));
+                upgrader.upgrade(() -> completeUpgrade(true), execution);
             }
         }
     }

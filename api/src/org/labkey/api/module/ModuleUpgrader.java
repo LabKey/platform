@@ -28,7 +28,30 @@ import java.util.ListIterator;
 public class ModuleUpgrader
 {
     private static final Logger _log = Logger.getLogger(ModuleUpgrader.class);
+
     private final List<Module> _modules;
+
+    public enum Execution
+    {
+        Synchronous
+        {
+            @Override
+            void run(Runnable runnable)
+            {
+                runnable.run();
+            }
+        },
+        Asynchronous
+        {
+            @Override
+            void run(Runnable runnable)
+            {
+                Thread thread = new Thread(runnable, "Module Upgrade");
+                thread.start();
+            }
+        };
+
+        abstract void run(Runnable runnable);}
 
     ModuleUpgrader(List<Module> modules)
     {
@@ -63,25 +86,19 @@ public class ModuleUpgrader
     }
 
 
-    void upgradeInBackground(final Runnable afterUpgrade)
+    void upgrade(Runnable afterUpgrade, Execution execution)
     {
-        Thread thread = new Thread("Module Upgrade")
-        {
-            @Override
-            public void run()
+        execution.run(() -> {
+            try
             {
-                try
-                {
-                    upgrade();
-                    afterUpgrade.run();
-                }
-                catch (Throwable t)
-                {
-                    ModuleLoader.getInstance().setStartupFailure(t);
-                    _log.error("Failure during module upgrade", t);
-                }
+                upgrade();
+                afterUpgrade.run();
             }
-        };
-        thread.start();
+            catch (Throwable t)
+            {
+                ModuleLoader.getInstance().setStartupFailure(t);
+                _log.error("Failure during module upgrade", t);
+            }
+        });
     }
 }

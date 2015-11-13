@@ -157,7 +157,7 @@ public class WriteableAppProps extends AppPropsImpl
 
     public void setDefaultLsidAuthority(String defaultLsidAuthority)
     {
-        if (defaultLsidAuthority != null && defaultLsidAuthority.indexOf(":") != -1)
+        if (defaultLsidAuthority != null && defaultLsidAuthority.contains(":"))
         {
             throw new IllegalArgumentException("Default LSID authority may not contain ':'");
         }
