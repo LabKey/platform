@@ -834,8 +834,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             return answer;
         };
 
-        this.gridPanel.clearFilter();
-        Ext4.defer(this.gridPanel.filterBy, delay || 200, this, [filter, this]);
+        var f = function(filter, value){
+            this.gridPanel.clearFilter();
+            this.gridPanel.filterBy(filter, value);
+        };
+
+        Ext4.defer(f, delay || 200, this, [filter, this]);
     },
 
     isCustomizable : function() {

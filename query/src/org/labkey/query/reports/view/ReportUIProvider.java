@@ -81,6 +81,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         _typeToIconClsMap.put(AttachmentReport.TYPE, "fa fa-paperclip");
         _typeToIconClsMap.put(LinkReport.TYPE, "fa fa-external-link-square");
         _typeToIconClsMap.put(QueryReport.TYPE, "fa fa-table");
+        _typeToIconClsMap.put(QuerySnapshotService.TYPE, "fa fa-camera");
     }
 
     /**

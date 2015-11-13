@@ -76,7 +76,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         _typeToIconClsMap.put(StudyQueryReport.TYPE, "fa fa-table");
         _typeToIconClsMap.put(StudyChartQueryReport.TYPE, "fa fa-bar-chart");
         _typeToIconClsMap.put(ExportExcelReport.TYPE, "fa fa-file-excel-o");
-        _typeToIconClsMap.put(ExternalReport.TYPE, "fa fa-share-square-o");
+        _typeToIconClsMap.put(ExternalReport.TYPE, "fa fa-cogs");
         _typeToIconClsMap.put(ParticipantReport.TYPE, "fa fa-clipboard");
 //      _typeToIconClsMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
 //      _typeToIconClsMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
