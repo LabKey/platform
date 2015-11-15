@@ -58,6 +58,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -434,7 +435,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             _schema = QueryService.get().getUserSchema(getUser(), getContainer(), getSchemaPath());
         if (_schema == null)
         {
-            throw new IllegalStateException("Could not find schema " + getSchemaPath() + " in " + getContainer().getPath() + " for user " + getUser() + " with query " + getName());
+            throw new NotFoundException("Could not find schema " + getSchemaPath() + " in " + getContainer().getPath() + " for user " + getUser() + " with query " + getName() + " - is its owning module enabled?");
         }
         assert _schema.getSchemaPath().equals(getSchemaPath()) : "Paths were not equal: " + _schema.getSchemaPath() + " vs " + getSchemaPath();
         return _schema;
