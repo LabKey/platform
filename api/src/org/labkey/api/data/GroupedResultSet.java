@@ -247,7 +247,7 @@ public class GroupedResultSet extends ResultSetImpl
             if (null == _currentValue)
                 _currentValue = getObject(_columnIndex);
             else
-                success = getObject(_columnIndex).equals(_currentValue);
+                success = Objects.equals(getObject(_columnIndex), _currentValue);
 
             if (!success)
             {
