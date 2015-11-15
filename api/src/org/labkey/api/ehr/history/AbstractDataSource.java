@@ -38,7 +38,6 @@ import org.labkey.api.security.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -65,9 +64,7 @@ abstract public class AbstractDataSource implements HistoryDataSource
     protected String _subjectIdField = "Id";
     protected static final Logger _log = Logger.getLogger(HistoryDataSource.class);
 
-    protected final static SimpleDateFormat _dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm");
-    protected final static SimpleDateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    protected final static SimpleDateFormat _timeFormat = new SimpleDateFormat("kk:mm");
+    protected final static String DATE_FORMAT = "yyyy-MM-dd";
 
     public AbstractDataSource(String schema, String query)
     {
