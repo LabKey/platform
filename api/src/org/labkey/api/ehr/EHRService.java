@@ -182,9 +182,16 @@ abstract public class EHRService
             return _label;
         }
 
-        public EHRQCState getQCState(Container c)
+        /** @throws java.lang.IllegalArgumentException if the QC state doesn't exist in the container */
+        @NotNull
+        public EHRQCState getQCState(@NotNull Container c)
         {
-            return EHRService.get().getQCStates(c).get(_label);
+            EHRQCState result = EHRService.get().getQCStates(c).get(_label);
+            if (result == null)
+            {
+                throw new IllegalArgumentException("Could not find QC state " + _label + " in container " + c.getPath());
+            }
+            return result;
         }
     }
     abstract public List<FieldKey> getDefaultFieldKeys(TableInfo ti);
