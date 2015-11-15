@@ -80,4 +80,16 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
         writeFile(bIn, file);
         return Collections.singletonMap(PRIMARY_FILE, file);
     }
+
+    @Override
+    protected String getPreferredAssayId(File primaryFile)
+    {
+        // Strip off the .tmp extension if present
+        String result = primaryFile.getName();
+        if (result.toLowerCase().endsWith(".tmp"))
+        {
+            result = result.substring(0, result.length() - ".tmp".length());
+        }
+        return result;
+    }
 }

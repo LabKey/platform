@@ -101,7 +101,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
 
                     // If the run name is the filename, and the filename was changed to another unique value, change the run name.
                     if (run.getName().equals(tempDirFile.getName()) ) {
-                        run.setName(assayDirFile.getName());
+                        run.setName(getPreferredAssayId(assayDirFile));
                     }
 
                     run.save(context.getUser());
@@ -117,6 +117,12 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
         _uploadComplete = true;
 
         return result;
+    }
+
+    /** @return the preferred name for the run given the primary data file */
+    protected String getPreferredAssayId(File primaryFile)
+    {
+        return primaryFile.getName();
     }
 
     public boolean isVisible()
