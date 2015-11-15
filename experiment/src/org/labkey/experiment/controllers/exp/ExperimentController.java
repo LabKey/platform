@@ -17,6 +17,7 @@
 package org.labkey.experiment.controllers.exp;
 
 import au.com.bytecode.opencsv.CSVWriter;
+import com.allen_sauer.gwt.dnd.client.util.StringUtil;
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -93,12 +94,14 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.form.DeleteForm;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
@@ -156,6 +159,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DetailsView;
+import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -194,6 +198,7 @@ import org.labkey.experiment.StandardAndCustomPropertiesView;
 import org.labkey.experiment.XarExportPipelineJob;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpExperimentImpl;
@@ -206,6 +211,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleSetDomainType;
+import org.labkey.experiment.api.property.PropertyServiceImpl;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
@@ -1029,6 +1035,48 @@ public class ExperimentController extends SpringActionController
             {
                 return Collections.emptyList();
             }
+        }
+    }
+
+    @RequiresPermission(InsertPermission.class)
+    public class InsertDataClassAction extends FormViewAction<DataClass>
+    {
+        private ActionURL _sucessUrl;
+
+        @Override
+        public void validateCommand(DataClass form, Errors errors)
+        {
+            if (StringUtils.isBlank(form.getName()))
+            {
+                errors.reject(ERROR_MSG, "Name is required");
+            }
+        }
+
+        @Override
+        public ModelAndView getView(DataClass form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/experiment/insertDataClass.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(DataClass form, BindException errors) throws Exception
+        {
+            ExpDataClass dataClass = ExperimentService.get().createDataClass(getContainer(), getUser(), form.getName(), form.getDescription(), Collections.EMPTY_LIST, null, form.getNameExpression());
+            _sucessUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), dataClass.getDomain().getTypeURI(), false, false, false);
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(DataClass o)
+        {
+            return _sucessUrl;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Create Data Class");
         }
     }
 

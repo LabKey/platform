@@ -47,6 +47,7 @@ public class DataClassDomainKind extends AbstractDomainKind
 
     static {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
+                new PropertyStorageSpec("genId", JdbcType.INTEGER),
                 new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false)
         )));
 

@@ -13,6 +13,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
@@ -225,6 +227,13 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             if (colName.equalsIgnoreCase(_extension.getLookupColumnName()) || colName.equalsIgnoreCase("rowid"))
                 continue;
 
+            if (colName.equalsIgnoreCase("genid"))
+            {
+                col.setHidden(true);
+                col.setKeyField(true);
+                col.setShownInInsertView(false);
+                col.setShownInUpdateView(false);
+            }
             cols.add(_extension.addExtensionColumn(col, null));
         }
 
@@ -383,8 +392,13 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
     private class DataClassDataIteratorBuilder implements DataIteratorBuilder
     {
+        private static final String GENID_SEQUENCE_NAME = "org.labkey.experiment.api.DataClass";
+        private static final int BATCH_SIZE = 1000;
+
         private DataIteratorContext _context;
         private final DataIteratorBuilder _in;
+        private int _count = 0;
+        private Integer _sequenceNum;
 
         DataClassDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
         {
@@ -412,6 +426,25 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             // Generate LSID before inserting
             step0.addColumn(lsidCol, (Supplier) () -> svc.generateGuidLSID(c, ExpData.class));
+
+            // auto gen a sequence number for genId
+            ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
+            step0.addColumn(genIdCol, new Supplier()
+            {
+                @Override
+                public Object get()
+                {
+                    if (_sequenceNum == null || ((_count % BATCH_SIZE) == 0))
+                    {
+                        DbSequence sequence = DbSequenceManager.get(c, GENID_SEQUENCE_NAME);
+                        _sequenceNum = sequence.next();
+                        sequence.ensureMinimum(_sequenceNum + BATCH_SIZE);
+                        _count = 0;
+                    }
+                    _count++;
+                    return _sequenceNum++;
+                }
+            });
 
             // Ensure we have a dataClass column and it is of the right value
             ColumnInfo classIdCol = expData.getColumn("classId");
@@ -574,7 +607,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             return hasNext;
         }
     }
-
 
     @Nullable
     @Override

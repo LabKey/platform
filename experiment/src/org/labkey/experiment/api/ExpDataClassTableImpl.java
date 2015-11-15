@@ -94,6 +94,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 Collections.singletonMap("rowId", "RowId")));
 
         setDeleteURL(new DetailsURL(new ActionURL(ExperimentController.DeleteDataClassAction.class, _userSchema.getContainer())));
+        setInsertURL(new DetailsURL(new ActionURL(ExperimentController.InsertDataClassAction.class, _userSchema.getContainer())));
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.labkey.experiment;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
@@ -10,6 +11,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -66,4 +68,16 @@ public class DataClassWebPart extends QueryView
         return settings;
     }
 
+    @Override
+    protected boolean canInsert()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasPermission(getUser(), InsertPermission.class);
+    }
+
+    @Override
+    public boolean showImportDataButton()
+    {
+        return false;
+    }
 }
