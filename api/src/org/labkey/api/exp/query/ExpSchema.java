@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.*;
@@ -23,7 +24,10 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import java.util.*;
 
@@ -392,5 +396,29 @@ public class ExpSchema extends AbstractExpSchema
         {
             return getURL(parent, true);
         }
+    }
+
+    @Override
+    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
+    {
+        if (TableType.DataClasses.name().equalsIgnoreCase(settings.getQueryName()))
+        {
+            return new QueryView(this, settings, errors)
+            {
+                @Override
+                protected boolean canInsert()
+                {
+                    TableInfo table = getTable();
+                    return table != null && table.hasPermission(getUser(), InsertPermission.class);
+                }
+
+                @Override
+                public boolean showImportDataButton()
+                {
+                    return false;
+                }
+            };
+        }
+        return super.createView(context, settings, errors);
     }
 }
