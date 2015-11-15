@@ -51,6 +51,7 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataLoaderSettings;
@@ -744,20 +745,29 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     {
         for (Map.Entry<ExpSampleSet, Set<String>> entry : sampleNamesBySampleSet.entrySet())
         {
+            // Default to looking in the current container
+            Container sampleContainer = container;
             ExpSampleSet ss = entry.getKey();
             Set<String> sampleNames = entry.getValue();
-            List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterials(container, user, sampleNames, ss, false, false);
 
-            // Find the DomainProperty and use it's name as the role
+            // Find the DomainProperty and use its name as the role
             String role = null;
             for (Map.Entry<DomainProperty, ExpSampleSet> pair : sampleSets.entrySet())
             {
                 if (pair.getValue().equals(ss))
                 {
                     role = pair.getKey().getName(); // TODO: More than one DomainProperty could be a lookup to the SampleSet
+                    Lookup lookup = pair.getKey().getLookup();
+                    if (lookup != null && lookup.getContainer() != null)
+                    {
+                        // The property is specifically targeting a container, so look there
+                        sampleContainer = lookup.getContainer();
+                    }
                     break;
                 }
             }
+
+            List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterials(sampleContainer, user, sampleNames, ss, false, false);
 
             for (ExpMaterial material : materials)
                 if (!materialInputs.containsKey(material))
