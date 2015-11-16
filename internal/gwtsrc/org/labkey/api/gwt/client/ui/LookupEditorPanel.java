@@ -65,7 +65,7 @@ public class LookupEditorPanel extends LayoutContainer
         _service = service;
         initUI(showContainer);
         setValue(initialValue);
-        updateUI();
+        updateUI();                // TODO #24770 related? Is this needed?
     }
 
     @Override
@@ -486,7 +486,7 @@ public class LookupEditorPanel extends LayoutContainer
             {
                 _log("_ComboBox.ONCHANGE()");
                 //onChange(ce);
-                value = new ComboModelData(getRawValue(),getRawValue());
+                value = new ComboModelData(getRawValue(),getRawValue());   // TODO: could this cause #24770
                 _widgetChange();
             }
         }
