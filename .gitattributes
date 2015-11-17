@@ -1831,6 +1831,7 @@ api/webapp/clientapi/core/ParticipantGroup.js -text
 api/webapp/clientapi/core/Pipeline.js -text
 api/webapp/clientapi/core/Query.js -text
 api/webapp/clientapi/core/Report.js -text
+api/webapp/clientapi/core/SQL.js -text
 api/webapp/clientapi/core/Security.js -text
 api/webapp/clientapi/core/Specimen.js -text
 api/webapp/clientapi/core/Utils.js -text

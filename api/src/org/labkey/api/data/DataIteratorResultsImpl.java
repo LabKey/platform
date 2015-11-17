@@ -71,6 +71,12 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
         _nameIndexMap = Collections.unmodifiableMap(DataIteratorUtil.createColumnAndPropertyMap(di));
     }
 
+    @Override
+    public ColumnInfo getColumn(int i)
+    {
+        return _di.getColumnInfo(i);
+    }
+
     @NotNull
     @Override
     public Map<FieldKey, ColumnInfo> getFieldMap()

@@ -175,6 +175,15 @@ public class ResultsImpl implements Results, DataIterator
 //    }
 //
 //
+
+
+    @Override
+    public ColumnInfo getColumn(int i)
+    {
+        return _columnInfoList.get(i);
+    }
+
+
     @Override
     @NotNull
     public Map<FieldKey, ColumnInfo> getFieldMap()

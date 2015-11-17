@@ -38,6 +38,8 @@ import java.util.Map;
  */
 public interface Results extends ResultSet, TableResultSet
 {
+    ColumnInfo getColumn(int i);
+
     @NotNull
     Map<FieldKey, ColumnInfo> getFieldMap();
 
