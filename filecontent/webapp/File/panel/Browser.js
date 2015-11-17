@@ -1182,30 +1182,33 @@ Ext4.define('File.panel.Browser', {
 
             var listeners = {
                 load: {
-                    fn : function(s) {
-                        this.loadRootNode();
+                    fn : function() {
+
+                        var nodeId;
+
                         if (!Ext4.isEmpty(this.startDirectory)) {
-                            this.getFileStore().LOCKED = true;
-                            this.STATE_LOCK = true;
-                            this.ensureVisible(this.fileSystem.getBaseURL() + this.startDirectory);
+                            nodeId = this.fileSystem.getBaseURL() + this.startDirectory;
 
                             if (this.hasStatePrefix()) {
-                                Ext4.state.Manager.clear(this.statePrefix + ".currentDirectory");
+                                Ext4.state.Manager.clear(this.statePrefix + '.currentDirectory');
                             }
                         }
                         else if (this.hasStatePrefix()) {
                             // Retrieve the last visited folder from the container cookie
-                            var startFolder = Ext4.state.Manager.get(this.statePrefix + ".currentDirectory");
+                            var startFolder = Ext4.state.Manager.get(this.statePrefix + '.currentDirectory');
                             if (startFolder) {
-                                this.getFileStore().LOCKED = true;
-                                this.STATE_LOCK = true;
-                                this.ensureVisible(startFolder);
+                                nodeId = startFolder;
                             }
                         }
                         else {
-                            this.ensureVisible(this.fileSystem.getOffsetURL());
+                            nodeId = this.fileSystem.getOffsetURL();
                         }
-                        this.onRefresh();
+
+                        if (!nodeId) {
+                            nodeId = this.folderSeparator;
+                        }
+
+                        this._ensureVisible(nodeId);
                     },
                     single: true
                 },
@@ -1241,37 +1244,6 @@ Ext4.define('File.panel.Browser', {
         });
     },
 
-    loadRootNode : function() {
-        var proxy = Ext4.create( 'File.data.webdav.Proxy', {
-            url: this.fileSystem.getURI(this.fileSystem.getBaseURL()),
-            model: 'File.data.webdav.XMLResponse',
-            reader: new Ext4.data.reader.Xml({
-                record: 'response',
-                root: 'multistatus',
-                model: 'File.data.webdav.XMLResponse'
-            }),
-            depth: 0
-        });
-
-        var tree = this.getComponent('treenav');
-        if (tree) {
-            var store = tree.getView().getTreeStore();
-            var uploadPanel = this.uploadPanel;
-            proxy.read(new Ext4.data.Operation({action: 'read'}), function(s) {
-                var options;
-                if (s.success) {
-                    // only one result (depth=0)
-                    options = s.resultSet.records[0].data.options;
-                }
-                else {
-                    options = {COPY: false, DELETE: false, GET: false, HEAD: false, LOCK: false, MKCOL: false, MOVE: false, OPTIONS: false, POST: false, PROPFIND: false, PUT: false, UNLOCK: false };
-                }
-                store.tree.root.data.options = options;
-                uploadPanel.onLoad();
-            });
-        }
-    },
-
     /**
      * Helper method to ensure that the ID is wrapped by this.folderSeparator on either side. Tree nodes require this.
      * @param id
@@ -1286,53 +1258,74 @@ Ext4.define('File.panel.Browser', {
         return _id;
     },
 
-    ensureVisible : function(id) {
-
-        var nodeId = this.ensureNodeId(id);
-
-        if (!this.vStack) {
-            this.vStack = [];
+    /**
+     * Ensures the visibility of a node with 'id'. This will recurse down the folder tree
+     * expanding until that node is found. If it is not found, it will stop at the closest parent.
+     * @param id
+     * @param {boolean} _recurse - private variable for recursion
+     * @private
+     */
+    _ensureVisible : function(id, _recurse) {
+        if (_recurse !== true) {
+            this.lockState();
+        }
+        else if (!this.STATE_LOCK) {
+            throw '_ensureVisible() was called during another recursion.';
         }
 
-        var tree = this.tree;
-        var node = tree.getView().getTreeStore().getRootNode().findChild('id', nodeId, true);
-        if (!node) {
-            var p = this.fileSystem.getParentPath(nodeId);
-            if (p == this.folderSeparator) {
-                this.unlockState();
-                return;
-            }
-            if (nodeId.length > 0 && nodeId.substring(nodeId.length-1) != this.folderSeparator) {
-                nodeId += this.folderSeparator;
-            }
-            this.vStack.push(nodeId);
-            this.ensureVisible(p);
-        }
-        else
-        {
-            if (!node.isLeaf())
-            {
-                var s = this.vStack.pop();
-                if (!s)
-                {
-                    tree.getSelectionModel().select(node);
-                    this.unlockState();
-                }
-                else
-                {
-                    if (tree.getSelectionModel().isSelected(node) && this.getFileStore().LOCKED && this.STATE_LOCK) {
+        var nodeId = this.ensureNodeId(id),
+            tree = this.tree,
+            node = tree.getView().getTreeStore().getRootNode().findChild('id', nodeId, true),
+            path;
+
+        if (node) {
+            if (!node.isLeaf()) {
+                path = this.vStack.pop();
+                if (path) {
+                    if (tree.getSelectionModel().isSelected(node)) {
                         // degenerate case
-                        this.unlockState(true);
+                        this.unlockState(true /* refresh */);
                     }
                     else {
-                        tree.getView().getTreeStore().on('load', function (cmp, node, recs) {
-                            this.ensureVisible(s);
+                        tree.getView().getTreeStore().on('load', function() {
+                            this._ensureVisible(path, true /* _recurse */);
                         }, this, {single: true});
 
                         tree.getSelectionModel().select(node);
                     }
                 }
+                else {
+                    tree.getSelectionModel().select(node);
+                    this.unlockState();
+                }
             }
+            // else, it is a leaf. return
+        }
+        else {
+            // couldn't find the node
+            path = this.fileSystem.getParentPath(nodeId);
+
+            // see if the nodeId is a direct child of root
+            if (path == this.folderSeparator) {
+                this.unlockState(true /* refresh */);
+            }
+            else {
+                // otherwise, prepare to recursively ensure visibility
+                if (nodeId.length > 0 && nodeId.substring(nodeId.length-1) !== this.folderSeparator) {
+                    nodeId += this.folderSeparator;
+                }
+
+                this.vStack.push(nodeId);
+                this._ensureVisible(path, true /* _recurse */);
+            }
+        }
+    },
+
+    lockState : function() {
+        if (!this.STATE_LOCK) {
+            this.getFileStore().LOCKED = true;
+            this.STATE_LOCK = true;
+            this.vStack = [];
         }
     },
 
@@ -1342,17 +1335,20 @@ Ext4.define('File.panel.Browser', {
         this.STATE_LOCK = false;
         this.vStack = undefined;
 
-        if (refresh)
+        if (refresh === true) {
             this.onRefresh();
+        }
     },
 
     expandPath : function(p, model) {
-        var path = this.ensureNodeId(model.data.id);
-        var idx = this.tree.getView().getStore().find('id', path);
+        var path = this.ensureNodeId(model.data.id),
+            treeView = this.tree.getView();
+
+        var idx = treeView.getStore().find('id', path);
         if (idx) {
-            var rec = this.tree.getView().getStore().getAt(idx);
+            var rec = treeView.getStore().getAt(idx);
             if (rec) {
-                this.tree.getView().expand(rec);
+                treeView.expand(rec);
                 this.tree.getSelectionModel().select(rec, false, true);
             }
         }
@@ -1855,8 +1851,39 @@ Ext4.define('File.panel.Browser', {
             flex : 4,
             region : 'center',
             border: false,
-            viewConfig : {
-                emptyText : '<span style="margin-left: 5px; opacity: 0.3;"><i>No Files Found</i></span>'
+            viewConfig: {
+                emptyText: '<span style="margin-left: 5px; opacity: 0.3;"><i>No Files Found</i></span>',
+
+                // https://www.sencha.com/forum/showthread.php?263392-Two-Infinite-Scrolling-grids-PageMap-error
+                handleMouseOverOrOut: function(e) {
+                    var me = this,
+                            isMouseout = e.type === 'mouseout',
+                            method = isMouseout ? e.getRelatedTarget : e.getTarget,
+                            nowOverItem = method.call(e, me.itemSelector) || method.call(e, me.dataRowSelector);
+
+                    // If the mouse event of whatever type tells use that we are no longer over the current mouseOverItem...
+                    if (!me.mouseOverItem || nowOverItem !== me.mouseOverItem) {
+
+                        // First fire mouseleave for the item we just left (If it is in this view)
+                        if (me.el.contains(me.mouseOverItem)) {
+                            if (me.mouseOverItem) {
+                                e.item = me.mouseOverItem;
+                                e.newType = 'mouseleave';
+                                me.handleEvent(e);
+                            }
+                        }
+
+                        // If we are over an item *in this view*, fire the mouseenter
+                        if (me.el.contains(nowOverItem)) {
+                            me.mouseOverItem = nowOverItem;
+                            if (me.mouseOverItem) {
+                                e.item = me.mouseOverItem;
+                                e.newType = 'mouseenter';
+                                me.handleEvent(e);
+                            }
+                        }
+                    }
+                }
             }
         });
 
@@ -2108,22 +2135,19 @@ Ext4.define('File.panel.Browser', {
 
     reload : function(options) {
         // Reload stores
-        if (this.STATE_LOCK !== true)
-        {
+        if (this.STATE_LOCK === false) {
             this.getFileStore().load(options);
             var nodes = this.tree.getSelectionModel().getSelection(),
-                    treeStore = this.tree.getStore();
+                treeStore = this.tree.getStore();
 
-            treeStore.on('load', function (s)
-            {
+            treeStore.on('load', function() {
                 this.tree.getView().refresh();
             }, this, {single: true});
 
             var node = (nodes && nodes.length ? nodes[0] : treeStore.getRootNode());
             treeStore.load({node: node});
 
-            if (this.showDetails)
-            {
+            if (this.showDetails) {
                 this.getDetailPanel().update(node.data);
             }
         }
@@ -2571,7 +2595,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     onRefresh : function() {
-        if (this.STATE_LOCK !== true) {
+        if (this.STATE_LOCK === false) {
 
             if (!this.refreshTask) {
                 this.refreshTask = new Ext4.util.DelayedTask(this.reload, this);
@@ -2767,7 +2791,7 @@ Ext4.define('File.panel.Browser', {
                     });
                 },
                 successfulsave : function() {
-                    //TODO:  Improve preformance
+                    // TODO: Improve performance
                     this.getGrid().getStore().load();
                 },
                 scope : this
@@ -2885,9 +2909,11 @@ Ext4.define('File.store.GridStore', {
         if (this.LOCKED !== true) {
             if (this.isLoading()) {
                 this.QUEUED = this.getProxy().url;
-                if (this.QUEUED != this.CURRENT)
-                {
-                    this.on('load', function() { this.QUEUED = false; this.load(); }, this, {single: true});
+                if (this.QUEUED != this.CURRENT) {
+                    this.on('load', function() {
+                        this.QUEUED = false;
+                        this.load();
+                    }, this, {single: true});
                 }
             }
             else {

@@ -8,37 +8,26 @@ Ext4.define('File.panel.Preview',
 {
     extend : "Ext.tip.ToolTip",
 
-    baseCls    : 'x-panel',
-    minWidth   : 40,
-    maxWidth   : 800,
-    frame      : true,
-    connection : new Ext4.data.Connection({autoAbort:true, method:'GET', disableCaching:false}),
+    minWidth: 40,
+    maxWidth: 800,
+    frame: true,
+    connection : new Ext4.data.Connection({
+        autoAbort: true,
+        method: 'GET',
+        disableCaching: false
+    }),
 
-    status : "notloaded",
+    status : 'notloaded',
     previewMarkup : null,
-
-
-    constructor : function(config)
-    {
-        //config.baseCls = "x-mask-loading";
-        config.html = '<div style="x-mask-loading"><div min-height;16px; min-width:16px;"><div></div>';
-        this.callParent(arguments);
-        this.on({beforeshow:this.onBeforeShow});
-        return this;
-        //return File.panel.Preview.superclass.constructor.call(this, config);
-    },
 
     initComponent : function()
     {
         this.callParent(arguments);
+
+        this.on('beforeshow', this.loadResource, this);
     },
 
-    onBeforeShow : function()
-    {
-        return this.loadResource();
-    },
-
-    show : function ()
+    show : function()
     {
         if (this.loadResource())
             this.callParent(arguments);
@@ -59,27 +48,27 @@ Ext4.define('File.panel.Preview',
 
     loadResource : function()
     {
-        if (this.status=="loaded" || this.status=="loading")
+        if (this.status == 'loaded' || this.status == 'loading')
             return true;
 
         var me = this;
         var record = this.record;
-        var name = record.get("name");
-        var uri = record.get("href");
-        var contentType = record.get("contentType")||record.get("contenttype");
+        var name = record.get('name');
+        var uri = record.get('href');
+        var contentType = record.get('contentType')||record.get('contenttype');
         var size = record.data.size;
+        var headers = {};
 
         if (!uri || !contentType || !size)
             return false;
 
-        if (Ext4.String.startsWith(contentType,'image/') && contentType != "image/tiff")
+        if (Ext4.String.startsWith(contentType,'image/') && contentType != 'image/tiff')
         {
-            this.status = "loading";
-            console.log(uri + " - loading");
+            this.status = 'loading';
             var image = new Image();
             image.onload = function()
             {
-                me.status="loaded"
+                me.status = "loaded";
                 var img = {tag:'img', src:uri, border:'0', width:image.width, height:image.height};
                 me.constrain(img, 400, 400);
                 me.previewMarkup = img;
@@ -91,11 +80,9 @@ Ext4.define('File.panel.Preview',
         //IFRAME
         else if (contentType == 'text/html')
         {
-            this.status = "loading";
-            console.log(uri + " - loading");
-            var base = uri.substr(0,uri.lastIndexOf('/')+1)
-            var headers = {};
-            var requestid = this.connection.request({
+            this.status = 'loading';
+            var base = uri.substr(0, uri.lastIndexOf('/') + 1);
+            this.connection.request({
                 autoAbort:true,
                 url:uri,
                 headers:headers,
@@ -103,15 +90,22 @@ Ext4.define('File.panel.Preview',
                 disableCaching:false,
                 success : function(response)
                 {
-                    me.status="loaded"
-                    console.log(uri + " - loaded");
+                    me.status="loaded";
                     var contentType = response.getResponseHeader("Content-Type") || "text/html";
                     if (Ext4.String.startsWith(contentType,"text/"))
                     {
                         var id = 'iframePreview' + (++Ext4.Component.AUTO_ID);
                         var body = response.responseText;
                         body = Ext4.util.Format.stripScripts(body);
-                        me.previewMarkup = {tag:'iframe', id:id, name:id, width:600, height:400, frameborder:'no', src:(Ext4.isIE ? Ext4.SSL_SECURE_URL : "javascript:;")};
+                        me.previewMarkup = {
+                            tag: 'iframe',
+                            id: id,
+                            name: id,
+                            width: 600,
+                            height: 400,
+                            frameborder: 'no',
+                            src: (Ext4.isIE ? Ext4.SSL_SECURE_URL : "javascript:;")
+                        };
                         me.continueShow();
                         var frame = Ext4.getDom(id);
                         if (!frame)
@@ -136,11 +130,9 @@ Ext4.define('File.panel.Preview',
         else if (Ext4.String.startsWith(contentType,'text/') || contentType == 'application/javascript' || Ext4.String.endsWith(name,".log"))
         {
             this.status = "loading";
-            console.log(uri + " - loading");
-            var headers = {};
             if (contentType != 'text/html' && size > 10000)
                 headers['Range'] = 'bytes 0-10000';
-            var requestid = this.connection.request({
+            this.connection.request({
                 autoAbort:true,
                 url:uri,
                 headers:headers,
@@ -148,29 +140,43 @@ Ext4.define('File.panel.Preview',
                 disableCaching:false,
                 success : function(response)
                 {
-                    me.status="loaded"
-                    console.log(uri + " - loaded");
-                    var contentType = response.getResponseHeader("Content-Type") || "text/plain";
-                    if (Ext4.String.startsWith(contentType,"text/"))
+                    this.status = 'loaded';
+                    var contentType = response.getResponseHeader('Content-Type') || 'text/plain';
+                    if (Ext4.String.startsWith(contentType, 'text/'))
                     {
                         var text = response.responseText;
-                        if (headers['Range']) text += "\n. . .";
-                        me.previewMarkup = {tag:'div', style:{width:'600px', height:'400px', overflow:'auto'}, children:{tag:'pre', children:Ext4.util.Format.htmlEncode(text)}};
-                        me.continueShow();
+
+                        if (headers['Range']) {
+                            text += '\n. . .';
+                        }
+
+                        this.previewMarkup = {
+                            tag:'div',
+                            style: {
+                                width: '600px',
+                                height: '400px',
+                                overflow: 'auto'
+                            },
+                            children: {
+                                tag: 'pre',
+                                children: Ext4.htmlEncode(text)
+                            }
+                        };
+                        this.continueShow();
                     }
-                }
+                },
+                scope: this
             });
             return true;
         }
         else
         {
-            this.status = "no preview";
-            console.log(uri + " - no preview");
+            this.status = 'no preview';
             return false;
         }
     },
 
-    constrain : function(img,w,h)
+    constrain : function(img, w, h)
     {
         var X = img.width;
         var Y = img.height;
