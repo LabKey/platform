@@ -1605,6 +1605,7 @@ query/src/org/labkey/query/controllers/PropertiesForm.java -text
 query/src/org/labkey/query/controllers/QueryController.java -text
 query/src/org/labkey/query/controllers/QueryPage.java -text
 query/src/org/labkey/query/controllers/SourceForm.java -text
+query/src/org/labkey/query/controllers/SqlController.java -text
 query/src/org/labkey/query/controllers/TableInfoForm.java -text
 query/src/org/labkey/query/controllers/ValidateQueriesAction.java -text
 query/src/org/labkey/query/controllers/ValidateQueryAction.java -text

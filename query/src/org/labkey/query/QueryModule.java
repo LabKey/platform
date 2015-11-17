@@ -81,6 +81,7 @@ import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.api.data.ScopeQueryLoggingProfilerListener;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
+import org.labkey.query.controllers.SqlController;
 import org.labkey.query.jdbc.QueryDriver;
 import org.labkey.query.olap.MemberSet;
 import org.labkey.query.olap.ServerManager;
@@ -158,6 +159,7 @@ public class QueryModule extends DefaultModule
 
 
         addController("query", QueryController.class);
+        addController("sql", SqlController.class);
         addController("reports", ReportsController.class);
         addController("olap", OlapController.class);
 
