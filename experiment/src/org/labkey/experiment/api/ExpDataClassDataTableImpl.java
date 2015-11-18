@@ -393,10 +393,12 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     private class DataClassDataIteratorBuilder implements DataIteratorBuilder
     {
         private static final String GENID_SEQUENCE_NAME = "org.labkey.experiment.api.DataClass";
-        private static final int BATCH_SIZE = 1000;
+        private static final int BATCH_SIZE = 100;
 
         private DataIteratorContext _context;
         private final DataIteratorBuilder _in;
+
+        // genId sequence state
         private int _count = 0;
         private Integer _sequenceNum;
 
@@ -427,23 +429,27 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             // Generate LSID before inserting
             step0.addColumn(lsidCol, (Supplier) () -> svc.generateGuidLSID(c, ExpData.class));
 
-            // auto gen a sequence number for genId
+            // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
-            step0.addColumn(genIdCol, new Supplier()
-            {
-                @Override
-                public Object get()
+            final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
+            step0.addColumn(genIdCol, (Supplier) () -> {
+                int genId;
+                if (_sequenceNum == null || ((_count % batchSize) == 0))
                 {
-                    if (_sequenceNum == null || ((_count % BATCH_SIZE) == 0))
-                    {
-                        DbSequence sequence = DbSequenceManager.get(c, GENID_SEQUENCE_NAME);
-                        _sequenceNum = sequence.next();
-                        sequence.ensureMinimum(_sequenceNum + BATCH_SIZE);
-                        _count = 0;
-                    }
-                    _count++;
-                    return _sequenceNum++;
+                    DbSequence sequence = DbSequenceManager.get(c, GENID_SEQUENCE_NAME);
+                    _sequenceNum = sequence.next();
+                    if (batchSize > 1)
+                        sequence.ensureMinimum(_sequenceNum + batchSize - 1);
+                    _count = 1;
+                    genId = _sequenceNum;
                 }
+                else
+                {
+                    _count++;
+                    genId = ++_sequenceNum;
+                }
+
+                return genId;
             });
 
             // Ensure we have a dataClass column and it is of the right value
