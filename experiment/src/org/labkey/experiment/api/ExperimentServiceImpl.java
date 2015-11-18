@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -27,7 +28,28 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.collections.Sets;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
@@ -2577,15 +2599,29 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     }
 
-    public int truncateDataClass(ExpDataClass dataClass, Container c)
+    /**
+     * Delete all exp.Data from the DataClass.  If container is not provided,
+     * all rows from the DataClass will be deleted regardless of container.
+     */
+    public int truncateDataClass(ExpDataClass dataClass, @Nullable Container c)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
-        // Delete all exp.Data from the DataClass
-        SimpleFilter dataClassFilter = new SimpleFilter(FieldKey.fromParts("classId"), dataClass.getRowId());
-        Collection<Integer> dataIds = new TableSelector(ExperimentServiceImpl.get().getTinfoData(), Collections.singleton("RowId"), dataClassFilter, null).getCollection(Integer.class);
-        deleteDataByRowIds(c, dataIds);
-        return dataIds.size();
+        SimpleFilter filter = c == null ? new SimpleFilter() : SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("classId"), dataClass.getRowId());
+
+        MultiHashMap<String, Integer> byContainer = new MultiHashMap<>();
+        TableSelector ts = new TableSelector(ExperimentServiceImpl.get().getTinfoData(), Sets.newCaseInsensitiveHashSet("container", "rowid"), filter, null);
+        ts.forEachMap(row -> byContainer.put((String)row.get("container"), (Integer)row.get("rowid")));
+
+        int count = 0;
+        for (Map.Entry<String, Collection<Integer>> entry : byContainer.entrySet())
+        {
+            Container container = ContainerManager.getForId(entry.getKey());
+            deleteDataByRowIds(container, entry.getValue());
+            count += entry.getValue().size();
+        }
+        return count;
     }
 
     public void deleteDataClass(int rowId, Container c, User user) throws ExperimentException
@@ -2600,7 +2636,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            truncateDataClass(dataClass, c);
+            DbSequenceManager.delete(c, ExpDataClassImpl.GENID_SEQUENCE_NAME, dataClass.getRowId());
+
+            truncateDataClass(dataClass, null);
 
             d.delete(user);
 

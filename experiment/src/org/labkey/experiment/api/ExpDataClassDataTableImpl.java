@@ -392,7 +392,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
     private class DataClassDataIteratorBuilder implements DataIteratorBuilder
     {
-        private static final String GENID_SEQUENCE_NAME = "org.labkey.experiment.api.DataClass";
         private static final int BATCH_SIZE = 100;
 
         private DataIteratorContext _context;
@@ -436,7 +435,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 int genId;
                 if (_sequenceNum == null || ((_count % batchSize) == 0))
                 {
-                    DbSequence sequence = DbSequenceManager.get(c, GENID_SEQUENCE_NAME);
+                    DbSequence sequence = DbSequenceManager.get(_dataClass.getContainer(), ExpDataClassImpl.GENID_SEQUENCE_NAME, _dataClass.getRowId());
                     _sequenceNum = sequence.next();
                     if (batchSize > 1)
                         sequence.ensureMinimum(_sequenceNum + batchSize - 1);
