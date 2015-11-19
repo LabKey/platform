@@ -24,7 +24,6 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -36,7 +35,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,8 +61,6 @@ abstract public class AbstractDataSource implements HistoryDataSource
     private boolean _showTime = false;
     protected String _subjectIdField = "Id";
     protected static final Logger _log = Logger.getLogger(HistoryDataSource.class);
-
-    protected final static String DATE_FORMAT = "yyyy-MM-dd";
 
     public AbstractDataSource(String schema, String query)
     {
@@ -145,7 +141,7 @@ abstract public class AbstractDataSource implements HistoryDataSource
         TableSelector ts = new TableSelector(ti, cols, filter, getSort(ti));
         ts.setForDisplay(true);
 
-        List<HistoryRow> rows = processRows(ts, redacted, cols);
+        List<HistoryRow> rows = processRows(c, ts, redacted, cols);
 
         Long duration = ((new Date()).getTime() - start.getTime()) / 1000;
         if (duration > 5)
@@ -170,37 +166,33 @@ abstract public class AbstractDataSource implements HistoryDataSource
         return null;
     }
 
-    protected List<HistoryRow> processRows(TableSelector ts, final boolean redacted, final Collection<ColumnInfo> cols)
+    protected List<HistoryRow> processRows(Container c, TableSelector ts, final boolean redacted, final Collection<ColumnInfo> cols)
     {
-        final List<HistoryRow> rows = new ArrayList<HistoryRow>();
-        ts.forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                Results results = new ResultsImpl(rs, cols);
-                Date date = results.getTimestamp(getDateField());
-                String categoryText = getCategoryText(results);
-                String categoryColor = getCategoryColor(results);
-                String categoryGroup = getPrimaryGroup(results);
-                String taskId = results.hasColumn(FieldKey.fromString("taskid")) ? results.getString(FieldKey.fromString("taskid")) : null;
-                String objectId = results.hasColumn(FieldKey.fromString("objectid")) ? results.getString(FieldKey.fromString("objectid")) : null;
-                Integer taskRowId = results.hasColumn(FieldKey.fromString("taskid/rowid")) ? results.getInt(FieldKey.fromString("taskid/rowid")) : null;
-                String formType = results.hasColumn(FieldKey.fromString("taskid/formtype")) ? results.getString(FieldKey.fromString("taskid/formtype")) : null;
+        final List<HistoryRow> rows = new ArrayList<>();
+        ts.forEach(rs -> {
+            Results results = new ResultsImpl(rs, cols);
+            Date date = results.getTimestamp(getDateField());
+            String categoryText = getCategoryText(results);
+            String categoryColor = getCategoryColor(results);
+            String categoryGroup = getPrimaryGroup(results);
+            String taskId = results.hasColumn(FieldKey.fromString("taskid")) ? results.getString(FieldKey.fromString("taskid")) : null;
+            String objectId = results.hasColumn(FieldKey.fromString("objectid")) ? results.getString(FieldKey.fromString("objectid")) : null;
+            Integer taskRowId = results.hasColumn(FieldKey.fromString("taskid/rowid")) ? results.getInt(FieldKey.fromString("taskid/rowid")) : null;
+            String formType = results.hasColumn(FieldKey.fromString("taskid/formtype")) ? results.getString(FieldKey.fromString("taskid/formtype")) : null;
 
-                String html = getHtml(results, redacted);
-                String subjectId = results.getString(FieldKey.fromString(_subjectIdField));
-                if (!StringUtils.isEmpty(html))
-                {
-                    HistoryRow row = createHistoryRow(results, categoryText, categoryGroup, categoryColor, subjectId, date, html, taskId, taskRowId, formType, objectId);
-                    if (row != null)
-                        rows.add(row);
-                }
+            String html = getHtml(c, results, redacted);
+            String subjectId = results.getString(FieldKey.fromString(_subjectIdField));
+            if (!StringUtils.isEmpty(html))
+            {
+                HistoryRow row = createHistoryRow(results, categoryText, categoryGroup, categoryColor, subjectId, date, html, taskId, taskRowId, formType, objectId);
+                if (row != null)
+                    rows.add(row);
             }
         });
 
         return rows;
     }
+
     protected HistoryRow createHistoryRow(Results results, String categoryText, String categoryGroup, String categoryColor, String subjectId, Date date, String html, String taskId, Integer taskRowId, String formType, String objectId) throws SQLException
     {
         String qcStateLabel = results.hasColumn(FieldKey.fromString("qcstate/Label")) ? results.getString(FieldKey.fromString("qcstate/Label")) : null;
@@ -350,5 +342,5 @@ abstract public class AbstractDataSource implements HistoryDataSource
         return c.getActiveModules(u).contains(ModuleLoader.getInstance().getModule("ehr"));
     }
 
-    abstract protected String getHtml(Results rs, boolean redacted) throws SQLException;
+    abstract protected String getHtml(Container c, Results rs, boolean redacted) throws SQLException;
 }
