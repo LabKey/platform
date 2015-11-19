@@ -181,7 +181,8 @@
 
         // populate name field
         document.getElementsByName('name')[0].value = '<%= bean.getName()%>';
-        document.getElementsByName('comments')[0].value = '<%= bean.getComments()%>';
+        if(<%= bean.getComments()%> != null)
+            document.getElementsByName('comments')[0].value = '<%= bean.getComments()%>';
 
         hideAllCollectors();
         showCollector('Previously uploaded files');
