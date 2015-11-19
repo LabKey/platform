@@ -853,7 +853,7 @@ public class MothershipController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             HtmlView linkView = new HtmlView(getLinkBarHTML());
-            HtmlView graphView = new HtmlView("Installations", "<img src=\"showActiveInstallationGraph.view\" height=\"400\" width=\"800\" /><br/><br/><img src=\"showRegistrationInstallationGraph.view\" height=\"400\" width=\"800\" />");
+            HtmlView graphView = new HtmlView("Installations", "<img src=\"mothership-showActiveInstallationGraph.view\" height=\"400\" width=\"800\" /><br/><br/><img src=\"mothership-showRegistrationInstallationGraph.view\" height=\"400\" width=\"800\" />");
             return new VBox(linkView, new UnbuggedExceptionsGridView(), new UnassignedExceptionsGridView(), graphView);
         }
     }
@@ -887,7 +887,7 @@ public class MothershipController extends SpringActionController
                             "and core.principals.userid = assignedto\n" +
                             "and core.principals.userid = core.usersdata.userid\n" +
                             "group by core.usersdata.displayname order by ExceptionCount DESC");
-            getDataRegion().getDisplayColumn("Owner").setURL("mothership/showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=${Owner}");
+            getDataRegion().getDisplayColumn("Owner").setURL("mothership-showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=${Owner}");
             getDataRegion().getDisplayColumn("Owner").setWidth("200");
             getDataRegion().getDisplayColumn("ExceptionCount").setCaption("Exception Count");
         }
@@ -901,7 +901,7 @@ public class MothershipController extends SpringActionController
                     "SELECT COUNT(ExceptionStackTraceId) AS TotalCount\n" +
                             "FROM Mothership.ExceptionStackTrace AS Trace\n" +
                             "WHERE Trace.AssignedTo IS NULL AND Trace.BugNumber IS NULL");
-            getDataRegion().getDisplayColumn("TotalCount").setURL("mothership/showExceptions.view?ExceptionSummary.AssignedTo/DisplayName~isblank&ExceptionSummary.BugNumber~isblank");
+            getDataRegion().getDisplayColumn("TotalCount").setURL("mothership-showExceptions.view?ExceptionSummary.AssignedTo/DisplayName~isblank&ExceptionSummary.BugNumber~isblank");
         }
     }
 
@@ -919,7 +919,7 @@ public class MothershipController extends SpringActionController
     private String getLinkBarHTML()
     {
         StringBuilder builder = new StringBuilder();
-        builder.append(PageFlowUtil.textLink("View Exceptions", "showExceptions.view?" + DataRegion.LAST_FILTER_PARAM + "=true") + " " +
+        builder.append(PageFlowUtil.textLink("View Exceptions", "mothership-showExceptions.view?" + DataRegion.LAST_FILTER_PARAM + "=true") + " " +
                 PageFlowUtil.textLink("View All Installations", new ActionURL(ShowInstallationsAction.class,getContainer())) + " " +
                 PageFlowUtil.textLink("Configure Mothership", new ActionURL(EditUpgradeMessageAction.class,getContainer())) + " " +
                 PageFlowUtil.textLink("List of Releases", new ActionURL(ShowReleasesAction.class,getContainer())) + " " +
@@ -927,7 +927,7 @@ public class MothershipController extends SpringActionController
 
         if (getUser() != null && !getUser().isGuest())
         {
-            String link = "showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=" + getUser().getDisplayName(getUser());
+            String link = "mothership-showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=" + getUser().getDisplayName(getUser());
             builder.append(PageFlowUtil.textLink("My Exceptions", link));
         }
 
