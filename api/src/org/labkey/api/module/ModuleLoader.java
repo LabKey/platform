@@ -487,7 +487,7 @@ public class ModuleLoader implements Filter
                     if (!AppProps.getInstance().isDevMode())
                         throw e;
 
-                    // In dev mode, make them a warning so devs can easily switch databases
+                    // In dev mode, make them warnings so devs can easily switch databases
                     removeModule(iterator, module, false, e);
                 }
             }
