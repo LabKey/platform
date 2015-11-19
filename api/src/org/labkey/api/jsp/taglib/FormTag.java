@@ -17,9 +17,12 @@
 package org.labkey.api.jsp.taglib;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.BodyTagSupport;
@@ -132,7 +135,16 @@ public class FormTag extends BodyTagSupport
             if (action instanceof URLHelper)
                 s = PageFlowUtil.filter(((URLHelper)action));
             else
+            {
                 s = String.valueOf(action);
+                if (AppProps.getInstance().getUseContainerRelativeURL() &&
+                    StringUtils.containsNone("/-") && (StringUtils.endsWith(s, ".view") || StringUtils.endsWith(s, ".post")))
+                {
+                    ViewContext ctx = HttpView.getRootContext();
+                    if (null != ctx)
+                        s = ctx.getActionURL().getController() + "-" + s;
+                }
+            }
             sb.append(" action=\"").append(s).append("\"");
         }
         if (StringUtils.isNotEmpty(enctype))
