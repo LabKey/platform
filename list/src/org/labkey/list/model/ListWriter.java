@@ -79,11 +79,6 @@ public class ListWriter
     static final String SCHEMA_FILENAME = "lists.xml";
     static final String SETTINGS_FILENAME = "settings.xml";
 
-    public boolean write(Container c, User user, VirtualFile listsDir) throws Exception
-    {
-        return write(c, user, listsDir, null);
-    }
-
     public boolean write(Container c, User user, VirtualFile listsDir, ImportContext ctx) throws Exception
     {
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
