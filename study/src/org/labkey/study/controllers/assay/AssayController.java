@@ -150,6 +150,7 @@ public class AssayController extends SpringActionController
             PublishConfirmAction.class,
             ImportRunApiAction.class,
             UploadWizardAction.class,
+            TransformResultsAction.class,
             PlateBasedUploadWizardAction.class,
             PipelineDataCollectorRedirectAction.class,
             DeleteAction.class,
