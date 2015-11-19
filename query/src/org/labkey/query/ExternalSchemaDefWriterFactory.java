@@ -35,7 +35,6 @@ import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryManager;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -65,8 +64,9 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
         @Override
         public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
         {
-            List<ExternalSchemaDef> externalSchemas = Arrays.asList(QueryManager.get().getExternalSchemaDefs(c));
-            List<LinkedSchemaDef> linkedSchemas = Arrays.asList(QueryManager.get().getLinkedSchemaDefs(c));
+            List<ExternalSchemaDef> externalSchemas = QueryManager.get().getExternalSchemaDefs(c);
+            List<LinkedSchemaDef> linkedSchemas = QueryManager.get().getLinkedSchemaDefs(c);
+
             if (!externalSchemas.isEmpty() || !linkedSchemas.isEmpty())
             {
                 ctx.getXml().addNewExternalSchemas().setDir(DEFAULT_DIRECTORY);
@@ -142,8 +142,6 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
                     defXml.setMetadata(metaDataXml);
                 }
             }
-
         }
-
     }
 }

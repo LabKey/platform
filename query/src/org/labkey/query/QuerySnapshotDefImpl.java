@@ -177,7 +177,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         {
             throw new IllegalAccessException("Access denied");
         }
-        QueryManager.get().delete(user, _snapshotDef);
+        QueryManager.get().delete(_snapshotDef);
         _snapshotDef = null;
         _queryDef = null;
     }

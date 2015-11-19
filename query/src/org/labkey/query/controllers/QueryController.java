@@ -101,7 +101,6 @@ import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.EditableCustomView;
-import org.labkey.query.ExternalSchemaDocumentProvider;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableWriter;
@@ -534,7 +533,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            ExternalSchemaDef[] allDefs = QueryManager.get().getExternalSchemaDefs(null);
+            List<ExternalSchemaDef> allDefs = QueryManager.get().getExternalSchemaDefs(null);
 
             MultiMap<String, ExternalSchemaDef> byDataSourceName = new MultiHashMap<>();
 
@@ -3788,6 +3787,7 @@ public class QueryController extends SpringActionController
             try
             {
                 form.doInsert();
+                QueryManager.get().updateExternalSchemas(getContainer());
             }
             catch (RuntimeSQLException e)
             {
@@ -3894,7 +3894,7 @@ public class QueryController extends SpringActionController
         protected void delete(LinkedSchemaForm form) throws Exception
         {
             form.refreshFromDb();
-            QueryManager.get().delete(getUser(), form.getBean());
+            QueryManager.get().delete(form.getBean());
         }
     }
 
@@ -3909,7 +3909,7 @@ public class QueryController extends SpringActionController
         protected void delete(ExternalSchemaForm form) throws Exception
         {
             form.refreshFromDb();
-            QueryManager.get().delete(getUser(), form.getBean());
+            QueryManager.get().delete(form.getBean());
         }
     }
 
@@ -3925,7 +3925,7 @@ public class QueryController extends SpringActionController
             form.validate(errors);
         }
 
-        protected abstract T getFromDb(int externalSchemaId);
+        protected abstract T getCurrent(int externalSchemaId);
 
         protected T getDef(F form, boolean reshow, BindException errors) throws Exception
         {
@@ -3935,8 +3935,8 @@ public class QueryController extends SpringActionController
             if (reshow)
             {
                 def = form.getBean();
-                T fromDb = getFromDb(def.getExternalSchemaId());
-                defContainer = fromDb.lookupContainer();
+                T current = getCurrent(def.getExternalSchemaId());
+                defContainer = current.lookupContainer();
             }
             else
             {
@@ -3954,7 +3954,7 @@ public class QueryController extends SpringActionController
         public boolean handlePost(F form, BindException errors) throws Exception
         {
             T def = form.getBean();
-            T fromDb = getFromDb(def.getExternalSchemaId());
+            T fromDb = getCurrent(def.getExternalSchemaId());
 
             // Unauthorized if def in the database reports a different container
             if (!getContainer().equals(fromDb.lookupContainer()))
@@ -3963,7 +3963,7 @@ public class QueryController extends SpringActionController
             try
             {
                 form.doUpdate();
-                ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, getContainer(), null);
+                QueryManager.get().updateExternalSchemas(getContainer());
             }
             catch (RuntimeSQLException e)
             {
@@ -3999,9 +3999,9 @@ public class QueryController extends SpringActionController
             super(LinkedSchemaForm.class);
         }
 
-        protected LinkedSchemaDef getFromDb(int externalId)
+        protected LinkedSchemaDef getCurrent(int externalId)
         {
-            return QueryManager.get().getLinkedSchemaDef(externalId);
+            return QueryManager.get().getLinkedSchemaDef(getContainer(), externalId);
         }
 
         public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors) throws Exception
@@ -4021,9 +4021,9 @@ public class QueryController extends SpringActionController
             super(ExternalSchemaForm.class);
         }
 
-        protected ExternalSchemaDef getFromDb(int externalId)
+        protected ExternalSchemaDef getCurrent(int externalId)
         {
-            return QueryManager.get().getExternalSchemaDef(externalId);
+            return QueryManager.get().getExternalSchemaDef(getContainer(), externalId);
         }
 
         public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
@@ -4798,7 +4798,7 @@ public class QueryController extends SpringActionController
         public boolean handlePost(InternalViewForm form, BindException errors) throws Exception
         {
             CstmView view = form.getViewAndCheckPermission();
-            QueryManager.get().delete(getUser(), view);
+            QueryManager.get().delete(view);
             return true;
         }
 

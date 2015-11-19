@@ -20,8 +20,15 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CacheKey;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.QueryServiceImpl;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Common entity for the shared fields of ExternalSchemaDef and LinkedSchemaDef.
@@ -37,8 +44,60 @@ public abstract class AbstractExternalSchemaDef extends Entity
 
     public enum SchemaType
     {
-        external,
-        linked
+        external(ExternalSchemaDef.class),
+        linked(LinkedSchemaDef.class);
+
+        private final Class<? extends AbstractExternalSchemaDef> _clazz;
+
+        SchemaType(Class<? extends AbstractExternalSchemaDef> clazz)
+        {
+            _clazz = clazz;
+        }
+
+        public Class<? extends AbstractExternalSchemaDef> getSchemaDefClass()
+        {
+            return _clazz;
+        }
+
+        public AbstractExternalSchemaDef handle(ResultSet rs) throws SQLException
+        {
+            return ObjectFactory.Registry.getFactory(getSchemaDefClass()).handle(rs);
+        }
+    }
+
+    // Like an enum, but allows a type parameter
+    public interface SchemaType2<T extends AbstractExternalSchemaDef>
+    {
+        Class<T> getSchemaDefClass();
+
+        default T handle(ResultSet rs) throws SQLException
+        {
+            return ObjectFactory.Registry.getFactory(getSchemaDefClass()).handle(rs);
+        }
+
+        SchemaType2 external = () -> ExternalSchemaDef.class;
+        SchemaType2 linked = () -> LinkedSchemaDef.class;
+
+        Map<String, SchemaType2> VALUE_MAP = initMap();
+
+        static Map<String, SchemaType2> initMap()
+        {
+            Map<String, SchemaType2> map = new HashMap<>();
+            map.put("external", external);
+            map.put("linked", linked);
+
+            return map;
+        }
+
+        static SchemaType2 valueOf(String schemaTypeName)
+        {
+            return VALUE_MAP.get(schemaTypeName);
+        }
+
+        static Collection<SchemaType2> values()
+        {
+            return VALUE_MAP.values();
+        }
     }
 
     public static abstract class Key<T extends AbstractExternalSchemaDef> extends CacheKey<T, AbstractExternalSchemaDef.Column>

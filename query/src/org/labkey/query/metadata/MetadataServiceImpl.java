@@ -19,14 +19,12 @@ package org.labkey.query.metadata;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
@@ -691,7 +689,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         if (queryDef != null)
         {
             // Delete the metadata override on a built-in table
-            QueryManager.get().delete(getViewContext().getUser(), queryDef);
+            QueryManager.get().delete(queryDef);
         }
         else
         {

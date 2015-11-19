@@ -464,6 +464,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
+    // TODO: Unused... delete?
     public CustomView getSharedCustomView(@NotNull User user, Container container, String schema, String query, String name)
     {
         Map<String, CustomView> views = getCustomViewMap(user, container, null, schema, query, false, true, true);
@@ -726,7 +727,7 @@ public class QueryServiceImpl extends QueryService
 
             // Delete them
             for (CstmView view : views)
-                mgr.delete(null, view);
+                mgr.delete(view);
 
             // owner == null since we're exporting/importing only shared views
             CustomView cv = qd.createSharedCustomView(reader.getName());
@@ -1314,7 +1315,7 @@ public class QueryServiceImpl extends QueryService
     public Map<String, UserSchema> getExternalSchemas(User user, Container c)
     {
         Map<String, UserSchema> ret = new HashMap<>();
-        ExternalSchemaDef[] defs = QueryManager.get().getExternalSchemaDefs(c);
+        List<ExternalSchemaDef> defs = QueryManager.get().getExternalSchemaDefs(c);
 
         for (ExternalSchemaDef def : defs)
         {
@@ -1354,7 +1355,7 @@ public class QueryServiceImpl extends QueryService
     public Map<String, UserSchema> getLinkedSchemas(User user, Container c)
     {
         Map<String, UserSchema> ret = new HashMap<>();
-        LinkedSchemaDef[] defs = QueryManager.get().getLinkedSchemaDefs(c);
+        List<LinkedSchemaDef> defs = QueryManager.get().getLinkedSchemaDefs(c);
 
         for (LinkedSchemaDef def : defs)
         {

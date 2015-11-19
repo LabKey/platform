@@ -98,7 +98,7 @@ public class QueryDataViewProvider extends AbstractQueryDataViewProvider
                         if (!container.hasPermission(user, EditSharedViewPermission.class))
                             throw new ValidationException("The specified view is shared, you must be in the Editor role to be allowed to delete a shared view.");
                     }
-                    QueryManager.get().delete(user, view);
+                    QueryManager.get().delete(view);
                 }
             }
             catch (SQLException e)

@@ -22,12 +22,10 @@
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.labkey.query.controllers.QueryController.QueryUrlsImpl" %>
 <%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
-<%@ page import="org.labkey.query.persist.QueryManager" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.Collections" %>
-<%@ page import="java.util.Comparator" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.labkey.query.persist.LinkedSchemaDef" %>
+<%@ page import="org.labkey.query.persist.QueryManager" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <h2>External Schemas</h2>
@@ -47,20 +45,13 @@
     boolean isAdmin = getUser().isSiteAdmin();
     QueryUrlsImpl urls = new QueryUrlsImpl();
 
-    List<ExternalSchemaDef> defs = Arrays.asList(QueryManager.get().getExternalSchemaDefs(c));
+    List<ExternalSchemaDef> defs = QueryManager.get().getExternalSchemaDefs(c);
     if (defs.isEmpty()) { %>
 <p>There are no external schemas defined in this folder.</p>
 <% }
 else
 {
-    Collections.sort(defs, new Comparator<ExternalSchemaDef>()
-    {
-        @Override
-        public int compare(ExternalSchemaDef def1, ExternalSchemaDef def2)
-        {
-            return def1.getUserSchemaName().compareToIgnoreCase(def2.getUserSchemaName());
-        }
-    });
+    Collections.sort(defs, (def1, def2) -> def1.getUserSchemaName().compareToIgnoreCase(def2.getUserSchemaName()));
 
     String reloadedSchema = StringUtils.trimToNull(request.getParameter("reloadedSchema"));
 
@@ -151,20 +142,13 @@ else
     The linked tables and queries may be filtered such that only a subset of the rows are available.
 </p>
 <%
-    List<LinkedSchemaDef> linkedSchemas = Arrays.asList(QueryManager.get().getLinkedSchemaDefs(c));
+    List<LinkedSchemaDef> linkedSchemas = QueryManager.get().getLinkedSchemaDefs(c);
     if (linkedSchemas.isEmpty()) { %>
 <p>There are no linked schemas defined in this folder.</p>
 <% }
 else
 {
-    Collections.sort(linkedSchemas, new Comparator<LinkedSchemaDef>()
-    {
-        @Override
-        public int compare(LinkedSchemaDef def1, LinkedSchemaDef def2)
-        {
-            return def1.getUserSchemaName().compareToIgnoreCase(def2.getUserSchemaName());
-        }
-    }); %>
+    Collections.sort(linkedSchemas, (def1, def2) -> def1.getUserSchemaName().compareToIgnoreCase(def2.getUserSchemaName())); %>
 
     <table class='labkey-data-region labkey-show-borders'>
         <tr>

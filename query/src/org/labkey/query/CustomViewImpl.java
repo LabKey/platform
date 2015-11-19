@@ -269,7 +269,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
                 if (isNew())
                     return;
 
-                _mgr.delete(user, _cstmView);
+                _mgr.delete(_cstmView);
                 _mgr.fireViewDeleted(this);
                 _cstmView = null;
             }

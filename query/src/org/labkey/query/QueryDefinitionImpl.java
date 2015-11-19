@@ -168,7 +168,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         {
             throw new IllegalArgumentException("Access denied");
         }
-        QueryManager.get().delete(user, _queryDef);
+        QueryManager.get().delete(_queryDef);
         if (fireChangeEvent)
             QueryService.get().fireQueryDeleted(user, getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
         _queryDef = null;

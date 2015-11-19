@@ -105,7 +105,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
 
                 ExternalSchemaDef existingDef = QueryManager.get().getExternalSchemaDef(ctx.getContainer(), schemaXml.getUserSchemaName());
                 if (null != existingDef)
-                    QueryManager.get().delete(ctx.getUser(), existingDef);
+                    QueryManager.get().delete(existingDef);
 
                 form = new ExternalSchemaForm();
                 form.setTypedValue("schematype", "external");
@@ -123,7 +123,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
 
                 LinkedSchemaDef existingDef = QueryManager.get().getLinkedSchemaDef(ctx.getContainer(), schemaXml.getUserSchemaName());
                 if (null != existingDef)
-                    QueryManager.get().delete(ctx.getUser(), existingDef);
+                    QueryManager.get().delete(existingDef);
 
                 form = new LinkedSchemaForm();
                 form.setTypedValue("schematype", "linked");

@@ -39,12 +39,6 @@ public class ExternalSchemaDef extends AbstractExternalSchemaDef
     private boolean _editable;
     private boolean _indexable = true;
 
-    // Source database schema name.
-    public String getDbSchemaName()
-    {
-        return getSourceSchemaName();
-    }
-
     public DbScope lookupDbScope()
     {
         try

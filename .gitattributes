@@ -1644,6 +1644,7 @@ query/src/org/labkey/query/persist/AbstractExternalSchemaDef.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
 query/src/org/labkey/query/persist/CustomViewCache.java -text
 query/src/org/labkey/query/persist/ExternalSchemaDef.java -text
+query/src/org/labkey/query/persist/ExternalSchemaDefCache.java -text
 query/src/org/labkey/query/persist/LinkedSchemaDef.java -text
 query/src/org/labkey/query/persist/QueryDef.java -text
 query/src/org/labkey/query/persist/QueryDefCache.java -text
