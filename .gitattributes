@@ -1421,6 +1421,7 @@ api/src/org/labkey/api/study/actions/ShowSelectedDataAction.java -text
 api/src/org/labkey/api/study/actions/ShowSelectedRunsAction.java -text
 api/src/org/labkey/api/study/actions/StudyPickerColumn.java -text
 api/src/org/labkey/api/study/actions/TemplateAction.java -text
+api/src/org/labkey/api/study/actions/TransformResultsAction.java -text
 api/src/org/labkey/api/study/actions/UploadWizardAction.java -text
 api/src/org/labkey/api/study/actions/alreadyReplacedError.jsp -text
 api/src/org/labkey/api/study/actions/assayHeader.jsp -text

@@ -30,9 +30,26 @@ import java.util.Map;
 public interface TransformResult
 {
     Map<ExpData, List<Map<String, Object>>> getTransformedData();
+
     Map<DomainProperty, String> getRunProperties();
+
     Map<DomainProperty, String> getBatchProperties();
+
     File getUploadedFile();
+
     String getAssayId();
+
     void setAssayId(String assayId);
+
+    String getWarnings();
+
+    void setWarnings(String warnings);
+
+    boolean isWarningsExist();
+
+    void setWarningsExist(boolean warningsExist);
+
+    List<String> getFiles();
+
+    void setFiles(List<String> files);
 }

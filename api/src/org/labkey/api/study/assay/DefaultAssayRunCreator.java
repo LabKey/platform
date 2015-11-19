@@ -57,6 +57,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
@@ -276,6 +277,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             // handle data transformation
             TransformResult transformResult = transform(context, run);
             List<ExpData> insertedDatas = new ArrayList<>();
+
+            if(transformResult.isWarningsExist())
+            {
+                context.setTransformResult(transformResult);
+                ((AssayRunUploadForm)context).setName(run.getName());
+                ((AssayRunUploadForm) context).setComments(run.getComments());
+                throw new ValidationException(" ");
+            }
 
             if (saveBatchProps)
             {

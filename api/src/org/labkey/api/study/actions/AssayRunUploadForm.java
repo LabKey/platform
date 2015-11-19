@@ -57,10 +57,10 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.BindException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,6 +91,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private Map<DomainProperty, File> _additionalFiles;
     private Integer _batchId;
     private Integer _reRunId;
+    private String _severityLevel;
     protected BindException _errors;
     private List<AssayDataCollector> _collectors;
     private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
@@ -148,6 +149,16 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 properties.put(pd, value);
         }
         return properties;
+    }
+
+    public String getSeverityLevel()
+    {
+        return _severityLevel;
+    }
+
+    public void setSeverityLevel(String severityLevel)
+    {
+        this._severityLevel = severityLevel;
     }
 
     public String getComments()
@@ -523,6 +534,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void setErrors(BindException errors)
     {
         _errors = errors;
+    }
+
+    public BindException getErrors()
+    {
+        return _errors;
     }
 
     public TransformResult getTransformResult()

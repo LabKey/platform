@@ -15,6 +15,7 @@
  */
 package org.labkey.api.qc;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -27,7 +28,12 @@ import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.PropertyValidationError;
@@ -38,7 +44,14 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.assay.*;
+import org.labkey.api.study.actions.AssayRunUploadForm;
+import org.labkey.api.study.assay.AssayFileWriter;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayRunUploadContext;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUploadXarContext;
+import org.labkey.api.study.assay.DefaultAssayRunCreator;
+import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -46,11 +59,24 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Reader;
 import java.sql.Types;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.Set;
 
 /*
 * User: Karl Lum
@@ -76,6 +102,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         runDataUploadedFile,
         errorsFile,
         transformedRunPropertiesFile,
+        severityLevel,
+        maximumSeverity
+    }
+    public enum errLevel {
+        NONE,
+        WARN,
+        ERROR
     }
     public static final String SAMPLE_DATA_PROP_NAME = "sampleData";
     public static final String VALIDATION_RUN_INFO_FILE = "runProperties.tsv";
@@ -83,6 +116,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     public static final String RUN_DATA_FILE = "runData.tsv";
     public static final String TRANSFORMED_RUN_INFO_FILE = "transformedRunProperties.tsv";
     public static final String ASSAY_ID = "assayId";
+    public static final String TRANS_ERR_FILE = "errors.html";
 
     private Map<String, String> _formFields = new HashMap<>();
     private Map<String, List<Map<String, Object>>> _sampleProperties = new HashMap<>();
@@ -91,6 +125,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     /** Files that shouldn't be considered part of the run's output, such as the transform script itself */
     private Set<File> _filesToIgnore = new HashSet<>();
+
+    public static String workingDirectory;
 
     public DataSerializer getDataSerializer()
     {
@@ -141,6 +177,14 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.append('\t');
             pw.println(transformedRunPropsFile.getAbsolutePath());
             _filesToIgnore.add(transformedRunPropsFile);
+
+            // error level initialization
+            pw.append(Props.severityLevel.name());
+            pw.append('\t');
+            if(null != ((AssayRunUploadForm) context).getSeverityLevel())
+                pw.println(((AssayRunUploadForm) context).getSeverityLevel());
+            else
+                pw.println(errLevel.WARN.name());
 
             return new Pair<>(runProps, dataFiles);
         }
@@ -350,6 +394,96 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         map.put(Props.protocolLsid.name(), context.getProtocol().getLSID());
 
         return map;
+    }
+
+    public void processWarningsOutput(DefaultTransformResult result, Map<String, String> transformedProps, File runInfo, String errorFile, List<String> files) throws ValidationException
+    {
+        if (runInfo.exists())
+        {
+            List<ValidationError> errors = new ArrayList<>();
+
+            try (TabLoader loader = new TabLoader(runInfo, false))
+            {
+                // Don't unescape file path names on windows (C:\foo\bar.tsv)
+                loader.setUnescapeBackslashes(false);
+                loader.setColumns(new ColumnDescriptor[]{
+                        new ColumnDescriptor("name", String.class),
+                        new ColumnDescriptor("value", String.class),
+                        new ColumnDescriptor("type", String.class)
+                });
+
+                String sevLevel = null;
+                String maxSeverity = null;
+                String workingDir = "";
+                for (Map<String, Object> row : loader)
+                {
+                    if (row.get("name").equals(Props.severityLevel.name()))
+                    {
+                        sevLevel = row.get("value").toString();
+                    }
+                    if (row.get("name").equals(Props.workingDir.name()))
+                    {
+                        workingDir = row.get("value").toString();
+                    }
+                }
+
+                if(null != transformedProps)
+                {
+                    for (Map.Entry<String, String> row : transformedProps.entrySet())
+                    {
+                        if (row.getKey().equals(Props.maximumSeverity.name()))
+                        {
+                            maxSeverity = row.getValue();
+                            break;
+                        }
+                    }
+                }
+
+                // Look for error file and get contents
+                String warning = null;
+                if(null != errorFile)
+                {
+                    File errFile = new File(errorFile);
+                    if (errFile.exists())
+                    {
+                        try (Scanner sc = new Scanner(new File(errorFile)))
+                        {
+                            warning = sc.useDelimiter("\\A").next();
+                        }
+                        catch (Exception e)
+                        {
+                            warning = null;
+                        }
+                    }
+                }
+
+                // Display warnings case
+                if(null != sevLevel && sevLevel.equals(errLevel.WARN.name()) && null != maxSeverity && maxSeverity.equals(errLevel.WARN.name()))
+                {
+                    result.setWarningsExist(true);
+                    if(null != warning)
+                        result.setWarnings(warning);
+                    else
+                        result.setWarnings("Warnings found in transform script!");
+
+                    if(null != files && !files.isEmpty())
+                        result.setFiles(files);
+                }
+                // if error file exists
+                else if(null != warning)
+                    throw new ValidationException(warning);
+                // if error indicated in transformPropertiesFile
+                else if(null != maxSeverity && maxSeverity.equals(errLevel.ERROR.name()))
+                    throw new ValidationException("Transform script has thrown errors.");
+            }
+            catch (Exception e)
+            {
+                throw new ValidationException(e.toString());
+            }
+
+            if (!errors.isEmpty())
+                throw new ValidationException(errors);
+        }
     }
 
     public void processValidationOutput(File runInfo, @Nullable Logger log) throws ValidationException
@@ -573,6 +707,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 Map<String, File> transformedData = new HashMap<>();
                 File transformedRunProps = null;
                 File runDataUploadedFile = null;
+                Map<String, String> transformedProps = null;
+                String transErrorFile = null;
 
                 for (Map<String, Object> row : maps)
                 {
@@ -596,7 +732,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     }
                 }
 
-                // Look through all of the files that are left after running the transform script
+                List<String> tempFiles = Lists.newArrayList();
+
+                // Loop through all of the files that are left after running the transform script
                 for (File file : runInfo.getParentFile().listFiles())
                 {
                     if (!isIgnorableOutput(file) && runDataUploadedFile != null)
@@ -613,6 +751,15 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                             index++;
                         }
                         while (targetFile.exists());
+
+                        workingDirectory = runDataUploadedFile.getParentFile().getAbsolutePath();
+
+                        // Catch errors file
+                        if(file.getName().equals(TRANS_ERR_FILE))
+                            transErrorFile = targetFile.getPath();
+                        else
+                            tempFiles.add(targetFile.getName());
+
 
                         // Copy the file to the same directory as the original data file
                         FileUtils.moveFile(file, targetFile);
@@ -655,7 +802,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                 if (transformedRunProps != null && transformedRunProps.exists())
                 {
-                    Map<String, String> transformedProps = new HashMap<>();
+                    transformedProps = new HashMap<>();
                     for (Map<String, Object> row : parseRunInfo(transformedRunProps))
                     {
                         String name = String.valueOf(row.get("name"));
@@ -705,6 +852,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 }
                 if (runDataUploadedFile != null)
                     result.setUploadedFile(runDataUploadedFile);
+
+                processWarningsOutput(result, transformedProps, runInfo, transErrorFile, tempFiles);
             }
             catch (Exception e)
             {
@@ -788,6 +937,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         {
             return _context.getUser();
         }
+
+        public String getSeverityLevel() { return "";}
+
+        public void setSeverityLevel(String severityLevel) {};
 
         @NotNull
         public Container getContainer()

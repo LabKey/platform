@@ -252,6 +252,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
         view.getDataRegion().addHiddenFormField("uploadStep", uploadStepName);
         view.getDataRegion().addHiddenFormField("multiRunUpload", "false");
+        view.getDataRegion().addHiddenFormField("severityLevel",(form.getTransformResult().isWarningsExist()?"ERROR":"WARN"));
         view.getDataRegion().addHiddenFormField("resetDefaultValues", "false");
         view.getDataRegion().addHiddenFormField("rowId", Integer.toString(_protocol.getRowId()));
         view.getDataRegion().addHiddenFormField("uploadAttemptID", form.getUploadAttemptID());
@@ -393,7 +394,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             newRunForm.clearUploadedData();
         }
-        InsertView insertView = createRunInsertView(newRunForm, errorReshow, errors);
+
+        //Put messages on top of page instead of in insert widget
+        if(null != errors)
+            newRunForm.setErrors(errors);
+        InsertView insertView = createRunInsertView(newRunForm, errorReshow, null);
+
         addHiddenBatchProperties(newRunForm, insertView);
 
         for (Map.Entry<DomainProperty, String> entry : newRunForm.getBatchProperties().entrySet())
