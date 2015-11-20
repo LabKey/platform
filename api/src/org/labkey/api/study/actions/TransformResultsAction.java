@@ -27,8 +27,8 @@ public class TransformResultsAction extends BaseAssayAction<TransformResultsActi
 
         if (null != TsvDataExchangeHandler.workingDirectory)
         {
-            String path =  TsvDataExchangeHandler.workingDirectory.substring(0,TsvDataExchangeHandler.workingDirectory.lastIndexOf('\\') + 1)
-                   + form.getUploadAttemptId() + "\\" + form.getName();
+            File transformFile = new File(TsvDataExchangeHandler.workingDirectory);
+            String path = transformFile.getParent() + File.separator + form.getUploadAttemptId() + File.separator + form.getName();
 
             HttpServletResponse response = getViewContext().getResponse();
             OutputStream out;
