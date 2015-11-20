@@ -15,10 +15,8 @@
  */
 package org.labkey.core;
 
-import org.labkey.api.module.FirstRequestHandler;
-import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.FirstRequestHandler.FirstRequestListener;
 import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -27,12 +25,10 @@ import javax.servlet.http.HttpServletRequest;
  * Date: Nov 5, 2008
  * Time: 2:04:48 PM
  */
-public class CoreFirstRequestHandler implements FirstRequestHandler.FirstRequestListener
+public class CoreFirstRequestHandler implements FirstRequestListener
 {
     public void handleFirstRequest(HttpServletRequest request)
     {
-        ViewServlet.initialize();
-        ModuleLoader.getInstance().initControllerToModule();
         AuthenticationManager.initialize();
     }
 }
