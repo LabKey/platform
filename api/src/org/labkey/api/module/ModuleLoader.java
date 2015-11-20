@@ -68,6 +68,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.TemplateHeaderView;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
@@ -428,6 +429,7 @@ public class ModuleLoader implements Filter
                 }
 
                 startNonCoreUpgrade(upgradeUser, Execution.Synchronous);
+                ensureStartupComplete(Execution.Synchronous);
             }
         }
 
@@ -501,6 +503,10 @@ public class ModuleLoader implements Filter
         _modules = Collections.unmodifiableList(_modules);
         moduleMap = Collections.unmodifiableMap(moduleMap);
         moduleClassMap = Collections.unmodifiableMap(moduleClassMap);
+
+        // All modules are initialized (controllers are registered), so initialize the controller-related maps
+        ViewServlet.initialize();
+        ModuleLoader.getInstance().initControllerToModule();
     }
 
     // Check a module's dependencies and throw on the first one that's not present (i.e., it was removed because its initialize() failed)
@@ -1147,7 +1153,7 @@ public class ModuleLoader implements Filter
         }
         else
         {
-            ensureStartupComplete();
+            ensureStartupComplete(Execution.Asynchronous);
         }
 
         filterChain.doFilter(servletRequest, servletResponse);
@@ -1270,7 +1276,7 @@ public class ModuleLoader implements Filter
         }
     }
 
-    private void ensureStartupComplete()
+    private void ensureStartupComplete(Execution execution)
     {
         synchronized (STARTUP_LOCK)
         {
@@ -1280,27 +1286,18 @@ public class ModuleLoader implements Filter
             if (isUpgradeRequired())
                 throw new IllegalStateException("Can't start modules before upgrade is complete");
 
-            // Run module startup in the background
-            Thread thread = new Thread("Module Starter")
-            {
-                @Override
-                public void run()
+            // Run module startup
+            execution.run(() -> {
+                try
                 {
-                    try
-                    {
-                        completeStartup();
-                    }
-                    catch (Throwable t)
-                    {
-                        ModuleLoader.getInstance().setStartupFailure(t);
-                        _log.error("Failure during module startup", t);
-                    }
+                    completeStartup();
                 }
-            };
-            thread.start();
-
-            _startupState = StartupState.StartupInProgress;
-            setStartingUpMessage("Starting up modules");
+                catch (Throwable t)
+                {
+                    ModuleLoader.getInstance().setStartupFailure(t);
+                    _log.error("Failure during module startup", t);
+                }
+            });
         }
     }
 
@@ -1317,6 +1314,9 @@ public class ModuleLoader implements Filter
      */
     private void completeStartup()
     {
+        _startupState = StartupState.StartupInProgress;
+        setStartingUpMessage("Starting up modules");
+
         for (Module m : _modules)
         {
             // Module startup

@@ -27,7 +27,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class FirstRequestHandler
 {
-    // Thread-safe list implementation that allows iteration and modifications without external synchronization
     private static final List<FirstRequestListener> _listeners = new CopyOnWriteArrayList<>();
 
     public static void addFirstRequestListener(FirstRequestListener listener)
@@ -52,6 +51,6 @@ public class FirstRequestHandler
         // This is a good place to do any last minute handling before the first page appears, e.g., initializing
         // server properties based on the incoming request, registering URLs, initializing authentication
         // providers, etc.
-        public void handleFirstRequest(HttpServletRequest request);
+        void handleFirstRequest(HttpServletRequest request);
     }
 }

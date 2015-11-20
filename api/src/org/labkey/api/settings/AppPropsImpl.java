@@ -17,6 +17,7 @@ package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -54,6 +55,8 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     private String _serverName;
     private String _projectRoot = null;
     private String _enlistmentId = null;
+
+    private static final Logger LOG = Logger.getLogger(AppPropsImpl.class);
 
     protected static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     protected static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
@@ -94,6 +97,21 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
 
+    public AppPropsImpl()
+    {
+        // Initialize URL properties with some placeholder values to allow headless upgrade. These will get overwritten after first request.
+        // TODO: Add some optional properties to labkey.xml
+        setContextPath("/labkey");
+        try
+        {
+            setBaseServerUrlAttributesInternal("http://www.test.com");
+        }
+        catch (URISyntaxException e)
+        {
+            LOG.error("Failed to initialize URL properties", e);
+        }
+    }
+
     protected String getType()
     {
         return "site settings";
@@ -106,10 +124,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
     public String getContextPath()
     {
-        if (_contextPathStr == null)
-        {
-            throw new IllegalStateException("Unable to determine the context path before a request has come in");
-        }
         return _contextPathStr;
     }
 
@@ -120,28 +134,16 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
     public int getServerPort()
     {
-        if (_serverPort == -1)
-        {
-            throw new IllegalStateException("Unable to determine the server port before a request has come in");
-        }
         return _serverPort;
     }
 
     public String getScheme()
     {
-        if (_scheme == null)
-        {
-            throw new IllegalStateException("Unable to determine the scheme before a request has come in");
-        }
         return _scheme;
     }
 
     public String getServerName()
     {
-        if (_serverName == null)
-        {
-            throw new IllegalStateException("Unable to determine the server name before a request has come in");
-        }
         return _serverName;
     }
 
@@ -151,13 +153,9 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         return _serverName != null;
     }
 
-    public void initializeFromRequest(HttpServletRequest request)
+    private void setContextPath(String contextPathStr)
     {
-        // Should be called once at first request
-        assert null == _contextPathStr;
-        assert null == _serverName && null == _scheme && -1 == _serverPort;
-
-        _contextPathStr = request.getContextPath();
+        _contextPathStr = contextPathStr;
         assert _contextPathStr.isEmpty() || _contextPathStr.startsWith("/");
 
         if (StringUtils.isEmpty(_contextPathStr))
@@ -165,7 +163,12 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         else
             _contextPath = Path.parse(getContextPath() + "/");
         assert _contextPath.isDirectory();
+    }
 
+    public void initializeFromRequest(HttpServletRequest request)
+    {
+        // TODO: Assert that request has not been initialized
+        setContextPath(request.getContextPath());
         String baseServerUrl = lookupStringValue(BASE_SERVER_URL_PROP, null);
 
         if (baseServerUrl != null)
@@ -187,8 +190,24 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     }
 
 
-    // Update the cached base server url attributes. Very important to validate this URL, #17625
     public void setBaseServerUrlAttributes(String baseServerUrl) throws URISyntaxException
+    {
+        setBaseServerUrlAttributesInternal(baseServerUrl);
+
+        // One last check... are we able to use ActionURL now?
+        try
+        {
+            ActionURL actionUrl = new ActionURL();
+            actionUrl.getURIString();
+        }
+        catch (Throwable t)
+        {
+            throw new URISyntaxException(baseServerUrl, "Invalid URL");
+        }
+    }
+
+    // Update the cached base server url attributes. Very important to validate this URL, #17625
+    private void setBaseServerUrlAttributesInternal(String baseServerUrl) throws URISyntaxException
     {
         // First, validate URL using Commons Validator
         if (!new UrlValidator(new String[] {"http", "https"}, UrlValidator.ALLOW_LOCAL_URLS).isValid(baseServerUrl))
@@ -231,17 +250,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         _scheme = scheme;
         _serverName = serverName;
         _serverPort = serverPort;
-
-        // One last check... are we able to use ActionURL now?
-        try
-        {
-            ActionURL actionUrl = new ActionURL();
-            actionUrl.getURIString();
-        }
-        catch (Throwable t)
-        {
-            throw new URISyntaxException(baseServerUrl, "Invalid URL");
-        }
     }
 
     public String getDefaultDomain()
