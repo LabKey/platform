@@ -154,7 +154,6 @@ import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
-import org.labkey.study.reports.WindowsCommandLineSplitter;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
@@ -748,7 +747,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(TsvAssayProvider.TestCase.class);
         set.add(AssaySchemaImpl.TestCase.class);
         set.add(AssayProviderSchema.TestCase.class);
-        set.add(WindowsCommandLineSplitter.TestCase.class);
         set.add(SequenceNumImportHelper.SequenceNumTest.class);
         set.add(ParticipantIdImportHelper.ParticipantIdTest.class);
         return set;

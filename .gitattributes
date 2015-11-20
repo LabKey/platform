@@ -2483,8 +2483,6 @@ study/src/org/labkey/study/query/studydesign/StudyTreatmentVisitMapTable.java -t
 study/src/org/labkey/study/reports/AbstractReportView.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
 study/src/org/labkey/study/reports/ChartReportView.java -text
-study/src/org/labkey/study/reports/CommandLineSplitter.java -text
-study/src/org/labkey/study/reports/DefaultCommandLineSplitter.java -text
 study/src/org/labkey/study/reports/EnrollmentReport.java -text
 study/src/org/labkey/study/reports/ExportExcelReport.java -text
 study/src/org/labkey/study/reports/ExternalReport.java -text
@@ -2499,7 +2497,6 @@ study/src/org/labkey/study/reports/StudyQueryReport.java -text
 study/src/org/labkey/study/reports/StudyRReport.java -text
 study/src/org/labkey/study/reports/StudyReportUIProvider.java -text
 study/src/org/labkey/study/reports/StudyRunChartReportView.java -text
-study/src/org/labkey/study/reports/WindowsCommandLineSplitter.java -text
 study/src/org/labkey/study/reports/configureExportExcel.jsp -text
 study/src/org/labkey/study/reports/participantThumbnail.gif -text
 study/src/org/labkey/study/requirements/DefaultActor.java -text

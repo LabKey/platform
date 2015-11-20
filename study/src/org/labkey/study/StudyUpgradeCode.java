@@ -16,10 +16,6 @@
 package org.labkey.study;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -33,7 +29,6 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -46,33 +41,20 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.query.QueryChangeListener;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.SchemaKey;
-import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySnapshotType;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.SpecimenTablesProvider;
-import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.reports.CommandLineSplitter;
-import org.labkey.study.reports.DefaultCommandLineSplitter;
-import org.labkey.study.reports.ExternalReport;
-import org.labkey.study.reports.WindowsCommandLineSplitter;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -87,71 +69,6 @@ import java.util.Set;
 public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
-
-    public static final CommandLineSplitter COMMAND_LINE_SPLITTER = SystemUtils.IS_OS_WINDOWS ? new WindowsCommandLineSplitter() : new DefaultCommandLineSplitter();
-
-    // invoked by study-13.23-13.24.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    @DeferredUpgrade
-    public void upgradeExternalReports(final ModuleContext context)
-    {
-        if (!context.isNewInstall())
-        {
-            DbScope scope = StudySchema.getInstance().getSchema().getScope();
-
-            try (DbScope.Transaction transaction = scope.ensureTransaction())
-            {
-                for (Report report : ReportService.get().getReports(new SimpleFilter()))
-                {
-                    // Find external reports and split single "commandLine" parameter into "program" and "arguments", see #18077
-                    if (report.getType().equals(ExternalReport.TYPE))
-                    {
-                        ExternalReport externalReport = (ExternalReport)report;
-                        String commandLine = externalReport.getCommandLine();
-
-                        // This report is messed up
-                        if (StringUtils.isBlank(commandLine))
-                            continue;
-
-                        String[] strings = COMMAND_LINE_SPLITTER.getCommandStrings(commandLine);
-
-                        externalReport.setProgram(strings[0]);
-
-                        if (strings.length > 1)
-                        {
-                            String arguments = StringUtils.join(ArrayUtils.subarray(strings, 1, strings.length), " ");
-                            externalReport.setArguments(arguments);
-                        }
-
-                        externalReport.setCommandLine(null);
-
-                        ReportDescriptor descriptor = externalReport.getDescriptor();
-
-                        final Container descriptorContainer = ContainerManager.getForId(descriptor.getContainerId());
-
-                        ContainerUser rptContext = new ContainerUser()
-                        {
-                            public User getUser()
-                            {
-                                return context.getUpgradeUser();
-                            }
-
-                            public Container getContainer()
-                            {
-                                return descriptorContainer;
-                            }
-                        };
-                        ReportService.get().saveReport(rptContext, descriptor.getReportKey(), externalReport);
-                    }
-                }
-                transaction.commit();
-            }
-            catch (Exception e)
-            {
-                _log.error("An error occurred upgrading participant reports: ", e);
-            }
-        }
-    }
 
     private static final String STUDY_FORMAT_STRINGS = "DefaultStudyFormatStrings";
     private static final String DATE_FORMAT_STRING = "DateFormatString";
