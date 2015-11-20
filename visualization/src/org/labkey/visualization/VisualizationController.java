@@ -50,10 +50,12 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.data.ActivityService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -312,6 +314,13 @@ public class VisualizationController extends SpringActionController
         public ApiResponse execute(Form measureRequest, BindException errors) throws Exception
         {
             String key = getContainer().getId() + ":" + measureRequest.getCacheKey();
+            ActivityService activityService = ServiceRegistry.get(ActivityService.class);
+            if (activityService != null)
+            {
+                PHI phi = activityService.getPHI(getViewContext());
+                if (phi != null)
+                    key += ":" + activityService.getPHI(getViewContext());
+            }
             List<Map<String,Object>> json = (List<Map<String,Object>>)_getMeasuresCache.get(key);
             if (json == null)
             {
