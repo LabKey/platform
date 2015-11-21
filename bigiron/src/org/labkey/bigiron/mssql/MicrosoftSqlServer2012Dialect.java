@@ -15,52 +15,17 @@
  */
 package org.labkey.bigiron.mssql;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.InClauseGenerator;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.dialect.TableResolver;
-
-import java.util.Collection;
 
 /**
  * User: adam
  * Date: 2/9/12
  * Time: 8:34 AM
  */
-public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Dialect
+public class MicrosoftSqlServer2012Dialect extends BaseMicrosoftSqlServerDialect
 {
-    private static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
-
-    private final InClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
-
     public MicrosoftSqlServer2012Dialect(TableResolver tableResolver)
     {
         super(tableResolver);
-    }
-
-    // Called only if rowCount and offset are both > 0... and order is non-blank
-    @Override
-    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset)
-    {
-        SQLFragment sql = new SQLFragment(select);
-        sql.append("\n").append(from);
-        if (null != filter && !filter.isEmpty()) sql.append("\n").append(filter);
-        if (groupBy != null) sql.append("\n").append(groupBy);
-        sql.append("\n").append(order).append("\nOFFSET ").append(offset).append(" ROWS FETCH NEXT ").append(maxRows).append(" ROWS ONLY");
-
-        return sql;
-    }
-
-    @Override
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
-    {
-        if (params.size() >= TEMPTABLE_GENERATOR_MINSIZE)
-        {
-            SQLFragment ret = _tempTableInClauseGenerator.appendInClauseSql(sql, params);
-            if (null != ret)
-                return ret;
-        }
-        return super.appendInClauseSql(sql, params);
     }
 }

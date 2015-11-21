@@ -39,6 +39,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -82,9 +83,9 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for Microsoft SQL Server
-public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
+public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 {
-    private static final Logger LOG = Logger.getLogger(MicrosoftSqlServer2008R2Dialect.class);
+    private static final Logger LOG = Logger.getLogger(BaseMicrosoftSqlServerDialect.class);
 
     private volatile boolean _groupConcatInstalled = false;
     private volatile Edition _edition = Edition.Unknown;
@@ -129,7 +130,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     private final InClauseGenerator _defaultGenerator = new InlineInClauseGenerator(this);
     private final TableResolver _tableResolver;
 
-    public MicrosoftSqlServer2008R2Dialect(TableResolver tableResolver)
+    public BaseMicrosoftSqlServerDialect(TableResolver tableResolver)
     {
         _tableResolver = tableResolver;
     }
@@ -281,9 +282,20 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         return "DATETIME";
     }
 
+    private static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
+
+    private final InClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
+
     @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
+        if (params.size() >= TEMPTABLE_GENERATOR_MINSIZE)
+        {
+            SQLFragment ret = _tempTableInClauseGenerator.appendInClauseSql(sql, params);
+            if (null != ret)
+                return ret;
+        }
+
         return _defaultGenerator.appendInClauseSql(sql, params);
     }
 
@@ -425,23 +437,14 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         }
     }
 
-    // Called only if rowCount and offset are both > 0
+    // Called only if rowCount and offset are both > 0... and order is non-blank
     protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset)
     {
-        SQLFragment sql = new SQLFragment();
-        sql.append("SELECT * FROM (\n");
-        sql.append(select);
-        sql.append(",\nROW_NUMBER() OVER (\n");
-        sql.append(order);
-        sql.append(") AS _RowNum\n");
-        sql.append(from);
-        if (filter != null) sql.append("\n").append(filter);
+        SQLFragment sql = new SQLFragment(select);
+        sql.append("\n").append(from);
+        if (null != filter && !filter.isEmpty()) sql.append("\n").append(filter);
         if (groupBy != null) sql.append("\n").append(groupBy);
-        sql.append("\n) AS z\n");
-        sql.append("WHERE _RowNum BETWEEN ");
-        sql.append(offset + 1);
-        sql.append(" AND ");
-        sql.append(offset + maxRows);
+        sql.append("\n").append(order).append("\nOFFSET ").append(offset).append(" ROWS FETCH NEXT ").append(maxRows).append(" ROWS ONLY");
 
         return sql;
     }
