@@ -27,5 +27,5 @@ import java.util.Collection;
  */
 public interface InClauseGenerator
 {
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params);
+    SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params);
 }
