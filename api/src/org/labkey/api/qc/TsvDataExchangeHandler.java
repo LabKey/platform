@@ -181,7 +181,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             // error level initialization
             pw.append(Props.severityLevel.name());
             pw.append('\t');
-            if(null != ((AssayRunUploadForm) context).getSeverityLevel())
+            if(context instanceof AssayRunUploadForm && null != ((AssayRunUploadForm) context).getSeverityLevel())
                 pw.println(((AssayRunUploadForm) context).getSeverityLevel());
             else
                 pw.println(errLevel.WARN.name());
