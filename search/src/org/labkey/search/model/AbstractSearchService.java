@@ -1118,69 +1118,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             while (!_shuttingDown)
             {
-//                if (!waitForRunning())
-//                    continue;
-                Item i = null;
-                boolean success = false;
                 try
                 {
-                    i = getPreprocessedItem();
-                    long ms = HeartBeat.currentTimeMillis();
-
-                    if (null == i || _commitItem == i)
-                    {
-                        synchronized (_commitLock)
-                        {
-                            // TODO: Add a check that allows commit in the case where we've been continuously pounding the indexer for a long time...
-                            // either an oldest non-committed document check or a simple _countIndexedSinceCommit > n check.
-                            if (_countIndexedSinceCommit > 0 && _lastIndexedTime + 2000 < ms && _runQueue.isEmpty())
-                            {
-                                commit();
-                            }
-
-                        }
-                        continue;
-                    }
-
-                    WebdavResource r = i.getResource();
-                    if (null == r || !r.exists())
-                        continue;
-                    MemTracker.getInstance().put(r);
-                    _log.debug("index(" + i._id + ")");
-
-                    if (index(i._id, i._res, i._preprocessMap))
-                    {
-                        i._res.setLastIndexed(i._start, i._modified);
-                        success = true;
-                        synchronized (_commitLock)
-                        {
-                            String category = (String)i.getResource().getProperties().get(PROPERTY.categories.toString());
-                            incrementIndexStat(ms, category);
-                            _countIndexedSinceCommit++;
-                            _lastIndexedTime = ms;
-                            if (_countIndexedSinceCommit > 10000)
-                                commit();
-                        }
-                    }
+                      _indexLoop();
                 }
-                catch (InterruptedException x)
+                catch (Throwable t)
                 {
-                }
-                catch (Throwable x)
-                {
-                    _log.error("Error indexing " + (null != i ? i._id : ""), x);
-                }
-                finally
-                {
-                    try
-                    {
-                        if (null != i)
-                            i.complete(success);
-                    }
-                    finally
-                    {
-                        DbScope.closeAllConnectionsForCurrentThread();
-                    }
+                    // this should only happen if the catch/finally of the inner loop throws
+                    try {_log.warn("error in indexer", t);} catch (Throwable x){/* */}
                 }
             }
             synchronized (_commitLock)
@@ -1193,6 +1138,74 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
         }
     };
+
+
+    private void _indexLoop()
+    {
+        Item i = null;
+        boolean success = false;
+        try
+        {
+            i = getPreprocessedItem();
+            long ms = HeartBeat.currentTimeMillis();
+
+            if (null == i || _commitItem == i)
+            {
+                synchronized (_commitLock)
+                {
+                    // TODO: Add a check that allows commit in the case where we've been continuously pounding the indexer for a long time...
+                    // either an oldest non-committed document check or a simple _countIndexedSinceCommit > n check.
+                    if (_countIndexedSinceCommit > 0 && _lastIndexedTime + 2000 < ms && _runQueue.isEmpty())
+                    {
+                        commit();
+                    }
+                }
+                return;
+            }
+
+            WebdavResource r = i.getResource();
+            if (null == r || !r.exists())
+                return;
+            MemTracker.getInstance().put(r);
+            _log.debug("index(" + i._id + ")");
+
+            if (index(i._id, i._res, i._preprocessMap))
+            {
+                i._res.setLastIndexed(i._start, i._modified);
+                success = true;
+                synchronized (_commitLock)
+                {
+                    String category = (String)i.getResource().getProperties().get(PROPERTY.categories.toString());
+                    incrementIndexStat(ms, category);
+                    _countIndexedSinceCommit++;
+                    _lastIndexedTime = ms;
+                    if (_countIndexedSinceCommit > 10000)
+                        commit();
+                }
+            }
+        }
+        catch (InterruptedException x)
+        {
+        }
+        catch (Throwable x)
+        {
+            _log.error("Error indexing " + (null != i ? i._id : ""), x);
+        }
+        finally
+        {
+            try
+            {
+                if (null != i)
+                    i.complete(success);
+            }
+            finally
+            {
+                DbScope.closeAllConnectionsForCurrentThread();
+            }
+        }
+    }
+
+
 
 
     private final ArrayList<SearchCategory> _searchCategories = new ArrayList<>();

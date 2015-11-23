@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import com.drew.lang.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.CustomView;
@@ -23,6 +24,7 @@ import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.writer.VirtualFile;
@@ -55,6 +57,29 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
     public QueryDefinition getQueryDefinition()
     {
         return _queryDef;
+    }
+
+
+    /*
+     * The file based custom view does not know its schema or query in general! Presumably,
+     * the view got attached to the right query, so ask the query.
+     */
+    @Override @NotNull
+    public String getSchemaName()
+    {
+        return _queryDef.getSchemaName();
+    }
+
+    @Override @NotNull
+    public SchemaKey getSchemaPath()
+    {
+        return _queryDef.getSchemaPath();
+    }
+
+    @Override @NotNull
+    public String getQueryName()
+    {
+        return _queryDef.getName();
     }
 
     public void setName(String name)

@@ -872,7 +872,9 @@ public class ParticipantGroupController extends BaseStudyController
             }
 
             // we want to OR subjects within a category and AND them across categories
-            Collection<String> subjects = new ArrayList<>();
+            // NOTE we start with the subjects==null so we can distinguish between the first time through the loop
+            // when null==subjects vs. no subjects due to being filtered when true==subjects.isEmpty()
+            Collection<String> subjects = null;
             Set<String> cohortParticipants = null;
             for (String key : categoryToSubjectMap.keySet())
             {
@@ -883,27 +885,30 @@ public class ParticipantGroupController extends BaseStudyController
                 }
 
                 Set<String> participants = categoryToSubjectMap.get(key);
-                if (!subjects.isEmpty())
+                if (null == subjects)
+                {
+                    subjects = new ArrayList<>(participants);
+                }
+                else
                 {
                     subjects = CollectionUtils.intersection(subjects, participants);
                     if (subjects.isEmpty())
                         break;
                 }
-                else
-                    subjects.addAll(participants);
             }
 
             // Issue 18697: since cohorts are allowed to be empty (i.e. have no ptids in it) and ptid groups are not, go through the ptids groups first
             if (cohortParticipants != null)
             {
-                if (subjects.isEmpty())
-                    subjects.addAll(cohortParticipants);
+                if (null == subjects)
+                    subjects = new ArrayList<>(cohortParticipants);
                 else
                     subjects = CollectionUtils.intersection(subjects, cohortParticipants);
             }
 
             List<String> sortedSubjects = new ArrayList<>();
-            sortedSubjects.addAll(subjects);
+            if (null != subjects)
+                sortedSubjects.addAll(subjects);
 
             Collections.sort(sortedSubjects);
 
