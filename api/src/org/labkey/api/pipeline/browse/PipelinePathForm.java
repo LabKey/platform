@@ -39,7 +39,6 @@ public class PipelinePathForm extends ViewForm
     private String _path;
     private String[] _file = new String[0];
     private int[] _fileIds = new int[0];
-    private String _format = null;
 
     public String getPath()
     {
@@ -55,10 +54,6 @@ public class PipelinePathForm extends ViewForm
     {
         return _file;
     }
-
-    public String getFormat() { return _format; }
-
-    public void setFormat(String format) { _format = format; }
 
     public void setFile(String[] file)
     {
