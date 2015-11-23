@@ -117,7 +117,6 @@ import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListImporter;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
-import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListWriter;
 import org.labkey.list.view.ListDefinitionForm;
 import org.labkey.list.view.ListImportServiceImpl;
@@ -804,7 +803,7 @@ public class ListController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
         {
-            int count = _list.insertListItems(getUser(),getContainer() , dl, errors, null, null, false);
+            int count = _list.insertListItems(getUser(),getContainer() , dl, errors, null, null, false, _importLookupByAlternateKey);
             return count;
         }
 

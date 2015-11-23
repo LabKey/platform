@@ -167,7 +167,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
                 // TODO: Instead of throwing a CancellationException, this method should return a status object holding
                 //  errors and cancellation status.  This will require reworking OntologyManager, so signal with an
                 //  exception for now.
-                _def.insertListItems(getUser(), getContainer(), _loader, errors, null, _progress, false);
+                _def.insertListItems(getUser(), getContainer(), _loader, errors, null, _progress, false, false);
             }
             catch (CancellationException ce)
             {

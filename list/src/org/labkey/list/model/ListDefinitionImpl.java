@@ -561,19 +561,19 @@ public class ListDefinitionImpl implements ListDefinition
         MapLoader loader = new MapLoader(rows);
 
         // TODO: Find out the attachment directory?
-        return insertListItems(user, container, loader, ve, null, null, false);
+        return insertListItems(user, container, loader, ve, null, null, false, false);
     }
 
 
     @Override
-    public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey) throws IOException
+    public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey) throws IOException
     {
         TableInfo table = getTable(user, container);
         if (null != table)
         {
             ListQueryUpdateService lqus = (ListQueryUpdateService) table.getUpdateService();
             if (null != lqus)
-                return lqus.insertETL(loader, user, container, errors, attachmentDir, progress, supportAutoIncrementKey);
+                return lqus.insertETL(loader, user, container, errors, attachmentDir, progress, supportAutoIncrementKey, importByAlternateKey);
         }
         return 0;
     }

@@ -28,6 +28,7 @@ import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -43,9 +44,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class SampleSetDomainType extends AbstractDomainKind
+public class SampleSetDomainKind extends AbstractDomainKind
 {
-    public SampleSetDomainType()
+    public SampleSetDomainKind()
     {
     }
 
@@ -135,6 +136,7 @@ public class SampleSetDomainType extends AbstractDomainKind
         String name = domain.getName();
         String description = domain.getDescription();
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+        List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         Object[] idCols = arguments.containsKey("idCols") ? (Object[])arguments.get("idCols") : new Object[0];
         int idCol1 = idCols.length > 0 ? ((Number)idCols[0]).intValue() : -1;
@@ -145,7 +147,7 @@ public class SampleSetDomainType extends AbstractDomainKind
         ExpSampleSet ss;
         try
         {
-            ss = ExperimentService.get().createSampleSet(container, user, name, description, properties, idCol1, idCol2, idCol3, parentCol);
+            ss = ExperimentService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol);
         }
         catch (SQLException e)
         {

@@ -41,6 +41,7 @@ import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -669,6 +670,22 @@ public class PropertyController extends SpringActionController
         }
 
         domain.setFields(props);
+
+        JSONArray jsonIndices = jsonDomain.optJSONArray("indices");
+        if (jsonIndices != null)
+        {
+            List<GWTIndex> indices = new ArrayList<>();
+            for (JSONObject jsonIndex : jsonIndices.toJSONObjectArray())
+            {
+                List<String> columnNames = new ArrayList<>();
+                for (Object o : jsonIndex.getJSONArray("columnNames").toArray())
+                    columnNames.add(String.valueOf(o));
+
+                GWTIndex index = new GWTIndex(columnNames, jsonIndex.getBoolean("unique"));
+                indices.add(index);
+            }
+            domain.setIndices(indices);
+        }
 
         return domain;
     }

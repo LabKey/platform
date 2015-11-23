@@ -17,7 +17,6 @@
 package org.labkey.experiment.controllers.exp;
 
 import au.com.bytecode.opencsv.CSVWriter;
-import com.allen_sauer.gwt.dnd.client.util.StringUtil;
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -94,14 +93,12 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.form.DeleteForm;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
@@ -159,7 +156,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DetailsView;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -210,8 +206,7 @@ import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
-import org.labkey.experiment.api.SampleSetDomainType;
-import org.labkey.experiment.api.property.PropertyServiceImpl;
+import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
@@ -620,7 +615,7 @@ public class ExperimentController extends SpringActionController
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
                 }
 
-                if (domainKind instanceof SampleSetDomainType)
+                if (domainKind instanceof SampleSetDomainKind)
                 {
                     ActionButton updateButton = new ActionButton(ShowUpdateMaterialSourceAction.class, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.GET);
                     updateButton.setDisplayPermission(UpdatePermission.class);
@@ -1061,7 +1056,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(DataClass form, BindException errors) throws Exception
         {
-            ExpDataClass dataClass = ExperimentService.get().createDataClass(getContainer(), getUser(), form.getName(), form.getDescription(), Collections.EMPTY_LIST, null, form.getNameExpression());
+            ExpDataClass dataClass = ExperimentService.get().createDataClass(getContainer(), getUser(), form.getName(), form.getDescription(), Collections.emptyList(), Collections.emptyList(), null, form.getNameExpression());
             _sucessUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), dataClass.getDomain().getTypeURI(), false, false, false);
 
             return true;

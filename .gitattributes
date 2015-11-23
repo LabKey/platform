@@ -797,7 +797,7 @@ experiment/src/org/labkey/experiment/api/ProtocolActionPredecessor.java -text
 experiment/src/org/labkey/experiment/api/ProtocolActionStepDetail.java -text
 experiment/src/org/labkey/experiment/api/ProtocolApplication.java -text
 experiment/src/org/labkey/experiment/api/ProtocolOutput.java -text
-experiment/src/org/labkey/experiment/api/SampleSetDomainType.java -text
+experiment/src/org/labkey/experiment/api/SampleSetDomainKind.java -text
 experiment/src/org/labkey/experiment/api/SampleSetUpdateService.java -text
 experiment/src/org/labkey/experiment/api/property/DomainImpl.java -text
 experiment/src/org/labkey/experiment/api/property/DomainPropertyImpl.java -text

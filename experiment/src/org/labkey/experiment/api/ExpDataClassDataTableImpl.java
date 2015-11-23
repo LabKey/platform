@@ -58,6 +58,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
@@ -231,10 +232,14 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             {
                 col.setHidden(true);
                 col.setKeyField(true);
+                col.setShownInDetailsView(false);
                 col.setShownInInsertView(false);
                 col.setShownInUpdateView(false);
             }
-            cols.add(_extension.addExtensionColumn(col, null));
+            String newName = col.getName();
+            for (int i = 0; null != getColumn(newName); i++)
+                newName = newName + i;
+            cols.add(_extension.addExtensionColumn(col, newName));
         }
 
         HashMap<String,DomainProperty> properties = new HashMap<>();
@@ -292,9 +297,11 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
     @NotNull
     @Override
-    public List<ColumnInfo> getAlternateKeyColumns()
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices()
     {
-        return Arrays.asList(getColumn("Name"));
+        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>(super.getIndices());
+        indices.putAll(wrapTableIndices(_dataClass.getTinfo()));
+        return Collections.unmodifiableMap(indices);
     }
 
     //

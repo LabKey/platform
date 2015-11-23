@@ -40,6 +40,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
@@ -106,6 +107,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -1399,7 +1401,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         //delete run properties and all children
         OntologyManager.deleteOntologyObject(run.getLSID(), run.getContainer(), true);
-        
+
         SQLFragment sql = new SQLFragment("DELETE FROM exp.RunList WHERE ExperimentRunId = ?;\n");
         sql.add(run.getRowId());
         sql.append("UPDATE exp.ExperimentRun SET ReplacedByRunId = NULL WHERE ReplacedByRunId = ?;\n");
@@ -1710,7 +1712,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 // Create a new SampleSet in the current container
                 List<GWTPropertyDescriptor> properties = new ArrayList<>();
                 properties.add(new GWTPropertyDescriptor("Name", "http://www.w3.org/2001/XMLSchema#string"));
-                return createSampleSet(c, user, "Samples", null, properties, 0, -1, -1, -1);
+                return createSampleSet(c, user, "Samples", null, properties, Collections.emptyList(), 0, -1, -1, -1);
             }
             else
             {
@@ -3516,7 +3518,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpSampleSetImpl(new MaterialSource());
     }
 
-    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, int idCol1, int idCol2, int idCol3, int parentCol)
+    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol)
             throws ExperimentException
     {
         ExpSampleSet existing = getSampleSet(c, name);
@@ -3575,6 +3577,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
         }
 
+        Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
+        for (GWTIndex index : indices)
+        {
+            PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
+            propertyIndices.add(propIndex);
+        }
+        domain.setPropertyIndices(propertyIndices);
+
         if (!hasNameProperty && idUri1 == null)
             throw new ExperimentException("Please provide either a 'Name' property or an index for idCol1");
 
@@ -3613,7 +3623,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ss;
     }
 
-    public ExpDataClass createDataClass(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, Integer sampleSetId, String nameExpression)
+    public ExpDataClass createDataClass(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression)
             throws ExperimentException
     {
         ExpDataClass existing = getDataClass(c, u, name, true);
@@ -3648,6 +3658,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             DomainProperty dp = DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
         }
+
+        Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
+        for (GWTIndex index : indices)
+        {
+            PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
+            propertyIndices.add(propIndex);
+        }
+        domain.setPropertyIndices(propertyIndices);
 
         DataClass dataClass = new DataClass();
         dataClass.setLSID(lsid.toString());
@@ -3909,7 +3927,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             for (ExpMaterialImpl expMaterial : sampleSet.getSamples())
             {
-                List<ExpMaterialImpl> matchingSamples = potentialParents.get(expMaterial.getName()); 
+                List<ExpMaterialImpl> matchingSamples = potentialParents.get(expMaterial.getName());
                 if (matchingSamples == null)
                 {
                     matchingSamples = new LinkedList<>();

@@ -192,6 +192,17 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             //now the native columns plus any additional fields requested
             columnMetadata = JsonWriter.getNativeColProps(tinfo, fields, fk, false);
             resp.put("columns", columnMetadata.values());
+
+            // table indices
+            JSONObject jsonIndices = new JSONObject();
+            for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> entry : tinfo.getIndices().entrySet())
+            {
+                JSONObject jsonIndex = new JSONObject();
+                jsonIndex.put("type", entry.getValue().getKey());
+                jsonIndex.put("columns", entry.getValue().getValue().stream().map(ColumnInfo::getFieldKey).toArray());
+                jsonIndices.put(entry.getKey(), jsonIndex);
+            }
+            resp.put("indices", jsonIndices);
         }
         catch (QueryParseException e)
         {

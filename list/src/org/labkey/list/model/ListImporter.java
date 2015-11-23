@@ -210,7 +210,7 @@ public class ListImporter
                                     }
                                 }
 
-                                def.insertListItems(user, c, loader, batchErrors, listsDir.getDir(legalName), null, supportAI);
+                                def.insertListItems(user, c, loader, batchErrors, listsDir.getDir(legalName), null, supportAI, false);
                                 for (ValidationException v : batchErrors.getRowErrors())
                                     errors.add(v.getMessage());
 

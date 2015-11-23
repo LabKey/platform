@@ -80,6 +80,7 @@ public class DomainImpl implements Domain
     DomainDescriptor _dd;
     List<DomainPropertyImpl> _properties;
     private Set<PropertyStorageSpec.ForeignKey> _propertyForeignKeys = Collections.emptySet();
+    private Set<PropertyStorageSpec.Index> _propertyIndices = Collections.emptySet();
     private boolean _shouldDeleteAllData = false;
 
     // NOTE we could put responsibilty for generating column names on the StorageProvisioner
@@ -107,6 +108,7 @@ public class DomainImpl implements Domain
             _properties.add(property);
         }
     }
+
     public DomainImpl(Container container, String uri, String name)
     {
         _new = true;
@@ -636,6 +638,18 @@ public class DomainImpl implements Domain
     public void setPropertyForeignKeys(Set<PropertyStorageSpec.ForeignKey> propertyForeignKeys)
     {
         _propertyForeignKeys = propertyForeignKeys;
+    }
+
+    @Override
+    @NotNull
+    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    {
+        return _propertyIndices;
+    }
+
+    public void setPropertyIndices(@NotNull Set<PropertyStorageSpec.Index> propertyIndices)
+    {
+        _propertyIndices = propertyIndices;
     }
 
     @Override

@@ -110,4 +110,5 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _userSchema.getContainer()),
                 Collections.singletonMap("rowId", "RowId")));
     }
+
 }

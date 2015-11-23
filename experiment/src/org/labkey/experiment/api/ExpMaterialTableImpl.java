@@ -54,6 +54,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -61,8 +62,11 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
@@ -435,5 +439,15 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
         // don't allow insert/update on exp.Materials without a sample set
         return false;
+    }
+
+    @NotNull
+    @Override
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices()
+    {
+        // rewrite the "idx_material_ak" unique index over "Folder", "SampleSet", "Name" to just "Name"
+        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>(super.getIndices());
+        ret.put("idx_material_ak", Pair.of(IndexType.Unique, Arrays.asList(getColumn("Name"))));
+        return Collections.unmodifiableMap(ret);
     }
 }

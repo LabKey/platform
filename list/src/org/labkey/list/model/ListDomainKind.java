@@ -38,6 +38,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.User;
@@ -322,6 +323,7 @@ public abstract class ListDomainKind extends AbstractDomainKind
         // TODO: lots of optional stuff we could set: discussionSetting, allowDelete, allowUpload, ...
 
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+        List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
@@ -344,6 +346,14 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
                 DomainProperty dp = DomainUtil.addProperty(d, pd, defaultValues, propertyUris, null);
             }
+
+            Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
+            for (GWTIndex index : indices)
+            {
+                PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
+                propertyIndices.add(propIndex);
+            }
+            d.setPropertyIndices(propertyIndices);
 
             list.save(user);
             DefaultValueService.get().setDefaultValues(container, defaultValues);

@@ -17,7 +17,9 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -53,6 +55,7 @@ public class DataClassDomainKind extends AbstractDomainKind
 
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
+        RESERVED_NAMES.addAll(Arrays.asList(ExpDataClassDataTable.Column.values()).stream().map(ExpDataClassDataTable.Column::name).collect(Collectors.toList()));
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 // NOTE: We join to exp.data using LSID instead of rowid for insert performance -- we will generate
@@ -171,6 +174,7 @@ public class DataClassDomainKind extends AbstractDomainKind
         String name = domain.getName();
         String description = domain.getDescription();
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+        List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         String nameExpression = arguments.containsKey("nameExpression") ? String.valueOf(arguments.get("nameExpression")) : null;
 
@@ -191,7 +195,7 @@ public class DataClassDomainKind extends AbstractDomainKind
         ExpDataClass dataClass;
         try
         {
-            dataClass = ExperimentService.get().createDataClass(container, user, name, description, properties, sampleSetId, nameExpression);
+            dataClass = ExperimentService.get().createDataClass(container, user, name, description, properties, indices, sampleSetId, nameExpression);
         }
         catch (SQLException e)
         {

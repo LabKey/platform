@@ -59,7 +59,7 @@ import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
-import org.labkey.experiment.api.SampleSetDomainType;
+import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
 import org.labkey.experiment.api.property.LengthValidator;
 import org.labkey.experiment.api.property.LookupValidator;
@@ -117,7 +117,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ExperimentProperty.register();
         SamplesSchema.register(this);
         ExpSchema.register(this);
-        PropertyService.get().registerDomainKind(new SampleSetDomainType());
+        PropertyService.get().registerDomainKind(new SampleSetDomainKind());
         PropertyService.get().registerDomainKind(new DataClassDomainKind());
     }
 
