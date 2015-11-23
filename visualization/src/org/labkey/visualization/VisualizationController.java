@@ -319,7 +319,7 @@ public class VisualizationController extends SpringActionController
             {
                 PHI phi = activityService.getPHI(getViewContext());
                 if (phi != null)
-                    key += ":" + activityService.getPHI(getViewContext());
+                    key += ":" + phi;
             }
             List<Map<String,Object>> json = (List<Map<String,Object>>)_getMeasuresCache.get(key);
             if (json == null)
