@@ -1,5 +1,6 @@
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.ViewContext;
 
 /**
@@ -7,5 +8,6 @@ import org.labkey.api.view.ViewContext;
  */
 public interface ActivityService
 {
+    @Nullable
     PHI getPHI(ViewContext context);
 }
