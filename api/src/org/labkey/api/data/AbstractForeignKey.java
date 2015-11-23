@@ -19,7 +19,9 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.Pair;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -249,6 +251,13 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             .collect(Collectors.toSet());
     }
 
+    /**
+     * Check if an alternate key can be used when importing a value for this lookup.
+     * The lookup table must meet the following requirements:
+     * - Has a single primary key
+     * - Has a unique index over a single column that isn't the primary key
+     * - The column in the unique index must be a string type
+     */
     @Override
     public boolean allowImportByAlternateKey()
     {
@@ -260,16 +269,28 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         if (pkCols.size() != 1)
             return false;
 
-        List<ColumnInfo> akCols = lookupTable.getAlternateKeyColumns();
-        if (akCols.size() != 1)
-            return false;
-
         ColumnInfo pkCol = pkCols.get(0);
-        ColumnInfo akCol = akCols.get(0);
-        if (pkCol == akCol)
-            return false;
 
-        return !pkCol.getJdbcType().isText() && akCol.getJdbcType().isText();
+        List<List<ColumnInfo>> candidates = new ArrayList<>();
+        for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : lookupTable.getIndices().values())
+        {
+            if (index.getKey() != TableInfo.IndexType.Unique)
+                continue;
+
+            if (index.getValue().size() != 1)
+                continue;
+
+            ColumnInfo col = index.getValue().get(0);
+            if (pkCol == col)
+                continue;
+
+            if (!col.getJdbcType().isText())
+                continue;
+
+            candidates.add(index.getValue());
+        }
+
+        return !candidates.isEmpty();
     }
 
 }

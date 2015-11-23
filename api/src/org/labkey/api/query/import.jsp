@@ -322,6 +322,13 @@
                     triggerAction: 'all',
                     value: 'tsv',
                     width: 250
+                },
+                {
+                    boxLabel: 'Import Lookups by Alternate Key',
+                    xtype: 'checkbox',
+                    name: 'importLookupByAlternateKey',
+                    checked: false,
+                    inputValue: "true"
                 }
             ],
             buttonAlign:'left',
@@ -365,7 +372,15 @@
                     {
                         xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
                     },
-                    fibasic
+                    fibasic,
+                    {
+                        boxLabel: 'Import Lookups by Alternate Key',
+                        xtype: 'checkbox',
+                        name: 'importLookupByAlternateKey',
+                        checked: false,
+                        inputValue: "true",
+                        hideLabel: true
+                    }
             ],
 
             buttonAlign:'left',

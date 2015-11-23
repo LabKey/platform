@@ -44,6 +44,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private DefaultValueType defaultDefaultValueType = null;
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
     private List<FieldType> fields = new ArrayList<FieldType>();
+    private List<GWTIndex> indices = new ArrayList<GWTIndex>();
     private String defaultValuesURL = null;
 
     private Set<String> mandatoryPropertyDescriptorNames = new HashSet<String>();
@@ -71,6 +72,12 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.defaultDefaultValueType = src.defaultDefaultValueType;
         this.defaultValueOptions = src.defaultValueOptions;
         this.defaultValuesURL = src.defaultValuesURL;
+
+        if (src.indices != null)
+        {
+            for (int i = 0; i < src.indices.size(); i++)
+                this.indices.add(src.indices.get(i).copy());
+        }
 
         if (src.getFields() == null)
             return;
@@ -161,6 +168,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setFields(List<FieldType> list)
     {
         fields = list;
+    }
+
+    public List<GWTIndex> getIndices()
+    {
+        return indices;
+    }
+
+    public void setIndices(List<GWTIndex> indices)
+    {
+        this.indices = indices;
     }
 
     public boolean isAllowFileLinkProperties()

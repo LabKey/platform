@@ -468,7 +468,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final SimpleConvertColumn _convertCol;
         final ColumnInfo _toCol;
         final RemapMissingBehavior _missing;
-        Map<?, ?> _map = null;
+        List<Map<?, ?>> _maps = null;
 
         public RemapPostConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing)
         {
@@ -479,18 +479,45 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _missing = missing;
         }
 
-        private Map<?,?> getMap()
+        private List<Map<?,?>> getMaps()
         {
-            if (_map == null)
+            if (_maps == null)
             {
+                _maps = new ArrayList<>();
+
                 TableInfo targetTable = _toCol.getFkTableInfo();
-                List<ColumnInfo> mapCols = new ArrayList<>();
-                mapCols.add(targetTable.getAlternateKeyColumns().get(0));
-                mapCols.add(targetTable.getPkColumns().get(0));
-                Map<?, ?> map = new TableSelector(targetTable, mapCols, null, null).getValueMap();
-                _map = map;
+                ColumnInfo pkCol = targetTable.getPkColumns().get(0);
+
+                // See similar check in AbstractForeignKey.allowImportByAlternateKey()
+                // The lookup table must meet the following requirements:
+                // - Has a single primary key
+                // - Has a unique index over a single column that isn't the primary key
+                // - The column in the unique index must be a string type
+                for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : targetTable.getIndices().values())
+                {
+                    if (index.getKey() != TableInfo.IndexType.Unique)
+                        continue;
+
+                    if (index.getValue().size() != 1)
+                        continue;
+
+                    ColumnInfo col = index.getValue().get(0);
+                    if (pkCol == col)
+                        continue;
+
+                    if (!col.getJdbcType().isText())
+                        continue;
+
+                    _maps.add(createMap(targetTable, pkCol, col));
+                }
             }
-            return _map;
+            return _maps;
+        }
+
+        // Create a value map from the altKeyCol -> pkCol
+        private Map<?, ?> createMap(TableInfo targetTable, ColumnInfo pkCol, ColumnInfo altKeyCol)
+        {
+            return new TableSelector(targetTable, Arrays.asList(altKeyCol, pkCol), null, null).getValueMap();
         }
 
         @Override
@@ -510,9 +537,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             if (null == k)
                 return null;
-            Object v = getMap().get(k);
-            if (null != v || getMap().containsKey(k))
-                return v;
+
+            for (Map<?,?> map : getMaps())
+            {
+                Object v = map.get(k);
+                if (null != v || map.containsKey(k))
+                    return v;
+            }
+
             switch (_missing)
             {
                 case Null:          return null;

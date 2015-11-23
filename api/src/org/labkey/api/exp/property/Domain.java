@@ -89,6 +89,14 @@ public interface Domain extends IPropertyType
     Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys();
 
     /**
+     * Used by storage provisioner to add indices to the provisioned table.  The indices on this Domain
+     * are in addition to those from the {@link DomainKind#getPropertyIndices()}.
+     * Currently, the indices are not saved as a part of the domain definition.
+     */
+    void setPropertyIndices(@NotNull Set<PropertyStorageSpec.Index> indices);
+    @NotNull Set<PropertyStorageSpec.Index> getPropertyIndices();
+
+    /**
      *
      * @param shouldDeleteAllData Flag that all data should be deleted, initial use case is for Lists and Datasets
      *                            having all their user-editable fields replaced via Import Fields form

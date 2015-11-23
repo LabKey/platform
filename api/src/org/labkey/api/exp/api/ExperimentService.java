@@ -50,6 +50,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -135,7 +136,7 @@ public class ExperimentService
         /**
          * Create a new DataClass with the provided properties.
          */
-        ExpDataClass createDataClass(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, Integer sampleSetId, String nameExpression)
+        ExpDataClass createDataClass(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression)
                 throws ExperimentException, SQLException;
 
         List<? extends ExpDataClass> getDataClasses(Container container, User user, boolean includeOtherContainers);
@@ -187,7 +188,7 @@ public class ExperimentService
          * Create a new SampleSet with the provided properties.  If a 'Name' property exists in the list, it will be used
          * as the 'id' property of the SampleSet.  Either a 'Name' property must exist or at least one idCol index must be provided.
          */
-        ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, int idCol1, int idCol2, int idCol3, int parentCol)
+        ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol)
             throws ExperimentException, SQLException;
 
         ExpSampleSet createSampleSet();

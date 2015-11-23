@@ -308,7 +308,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     ListItem getListItemForEntityId(String entityId, User user);
 
     int insertListItems(User user, Container container, List<ListItem> listItems) throws IOException;
-    int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey) throws IOException;
+    int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey) throws IOException;
 
     @Nullable TableInfo getTable(User user);
     @Nullable TableInfo getTable(User user, Container c);

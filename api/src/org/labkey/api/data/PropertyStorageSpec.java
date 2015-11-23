@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -353,6 +354,12 @@ public class PropertyStorageSpec
         public Index(boolean unique, String... columnNames)
         {
             this.columnNames = columnNames;
+            this.isUnique = unique;
+        }
+
+        public Index(boolean unique, Collection<String> columnNames)
+        {
+            this.columnNames = columnNames.toArray(new String[columnNames.size()]);
             this.isUnique = unique;
         }
 

@@ -19,19 +19,19 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.util.Pair;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +53,7 @@ public class SchemaColumnMetaData
     private List<ColumnInfo> _pkColumns;
     private String _titleColumn = null;
     private boolean _hasDefaultTitleColumn = true;
+    private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _indices = Collections.emptyMap();
 
     protected SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
     {
@@ -166,11 +167,16 @@ public class SchemaColumnMetaData
 
     private void loadFromMetaData(SchemaTableInfo ti) throws SQLException
     {
+        loadColumnsFromMetaData(ti);
+        loadPkColumns(ti);
+        loadUniqueIndices(ti);
+    }
+
+    private void loadPkColumns(SchemaTableInfo ti) throws SQLException
+    {
         DbSchema schema = ti.getSchema();
         DbScope scope = schema.getScope();
         String schemaName = schema.getName();
-
-        loadColumnsFromMetaData(schemaName, ti);
 
         // Use TreeMap to order columns by keySeq
         Map<Integer, String> pkMap = new TreeMap<>();
@@ -207,11 +213,64 @@ public class SchemaColumnMetaData
         setPkColumnNames(new ArrayList<>(pkMap.values()));
     }
 
-    private void loadColumnsFromMetaData(String schemaName, SchemaTableInfo ti) throws SQLException
+    private void loadColumnsFromMetaData(SchemaTableInfo ti) throws SQLException
     {
+        String schemaName = ti.getSchema().getName();
+
         Collection<ColumnInfo> meta = ColumnInfo.createFromDatabaseMetaData(schemaName, ti);
         for (ColumnInfo c : meta)
             addColumn(c);
+    }
+
+    private void loadUniqueIndices(SchemaTableInfo ti) throws SQLException
+    {
+        DbSchema schema = ti.getSchema();
+        DbScope scope = schema.getScope();
+        String schemaName = schema.getName();
+
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
+        {
+            JdbcMetaDataSelector uqSelector = new JdbcMetaDataSelector(locator,
+                    ((dbmd, l) -> dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), true, false)));
+
+            Set<String> ignoreIndex = new HashSet<>();
+            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> uniqueIndexMap = new HashMap<>();
+            uqSelector.forEach(rs -> {
+                String colName = rs.getString("COLUMN_NAME");
+                String uniqueIndexName = rs.getString("INDEX_NAME");
+                if (uniqueIndexName == null)
+                    return;
+
+                uniqueIndexName = uniqueIndexName.toLowerCase();
+
+                Pair<TableInfo.IndexType, List<ColumnInfo>> pair = uniqueIndexMap.get(uniqueIndexName);
+                if (pair == null)
+                    uniqueIndexMap.put(uniqueIndexName, pair = Pair.of(TableInfo.IndexType.Unique, new ArrayList<>(2)));
+
+                ColumnInfo colInfo = getColumn(colName);
+                // Column will be null for indices over expressions, eg.: "lower(name)"
+                if (colInfo == null)
+                    ignoreIndex.add(uniqueIndexName);
+                else
+                    pair.getValue().add(colInfo);
+            });
+
+            // Remove ignored indices
+            ignoreIndex.forEach(uniqueIndexMap::remove);
+
+            // Search for the primary index and change the index type to Primary
+            for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> entry : uniqueIndexMap.entrySet())
+            {
+                List<ColumnInfo> cols = entry.getValue().getValue();
+                if (getPkColumns().equals(cols))
+                {
+                    entry.setValue(Pair.of(TableInfo.IndexType.Primary, cols));
+                    break;
+                }
+            }
+
+            _indices = Collections.unmodifiableMap(uniqueIndexMap);
+        }
     }
 
     public List<ColumnInfo> getColumns()
@@ -357,6 +416,11 @@ public class SchemaColumnMetaData
     public @NotNull List<String> getPkColumnNames()
     {
         return _pkColumnNames;
+    }
+
+    public @NotNull Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> getIndices()
+    {
+        return _indices;
     }
 
     void copyToXml(TableType xmlTable, boolean bFull)

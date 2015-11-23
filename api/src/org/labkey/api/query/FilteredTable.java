@@ -30,13 +30,17 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.CustomizerType;
 import org.labkey.data.xml.TableType;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -587,6 +591,34 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     public SchemaType getUserSchema()
     {
         return _userSchema;
+    }
+
+    @NotNull
+    @Override
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices()
+    {
+        return Collections.unmodifiableMap(wrapTableIndices(getRealTable()));
+    }
+
+    protected Map<String, Pair<IndexType, List<ColumnInfo>>> wrapTableIndices(TableInfo table)
+    {
+        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = table.getIndices();
+        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>();
+        for (Map.Entry<String, Pair<IndexType, List<ColumnInfo>>> entry : indices.entrySet())
+        {
+            List<ColumnInfo> indexCols = new ArrayList<>(entry.getValue().getValue().size());
+            for (ColumnInfo col : entry.getValue().getValue())
+            {
+                ColumnInfo c = getColumn(col.getFieldKey());
+                if (c != null)
+                    indexCols.add(c);
+            }
+
+            if (!indexCols.isEmpty())
+                ret.put(entry.getKey(), Pair.of(entry.getValue().getKey(), indexCols));
+        }
+
+        return ret;
     }
 
 }

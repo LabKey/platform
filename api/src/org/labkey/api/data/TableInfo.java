@@ -109,6 +109,13 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     @NotNull List<ColumnInfo> getPkColumns();
 
+    @NotNull
+    Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices();
+
+    enum IndexType
+    {
+        Primary, Unique
+    }
 
     /** Get a list of columns that specifies a unique key, may return the same result as getPKColumns()
      * However, whereas getPkColumns() will usually return a 'short' pk, such as "rowid" or "lsid", this

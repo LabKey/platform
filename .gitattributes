@@ -6563,6 +6563,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonResult.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTConditionalFormat.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTContainer.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTDomain.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/model/GWTIndex.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTMaterial.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyDescriptor.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyValidator.java -text

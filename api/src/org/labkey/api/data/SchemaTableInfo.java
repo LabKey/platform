@@ -255,6 +255,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return getColumnMetaData().getPkColumns();
     }
 
+    @Override @NotNull
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices()
+    {
+        return getColumnMetaData().getIndices();
+    }
 
     @NotNull
     @Override

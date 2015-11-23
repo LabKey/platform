@@ -48,6 +48,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
@@ -140,7 +141,11 @@ public class StorageProvisioner
                 }
             }
 
-            change.setIndexedColumns(kind.getPropertyIndices());
+            List<PropertyStorageSpec.Index> indices = new ArrayList<>();
+            indices.addAll(kind.getPropertyIndices());
+            indices.addAll(domain.getPropertyIndices());
+            change.setIndexedColumns(indices);
+
             change.setForeignKeys(domain.getPropertyForeignKeys());
 
             execute(scope, scope.getConnection(), change);
@@ -598,6 +603,20 @@ public class StorageProvisioner
             return _inner.toString();
         }
 
+        @NotNull
+        @Override
+        public List<ColumnInfo> getAlternateKeyColumns()
+        {
+            return _inner.getAlternateKeyColumns();
+        }
+
+        @NotNull
+        @Override
+        public Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices()
+        {
+            return _inner.getIndices();
+        }
+
         @Override
         public Path getNotificationKey()
         {
@@ -739,9 +758,13 @@ public class StorageProvisioner
         if (null == tableName)
             throw new IllegalStateException("Table must already exist.");
 
+        Collection<PropertyStorageSpec.Index> indices = new ArrayList<>();
+        indices.addAll(kind.getPropertyIndices());
+        indices.addAll(domain.getPropertyIndices());
+
         TableChange change = new TableChange(kind.getStorageSchemaName(), tableName,
                 doAdd ? TableChange.ChangeType.AddIndices : TableChange.ChangeType.DropIndices);
-        change.setIndexedColumns(kind.getPropertyIndices());
+        change.setIndexedColumns(indices);
 
         try (Transaction transaction = scope.ensureTransaction())
         {
