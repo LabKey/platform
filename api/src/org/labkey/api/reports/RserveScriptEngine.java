@@ -15,24 +15,24 @@
  */
 package org.labkey.api.reports;
 
-import org.apache.axis.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.reports.report.RReport;
-
-import javax.script.*;
-import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Map;
-
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewContext;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
+
+import javax.script.ScriptContext;
+import javax.script.ScriptException;
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Map;
 
 public class RserveScriptEngine extends RScriptEngine
 {
