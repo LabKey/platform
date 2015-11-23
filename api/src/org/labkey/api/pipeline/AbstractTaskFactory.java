@@ -36,7 +36,6 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     private String _executionLocation;
     private String _groupParameterName;
     private int _autoRetry = -1;
-    private GlobusSettings _globusSettings;
 
     private Module _declaringModule;
 
@@ -67,23 +66,6 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         return _groupParameterName;
     }
 
-    @NotNull
-    public GlobusSettings getGlobusSettings()
-    {
-        if (_globusSettings != null)
-        {
-            return _globusSettings;
-        }
-        GlobusSettingsImpl result = new GlobusSettingsImpl();
-        result.setLocation(getLocation());
-        return result;
-    }
-
-    public void setGlobusSettings(GlobusSettings globusSettings)
-    {
-        _globusSettings = globusSettings;
-    }
-
     protected void configure(SettingsType settings)
     {
         _id = settings.getId();
@@ -99,8 +81,6 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
             _autoRetry = settings.getAutoRetry();
         if (settings.getGroupParameterName() != null)
             _groupParameterName = settings.getGroupParameterName();
-        if (settings.getGlobusSettings() != null)
-            _globusSettings = settings.getGlobusSettings();
         if (settings.getDeclaringModule() != null)
             _declaringModule = settings.getDeclaringModule();
     }
@@ -126,31 +106,6 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     @Override
     public void validateParameters(PipelineJob job) throws PipelineValidationException
     {
-        for (PipelineJobService.GlobusClientProperties globusClientProperties : PipelineJobService.get().getGlobusClientPropertiesList())
-        {
-            if (globusClientProperties.getLocation() != null && globusClientProperties.getLocation().equalsIgnoreCase(getLocation()))
-            {
-                // Globus can't submit jobs that have a space in the path to the logs for stdout or stderr.
-                // See issue 15254
-                String clusterPath;
-                if (globusClientProperties.getPathMapper() == null)
-                {
-                    clusterPath = job.getLogFile().toURI().toString();
-                }
-                else
-                {
-                    clusterPath = globusClientProperties.getPathMapper().remoteToLocal(job.getLogFile().toURI().toString());
-                }
-                if (clusterPath.contains(" ") || clusterPath.contains("%20"))
-                {
-                    throw new PipelineValidationException("Paths cannot contain spaces (or their encoded equivalent, '%20') when submitting a cluster job via Globus:" + job.getLogFile());
-                }
-                if (clusterPath.contains("+") || clusterPath.contains("%2B"))
-                {
-                    throw new PipelineValidationException("Paths cannot contain pluses (or their encoded equivalent, '%2B') when submitting a cluster job via Globus:" + job.getLogFile());
-                }
-            }
-        }
     }
 
     public boolean isAutoRetryEnabled(PipelineJob job)

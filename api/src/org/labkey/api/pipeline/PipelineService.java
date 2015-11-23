@@ -80,7 +80,7 @@ abstract public class PipelineService
     @Nullable
     abstract public PipeRoot getPipelineRootSetting(Container container, String type);
 
-    abstract public void setPipelineRoot(User user, Container container, String type, GlobusKeyPair globusKeyPair, boolean searchable, URI... roots) throws SQLException;
+    abstract public void setPipelineRoot(User user, Container container, String type, boolean searchable, URI... roots) throws SQLException;
 
     abstract public boolean canModifyPipelineRoot(User user, Container container);
 

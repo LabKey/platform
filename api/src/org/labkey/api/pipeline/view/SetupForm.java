@@ -18,7 +18,6 @@ package org.labkey.api.pipeline.view;
 
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
-import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.springframework.validation.BindException;
@@ -33,10 +32,7 @@ public class SetupForm extends ReturnUrlForm
 
     private String _path;
     private String _supplementalPath;
-    private String _keyPassword;
-    private boolean _uploadNewGlobusKeys;
     private String _confirmMessage;
-    private GlobusKeyPair _globusKeyPair;
     private BindException _errors;
     private boolean _pipelineRootForm;
     private String _pipelineRootOption;
@@ -51,16 +47,6 @@ public class SetupForm extends ReturnUrlForm
     public void setConfirmMessage(String confirmMessage)
     {
         _confirmMessage = confirmMessage;
-    }
-
-    public GlobusKeyPair getGlobusKeyPair()
-    {
-        return _globusKeyPair;
-    }
-
-    public void setGlobusKeyPair(GlobusKeyPair globusKeyPair)
-    {
-        _globusKeyPair = globusKeyPair;
     }
 
     public String getPath()
@@ -91,27 +77,6 @@ public class SetupForm extends ReturnUrlForm
     public void setErrors(BindException errors)
     {
         _errors = errors;
-    }
-
-    public String getKeyPassword()
-    {
-
-        return _keyPassword;
-    }
-
-    public void setKeyPassword(String keyPassword)
-    {
-        _keyPassword = keyPassword;
-    }
-
-    public boolean isUploadNewGlobusKeys()
-    {
-        return _uploadNewGlobusKeys;
-    }
-
-    public void setUploadNewGlobusKeys(boolean uploadNewGlobusKeys)
-    {
-        _uploadNewGlobusKeys = uploadNewGlobusKeys;
     }
 
     public boolean isPipelineRootForm()

@@ -53,7 +53,7 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
     /** The name of the status to be shown when this task is running, waiting, etc */
     String getStatusName();
 
-    /** The prefix for a parameter group. Used to collect task-specific properties like Globus configuration overrides */
+    /** The prefix for a parameter group. Used to collect task-specific properties like remote execution engine configuration overrides */
     String getGroupParameterName();
 
     /**
@@ -84,8 +84,6 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
      * to a specific machine name
      */
     String getExecutionLocation();
-
-    GlobusSettings getGlobusSettings();
 
     int getAutoRetry();
 

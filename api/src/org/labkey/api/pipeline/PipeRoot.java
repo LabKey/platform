@@ -87,12 +87,6 @@ public interface PipeRoot extends SecurableResource
     /** @return the entityId for this pipeline root, used to store permissions */
     String getEntityId();
 
-    /**
-     * @return null if no key pair has been configured for this pipeline root
-     */
-    @Nullable
-    GlobusKeyPair getGlobusKeyPair();
-
     /** @return whether this root's contents should be indexed by the crawler */
     boolean isSearchable();
 

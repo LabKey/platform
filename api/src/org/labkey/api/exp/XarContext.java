@@ -222,18 +222,23 @@ public class XarContext
         // Path mappers deal with URIs, not file paths
         String uri = "file:" + (path.startsWith("/") ? path : "/" + path);
         // This PathMapper considers "local" from a cluster node's point of view.
-        String mappedURI = PipelineJobService.get().getClusterPathMapper().localToRemote(uri);
-        // If we have translated Windows paths, they won't be legal URIs, so convert slashes
-        mappedURI = mappedURI.replace('\\', '/');
-        try
+        for (PipelineJobService.RemoteExecutionEngineConfig config : PipelineJobService.get().getRemoteExecutionEngineConfigs())
         {
-            f = new File(new URI(mappedURI));
-            if (NetworkDrive.exists(f))
+            String mappedURI = config.getPathMapper().localToRemote(uri);
+            // If we have translated Windows paths, they won't be legal URIs, so convert slashes
+            mappedURI = mappedURI.replace('\\', '/');
+            try
             {
-                return f;
+                f = new File(new URI(mappedURI));
+                if (NetworkDrive.exists(f))
+                {
+                    return f;
+                }
+            }
+            catch (URISyntaxException e)
+            {
             }
         }
-        catch (URISyntaxException e) {}
 
         return null;
     }

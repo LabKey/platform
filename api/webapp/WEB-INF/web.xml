@@ -104,15 +104,6 @@
     </filter-mapping>
 
     <servlet>
-      <servlet-name>WSRFServlet</servlet-name>
-      <display-name>WSRF Container Servlet</display-name>
-      <servlet-class>
-          org.globus.wsrf.container.AxisServlet
-      </servlet-class>
-      <load-on-startup>0</load-on-startup>
-    </servlet>
-
-    <servlet>
         <servlet-name>ViewServlet</servlet-name>
         <servlet-class>org.labkey.api.view.ViewServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
@@ -205,21 +196,6 @@
     <servlet-mapping>
         <servlet-name>static</servlet-name>
         <url-pattern>/_webdav/*</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-      <servlet-name>WSRFServlet</servlet-name>
-      <url-pattern>/servlet/AxisServlet</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-      <servlet-name>WSRFServlet</servlet-name>
-      <url-pattern>*.jws</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-      <servlet-name>WSRFServlet</servlet-name>
-      <url-pattern>/services/*</url-pattern>
     </servlet-mapping>
 
     <!-- To display a nice error message in the case of a database error, remove the

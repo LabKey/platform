@@ -22,6 +22,7 @@ import org.labkey.api.pipeline.file.PathMapper;
 
 import java.io.FileNotFoundException;
 import java.util.List;
+import java.util.Set;
 
 /**
  * <code>PipelineJobService</code> exposes the interface for dealing with
@@ -86,21 +87,16 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
         @NotNull String getHostName();
     }
 
-    /**
-     * <code>GlobusClientProperties</code> are only used on a machine running
-     * the <code>PipelineJobRunnerGlobus</code>. 
-     */
-    public interface GlobusClientProperties extends GlobusSettings
+    public interface RemoteExecutionEngineConfig
     {
-        String getJavaHome();
-        String getLabKeyDir();
-        String getGlobusServer();
-        String getJobFactoryType();
+        @NotNull
+        String getLocation();
+        @NotNull
+        String getType();
+        @NotNull
+        Set<String> getAvailableQueues();
+        @NotNull
         PathMapper getPathMapper();
-
-        GlobusClientProperties mergeOverrides(GlobusSettings overrides);
-
-        String getGlobusEndpoint();
     }
 
     abstract public ApplicationProperties getAppProperties();
@@ -113,9 +109,7 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     abstract public LocationType getLocationType();
 
     @NotNull
-    abstract public List<? extends GlobusClientProperties> getGlobusClientPropertiesList();
-
-    abstract public PathMapper getClusterPathMapper();
+    abstract public List<? extends RemoteExecutionEngineConfig> getRemoteExecutionEngineConfigs();
 
     /**
      * @param exeRel if relative, interpreted based on either the installPath or tools directory

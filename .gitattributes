@@ -863,14 +863,11 @@ api/src/org/labkey/api/notification/EmailMessage.java -text
 api/src/org/labkey/api/notification/EmailPref.java -text
 api/src/org/labkey/api/notification/EmailPrefFilter.java -text
 api/src/org/labkey/api/notification/EmailService.java -text
-api/src/org/labkey/api/pipeline/AbstractGlobusSettings.java -text
+api/src/org/labkey/api/pipeline/AbstractRemoteExecutionEngineConfig.java -text
 api/src/org/labkey/api/pipeline/AbstractTaskFactory.java -text
 api/src/org/labkey/api/pipeline/AbstractTaskFactorySettings.java -text
 api/src/org/labkey/api/pipeline/CancelledException.java -text
 api/src/org/labkey/api/pipeline/DirectoryNotDeletedException.java -text
-api/src/org/labkey/api/pipeline/GlobusKeyPair.java -text
-api/src/org/labkey/api/pipeline/GlobusSettings.java -text
-api/src/org/labkey/api/pipeline/GlobusSettingsImpl.java -text
 api/src/org/labkey/api/pipeline/NoSuchJobException.java -text
 api/src/org/labkey/api/pipeline/ParamParser.java -text
 api/src/org/labkey/api/pipeline/PipeRoot.java -text
