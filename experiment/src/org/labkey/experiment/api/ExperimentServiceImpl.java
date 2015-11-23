@@ -2573,6 +2573,31 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
+    /**
+     * Delete all exp.Material from the SampleSet.  If container is not provided,
+     * all rows from the SampleSet will be deleted regardless of container.
+     */
+    public int truncateSampleSet(ExpSampleSet source, User user, @Nullable Container c)
+    {
+        assert getExpSchema().getScope().isTransactionActive();
+
+        SimpleFilter filter = c == null ? new SimpleFilter() : SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("CpasType"), source.getLSID());
+
+        MultiHashMap<String, Integer> byContainer = new MultiHashMap<>();
+        TableSelector ts = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet("container", "rowid"), filter, null);
+        ts.forEachMap(row -> byContainer.put((String)row.get("container"), (Integer)row.get("rowid")));
+
+        int count = 0;
+        for (Map.Entry<String, Collection<Integer>> entry : byContainer.entrySet())
+        {
+            Container container = ContainerManager.getForId(entry.getKey());
+            deleteMaterialByRowIds(user, container, entry.getValue());
+            count += entry.getValue().size();
+        }
+        return count;
+    }
+
     public void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException
     {
         ExpSampleSet source = getSampleSet(rowId);
@@ -2583,10 +2608,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            // Delete all Materials from the SampleSet
-            SimpleFilter materialFilter = new SimpleFilter(FieldKey.fromParts("CpasType"), source.getLSID());
-            Collection<Integer> materialIds = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Collections.singleton("RowId"), materialFilter, null).getCollection(Integer.class);
-            deleteMaterialByRowIds(user, c, materialIds);
+            truncateSampleSet(source, user, null);
 
             deleteDomainObjects(source.getContainer(), source.getLSID());
 
