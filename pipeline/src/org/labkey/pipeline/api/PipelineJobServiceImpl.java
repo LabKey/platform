@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -41,17 +42,17 @@ import org.labkey.api.pipeline.TaskPipelineSettings;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
 import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
-import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.cluster.NoOpPipelineStatusWriter;
 import org.labkey.pipeline.mule.JMSStatusWriter;
+import org.labkey.pipeline.mule.RemoteExecutionEngine;
 import org.labkey.pipeline.xml.TaskType;
-import org.labkey.api.pipeline.file.PathMapperImpl;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -62,10 +63,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -134,8 +135,11 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private ApplicationProperties _appProperties;
     private ConfigProperties _configProperties;
     private RemoteServerProperties _remoteServerProperties;
-    private List<GlobusClientPropertiesImpl> _globusClientProperties = new ArrayList<>();
-    private PathMapperImpl _clusterPathMapper = new PathMapperImpl(new LinkedHashMap<String, String>());
+
+    @NotNull
+    private List<RemoteExecutionEngineConfig> _remoteExecutionEngineConfigs = new ArrayList<>();
+    @NotNull
+    private List<RemoteExecutionEngine> _remoteExecutionEngines = new CopyOnWriteArrayList<>();
 
     private PipelineStatusFile.StatusWriter _statusWriter;
     private PipelineStatusFile.JobStore _jobStore;
@@ -167,12 +171,12 @@ public class PipelineJobServiceImpl extends PipelineJobService
             _appProperties = current._appProperties;
             _configProperties = current._configProperties;
             _remoteServerProperties = current._remoteServerProperties;
-            _globusClientProperties = current._globusClientProperties;
+            _remoteExecutionEngineConfigs = current._remoteExecutionEngineConfigs;
+            _remoteExecutionEngines = current._remoteExecutionEngines;
             _statusWriter = current._statusWriter;
             _workDirFactory = current._workDirFactory;
             _jobStore = current._jobStore;
             _locationType = current._locationType;
-            _clusterPathMapper = current._clusterPathMapper;
         }
 
         if (register)
@@ -554,56 +558,57 @@ public class PipelineJobServiceImpl extends PipelineJobService
         _remoteServerProperties = remoteServerProperties;
     }
 
-    public GlobusClientPropertiesImpl getGlobusClientProperties()
-    {
-        return _globusClientProperties.get(0);
-    }
-    
     @NotNull
-    public List<GlobusClientPropertiesImpl> getGlobusClientPropertiesList()
+    public List<RemoteExecutionEngineConfig> getRemoteExecutionEngineConfigs()
     {
-        return _globusClientProperties;
+        return _remoteExecutionEngineConfigs;
     }
 
-    public void setGlobusClientProperties(GlobusClientPropertiesImpl globusClientProperties)
+    public void setRemoteExecutionEngineConfigs(@NotNull List<RemoteExecutionEngineConfig> remoteExecutionEngineConfigs)
     {
-        setGlobusClientPropertiesList(Collections.singletonList(globusClientProperties));
-    }
-
-    public void setGlobusClientPropertiesList(List<GlobusClientPropertiesImpl> globusClientProperties)
-    {
-        for (GlobusClientPropertiesImpl newProperties : globusClientProperties)
+        Set<String> locations = new CaseInsensitiveHashSet();
+        for (RemoteExecutionEngineConfig config : remoteExecutionEngineConfigs)
         {
-            validateUniqueLocation(newProperties);
-            _globusClientProperties.add(newProperties);
-        }
-        for (GlobusClientProperties globusClientProperty : globusClientProperties)
-        {
-            PathMapper mapper = globusClientProperty.getPathMapper();
-            if (mapper != null)
+            if (!locations.add(config.getLocation()))
             {
-                for (Map.Entry<String, String> entry : mapper.getPathMap().entrySet())
-                {
-                    _clusterPathMapper.getPathMap().put(entry.getKey(), entry.getValue());
-                }
+                throw new IllegalArgumentException("Duplicate remote execution engine location: " + config.getLocation());
+            }
+            getRemoteExecutionEngine(config.getType());
+        }
+        _remoteExecutionEngineConfigs = remoteExecutionEngineConfigs;
+    }
+
+    @NotNull
+    public List<RemoteExecutionEngine> getRemoteExecutionEngines()
+    {
+        return _remoteExecutionEngines;
+    }
+
+    public void registerRemoteExecutionEngine(RemoteExecutionEngine engine)
+    {
+        Set<String> types = new CaseInsensitiveHashSet();
+        for (RemoteExecutionEngine existingEngine : _remoteExecutionEngines)
+        {
+            if (engine.getType().equals(existingEngine.getType()))
+            {
+                throw new IllegalArgumentException("Duplicate remote execution engine type: " + engine.getType());
             }
         }
+        _remoteExecutionEngines.add(engine);
     }
 
-    private void validateUniqueLocation(GlobusClientPropertiesImpl newProperties)
+    /** @throws IllegalArgumentException if the requested type is not available */
+    @NotNull
+    public RemoteExecutionEngine getRemoteExecutionEngine(@NotNull String type)
     {
-        String location = newProperties.getLocation();
-        if (location == null)
+        for (RemoteExecutionEngine engine : _remoteExecutionEngines)
         {
-            throw new IllegalArgumentException("No location property specified for Globus server " + newProperties.getGlobusEndpoint());
-        }
-        for (GlobusClientPropertiesImpl existingProperties : _globusClientProperties)
-        {
-            if (existingProperties.getLocation().equalsIgnoreCase(location))
+            if (type.equalsIgnoreCase(engine.getType()))
             {
-                throw new IllegalArgumentException("Duplicate location property value '" + newProperties.getLocation() + "' specified for Globus server in pipelineConfig.xml. The default location value is 'cluster', and each Globus server must have a unique location property value.");
+                return engine;
             }
         }
+        throw new IllegalArgumentException("Unknown remote execution engine type: " + type);
     }
 
     private String getVersionedPath(String path, String packageName, String ver)
@@ -764,16 +769,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 "Please fix the JAVA_HOME environment variable.");
         }
         return new File(javaBin, "java").toString();
-    }
-
-    public void setClusterPathMapper(PathMapperImpl clusterPathMapper)
-    {
-        _clusterPathMapper = clusterPathMapper;
-    }
-
-    public PathMapperImpl getClusterPathMapper()
-    {
-        return _clusterPathMapper;
     }
 
     @NotNull @Override

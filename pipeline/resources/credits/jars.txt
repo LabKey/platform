@@ -1,43 +1,17 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
 activemq-core-4.1.1.jar|Apache ActiveMQ|4.1.1|{link:Apache|http://activemq.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Java Message Service queuing
-addressing-1.0.jar|Apache WS-Addressing|1.0|{link:Apache|http://ws.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web Services-Addressing implementation
-cog-axis.jar|CoG forked Axis|1.2|{link:Java CoG Kit|http://wiki.cogkit.org/wiki/Main_Page}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web services support
-cog-jglobus-1.2-060802.jar|Java commodity grid - Globus|1.2|{link:Java CoG Kit|http://wiki.cogkit.org/wiki/Main_Page}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Core Java non-WS runtime and security technologies for Globus
-commonj.jar|Foo-CommonJ|1.0.1|{link:myFOO|http://commonj.myfoo.de/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|JSR 237 Timer and WorkManager implementation
 commons-collections-3.2.jar|Commons Collections|3.2|{link:Apache|http://jakarta.apache.org/commons/collections/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Mule dependency
 commons-jxpath-1.2.jar|Commons JXPath|1.2|{link:Apache|http://commons.apache.org/jxpath/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Pipeline (Mule XPath filtering)
-commons-lang-2.6.jar|Commons Lang|2.6|{link:Apache|http://jakarta.apache.org/commons/lang/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Language helpers; older version required by Mule/Globus
+commons-lang-2.6.jar|Commons Lang|2.6|{link:Apache|http://jakarta.apache.org/commons/lang/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Language helpers; older version required by Mule
 backport-util-concurrent-3.1.jar|JSR 166|3.1|{link:Emory|http://dcl.mathcs.emory.edu/util/backport-util-concurrent/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|jeckels|Pipeline (Mule dependency)
-concurrent.jar|Concurrent library|1.3.4|{link:Doug Lea|http://g.oswego.edu/dl/classes/EDU/oswego/cs/dl/util/concurrent/intro.html}|Public domain|jeckels|Concurrent utility class library
-cryptix-asn1.jar|Cryptix ASN.1|0.1.11|{link:Cryptix project|http://www.cryptix.org/}|{link:Cryptix General License|http://www.cryptix.org/LICENSE.TXT}|jeckels|Cryptography libraries
-cryptix32.jar|Cryptix|3.2|{link:Cryptix project|http://www.cryptix.org/}|{link:Cryptix General License|http://www.cryptix.org/LICENSE.TXT}|jeckels|Cryptography libraries
 dom4j-1.4.jar|DOM4J|1.4|{link:DOM4J|http://www.dom4j.org/}|{link:BSD Style|http://www.dom4j.org/license.html}|jeckels|Pipeline (Mule XML parsing)
 geronimo-j2ee-connector_1.5_spec-1.0.1.jar|J2EE Connector API|1.0.1|{link:Apache Geronimo|http://geronimo.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|J2EE Connector API classes
 geronimo-j2ee-management_1.0_spec-1.0.jar|J2EE Management API|1.0|{link:Apache Geronimo|http://geronimo.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|J2EE Management API classes
 geronimo-jms_1.1_spec-1.0.1.jar|J2EE Java Message Service API|1.0.1|{link:Apache Geronimo|http://geronimo.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|J2EE Java Message Service API classes
 geronimo-jta_1.0.1B_spec-1.0.1.jar|J2EE Java Transaction API|1.0.1|{link:Apache Geronimo|http://geronimo.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|J2EE Java Transaction API classes
-globus_delegation_service.jar|Globus delegation service|4.0.6|{link:Globus Alliance|http://www.globus.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Globus cluster support
-globus_delegation_stubs.jar|Globus delegation stubs|4.0.6|{link:Globus Alliance|http://www.globus.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Globus cluster support
-globus_wsrf_rendezvous_service.jar|Globus Web Service resource framework service|4.0.6|{link:Globus Alliance|http://www.globus.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Globus cluster support
-globus_wsrf_rendezvous_stubs.jar|Globus Web Service resource framework stubs|4.0.6|{link:Globus Alliance|http://www.globus.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Globus cluster support
-globus_wsrf_rft_stubs.jar|Globus Web Service resource framework service, reliable file transfer stubs|4.0.6|{link:Globus Alliance|http://www.globus.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Globus cluster support
-gram-client.jar|Globus GRAM client|4.0.6|{link:Globus Alliance|http://www.globus.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Globus cluster support
-gram-stubs.jar|Globus stub code|4.0.6|{link:Globus Alliance|http://www.globus.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Globus cluster support
-gram-utils.jar|Globus utilities|4.0.6|{link:Globus Alliance|http://www.globus.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Globus cluster support
 jug-2.0.0-asl.jar|Jug|2.0.2|{link:Safehaus|http://jug.safehaus.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Java UUID generator
 mule-1.4.4-embedded.jar|Mule Enterprise Service Bus|1.4.4|{link:MuleSoft|http://www.mulesoft.org/}|{link:Common Public Attribution License Version 1.0|http://www.opensource.org/licenses/cpal_1.0}|jeckels|Enterprise service bus implementation 
-puretls.jar|PureTLS|0.9b5|{link:Claymore Systems|http://www.rtfm.com/puretls/}|{link:Custom|https://www.labkey.org/download/puretls.LICENSE}|jeckels|SSLv3/TLS implementation
-saaj.jar|SOAP with Attachments API for Java|1.2|{link:SAAJ|https://saaj.dev.java.net/}|{link:CDDL|https://glassfish.dev.java.net/public/CDDL+GPL.html}|jeckels|Attachments with webservices
-wsdl4j.jar|Web Services Description Language for Java|1.5|{link:WSDL4J|http://sourceforge.net/projects/wsdl4j}|{link:CPL|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|WSDL support - required for webservices
-wsrf_core.jar|WS-Resource Framework - Core|4.0.7|{link:Globus Alliance|http://www.globus.org/wsrf/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web-services Resource support
-wsrf_core_registry.jar|WS-Resource Framework - Registry|4.0.7|{link:Globus Alliance|http://www.globus.org/wsrf/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web-services Resource support
-wsrf_core_registry_stubs.jar|WS-Resource Framework - Registry Stubs|4.0.7|{link:Globus Alliance|http://www.globus.org/wsrf/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web-services Resource support
-wsrf_core_stubs.jar|WS-Resource Framework - Stubs|4.0.7|{link:Globus Alliance|http://www.globus.org/wsrf/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web-services Resource support
-wsrf_mds_usefulrp_schema_stubs.jar|WS-Resource Framework - Schema Stubs|4.0.7|{link:Globus Alliance|http://www.globus.org/wsrf/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web-services Resource support
-wsrf_tools.jar|WS-Resource Framework - Tools|4.0.7|{link:Globus Alliance|http://www.globus.org/wsrf/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web-services Resource support
-wss4j.jar|Apache WSS4J|1.5.0|{link:Apache WSS4J|http://ws.apache.org/wss4j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Implementation of the OASIS Web Services Security
-xmlsec.jar|Apache XML Security|1.4.1|{link:Apache XML Security|http://santuario.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Java xml-security library
 xpp3_min-1.1.3.4.O.jar|XML Pull|1.1.3.4.0|{link:XMLPull.org|http://www.xmlpull.org/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|jeckels|Pipeline (Mule dependency)
 xstream-1.2.2.jar|XStream|1.2.2|{link:XStream|http://xstream.codehaus.org/}|{link:BSD|http://xstream.codehaus.org/license.html}|jeckels|Pipeline (Mule dependency}
 {table}

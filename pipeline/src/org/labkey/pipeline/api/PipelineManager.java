@@ -33,7 +33,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
@@ -114,7 +113,7 @@ public class PipelineManager
     }
 
     static public void setPipelineRoot(User user, Container container, URI[] roots, String type,
-                                       GlobusKeyPair globusKeyPair, boolean searchable) throws SQLException
+                                       boolean searchable) throws SQLException
     {
         PipelineRoot oldValue = getPipelineRootObject(container, type);
         PipelineRoot newValue = null;
@@ -142,9 +141,6 @@ public class PipelineManager
                 newValue.setSupplementalPath(roots.length > 1 ? roots[1].toString() : null);
                 newValue.setContainerId(container.getId());
                 newValue.setType(type);
-                newValue.setKeyBytes(globusKeyPair == null ? null : globusKeyPair.getKeyBytes());
-                newValue.setCertBytes(globusKeyPair == null ? null : globusKeyPair.getCertBytes());
-                newValue.setKeyPassword(globusKeyPair == null ? null : globusKeyPair.getPassword());
                 newValue.setSearchable(searchable);
                 if (oldValue == null)
                 {

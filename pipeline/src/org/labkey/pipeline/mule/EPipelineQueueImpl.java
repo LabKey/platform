@@ -27,7 +27,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.JobRunner;
 import org.labkey.pipeline.api.AbstractPipelineQueue;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
-import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 import org.labkey.pipeline.mule.filters.JobIdJmsSelectorFilter;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.mule.MuleManager;
@@ -115,43 +114,37 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
 
             // Connect to the queue to see if we can grab the job before it starts running
             if (removeFromJMSQueue(statusFile, job)) return true;
-            // If we can't find it on the queue, see if it's been submitted to Globus
-            if (cancelGlobusJob(statusFile, job)) return true;
+            // If we can't find it on the queue, see if it's been submitted to a cluster
+            if (cancelRemoteExecutionEngineJob(statusFile, job)) return true;
         }
 
 
         return false;
     }
 
-    /** @return true if we found it on a Globus server and killed it, thus cancelling the job */
-    private boolean cancelGlobusJob(final PipelineStatusFile statusFile, final PipelineJob job)
+    /** @return true if we found it on a remote execution location and submitted a request to kill it, thus cancelling the job */
+    private boolean cancelRemoteExecutionEngineJob(final PipelineStatusFile statusFile, final PipelineJob job)
     {
         TaskFactory taskFactory = job.getActiveTaskFactory();
-        for (GlobusClientPropertiesImpl globus : PipelineJobServiceImpl.get().getGlobusClientPropertiesList())
+        for (PipelineJobService.RemoteExecutionEngineConfig config : PipelineJobServiceImpl.get().getRemoteExecutionEngineConfigs())
         {
-            String name = globus.getLocation();
-            // Check if it's running through Globus
+            String name = config.getLocation();
+            // Check if it's running through a remote execution engine
             if (taskFactory != null && taskFactory.getExecutionLocation() != null && taskFactory.getExecutionLocation().equals(name))
             {
-                // It is running through Globus - kill it
-                JobRunner.getDefault().execute(new Runnable()
-                {
-                    @Override
-                    public void run()
+                // It is running through the remote engine - kill it
+                JobRunner.getDefault().execute(() -> {
+                    try
                     {
-                        try
-                        {
-                            GlobusJobWrapper wrapper = new GlobusJobWrapper(job, false, false);
-                            job.getLogger().info("Cancelling job by submitting request to Globus.");
-                            PipelineJob.logStartStopInfo("Cancelling job by submitting request to Globus. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
-                            wrapper.cancel();
-                        }
-                        catch (Exception e)
-                        {
-                            _log.error("Error attempting to cancel job " + statusFile.getFilePath(), e);
-                        }
+                        RemoteExecutionEngine engine = PipelineJobServiceImpl.get().getRemoteExecutionEngine(config.getType());
+                        job.getLogger().info("Cancelling remote job by submitting request to " + engine);
+                        PipelineJob.logStartStopInfo("Cancelling job by submitting request to " + engine + ". Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
+                        engine.cancelJob(job.getJobGUID());
                     }
-
+                    catch (Exception e)
+                    {
+                        _log.error("Error attempting to cancel job " + statusFile.getFilePath(), e);
+                    }
                 });
                 return true;
             }

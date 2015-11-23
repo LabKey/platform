@@ -86,7 +86,7 @@
         <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
     </connector>
 
-    <connector name="jmsConnectorGlobus" className="org.mule.providers.jms.activemq.ActiveMqJmsConnector">
+    <connector name="jmsConnectorRemoteExecution" className="org.mule.providers.jms.activemq.ActiveMqJmsConnector">
         <properties>
             <!-- JMS connector from JNDI. -->
             <property name="connectionFactoryJndiName" value="java:comp/env/jms/ConnectionFactory"/>
@@ -242,12 +242,12 @@
             </properties>
         </mule-descriptor>
 
-        <mule-descriptor name="PipelineJobRunnerGlobusUMO"
-            implementation="org.labkey.pipeline.mule.PipelineJobRunnerGlobus">
+        <mule-descriptor name="PipelineJobRunnerRemoteExecutionUMO"
+            implementation="org.labkey.pipeline.mule.PipelineJobRunnerRemoteExecution">
             <inbound-router>
                 <endpoint type="receiver" address="JobMQ" transformers="JMSMessageToXML"
-                        responseTransformers="NoOpTransformer" connector="jmsConnectorGlobus">
-                    <filter className="org.labkey.pipeline.mule.filters.TaskGlobusJmsSelectorFilter" />
+                        responseTransformers="NoOpTransformer" connector="jmsConnectorRemoteExecution">
+                    <filter className="org.labkey.pipeline.mule.filters.TaskRemoteExecutionEngineJmsSelectorFilter" />
                 </endpoint>
             </inbound-router>
 

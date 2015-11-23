@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<wsdl:definitions name="WidgetNotification" targetNamespace="http://widgets.com/service" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:binding="http://widgets.com/bindings" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
-  <wsdl:import namespace="http://widgets.com/bindings" location="widget_notification_bindings.wsdl"/>
-  <wsdl:service name="WidgetNotificationService">
-    <wsdl:port name="WidgetNotificationPortTypePort" binding="binding:WidgetNotificationPortTypeSOAPBinding">
-      <soap:address location="http://localhost:8080/wsrf/services/"/>
-    </wsdl:port>
-  </wsdl:service>
-</wsdl:definitions>

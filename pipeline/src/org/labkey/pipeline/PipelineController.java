@@ -48,7 +48,6 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
-import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineActionConfig;
@@ -102,7 +101,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipUtil;
-import org.labkey.pipeline.api.GlobusKeyPairImpl;
 import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineRoot;
@@ -112,12 +110,9 @@ import org.labkey.pipeline.importer.FolderImportJob;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.xml.sax.SAXException;
 
-import javax.crypto.BadPaddingException;
 import javax.servlet.ServletException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
@@ -125,7 +120,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystemAlreadyExistsException;
-import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -257,7 +251,7 @@ public class PipelineController extends SpringActionController
     {
         if (form.shouldRevertOverride())
         {
-            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, null, false);
+            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, false);
             return true;
         }
 
@@ -270,57 +264,13 @@ public class PipelineController extends SpringActionController
             return false;
         }
 
-        Map<String, MultipartFile> files = Collections.emptyMap();
-        byte[] keyBytes = null;
-        String keyPassword = form.getKeyPassword();
-        byte[] certBytes = null;
-
-        if (context.getRequest() instanceof MultipartHttpServletRequest)
-            files = (Map<String, MultipartFile>)((MultipartHttpServletRequest)context.getRequest()).getFileMap();
-
-        if (files.get("keyFile") != null)
-        {
-            keyBytes = files.get("keyFile").getBytes();
-        }
-        if (files.get("certFile") != null)
-        {
-            certBytes = files.get("certFile").getBytes();
-        }
-        GlobusKeyPair keyPair = null;
-        if (!form.isUploadNewGlobusKeys())
-        {
-            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(context.getContainer());
-            if (pipeRoot != null)
-            {
-                keyPair = pipeRoot.getGlobusKeyPair();
-            }
-        }
-        else if ((keyBytes != null && keyBytes.length > 0) || (certBytes != null && certBytes.length > 0) || keyPassword != null)
-        {
-            keyPair = new GlobusKeyPairImpl(keyBytes, keyPassword, certBytes);
-            try
-            {
-                keyPair.validateMatch();
-            }
-            catch (BadPaddingException e)
-            {
-                errors.addError(new LabkeyError("Invalid Globus key/cert configuration: This is most likely caused by an incorrect password for the private key file, but could also be a corrupt private key file (" + e.getMessage() + ")"));
-                return false;
-            }
-            catch (GeneralSecurityException e)
-            {
-                errors.addError(new LabkeyError("Invalid Globus key/cert configuration: " + e.getMessage()));
-                return false;
-            }
-        }
-
         if (supplementalRoot == null)
         {
-            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, keyPair, form.isSearchable(), root);
+            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, form.isSearchable(), root);
         }
         else
         {
-            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, keyPair, form.isSearchable(), root, supplementalRoot);
+            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, form.isSearchable(), root, supplementalRoot);
         }
         return true;
     }

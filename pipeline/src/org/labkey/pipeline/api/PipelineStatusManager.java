@@ -205,7 +205,7 @@ public class PipelineStatusManager
             boolean cancelled = false;
             if (PipelineJob.TaskStatus.cancelling.matches(sfExist.getStatus()) && sfSet.isActive())
             {
-                // Mark is as officially dead
+                // Mark as officially dead
                 sfSet.setStatus(PipelineJob.TaskStatus.cancelled.toString());
                 cancelled = true;
             }

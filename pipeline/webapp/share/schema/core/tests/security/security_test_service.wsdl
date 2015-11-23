@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<wsdl:definitions name="SecurityTest" targetNamespace="http://wsrf.globus.org/tests/security/service" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:binding="http://wsrf.globus.org/tests/security/bindings" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
-  <wsdl:import namespace="http://wsrf.globus.org/tests/security/bindings" location="security_test_bindings.wsdl"/>
-  <wsdl:service name="SecurityTestService">
-    <wsdl:port name="SecurityTestPortTypePort" binding="binding:SecurityTestPortTypeSOAPBinding">
-      <soap:address location="http://localhost:8080/wsrf/services/"/>
-    </wsdl:port>
-  </wsdl:service>
-</wsdl:definitions>

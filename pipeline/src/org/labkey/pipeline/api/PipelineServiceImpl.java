@@ -28,7 +28,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineProtocolFactory;
@@ -221,12 +220,12 @@ public class PipelineServiceImpl extends PipelineService
         return new PipeRootImpl(r);
     }
 
-    public void setPipelineRoot(User user, Container container, String type, GlobusKeyPair globusKeyPair, boolean searchable, URI... roots) throws SQLException
+    public void setPipelineRoot(User user, Container container, String type, boolean searchable, URI... roots) throws SQLException
     {
         if (!canModifyPipelineRoot(user, container))
             throw new UnauthorizedException("You do not have sufficient permissions to set the pipeline root");
         
-        PipelineManager.setPipelineRoot(user, container, roots, type, globusKeyPair, searchable);
+        PipelineManager.setPipelineRoot(user, container, roots, type, searchable);
     }
 
     public boolean canModifyPipelineRoot(User user, Container container)

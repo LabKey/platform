@@ -1,7 +1,6 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
 annotations.jar|Compiler annotations|1.0|{link:JetBrains|http://www.jetbrains.com/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Annotations to enable compile-time checking for null
-axis.jar|Apache Axis|1.2RC2|{link:Apache|http://ws.apache.org/axis/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web service implementation (pipeline)
 batik-1.7-all.jar|Apache Batik|1.7|{link:Apache|http://xmlgraphics.apache.org/batik/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|brittp|Used for exporting SVG visualizations to image and PDF formats. This jar includes dependencies.
 cglib-nodep-2.2.3.jar|Code Generation Library|2.2.3|{link:SourceForge|http://sourceforge.net/projects/cglib/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Used by Spring Framework and jMock
 collections-generic-4.01.jar|Commons Collections with Generics|4.01|{link:SourceForge|http://sourceforge.net/projects/collections}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Helpful collections

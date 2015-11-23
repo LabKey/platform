@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<wsdl:definitions name="Counter" targetNamespace="http://perf.counter.com/service" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:binding="http://perf.counter.com/bindings" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
-  <wsdl:import namespace="http://perf.counter.com/bindings" location="counter_bindings.wsdl"/>
-  <wsdl:service name="CounterService">
-    <wsdl:port name="CounterPortTypePort" binding="binding:CounterPortTypeSOAPBinding">
-      <soap:address location="http://localhost:8080/wsrf/services/"/>
-    </wsdl:port>
-  </wsdl:service>
-</wsdl:definitions>

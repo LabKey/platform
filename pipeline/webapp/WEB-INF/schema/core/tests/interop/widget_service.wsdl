@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<wsdl:definitions name="Widget" targetNamespace="http://widgets.com/service" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:binding="http://widgets.com/bindings">
-  <wsdl:import namespace="http://widgets.com/bindings" location="widget_bindings.wsdl"/>
-  <wsdl:service name="WidgetService">
-    <wsdl:port name="WidgetPortTypePort" binding="binding:WidgetPortTypeSOAPBinding">
-      <soap:address location="http://localhost:8080/wsrf/services/"/>
-    </wsdl:port>
-  </wsdl:service>
-</wsdl:definitions>

@@ -29,9 +29,6 @@ public class PipelineRoot extends Entity
     String _supplementalPath;
     String _type;
     
-    byte[] _keyBytes;
-    byte[] _certBytes;
-    String _keyPassword;
     boolean _searchable = true;
 
     public PipelineRoot()
@@ -48,9 +45,6 @@ public class PipelineRoot extends Entity
         this._path = root._path;
         this._supplementalPath = root._supplementalPath;
         this._type = root._type;
-        this._keyBytes = root._keyBytes;
-        this._certBytes = root._certBytes;
-        this._keyPassword = root._keyPassword;
         this._searchable = root._searchable;
     }
 
@@ -104,36 +98,6 @@ public class PipelineRoot extends Entity
     public void setType(String type)
     {
         _type = type;
-    }
-
-    public byte[] getKeyBytes()
-    {
-        return _keyBytes;
-    }
-
-    public void setKeyBytes(byte[] keyBytes)
-    {
-        _keyBytes = keyBytes;
-    }
-
-    public byte[] getCertBytes()
-    {
-        return _certBytes;
-    }
-
-    public void setCertBytes(byte[] certBytes)
-    {
-        _certBytes = certBytes;
-    }
-
-    public String getKeyPassword()
-    {
-        return _keyPassword;
-    }
-
-    public void setKeyPassword(String keyPassword)
-    {
-        _keyPassword = keyPassword;
     }
 
     public boolean isSearchable()

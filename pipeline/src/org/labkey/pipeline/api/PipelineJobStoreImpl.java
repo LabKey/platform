@@ -195,7 +195,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             PipelineJob jobJoin = getJoinJob(job.getParentGUID());
             if (jobJoin == null)
             {
-                throw new NoSuchJobException("Could not find parent job with ID '" + job.getParentGUID() + "', it may have been resubmitted and given an new ID");
+                throw new NoSuchJobException("Could not find parent job with ID '" + job.getParentGUID() + "', it may have been resubmitted and given a new ID");
             }
 
             jobJoin.mergeSplitJob(job);

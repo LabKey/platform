@@ -21,13 +21,13 @@ import org.labkey.api.gwt.client.pipeline.GWTPipelineLocation;
 import org.labkey.api.gwt.client.pipeline.GWTPipelineTask;
 import org.labkey.api.gwt.client.pipeline.PipelineGWTService;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
-import org.labkey.pipeline.api.properties.GlobusClientPropertiesImpl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,12 +56,12 @@ public class PipelineGWTServiceImpl extends BaseRemoteService implements Pipelin
             }
 
             Map<String, GWTPipelineLocation> locations = new CaseInsensitiveHashMap<>();
-            Map<String, GlobusClientPropertiesImpl> globusProperties = new CaseInsensitiveHashMap<>();
-            for (GlobusClientPropertiesImpl globus : PipelineJobServiceImpl.get().getGlobusClientPropertiesList())
+            Map<String, PipelineJobService.RemoteExecutionEngineConfig> remoteProperties = new CaseInsensitiveHashMap<>();
+            for (PipelineJobService.RemoteExecutionEngineConfig config : PipelineJobServiceImpl.get().getRemoteExecutionEngineConfigs())
             {
-                globusProperties.put(globus.getLocation(), globus);
-                String name = globus.getLocation();
-                locations.put(name, new GWTPipelineLocation(name, globus.getAvailableQueues()));
+                remoteProperties.put(config.getLocation(), config);
+                String name = config.getLocation();
+                locations.put(name, new GWTPipelineLocation(name, new ArrayList<>(config.getAvailableQueues())));
             }
 
             List<GWTPipelineTask> tasks = new ArrayList<>();

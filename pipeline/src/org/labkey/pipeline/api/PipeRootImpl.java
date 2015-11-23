@@ -25,7 +25,6 @@ import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
-import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
@@ -58,7 +57,6 @@ public class PipeRootImpl implements PipeRoot
     private final URI[] _uris;
     private transient File[] _rootPaths;
     private final String _entityId;
-    private transient final GlobusKeyPairImpl _keyPair;
     private final boolean _searchable;
     /** true if this root is based on the site or project default file root */
     private boolean _isDefaultRoot;
@@ -69,7 +67,6 @@ public class PipeRootImpl implements PipeRoot
     {
         _uris = null;
         _entityId = null;
-        _keyPair = null;
         _searchable = false;
     }
 
@@ -97,14 +94,6 @@ public class PipeRootImpl implements PipeRoot
         }
         _entityId = root.getEntityId();
         _searchable = root.isSearchable();
-        if (root.getKeyBytes() != null && root.getCertBytes() != null)
-        {
-            _keyPair = new GlobusKeyPairImpl(root.getKeyBytes(), root.getKeyPassword(), root.getCertBytes());
-        }
-        else
-        {
-            _keyPair = null;
-        }
     }
 
     @NotNull
@@ -291,11 +280,6 @@ public class PipeRootImpl implements PipeRoot
         return _entityId;
     }
 
-    public GlobusKeyPair getGlobusKeyPair()
-    {
-        return _keyPair;
-    }
-
     @NotNull
     public String getResourceId()
     {
@@ -401,9 +385,7 @@ public class PipeRootImpl implements PipeRoot
             form.setSupplementalPath(roots[1].getPath());
         }
 
-        form.setGlobusKeyPair(getGlobusKeyPair());
         form.setSearchable(isSearchable());
-
     }
 
     @Override

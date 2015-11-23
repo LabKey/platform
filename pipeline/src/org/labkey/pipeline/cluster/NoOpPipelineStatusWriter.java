@@ -19,8 +19,8 @@ import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineJob;
 
 /**
- * Used when running a job through Globus. Globus handles giving the web server job status updates through a web
- * service callback so we don't need to duplicate the status info. 
+ * Used when running a job through a remote execution engine. The cluster itself may handle giving the web
+ * server job status updates through a callback so we don't need to duplicate the status info.
  * User: jeckels
  * Date: Jul 18, 2008
 */

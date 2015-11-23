@@ -32,9 +32,6 @@
       <ns:column columnName="SupplementalPath"/>
       <ns:column columnName="Providers"/>
       <ns:column columnName="Type"/>
-      <ns:column columnName="KeyBytes"/>
-      <ns:column columnName="KeyPassword"/>
-      <ns:column columnName="CertBytes"/>
       <ns:column columnName="Searchable"/>
     </ns:columns>
   </ns:table>
