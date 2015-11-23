@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -68,7 +69,7 @@ public class ExternalSchemaDefCache
 
             for (SchemaType type : SchemaType.values())
             {
-                byName.put(type.getSchemaDefClass(), new HashMap<>());
+                byName.put(type.getSchemaDefClass(), new CaseInsensitiveHashMap<>());
                 byRowId.put(type.getSchemaDefClass(), new HashMap<>());
             }
 
