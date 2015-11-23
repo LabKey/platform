@@ -2604,7 +2604,7 @@ public class SecurityManager
         ActionURL verificationURL = createModuleVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters, provider, isAddUser);
 
         SecurityManager.sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
-        if (!currentUser.getEmail().equals(email.getEmailAddress()))
+        if (!currentUser.isGuest() && !currentUser.getEmail().equals(email.getEmailAddress()))
         {
             SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
             msg.setTo(email.getEmailAddress());

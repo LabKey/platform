@@ -447,8 +447,15 @@ boxPlot.render();
         }
 
         if (min == max ) {
-            max = max + 1;
-            min = min - 1;
+            // use *2 and /2 so that we won't end up with <= 0 value for log scale
+            if (userScale && userScale.trans && userScale.trans === 'log') {
+                max = max * 2;
+                min = min / 2;
+            }
+            else {
+                max = max + 1;
+                min = min - 1;
+            }
         }
 
         /*
@@ -584,12 +591,20 @@ boxPlot.render();
     var getLogScale = function (domain, range) {
         var scale, scaleWrapper, increment = false;
 
-        // domain[0] can be (-1, 0) since we decrement lower bound when upper and lower is the same, see getContinuousDomain
+        // Issue 24727: adjust domain range to compensate for log scale fitting error margin
+        // With log scale, log transformation is applied before the mapping (fitting) to result range
+        // Javascript has binary floating points calculation issues. Use a small error constant to compensate.
+        var scaleRoundingEpsilon = 0.00001;
+
         // domain must not include or cross zero
-        if (domain[0] <= 0) {
+        if (domain[0] <= scaleRoundingEpsilon) {
             increment = true;
             domain[0] = domain[0] + 1;
             domain[1] = domain[1] + 1;
+        }
+        else {
+            domain[0] = domain[0] - scaleRoundingEpsilon;
+            domain[1] = domain[1] + scaleRoundingEpsilon;
         }
 
         scale = d3.scale.log().domain(domain).range(range);
@@ -598,8 +613,7 @@ boxPlot.render();
         scaleWrapper = function(val) {
             if(val != null && val >= 0) {
                 if (increment == true) {
-                    // since we increment the domain by 1, the orignial data should multiply by 10, instead of increment by 1
-                    return scale(val * 10);
+                    return scale(val + 1);
                 }
 
                 return scale(val);
