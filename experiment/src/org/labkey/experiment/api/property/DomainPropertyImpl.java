@@ -600,12 +600,18 @@ public class DomainPropertyImpl implements DomainProperty
                 boolean mvAdded = !_pdOld.isMvEnabled() && _pd.isMvEnabled();
                 boolean mvDropped = _pdOld.isMvEnabled() && !_pd.isMvEnabled();
                 boolean propRenamed = !_pdOld.getName().equals(_pd.getName());
+                boolean propResized = _pd.isStringType() && _pdOld.getScale() != _pd.getScale();
 
                 if (propRenamed)
                 {
                     Map<DomainProperty, PropertyDescriptor> renames = new HashMap<>();
                     renames.put(this, _pdOld);
                     StorageProvisioner.renameProperties(this.getDomain(), renames);
+                }
+
+                if (propResized)
+                {
+                    StorageProvisioner.resizeProperties(this.getDomain(), this);
                 }
 
                 // Drop the MV column after it's been renamed to be in sync with any potential column name
@@ -701,6 +707,8 @@ public class DomainPropertyImpl implements DomainProperty
         setShownInUpdateView(propSrc.isShownInUpdateView());
         setMvEnabled(propSrc.isMvEnabled());
         setDefaultValueTypeEnum(propSrc.getDefaultValueTypeEnum());
+        setScale(propSrc.getScale());
+
         // check to see if we're moving a lookup column to another container:
         Lookup lookup = propSrc.getLookup();
         if (lookup != null && !getContainer().equals(targetContainer))
