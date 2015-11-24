@@ -48,7 +48,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -1691,61 +1690,52 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         // At the moment, we're only checking for stored procedure definitions that aren't followed immediately by a GO
         // statement or end of the script. These will cause major problem if they are missed during script consolidation.
 
-        long start = System.currentTimeMillis();
+        // Dumb little parser that, within stored procedure definitions, matches up each BEGIN with COMMIT/END.
+        String[] tokens = sql.replace(";", "").split("\\s+|,");
+        int idx = 0;
 
-        try
+        while (-1 != (idx = skipToCreateProcedure(tokens, idx)))
         {
-            // Dumb little parser that, within stored procedure definitions, matches up each BEGIN with COMMIT/END.
-            String[] tokens = sql.replace(";", "").split("\\s+|,");
-            int idx = 0;
+            idx += 2;
+            String procedureName = tokens[idx];
 
-            while (-1 != (idx = skipToCreateProcedure(tokens, idx)))
+            idx = skipToToken(tokens, idx, BEGIN);
+
+            if (-1 == idx)
+                return Collections.singleton("Stored procedure definition " + procedureName + " has no BEGIN statement!");
+
+            Stack<Token> stack = new Stack<>();
+            stack.push(Token.BEGIN);
+
+            while (!stack.isEmpty())
             {
-                idx += 2;
-                String procedureName = tokens[idx];
-
-                idx = skipToToken(tokens, idx, BEGIN);
+                idx = skipToToken(tokens, idx + 1, BEGIN_END);
 
                 if (-1 == idx)
-                    return Collections.singleton("Stored procedure definition " + procedureName + " has no BEGIN statement!");
+                    return Collections.singleton("Stored procedure definition " + procedureName + " seems to be missing an END statement!");
 
-                Stack<Token> stack = new Stack<>();
-                stack.push(Token.BEGIN);
+                Token token = Token.valueOf(tokens[idx].toUpperCase());
 
-                while (!stack.isEmpty())
+                if (token.getType() == TokenType.BEGIN)
                 {
-                    idx = skipToToken(tokens, idx + 1, BEGIN_END);
-
-                    if (-1 == idx)
-                        return Collections.singleton("Stored procedure definition " + procedureName + " seems to be missing an END statement!");
-
-                    Token token = Token.valueOf(tokens[idx].toUpperCase());
-
-                    if (token.getType() == TokenType.BEGIN)
-                    {
-                        // BEGIN or CASE
-                        stack.push(token);
-                    }
-                    else
-                    {
-                        // END or COMMIT
-                        Token beginToken = stack.pop();
-
-                        if (!beginToken.getTerminatingTokens().contains(token))
-                            return Collections.singleton("Stored procedure definition " + procedureName + " has mismatched tokens: " + beginToken + " & " + token + "!");
-                    }
+                    // BEGIN or CASE
+                    stack.push(token);
                 }
+                else
+                {
+                    // END or COMMIT
+                    Token beginToken = stack.pop();
 
-                if (tokens.length <= (idx + 1) || !tokens[idx + 1].equalsIgnoreCase("GO"))
-                    return Collections.singleton("Stored procedure definition " + procedureName + " doesn't seem to terminate with a GO statement!");
+                    if (!beginToken.getTerminatingTokens().contains(token))
+                        return Collections.singleton("Stored procedure definition " + procedureName + " has mismatched tokens: " + beginToken + " & " + token + "!");
+                }
             }
 
-            return Collections.emptyList();
+            if (tokens.length <= (idx + 1) || !tokens[idx + 1].equalsIgnoreCase("GO"))
+                return Collections.singleton("Stored procedure definition " + procedureName + " doesn't seem to terminate with a GO statement!");
         }
-        finally
-        {
-            LOG.info("Validating " + name + " (" + sql.length() + " chars) took " + DateUtil.formatDuration(System.currentTimeMillis() - start));
-        }
+
+        return Collections.emptyList();
     }
 
     private final static CaseInsensitiveHashSet CREATE = new CaseInsensitiveHashSet("CREATE", "ALTER");
