@@ -307,7 +307,6 @@ core/src/org/labkey/authentication/test/TestSecondaryProvider.java -text
 core/src/org/labkey/authentication/test/testSecondary.jsp -text
 core/src/org/labkey/core/CoreContainerListener.java -text
 core/src/org/labkey/core/CoreController.java -text
-core/src/org/labkey/core/CoreFirstRequestHandler.java -text
 core/src/org/labkey/core/CoreModule.java -text
 core/src/org/labkey/core/CoreUpgradeCode.java -text
 core/src/org/labkey/core/LabKeyDbSchema.java -text

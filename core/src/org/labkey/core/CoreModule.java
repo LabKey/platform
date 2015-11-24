@@ -49,7 +49,6 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.MarkableIterator;
-import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -275,7 +274,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.register(new AttachmentServiceImpl());
         AnalyticsServiceImpl.register();
-        FirstRequestHandler.addFirstRequestListener(new CoreFirstRequestHandler());
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.register(NotificationServiceImpl.getInstance());
