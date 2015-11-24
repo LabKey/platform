@@ -73,6 +73,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty isExcludeFromShifting = new BooleanProperty();
     private BooleanProperty isPreventReordering = new BooleanProperty();
     private BooleanProperty isDisableEditing = new BooleanProperty();
+    private IntegerProperty scale = new IntegerProperty(4000);
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -130,6 +131,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setExcludeFromShifting(s.isExcludeFromShifting());
         setPreventReordering(s.getPreventReordering());
         setDisableEditing(s.getDisableEditing());
+        setScale(s.getScale());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -508,6 +510,16 @@ public class GWTPropertyDescriptor implements IsSerializable
         isDisableEditing.setBool(disableEditing);
     }
 
+    public Integer getScale()
+    {
+        return this.scale.getInteger();
+    }
+
+    public void setScale(Integer value)
+    {
+        this.scale.set(value);
+    }
+
     public String debugString()
     {
         return getName() + " " + getLabel() + " " + getRangeURI() + " " + isRequired() + " " + getDescription();
@@ -563,6 +575,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         {
             return false;
         }
+        if(getScale() != that.getScale()) return false;
 
         return true;
     }
@@ -603,6 +616,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (facetingBehaviorType.getString() != null ? facetingBehaviorType.getString().hashCode() : 0);
         result = 31 * result + (isProtected.getBoolean() != null ? isProtected.getBoolean().hashCode() : 0);
         result = 31 * result + (isExcludeFromShifting.getBoolean() != null ? isExcludeFromShifting.getBoolean().hashCode() : 0);
+        result = 31 * result + (scale.getInteger() != null ? scale.getInteger().hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {
@@ -646,6 +660,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("facetingBehaviorType".equals(prop)) return facetingBehaviorType;
         if ("protected".equals(prop)) return isProtected;
         if ("excludeFromShifting".equals(prop)) return isExcludeFromShifting;
+        if ("scale".equals(prop)) return scale;
+
         return null;
     }
 

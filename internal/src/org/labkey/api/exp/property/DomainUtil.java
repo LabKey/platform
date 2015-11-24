@@ -232,6 +232,7 @@ public class DomainUtil
         gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());
         StringExpression url = prop.getPropertyDescriptor().getURL();
         gwtProp.setURL(url == null ? null : url.toString());
+        gwtProp.setScale(prop.getScale());
 
         List<GWTPropertyValidator> validators = new ArrayList<>();
         for (IPropertyValidator pv : prop.getValidators())
@@ -490,13 +491,14 @@ public class DomainUtil
         return p;
     }
 
+    /**
+     * Set default scales for non-string types
+     * @param p
+     */
     public static void setPropertyDescriptorScale(DomainProperty p)
     {
-        // For string, we have been setting scale to 100 and then ignoring it when creating provisioned tables on favor of 4000
-        // So, maintain that behavior; also, we had always set scale to be STRING.size, but that's wrong for other types
-        if (PropertyType.STRING.equals(p.getPropertyDescriptor().getPropertyType()) || PropertyType.MULTI_LINE.equals(p.getPropertyDescriptor().getPropertyType()))
-            p.setScale(PropertyStorageSpec.DEFAULT_SIZE);
-        else
+        // Set Scale for non-string types
+        if (!PropertyType.STRING.equals(p.getPropertyDescriptor().getPropertyType()) || PropertyType.MULTI_LINE.equals(p.getPropertyDescriptor().getPropertyType()))
             p.setScale(p.getPropertyDescriptor().getPropertyType().getScale());
     }
 
@@ -603,6 +605,9 @@ public class DomainUtil
 
         if (from.isExcludeFromShifting())
             to.setExcludeFromShifting(from.isExcludeFromShifting());
+
+        if(from.getScale() != null)
+            to.setScale(from.getScale());
     }
 
     @SuppressWarnings("unchecked")

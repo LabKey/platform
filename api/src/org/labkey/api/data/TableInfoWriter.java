@@ -200,6 +200,8 @@ public class TableInfoWriter
 
         if (PHI.NotPHI != column.getPHI())
             columnXml.setPhi(PhiType.Enum.forString(column.getPHI().toString()));
+
+        columnXml.setScale(column.getScale());
     }
 
     protected String getConceptURI(ColumnInfo column)

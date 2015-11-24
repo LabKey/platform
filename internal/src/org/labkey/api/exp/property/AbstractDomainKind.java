@@ -229,4 +229,36 @@ public abstract class AbstractDomainKind extends DomainKind
     {
         return true;
     }
+
+    /**
+     * Check if existing data fits in property scale
+     * @param domain to execute within
+     * @param prop property to check
+     * @return
+     */
+    @Override
+    public boolean exceedsMaxLength(Domain domain, DomainProperty prop)
+    {
+        String schema = getStorageSchemaName();
+        if (schema != null && domain.getStorageTableName() != null)
+        {
+            SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+            String maxChars = "maxCharCount";
+            SQLFragment sql = new SQLFragment(String.format("SELECT coalesce(MAX(%s(%s)),0) AS %s FROM %s.%s",
+                    dialect.getVarcharLengthFunction(),
+                    //Lowercase names for postgres (MSSQL is case insensitive in this case)
+                    dialect.makeLegalIdentifier(prop.getName().toLowerCase()),
+                    maxChars,
+                    dialect.makeLegalIdentifier(schema.toLowerCase()),
+                    dialect.makeLegalIdentifier(domain.getStorageTableName().toLowerCase())
+            ));
+
+            int maxSize = new SqlSelector(ExperimentService.get().getSchema(), sql).getObject(Integer.class);
+            return prop.getScale() < maxSize;
+        }
+        else
+        {
+            return false;
+        }
+    }
 }

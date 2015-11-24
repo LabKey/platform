@@ -148,7 +148,8 @@ public class TableChange
         DropColumns,
         RenameColumns,
         DropIndices,
-        AddIndices
+        AddIndices,
+        ResizeColumns
     }
 
 

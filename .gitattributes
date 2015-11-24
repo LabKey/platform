@@ -6632,6 +6632,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ExcludeFromShiftingItem.ja
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FacetingBehaviorItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FormatItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ImportAliasesItem.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MaxLengthItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MeasureItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MvEnabledItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/PropertyPaneItem.java -text

@@ -428,7 +428,7 @@ public class StorageProvisioner
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
-        // should be in a trasaction with propertydescriptor changes
+        // should be in a transaction with propertydescriptor changes
         assert scope.isTransactionActive();
 
         Connection con = null;
@@ -483,6 +483,54 @@ public class StorageProvisioner
         }
     }
 
+    /**
+     * Generate and execute the appropriate SQL statements to resize properties
+     * @param domain to execute within
+     * @param properties set of properties to resize
+     */
+    public static void resizeProperties(Domain domain, DomainProperty... properties)
+    {
+        DomainKind kind = domain.getDomainKind();
+        DbScope scope = kind.getScope();
+
+        // should be in a transaction with propertydescriptor changes
+        assert scope.isTransactionActive();
+
+        Connection con = null;
+
+        try
+        {
+            con = scope.getConnection();
+            TableChange resizePropChange = new TableChange(kind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.ResizeColumns);
+
+            Set<String> base = Sets.newCaseInsensitiveHashSet();
+            kind.getBaseProperties().forEach(s ->
+                    base.add(s.getName()));
+
+            for (DomainProperty prop : properties)
+            {
+                if (!base.contains(prop.getName()))
+                    resizePropChange.addColumn(prop.getPropertyDescriptor());
+            }
+
+            if (resizePropChange.getColumns().isEmpty())
+            {
+                // Nothing to do, so don't try to run an ALTER TABLE that doesn't actually do anything
+                return;
+            }
+
+            execute(scope, con, resizePropChange);
+            kind.invalidate(domain);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            scope.releaseConnection(con);
+        }
+    }
 
     public static String makeTableName(DomainKind kind, Domain domain)
     {
@@ -547,6 +595,7 @@ public class StorageProvisioner
                 map.put(scn,name);
         }
 
+        //    TODO: Should this be removed?
         if (1==0 && !needsAliases)
             return sti;
 

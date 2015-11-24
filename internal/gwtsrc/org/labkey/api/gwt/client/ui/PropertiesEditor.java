@@ -371,6 +371,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         advancedPane.addItem(new ProtectedItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new ExcludeFromShiftingItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new FacetingBehaviorItem<DomainType, FieldType>(advancedPane));
+        advancedPane.addItem(new MaxLengthItem<DomainType, FieldType>(advancedPane));
         addChangeHandler(advancedPane.getChangeListener());
 
         List<PropertyPane<DomainType, FieldType>> result = new ArrayList<PropertyPane<DomainType, FieldType>>();
