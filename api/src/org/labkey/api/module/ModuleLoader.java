@@ -55,6 +55,7 @@ import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -507,6 +508,11 @@ public class ModuleLoader implements Filter
         // All modules are initialized (controllers are registered), so initialize the controller-related maps
         ViewServlet.initialize();
         ModuleLoader.getInstance().initControllerToModule();
+
+        // Doesn't really belong here, but needs to happen after all modules' init() but before first request. CONSIDER: Split
+        // AuthenticationManager into a couple singletons, AuthenticationProviderRegistry and AuthenticationManager. Modules
+        // could then register their providers with the registry and first reference to the manager would trigger initialize().
+        AuthenticationManager.initialize();
     }
 
     // Check a module's dependencies and throw on the first one that's not present (i.e., it was removed because its initialize() failed)

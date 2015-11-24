@@ -825,7 +825,6 @@ api/src/org/labkey/api/module/AllowedDuringUpgrade.java -text
 api/src/org/labkey/api/module/CustomFolderType.java -text
 api/src/org/labkey/api/module/DefaultFolderType.java -text
 api/src/org/labkey/api/module/DefaultModule.java -text
-api/src/org/labkey/api/module/FirstRequestHandler.java -text
 api/src/org/labkey/api/module/FolderType.java -text
 api/src/org/labkey/api/module/FolderTypeManager.java -text
 api/src/org/labkey/api/module/MockModule.java -text

@@ -16,7 +16,6 @@
 
 package org.labkey.api.security;
 
-import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
@@ -152,7 +151,7 @@ public class AuthFilter implements Filter
             }
         }
 
-        QueryService.get().setEnvironment(QueryService.Environment.USER, null==user ? User.guest : user);
+        QueryService.get().setEnvironment(QueryService.Environment.USER, user);
 
         try
         {
@@ -164,7 +163,7 @@ public class AuthFilter implements Filter
             SecurityLogger.popSecurityContext();
             QueryService.get().clearEnvironment();
             
-            // Clear all the request attributes that have been set.  This helps memtracker.  See #10747.
+            // Clear all the request attributes that have been set. This helps memtracker.  See #10747.
             assert clearRequestAttributes(req);
         }
     }
@@ -194,7 +193,6 @@ public class AuthFilter implements Filter
                 return;
 
             AppProps.getInstance().initializeFromRequest(request);
-            FirstRequestHandler.handleFirstRequest(request);
             _firstRequestHandled = true;
         }
     }
