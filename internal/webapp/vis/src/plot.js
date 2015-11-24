@@ -1398,7 +1398,7 @@ boxPlot.render();
                     groupedTrendlineData[index] = { seqValue: index, sum: 0, count: 0 };
                 }
 
-                if (row[config.properties.value])
+                if (row[config.properties.value] != undefined)
                 {
                     groupedTrendlineData[index].sum += row[config.properties.value];
                     groupedTrendlineData[index].count++;
