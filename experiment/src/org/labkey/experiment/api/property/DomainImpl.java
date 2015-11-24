@@ -318,7 +318,6 @@ public class DomainImpl implements Domain
         ExperimentService.Interface exp = ExperimentService.get();
 
         // NOTE: the synchronization here does not remove the need to add better synchronization in StorageProvisioner, but it helps
-
         Lock domainLock = _domainSaveLockManager.getLock(_dd.getDomainURI().toLowerCase());
 
         try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction(domainLock))
@@ -423,6 +422,10 @@ public class DomainImpl implements Domain
                             {
                                 checkRequiredStatus.add(impl);
                             }
+
+                            //if size constraints have decreased check
+                            if(impl._pdOld.getScale() > impl._pd.getScale())
+                                checkAndThrowSizeConstraints(kind, this, impl);
                         }
 
                         if (impl.isDirty())
@@ -484,6 +487,15 @@ public class DomainImpl implements Domain
                     getDomainKind().invalidate(this);
             }
             transaction.commit();
+        }
+    }
+
+    private void checkAndThrowSizeConstraints(DomainKind kind, Domain domain, DomainProperty prop )
+    {
+        boolean tooLong = kind.exceedsMaxLength(this, prop);
+        if (tooLong)
+        {
+            throw new IllegalStateException("The property \"" + prop.getName() + "\" cannot be scaled down. It contains existing values exceeding ["+ prop.getScale() + "] characters.");
         }
     }
 
@@ -549,6 +561,7 @@ public class DomainImpl implements Domain
         pd.setPropertyURI(getTypeURI() + ":field-" + spec.getName());
         pd.setDescription(spec.getDescription());
         pd.setImportAliases(spec.getImportAliases());
+        pd.setScale(spec.getSize());
         DomainPropertyImpl ret = new DomainPropertyImpl(this, pd);
         _properties.add(ret);
         return ret;

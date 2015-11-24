@@ -312,6 +312,9 @@ public class PropertyServiceImpl implements PropertyService.Interface
         if (xProp.isSetShownInUpdateView())
             prop.getPropertyDescriptor().setShownInUpdateView(xProp.getShownInUpdateView());
 
+        if (xProp.isSetScale())
+            prop.getPropertyDescriptor().setScale(xProp.getScale());
+
         if (xProp.isSetDefaultType())
         {
             DefaultType.Enum xDefaultType = xProp.getDefaultType();

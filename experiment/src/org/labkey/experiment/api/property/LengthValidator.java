@@ -70,7 +70,7 @@ public class LengthValidator extends DefaultPropertyValidator implements Validat
         if (parts.length == 2)
         {
             // only 1 operator and 1 value support (e.g. "~lte=42")
-            if (!isValid(value, parts[0], parts[1]))
+            if (!isValid(value, parts[0], field.getScale()))
             {
                 createErrorMessage(validator, field, value, errors);
                 return false;
@@ -80,11 +80,11 @@ public class LengthValidator extends DefaultPropertyValidator implements Validat
         return true;
     }
 
-    private boolean isValid(Object value, String oper, String constraint)
+    private boolean isValid(Object value, String oper, int constraint)
     {
         if (NumberUtilsLabKey.isNumber(String.valueOf(constraint)))
         {
-            int comparison = Long.compare(value.toString().length(), NumberUtils.toLong(constraint));
+            int comparison = Long.compare(value.toString().length(), constraint);
             return comparisonValid(comparison, oper);
         }
         return false;

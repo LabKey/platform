@@ -593,6 +593,8 @@ public class XarExporter
             addPropertyValidator(xProp, validator);
         }
 
+        xProp.setScale(domainProp.getScale());
+
         ConditionalFormat.convertToXML(domainProp.getConditionalFormats(), xProp);
     }
 

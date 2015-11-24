@@ -970,9 +970,38 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             case AddIndices:
                 sql.addAll(getCreateIndexStatements(change));
                 break;
+            case ResizeColumns:
+                sql.addAll(getResizeColumnStatement(change));
+                break;
         }
 
         return sql;
+    }
+
+    /**
+     * Generate the Alter Table statement to change the size of a column
+     *
+     * NOTE: expects data size check to be done prior,
+     *       will throw a SQL exception if not able to change size due to existing data
+     * @param change
+     * @return
+     */
+    private List<String> getResizeColumnStatement(TableChange change)
+    {
+        List<String> statements = new ArrayList<>();
+        for (PropertyStorageSpec column : change.getColumns())
+        {
+            //Int.Max denotes a max column even if dialect max size differs
+            String size = column.getSize() == Integer.MAX_VALUE ?
+                    "max" :
+                    column.getSize().toString();
+
+            //T-SQL only allows 1 ALTER COLUMN clause per ALTER TABLE statement
+            String statement = String.format("ALTER TABLE [%s].[%s] ALTER COLUMN [%s] %s(%s);", change.getSchemaName(),
+                    change.getTableName(), column.getName(), sqlTypeNameFromJdbcType(column.getJdbcType()), size);
+            statements.add(statement);
+        }
+        return statements;
     }
 
     private List<String> getCreateTableStatements(TableChange change)

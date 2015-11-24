@@ -1001,9 +1001,43 @@ public class PostgreSql91Dialect extends SqlDialect
             case AddIndices:
                 sql.addAll(getCreateIndexStatements(change));
                 break;
+            case ResizeColumns:
+                sql.add(getResizeColumnStatement(change));
+                break;
         }
 
         return sql;
+    }
+
+    /**
+     * Generate the Alter Table statement to change the size of a column
+     *
+     * NOTE: expects data size check to be done prior,
+     *       will throw a SQL exception if not able to change size due to existing data
+     * @param change
+     * @return
+     */
+    private String getResizeColumnStatement(TableChange change)
+    {
+        List<String> statements = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        String comma = "";
+
+        //Postgres allows executing multiple Alter Column statements under one Alter Table
+        //  Reducing column size may cause a rebuild of the data so it can be expensive
+        sb.append( String.format("ALTER TABLE %s.%s ", change.getSchemaName(), change.getTableName()));
+        for (PropertyStorageSpec column : change.getColumns())
+        {
+            //Int.Max denotes a max column even if dialect max size differs
+            String dbType = column.getSize() == Integer.MAX_VALUE ?
+                    "text" :
+                    sqlTypeNameFromJdbcType(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
+
+            sb.append(comma);
+            comma = ", ";
+            sb.append(String.format("ALTER COLUMN %s TYPE %s", makePropertyIdentifier(column.getName()), dbType));
+        }
+        return sb.append(";").toString();
     }
 
     private List<String> getRenameColumnsStatement(TableChange change)
