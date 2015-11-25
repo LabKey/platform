@@ -18,7 +18,6 @@ package org.labkey.api.settings;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.util.ExceptionReportingLevel;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UsageReportingLevel;
 
 import java.net.URISyntaxException;
@@ -34,20 +33,6 @@ public class WriteableAppProps extends AppPropsImpl
     {
         super();
         makeWriteable(c);
-        try
-        {
-            if (AppProps.getInstance().isBaseServerUrlInitialized())
-            {
-                // Copy original values from AppProps singleton. The URL properties are special, and are also stashed
-                // separately in AppProps, unlike other properties which always go back to the property bag for their values
-                setBaseServerUrl(AppProps.getInstance().getBaseServerUrl());
-            }
-        }
-        catch (URISyntaxException e)
-        {
-            // Shouldn't get here - should have been validated before it was saved
-            throw new UnexpectedException(e);
-        }
     }
 
     /** Override to make public */
@@ -55,19 +40,6 @@ public class WriteableAppProps extends AppPropsImpl
     public void save()
     {
         super.save();
-        try
-        {
-            if (isBaseServerUrlInitialized())
-            {
-                // If we know the server name, copy server URL back to AppProps singleton.
-                AppProps.getInstance().setBaseServerUrlAttributes(getBaseServerUrl());
-            }
-        }
-        catch (URISyntaxException e)
-        {
-            // Shouldn't get here - should have been validated before it was saved
-            throw new UnexpectedException(e);
-        }
     }
 
     public void setAdminOnlyMessage(String adminOnlyMessage)
@@ -166,7 +138,7 @@ public class WriteableAppProps extends AppPropsImpl
 
     public void setBaseServerUrl(String baseServerUrl) throws URISyntaxException
     {
-        setBaseServerUrlAttributes(baseServerUrl);
+        validateBaseServerUrl(baseServerUrl);
 
         storeStringValue(BASE_SERVER_URL_PROP, baseServerUrl);
     }

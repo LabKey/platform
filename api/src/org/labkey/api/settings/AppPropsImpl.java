@@ -16,8 +16,6 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.UrlValidator;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -50,13 +48,9 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 {
     private String _contextPathStr;
     private Path _contextPath = null;
-    private int _serverPort = -1;
-    private String _scheme;
-    private String _serverName;
     private String _projectRoot = null;
     private String _enlistmentId = null;
-
-    private static final Logger LOG = Logger.getLogger(AppPropsImpl.class);
+    private String _initialRequestBaseServerUrl = null;
 
     protected static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     protected static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
@@ -97,21 +91,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
 
-    public AppPropsImpl()
-    {
-        // Initialize URL properties with some placeholder values to allow headless upgrade. These will get overwritten after first request.
-        // TODO: Add some optional properties to labkey.xml
-        setContextPath("/labkey");
-        try
-        {
-            setBaseServerUrlAttributesInternal("http://www.test.com");
-        }
-        catch (URISyntaxException e)
-        {
-            LOG.error("Failed to initialize URL properties", e);
-        }
-    }
-
     protected String getType()
     {
         return "site settings";
@@ -124,6 +103,10 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
     public String getContextPath()
     {
+        if (_contextPathStr == null)
+        {
+            throw new IllegalStateException("Unable to determine the context path before a request has come in");
+        }
         return _contextPathStr;
     }
 
@@ -132,28 +115,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         return _contextPath;
     }
 
-    public int getServerPort()
-    {
-        return _serverPort;
-    }
-
-    public String getScheme()
-    {
-        return _scheme;
-    }
-
-    public String getServerName()
-    {
-        return _serverName;
-    }
-
-    @Override
-    public boolean isBaseServerUrlInitialized()
-    {
-        return _serverName != null;
-    }
-
-    private void setContextPath(String contextPathStr)
+    public void setContextPath(String contextPathStr)
     {
         _contextPathStr = contextPathStr;
         assert _contextPathStr.isEmpty() || _contextPathStr.startsWith("/");
@@ -165,101 +127,68 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         assert _contextPath.isDirectory();
     }
 
+    public int getServerPort()
+    {
+        return getBaseServerProperties().getServerPort();
+    }
+
+    public String getScheme()
+    {
+        return getBaseServerProperties().getScheme();
+    }
+
+    public String getServerName()
+    {
+        return getBaseServerProperties().getServerName();
+    }
+
     public void initializeFromRequest(HttpServletRequest request)
     {
-        // TODO: Assert that request has not been initialized
-        setContextPath(request.getContextPath());
+        assert null == _initialRequestBaseServerUrl;
+
+        // Stash this away just in case we need it.
+        _initialRequestBaseServerUrl = URLHelper.getBaseServer(request.getScheme(), request.getServerName(), request.getServerPort()).toString();
+    }
+
+
+    public void validateBaseServerUrl(String baseServerUrl) throws URISyntaxException
+    {
+        BaseServerProperties.validate(baseServerUrl);
+    }
+
+    private BaseServerProperties getBaseServerProperties()
+    {
+        return BaseServerProperties.parse(getBaseServerUrl());
+    }
+
+    public String getBaseServerUrl()
+    {
         String baseServerUrl = lookupStringValue(BASE_SERVER_URL_PROP, null);
 
-        if (baseServerUrl != null)
+        if (null == baseServerUrl)
         {
             try
             {
-                setBaseServerUrlAttributes(baseServerUrl);
-                return;
+                BaseServerProperties.validate(_initialRequestBaseServerUrl);
+
+                WriteableAppProps writeable = AppProps.getWriteableInstance();
+                writeable.storeStringValue(BASE_SERVER_URL_PROP, _initialRequestBaseServerUrl);
+                writeable.save();
+
+                baseServerUrl = _initialRequestBaseServerUrl;
             }
             catch (URISyntaxException e)
             {
-                // Ignore -- just use request
+                throw new RuntimeException("Invalid initial request URL", e);
             }
         }
 
-        _serverPort = request.getServerPort();
-        _scheme = request.getScheme();
-        _serverName = request.getServerName();
-    }
-
-
-    public void setBaseServerUrlAttributes(String baseServerUrl) throws URISyntaxException
-    {
-        setBaseServerUrlAttributesInternal(baseServerUrl);
-
-        // One last check... are we able to use ActionURL now?
-        try
-        {
-            ActionURL actionUrl = new ActionURL();
-            actionUrl.getURIString();
-        }
-        catch (Throwable t)
-        {
-            throw new URISyntaxException(baseServerUrl, "Invalid URL");
-        }
-    }
-
-    // Update the cached base server url attributes. Very important to validate this URL, #17625
-    private void setBaseServerUrlAttributesInternal(String baseServerUrl) throws URISyntaxException
-    {
-        // First, validate URL using Commons Validator
-        if (!new UrlValidator(new String[] {"http", "https"}, UrlValidator.ALLOW_LOCAL_URLS).isValid(baseServerUrl))
-            throw new URISyntaxException(baseServerUrl, "Invalid URL");
-
-        // Divide up the parts and validate some more
-        URLHelper url = new URLHelper(baseServerUrl);
-
-        if (url.getParsedPath().size() > 0)
-            throw new URISyntaxException(baseServerUrl, "Too many path parts");
-
-        String scheme = url.getScheme();
-        String serverName = url.getHost();
-
-        if (null == serverName)
-            throw new URISyntaxException(baseServerUrl, "Invalid server name");
-
-        int serverPort;
-
-        if (url.getPort() != -1)
-        {
-            serverPort = url.getPort();
-        }
-        else
-        {
-            switch (scheme)
-            {
-                case "http":
-                    serverPort = 80;
-                    break;
-                case "https":
-                    serverPort = 443;
-                    break;
-                default:
-                    throw new URISyntaxException(baseServerUrl, "Invalid scheme");
-            }
-        }
-
-        // New values have been validated -- now update global settings
-        _scheme = scheme;
-        _serverName = serverName;
-        _serverPort = serverPort;
+        return baseServerUrl;
     }
 
     public String getDefaultDomain()
     {
         return lookupStringValue(DEFAULT_DOMAIN_PROP, "");
-    }
-
-    public String getBaseServerUrl()
-    {
-        return URLHelper.getBaseServer(_scheme, _serverName, _serverPort).toString();
     }
 
     // CONSIDER: All the following should probably be migrated into look & feel settings, making them overrideable at the project level

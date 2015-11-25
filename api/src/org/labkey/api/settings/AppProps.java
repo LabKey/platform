@@ -25,7 +25,6 @@ import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.net.URISyntaxException;
 
 /**
  * Stores basic site-wide configuration.
@@ -73,9 +72,8 @@ public class AppProps
         int getServerPort();
         String getScheme();
         String getServerName();
-        boolean isBaseServerUrlInitialized();
         void initializeFromRequest(HttpServletRequest request);
-        void setBaseServerUrlAttributes(String baseServerUrl) throws URISyntaxException;
+        void setContextPath(String contextPath);
 
         String getDefaultDomain();
         String getBaseServerUrl();

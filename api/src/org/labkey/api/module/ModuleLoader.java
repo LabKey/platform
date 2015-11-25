@@ -288,6 +288,8 @@ public class ModuleLoader implements Filter
 
         _servletContext = servletCtx;
 
+        AppProps.getInstance().setContextPath(_servletContext.getContextPath());
+
         verifyTomcatVersion();
 
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath("")));
