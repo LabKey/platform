@@ -206,8 +206,8 @@ public class GroupMembershipCache
 
         public void userDeletedFromSite(User user)
         {
-            // Blow away groups immediately after user is deleted (otherwise this user's groups, and therefore permissions, will remain active
-            // until the user choses to sign out.
+            // Blow away groups immediately after user is deleted, otherwise this user's groups, and therefore permissions, will remain active
+            // until the user chooses to sign out.
             uncache(user);
         }
 

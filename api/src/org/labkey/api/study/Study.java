@@ -24,6 +24,7 @@ import org.labkey.api.security.User;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -63,7 +64,7 @@ public interface Study extends StudyEntity
 
     List<? extends Visit> getVisitsForTreatmentSchedule();
 
-    ParticipantCategory[] getParticipantCategories(User user);
+    List<? extends ParticipantCategory> getParticipantCategories(User user);
 
     boolean isAdvancedCohorts();
 

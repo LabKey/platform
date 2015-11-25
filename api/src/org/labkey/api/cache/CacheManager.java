@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -90,7 +91,7 @@ public class CacheManager
         return new BlockingStringKeyCache<>(cache, loader);
     }
 
-    // Temporary caches must be closed when no longer needed.  Their statistics can accumulate to another cache's stats.
+    // Temporary caches must be closed when no longer needed. Their statistics can accumulate to another cache's stats.
     public static <V> StringKeyCache<V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
         TrackingCache<String, V> cache = new CacheWrapper<>(PROVIDER.<String, V>getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, true), debugName, stats);
@@ -119,8 +120,7 @@ public class CacheManager
     {
         synchronized (KNOWN_CACHES)
         {
-            for (TrackingCache cache : KNOWN_CACHES)
-                cache.clear();
+            KNOWN_CACHES.forEach(TrackingCache::clear);
         }
 
         fireClearCaches();
@@ -133,8 +133,7 @@ public class CacheManager
 
         synchronized (KNOWN_CACHES)
         {
-            for (TrackingCache cache : KNOWN_CACHES)
-                copy.add(cache);
+            copy.addAll(KNOWN_CACHES.stream().collect(Collectors.toList()));
         }
 
         return copy;
@@ -142,10 +141,7 @@ public class CacheManager
 
     private static void fireClearCaches()
     {
-        for (CacheListener listener : LISTENERS)
-        {
-            listener.clearCaches();
-        }
+        LISTENERS.forEach(CacheListener::clearCaches);
     }
 
     public static void addListener(CacheListener listener)
@@ -174,8 +170,11 @@ public class CacheManager
         String description = CollectionUtils.getModifiableCollectionMapOrArrayType(value);
 
         // TODO: Stop caching arrays and remove this array check
+        if (null != value && value.getClass().isArray())
+            return;
+
         //noinspection ConstantConditions
-        if (null != description && !value.getClass().isArray())
+        if (null != description)
         {
             LOG.warn(loader.getClass().getName() + " returned " + description + ", which could be mutated by callers!");
         }
