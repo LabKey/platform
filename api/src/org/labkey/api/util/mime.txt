@@ -609,3 +609,4 @@ cmd text/plain
 ipr text/xml
 iml text/xml
 iws text/xml
+rss application/rss+xml
