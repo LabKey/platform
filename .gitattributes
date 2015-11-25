@@ -1176,7 +1176,6 @@ pipeline/src/org/labkey/pipeline/mule/PipelineJobRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunnerRemoteExecution.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineProgressionRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineTaskRunner.java -text
-pipeline/src/org/labkey/pipeline/mule/RemoteExecutionEngine.java -text
 pipeline/src/org/labkey/pipeline/mule/RemoteServerStartup.java -text
 pipeline/src/org/labkey/pipeline/mule/RequeueLostJobsRequest.java -text
 pipeline/src/org/labkey/pipeline/mule/ResumableDescriptor.java -text

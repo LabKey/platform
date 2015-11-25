@@ -51,7 +51,7 @@ import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
 import org.labkey.pipeline.cluster.NoOpPipelineStatusWriter;
 import org.labkey.pipeline.mule.JMSStatusWriter;
-import org.labkey.pipeline.mule.RemoteExecutionEngine;
+import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;

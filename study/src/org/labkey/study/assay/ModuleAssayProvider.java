@@ -37,6 +37,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
@@ -183,6 +184,23 @@ public class ModuleAssayProvider extends TsvAssayProvider
             for (ProviderType.TransformScripts.TransformScript transformScript : providerConfig.getTransformScripts().getTransformScriptArray())
             {
                 _scriptMetadata.add(new ScriptMetadata(transformScript.getFileName(), null, null));
+            }
+        }
+
+        //required modules
+        if (providerConfig.isSetRequiredModules() && providerConfig.getRequiredModules() != null)
+        {
+            for (String moduleName : providerConfig.getRequiredModules().getModuleNameArray())
+            {
+                Module m = ModuleLoader.getInstance().getModule(moduleName);
+                if (m == null)
+                {
+                    LOG.error("unknown required module referenced in assay provider " + providerConfig.getName() + " assay definition: [" + moduleName + "]");
+                }
+                else
+                {
+                    _requiredModules.add(m);
+                }
             }
         }
 

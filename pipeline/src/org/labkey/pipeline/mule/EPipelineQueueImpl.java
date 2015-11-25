@@ -23,6 +23,7 @@ import org.labkey.api.pipeline.PipelineJobData;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JobRunner;
 import org.labkey.pipeline.api.AbstractPipelineQueue;

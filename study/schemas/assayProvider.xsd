@@ -13,6 +13,21 @@
         <xs:sequence>
             <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1"/>
+
+            <xs:element name="requiredModules" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        If provided, this set of modules will always be active in a given folder when an instance of this assay is present.
+                        This could be useful if the assay depends on a user schema or other resources present in the module.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="moduleName" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+
             <xs:element name="inputDataFileSuffix" type="xs:string" minOccurs="0" maxOccurs="unbounded">
                 <xs:annotation>
                     <xs:documentation>Deprecated (use inputDataFile/fileSuffixes instead). File extension that should be offered the option to import into designs of this type</xs:documentation>

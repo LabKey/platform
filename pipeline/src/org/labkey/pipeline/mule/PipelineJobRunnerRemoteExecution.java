@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.util.JobRunner;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
