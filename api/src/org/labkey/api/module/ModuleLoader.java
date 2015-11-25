@@ -1294,6 +1294,9 @@ public class ModuleLoader implements Filter
             if (isUpgradeRequired())
                 throw new IllegalStateException("Can't start modules before upgrade is complete");
 
+            _startupState = StartupState.StartupInProgress;
+            setStartingUpMessage("Starting up modules");
+
             // Run module startup
             execution.run(() -> {
                 try
@@ -1322,9 +1325,6 @@ public class ModuleLoader implements Filter
      */
     private void completeStartup()
     {
-        _startupState = StartupState.StartupInProgress;
-        setStartingUpMessage("Starting up modules");
-
         for (Module m : _modules)
         {
             // Module startup
