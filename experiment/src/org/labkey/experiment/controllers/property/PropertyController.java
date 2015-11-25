@@ -32,6 +32,7 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
@@ -678,10 +679,12 @@ public class PropertyController extends SpringActionController
             for (JSONObject jsonIndex : jsonIndices.toJSONObjectArray())
             {
                 List<String> columnNames = new ArrayList<>();
-                for (Object o : jsonIndex.getJSONArray("columnNames").toArray())
+                for (Object o : jsonIndex.getJSONArray("columns").toArray())
                     columnNames.add(String.valueOf(o));
 
-                GWTIndex index = new GWTIndex(columnNames, jsonIndex.getBoolean("unique"));
+                // Only unique is supported currently
+                boolean unique = TableInfo.IndexType.Unique.name().equalsIgnoreCase(jsonIndex.optString("type"));
+                GWTIndex index = new GWTIndex(columnNames, unique);
                 indices.add(index);
             }
             domain.setIndices(indices);
