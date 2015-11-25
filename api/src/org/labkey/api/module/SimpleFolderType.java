@@ -257,6 +257,14 @@ public class SimpleFolderType extends MultiPortalFolderType
             for(Class<? extends Permission> permClass : role.getPermissions())
             {
                 Permission perm = RoleManager.getPermission(permClass);
+
+                //this is to debug intermittent team city failures and probably should not be merged
+                if (perm == null)
+                {
+                    LOGGER.error("unknown permission class: " + permClass + " from the role: " + role.getName(), new Exception());
+                    continue;
+                }
+
                 if(!permissionsMap.containsKey(perm.getName()))
                     permissionsMap.put(perm.getName(), perm);
             }

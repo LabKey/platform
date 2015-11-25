@@ -1582,6 +1582,21 @@ public class ModuleLoader implements Filter
         return modules;
     }
 
+    /** @return the modules, sorted in reverse dependency order. Typically used to resolve the most specific version of a resource */
+    public Collection<Module> orderModules(Collection<Module> modules)
+    {
+        List<Module> result = new ArrayList<>(modules.size());
+        for (Module module : ModuleLoader.getInstance().getModules())
+        {
+            if (modules.contains(module))
+            {
+                result.add(module);
+            }
+        }
+        Collections.reverse(result);
+        return result;
+    }
+
     // Returns a set of data source names representing all external data sources that are required for module schemas
     public Set<String> getAllModuleDataSourceNames()
     {

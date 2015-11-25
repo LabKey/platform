@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -45,6 +47,8 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -65,6 +69,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1036,14 +1041,29 @@ public class Container implements Serializable, Comparable<Container>, Securable
                         withDependencies.add(dependent);
             }
 
-            activeModules = Collections.unmodifiableSet(withDependencies);
+            // add modules associated with assays that have an active definition
+            //note: on server startup, this can be called before AssayService is registered
+            if (!ModuleLoader.getInstance().isUpgradeInProgress() && AssayService.get() != null)
+            {
+                List<ExpProtocol> activeProtocols = AssayService.get().getAssayProtocols(this);
+                for (ExpProtocol p : activeProtocols)
+                {
+                    AssayProvider ap = AssayService.get().getProvider(p);
+                    if (!ap.getRequiredModules().isEmpty())
+                    {
+                        withDependencies.addAll(ap.getRequiredModules());
+                    }
+                }
+            }
+
+            activeModules = withDependencies;
         }
         else
         {
-            activeModules = Collections.unmodifiableSet(modules);
+            activeModules = modules;
         }
 
-        return activeModules;
+        return Collections.unmodifiableSet(new LinkedHashSet<>(ModuleLoader.getInstance().orderModules(activeModules)));
     }
 
     public boolean isDescendant(Container container)

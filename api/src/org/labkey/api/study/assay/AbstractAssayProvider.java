@@ -157,6 +157,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
+    protected final Set<Module> _requiredModules = new HashSet<>();
+
     private final Module _declaringModule;
     @Nullable protected AssayDataType _dataType;
 
@@ -1462,5 +1464,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public Module getDeclaringModule()
     {
         return _declaringModule;
+    }
+
+    public Set<Module> getRequiredModules()
+    {
+        return Collections.unmodifiableSet(_requiredModules);
     }
 }

@@ -52,6 +52,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * An AssayProvider is the main implementation point for participanting in the overall assay framework. It provides
@@ -282,6 +283,10 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /**@ return the module in which this assay provider is declared */
     Module getDeclaringModule();
+
+    /**@ return any modules that will be considered active if there is an instance of this assay in the current container */
+    @NotNull
+    Set<Module> getRequiredModules();
 
     /**
      * Supplies the handler that responds to API-based requests to insert or update assay data. Null if the API-based
