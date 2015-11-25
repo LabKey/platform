@@ -240,8 +240,8 @@
         // groups/categories
         final HashMap<Integer,Integer> groupMap = new HashMap<>();
         ParticipantGroupManager m = ParticipantGroupManager.getInstance();
-        ParticipantCategoryImpl[] categories = m.getParticipantCategories(container, user);
-        boolean hasGroups = categories.length > 0;
+        List<ParticipantCategoryImpl> categories = m.getParticipantCategories(container, user);
+        boolean hasGroups = !categories.isEmpty();
         int nogroupIndex = -1;
         int firstGroupIndex = index;
         if (hasGroups)
@@ -250,7 +250,7 @@
             {
                 for (ParticipantCategoryImpl cat : categories)
                 {
-                    if ((isShared==1) == cat.isShared())
+                    if ((isShared == 1) == cat.isShared())
                     {
                         for (ParticipantGroup g : m.getParticipantGroups(container, user, cat))
                         {

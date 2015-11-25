@@ -92,7 +92,7 @@
 
     for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(c, user))
     {
-        groups.addAll(Arrays.asList(ParticipantGroupManager.getInstance().getParticipantGroups(c, user, category)));
+        groups.addAll(ParticipantGroupManager.getInstance().getParticipantGroups(c, user, category));
     }
 
     if (!study.isAllowReload())

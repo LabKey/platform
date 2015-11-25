@@ -23,8 +23,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedDisplayColumn;
@@ -63,7 +61,8 @@ public class ParticipantTable extends BaseStudyTable
 {
     public static final String ALIASES_COLUMN_NAME = "Aliases";
     private static final String LINKED_IDS_COLUMN_NAME = "LinkedIDs";
-    private StudyImpl _study;
+
+    private final StudyImpl _study;
 
     private Set<String> _participantAliasSources;
 
@@ -193,14 +192,9 @@ public class ParticipantTable extends BaseStudyTable
                     concatSQL.append(".ParticipantID) Y ORDER BY AliasValue");
 
                     ExprColumn aliasesColumn = new ExprColumn(this, ALIASES_COLUMN_NAME, getSqlDialect().getSelectConcat(concatSQL, MultiValuedRenderContext.VALUE_DELIMITER), JdbcType.VARCHAR);
-                    aliasesColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-                    {
-                        @Override
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            // Use a multi valued implementation so that we get nice formatting
-                            return new MultiValuedDisplayColumn(new DataColumn(colInfo, false));
-                        }
+                    aliasesColumn.setDisplayColumnFactory(colInfo -> {
+                        // Use a multi valued implementation so that we get nice formatting
+                        return new MultiValuedDisplayColumn(new DataColumn(colInfo, false));
                     });
                     addColumn(aliasesColumn);
 

@@ -263,7 +263,7 @@ public class ParticipantGroupController extends BaseStudyController
         public ApiResponse execute(GetParticipantCategoriesForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            ParticipantCategoryImpl[] categories;
+            Collection<ParticipantCategoryImpl> categories;
             if (form.getCategoryType() != null && form.getCategoryType().equals("manual"))
             {
                 categories = ParticipantGroupManager.getInstance().getParticipantCategoriesByType(getContainer(), getUser(), form.getCategoryType());
@@ -341,9 +341,9 @@ public class ParticipantGroupController extends BaseStudyController
             if (form.isNew())
             {
                 // try to match a single category by label/container
-                ParticipantCategoryImpl[] defs = ParticipantGroupManager.getInstance().getParticipantCategoriesByLabel(getContainer(), getUser(), form.getLabel());
-                if (defs.length == 1)
-                    category = defs[0];
+                List<ParticipantCategoryImpl> defs = ParticipantGroupManager.getInstance().getParticipantCategoriesByLabel(getContainer(), getUser(), form.getLabel());
+                if (defs.size() == 1)
+                    category = defs.get(0);
             }
             else
             {
@@ -930,7 +930,7 @@ public class ParticipantGroupController extends BaseStudyController
             form.setContainerId(getContainer().getId());
             if (!form.getParticipantCategorySpecification().isNew())
             {
-                ParticipantGroup[] participantGroups = ParticipantGroupManager.getInstance().getParticipantGroups(getContainer(), getUser(), form.getParticipantCategorySpecification());
+                List<ParticipantGroup> participantGroups = ParticipantGroupManager.getInstance().getParticipantGroups(getContainer(), getUser(), form.getParticipantCategorySpecification());
                 Set<String> formParticipants = new HashSet<>(Arrays.asList(form.getParticipantIds()));
 
                 for (ParticipantGroup group : participantGroups)

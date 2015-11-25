@@ -70,7 +70,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
     {
         User user = ctx.getUser();
         Container container = ctx.getContainer();
-        ParticipantCategoryImpl[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
+        List<ParticipantCategoryImpl> categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
         Set<ParticipantCategoryImpl> categoriesToCopy = new HashSet<>();
 
         for (ParticipantGroup pg : _groupsToCopy)
@@ -80,7 +80,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
                 categoriesToCopy.add(pc);
         }
 
-        if (categories.length > 0)
+        if (!categories.isEmpty())
         {
             ParticipantGroupsDocument doc = ParticipantGroupsDocument.Factory.newInstance();
             ParticipantGroupsType groups = doc.addNewParticipantGroups();

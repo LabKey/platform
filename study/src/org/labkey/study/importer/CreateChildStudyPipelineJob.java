@@ -84,8 +84,8 @@ import java.util.Set;
 */
 public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 {
-    private ChildStudyDefinition _form;
-    private boolean _destFolderCreated;
+    private final ChildStudyDefinition _form;
+    private final boolean _destFolderCreated;
 
     private transient Set<DatasetDefinition> _datasets = new HashSet<>();
     private transient List<ParticipantGroup> _participantGroups = new ArrayList<>();

@@ -41,7 +41,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationError;
@@ -69,7 +68,6 @@ import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.lang.String;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -78,6 +76,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,8 +91,17 @@ public class ParticipantGroupManager
 {
     private static final ParticipantGroupManager _instance = new ParticipantGroupManager();
     private static final List<ParticipantCategoryListener> _listeners = new CopyOnWriteArrayList<>();
-    private static final Cache<String, ParticipantGroup[]> GROUP_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Group Cache");
-    private static final Cache<Container, ParticipantCategoryImpl[]> CATEGORY_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Category Cache");
+    private static final Cache<String, List<ParticipantGroup>> GROUP_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Group Cache", null);
+    private static final Cache<Container, List<ParticipantCategoryImpl>> CATEGORY_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Category Cache", new CacheLoader<Container, List<ParticipantCategoryImpl>>()
+    {
+        @Override
+        public List<ParticipantCategoryImpl> load(Container key, @Nullable Object argument)
+        {
+            TableSelector selector = new TableSelector(getTableInfoParticipantCategory(), SimpleFilter.createContainerFilter(key), null);
+
+            return Collections.unmodifiableList(selector.getArrayList(ParticipantCategoryImpl.class));
+        }
+    });
 
     private static final String PARTICIPANT_GROUP_SESSION_KEY = "LABKEY.sharedStudyParticipantFilter.";
 
@@ -114,7 +122,7 @@ public class ParticipantGroupManager
         return StudySchema.getInstance().getSchema().getTable("ParticipantGroupMap");
     }
 
-    public TableInfo getTableInfoParticipantCategory()
+    public static TableInfo getTableInfoParticipantCategory()
     {
         return StudySchema.getInstance().getTableInfoParticipantCategory();
     }
@@ -148,7 +156,7 @@ public class ParticipantGroupManager
         return exsitingCategories.contains(label.toLowerCase());
     }
 
-    public ParticipantCategoryImpl[] getParticipantCategoriesByType(final Container c, final User user, @Nullable String type)
+    public List<ParticipantCategoryImpl> getParticipantCategoriesByType(final Container c, final User user, @Nullable String type)
     {
         if (type == null)
             return _getParticipantCategories(c, user);
@@ -159,10 +167,10 @@ public class ParticipantGroupManager
             if (type.equals(category.getType()))
                 filtered.add(category);
         }
-        return filtered.toArray(new ParticipantCategoryImpl[filtered.size()]);
+        return filtered;
     }
 
-    public ParticipantCategoryImpl[] getParticipantCategoriesByLabel(final Container c, final User user, @Nullable String label)
+    public List<ParticipantCategoryImpl> getParticipantCategoriesByLabel(final Container c, final User user, @Nullable String label)
     {
         if (label == null)
             return _getParticipantCategories(c, user);
@@ -173,7 +181,7 @@ public class ParticipantGroupManager
             if (label.equals(category.getLabel()))
                 filtered.add(category);
         }
-        return filtered.toArray(new ParticipantCategoryImpl[filtered.size()]);
+        return filtered;
     }
 
     public ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, CohortFilter cohortFilter,
@@ -194,11 +202,10 @@ public class ParticipantGroupManager
             colFilters.put(colName, context.getActionURL().getParameter(colFilterParamName));
         }
 
-        ParticipantCategoryImpl[] allCategories = getParticipantCategories(container, context.getUser());
+        Collection<ParticipantCategoryImpl> allCategories = getParticipantCategories(container, context.getUser());
         for (ParticipantCategoryImpl category : allCategories)
         {
-            ParticipantGroup[] allGroups = getParticipantGroups(container, context.getUser(), category);
-            for (ParticipantGroup group : allGroups)
+            for (ParticipantGroup group : getParticipantGroups(container, context.getUser(), category))
             {
                 Pair<FieldKey, String> colAndValue = group.getFilterColAndValue(container);
                 String parameterName = group.getURLFilterParameterName(colAndValue.getKey(), dataRegionName);
@@ -220,7 +227,7 @@ public class ParticipantGroupManager
             StudyImpl study = StudyManager.getInstance().getStudy(container);
             MenuButton button = new MenuButton(study.getSubjectNounSingular() + " Groups");
 
-            ParticipantCategoryImpl[] classes = getParticipantCategories(container, context.getUser());
+            Collection<ParticipantCategoryImpl> classes = getParticipantCategories(container, context.getUser());
 
             // TODO: Move all cohort menu generation into CohortFilterFactory
             // Remove all ptid list filters from the URL- this lets users switch between lists via the menu (versus adding filters with each click)
@@ -395,7 +402,7 @@ public class ParticipantGroupManager
      * @param distinctCategories if true returns the unique (by label) set of categories. A private category will
      *                           supersede a public category.
      */
-    public ParticipantCategoryImpl[] getParticipantCategories(Container c, User user, boolean distinctCategories)
+    public List<ParticipantCategoryImpl> getParticipantCategories(Container c, User user, boolean distinctCategories)
     {
         if (distinctCategories)
         {
@@ -410,43 +417,33 @@ public class ParticipantGroupManager
                 else
                     categoryMap.put(category.getLabel(), category);
             }
-            return categoryMap.values().toArray(new ParticipantCategoryImpl[categoryMap.size()]);
+            return new LinkedList<>(categoryMap.values());
 
         }
         else
             return _getParticipantCategories(c, user);
     }
 
-    public ParticipantCategoryImpl[] getParticipantCategories(Container c, User user)
+    public List<ParticipantCategoryImpl> getParticipantCategories(Container c, User user)
     {
         return getParticipantCategories(c, user, true);
     }
 
-    private ParticipantCategoryImpl[] _getParticipantCategories(Container c, User user)
+    private List<ParticipantCategoryImpl> _getParticipantCategories(Container c, User user)
     {
-        ParticipantCategoryImpl[] categories = CATEGORY_CACHE.get(c, null, new CacheLoader<Container, ParticipantCategoryImpl[]>()
-        {
-            @Override
-            public ParticipantCategoryImpl[] load(Container key, @Nullable Object argument)
-            {
-                TableSelector selector = new TableSelector(getTableInfoParticipantCategory(), SimpleFilter.createContainerFilter(key), null);
+        List<ParticipantCategoryImpl> categories = CATEGORY_CACHE.get(c);
+        List<ParticipantCategoryImpl> filtered = new ArrayList<>();
 
-                return selector.getArray(ParticipantCategoryImpl.class);
-            }
+        // TODO: Switch ParticipantCategoryImpl internals from arrays to lists... but not right now
+        categories.stream().filter(category -> category.canRead(c, user)).forEach(category -> {
+            ParticipantCategoryImpl pc = new ParticipantCategoryImpl(category);
+
+            List<ParticipantGroup> list = getParticipantGroups(c, user, pc);
+            // TODO: Switch ParticipantCategoryImpl internals from arrays to lists... but not right now
+            pc.setGroups(list.toArray(new ParticipantGroup[list.size()]));
+            filtered.add(pc);
         });
-
-        List<ParticipantCategoryImpl> filtered = new ArrayList<ParticipantCategoryImpl>();
-        for (ParticipantCategoryImpl category : categories)
-        {
-            if (category.canRead(c, user))
-            {
-                ParticipantCategoryImpl pc = new ParticipantCategoryImpl(category);
-
-                pc.setGroups(getParticipantGroups(c, user, pc));
-                filtered.add(pc);
-            }
-        }
-        return filtered.toArray(new ParticipantCategoryImpl[filtered.size()]);
+        return filtered;
     }
 
     /**
@@ -752,10 +749,10 @@ public class ParticipantGroupManager
             ParticipantCategoryImpl ret;
             List<Throwable> errors;
 
-            ParticipantGroup[] groups = getParticipantGroups(c, user, def);
-            if (groups.length != 1)
+            List<ParticipantGroup> groups = getParticipantGroups(c, user, def);
+            if (groups.size() != 1)
                 throw new RuntimeException("Expected one group in category " + def.getLabel());
-            ParticipantGroup group = groups[0];
+            ParticipantGroup group = groups.get(0);
 
             switch (ParticipantCategory.Type.valueOf(def.getType()))
             {
@@ -876,7 +873,7 @@ public class ParticipantGroupManager
             {
                 // Use getParticipantGroups here to pull the entire category into the cache- this is more expensive up-front,
                 // but will save us time later.
-                ParticipantGroup[] groups = getParticipantGroups(container, user, category);
+                List<ParticipantGroup> groups = getParticipantGroups(container, user, category);
                 for (ParticipantGroup group : groups)
                 {
                     if (group.getRowId() == rowId)
@@ -908,43 +905,34 @@ public class ParticipantGroupManager
     }
 
 
-    public ParticipantGroup[] getParticipantGroups(final Container c, User user, ParticipantCategoryImpl def)
+    private static final CacheLoader<String, List<ParticipantGroup>> GROUP_LOADER = (key, argument) -> {
+        final ParticipantCategoryImpl def = (ParticipantCategoryImpl)argument;
+        final List<ParticipantGroup> groups = new ArrayList<>();
+
+        Filter filter = new SimpleFilter(FieldKey.fromParts("categoryId"), def.getRowId());
+        new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroup(), filter, new Sort("rowId")).forEach(group -> {
+            // get the participants assigned to this group
+            Filter filter1 = new SimpleFilter(FieldKey.fromParts("groupId"), group.getRowId());
+            Set<String> participants = new HashSet<>();
+            participants.addAll((new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroupMap(), Collections.singleton("participantId"), filter1, new Sort("participantId")).getArrayList(String.class)));
+
+            group.setParticipantSet(participants);
+            group.setCategoryLabel(def.getLabel());
+            groups.add(group);
+        }, ParticipantGroup.class);
+
+        return Collections.unmodifiableList(groups);
+    };
+
+    public List<ParticipantGroup> getParticipantGroups(final Container c, User user, ParticipantCategoryImpl def)
     {
         if (!def.isNew())
         {
             String cacheKey = getCacheKey(def);
-            ParticipantGroup[] participantGroups = GROUP_CACHE.get(cacheKey, def, new CacheLoader<String, ParticipantGroup[]>()
-            {
-                @Override
-                public ParticipantGroup[] load(String key, @Nullable Object argument)
-                {
-                    final ParticipantCategoryImpl def = (ParticipantCategoryImpl)argument;
-                    final List<ParticipantGroup> groups = new ArrayList<>();
 
-                    Filter filter = new SimpleFilter(FieldKey.fromParts("categoryId"), def.getRowId());
-                    new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroup(), filter, new Sort("rowId")).forEach(new Selector.ForEachBlock<ParticipantGroup>()
-                    {
-                        @Override
-                        public void exec(ParticipantGroup group) throws SQLException
-                        {
-                            // get the participants assigned to this group
-                            Filter filter = new SimpleFilter(FieldKey.fromParts("groupId"), group.getRowId());
-                            Set<String> participants = new HashSet<>();
-                            participants.addAll((new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroupMap(), Collections.singleton("participantId"), filter, new Sort("participantId")).getArrayList(String.class)));
-
-                            group.setParticipantSet(participants);
-                            group.setCategoryLabel(def.getLabel());
-                            groups.add(group);
-                        }
-                    }, ParticipantGroup.class);
-
-                    return groups.toArray(new ParticipantGroup[groups.size()]);
-                }
-            });
-
-            return participantGroups;
+            return GROUP_CACHE.get(cacheKey, def, GROUP_LOADER);
         }
-        return new ParticipantGroup[0];
+        return Collections.emptyList();
     }
 
     public static class ParticipantGroupMap extends ParticipantGroup
@@ -991,10 +979,10 @@ public class ParticipantGroupManager
                 // updating an existing category
                 if (update)
                 {
-                    ParticipantGroup[] groups = getParticipantGroups(c, user, def);
-                    if (groups.length == 1)
+                    List<ParticipantGroup> groups = getParticipantGroups(c, user, def);
+                    if (groups.size() == 1)
                     {
-                        group = groups[0];
+                        group = groups.get(0);
                         deleteGroupParticipants(c, user, group);
                     }
                 }
@@ -1083,8 +1071,8 @@ public class ParticipantGroupManager
             // the associated category if it is not referenced
             if(cat.getType().equals("list"))
             {
-                ParticipantGroup[] groups = getParticipantGroups(c, user, cat);
-                if (groups.length == 1 && groups[0].equals(group))
+                List<ParticipantGroup> groups = getParticipantGroups(c, user, cat);
+                if (groups.size() == 1 && groups.get(0).equals(group))
                 {
                     // delete the participant category
                     SQLFragment sqlCat = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantCategory(), "").append(" WHERE RowId = ? ");

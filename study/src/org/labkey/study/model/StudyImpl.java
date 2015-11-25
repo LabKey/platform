@@ -344,7 +344,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public ParticipantCategory[] getParticipantCategories(User user)
+    public List<ParticipantCategoryImpl> getParticipantCategories(User user)
     {
         return ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), user);
     }
