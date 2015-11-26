@@ -16,6 +16,7 @@
 
 package org.labkey.bigiron.oracle;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,6 +38,8 @@ import java.util.Set;
  */
 public class OracleDialectFactory implements SqlDialectFactory
 {
+    private static final Logger _log = Logger.getLogger(OracleDialectFactory.class);
+
     private String getProductName()
     {
         return "Oracle";
@@ -71,13 +74,24 @@ public class OracleDialectFactory implements SqlDialectFactory
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion.substring(startIndex, endIndex));
 
         // Restrict to 11g
-        if (versionNumber.getMajor() >= 11)
+        if (versionNumber.getMajor() == 11)
         {
             if (versionNumber.getVersionInt() == 111)
                 return new Oracle11gR1Dialect();
 
-            if (versionNumber.getVersionInt() == 112)
+            if (versionNumber.getVersionInt() >= 112)
                 return new Oracle11gR2Dialect();
+        }
+        if (versionNumber.getMajor() == 12)
+            return new Oracle12cDialect();
+
+        if (versionNumber.getMajor() > 12)
+        {
+            // Trust that's it's backwards compatible enough to treat like 12c
+            if (logWarnings)
+                _log.warn("LabKey Server has not been tested against Oracle version " + databaseProductVersion + ". 11g or 12c are recommended.");
+
+            return new Oracle12cDialect();
         }
 
         throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation to " + getProductName() + " version 11g or greater.");
@@ -97,6 +111,20 @@ public class OracleDialectFactory implements SqlDialectFactory
 
     public static class JdbcHelperTestCase extends Assert
     {
+        @Test
+        public void testVersionParsing()
+        {
+            OracleDialectFactory factory = new OracleDialectFactory();
+            assertEquals(Oracle11gR1Dialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 11g Enterprise Edition Release 11.1.0.2.0 - 64bit Production\n" +
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false).getClass());
+            assertEquals(Oracle11gR2Dialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 11g Enterprise Edition Release 11.2.0.2.0 - 64bit Production\n" +
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false).getClass());
+            assertEquals(Oracle11gR2Dialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 11g Enterprise Edition Release 11.3.0.2.0 - 64bit Production\n" +
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false).getClass());
+            assertEquals(Oracle12cDialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production\n" +
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false).getClass());
+        }
+
         @Test
         public void testJdbcHelper()
         {

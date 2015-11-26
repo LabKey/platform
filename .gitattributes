@@ -131,6 +131,7 @@ bigiron/src/org/labkey/bigiron/mysql/MySqlDialect.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySqlDialectFactory.java -text
 bigiron/src/org/labkey/bigiron/oracle/Oracle11gR1Dialect.java -text
 bigiron/src/org/labkey/bigiron/oracle/Oracle11gR2Dialect.java -text
+bigiron/src/org/labkey/bigiron/oracle/Oracle12cDialect.java -text
 bigiron/src/org/labkey/bigiron/oracle/OracleDialect.java -text
 bigiron/src/org/labkey/bigiron/oracle/OracleDialectFactory.java -text
 bigiron/src/org/labkey/bigiron/sas/Sas91Dialect.java -text
