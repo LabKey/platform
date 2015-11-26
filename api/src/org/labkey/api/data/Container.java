@@ -1041,9 +1041,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
                         withDependencies.add(dependent);
             }
 
-            // add modules associated with assays that have an active definition
+            //Issue 24850: add modules associated with assays that have an active definition
             //note: on server startup, this can be called before AssayService is registered
-            if (!ModuleLoader.getInstance().isUpgradeInProgress() && AssayService.get() != null)
+            //we also need to defer until after the initial setup, to make sure the expected schemas exist.
+            if (ModuleLoader.getInstance().isStartupComplete() && AssayService.get() != null)
             {
                 List<ExpProtocol> activeProtocols = AssayService.get().getAssayProtocols(this);
                 for (ExpProtocol p : activeProtocols)
