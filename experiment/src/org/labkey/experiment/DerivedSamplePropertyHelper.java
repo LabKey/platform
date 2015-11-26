@@ -41,9 +41,12 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
     private final Container _container;
     private final User _user;
 
+    private final DomainProperty _nameProperty;
+
     public DerivedSamplePropertyHelper(ExpSampleSet sampleSet, int sampleCount, Container c, User user)
     {
-        super(getPropertyDescriptors(sampleSet, c));
+        super(Collections.emptyList());
+
         _sampleSet = sampleSet;
         _container = c;
         _user = user;
@@ -52,6 +55,28 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         {
             _names.add("Output Sample " + i);
         }
+
+        PropertyDescriptor namePropertyDescriptor = new PropertyDescriptor(ExperimentServiceImpl.get().getTinfoMaterial().getColumn("Name"), c);
+        namePropertyDescriptor.setRequired(true);
+        _nameProperty = new DomainPropertyImpl(null, namePropertyDescriptor);
+
+        List<DomainProperty> dps = new ArrayList<>();
+        if (sampleSet != null && sampleSet.getType() != null)
+        {
+            if (sampleSet.hasNameAsIdCol())
+            {
+                dps.add(_nameProperty);
+            }
+            for (DomainProperty property : sampleSet.getType().getProperties())
+            {
+                dps.add(property);
+            }
+        }
+        else
+        {
+            dps.add(_nameProperty);
+        }
+        setDomainProperties(Collections.unmodifiableList(dps));
     }
 
     public ExpSampleSet getSampleSet()
@@ -121,29 +146,15 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         return !getNamePDs().contains(pd);
     }
 
-    public static List<? extends DomainProperty> getPropertyDescriptors(ExpSampleSet sampleSet, Container c)
-    {
-        List<DomainProperty> dps = new ArrayList<>();
-
-        if (sampleSet != null && sampleSet.getType() != null)
-        {
-            dps.addAll(sampleSet.getType().getProperties());
-        }
-        else
-        {
-            PropertyDescriptor namePropertyDescriptor = new PropertyDescriptor(ExperimentServiceImpl.get().getTinfoMaterial().getColumn("Name"), c);
-            namePropertyDescriptor.setRequired(true);
-            DomainPropertyImpl nameDomainProperty = new DomainPropertyImpl(null, namePropertyDescriptor);
-            dps.add(nameDomainProperty);
-        }
-        
-        return dps;
-    }
-
     public List<? extends DomainProperty> getNamePDs()
     {
         if (_sampleSet != null)
         {
+            if (_sampleSet.hasNameAsIdCol())
+            {
+                return Collections.singletonList(_nameProperty);
+            }
+
             Set<String> idColNames = new HashSet<>();
             for (DomainProperty pd : _sampleSet.getIdCols())
                 idColNames.add(pd.getName());
