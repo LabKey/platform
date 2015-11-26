@@ -142,7 +142,7 @@ public abstract class SamplePropertyHelper<ObjectType>
 
         // don't display the group heading if there is only a single group
         if (sampleNames.size() == 1)
-            region.setGroupHeadings(Collections.EMPTY_LIST);
+            region.setGroupHeadings(Collections.emptyList());
         else
             region.setGroupHeadings(sampleNames);
         region.setHorizontalGroups(true);
