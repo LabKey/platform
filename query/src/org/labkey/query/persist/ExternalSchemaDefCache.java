@@ -31,8 +31,11 @@ public class ExternalSchemaDefCache
         }
     });
 
-    public static <T extends AbstractExternalSchemaDef> T getSchemaDef(Container c, String userSchemaName, Class<T> clazz)
+    public static <T extends AbstractExternalSchemaDef> T getSchemaDef(Container c, @Nullable String userSchemaName, Class<T> clazz)
     {
+        if (userSchemaName == null)
+            return null;
+
         return getCollections(c).getSchemaDef(userSchemaName, clazz);
     }
 

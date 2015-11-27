@@ -48,13 +48,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
-import org.springframework.util.ObjectUtils;
 
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -285,43 +283,38 @@ public class QueryManager
 
     public ExternalSchemaDef getExternalSchemaDef(Container c, int rowId)
     {
-        ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(null);
-        key.setExternalSchemaId(rowId);
-        ExternalSchemaDef oldDef = key.selectObject();
-
-        ExternalSchemaDef def = ExternalSchemaDefCache.getSchemaDef(c, rowId, ExternalSchemaDef.class);
-
-        assert ObjectUtils.nullSafeEquals(oldDef, def);
-
-        return def;
+        return ExternalSchemaDefCache.getSchemaDef(c, rowId, ExternalSchemaDef.class);
     }
 
     public List<ExternalSchemaDef> getExternalSchemaDefs(@Nullable Container container)
     {
-        ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(container);
-        List<ExternalSchemaDef> oldRet = Arrays.asList(key.select());
-
-        List<ExternalSchemaDef> ret = ExternalSchemaDefCache.getSchemaDefs(container, ExternalSchemaDef.class);
-
-        assert new HashSet<>(oldRet).equals(new HashSet<>(ret));
-
-        return ret;
+        return ExternalSchemaDefCache.getSchemaDefs(container, ExternalSchemaDef.class);
     }
 
-    public ExternalSchemaDef getExternalSchemaDef(Container container, String userSchemaName)
+    public ExternalSchemaDef getExternalSchemaDef(Container container, @Nullable String userSchemaName)
     {
-        if (userSchemaName == null)
-            return null;
+        return ExternalSchemaDefCache.getSchemaDef(container, userSchemaName, ExternalSchemaDef.class);
+    }
 
-        ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(container);
-        key.setUserSchemaName(userSchemaName);
-        ExternalSchemaDef oldDef = key.selectObject();
+    public LinkedSchemaDef getLinkedSchemaDef(Container c, int rowId)
+    {
+        return ExternalSchemaDefCache.getSchemaDef(c, rowId, LinkedSchemaDef.class);
+    }
 
-        ExternalSchemaDef def = ExternalSchemaDefCache.getSchemaDef(container, userSchemaName, ExternalSchemaDef.class);
+    public List<LinkedSchemaDef> getLinkedSchemaDefs(@Nullable Container c)
+    {
+        return ExternalSchemaDefCache.getSchemaDefs(c, LinkedSchemaDef.class);
+    }
 
-        assert ObjectUtils.nullSafeEquals(oldDef, def);
+    public LinkedSchemaDef getLinkedSchemaDef(Container c, @Nullable String userSchemaName)
+    {
+        return ExternalSchemaDefCache.getSchemaDef(c, userSchemaName, LinkedSchemaDef.class);
+    }
 
-        return def;
+    public void delete(AbstractExternalSchemaDef def)
+    {
+        Table.delete(getTableInfoExternalSchema(), def.getExternalSchemaId());
+        updateExternalSchemas(def.lookupContainer());
     }
 
     // Uncaches and re-indexes all external schemas in a container. Called any time an external schema or linked schema
@@ -335,72 +328,14 @@ public class QueryManager
         }
     }
 
-    public void delete(ExternalSchemaDef def)
-    {
-        Table.delete(getTableInfoExternalSchema(), def.getExternalSchemaId());
-        updateExternalSchemas(def.lookupContainer());
-    }
-
-
     public void reloadAllExternalSchemas(Container c)
     {
-        List<ExternalSchemaDef> defs = getExternalSchemaDefs(c);
-
-        defs.forEach(this::reloadExternalSchema);
+        getExternalSchemaDefs(c).forEach(this::reloadExternalSchema);
     }
-
 
     public void reloadExternalSchema(ExternalSchemaDef def)
     {
         ExternalSchema.uncache(def);
-    }
-
-    public LinkedSchemaDef getLinkedSchemaDef(Container c, int rowId)
-    {
-        LinkedSchemaDef.Key key = new LinkedSchemaDef.Key(null);
-        key.setExternalSchemaId(rowId);
-        LinkedSchemaDef oldDef = key.selectObject();
-
-        LinkedSchemaDef def = ExternalSchemaDefCache.getSchemaDef(c, rowId, LinkedSchemaDef.class);
-
-        assert ObjectUtils.nullSafeEquals(oldDef, def);
-
-        return def;
-    }
-
-    public List<LinkedSchemaDef> getLinkedSchemaDefs(@Nullable Container c)
-    {
-        LinkedSchemaDef.Key key = new LinkedSchemaDef.Key(c);
-        List<LinkedSchemaDef> oldRet = Arrays.asList(key.select());
-
-        List<LinkedSchemaDef> ret = ExternalSchemaDefCache.getSchemaDefs(c, LinkedSchemaDef.class);
-
-        assert new HashSet<>(oldRet).equals(new HashSet<>(ret));
-
-        return ret;
-    }
-
-    public LinkedSchemaDef getLinkedSchemaDef(Container c, String userSchemaName)
-    {
-        if (userSchemaName == null)
-            return null;
-
-        LinkedSchemaDef.Key key = new LinkedSchemaDef.Key(c);
-        key.setUserSchemaName(userSchemaName);
-
-        LinkedSchemaDef oldDef = key.selectObject();
-
-        LinkedSchemaDef def = ExternalSchemaDefCache.getSchemaDef(c, userSchemaName, LinkedSchemaDef.class);
-
-        assert ObjectUtils.nullSafeEquals(oldDef, def);
-
-        return def;
-    }
-
-    public void delete(LinkedSchemaDef def)
-    {
-        Table.delete(getTableInfoExternalSchema(), def.getExternalSchemaId());
-        updateExternalSchemas(def.lookupContainer());
     }
 
     public boolean canInherit(int flag)

@@ -16,26 +16,11 @@
 package org.labkey.query.persist;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 
 public class LinkedSchemaDef extends AbstractExternalSchemaDef
 {
-    static public class Key extends AbstractExternalSchemaDef.Key<LinkedSchemaDef>
-    {
-        public Key(@Nullable Container container)
-        {
-            super(LinkedSchemaDef.class, container);
-        }
-
-        @Override
-        public SchemaType getSchemaType()
-        {
-            return SchemaType.linked;
-        }
-    }
-
     @Override
     public boolean isEditable()
     {

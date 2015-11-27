@@ -17,7 +17,6 @@ package org.labkey.query.persist;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.CacheKey;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.ObjectFactory;
@@ -26,22 +25,12 @@ import org.labkey.query.QueryServiceImpl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Common entity for the shared fields of ExternalSchemaDef and LinkedSchemaDef.
  */
 public abstract class AbstractExternalSchemaDef extends Entity
 {
-    public enum Column
-    {
-        schemaType,
-        externalSchemaId,
-        userschemaname
-    }
-
     public enum SchemaType
     {
         external(ExternalSchemaDef.class),
@@ -62,62 +51,6 @@ public abstract class AbstractExternalSchemaDef extends Entity
         public AbstractExternalSchemaDef handle(ResultSet rs) throws SQLException
         {
             return ObjectFactory.Registry.getFactory(getSchemaDefClass()).handle(rs);
-        }
-    }
-
-    // Like an enum, but allows a type parameter
-    public interface SchemaType2<T extends AbstractExternalSchemaDef>
-    {
-        Class<T> getSchemaDefClass();
-
-        default T handle(ResultSet rs) throws SQLException
-        {
-            return ObjectFactory.Registry.getFactory(getSchemaDefClass()).handle(rs);
-        }
-
-        SchemaType2 external = () -> ExternalSchemaDef.class;
-        SchemaType2 linked = () -> LinkedSchemaDef.class;
-
-        Map<String, SchemaType2> VALUE_MAP = initMap();
-
-        static Map<String, SchemaType2> initMap()
-        {
-            Map<String, SchemaType2> map = new HashMap<>();
-            map.put("external", external);
-            map.put("linked", linked);
-
-            return map;
-        }
-
-        static SchemaType2 valueOf(String schemaTypeName)
-        {
-            return VALUE_MAP.get(schemaTypeName);
-        }
-
-        static Collection<SchemaType2> values()
-        {
-            return VALUE_MAP.values();
-        }
-    }
-
-    public static abstract class Key<T extends AbstractExternalSchemaDef> extends CacheKey<T, AbstractExternalSchemaDef.Column>
-    {
-        public Key(Class<T> clazz, @Nullable Container container)
-        {
-            super(QueryManager.get().getTableInfoExternalSchema(), clazz, container);
-            addCondition(Column.schemaType, getSchemaType());
-        }
-
-        public abstract SchemaType getSchemaType();
-
-        public void setExternalSchemaId(int id)
-        {
-            addCondition(Column.externalSchemaId, id);
-        }
-
-        public void setUserSchemaName(String name)
-        {
-            addCaseInsensitive(Column.userschemaname, name);
         }
     }
 

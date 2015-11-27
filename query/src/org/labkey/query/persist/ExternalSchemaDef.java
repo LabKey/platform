@@ -16,26 +16,10 @@
 
 package org.labkey.query.persist;
 
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 
 public class ExternalSchemaDef extends AbstractExternalSchemaDef
 {
-    static public class Key extends AbstractExternalSchemaDef.Key<ExternalSchemaDef>
-    {
-        public Key(@Nullable Container container)
-        {
-            super(ExternalSchemaDef.class, container);
-        }
-
-        @Override
-        public SchemaType getSchemaType()
-        {
-            return SchemaType.external;
-        }
-    }
-
     private boolean _editable;
     private boolean _indexable = true;
 
