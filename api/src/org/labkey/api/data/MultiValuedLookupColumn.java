@@ -147,6 +147,7 @@ public class MultiValuedLookupColumn extends LookupColumn
                     String join = StringUtils.replace(fragment.getSQL(), "\n\t", "\n\t\t\t\t");
                     join = join.replace("LEFT OUTER", "INNER");
                     select.append(join);
+                    select.addAll(fragment.getParams());
                 }
 
                 select.append(" WHERE ");
