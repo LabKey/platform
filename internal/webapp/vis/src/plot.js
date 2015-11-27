@@ -1415,7 +1415,7 @@ boxPlot.render();
                         groupedTrendlineSeriesData[key][config.properties.groupBy] = series;
                     }
 
-                    if (row[config.properties.value])
+                    if (row[config.properties.value] != undefined)
                     {
                         groupedTrendlineSeriesData[key].sum += row[config.properties.value];
                         groupedTrendlineSeriesData[key].count++;
