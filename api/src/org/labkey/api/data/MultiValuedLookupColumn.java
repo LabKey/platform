@@ -63,14 +63,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     @Override
     public DisplayColumnFactory getDisplayColumnFactory()
     {
-        return new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new MultiValuedDisplayColumn(MultiValuedLookupColumn.super.getDisplayColumnFactory().createRenderer(colInfo));
-            }
-        };
+        return colInfo -> new MultiValuedDisplayColumn(MultiValuedLookupColumn.super.getDisplayColumnFactory().createRenderer(colInfo));
     }
 
     @Override

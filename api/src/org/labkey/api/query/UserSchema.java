@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CrosstabTableInfo;
@@ -49,7 +50,6 @@ import org.springframework.validation.BindException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -386,14 +386,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     public Map<String, String> getTableAndQueryNamesAndLabels(boolean visibleOnly, boolean includeTemporary)
     {
         Map<String, QueryDefinition> queries = _getQueries(visibleOnly, includeTemporary);
-        TreeMap<String, String> namesAndLabels = new TreeMap<>(new Comparator<String>()
-        {
-            @Override
-            public int compare(String o1, String o2)
-            {
-                return o1.compareToIgnoreCase(o2);
-            }
-        });
+        TreeMap<String, String> namesAndLabels = new CaseInsensitiveTreeMap<>();
 
         populateQueryNameToLabelMap(queries, namesAndLabels);
         return namesAndLabels;
@@ -419,14 +412,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
     protected Map<String, QueryDefinition> _getQueries(boolean visibleOnly, boolean includeTemporary)
     {
-        TreeMap<String, QueryDefinition> set = new TreeMap<>(new Comparator<String>()
-        {
-            @Override
-            public int compare(String o1, String o2)
-            {
-                return o1.compareToIgnoreCase(o2);
-            }
-        });
+        TreeMap<String, QueryDefinition> set = new CaseInsensitiveTreeMap<>();
 
         for (String tableName : visibleOnly ? getVisibleTableNames() : getTableNames())
         {

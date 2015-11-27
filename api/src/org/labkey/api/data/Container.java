@@ -23,7 +23,6 @@ import org.json.JSONArray;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;

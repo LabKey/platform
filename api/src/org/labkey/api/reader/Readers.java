@@ -47,8 +47,8 @@ public class Readers
         return new BufferedReader(getUnbufferedReader(in));
     }
 
-    public static BufferedReader getReader(File in) throws FileNotFoundException
+    public static BufferedReader getReader(File file) throws FileNotFoundException
     {
-        return new BufferedReader(getUnbufferedReader(in));
+        return new BufferedReader(getUnbufferedReader(file));
     }
 }
