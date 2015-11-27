@@ -15,14 +15,12 @@
  */
 package org.labkey.audit;
 
-import org.apache.commons.lang3.time.FastDateFormat;
-import org.labkey.api.audit.AuditLogEvent;
-import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.Container;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.util.DateUtil;
 
 import java.util.Date;
-import java.util.Map;
 
 /*
  * User: Dave
@@ -32,22 +30,21 @@ import java.util.Map;
 
 public class SiteSettingsAuditDetailsModel
 {
-    private FastDateFormat _dateFormat = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
-    private String _diff;
-    private User _createdBy;
-    private Date _created;
+    private final Container _c;
+    private final String _diff;
+    private final User _createdBy;
+    private final Date _created;
 
-    public SiteSettingsAuditDetailsModel(String diff, User createdBy, Date created)
+    public SiteSettingsAuditDetailsModel(Container c, String diff, User createdBy, Date created)
     {
-        _diff = diff;
+        _c = c;
+        _diff = StringUtils.isEmpty(diff) ? "<p>No details were recorded.</p>" : diff;
         _createdBy = createdBy;
         _created = created;
     }
 
     public String getDiff()
     {
-        if(null == _diff || 0 == _diff.length())
-            _diff = "<p>No details were recorded.</p>";
         return _diff;
     }
 
@@ -56,7 +53,7 @@ public class SiteSettingsAuditDetailsModel
         if(null == _created)
             return "(unknown)";
 
-        return _dateFormat.format(_created);
+        return DateUtil.formatDateTime(_c, _created);
     }
 
     public User getCreatedBy()

@@ -196,7 +196,7 @@ public class AuditController extends SpringActionController
                 created = event.getCreated();
             }
 
-            SiteSettingsAuditDetailsModel model = new SiteSettingsAuditDetailsModel(diff, createdBy, created);
+            SiteSettingsAuditDetailsModel model = new SiteSettingsAuditDetailsModel(getContainer(), diff, createdBy, created);
             return new JspView<>("/org/labkey/audit/siteSettingsAuditDetails.jsp", model);
         }
 
