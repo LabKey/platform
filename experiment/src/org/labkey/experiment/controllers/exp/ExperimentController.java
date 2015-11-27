@@ -1833,8 +1833,9 @@ public class ExperimentController extends SpringActionController
                 response.setHeader("Cache-Control", "private");
                 workbook.write(response.getOutputStream());
             }
-            catch (JSONException e)
+            catch (JSONException | ClassCastException e)
             {
+                // We can get a ClassCastException if we expect an array and get a simple String, for example
                 HttpView errorView = ExceptionUtil.getErrorView(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid input", e, getViewContext().getRequest(), false);
                 errorView.render(getViewContext().getRequest(), getViewContext().getResponse());
             }
