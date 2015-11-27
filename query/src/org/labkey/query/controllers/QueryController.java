@@ -155,6 +155,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.ExceptionUtil;
@@ -628,7 +629,7 @@ public class QueryController extends SpringActionController
             StringBuilder sb = new StringBuilder();
 
             sb.append("\n<table>\n");
-            sb.append("  <tr><td colspan=5>This page lists all the data sources defined in your labkey.xml file that were available at server startup and the external schemas defined in each.</td></tr>\n");
+            sb.append("  <tr><td colspan=5>This page lists all the data sources defined in your " + AppProps.getInstance().getWebappConfigurationFilename() + " file that were available at server startup and the external schemas defined in each.</td></tr>\n");
             sb.append("  <tr><td colspan=5>&nbsp;</td></tr>\n");
             sb.append("  <tr><th>Data Source</th><th>Current Status</th><th>URL</th><th>Product Name</th><th>Product Version</th></tr>\n");
 
