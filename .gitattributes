@@ -238,7 +238,6 @@ api/src/org/labkey/api/data/Builder.java -text
 api/src/org/labkey/api/data/BuiltInButtonConfig.java -text
 api/src/org/labkey/api/data/ButtonBarConfig.java -text
 api/src/org/labkey/api/data/ButtonConfig.java -text
-api/src/org/labkey/api/data/CacheKey.java -text
 api/src/org/labkey/api/data/CacheableWriter.java -text
 api/src/org/labkey/api/data/CachedResultSet.java -text
 api/src/org/labkey/api/data/CachedResultSetMetaData.java -text
