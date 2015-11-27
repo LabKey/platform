@@ -56,6 +56,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.io.Writer;
+import java.util.stream.Collectors;
 
 public class IssuesTable extends FilteredTable<IssuesQuerySchema>
 {
@@ -116,13 +117,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
 
         ColumnInfo assignedTo = wrapColumn("AssignedTo", _rootTable.getColumn("AssignedTo"));
         assignedTo.setFk(new UserIdForeignKey(getUserSchema()));
-        assignedTo.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new UserIdRenderer.GuestAsBlank(colInfo);
-            }
-        });
+        assignedTo.setDisplayColumnFactory(UserIdRenderer.GuestAsBlank::new);
         addColumn(assignedTo);
 
         addColumn(new AliasedColumn(this, getCustomCaption("Priority", ccc), _rootTable.getColumn("Priority")));
@@ -175,29 +170,23 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
             }
         });
 
-        related.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                DataColumn dataColumn = new DataColumn(colInfo) {
-                    @Override
-                    public boolean isSortable()
-                    {
-                        return false;
-                    }
+        related.setDisplayColumnFactory(colInfo -> {
+            DataColumn dataColumn = new DataColumn(colInfo) {
+                @Override
+                public boolean isSortable()
+                {
+                    return false;
+                }
 
-                    @Override
-                    public boolean isFilterable()
-                    {
-                        return false;
-                    }
-                };
-                dataColumn.setURLTitle(new StringExpressionFactory.FieldKeyStringExpression("Issue ${Related/IssueId}: ${Related/Title:htmlEncode}", false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult));
+                @Override
+                public boolean isFilterable()
+                {
+                    return false;
+                }
+            };
+            dataColumn.setURLTitle(new StringExpressionFactory.FieldKeyStringExpression("Issue ${Related/IssueId}: ${Related/Title:htmlEncode}", false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult));
 
-                MultiValuedDisplayColumn displayColumn = new MultiValuedDisplayColumn(dataColumn, true);
-                return displayColumn;
-            }
+            return new MultiValuedDisplayColumn(dataColumn, true);
         });
 
         ColumnInfo closedBy = wrapColumn(_rootTable.getColumn("ClosedBy"));
@@ -207,14 +196,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         addWrapColumn(_rootTable.getColumn("Closed"));
 
         ColumnInfo notifyList = addWrapColumn(_rootTable.getColumn("NotifyList"));
-        notifyList.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new NotifyListDisplayColumn(colInfo, _userSchema.getUser());
-            }
-        });
+        notifyList.setDisplayColumnFactory(colInfo -> new NotifyListDisplayColumn(colInfo, _userSchema.getUser()));
 
         // add any custom columns that weren't added above
         for (CustomColumn cc : ccc.getCustomColumns(_userSchema.getUser()))
@@ -236,11 +218,17 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
 
         CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(getContainer());
 
-        for (String name : DEFAULT_LIST_COLUMNS)
-            visibleColumns.add(FieldKey.fromParts(getCustomCaption(name, ccc)));
+        visibleColumns.addAll(
+            DEFAULT_LIST_COLUMNS
+                .stream()
+                .map(name -> FieldKey.fromParts(getCustomCaption(name, ccc)))
+                .collect(Collectors.toList()));
 
-        for (CustomColumn column : ccc.getCustomColumns(_userSchema.getUser()))
-            visibleColumns.add(FieldKey.fromParts(column.getCaption()));
+        visibleColumns.addAll(
+            ccc.getCustomColumns(_userSchema.getUser())
+                .stream()
+                .map(column -> FieldKey.fromParts(column.getCaption()))
+                .collect(Collectors.toList()));
 
         return new ArrayList<>(visibleColumns);
     }
