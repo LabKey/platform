@@ -34,6 +34,7 @@ import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MemTracker;
@@ -996,7 +997,7 @@ public class DbScope
                     DataSourceProperties dsPropertiesBean = DataSourceProperties.get(dsProperties);
                     if (dsName.equals(labkeyDsName) && dsPropertiesBean.isLogQueries())
                     {
-                        LOG.warn("Ignoring unsupported parameter in labkey.xml to log queries for LabKey DataSource \"" + labkeyDsName + "\"");
+                        LOG.warn("Ignoring unsupported parameter in " + AppProps.getInstance().getWebappConfigurationFilename() + " to log queries for LabKey DataSource \"" + labkeyDsName + "\"");
                         dsPropertiesBean.setLogQueries(false);
                     }
                     addScope(dsName, dataSources.get(dsName), dsPropertiesBean);
@@ -1010,11 +1011,11 @@ public class DbScope
                         if (e instanceof ConfigurationException)
                             throw (ConfigurationException)e;
 
-                        throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in labkey.xml. Server cannot start.", e);
+                        throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.", e);
                     }
 
                     // Failure to connect with any other datasource results in an error message, but doesn't halt startup  
-                    LOG.error("Cannot connect to DataSource \"" + dsName + "\" defined in labkey.xml. This DataSource will not be available during this server session.", e);
+                    LOG.error("Cannot connect to DataSource \"" + dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". This DataSource will not be available during this server session.", e);
                     addDataSourceFailure(dsName, e);
                 }
             }
@@ -1022,7 +1023,7 @@ public class DbScope
             _labkeyScope = _scopes.get(labkeyDsName);
 
             if (null == _labkeyScope)
-                throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in labkey.xml. Server cannot start.");
+                throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.");
 
             _labkeyScope.getSqlDialect().prepareNewLabKeyDatabase(_labkeyScope);
         }

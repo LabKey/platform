@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ConfigurationException;
 
@@ -114,8 +115,8 @@ public enum PropertyEncryption
 
             private ConfigurationException getConfigurationException()
             {
-                return new ConfigurationException("Attempting to save encrypted properties but MasterEncryptionKey has not been specified in labkey.xml.",
-                        "Edit labkey.xml and provide a suitable encryption key. See the server configuration documentation on labkey.org.");
+                return new ConfigurationException("Attempting to save encrypted properties but MasterEncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename() + ".",
+                        "Edit " + AppProps.getInstance().getWebappConfigurationFilename() + " and provide a suitable encryption key. See the server configuration documentation on labkey.org.");
             }
         },
     AES128

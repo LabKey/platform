@@ -46,11 +46,11 @@ import java.util.Set;
  */
 public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.Interface
 {
-    private String _contextPathStr;
-    private Path _contextPath = null;
-    private String _projectRoot = null;
-    private String _enlistmentId = null;
-    private String _initialRequestBaseServerUrl = null;
+    private volatile String _contextPathStr;
+    private volatile Path _contextPath = null;
+    private volatile String _projectRoot = null;
+    private volatile String _enlistmentId = null;
+    private volatile String _initialRequestBaseServerUrl = null;
 
     protected static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     protected static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
@@ -105,7 +105,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     {
         if (_contextPathStr == null)
         {
-            throw new IllegalStateException("Unable to determine the context path before a request has come in");
+            throw new IllegalStateException("Context path should have been set in ModuleLoader.doInit()");
         }
         return _contextPathStr;
     }
@@ -439,12 +439,9 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     //  to provide suggestions to the admin.
     public String getWebappConfigurationFilename()
     {
-        // Would rather determine the context filename from ModuleLoader.getServletContext(), but there appears to be
-        //  no way to do this.
-
         String path = getContextPath();
 
-        return "".equals(path) ? "root.xml" : path.substring(1) + ".xml";
+        return "".equals(path) ? "ROOT.xml" : path.substring(1) + ".xml";
     }
 
     @Override

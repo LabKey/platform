@@ -26,6 +26,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.StringUtilsLabKey;
 
@@ -140,8 +141,8 @@ public class Encryption
 
     public interface Algorithm
     {
-        public @NotNull byte[] encrypt(@NotNull String plainText);
-        public @NotNull String decrypt(@NotNull byte[] cipherText);
+        @NotNull byte[] encrypt(@NotNull String plainText);
+        @NotNull String decrypt(@NotNull byte[] cipherText);
     }
 
 
@@ -245,9 +246,9 @@ public class Encryption
     public static Algorithm getAES128()
     {
         if (isMasterEncryptionPassPhraseSpecified())
-            return new AES(getMasterEncryptionPassPhrase(), 128, "currently configured MasterEncryptionKey; has the key changed in labkey.xml?");
+            return new AES(getMasterEncryptionPassPhrase(), 128, "currently configured MasterEncryptionKey; has the key changed in " + AppProps.getInstance().getWebappConfigurationFilename() + "?");
         else
-            throw new IllegalStateException("MasterEncryptionKey has not been specified in labkey.xml; this method should not be called");
+            throw new IllegalStateException("MasterEncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename() + "; this method should not be called");
     }
 
 

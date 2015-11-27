@@ -19,10 +19,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.Encryption;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 /**
  * A PropertyStore that encrypts its contents when writing to the database, and automatically decrypts on read. Uses
@@ -49,8 +47,8 @@ public class EncryptedPropertyStore extends AbstractPropertyStore
     protected void validateStore()
     {
         if (PropertyEncryption.AES128 != _preferredPropertyEncryption)
-            throw new ConfigurationException("Attempting to use the encrypted property store, but MasterEncryptionKey has not been specified in labkey.xml.",
-                "Edit labkey.xml and provide a suitable encryption key. See the server configuration documentation on labkey.org.");
+            throw new ConfigurationException("Attempting to use the encrypted property store, but MasterEncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename() + ".",
+                "Edit " + AppProps.getInstance().getWebappConfigurationFilename() + " and provide a suitable encryption key. See the server configuration documentation on labkey.org.");
     }
 
     @Override
@@ -75,15 +73,10 @@ public class EncryptedPropertyStore extends AbstractPropertyStore
 
         validatePropertyMap(props);
 
-        selector.forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String encryptedValue = rs.getString(2);
-                String value = null == encryptedValue ? null : propertyEncryption.decrypt(Base64.decodeBase64(encryptedValue));
-                props.put(rs.getString(1), value);
-            }
+        selector.forEach(rs -> {
+            String encryptedValue = rs.getString(2);
+            String value = null == encryptedValue ? null : propertyEncryption.decrypt(Base64.decodeBase64(encryptedValue));
+            props.put(rs.getString(1), value);
         });
     }
 

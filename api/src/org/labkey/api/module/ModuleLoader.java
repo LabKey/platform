@@ -304,7 +304,7 @@ public class ModuleLoader implements Filter
         }
         catch (NoSuchMethodException e)
         {
-            throw new ConfigurationException("Could not find expected method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
+            throw new ConfigurationException("Could not find expected method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
         }
         catch (InvocationTargetException e)
         {
@@ -924,13 +924,13 @@ public class ModuleLoader implements Filter
                 }
                 catch (NamingException e)
                 {
-                    _log.error("DataSources are not properly configured in labkey.xml.", e);
+                    _log.error("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
                 }
             }
         }
         catch (Exception e)
         {
-            throw new ConfigurationException("DataSources are not properly configured in labkey.xml.", e);
+            throw new ConfigurationException("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
         }
 
         DbScope.initializeScopes(labkeyDsName, dataSources);
@@ -993,7 +993,7 @@ public class ModuleLoader implements Filter
                     }
                     catch (Exception e2)
                     {
-                        throw new ConfigurationException("Failed to retrieve \"" + dsName + "\" properties from labkey.xml. Try creating the database manually and restarting the server.", e2);
+                        throw new ConfigurationException("Failed to retrieve \"" + dsName + "\" properties from " + AppProps.getInstance().getWebappConfigurationFilename() + ". Try creating the database manually and restarting the server.", e2);
                     }
 
                     // Try it again
@@ -1001,12 +1001,12 @@ public class ModuleLoader implements Filter
                     break;
                 }
 
-                throw new ConfigurationException("Failed to load DataSource \"" + dsName + "\" defined in labkey.xml.", e);
+                throw new ConfigurationException("Failed to load DataSource \"" + dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
             }
         }
 
         if (null == dataSource)
-            throw new ConfigurationException("You must have a DataSource named \"" + primaryName + "\" defined in labkey.xml.");
+            throw new ConfigurationException("You must have a DataSource named \"" + primaryName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".");
 
         DbScope.ensureDataBase(dsName, dataSource);
 
