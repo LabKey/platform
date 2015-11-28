@@ -28,17 +28,14 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.filecontent.message.FileContentDigestProvider;
 import org.labkey.filecontent.message.FileEmailConfig;
 import org.labkey.filecontent.message.ShortMessageDigest;
 
-import javax.servlet.ServletContext;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,7 +67,7 @@ public class FileContentModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
                 new FilesWebPart.Factory()
         ));
     }
@@ -143,20 +140,6 @@ public class FileContentModule extends DefaultModule
 
         // initialize message digests
         ShortMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.SHORT_DIGEST));
-        ContextListener.addStartupListener(new StartupListener()
-        {
-            @Override
-            public String getName()
-            {
-                return "Short Message Digest";
-            }
-
-            @Override
-            public void moduleStartupComplete(ServletContext servletContext)
-            {
-                ShortMessageDigest.getInstance().initializeTimer();
-            }
-        });
 
         // Note: DailyMessageDigest timer is initialized by the AnnouncementModule
         DailyMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.DAILY_DIGEST));
@@ -165,6 +148,12 @@ public class FileContentModule extends DefaultModule
         MessageConfigService.getInstance().registerConfigType(new FileEmailConfig());
         ContainerManager.addContainerListener(new FileContentContainerListener());
         ContainerManager.addContainerListener(FileContentServiceImpl.getInstance());
+    }
+
+    @Override
+    public void startBackgroundThreads(ModuleContext moduleContext)
+    {
+        ShortMessageDigest.getInstance().initializeTimer();
     }
 
     @Override

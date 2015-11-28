@@ -180,9 +180,6 @@ public class SearchModule extends DefaultModule
                         // Must call upgradeIndex() before we start the SearchService
                         ss.upgradeIndex();
                     }
-
-                    ss.start();
-                    DavCrawler.getInstance().start();
                 }
             });
 
@@ -199,6 +196,18 @@ public class SearchModule extends DefaultModule
         ContainerManager.addContainerListener(new SearchContainerListener());
     }
 
+
+    @Override
+    public void startBackgroundThreads(ModuleContext moduleContext)
+    {
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+        if (null != (ss))
+        {
+            ss.start();
+            DavCrawler.getInstance().start();
+        };
+    }
 
     @NotNull
     @Override

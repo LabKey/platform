@@ -601,7 +601,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
-        SystemMaintenance.setTimer();
 
         AuditLogService.get().addAuditViewFactory(UserAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(GroupAuditViewFactory.getInstance());
@@ -724,6 +723,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         PropertyService.get().registerDomainKind(new UsersDomainKind());
         UsersDomainKind.ensureDomain(moduleContext);
+    }
+
+    @Override
+    public void startBackgroundThreads(ModuleContext moduleContext)
+    {
+        SystemMaintenance.setTimer();
     }
 
     @Override

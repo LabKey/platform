@@ -41,6 +41,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -56,6 +57,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewContext.StackResetter;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.FormattedHtml;
@@ -596,11 +598,11 @@ public class WikiManager implements WikiService
 
     public void setLastIndexed(Container c, String name, long ms)
     {
-        new SqlExecutor(comm.getSchema()).execute("UPDATE comm.pages SET LastIndexed = ? WHERE Container = ? AND Name = ?", new Timestamp(ms), c, name);
+        new SqlExecutor(comm.getSchema()).execute("UPDATE " + comm.getTableInfoPages() + " SET LastIndexed = ? WHERE Container = ? AND Name = ?", new Timestamp(ms), c, name);
     }
 
     
-    public void indexWikis(@Nullable SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, @Nullable String wikiName)
+    public void indexWikis(@Nullable IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, @Nullable String wikiName)
     {
         final SearchService ss = getSearchService();
         if (null == ss)
@@ -609,15 +611,20 @@ public class WikiManager implements WikiService
         if (null == task)
             task = ss.defaultTask();
 
-        // Push a ViewContext onto the stack before indexing; wikis may need this to render embedded webpart
-        try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(User.getSearchUser(), c, new ActionURL()))
-        {
-            indexWikiContainerFast(task, c, modifiedSince, wikiName);
-        }
+        final IndexTask fTask = task;
+
+        // Use a Runnable to postpone construction of the MockViewContext; if we're bootstrapping then base server URL won't be ready.
+        fTask.addRunnable(() -> {
+            // Push a ViewContext onto the stack before indexing; wikis may need this to render embedded webparts
+            try (StackResetter ignored = ViewContext.pushMockViewContext(User.getSearchUser(), c, new ActionURL()))
+            {
+                indexWikiContainerFast(fTask, c, modifiedSince, wikiName);
+            }
+        }, SearchService.PRIORITY.item);
     }
 
 
-    private void indexWikiContainerFast(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, @Nullable String wikiName)
+    private void indexWikiContainerFast(@NotNull IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, @Nullable String wikiName)
     {
         LOG.debug("indexWikiContainerFast(" + wikiName + ")");
 

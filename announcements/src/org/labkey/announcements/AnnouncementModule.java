@@ -52,16 +52,13 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
-import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -119,7 +116,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
             new AnnouncementsController.AnnoucementWebPartFactory(WEB_PART_NAME),
             new AlwaysAvailableWebPartFactory(WEB_PART_NAME + " List")
             {
@@ -171,20 +168,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
         // initialize message digests
         DailyMessageDigest.getInstance().addProvider(new AnnouncementDigestProvider());
-        ContextListener.addStartupListener(new StartupListener()
-        {
-            @Override
-            public String getName()
-            {
-                return "Daily Message Digest";
-            }
-
-            @Override
-            public void moduleStartupComplete(ServletContext servletContext)
-            {
-                DailyMessageDigest.getInstance().initializeTimer();
-            }
-        });
 
         // initialize message config service and add a config provider for announcements
         ServiceRegistry.get().registerService(MessageConfigService.I.class, new MessageConfigServiceImpl());
@@ -206,7 +189,13 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
         TourService.setInstance(new TourServiceImpl());
     }
-    
+
+
+    @Override
+    public void startBackgroundThreads(ModuleContext moduleContext)
+    {
+        DailyMessageDigest.getInstance().initializeTimer();
+    }
 
     @Override
     public void afterUpdate(ModuleContext moduleContext)
@@ -225,7 +214,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<Class>(Arrays.asList(
+        return new HashSet<>(Arrays.asList(
                 AnnouncementManager.TestCase.class,
                 EmailServiceImpl.TestCase.class
         ));
@@ -253,13 +242,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
     public void enumerateDocuments(final SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
-        Runnable r = new Runnable()
-            {
-                public void run()
-                {
-                    AnnouncementManager.indexMessages(task, c, modifiedSince);
-                }
-            };
+        Runnable r = () -> AnnouncementManager.indexMessages(task, c, modifiedSince);
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 
