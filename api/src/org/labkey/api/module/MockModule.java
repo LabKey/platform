@@ -198,6 +198,11 @@ public class MockModule implements Module
     }
 
     @Override
+    public void startBackgroundThreads(ModuleContext moduleContext)
+    {
+    }
+
+    @Override
     public void destroy()
     {
     }

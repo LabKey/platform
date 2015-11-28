@@ -76,6 +76,7 @@ public class AppProps
         void setContextPath(String contextPath);
 
         String getDefaultDomain();
+        boolean isSetBaseServerUrl();
         String getBaseServerUrl();
         String getHomePageUrl();
         ActionURL getHomePageActionURL();

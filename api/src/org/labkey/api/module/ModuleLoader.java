@@ -391,6 +391,37 @@ public class ModuleLoader implements Filter
             }
         }
 
+        User upgradeUser = null;
+        String upgradeUserParameter = System.getProperty("upgradeUser");
+
+        if (upgradeUserParameter != null)
+        {
+            ValidEmail upgradeUserEmail = new ValidEmail(upgradeUserParameter);
+            upgradeUser = UserManager.getUser(upgradeUserEmail);
+
+            if (null == upgradeUser)
+            {
+                if (isNewInstall())
+                {
+                    // Must set the LSID authority early, since all audit LSIDs get created with this domain
+                    // TODO: Using email domain seems extremely questionable, but that's what we've always done
+                    String email = upgradeUserEmail.getEmailAddress();
+                    int atSign = email.indexOf('@');
+                    String defaultDomain = email.substring(atSign + 1);
+                    WriteableAppProps appProps = AppProps.getWriteableInstance();
+                    appProps.setDefaultDomain(defaultDomain);
+                    appProps.setDefaultLsidAuthority(defaultDomain);
+                    appProps.save();
+
+                    upgradeUser = User.getSearchUser();
+                }
+                else
+                {
+                    throw new ServletException("Invalid upgrade user; \"" + upgradeUserParameter + "\" is not a valid user.");
+                }
+            }
+        }
+
         if (modulesRequiringUpgrade.isEmpty() && additionalSchemasRequiringUpgrade.isEmpty())
         {
             completeUpgrade(coreRequiredUpgrade);
@@ -405,38 +436,19 @@ public class ModuleLoader implements Filter
             if (!additionalSchemasRequiringUpgrade.isEmpty())
                 _log.info((modulesRequiringUpgrade.isEmpty() ? "Schemas" : "Additional schemas" ) + " requiring upgrade: " + additionalSchemasRequiringUpgrade.toString());
 
-            String upgradeUserParameter = System.getProperty("upgradeUser");
-
-            if (upgradeUserParameter != null)
-            {
-                ValidEmail upgradeUserEmail = new ValidEmail(upgradeUserParameter);
-                User upgradeUser = UserManager.getUser(upgradeUserEmail);
-
-                if (isNewInstall())
-                {
-                    // Must set the LSID authority early, since all audit LSIDs get created with this domain
-                    String email = upgradeUserEmail.getEmailAddress();
-                    int atSign = email.indexOf('@');
-                    String defaultDomain = email.substring(atSign + 1);
-                    WriteableAppProps appProps = AppProps.getWriteableInstance();
-                    appProps.setDefaultDomain(defaultDomain);
-                    appProps.setDefaultLsidAuthority(defaultDomain);
-                    appProps.save();
-
-                    upgradeUser = User.getSearchUser();
-                }
-                else
-                {
-                    if (null == upgradeUser)
-                        throw new ServletException("Invalid upgrade user; \"" + upgradeUserParameter + "\" is not a valid user.");
-                }
-
+            if (upgradeUser != null)
                 startNonCoreUpgrade(upgradeUser, Execution.Synchronous);
-                ensureStartupComplete(Execution.Synchronous);
-            }
         }
 
-        _log.info("LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
+        if (upgradeUser != null)
+        {
+            ensureStartupComplete(Execution.Synchronous);
+            _log.info("LabKey Server startup is complete; all modules have been initialized");
+        }
+        else
+        {
+            _log.info("LabKey Server startup is complete; modules will be initialized after the first HTTP/HTTPS request");
+        }
     }
 
     // If in production mode then make sure this isn't a development build, #21567
@@ -1302,6 +1314,7 @@ public class ModuleLoader implements Filter
                 try
                 {
                     completeStartup();
+                    attemptStartBackgroundThreads();
                 }
                 catch (Throwable t)
                 {
@@ -1309,6 +1322,22 @@ public class ModuleLoader implements Filter
                     _log.error("Failure during module startup", t);
                 }
             });
+        }
+    }
+
+    private volatile boolean _backgroundThreadsStarted = false;
+
+    public void attemptStartBackgroundThreads()
+    {
+        synchronized (STARTUP_LOCK)
+        {
+            if (!_backgroundThreadsStarted && isStartupComplete() && AppProps.getInstance().isSetBaseServerUrl())
+            {
+                _backgroundThreadsStarted = true;
+
+                for (Module module : _modules)
+                    module.startBackgroundThreads(null);
+            }
         }
     }
 

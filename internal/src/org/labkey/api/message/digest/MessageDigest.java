@@ -17,7 +17,6 @@ package org.labkey.api.message.digest;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ShutdownListener;

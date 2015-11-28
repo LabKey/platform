@@ -193,6 +193,7 @@ public class AuthFilter implements Filter
                 return;
 
             AppProps.getInstance().initializeFromRequest(request);
+            ModuleLoader.getInstance().attemptStartBackgroundThreads();
             _firstRequestHandled = true;
         }
     }

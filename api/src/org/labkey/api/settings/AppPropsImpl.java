@@ -161,6 +161,11 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         return BaseServerProperties.parse(getBaseServerUrl());
     }
 
+    public boolean isSetBaseServerUrl()
+    {
+        return null != _initialRequestBaseServerUrl || null != lookupStringValue(BASE_SERVER_URL_PROP, null);
+    }
+
     public String getBaseServerUrl()
     {
         String baseServerUrl = lookupStringValue(BASE_SERVER_URL_PROP, null);
