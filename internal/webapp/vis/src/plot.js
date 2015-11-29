@@ -1329,7 +1329,8 @@ boxPlot.render();
  * @param {Number} [config.height] The chart canvas height in pixels.
  * @param {Array} [config.data] The array of chart segment data. Each object is of the form: { label: "label", value: 123 }.
  * @param {Object} [config.properties] An object that contains the properties specific to the Levey-Jennings plot
- * @param {String} [config.properties.value] The data property name for the value to be plotted on the y-axis.
+ * @param {String} [config.properties.value] The data property name for the value to be plotted on the left y-axis.
+ * @param {String} [config.properties.valueRight] The data property name for the value to be plotted on the right y-axis.
  * @param {String} [config.properties.mean] The data property name for the mean of the expected range.
  * @param {String} [config.properties.stdDev] The data property name for the standard deviation of the expected range.
  * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
@@ -1390,19 +1391,39 @@ boxPlot.render();
             // if we are grouping x values based on the xTick property, only increment index if we have a new xTick value
             if (config.properties.xTick)
             {
-                var xTickValue = row[config.properties.xTick];
-                index = uniqueXAxisLabels.indexOf(xTickValue);
+                var addValueToTrendLineData = function(dataArr, seqValue, arrKey, fieldName, rowValue, sumField, countField)
+                {
+                    if (dataArr[arrKey] == undefined)
+                    {
+                        dataArr[arrKey] = {
+                            seqValue: seqValue
+                        };
+                    }
+
+                    if (dataArr[arrKey][sumField] == undefined)
+                    {
+                        dataArr[arrKey][sumField] = 0;
+                    }
+                    if (dataArr[arrKey][countField] == undefined)
+                    {
+                        dataArr[arrKey][countField] = 0;
+                    }
+
+                    if (rowValue != undefined)
+                    {
+                        dataArr[arrKey][sumField] += rowValue;
+                        dataArr[arrKey][countField]++;
+                        dataArr[arrKey][fieldName] = dataArr[arrKey][sumField] / dataArr[arrKey][countField];
+                    }
+                };
+
+                index = uniqueXAxisLabels.indexOf(row[config.properties.xTick]);
 
                 // calculate average values for the trend line data (used when grouping x by unique value)
-                if (groupedTrendlineData[index] == undefined) {
-                    groupedTrendlineData[index] = { seqValue: index, sum: 0, count: 0 };
-                }
-
-                if (row[config.properties.value] != undefined)
+                addValueToTrendLineData(groupedTrendlineData, index, index, config.properties.value, row[config.properties.value], 'sum1', 'count1');
+                if (config.properties.valueRight != undefined)
                 {
-                    groupedTrendlineData[index].sum += row[config.properties.value];
-                    groupedTrendlineData[index].count++;
-                    groupedTrendlineData[index][config.properties.value] = groupedTrendlineData[index].sum / groupedTrendlineData[index].count;
+                    addValueToTrendLineData(groupedTrendlineData, index, index, config.properties.valueRight, row[config.properties.valueRight], 'sum2', 'count2');
                 }
 
                 // calculate average values for trend line data for each series (used when grouping x by unique value with a groupBy series property)
@@ -1410,17 +1431,13 @@ boxPlot.render();
                     var series = row[config.properties.groupBy];
                     var key = series + '|' + index;
 
-                    if (groupedTrendlineSeriesData[key] == undefined) {
-                        groupedTrendlineSeriesData[key] = { seqValue: index, sum: 0, count: 0 };
-                        groupedTrendlineSeriesData[key][config.properties.groupBy] = series;
+                    addValueToTrendLineData(groupedTrendlineSeriesData, index, key, config.properties.value, row[config.properties.value], 'sum1', 'count1');
+                    if (config.properties.valueRight != undefined)
+                    {
+                        addValueToTrendLineData(groupedTrendlineSeriesData, index, key, config.properties.valueRight, row[config.properties.valueRight], 'sum2', 'count2');
                     }
 
-                    if (row[config.properties.value] != undefined)
-                    {
-                        groupedTrendlineSeriesData[key].sum += row[config.properties.value];
-                        groupedTrendlineSeriesData[key].count++;
-                        groupedTrendlineSeriesData[key][config.properties.value] = groupedTrendlineSeriesData[key].sum / groupedTrendlineSeriesData[key].count;
-                    }
+                    groupedTrendlineSeriesData[key][config.properties.groupBy] = series;
                 }
             }
             else {
@@ -1453,6 +1470,7 @@ boxPlot.render();
         }
 
         config.tickOverlapRotation = 35;
+
         config.scales = {
             color: {
                 scaleType: 'discrete',
@@ -1487,6 +1505,18 @@ boxPlot.render();
                 }
             }
         };
+
+        if (config.properties.valueRight != undefined)
+        {
+            config.scales.yRight = {
+                scaleType: 'continuous',
+                domain: config.properties.yAxisDomain,
+                trans: config.properties.yAxisScale || 'linear',
+                tickFormat: function(val) {
+                    return LABKEY.vis.isValid(val) && (val > 100000 || val < -100000) ? val.toExponential() : val;
+                }
+            };
+        }
 
         // Issue 23626: map line/point color based on legend data
         if (config.legendData && config.properties.color && !config.properties.colorRange) {
@@ -1523,7 +1553,6 @@ boxPlot.render();
         }
 
         config.aes = {
-            yLeft: config.properties.value,
             x: 'seqValue'
         };
 
@@ -1536,7 +1565,7 @@ boxPlot.render();
             data: meanStdDevData,
             aes: {
                 error: function(row){return row[config.properties.stdDev] * 3;},
-                yLeft: function(row){return row[config.properties.mean];}
+                yLeft: config.properties.mean
             }
         });
         var stdDev2Layer = new LABKEY.vis.Layer({
@@ -1544,7 +1573,7 @@ boxPlot.render();
             data: meanStdDevData,
             aes: {
                 error: function(row){return row[config.properties.stdDev] * 2;},
-                yLeft: function(row){return row[config.properties.mean];}
+                yLeft: config.properties.mean
             }
         });
         var stdDev1Layer = new LABKEY.vis.Layer({
@@ -1552,7 +1581,7 @@ boxPlot.render();
             data: meanStdDevData,
             aes: {
                 error: function(row){return row[config.properties.stdDev];},
-                yLeft: function(row){return row[config.properties.mean];}
+                yLeft: config.properties.mean
             }
         });
         var meanLayer = new LABKEY.vis.Layer({
@@ -1560,7 +1589,7 @@ boxPlot.render();
             data: meanStdDevData,
             aes: {
                 error: function(row){return 0;},
-                yLeft: function(row){return row[config.properties.mean];}
+                yLeft: config.properties.mean
             }
         });
 
@@ -1568,67 +1597,109 @@ boxPlot.render();
 
         if (config.properties.showTrendLine)
         {
-            var pathLayerConfig = {
-                geom: new LABKEY.vis.Geom.Path({
-                    opacity: .6,
-                    size: 2
-                })
-            };
-
-            if (config.properties.groupBy)
+            var getPathLayerConfig = function(ySide, valueName, colorValue)
             {
-                pathLayerConfig.aes = {
-                    pathColor: config.properties.groupBy,
-                    group: config.properties.groupBy
+                var pathLayerConfig = {
+                    geom: new LABKEY.vis.Geom.Path({
+                        opacity: .6,
+                        size: 2
+                    }),
+                    aes: {}
                 };
 
-                // convert the groupedTrendlineSeriesData object into an array of the object values
-                var seriesDataArr = [];
-                for(var i in groupedTrendlineSeriesData) {
-                    if (groupedTrendlineSeriesData.hasOwnProperty(i)) {
-                        seriesDataArr.push(groupedTrendlineSeriesData[i]);
+                pathLayerConfig.aes[ySide] = valueName;
+
+                // if we aren't showing multiple series data via the group by, use the groupedTrendlineData for the path
+                if (config.properties.groupBy)
+                {
+                    // convert the groupedTrendlineSeriesData object into an array of the object values
+                    var seriesDataArr = [];
+                    for(var i in groupedTrendlineSeriesData) {
+                        if (groupedTrendlineSeriesData.hasOwnProperty(i)) {
+                            seriesDataArr.push(groupedTrendlineSeriesData[i]);
+                        }
+                    }
+                    pathLayerConfig.data = seriesDataArr;
+
+                    pathLayerConfig.aes.pathColor = config.properties.groupBy;
+                    pathLayerConfig.aes.group = config.properties.groupBy;
+                }
+                else
+                {
+                    pathLayerConfig.data = groupedTrendlineData;
+
+                    if (colorValue != undefined)
+                    {
+                        pathLayerConfig.aes.pathColor = function(row) { return colorValue; }
                     }
                 }
-                pathLayerConfig.data = seriesDataArr;
-            }
-            else {
-                // if we aren't showing multiple series data via the group by, use the groupedTrendlineData for the path
-                pathLayerConfig.data = groupedTrendlineData;
-            }
 
-            config.layers.push(new LABKEY.vis.Layer(pathLayerConfig));
+                return pathLayerConfig;
+            };
+
+            if (config.properties.valueRight != undefined)
+            {
+                config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.value, 0)));
+                config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yRight', config.properties.valueRight, 1)));
+            }
+            else
+            {
+                config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.value)));
+            }
         }
 
         // points based on the data value, color and hover text can be added via params to config
-        var pointLayerConfig = {
-            geom: new LABKEY.vis.Geom.Point({
-                position: config.properties.position,
-                size: 3
-            }),
-            aes: {}
-        };
-        if (config.properties.color) {
-            pointLayerConfig.aes.color = function(row){return row[config.properties.color];};
-        }
-        if (config.properties.shape) {
-            pointLayerConfig.aes.shape = function(row){return row[config.properties.shape];};
-        }
-        if (config.properties.hoverTextFn) {
-            pointLayerConfig.aes.hoverText = config.properties.hoverTextFn;
-        }
-        if (config.properties.pointClickFn) {
-            pointLayerConfig.aes.pointClickFn = config.properties.pointClickFn;
-        }
+        var getPointLayerConfig = function(ySide, valueName, colorValue)
+        {
+            var pointLayerConfig = {
+                geom: new LABKEY.vis.Geom.Point({
+                    position: config.properties.position,
+                    size: 3
+                }),
+                aes: {}
+            };
 
-        // add some mouse over effects to highlight selected point
-        pointLayerConfig.aes.mouseOverFn = function(event, pointData, layerSel) {
-            d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 5).ease("elastic");
-        };
-        pointLayerConfig.aes.mouseOutFn = function(event, pointData, layerSel) {
-            d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 1).ease("elastic");
+            pointLayerConfig.aes[ySide] = valueName;
+
+            if (config.properties.color) {
+                pointLayerConfig.aes.color = config.properties.color;
+            }
+            else if (colorValue != undefined) {
+                pointLayerConfig.aes.color = function(row){ return colorValue; };
+            }
+
+            if (config.properties.shape) {
+                pointLayerConfig.aes.shape = config.properties.shape;
+            }
+            if (config.properties.hoverTextFn) {
+                pointLayerConfig.aes.hoverText = function(row) {
+                    return config.properties.hoverTextFn.call(this, row, valueName);
+                };
+            }
+            if (config.properties.pointClickFn) {
+                pointLayerConfig.aes.pointClickFn = config.properties.pointClickFn;
+            }
+
+            // add some mouse over effects to highlight selected point
+            pointLayerConfig.aes.mouseOverFn = function(event, pointData, layerSel) {
+                d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 5).ease("elastic");
+            };
+            pointLayerConfig.aes.mouseOutFn = function(event, pointData, layerSel) {
+                d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 1).ease("elastic");
+            };
+
+            return pointLayerConfig;
         };
 
-        config.layers.push(new LABKEY.vis.Layer(pointLayerConfig));
+        if (config.properties.valueRight != undefined)
+        {
+            config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.value, 0)));
+            config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRight, 1)));
+        }
+        else
+        {
+            config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.value)));
+        }
 
         return new LABKEY.vis.Plot(config);
     };
