@@ -604,16 +604,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         List<ColumnInfo> sortCols = new ArrayList<>();
         if (sortFieldKeys != null)
         {
-            List<FieldKey> translatedFieldKeys = new ArrayList<>();
+            boolean foundAllInCache = true;
             for (FieldKey sortFieldKey : sortFieldKeys)
             {
-                translatedFieldKeys.add(FieldKey.fromParts(getFieldKey().getParent(), sortFieldKey));
-            }
-
-            boolean foundAllInCache = true;
-            for (FieldKey translatedFieldKey : translatedFieldKeys)
-            {
-                ColumnInfo column = cachedSortColumns.get(translatedFieldKey);
+                ColumnInfo column = cachedSortColumns.get(sortFieldKey);
                 if (column != null)
                 {
                     sortCols.add(column);
@@ -630,13 +624,13 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             }
 
             // The column may be on a separate table via a lookup, so use QueryService to resolve it
-            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), translatedFieldKeys);
-            if (columns.size() != translatedFieldKeys.size() || columns.values().contains(null))
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), sortFieldKeys);
+            if (columns.size() != sortFieldKeys.size() || columns.values().contains(null))
             {
                 //if we cannot resolve any of the intended columns, rather than proceed
                 // with just 1 of them, default back to the original column
                 StringBuilder msg = new StringBuilder("Unable to resolve one or more sortFieldKeys for column: " + getFieldKey() + " on table: " + (getParentTable() != null ? getParentTable().getName() : "") + ".  The fieldKeys are: ");
-                msg.append(StringUtils.join(translatedFieldKeys, ","));
+                msg.append(StringUtils.join(sortFieldKeys, ","));
                 _log.warn(msg);
 
                 sortCols = new ArrayList<>();
@@ -644,7 +638,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             }
             else
             {
-                for (FieldKey fk : translatedFieldKeys)
+                for (FieldKey fk : sortFieldKeys)
                 {
                     ColumnInfo column = columns.get(fk);
                     cachedSortColumns.put(fk, column);
