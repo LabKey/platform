@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -63,7 +64,7 @@ public class AssayPublishService
         /**
          * Set of studies the user has permission to.
          */
-        Set<Study> getValidPublishTargets(User user, Class<? extends Permission> permission);
+        Set<Study> getValidPublishTargets(@NotNull User user, @NotNull Class<? extends Permission> permission);
 
         ActionURL getPublishHistory(Container container, ExpProtocol protocol);
         ActionURL getPublishHistory(Container container, ExpProtocol protocol, ContainerFilter containerFilter);

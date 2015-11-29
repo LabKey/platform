@@ -122,7 +122,7 @@ public class ServiceRegistry
 
     /**
      * Registers a service implementation. Modules that expose services should call this method
-     * at load time, passing the service interface class and the implemenation instance.
+     * at load time, passing the service interface class and the implementation instance.
      * @param type The service interface class (MyService.class)
      * @param instance An instance of a class that implements that service.
      */
