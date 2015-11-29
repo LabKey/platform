@@ -585,7 +585,7 @@ public class StudyManager
     }
 
     @NotNull
-    public Set<? extends StudyImpl> getAllStudies(Container root, User user, Class<? extends Permission> perm)
+    public Set<? extends StudyImpl> getAllStudies(@NotNull Container root, @NotNull User user, @NotNull Class<? extends Permission> perm)
     {
         Set<StudyImpl> result = new LinkedHashSet<>();
         for (StudyImpl study : getAllStudies())

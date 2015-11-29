@@ -132,7 +132,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     /**
      * Studies that the user has permission to.
      */
-    public Set<Study> getValidPublishTargets(User user, Class<? extends Permission> permission)
+    public Set<Study> getValidPublishTargets(@NotNull User user, @NotNull Class<? extends Permission> permission)
     {
         Set<? extends Study> studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
 
