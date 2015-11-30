@@ -48,8 +48,6 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
         public FolderSchema(User user, Container container, QuerySchema fallback)
         {
             super(null, null, user, container, CoreSchema.getInstance().getSchema());
-            _user = user;
-            _container = container;
             _fallback = fallback;
         }
 

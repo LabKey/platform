@@ -494,7 +494,7 @@ public class ModuleLoader implements Filter
             {
                 try
                 {
-                    // Make sure all its dependencies intialized successfully
+                    // Make sure all its dependencies initialized successfully
                     verifyDependencies(module);
                     module.initialize();
                 }

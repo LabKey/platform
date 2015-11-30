@@ -904,19 +904,21 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return getActiveModules(init, includeDepencendies, null);
     }
 
+    /** @return all modules that are active in the container, ordered based on module dependencies as implemented in {@link ModuleLoader#orderModules(Collection)} */
     public Set<Module> getActiveModules(@Nullable User user)
     {
         return getActiveModules(false, true, user);
     }
 
-    public Set<Module> getActiveModules(boolean init, boolean includeDepencendies, @Nullable User user)
+    /** @return all modules that are active in the container, ordered based on module dependencies as implemented in {@link ModuleLoader#orderModules(Collection)} */
+    public Set<Module> getActiveModules(boolean init, boolean includeDependencies, @Nullable User user)
     {
         if(isWorkbook())
         {
             if(init)
-                appendWorkbookModulesToParent(new HashSet<Module>(), user);
+                appendWorkbookModulesToParent(new HashSet<>(), user);
 
-            return getParent().getActiveModules(init, includeDepencendies, user);
+            return getParent().getActiveModules(init, includeDependencies, user);
         }
 
         //Short-circuit for root module
@@ -1028,7 +1030,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         Set<Module> activeModules;
-        if (includeDepencendies)
+        if (includeDependencies)
         {
             Set<Module> withDependencies = new HashSet<>();
             for (Module m : modules)

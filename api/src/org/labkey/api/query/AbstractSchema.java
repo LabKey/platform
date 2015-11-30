@@ -32,9 +32,9 @@ import java.util.Set;
 
 abstract public class AbstractSchema implements QuerySchema
 {
-    protected DbSchema _dbSchema;
-    protected User _user;
-    protected Container _container;
+    protected final DbSchema _dbSchema;
+    protected final User _user;
+    protected final Container _container;
     protected boolean _hidden = false;
 
     public AbstractSchema(DbSchema dbSchema, User user, Container container)
