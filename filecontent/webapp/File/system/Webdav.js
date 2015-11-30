@@ -566,7 +566,15 @@
             {
                 if (records.length == 1 && record && !record.data.collection)
                 {
-                    url = record.data.href + "?contentDisposition=attachment";
+                    // hack to prevent Chrome from turning both test.txt.gz and test.tar.gz into test.gz see: https://code.google.com/p/chromium/issues/detail?id=136305
+                    if (navigator.userAgent.indexOf("Chrome")!==-1 && record.data.href.indexOf(".gz")!==-1)
+                    {
+                        url = record.data.href;
+                    }
+                    else
+                    {
+                        url = record.data.href + "?contentDisposition=attachment";
+                    }
                 }
                 else if (config.directoryURL)
                 {
