@@ -154,40 +154,11 @@ public class ParamParserImpl implements ParamParser
         return _errors.toArray(new ErrorImpl[_errors.size()]);
     }
 
-/*  Old implemenation -- replaced 4/22/10 to eliminate direct Xerces dependency.  Uncomment to restore previous behavior.
-
     public String getXML()
     {
         // If nothing parsed yet, return the empty parameter set.
         if (_doc == null)
-            return getXMLFromMap(new HashMap<String, String>());
-
-        OutputFormat format = new OutputFormat(_doc); // Serialize DOM
-        format.setIndent(2);
-        format.setLineSeparator(System.getProperty("line.separator"));
-        format.setLineWidth(80);
-        try
-        {
-            StringWriter writer = new StringWriter();
-            XMLSerializer FileSerial = new XMLSerializer(writer, format);
-            FileSerial.asDOMSerializer(); // As a DOM Serializer
-            FileSerial.serialize(_doc);
-            return writer.toString();
-        }
-        catch (IOException eio)
-        {
-            _log.error("Failure writing DOM document to string.", eio);
-        }
-
-        return null;
-    }
-
-*/
-    public String getXML()
-    {
-        // If nothing parsed yet, return the empty parameter set.
-        if (_doc == null)
-            return getXMLFromMap(new HashMap<String, String>());
+            return getXMLFromMap(new HashMap<>());
 
         try
         {

@@ -16,7 +16,6 @@
 
 package org.labkey.study;
 
-import com.drew.lang.annotations.Nullable;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -27,9 +26,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.ExperimentRunType;
-import org.labkey.api.exp.ExperimentRunTypeSource;
 import org.labkey.api.exp.LsidManager;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.AssayBatchDomainKind;
 import org.labkey.api.exp.property.AssayResultDomainKind;
@@ -56,7 +53,6 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -194,6 +190,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class StudyModule extends SpringModule implements SearchService.DocumentProvider
@@ -376,21 +373,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         SecurityManager.addViewFactory(new SecurityController.StudySecurityViewFactory());
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         AssayService.get().registerAssayProvider(new TsvAssayProvider());
-        ExperimentService.get().registerExperimentRunTypeSource(new ExperimentRunTypeSource()
-        {
-            @NotNull
-            public Set<ExperimentRunType> getExperimentRunTypes(@Nullable Container container)
+        ExperimentService.get().registerExperimentRunTypeSource(container -> {
+            Set<ExperimentRunType> result = new HashSet<>();
+            if (container != null)
             {
-                Set<ExperimentRunType> result = new HashSet<>();
-                if (container != null)
-                {
-                    for (final ExpProtocol protocol : AssayService.get().getAssayProtocols(container))
-                    {
-                        result.add(new AssayRunType(protocol, container));
-                    }
-                }
-                return result;
+                result.addAll(AssayService.get().getAssayProtocols(container)
+                    .stream()
+                    .map(protocol -> new AssayRunType(protocol, container))
+                    .collect(Collectors.toList()));
             }
+            return result;
         });
         AuditLogService.get().addAuditViewFactory(AssayAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(DatasetAuditViewFactory.getInstance());
@@ -418,8 +410,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerDescriptor(new ParticipantReportDescriptor());
 
         ReportService.get().addUIProvider(new StudyReportUIProvider());
-
-        StudyReload.initializeAllTimers();
 
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
@@ -458,21 +448,22 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
-        AdminLinkManager.getInstance().addListener(new AdminLinkManager.Listener()
-        {
-            @Override
-            public void addAdminLinks(NavTree adminNavTree, Container container, User user)
+        AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
+            // Need only read permissions to view manage assays page
+            if (container.hasPermission(user, ReadPermission.class))
             {
-                // Need only read permissions to view manage assays page
-                if (container.hasPermission(user, ReadPermission.class))
-                {
-                    adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
+                adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
 
-                    if (container.getActiveModules().contains(StudyModule.this) && container.hasPermission(user, ManageStudyPermission.class))
-                        adminNavTree.addChild(new NavTree("Manage Study", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(container)));
-                }
+                if (container.getActiveModules().contains(StudyModule.this) && container.hasPermission(user, ManageStudyPermission.class))
+                    adminNavTree.addChild(new NavTree("Manage Study", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(container)));
             }
         });
+    }
+
+    @Override
+    public void startBackgroundThreads(ModuleContext moduleContext)
+    {
+        StudyReload.initializeAllTimers();
     }
 
     @Override

@@ -21,13 +21,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderImportContext;
-import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -65,8 +64,6 @@ import org.springframework.validation.BindException;
 
 import javax.servlet.ServletContextEvent;
 import java.io.File;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -120,12 +117,12 @@ public class StudyReload
         private final Integer _seconds;
         private final boolean _devOnly;
 
-        private ReloadInterval(Integer seconds, String dropDownLabel, String description)
+        ReloadInterval(Integer seconds, String dropDownLabel, String description)
         {
             this(seconds, false, dropDownLabel, description);
         }
 
-        private ReloadInterval(Integer seconds, boolean devOnly, String dropDownLabel, String description)
+        ReloadInterval(Integer seconds, boolean devOnly, String dropDownLabel, String description)
         {
             _seconds = seconds;
             _devOnly = devOnly;
@@ -184,14 +181,8 @@ public class StudyReload
         filter.addCondition(FieldKey.fromParts("AllowReload"), true);
         filter.addCondition(FieldKey.fromParts("ReloadInterval"), 0, CompareType.GT);
 
-        new TableSelector(tinfo, tinfo.getColumns("Container", "ReloadInterval"), filter, null).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                initializeTimer(rs.getString(1), true, rs.getInt(2));
-            }
-        });
+        new TableSelector(tinfo, tinfo.getColumns("Container", "ReloadInterval"), filter, null)
+            .forEach(rs -> initializeTimer(rs.getString(1), true, rs.getInt(2)));
     }
 
 
