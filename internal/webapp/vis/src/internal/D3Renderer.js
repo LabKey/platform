@@ -1498,7 +1498,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var appendTSpans = function(selection, width) {
-        var i, words = selection.datum().text.split(' '), segments = [], partial = '', start = 0;
+        var i, words = selection.datum().text.split(' '), segments = [],
+            partial = '', start = 0, isSeparator = selection.datum().separator === true;
 
         for (i = 0; i < words.length; i++) {
             partial = partial + words[i] + ' ';
@@ -1516,6 +1517,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         selection.selectAll('tspan').data(segments).enter().append('tspan')
                 .text(function(d){return d})
+                .attr('font-size', (isSeparator ? '110%' : '100%'))
+                .attr('font-weight', (isSeparator ? 'bold' : 'normal'))
                 .attr('dy', function(d, i){return i > 0 ? 12 : 0;})
                 .attr('x', selection.attr('x'));
     };
@@ -1530,7 +1533,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         glyphX = plot.grid.rightEdge + 30 + xPad;
         textX = glyphX + 15;
         yAcc = function(d, i) {return plot.grid.topEdge + (i * 15);};
-        colorAcc = function(d) {return d.color ? d.color : '#000';};
+        colorAcc = function(d) {
+            return d.color ? d.color : (d.separator ? '#FFF' : '#000');
+        };
         shapeAcc = function(d) {
             if (d.shape) {
                 return d.shape(5);

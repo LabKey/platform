@@ -1377,7 +1377,9 @@ boxPlot.render();
 
         // create a sequencial index to use for the x-axis value and keep a map from that index to the tick label
         // also, pull out the meanStdDev data for the unique x-axis values and calculate average values for the trend line data
-        var tickLabelMap = {}, index = -1, distinctColorValues = [], meanStdDevData = [], groupedTrendlineData = [], groupedTrendlineSeriesData = {};
+        var tickLabelMap = {}, index = -1, distinctColorValues = [], meanStdDevData = [],
+            groupedTrendlineData = [], groupedTrendlineSeriesData = {},
+            hasYRightMetric = config.properties.valueRight != undefined;
 
         for (var i = 0; i < config.data.length; i++)
         {
@@ -1421,7 +1423,7 @@ boxPlot.render();
 
                 // calculate average values for the trend line data (used when grouping x by unique value)
                 addValueToTrendLineData(groupedTrendlineData, index, index, config.properties.value, row[config.properties.value], 'sum1', 'count1');
-                if (config.properties.valueRight != undefined)
+                if (hasYRightMetric)
                 {
                     addValueToTrendLineData(groupedTrendlineData, index, index, config.properties.valueRight, row[config.properties.valueRight], 'sum2', 'count2');
                 }
@@ -1432,7 +1434,7 @@ boxPlot.render();
                     var key = series + '|' + index;
 
                     addValueToTrendLineData(groupedTrendlineSeriesData, index, key, config.properties.value, row[config.properties.value], 'sum1', 'count1');
-                    if (config.properties.valueRight != undefined)
+                    if (hasYRightMetric)
                     {
                         addValueToTrendLineData(groupedTrendlineSeriesData, index, key, config.properties.valueRight, row[config.properties.valueRight], 'sum2', 'count2');
                     }
@@ -1465,7 +1467,7 @@ boxPlot.render();
         }
 
         // we only need the color aes if there is > 1 distinct value in the color variable
-        if (distinctColorValues.length < 2) {
+        if (distinctColorValues.length < 2 && config.properties.groupBy == undefined) {
             config.properties.color = undefined;
         }
 
@@ -1506,7 +1508,7 @@ boxPlot.render();
             }
         };
 
-        if (config.properties.valueRight != undefined)
+        if (hasYRightMetric)
         {
             config.scales.yRight = {
                 scaleType: 'continuous',
@@ -1519,10 +1521,15 @@ boxPlot.render();
         }
 
         // Issue 23626: map line/point color based on legend data
-        if (config.legendData && config.properties.color && !config.properties.colorRange) {
+        if (config.legendData && config.properties.color && !config.properties.colorRange)
+        {
             var legendColorMap = {};
-            for (var i = 0; i < config.legendData.length; i++) {
-                legendColorMap[config.legendData[i].text] = config.legendData[i].color;
+            for (var i = 0; i < config.legendData.length; i++)
+            {
+                if (config.legendData[i].name)
+                {
+                    legendColorMap[config.legendData[i].name] = config.legendData[i].color;
+                }
             }
 
             config.scales.color = {
@@ -1616,7 +1623,12 @@ boxPlot.render();
                     var seriesDataArr = [];
                     for(var i in groupedTrendlineSeriesData) {
                         if (groupedTrendlineSeriesData.hasOwnProperty(i)) {
-                            seriesDataArr.push(groupedTrendlineSeriesData[i]);
+                            var d = {
+                                seqValue: groupedTrendlineSeriesData[i].seqValue,
+                                sequence: groupedTrendlineSeriesData[i].sequence + (hasYRightMetric ? '|' + valueName : '')
+                            };
+                            d[valueName] = groupedTrendlineSeriesData[i][valueName];
+                            seriesDataArr.push(d);
                         }
                     }
                     pathLayerConfig.data = seriesDataArr;
@@ -1630,14 +1642,16 @@ boxPlot.render();
 
                     if (colorValue != undefined)
                     {
-                        pathLayerConfig.aes.pathColor = function(row) { return colorValue; }
+                        pathLayerConfig.aes.pathColor = function(data) {
+                            return colorValue;
+                        }
                     }
                 }
 
                 return pathLayerConfig;
             };
 
-            if (config.properties.valueRight != undefined)
+            if (hasYRightMetric)
             {
                 config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.value, 0)));
                 config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yRight', config.properties.valueRight, 1)));
@@ -1662,7 +1676,9 @@ boxPlot.render();
             pointLayerConfig.aes[ySide] = valueName;
 
             if (config.properties.color) {
-                pointLayerConfig.aes.color = config.properties.color;
+                pointLayerConfig.aes.color = function(row) {
+                    return row[config.properties.color] + (hasYRightMetric ? '|' + valueName : '');
+                };
             }
             else if (colorValue != undefined) {
                 pointLayerConfig.aes.color = function(row){ return colorValue; };
@@ -1691,7 +1707,7 @@ boxPlot.render();
             return pointLayerConfig;
         };
 
-        if (config.properties.valueRight != undefined)
+        if (hasYRightMetric)
         {
             config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.value, 0)));
             config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.valueRight, 1)));
