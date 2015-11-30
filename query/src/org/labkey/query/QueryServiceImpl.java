@@ -320,7 +320,7 @@ public class QueryServiceImpl extends QueryService
         Collection<Module> allModules = new HashSet<>(modules);
         allModules.addAll(Arrays.asList(extraModules));
 
-        allModules = reorderModules(allModules);
+        allModules = ModuleLoader.getInstance().orderModules(allModules);
 
         List<QueryDefinition> ret = new ArrayList<>();
         for (Module module : allModules)
@@ -348,31 +348,28 @@ public class QueryServiceImpl extends QueryService
                 }
             }
 
-            if (null != queries)
+            for (Resource query : queries)
             {
-                for (Resource query : queries)
+                // Include both schemaName and path in key because some queries come from the same file on disk
+                // but are exposed in multiple schemas. For example, we support queries supplied as part
+                // of an assay provider that are exposed as part of each assay design of that type. See issue 16595
+                // Also include module, as multiple modules may provide the same resource - see issue 20628
+                String cacheKey = module.getName() + "||" + query.getPath().toString() + "||" + schemaName;
+                ModuleQueryDef moduleQueryDef = MODULE_QUERY_DEFS_CACHE.get(cacheKey);
+                if (null == moduleQueryDef || moduleQueryDef.isStale())
                 {
-                    // Include both schemaName and path in key because some queries come from the same file on disk
-                    // but are exposed in multiple schemas. For example, we support queries supplied as part
-                    // of an assay provider that are exposed as part of each assay design of that type. See issue 16595
-                    // Also include container, so that we're respecting the right set of active modules (inactive
-                    // modules may contain queries of the same name) - see issue 20628
-                    String cacheKey = container.getRowId() + "||" + query.getPath().toString() + "||" + schemaName;
-                    ModuleQueryDef moduleQueryDef = MODULE_QUERY_DEFS_CACHE.get(cacheKey);
-                    if (null == moduleQueryDef || moduleQueryDef.isStale())
-                    {
-                        moduleQueryDef = new ModuleQueryDef(query, schemaName, module.getName());
-                        MODULE_QUERY_DEFS_CACHE.put(cacheKey, moduleQueryDef);
-                    }
-
-                    ret.add(new ModuleCustomQueryDefinition(moduleQueryDef, user, container));
+                    moduleQueryDef = new ModuleQueryDef(query, schemaName, module.getName());
+                     MODULE_QUERY_DEFS_CACHE.put(cacheKey, moduleQueryDef);
                 }
+
+                ret.add(new ModuleCustomQueryDefinition(moduleQueryDef, user, container));
             }
         }
         return ret;
     }
 
-    private Collection<? extends Resource> getModuleQueries(Resource schemaDir, String fileExtension)
+    @NotNull
+    private Collection<? extends Resource> getModuleQueries(@Nullable Resource schemaDir, String fileExtension)
     {
         if (schemaDir == null)
             return Collections.emptyList();
@@ -593,7 +590,7 @@ public class QueryServiceImpl extends QueryService
         Collection<Module> currentModules = new HashSet<>(modules);
         currentModules.addAll(Arrays.asList(extraModules));
 
-        currentModules = reorderModules(currentModules);
+        currentModules = ModuleLoader.getInstance().orderModules(currentModules);
 
         List<CustomView> customViews = new LinkedList<>();
 
@@ -621,21 +618,6 @@ public class QueryServiceImpl extends QueryService
     {
         CstmView view = QueryManager.get().getCustomView(container, entityId);
         return view != null ? view.getName() : null;
-    }
-
-    /** Sort the modules in reverse dependency order, to help us get the most specific version of a particular resource */
-    private Collection<Module> reorderModules(Collection<Module> selectedModules)
-    {
-        List<Module> result = new ArrayList<>(selectedModules.size());
-        for (Module module : ModuleLoader.getInstance().getModules())
-        {
-            if (selectedModules.contains(module))
-            {
-                result.add(module);
-            }
-        }
-        Collections.reverse(result);
-        return result;
     }
 
     private static class CustomViewResourceCacheHandler implements QueryBasedModuleResourceCacheHandler<ModuleCustomViewDef>
@@ -1721,8 +1703,6 @@ public class QueryServiceImpl extends QueryService
         // Look for file-based definitions in modules
         Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : schema.getContainer().getActiveModules(schema.getUser());
 
-        modules = reorderModules(modules);
-
         for (Module module : modules)
         {
             Collection<? extends Resource> queryMetadatas;
@@ -1748,24 +1728,22 @@ public class QueryServiceImpl extends QueryService
                 }
             }
 
-            if (null != queryMetadatas)
+            for (Resource query : queryMetadatas)
             {
-                for (Resource query : queryMetadatas)
+                // Scope to the source module as multiple modules may supply the same resource path
+                String cacheKey = module.getName() + "||" + query.getPath().toString();
+                ModuleQueryMetadataDef metadataDef = MODULE_QUERY_METADATA_DEF_CACHE.get(cacheKey);
+                if (null == metadataDef || metadataDef.isStale())
                 {
-                    String cacheKey = query.getPath().toString();
-                    ModuleQueryMetadataDef metadataDef = MODULE_QUERY_METADATA_DEF_CACHE.get(cacheKey);
-                    if (null == metadataDef || metadataDef.isStale())
-                    {
-                        metadataDef = new ModuleQueryMetadataDef(query);
-                        MODULE_QUERY_METADATA_DEF_CACHE.put(cacheKey, metadataDef);
-                    }
+                    metadataDef = new ModuleQueryMetadataDef(query);
+                    MODULE_QUERY_METADATA_DEF_CACHE.put(cacheKey, metadataDef);
+                }
 
-                    if (metadataDef.getName().equalsIgnoreCase(tableName))
-                    {
-                        QueryDef result = metadataDef.toQueryDef(schema.getContainer());
-                        result.setSchema(schemaName);
-                        return result;
-                    }
+                if (metadataDef.getName().equalsIgnoreCase(tableName))
+                {
+                    QueryDef result = metadataDef.toQueryDef(schema.getContainer());
+                    result.setSchema(schemaName);
+                    return result;
                 }
             }
         }
