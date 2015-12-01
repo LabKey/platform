@@ -1224,7 +1224,7 @@ public class QueryServiceImpl extends QueryService
 
             for (FieldKey key : sortFieldKeys)
             {
-                ColumnInfo sortCol = resolveFieldKey(FieldKey.fromParts(col.getFieldKey().getParent(), key), col.getParentTable(), columnMap, null, manager);
+                ColumnInfo sortCol = resolveFieldKey(key, col.getParentTable(), columnMap, null, manager);
                 if (sortCol != null)
                 {
                     toAdd.add(sortCol);
