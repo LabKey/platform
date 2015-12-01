@@ -29,28 +29,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
@@ -86,6 +65,7 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentListener;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProtocolImplementation;
+import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -159,6 +139,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -3246,38 +3227,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     }
                 }
 
-                protApp1.setActivityDate(date);
-                protApp1.setActionSequence(action1.getSequence());
-                protApp1.setRun(run);
-                protApp1.setProtocol(parentProtocol);
-                Map<String, ProtocolParameter> parentParams = parentProtocol.getProtocolParameters();
-                ProtocolParameter parentLSIDTemplateParam = parentParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                ProtocolParameter parentNameTemplateParam = parentParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                assert parentLSIDTemplateParam != null : "Parent LSID Template was null";
-                assert parentNameTemplateParam != null : "Parent Name Template was null";
-                protApp1.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
-                protApp1.setName(parentNameTemplateParam.getStringValue());
-
+                initializeProtocolApplication(protApp1, date, action1, run, parentProtocol, context);
                 protApp1.save(user);
-
                 addDataInputs(inputDatas, protApp1._object, user);
                 addMaterialInputs(inputMaterials, protApp1._object, user);
 
-                protApp2.setActivityDate(date);
-                protApp2.setActionSequence(action2.getSequence());
-                protApp2.setRun(run);
-                protApp2.setProtocol(protocol2);
-
-                Map<String, ProtocolParameter> coreParams = protocol2.getProtocolParameters();
-                ProtocolParameter coreLSIDTemplateParam = coreParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                ProtocolParameter coreNameTemplateParam = coreParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                assert coreLSIDTemplateParam != null;
-                assert coreNameTemplateParam != null;
-                protApp2.setLSID(LsidUtils.resolveLsidFromTemplate(coreLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
-                protApp2.setName(coreNameTemplateParam.getStringValue());
-
+                initializeProtocolApplication(protApp2, date, action2, run, protocol2, context);
                 protApp2.save(user);
-
                 addDataInputs(inputDatas, protApp2._object, user);
                 addMaterialInputs(inputMaterials, protApp2._object, user);
 
@@ -3313,20 +3269,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId());
                 }
 
-                protApp3.setActivityDate(date);
-                protApp3.setActionSequence(action3.getSequence());
-                protApp3.setRun(run);
-                protApp3.setProtocol(outputProtocol);
-
-                Map<String, ProtocolParameter> outputParams = outputProtocol.getProtocolParameters();
-                ProtocolParameter outputLSIDTemplateParam = outputParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
-                ProtocolParameter outputNameTemplateParam = outputParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                assert outputLSIDTemplateParam != null;
-                assert outputNameTemplateParam != null;
-                protApp3.setLSID(LsidUtils.resolveLsidFromTemplate(outputLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
-                protApp3.setName(outputNameTemplateParam.getStringValue());
+                initializeProtocolApplication(protApp3, date, action3, run, outputProtocol, context);
                 protApp3.save(user);
-
                 addDataInputs(outputDatas, protApp3._object, user);
                 addMaterialInputs(outputMaterials, protApp3._object, user);
 
@@ -3349,6 +3293,23 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             throw new RuntimeSQLException(e);
         }
+    }
+
+    private ExpProtocolApplication initializeProtocolApplication(ExpProtocolApplication protApp, Date activityDate, ProtocolAction action, ExpRun run, ExpProtocol parentProtocol, XarContext context ) throws XarFormatException
+    {
+        protApp.setActivityDate(activityDate);
+        protApp.setActionSequence(action.getSequence());
+        protApp.setRun(run);
+        protApp.setProtocol(parentProtocol);
+        Map<String, ProtocolParameter> parentParams = parentProtocol.getProtocolParameters();
+        ProtocolParameter parentLSIDTemplateParam = parentParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
+        ProtocolParameter parentNameTemplateParam = parentParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+        assert parentLSIDTemplateParam != null : "Parent LSID Template was null";
+        assert parentNameTemplateParam != null : "Parent Name Template was null";
+        protApp.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
+        protApp.setName(parentNameTemplateParam.getStringValue());
+
+        return protApp;
     }
 
     @Override
@@ -3384,10 +3345,306 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
     @Override
+    public void deriveSamplesBulk(List<SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException
+    {
+        final int MAX_RUNS_IN_BATCH = 1000;
+        int count = 0;
+
+        User user = info.getUser();
+        XarContext context = new XarContext("Simple Run Creation", info.getContainer(), user);
+        Date date = new Date();
+        DeriveSamplesBulkHelper helper = new DeriveSamplesBulkHelper(info.getContainer(), user, context);
+
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+        {
+            for (SimpleRunRecord runRecord : runRecords)
+            {
+                count++;
+                ExpRunImpl run = createRun(runRecord.getInputMaterialMap(), Collections.emptyMap(), runRecord.getOutputMaterialMap(), Collections.emptyMap(), info);
+
+                helper.addRunParams(run._object, user.getUserId());
+
+                // protocol applications
+                ExpProtocol parentProtocol = run.getProtocol();
+
+                ProtocolAction[] actions = getProtocolActions(parentProtocol.getRowId());
+                if (actions.length != 3)
+                {
+                    throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
+                }
+                ProtocolAction action1 = actions[0];
+                assert action1.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
+                assert action1.getChildProtocolId() == parentProtocol.getRowId();
+
+                ProtocolAction action2 = actions[1];
+                assert action2.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
+                ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
+
+                ProtocolAction action3 = actions[2];
+                assert action3.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
+                ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
+                assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
+
+                ExpProtocolApplicationImpl protApp1 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+                ExpProtocolApplicationImpl protApp2 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+                ExpProtocolApplicationImpl protApp3 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+
+                helper.addProtocolApp(protApp1, date, action1, parentProtocol, run, runRecord.getInputMaterialMap(),
+                        runRecord.getOutputMaterialMap());
+
+                helper.addProtocolApp(protApp2, date, action2, protocol2, run, runRecord.getInputMaterialMap(),
+                        runRecord.getOutputMaterialMap());
+
+                helper.addProtocolApp(protApp3, date, action3, outputProtocol, run, runRecord.getOutputMaterialMap(),
+                        runRecord.getOutputMaterialMap());
+
+                if ((count % MAX_RUNS_IN_BATCH) == 0)
+                {
+                    helper.saveBatch();
+                }
+            }
+
+            // process the rest of the list
+            if (!helper.isEmpty())
+            {
+                helper.saveBatch();
+            }
+
+            transaction.commit();
+        }
+        catch (SQLException e)
+        {
+            throw new ExperimentException(e);
+        }
+    }
+
+    private class DeriveSamplesBulkHelper
+    {
+        private Container _container;
+        private User _user;
+        private XarContext _context;
+
+        private List<List<?>> _runParams = new ArrayList<>();
+        private List<List<?>> _protAppParams = new ArrayList<>();
+        private List<ProtocolAppRecord> _protAppRecords = new ArrayList<>();
+        private List<List<?>> _materialInputParams = new ArrayList<>();
+
+        public DeriveSamplesBulkHelper(Container container, User user, XarContext context)
+        {
+            _container = container;
+            _user = user;
+            _context = context;
+        }
+
+        public void addRunParams(ExperimentRun run, int userId)
+        {
+            Timestamp ts = new Timestamp(System.currentTimeMillis());
+            _runParams.add(Arrays.asList(
+                    run.getLSID(),
+                    run.getName(),
+                    run.getProtocolLSID(),
+                    run.getFilePathRoot(),
+                    GUID.makeGUID(),
+                    ts,
+                    userId,
+                    ts,
+                    userId));
+        }
+
+        public void addProtocolApp(ExpProtocolApplicationImpl protApp, Date activityDate, ProtocolAction action, ExpProtocol protocol,
+                                   ExpRun run, Map<ExpMaterial, String> inputMaterialMap, Map<ExpMaterial, String> outputMaterialMap)
+        {
+            _protAppRecords.add(new ProtocolAppRecord(protApp, activityDate, action, protocol, run, inputMaterialMap, outputMaterialMap));
+        }
+
+        public void saveBatch() throws SQLException, XarFormatException
+        {
+            // insert into the experimentrun table
+            saveExpRunsBatch(_container, _runParams);
+
+            // insert into the protocolapplication table
+            createProtocolAppParams(_container, _protAppRecords, _protAppParams, _context);
+            saveExpProtocolApplicationBatch(_protAppParams);
+
+            // insert into the materialinput table
+            createMaterialInputParams(_protAppRecords, _materialInputParams);
+            saveExpMaterialInputBatch(_materialInputParams);
+            saveExpMaterialOutputs(_protAppRecords);
+
+            // clear the stored records
+            _runParams.clear();
+            _protAppParams.clear();
+            _materialInputParams.clear();
+            _protAppRecords.clear();
+        }
+
+        public boolean isEmpty()
+        {
+            return _runParams.isEmpty();
+        }
+
+        private void saveExpRunsBatch(Container c, List<List<?>> params) throws SQLException
+        {
+            StringBuilder sql = new StringBuilder("INSERT INTO ").append(ExperimentServiceImpl.get().getTinfoExperimentRun().toString()).
+                    append(" (Lsid, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) VALUES (?,?,?,?,?,?,?,?,?, '").
+                    append(c.getId()).append("')");
+
+            Table.batchExecute(getExpSchema(), sql.toString(), params);
+        }
+
+        /**
+         * Replace the placeholder run id with the actual run id
+         */
+        private void createProtocolAppParams(Container c, List<ProtocolAppRecord> protAppRecords, List<List<?>> protAppParams, XarContext context) throws XarFormatException
+        {
+            // get the run id's
+            Map<String, Integer> runRowMap = new HashMap<>();
+
+            for (ProtocolAppRecord rec : protAppRecords)
+                runRowMap.put(rec._run.getLSID(), null);
+
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+            new TableSelector(ExperimentService.get().getTinfoExperimentRun(), filter, null).forEach(new Selector.ForEachBlock<ResultSet>()
+            {
+                @Override
+                public void exec(ResultSet rs) throws SQLException
+                {
+                    if (runRowMap.containsKey(rs.getString("Lsid")))
+                        runRowMap.put(rs.getString("Lsid"), rs.getInt("RowId"));
+                }
+            });
+
+            for (ProtocolAppRecord rec : protAppRecords)
+            {
+                assert runRowMap.containsKey(rec._run.getLSID());
+
+                Integer runId = runRowMap.get(rec._run.getLSID());
+                context.addSubstitution("ExperimentRun.RowId", Integer.toString(runId));
+
+                initializeProtocolApplication(rec._protApp, rec._activityDate, rec._action, rec._run, rec._protocol, context);
+                rec._protApp._object.setRunId(runId);
+
+                protAppParams.add(Arrays.asList(
+                        rec._protApp._object.getName(),
+                        rec._protApp._object.getCpasType(),
+                        rec._protApp._object.getProtocolLSID(),
+                        rec._protApp._object.getActivityDate(),
+                        runId,
+                        rec._protApp._object.getActionSequence(),
+                        rec._protApp._object.getLSID()));
+            }
+        }
+
+        private void createMaterialInputParams(List<ProtocolAppRecord> protAppRecords, List<List<?>> materialInputParams)
+        {
+            // get the protocol application rows id's
+            Map<String, Integer> protAppRowMap = new HashMap<>();
+
+            for (ProtocolAppRecord rec : protAppRecords)
+                protAppRowMap.put(rec._protApp.getLSID(), null);
+
+            new TableSelector(ExperimentService.get().getTinfoProtocolApplication(), null, null).forEach(new Selector.ForEachBlock<ResultSet>()
+            {
+                @Override
+                public void exec(ResultSet rs) throws SQLException
+                {
+                    if (protAppRowMap.containsKey(rs.getString("Lsid")))
+                        protAppRowMap.put(rs.getString("Lsid"), rs.getInt("RowId"));
+                }
+            });
+
+            for (ProtocolAppRecord rec : protAppRecords)
+            {
+                assert protAppRowMap.containsKey(rec._protApp.getLSID());
+
+                Integer rowId = protAppRowMap.get(rec._protApp.getLSID());
+                // optimize, should be only 1 material input
+                for (Map.Entry<ExpMaterial, String> entry : rec._inputMaterialMap.entrySet())
+                {
+                    rec._protApp._object.setRowId(rowId);
+
+                    materialInputParams.add(Arrays.asList(
+                            entry.getKey().getRowId(),
+                            rowId,
+                            entry.getValue()));
+                }
+            }
+        }
+
+        private void saveExpMaterialOutputs(List<ProtocolAppRecord> protAppRecords)
+        {
+            for (ProtocolAppRecord rec : protAppRecords)
+            {
+                if (rec._action.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
+                {
+                    for (ExpMaterial outputMaterial : rec._outputMaterialMap.keySet())
+                    {
+                        SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterial(), "").
+                                append(" SET SourceApplicationId = ?, RunId = ? WHERE RowId = ?");
+
+                        sql.addAll(new Object[]{rec._protApp.getRowId(), rec._protApp._object.getRunId(), outputMaterial.getRowId()});
+
+                        new SqlExecutor(getTinfoMaterial().getSchema()).execute(sql);
+                    }
+                }
+            }
+        }
+
+        private void saveExpMaterialInputBatch(List<List<?>> params) throws SQLException
+        {
+            StringBuilder sql = new StringBuilder("INSERT INTO ").append(ExperimentServiceImpl.get().getTinfoMaterialInput().toString()).
+                    append(" (MaterialId, TargetApplicationId, Role)").
+                    append(" VALUES (?,?,?)");
+
+            Table.batchExecute(getExpSchema(), sql.toString(), params);
+        }
+
+        private void saveExpProtocolApplicationBatch(List<List<?>> params) throws SQLException
+        {
+            StringBuilder sql = new StringBuilder("INSERT INTO ").append(ExperimentServiceImpl.get().getTinfoProtocolApplication().toString()).
+                    append(" (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid)").
+                    append(" VALUES (?,?,?,?,?,?,?)");
+
+            Table.batchExecute(getExpSchema(), sql.toString(), params);
+        }
+
+        private class ProtocolAppRecord
+        {
+            ExpProtocolApplicationImpl _protApp;
+            Date _activityDate;
+            ProtocolAction _action;
+            ExpProtocol _protocol;
+            ExpRun _run;
+            Map<ExpMaterial, String> _inputMaterialMap;
+            Map<ExpMaterial, String> _outputMaterialMap;
+
+            public ProtocolAppRecord(ExpProtocolApplicationImpl protApp, Date activityDate, ProtocolAction action, ExpProtocol protocol,
+                                     ExpRun run, Map<ExpMaterial, String> inputMaterialMap, Map<ExpMaterial, String> outputMaterialMap)
+            {
+                _protApp = protApp;
+                _activityDate = activityDate;
+                _action = action;
+                _protocol = protocol;
+                _run = run;
+                _inputMaterialMap = inputMaterialMap;
+                _outputMaterialMap = outputMaterialMap;
+            }
+        }
+    }
+
+    @Override
     public ExpRun derive(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
                                 Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
                                 ViewBackgroundInfo info, Logger log)
             throws ExperimentException
+    {
+        ExpRun run = createRun(inputMaterials, inputDatas, outputMaterials, outputDatas,info);
+        return saveSimpleExperimentRun(run, inputMaterials, inputDatas, outputMaterials, outputDatas,
+                Collections.<ExpData, String>emptyMap(), info, log, false);
+    }
+
+    private ExpRunImpl createRun(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
+                         Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info) throws ExperimentException
     {
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !pipeRoot.isValid())
@@ -3448,8 +3705,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         run.setProtocol(protocol);
         run.setFilePathRoot(pipeRoot.getRootPath());
 
-        return saveSimpleExperimentRun(run, inputMaterials, inputDatas, outputMaterials, outputDatas,
-                Collections.<ExpData, String>emptyMap(), info, log, false);
+        return run;
     }
 
     @Override

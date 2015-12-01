@@ -166,29 +166,37 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
             task = ss.defaultTask();
         }
 
-        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(this);
-        ActionURL sourceURL = new ActionURL(ExperimentController.ShowMaterialSimpleAction.class, getContainer()).addParameter("rowId", getRowId());
+        // do the least possible amount of work here
+        final SearchService.IndexTask indexTask = task;
+        final ExpMaterialImpl me = this;
+        indexTask.addRunnable(
+                () -> {
+                    ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(me);
+                    ActionURL sourceURL = new ActionURL(ExperimentController.ShowMaterialSimpleAction.class, getContainer()).addParameter("rowId", getRowId());
 
-        ActionResource r = new ActionResource(searchCategory, getDocumentId(), url, sourceURL)
-        {
-            @Override
-            public void setLastIndexed(long ms, long modified)
-            {
-                new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?",
-                        new Timestamp(ms), getRowId());
-            }
-        };
-        r.getMutableProperties().put(SearchService.PROPERTY.title.toString(), "Sample - " + getName());
-        ExpSampleSet ss = getSampleSet();
-        if (null != ss)
-        {
-            //ActionURL resolve = new ActionURL(ExperimentController.ResolveLSIDAction.class,getContainer()).addParameter("lsid",ss.getLSID());
-            ActionURL show = new ActionURL(ExperimentController.ShowMaterialSourceAction.class,getContainer()).addParameter("rowId",ss.getRowId());
-            NavTree t = new NavTree("SampleSet - " + ss.getName(), show);
-            String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
-            r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-        }
-        task.addResource(r, SearchService.PRIORITY.item);
+                    ActionResource r = new ActionResource(searchCategory, getDocumentId(), url, sourceURL)
+                    {
+                        @Override
+                        public void setLastIndexed(long ms, long modified)
+                        {
+                            new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?",
+                                    new Timestamp(ms), getRowId());
+                        }
+                    };
+                    r.getMutableProperties().put(SearchService.PROPERTY.title.toString(), "Sample - " + getName());
+                    ExpSampleSet ss = getSampleSet();
+                    if (null != ss)
+                    {
+                        //ActionURL resolve = new ActionURL(ExperimentController.ResolveLSIDAction.class,getContainer()).addParameter("lsid",ss.getLSID());
+                        ActionURL show = new ActionURL(ExperimentController.ShowMaterialSourceAction.class,getContainer()).addParameter("rowId",ss.getRowId());
+                        NavTree t = new NavTree("SampleSet - " + ss.getName(), show);
+                        String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                        r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+                    }
+                    indexTask.addResource(r, SearchService.PRIORITY.item);
+                }
+                , SearchService.PRIORITY.bulk
+        );
     }
 
     public String getDocumentId()

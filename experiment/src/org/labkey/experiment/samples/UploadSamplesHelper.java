@@ -16,9 +16,9 @@
 
 package org.labkey.experiment.samples;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -27,15 +27,22 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -44,13 +51,23 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.SampleSetAuditViewFactory;
-import org.labkey.experiment.api.*;
+import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 
 public class UploadSamplesHelper
 {
@@ -518,6 +535,9 @@ public class UploadSamplesHelper
     public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, PropertyDescriptor[] descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs)
             throws SQLException, ValidationException, ExperimentException
     {
+        long start = System.currentTimeMillis();
+        _log.info("starting sample insert");
+
         if (rows.size() == 0)
             return Collections.emptyList();
 
@@ -555,6 +575,8 @@ public class UploadSamplesHelper
             }
 
             assert rows.size() == helper._materials.size() : "Didn't find as many materials as we have rows";
+
+            List<SimpleRunRecord> runRecords = new ArrayList<>();
             for (int i = 0; i < rows.size(); i++)
             {
                 Map<String, Object> row = rows.get(i);
@@ -588,8 +610,15 @@ public class UploadSamplesHelper
                         parentMap.put(parentMaterial, "Sample" + (index == 1 ? "" : Integer.toString(index)));
                         index++;
                     }
-                    ExperimentService.get().deriveSamples(parentMap, Collections.singletonMap(material, "Sample"), new ViewBackgroundInfo(_form.getContainer(),  _form.getUser(), null), _log);
+
+                    runRecords.add(new UploadSampleRunRecord(parentMap, Collections.singletonMap(material, "Sample")));
+                    //ExperimentService.get().deriveSamples(parentMap, Collections.singletonMap(material, "Sample"), new ViewBackgroundInfo(_form.getContainer(),  _form.getUser(), null), _log);
                 }
+            }
+
+            if (!runRecords.isEmpty())
+            {
+                ExperimentService.get().deriveSamplesBulk(runRecords, new ViewBackgroundInfo(_form.getContainer(),  _form.getUser(), null), _log);
             }
         }
 
@@ -604,8 +633,33 @@ public class UploadSamplesHelper
         event.setComment("Samples inserted or updated in: " + _form.getName());
 
         AuditLogService.get().addEvent(event);
+        _log.info("finished inserting samples : time elapsed " + (System.currentTimeMillis() - start));
 
         return helper._materials;
+    }
+
+    private static class UploadSampleRunRecord implements SimpleRunRecord
+    {
+        Map<ExpMaterial, String> _inputMaterial;
+        Map<ExpMaterial, String> _outputMaterial;
+
+        public UploadSampleRunRecord(Map<ExpMaterial, String> inputMaterial, Map<ExpMaterial, String> outputMaterial)
+        {
+            _inputMaterial = inputMaterial;
+            _outputMaterial = outputMaterial;
+        }
+
+        @Override
+        public Map<ExpMaterial, String> getInputMaterialMap()
+        {
+            return _inputMaterial;
+        }
+
+        @Override
+        public Map<ExpMaterial, String> getOutputMaterialMap()
+        {
+            return _outputMaterial;
+        }
     }
 
     private List<ExpMaterial> resolveParentMaterials(String newParent, Map<String, List<ExpMaterialImpl>> materials) throws ValidationException, ExperimentException
