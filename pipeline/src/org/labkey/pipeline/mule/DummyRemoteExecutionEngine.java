@@ -1,5 +1,6 @@
 package org.labkey.pipeline.mule;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.AbstractRemoteExecutionEngineConfig;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -12,6 +13,7 @@ import org.labkey.api.pipeline.RemoteExecutionEngine;
 public class DummyRemoteExecutionEngine implements RemoteExecutionEngine
 {
     public static final String TYPE = "Dummy!!!";
+    @NotNull
     @Override
     public String getType()
     {
@@ -19,19 +21,19 @@ public class DummyRemoteExecutionEngine implements RemoteExecutionEngine
     }
 
     @Override
-    public void submitJob(PipelineJob job) throws PipelineJobException
+    public void submitJob(@NotNull PipelineJob job) throws PipelineJobException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String getStatus(String jobId) throws PipelineJobException
+    public String getStatus(@NotNull String jobId) throws PipelineJobException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void cancelJob(String jobId) throws PipelineJobException
+    public void cancelJob(@NotNull String jobId) throws PipelineJobException
     {
         throw new UnsupportedOperationException();
     }

@@ -42,7 +42,7 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
 
     public PipelineJobRunnerRemoteExecution()
     {
-        // Note: can't throw exception at config time, for missing
+        // Note: can't throw exception at config time for missing
         //       client information, since it must be possible to run the web
         //       server without remote execution configuration.
     }

@@ -104,7 +104,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 jobStore = new PipelineJobMarshaller();
                 statusWriter = new JMSStatusWriter();
                 break;
-            case Cluster:
+            case RemoteExecutionEngine:
                 jobStore = new PipelineJobMarshaller();
                 statusWriter = new NoOpPipelineStatusWriter();
                 break;
