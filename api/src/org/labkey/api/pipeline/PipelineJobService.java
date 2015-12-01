@@ -87,14 +87,22 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
         @NotNull String getHostName();
     }
 
+    /** Configuration for a {@link RemoteExecutionEngine}. Expected to be registered via Spring XML configuration files. */
     public interface RemoteExecutionEngineConfig
     {
+        /** @return the pipeline location to which this configuration is bound, and for which jobs should be routed to the associated engine */
         @NotNull
         String getLocation();
+
+        /** @return the type of engine. Must match a registered engine's {@link RemoteExecutionEngine#getType()} */
         @NotNull
         String getType();
+
+        /** @return the queues available for submitting at the remote engine, if any. May be empty. */
         @NotNull
         Set<String> getAvailableQueues();
+
+        /** @return the path mapper that knows how to translate file paths from the web server's perspective to the remote execution engine's perspective */
         @NotNull
         PathMapper getPathMapper();
     }
@@ -110,6 +118,12 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
 
     @NotNull
     abstract public List<? extends RemoteExecutionEngineConfig> getRemoteExecutionEngineConfigs();
+
+    /** @return all of the engines that are currently known to the pipeline module */
+    abstract public List<? extends RemoteExecutionEngine> getRemoteExecutionEngines();
+
+    /** Registers a remote execution engine. Intended for calling during module startup */
+    abstract public void registerRemoteExecutionEngine(RemoteExecutionEngine engine);
 
     /**
      * @param exeRel if relative, interpreted based on either the installPath or tools directory
@@ -142,5 +156,13 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
         return (path == null ? null : path.replace('\\', '/'));
     }
 
-    public enum LocationType { WebServer, RemoteServer, Cluster }
+    public enum LocationType
+    {
+        /** Any of the various queues that are managed and run directly on the web server */
+        WebServer,
+        /** Any external server that is monitoring for jobs to be assigned to it via JMS messaging */
+        RemoteServer,
+        /** Any external computational resource to which something on the web server submits jobs via {@link RemoteExecutionEngine} */
+        RemoteExecutionEngine
+    }
 }

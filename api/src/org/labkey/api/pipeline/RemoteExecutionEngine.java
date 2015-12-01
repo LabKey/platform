@@ -1,16 +1,30 @@
 package org.labkey.api.pipeline;
 
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobException;
+import org.jetbrains.annotations.NotNull;
 
 /**
+ * RemoteExecutionEngine implementations know how to submit jobs to some sort of external execution engine, such as a
+ * cluster. They are responsible for managing communication with the remote resource.
+ *
+ * Implementations are also responsible for monitoring status changes and updating the job's record
+ * via PipelineJobService.get().getStatusWriter().setStatus(). The exception is that the core server, at restart time,
+ * will requery all jobs that were active or queued.
+ *
  * Created by: jeckels
  * Date: 11/16/15
  */
 public interface RemoteExecutionEngine
 {
+    /** @return a unique name for this type of execution engine, such as 'HTCondor' */
+    @NotNull
     String getType();
-    void submitJob(PipelineJob job) throws PipelineJobException;
-    String getStatus(String jobId) throws PipelineJobException;
-    void cancelJob(String jobId) throws PipelineJobException;
+
+    /** Submit a job for execution */
+    void submitJob(@NotNull PipelineJob job) throws PipelineJobException;
+
+    /** @return the status of the requested job, currently marked as being run/queued at a location managed by this engine */
+    String getStatus(@NotNull String jobId) throws PipelineJobException;
+
+    /** Cancel a job, if possible, that is currently marked as being run/queued at a location managed by this engine */
+    void cancelJob(@NotNull String jobId) throws PipelineJobException;
 }
