@@ -82,11 +82,7 @@ public class LengthValidator extends DefaultPropertyValidator implements Validat
 
     private boolean isValid(Object value, String oper, int constraint)
     {
-        if (NumberUtilsLabKey.isNumber(String.valueOf(constraint)))
-        {
-            int comparison = Long.compare(value.toString().length(), constraint);
-            return comparisonValid(comparison, oper);
-        }
-        return false;
+        int comparison = Long.compare(value.toString().length(), constraint);
+        return comparisonValid(comparison, oper);
     }
 }

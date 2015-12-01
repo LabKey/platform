@@ -997,8 +997,15 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                     column.getSize().toString();
 
             //T-SQL only allows 1 ALTER COLUMN clause per ALTER TABLE statement
-            String statement = String.format("ALTER TABLE [%s].[%s] ALTER COLUMN [%s] %s(%s);", change.getSchemaName(),
-                    change.getTableName(), column.getName(), sqlTypeNameFromJdbcType(column.getJdbcType()), size);
+            String statement = String.format("ALTER TABLE [%s].[%s] ALTER COLUMN [%s] %s(%s) ",
+                    change.getSchemaName(),
+                    change.getTableName(),
+                    column.getName(),
+                    sqlTypeNameFromJdbcType(column.getJdbcType()),
+                    size);
+
+            //T-SQL will drop any existing null constraints
+            statement += column.isNullable() ? "NULL;" : "NOT NULL;";
             statements.add(statement);
         }
         return statements;

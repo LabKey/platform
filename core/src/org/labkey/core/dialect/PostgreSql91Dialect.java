@@ -1035,6 +1035,7 @@ public class PostgreSql91Dialect extends SqlDialect
 
             sb.append(comma);
             comma = ", ";
+            //Postgres retains the existing null behavior
             sb.append(String.format("ALTER COLUMN %s TYPE %s", makePropertyIdentifier(column.getName()), dbType));
         }
         return sb.append(";").toString();
