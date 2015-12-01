@@ -440,7 +440,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         }
     }
 
-    // Get the name of the webapp configuration file, e.g., labkey.xml, cpas.xml, or root.xml.  Used in some error messages
+    // Get the name of the webapp configuration file, e.g., labkey.xml, cpas.xml, or ROOT.xml.  Used in some error messages
     //  to provide suggestions to the admin.
     public String getWebappConfigurationFilename()
     {
