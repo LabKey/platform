@@ -358,6 +358,7 @@ public class ExperimentService
                             Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
                             ViewBackgroundInfo info, Logger log)
             throws ExperimentException;
+        public void deriveSamplesBulk(List<SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
         public void registerExperimentMaterialListener(ExperimentMaterialListener listener);
         public void registerExperimentDataHandler(ExperimentDataHandler handler);

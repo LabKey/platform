@@ -693,6 +693,7 @@ api/src/org/labkey/api/exp/api/ExperimentUrls.java -text
 api/src/org/labkey/api/exp/api/IAssayDomainType.java -text
 api/src/org/labkey/api/exp/api/ProtocolImplementation.java -text
 api/src/org/labkey/api/exp/api/ProvisionedDbSchema.java -text
+api/src/org/labkey/api/exp/api/SimpleRunRecord.java -text
 api/src/org/labkey/api/exp/api/StorageProvisioner.java -text
 api/src/org/labkey/api/exp/list/ListDefinition.java -text
 api/src/org/labkey/api/exp/list/ListImportProgress.java -text
