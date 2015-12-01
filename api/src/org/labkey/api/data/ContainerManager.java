@@ -308,11 +308,21 @@ public class ContainerManager
         return c;
     }
 
+    public static void refreshFolderType(Container c, User user, BindException errors)
+    {
+        setFolderType(c, c.getFolderType(), user, errors, true);
+    }
+
     public static void setFolderType(Container c, FolderType folderType, User user, BindException errors)
+    {
+        setFolderType(c, folderType, user, errors, false);
+    }
+
+    private static void setFolderType(Container c, FolderType folderType, User user, BindException errors, boolean forceSet)
     {
         FolderType oldType = c.getFolderType();
 
-        if (folderType.equals(oldType))
+        if (!forceSet && folderType.equals(oldType))
             return;
 
         List<String> errorStrings = new ArrayList<>();
