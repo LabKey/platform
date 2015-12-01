@@ -32,6 +32,7 @@ import org.labkey.api.data.DbScope.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
@@ -488,13 +489,14 @@ public class StorageProvisioner
      * @param domain to execute within
      * @param properties set of properties to resize
      */
-    public static void resizeProperties(Domain domain, DomainProperty... properties)
+    public static void resizeProperties(Domain domain, DomainProperty... properties) throws ChangePropertyDescriptorException
     {
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction with propertydescriptor changes
-        assert scope.isTransactionActive();
+        if(!scope.isTransactionActive())
+            throw new ChangePropertyDescriptorException("Unable to change property size. Transaction is not active within change scope");
 
         Connection con = null;
 

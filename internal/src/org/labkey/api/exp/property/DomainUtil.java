@@ -498,7 +498,7 @@ public class DomainUtil
     public static void setPropertyDescriptorScale(DomainProperty p)
     {
         // Set Scale for non-string types
-        if (!PropertyType.STRING.equals(p.getPropertyDescriptor().getPropertyType()) || PropertyType.MULTI_LINE.equals(p.getPropertyDescriptor().getPropertyType()))
+        if (!(PropertyType.STRING.equals(p.getPropertyDescriptor().getPropertyType()) || PropertyType.MULTI_LINE.equals(p.getPropertyDescriptor().getPropertyType())))
             p.setScale(p.getPropertyDescriptor().getPropertyType().getScale());
     }
 
