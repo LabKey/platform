@@ -1404,7 +1404,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             translate = true;
             if(typeof rotate === 'undefined')
                 rotate = 90;
-            x = plot.grid.rightEdge + (plot.labels[name].position != undefined ? plot.labels[name].position : 45);
+            x = plot.grid.rightEdge + (plot.labels[name].position != undefined ? plot.labels[name].position : 55);
             y = plot.grid.height / 2;
         } else if (name == 'x') {
             x = plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2;
@@ -1463,6 +1463,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 }
             } else {
                 labelElements[name].dom.text(plot.labels[name].value);
+                if (plot.labels[name].color) {
+                    labelElements[name].dom.attr('fill', plot.labels[name].color);
+                }
             }
             if (translate) {
                 labelElements[name].dom.attr('transform', 'translate(' + x + ',' + y + ')rotate(' + rotate + ')')
@@ -1529,7 +1532,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         var fontFamily = plot.fontFamily ? plot.fontFamily : 'verdana, arial, helvetica, sans-serif';
         selection.attr('font-family', fontFamily).attr('font-size', '10px');
 
-        xPad = plot.scales.yRight && plot.scales.yRight.scale ? 40 : 0;
+        xPad = plot.scales.yRight && plot.scales.yRight.scale ? 50 : 0;
         glyphX = plot.grid.rightEdge + 30 + xPad;
         textX = glyphX + 15;
         yAcc = function(d, i) {return plot.grid.topEdge + (i * 15);};
@@ -1665,7 +1668,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return x !== null && y !== null;
         }, this);
 
-        // reset the jitterIndex since we will call xAxx again via translateAcc
+        // reset the jitterIndex since we will call xAcc again via translateAcc
         jitterIndex = {};
 
         anchorSel = layer.selectAll('.point').data(data);
