@@ -3152,16 +3152,15 @@ li.tab-nav-inactive:hover a {
 /* Popup */
 .edit-views-link
 {
-    background: url(./_images/pencil2.png) left top no-repeat;
-    position: absolute;
+    text-align: center;
     height: 18px;
     width: 23px;
 }
 
 .edit-views-link:hover
 {
-    background: url(./_images/pencil2.png) center top no-repeat;
     cursor: pointer;
+    color: #126495;
 }
 
 .labkey-main-menu

@@ -1754,7 +1754,7 @@ public class ReportsController extends BaseStudyController
                 view.setFrame(WebPartView.FrameType.PORTAL);
 
                 String script = String.format("javascript:customizeParticipantReport('%s');", form.getComponentId());
-                NavTree edit = new NavTree("Edit", script, getViewContext().getContextPath() + "/_images/partedit.png");
+                NavTree edit = new NavTree("Edit", script, null, "fa fa-pencil");
                 view.addCustomMenu(edit);
 
                 if (getViewContext().hasPermission(InsertPermission.class))

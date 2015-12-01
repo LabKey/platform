@@ -405,7 +405,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 sortable : false,
                 renderer : function(view, meta, rec, idx, colIdx, store) {
                     if (rec.data.entityId)
-                        return '<span height="16px" class="edit-views-link"></span>';
+                        return '<span height="16px" class="edit-views-link fa fa-pencil"></span>';
                     return '';
                 },
                 scope    : this

@@ -97,7 +97,7 @@ public class ParticipantReport extends AbstractReport
         if (canEdit(context.getUser(), context.getContainer()))
         {
             String script = String.format("javascript:customizeParticipantReport('%s');", form.getComponentId());
-            NavTree edit = new NavTree("Edit", script, AppProps.getInstance().getContextPath() + "/_images/partedit.png");
+            NavTree edit = new NavTree("Edit", script, null, "fa fa-pencil");
             view.addCustomMenu(edit);
 
             NavTree menu = new NavTree();

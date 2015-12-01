@@ -539,7 +539,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
                 // an item needs an edit info interface to be editable
                 if (editable)
-                    return '<span height="16px" class="edit-link-cls-' + this.webpartId + ' edit-views-link"></span>';
+                    return '<span height="16px" class="edit-link-cls-' + this.webpartId + ' edit-views-link fa fa-pencil"></span>';
                 else
                     return '<span height="16px" class="edit-link-cls-' + this.webpartId + '"></span>';
             },
