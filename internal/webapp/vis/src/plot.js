@@ -589,7 +589,7 @@ boxPlot.render();
     };
 
     var getLogScale = function (domain, range) {
-        var scale, scaleWrapper, increment = false;
+        var scale, scaleWrapper, increment = 0;
 
         // Issue 24727: adjust domain range to compensate for log scale fitting error margin
         // With log scale, log transformation is applied before the mapping (fitting) to result range
@@ -598,9 +598,14 @@ boxPlot.render();
 
         // domain must not include or cross zero
         if (domain[0] <= scaleRoundingEpsilon) {
-            increment = true;
-            domain[0] = domain[0] + 1;
-            domain[1] = domain[1] + 1;
+            // Issue 24967: incrementing domain is causing issue with brushing extent
+            // Ideally we'd increment as little as possible
+
+            // We set domain to [0, 1] if all values are null for an axis
+            // With the fix for issue 24695, the only case that would enter here is domain[0] == 0, so the adjustment will be small
+            increment = scaleRoundingEpsilon - domain[0];
+            domain[0] = domain[0] + increment;
+            domain[1] = domain[1] + increment;
         }
         else {
             domain[0] = domain[0] - scaleRoundingEpsilon;
@@ -609,13 +614,14 @@ boxPlot.render();
 
         scale = d3.scale.log().domain(domain).range(range);
 
-        // We need to wrap the scale so we can increment by 1 if the minimum value is 0.
         scaleWrapper = function(val) {
             if(val != null && val >= 0) {
-                if (increment == true) {
-                    return scale(val + 1);
+                if (increment > 0 && val === 0) {
+                    // values <=0 should have been filtered out for log scale, keeping this block just to be safe
+                    return scale(val + increment);
                 }
-
+                // incrementing the parameter causes shifting of axis label and brushing extents
+                // since the increment is small (should be == scaleRoundingEpsilon), we can skip incrementing here
                 return scale(val);
             }
 

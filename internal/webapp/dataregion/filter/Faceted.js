@@ -269,7 +269,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                 grid.getSelectionModel().deselectAll();
             }
             else if (numFilters == 0) {
-                grid.getSelectionModel().selectAll();
+                grid.getSelectionModel().selectAll(true);
             }
             else {
                 this.selectFilter(this.filters[0]);
@@ -410,6 +410,6 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
             return;
         }
 
-        this.getGrid().getSelectionModel().select(records);
+        this.getGrid().getSelectionModel().select(records, false, true);
     }
 });
