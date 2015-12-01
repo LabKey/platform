@@ -17,7 +17,7 @@ package org.labkey.announcements.model;
 
 import com.drew.lang.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
@@ -35,16 +35,14 @@ public class TourCache
 {
     private static final CommSchema _comm = CommSchema.getInstance();
     private static final TourCacheLoader tourLoader = new TourCacheLoader();
-    private static final BlockingStringKeyCache<TourCollections> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Tours", tourLoader);
+    private static final BlockingCache<Container, TourCollections> BLOCKING_CACHE = CacheManager.getBlockingCache(50000, CacheManager.DAY, "Tours", tourLoader);
     private static final TourCollections _emptyCollection = new TourCollections(Collections.emptyList());
 
-    public static class TourCacheLoader implements CacheLoader<String, TourCollections>
+    public static class TourCacheLoader implements CacheLoader<Container, TourCollections>
     {
         @Override
-        public TourCollections load(String key, Object argument)
+        public TourCollections load(Container c, Object argument)
         {
-            Container c = (Container) argument;
-
             Selector selector = new TableSelector(_comm.getTableInfoTours(), SimpleFilter.createContainerFilter(c), null);
             Collection<TourModel> tours = selector.getCollection(TourModel.class);
 
@@ -57,19 +55,11 @@ public class TourCache
 
     static @NotNull TourCollections getTourCollections(@NotNull Container c)
     {
-        return BLOCKING_CACHE.get(getCacheKey(c), c);
+        return BLOCKING_CACHE.get(c, null);
     }
 
     public static void uncache(Container c)
     {
-        BLOCKING_CACHE.removeUsingPrefix(getCacheKey(c));
+        BLOCKING_CACHE.remove(c);
     }
-
-    // Private methods below
-
-    private static String getCacheKey(Container c)
-    {
-        return "tours/" + c.getId();
-    }
-
 }
