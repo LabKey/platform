@@ -2685,7 +2685,7 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(SystemMaintenanceForm form, BindException errors) throws Exception
         {
-            String jobGuid = new SystemMaintenance(form.getTaskName(), getUser()).call();
+            String jobGuid = new SystemMaintenanceJob(form.getTaskName(), getUser()).call();
 
             if (null != jobGuid)
                 _jobId = PipelineService.get().getJobId(getUser(), getContainer(), jobGuid);
