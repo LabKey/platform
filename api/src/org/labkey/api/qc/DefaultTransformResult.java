@@ -35,7 +35,6 @@ public class DefaultTransformResult implements TransformResult
     private Map<DomainProperty, String> _runProperties = Collections.emptyMap();
     private File _uploadedFile;
     private String _assayId;
-    private boolean _hasWarnings;
     private String _warnings;
     private List<File> _files;
 
@@ -58,16 +57,6 @@ public class DefaultTransformResult implements TransformResult
     {
         _warnings = warnings;
     }
-
-//    public boolean hasWarnings()
-//    {
-//        return _hasWarnings;
-//    }
-//
-//    public void setHasWarnings(boolean hasWarnings)
-//    {
-//        _hasWarnings = hasWarnings;
-//    }
 
     public DefaultTransformResult(){}
 

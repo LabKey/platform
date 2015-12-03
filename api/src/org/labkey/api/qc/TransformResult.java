@@ -45,10 +45,6 @@ public interface TransformResult
 
     void setWarnings(String warnings);
 
-//    boolean hasWarnings();
-//
-//    void setHasWarnings(boolean warningsExist);
-
     List<File> getFiles();
 
     void setFiles(List<File> files);
