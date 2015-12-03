@@ -11,11 +11,32 @@ Ext4.define('File.data.webdav.XMLResponse', {
 
     statics : {
         readOptions : function(val) {
-            var h = val.replace(/\s/g, '');
-            h = h.split(',');
-            var ops = {};
-            for (var i=0; i < h.length; i++) {
-                ops[h[i]] = true;
+
+            // default values
+            var ops = {
+                COPY: false,
+                DELETE: false,
+                GET: false,
+                HEAD: false,
+                LOCK: false,
+                MKCOL: false,
+                MOVE: false,
+                OPTIONS: false,
+                POST: false,
+                PROPFIND: false,
+                PUT: false,
+                UNLOCK: false
+            };
+
+            if (Ext4.isString(val)) {
+                var h = val.replace(/\s/g, '');
+                h = h.split(',');
+                for (var i=0; i < h.length; i++) {
+                    ops[h[i]] = true;
+                }
+            }
+            else if (Ext4.isObject(val)) {
+                ops = Ext4.clone(val);
             }
             return ops;
         },

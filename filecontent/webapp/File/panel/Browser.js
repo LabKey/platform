@@ -1182,33 +1182,35 @@ Ext4.define('File.panel.Browser', {
 
             var listeners = {
                 load: {
-                    fn : function() {
+                    fn : function(treeStore) {
 
                         var nodeId;
 
-                        if (!Ext4.isEmpty(this.startDirectory)) {
-                            nodeId = this.fileSystem.getBaseURL() + this.startDirectory;
+                        this.loadRootNode(treeStore, function() {
+                            if (!Ext4.isEmpty(this.startDirectory)) {
+                                nodeId = this.fileSystem.getBaseURL() + this.startDirectory;
 
-                            if (this.hasStatePrefix()) {
-                                Ext4.state.Manager.clear(this.statePrefix + '.currentDirectory');
+                                if (this.hasStatePrefix()) {
+                                    Ext4.state.Manager.clear(this.statePrefix + '.currentDirectory');
+                                }
                             }
-                        }
-                        else if (this.hasStatePrefix()) {
-                            // Retrieve the last visited folder from the container cookie
-                            var startFolder = Ext4.state.Manager.get(this.statePrefix + '.currentDirectory');
-                            if (startFolder) {
-                                nodeId = startFolder;
+                            else if (this.hasStatePrefix()) {
+                                // Retrieve the last visited folder from the container cookie
+                                var startFolder = Ext4.state.Manager.get(this.statePrefix + '.currentDirectory');
+                                if (startFolder) {
+                                    nodeId = startFolder;
+                                }
                             }
-                        }
-                        else {
-                            nodeId = this.fileSystem.getOffsetURL();
-                        }
+                            else {
+                                nodeId = this.fileSystem.getOffsetURL();
+                            }
 
-                        if (!nodeId) {
-                            nodeId = this.folderSeparator;
-                        }
+                            if (!nodeId) {
+                                nodeId = this.folderSeparator;
+                            }
 
-                        this._ensureVisible(nodeId);
+                            this._ensureVisible(nodeId);
+                        }, this);
                     },
                     single: true
                 },
@@ -1242,6 +1244,30 @@ Ext4.define('File.panel.Browser', {
                 scope : this
             }
         });
+    },
+
+    /**
+     * This makes a separate request for the root node's metadata.
+     */
+    loadRootNode : function(treeStore, callback, scope) {
+
+        var operation = new Ext4.data.Operation({
+            action: 'read',
+            params: {
+                depth: 0 // only the root node result
+            }
+        });
+
+        treeStore.getProxy().read(operation, function(s) {
+            if (s.success) {
+                treeStore.getRootNode().set('options', s.resultSet.records[0].get('options'));
+            }
+            this.uploadPanel.onLoad();
+
+            if (Ext4.isFunction(callback)) {
+                callback.call(scope || this);
+            }
+        }, this);
     },
 
     /**

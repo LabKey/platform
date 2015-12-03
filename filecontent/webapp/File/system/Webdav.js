@@ -175,28 +175,6 @@
         getHistory: function (config)
         {
             console.warn('Get History NYI');
-
-//        config.scope = config.scope || this;
-//        var body =  "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<propfind xmlns=\"DAV:\"><prop><history/></prop></propfind>";
-//
-//        var proxy = new Ext.data.HttpProxy(
-//        {
-//            url: this.concatPaths(this.prefixUrl, config.path),
-//            xmlData : body,
-//            method: "PROPFIND",
-//            headers: {"Depth" : "0"}
-//        });
-//        proxy.api.read.method = 'PROPFIND';
-//
-//        var cb = function(response, args, success)
-//        {
-//            LABKEY.FileSystem.Util._processAjaxResponse(response);
-//            if (success && typeof config.success == 'function')
-//                config.success.call(config.scope, args.filesystem, args.path, response.records);
-//            else if (!success & typeof config.failure == 'function')
-//                config.failure.call(config.scope, response, options);
-//        };
-//        proxy.request('read', null, {method:"PROPFIND", depth:"0", propname : this.propNames}, this.historyReader, cb, this, {filesystem:this, path:config.path});
         },
 
         _check: function (record, option)
@@ -526,41 +504,41 @@
             if (directget)
             {
                 // TODO: downloading files using directget doesn't currently work
-                throw new Error("not yet implemented");
+                throw new Error("Downloading resources via 'directget' is not yet implemented");
 
                 // make direct request
-                Ext4.Ajax.request({
-                    method: directget.method,
-                    url: directget.endpoint,
-                    headers: directget.headers,
-                    disableCaching: false,
-                    success: function (response, options)
-                    {
-                        var success = false;
-                        if (OK == response.status || CREATED == response.status)
-                        {
-                            success = true;
-                        }
-                        else if (METHOD_NOT_ALLOWED == response.status)
-                        {
-                            success = false;
-                        }
-
-                        if (success)
-                        {
-                            if (Ext4.isFunction(config.success))
-                            {
-                                config.success.call(config.scope||this, config.path);
-                            }
-                        }
-                        else
-                        {
-                            this.handleFailureCallback(config, response, options);
-                        }
-                    },
-                    failure: config.failure,
-                    scope: this
-                });
+                //Ext4.Ajax.request({
+                //    method: directget.method,
+                //    url: directget.endpoint,
+                //    headers: directget.headers,
+                //    disableCaching: false,
+                //    success: function (response, options)
+                //    {
+                //        var success = false;
+                //        if (OK == response.status || CREATED == response.status)
+                //        {
+                //            success = true;
+                //        }
+                //        else if (METHOD_NOT_ALLOWED == response.status)
+                //        {
+                //            success = false;
+                //        }
+                //
+                //        if (success)
+                //        {
+                //            if (Ext4.isFunction(config.success))
+                //            {
+                //                config.success.call(config.scope||this, config.path);
+                //            }
+                //        }
+                //        else
+                //        {
+                //            this.handleFailureCallback(config, response, options);
+                //        }
+                //    },
+                //    failure: config.failure,
+                //    scope: this
+                //});
             }
             else
             {
