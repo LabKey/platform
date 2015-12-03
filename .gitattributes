@@ -1595,6 +1595,7 @@ api/src/org/labkey/api/util/JsonUtil.java -text
 api/src/org/labkey/api/util/LogOutputStream.java -text
 api/src/org/labkey/api/util/LogPrintWriter.java -text
 api/src/org/labkey/api/util/MXBeanAppender.java -text
+api/src/org/labkey/api/util/MaintenancePipelineJob.java -text
 api/src/org/labkey/api/util/MatrixUtil.java -text
 api/src/org/labkey/api/util/MemTrackable.java -text
 api/src/org/labkey/api/util/MemTracker.java -text
@@ -1631,6 +1632,7 @@ api/src/org/labkey/api/util/StringSubstitution.java -text
 api/src/org/labkey/api/util/StringUtilsLabKey.java -text
 api/src/org/labkey/api/util/SubstitutionFormat.java -text
 api/src/org/labkey/api/util/SystemMaintenance.java -text
+api/src/org/labkey/api/util/SystemMaintenanceJob.java -text
 api/src/org/labkey/api/util/Taintable.java -text
 api/src/org/labkey/api/util/ThumbnailUtil.java -text
 api/src/org/labkey/api/util/TidyUtil.java -text
